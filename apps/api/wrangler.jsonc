@@ -1,0 +1,40 @@
+{
+  "name": "cash-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-03-22",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cash-db",
+      "database_id": "dfd7fa4a-91a4-42a6-be16-465491b0467a"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ASSETS",
+      "bucket_name": "cash-prd-assets"
+    }
+  ],
+  "vars": {
+    "JWT_SECRET": "yolo-secret-change-me",
+    "DISCORD_TOKEN": "replace-me",
+    "DISCORD_PUBLIC_KEY": "replace-me"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SESSION",
+        "class_name": "HouseholdSession"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["HouseholdSession"]
+    }
+  ],
+  "triggers": {
+    "crons": ["0 0 * * 0"]
+  }
+}

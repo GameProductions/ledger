@@ -8,6 +8,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "deploy:api": "npm run deploy -w apps/api",
+    "deploy:web": "npm run deploy -w apps/web"
   }
 }

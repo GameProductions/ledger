@@ -18,7 +18,7 @@ import AICoach from './components/AICoach'
 import ThemeSwitcher from './components/ThemeSwitcher'
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
   const { data: accounts } = useApi('/api/accounts')
   const { data: transactions } = useApi('/api/transactions')
   const { data: templates } = useApi('/api/templates')
@@ -34,10 +34,9 @@ const Dashboard: React.FC = () => {
     setTimeout(() => setToast(null), 3000)
   }
 
-  const safetyNumber = 1245.50
 
   const handleExport = async () => {
-    const res = await fetch('http://localhost:8787/api/export/csv', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/csv`, {
       headers: { 
         'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
         'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
@@ -53,7 +52,7 @@ const Dashboard: React.FC = () => {
   }
 
   const toggleReconcile = async (txId: string, current: boolean) => {
-    await fetch(`http://localhost:8787/api/transactions/${txId}/reconcile`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${txId}/reconcile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -86,6 +85,7 @@ const Dashboard: React.FC = () => {
             <button className={view === 'calendar' ? 'primary' : ''} onClick={() => setView('calendar')}>Calendar</button>
           </div>
           <button onClick={handleExport} style={{ background: 'var(--secondary)', color: 'white' }}>Export CSV</button>
+          <ThemeSwitcher />
           <UserProfile />
           <button onClick={logout}>Logout</button>
         </div>
@@ -125,7 +125,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <button 
-                onClick={() => window.open('http://localhost:8787/api/report/summary', '_blank')}
+                onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/report/summary`, '_blank')}
                 style={{ marginTop: '1.5rem', width: '100%', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.2)' }}
               >
                 📥 Generate Monthly Digest (PDF)
@@ -204,7 +204,7 @@ const Dashboard: React.FC = () => {
           <form style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }} onSubmit={(e) => {
             e.preventDefault()
             const formData = new FormData(e.currentTarget)
-            fetch('http://localhost:8787/api/transactions', {
+            fetch(`${import.meta.env.VITE_API_URL}/api/transactions`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ const Login: React.FC = () => {
   const [username, setUsername] = useState('')
 
   const handleLogin = async () => {
-    const res = await fetch('http://localhost:8787/auth/login', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })

@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect } from 'react'
 
-const API_URL = 'http://localhost:8787'
+const API_URL = import.meta.env.VITE_API_URL
 
 export const useApi = (path: string) => {
   const { token } = useAuth()

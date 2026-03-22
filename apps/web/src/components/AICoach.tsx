@@ -11,20 +11,20 @@ const AICoach: React.FC = () => {
 
   const askCoach = async () => {
     if (!input.trim()) return
-    const userMsg = input
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }])
+    const question = input
+    setMessages(prev => [...prev, { role: 'user', text: question }])
     setInput('')
     setLoading(true)
 
     try {
-      const res = await fetch('http://localhost:8787/api/coach/ask', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/coach/ask`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'x-household-id': householdId || ''
         },
-        body: JSON.stringify({ question: userMsg })
+        body: JSON.stringify({ question: question })
       })
       const data = await res.json()
       setMessages(prev => [...prev, { role: 'coach', text: data.answer }])

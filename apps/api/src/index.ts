@@ -95,10 +95,12 @@ app.use('*', secureHeaders())
 const REQUESTS = new Map<string, number>()
 app.use('/api/*', async (c, next) => {
   const ip = c.req.header('cf-connecting-ip') || 'anon'
-  const count = (REQUESTS.get(ip) || 0) + 1
-  REQUESTS.set(ip, count)
+  const now = Math.floor(Date.now() / 3600000) // Hour bucket
+  const key = `${ip}:${now}`
+  const count = (REQUESTS.get(key) || 0) + 1
+  REQUESTS.set(key, count)
   
-  if (count > 500) { // High threshold for YOLO
+  if (count > 2000) { // Increased threshold with hourly reset for YOLO stability
     return c.json({ error: 'Too Many Requests' }, 429)
   }
   await next()

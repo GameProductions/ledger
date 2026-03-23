@@ -287,17 +287,20 @@ const Dashboard: React.FC = () => {
           </form>
         </section>
 
-        <footer style={{ gridColumn: 'span 3', marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center', opacity: 0.5, fontSize: '0.8rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1rem' }}>
-            <span>🔒 Secure (HSTS)</span>
-            <span>⚡ Edge 200ms</span>
-            <span>💎 v1.5.6 Gold</span>
+        <footer style={{ gridColumn: 'span 3', marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+              <span style={{ fontWeight: '600', color: 'var(--primary)' }}>CASH</span>
+              <span style={{ opacity: 0.7 }}>v1.5.6 Gold</span>
+            </div>
+            <div style={{ display: 'flex', gap: '2rem' }}>
+              <a href="#/privacy" style={{ color: 'white', textDecoration: 'none', transition: 'opacity 0.2s' }}>Privacy Policy</a>
+              <a href="#/terms" style={{ color: 'white', textDecoration: 'none', transition: 'opacity 0.2s' }}>Terms of Service</a>
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '1rem', opacity: 0.8 }}>
-            <a href="#/privacy" style={{ color: 'white', textDecoration: 'none' }}>Privacy</a>
-            <a href="#/terms" style={{ color: 'white', textDecoration: 'none' }}>Terms</a>
+          <div style={{ textAlign: 'center', opacity: 0.5, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+            © {new Date().getFullYear()} GameProductions - Unified Financial Command
           </div>
-          <p>© 2026 GameProductions - Unified Financial Command</p>
         </footer>
       </main>
 
@@ -307,7 +310,7 @@ const Dashboard: React.FC = () => {
 }
 
 const AppContent: React.FC = () => {
-  const { user, loading, globalRole } = useAuth()
+  const { user, globalRole } = useAuth()
   const [currentHash, setCurrentHash] = useState(window.location.hash)
 
   useEffect(() => {
@@ -316,14 +319,14 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  if (loading) return <div className="loading flex-center" style={{ height: '100vh' }}>Loading CASH...</div>
+  // Public Routes (No session required)
+  if (currentHash === '#/privacy') return <PrivacyPolicy />
+  if (currentHash === '#/terms') return <TermsOfService />
 
   if (!user) return <Login />
 
-  // SPA Routing Logic
+  // Protected Admin Routes
   if (currentHash === '#/admin' && globalRole === 'super_admin') return <AdminDashboard />
-  if (currentHash === '#/privacy') return <PrivacyPolicy />
-  if (currentHash === '#/terms') return <TermsOfService />
 
   return <Dashboard />
 }

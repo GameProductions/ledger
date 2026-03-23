@@ -279,7 +279,7 @@ const Login: React.FC = () => {
           onChange={(e) => setUsername(e.target.value)}
           style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
         />
-        <button className="primary" style={{ width: '100%' }} onClick={handleLogin}>Log In (YOLO Mode)</button>
+        <button className="primary" style={{ width: '100%' }} onClick={handleLogin}>Log In</button>
       </div>
     </div>
   )

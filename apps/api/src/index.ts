@@ -718,10 +718,9 @@ app.post('/discord/interactions', async (c) => {
 
 export default {
   fetch: app.fetch,
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+  async scheduled(event: any, env: Bindings, ctx: any) {
     if (event.cron === "0 0 * * 0") { // Every Sunday
       console.log("Running weekly pulse report...")
-      // In a real scenario, this would iterate through households and send Discord reports.
       const webhookUrl = env.DISCORD_WEBHOOK_URL
       if (webhookUrl) {
          await fetch(webhookUrl, {

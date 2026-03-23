@@ -102,7 +102,7 @@ app.use('/api/*', async (c, next) => {
     ).bind(token).all()
     
     if (results.length > 0) {
-      c.set('householdId', results[0].household_id)
+      c.set('householdId', String(results[0].household_id))
       // For PATs, we don't have a userId, so we'll set a placeholder or null
       c.set('userId', 'pat-user') 
       await next()

@@ -16,6 +16,7 @@ import TransferForm from './components/TransferForm'
 import SpendingHeatmap from './components/SpendingHeatmap'
 import AICoach from './components/AICoach'
 import ThemeSwitcher from './components/ThemeSwitcher'
+import DeveloperSettings from './components/DeveloperSettings'
 
 const Dashboard: React.FC = () => {
   const { logout } = useAuth()
@@ -181,6 +182,7 @@ const Dashboard: React.FC = () => {
         <Subscriptions />
         <BudgetProgress />
         <WhatIfLedger />
+        <DeveloperSettings />
         <ImportWizard />
 
         <section className="card" style={{ gridColumn: 'span 3' }}>

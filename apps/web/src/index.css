@@ -54,11 +54,10 @@ h1, h2, h3 {
 }
 
 .card {
-  background: var(--bg-card);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
   border-radius: 1rem;
   padding: 1.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -108,7 +107,7 @@ button.primary:hover {
     bottom: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    background: var(--bg-card);
+    background: var(--card-bg);
     border: 1px solid var(--primary);
     padding: 0.8rem 1.5rem;
     border-radius: 2rem;
@@ -125,3 +124,26 @@ button.primary:hover {
   animation: pulse 2s infinite ease-in-out;
 }
 
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  #root {
+    padding: 1rem;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  .safety-number-container {
+    font-size: 2.5rem;
+  }
+  .card {
+    padding: 1.2rem;
+  }
+  footer {
+    grid-column: 1 / -1 !important;
+  }
+}

@@ -11,5 +11,8 @@
     "build": "npm run build --workspaces --if-present",
     "deploy:api": "npm run deploy -w apps/api",
     "deploy:web": "npm run deploy -w apps/web"
+  },
+  "devDependencies": {
+    "wrangler": "^4.76.0"
   }
 }

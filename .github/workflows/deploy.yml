@@ -11,13 +11,14 @@ jobs:
     name: Deploy
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy
+      - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 'a5b3081992c9b5b608c5a39fea5a18d0'
-          workingDirectory: 'apps/api'
-          command: deploy --minify --config wrangler.jsonc
+          accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
+          workingDirectory: "apps/api"
+          wranglerVersion: "latest"
+          command: deploy --minify --name cash-api
           secrets: |
             DISCORD_TOKEN
             DISCORD_PUBLIC_KEY

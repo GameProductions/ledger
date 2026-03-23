@@ -34,7 +34,7 @@
     }
   ],
   "vars": {
-    "DISCORD_WEBHOOK_URL": "replace-me"
+    "DISCORD_WEBHOOK_URL": ""
   },
   "durable_objects": {
     "bindings": [

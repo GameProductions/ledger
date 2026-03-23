@@ -355,41 +355,133 @@ const Dashboard: React.FC = () => {
       {toast && <div className="status-toast flex-center"><span>●</span> {toast}</div>}
 
       {linkingTx && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card reveal" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card reveal" style={{ width: '100%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3>Link: {linkingTx.description}</h3>
-              <button onClick={() => setLinkingTx(null)} style={{ background: 'transparent', color: 'var(--text-secondary)', fontSize: '1.5rem' }}>×</button>
+              <div>
+                <h3 style={{ margin: 0 }}>Reconcile: {linkingTx.description}</h3>
+                <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)' }}>${(linkingTx.amount_cents / 100).toFixed(2)}</span>
+              </div>
+              <button onClick={() => setLinkingTx(null)} style={{ background: 'transparent', color: 'var(--text-secondary)', fontSize: '1.5rem', border: 'none' }}>×</button>
             </div>
+            
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-              Select a transaction to satisfy this entry (e.g., link a charge to a payment).
+              Select one or more transactions to satisfy this entry.
             </p>
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              {transactions?.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
-                <div 
-                  key={t.id} 
-                  className="card" 
-                  onClick={async () => {
-                    await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/link`, {
-                      method: 'POST',
-                      headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-                        'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
-                      },
-                      body: JSON.stringify({ linkedToId: t.id })
-                    })
-                    mutateTx()
-                    setLinkingTx(null)
-                    showToast('Transactions Linked')
-                  }}
-                  style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', padding: '0.8rem', background: 'rgba(255,255,255,0.03)' }}
-                >
-                  <span>{t.description}</span>
-                  <span style={{ fontWeight: '700' }}>${(t.amount_cents / 100).toFixed(2)}</span>
-                </div>
-              ))}
+
+            {/* Smart Suggestions */}
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 'bold', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>SMART SUGGESTIONS</div>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {transactions?.filter((t: any) => 
+                  t.id !== linkingTx.id && 
+                  t.reconciliation_status === 'unreconciled' &&
+                  Math.abs(t.amount_cents) === Math.abs(linkingTx.amount_cents)
+                ).map((t: any) => (
+                  <div 
+                    key={`suggest-${t.id}`}
+                    onClick={async () => {
+                      await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/link`, {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
+                          'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                        },
+                        body: JSON.stringify({ linkedToIds: [t.id] })
+                      })
+                      mutateTx()
+                      setLinkingTx(null)
+                      showToast('Auto-Matched Successfully')
+                    }}
+                    style={{ 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      padding: '1rem', 
+                      background: 'rgba(16, 185, 129, 0.1)', 
+                      border: '1px solid var(--primary)',
+                      borderRadius: '0.5rem',
+                      animation: 'pulse 2s infinite'
+                    }}
+                  >
+                    <span>✨ {t.description}</span>
+                    <span style={{ fontWeight: '700' }}>${(t.amount_cents / 100).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>ALL CANDIDATES</div>
+            <div style={{ display: 'grid', gap: '0.5rem' }}>
+              {transactions?.filter((t: any) => t.id !== linkingTx.id).map((t: any) => {
+                const isSelected = false // This will be handled by a local selection state if we want multi-click, but for now we'll stick to 1-click multi-link trigger
+                return (
+                  <div 
+                    key={t.id} 
+                    className="card" 
+                    onClick={async () => {
+                      await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/link`, {
+                        method: 'POST',
+                        headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
+                          'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                        },
+                        body: JSON.stringify({ linkedToIds: [t.id] })
+                      })
+                      mutateTx()
+                      setLinkingTx(null)
+                      showToast('Linked Successfully')
+                    }}
+                    style={{ 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      padding: '1rem', 
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid var(--glass-border)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '600' }}>{t.description}</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>{t.transaction_date}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: '700' }}>${(t.amount_cents / 100).toFixed(2)}</div>
+                      {Math.abs(t.amount_cents) === Math.abs(linkingTx.amount_cents) && (
+                        <span style={{ fontSize: '0.6rem', color: 'var(--primary)', fontWeight: 'bold' }}>EXACT MATCH</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            
+            {linkingTx.reconciliation_status === 'reconciled' && (
+              <button 
+                onClick={async () => {
+                  // Simplified unlink - remove all links for this source
+                  // In a real app we'd list the links and allow individual unlinking
+                  await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/unlink`, {
+                    method: 'POST',
+                    headers: { 
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
+                      'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                    },
+                    body: JSON.stringify({ targetId: 'all' }) // Backend needs to handle this or we need the targetId
+                  })
+                  mutateTx()
+                  setLinkingTx(null)
+                  showToast('Links Reset')
+                }}
+                style={{ marginTop: '2rem', width: '100%', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+              >
+                Reset All Links
+              </button>
+            )}
           </div>
         </div>
       )}

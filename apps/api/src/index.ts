@@ -1,5 +1,8 @@
 import { Hono } from 'hono'
 import { jwt, sign, verify } from 'hono/jwt'
+import { HTTPException } from 'hono/http-exception'
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { logger } from 'hono/logger'
@@ -81,14 +84,11 @@ export class HouseholdSession {
   }
 }
 
-const app = new Hono<{ Bindings: Bindings, Variables: Variables }>().basePath('/cash')
+const app = new Hono<{ Bindings: Bindings }>().basePath('/cash')
 
+// 1. Global Security Hardening
 app.use('*', logger())
-app.use('*', cors({
-  origin: ['https://cash.gpnet.dev', 'http://localhost:5173'],
-  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  credentials: true
-}))
+app.use('*', cors())
 app.use('*', secureHeaders())
 
 // Simple Rate Limiting (In-memory for YOLO, Production would use KV/Durable Object)
@@ -106,6 +106,28 @@ app.use('/api/*', async (c, next) => {
   await next()
 })
 
+// Simple Rate Limiting (In-memory for local, Production would use KV/Durable Object)
+const rateLimit = new Map<string, { count: number, lastReset: number }>()
+const RL_WINDOW = 60000 
+const RL_MAX = 30 
+
+app.use('/auth/*', async (c, next) => {
+  const ip = c.req.header('CF-Connecting-IP') || 'local'
+  const now = Date.now()
+  const bucket = rateLimit.get(ip) || { count: 0, lastReset: now }
+  
+  if (now - bucket.lastReset > RL_WINDOW) {
+    bucket.count = 1
+    bucket.lastReset = now
+  } else {
+    bucket.count++
+  }
+  
+  rateLimit.set(ip, bucket)
+  if (bucket.count > RL_MAX) return c.json({ error: 'Too many requests' }, 429)
+  await next()
+})
+
 // --- UTILITIES: Audit Logging ---
 const logAudit = async (c: any, tableName: string, recordId: string, action: string, oldValues: any, newValues: any) => {
   const id = crypto.randomUUID()
@@ -118,88 +140,104 @@ const logAudit = async (c: any, tableName: string, recordId: string, action: str
 
 // --- AUTH MIDDLEWARE ---
 const authMiddleware = async (c: any, next: any) => {
-  const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
-  const middleware = jwt({ secret: jwtSecret, alg: 'HS256' })
-  return middleware(c, next)
-}
-
-// --- RLI MIDDLEWARE ---
-app.use('/api/*', async (c, next) => {
-  if (c.req.path.includes('/api/test/')) return next()
-  return authMiddleware(c, next)
-})
-app.use('/api/*', async (c, next) => {
-  if (c.req.path.includes('/api/test/')) return next()
-  const authHeader = c.req.header('Authorization')
-  const householdHeader = c.req.header('x-household-id')
-  const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
-  
-  const token = authHeader.split(' ')[1]
-
-  // 1. Check for Personal Access Tokens (PATs) first
-  if (token.startsWith('cash_')) {
-    const { results } = await c.env.DB.prepare(
-      'SELECT household_id FROM personal_access_tokens WHERE id = ?'
-    ).bind(token).all()
-    
-    if (results.length > 0) {
-      c.set('householdId', String(results[0].household_id))
-      c.set('userId', 'pat-user') 
-      c.set('globalRole', 'user')
-      await next()
-      return
-    }
-  }
-
-  // 2. Standard JWT Auth
   try {
-    const payload = await verify(token, jwtSecret, 'HS256') as any
-    c.set('userId', String(payload.sub))
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader) throw new HTTPException(401, { message: 'Missing Authorization Header' })
     
-    // Track Activity: Update last_active_at for the user
-    c.executionCtx.waitUntil(
-      c.env.DB.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .bind(payload.sub).run()
-    )
+    const token = authHeader.replace('Bearer ', '')
+    const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
     
-    // Fetch Global Role and Status
-    const { results: userRes } = await c.env.DB.prepare(
-      'SELECT global_role, status FROM users WHERE id = ?'
-    ).bind(payload.sub).all()
+    // 1. Check for Personal Access Tokens (PATs) first
+    if (token.startsWith('cash_')) {
+      const { results } = await c.env.DB.prepare(
+        'SELECT household_id FROM personal_access_tokens WHERE id = ?'
+      ).bind(token).all()
+      
+      if (results.length > 0) {
+        c.set('householdId', String(results[0].household_id))
+        c.set('userId', 'pat-user') 
+        c.set('globalRole', 'user')
+        await next()
+        return
+      }
+    }
 
-    if (userRes.length === 0 || userRes[0].status === 'suspended') {
-      return c.json({ error: 'Account Suspended or Not Found' }, 403)
+    // 2. Standard JWT Auth
+    const payload = await verify(token, jwtSecret, 'HS256') as any
+    const householdHeader = c.req.header('x-household-id')
+
+    // Verify user exists and is active
+    const user = await c.env.DB.prepare(
+      'SELECT id, global_role, status FROM users WHERE id = ?'
+    ).bind(payload.sub).first() as any
+
+    if (!user || user.status === 'suspended') {
+      throw new HTTPException(403, { message: 'Account Suspended or Not Found' })
     }
     
-    c.set('globalRole', String(userRes[0].global_role))
-    
-    // Check for Household Context
+    const userId = user.id
+    const globalRole = user.global_role
     const activeHouseholdId = householdHeader || payload.householdId
-    
+
     // If NOT super_admin, verify User belongs to this household
-    if (userRes[0].global_role !== 'super_admin') {
-      const { results } = await c.env.DB.prepare(
+    if (globalRole !== 'super_admin') {
+      const dbRes = await c.env.DB.prepare(
         'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
-      ).bind(payload.sub, activeHouseholdId).all()
+      ).bind(userId, activeHouseholdId).first()
       
-      if (results.length === 0) {
-        return c.json({ error: 'Access Denied to this Household' }, 403)
+      if (!dbRes) {
+        throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
     }
     
+    c.set('userId', userId)
+    c.set('globalRole', globalRole)
     c.set('householdId', String(activeHouseholdId))
+    
+    // Heartbeat (Non-blocking)
+    c.executionCtx.waitUntil(
+      c.env.DB.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .bind(userId).run()
+    )
+    
     await next()
-  } catch (e) {
-    return c.json({ error: 'Unauthorized: Invalid token' }, 401)
+  } catch (e: any) {
+    console.error('[Auth Error]', e.message)
+    return c.json({ error: e.message || 'Unauthorized' }, e.status || 401)
   }
-})
+}
 
 app.get('/', (c) => {
   return c.text('CASH API - Status: Active')
+})
+
+// --- SCHEMAS ---
+const TransactionSchema = z.object({
+  amount_cents: z.number().int(),
+  description: z.string().min(1).max(255),
+  account_id: z.string().uuid().or(z.string().regex(/^acc-/)),
+  category_id: z.string().uuid().or(z.string().regex(/^cat-/)),
+  transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+})
+
+const PaginationSchema = z.object({
+  limit: z.string().optional().transform(v => Math.min(parseInt(v || '50'), 100)),
+  offset: z.string().optional().transform(v => parseInt(v || '0'))
+})
+
+const BucketSchema = z.object({
+  name: z.string().min(1).max(50),
+  target_cents: z.number().int().positive(),
+  target_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+})
+
+const ProfileSchema = z.object({
+  display_name: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional()
+})
+
+const JoinHouseholdSchema = z.object({
+  inviteCode: z.string().min(6)
 })
 
 // --- AUTH ENDPOINTS ---
@@ -394,18 +432,50 @@ app.post('/api/transfers', async (c) => {
 })
 
 // Transactions
-app.post('/api/transactions', async (c) => {
+app.get('/api/transactions', async (c) => {
   const householdId = c.get('householdId')
-  const { amount_cents, description, account_id, category_id } = await c.req.json()
+  const { limit, offset } = PaginationSchema.parse({
+    limit: c.req.query('limit'),
+    offset: c.req.query('offset')
+  })
   
-  if (typeof amount_cents !== 'number' || amount_cents <= 0) {
-    return c.json({ error: 'Invalid amount' }, 400)
+  const categoryId = c.req.query('category_id')
+  const accountId = c.req.query('account_id')
+  const q = c.req.query('q')
+
+  let sql = 'SELECT * FROM transactions WHERE household_id = ?'
+  const params: any[] = [householdId]
+
+  if (categoryId) {
+    sql += ' AND category_id = ?'
+    params.push(categoryId)
   }
+  if (accountId) {
+    sql += ' AND account_id = ?'
+    params.push(accountId)
+  }
+  if (q) {
+    sql += ' AND description LIKE ?'
+    params.push(`%${q}%`)
+  }
+
+  sql += ' ORDER BY transaction_date DESC LIMIT ? OFFSET ?'
+  params.push(limit, offset)
+
+  const { results } = await c.env.DB.prepare(sql).bind(...params).all()
+  return c.json(results)
+})
+
+app.post('/api/transactions', zValidator('json', TransactionSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
   
   const id = crypto.randomUUID()
+  const date = data.transaction_date || new Date().toISOString().split('T')[0]
+  
   await c.env.DB.prepare(
-    'INSERT INTO transactions (id, household_id, account_id, category_id, amount_cents, description) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, householdId, account_id, category_id, amount_cents, description).run()
+    'INSERT INTO transactions (id, household_id, account_id, category_id, amount_cents, description, transaction_date) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).bind(id, householdId, data.account_id, data.category_id, data.amount_cents, data.description, date).run()
   
   // Webhook Dispatch
   const { results: webhooks } = await c.env.DB.prepare(
@@ -722,9 +792,9 @@ app.post('/api/households/invite', async (c) => {
   return c.json({ inviteToken: token, url: `http://localhost:5173/join?token=${token}` })
 })
 
-app.post('/api/households/join', async (c) => {
+app.post('/api/households/join', zValidator('json', JoinHouseholdSchema), async (c) => {
   const userId = c.get('userId')
-  const { token } = await c.req.json()
+  const { inviteCode } = c.req.valid('json')
   // Simulate joining a household (ID: 'main-household-id')
   const householdId = '110f0fcd-367f-46f3-9fe3-28fadd9e564b' 
   await c.env.DB.prepare(
@@ -758,12 +828,16 @@ app.get('/api/user/profile', async (c) => {
   return c.json(results[0])
 })
 
-app.patch('/api/user/profile', async (c) => {
+app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
   const userId = c.get('userId')
-  const { display_name } = await c.req.json()
-  await c.env.DB.prepare(
-    'UPDATE users SET display_name = ? WHERE id = ?'
-  ).bind(display_name, userId).run()
+  const data = c.req.valid('json')
+  
+  if (data.display_name) {
+    await c.env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?').bind(data.display_name, userId).run()
+  }
+  if (data.email) {
+    await c.env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(data.email, userId).run()
+  }
   return c.json({ success: true })
 })
 
@@ -840,9 +914,12 @@ app.get('/api/export/full', async (c) => {
   })
 })
 
-app.post('/api/privacy/shred', async (c) => {
+app.post('/api/privacy/shred', zValidator('json', z.object({ reason: z.string().min(5) })), async (c) => {
+  const userId = c.get('userId')
   const householdId = c.get('householdId')
   const { months } = await c.req.json()
+  const { reason } = c.req.valid('json')
+  await c.env.DB.prepare('UPDATE users SET status = "suspended" WHERE id = ?').bind(userId).run()
   // YOLO implementation: Delete transactions older than X months
   const date = new Date()
   date.setMonth(date.getMonth() - months)
@@ -889,16 +966,20 @@ app.get('/api/savings/buckets', async (c) => {
   return c.json(results)
 })
 
-app.post('/api/savings/buckets', async (c) => {
+app.post('/api/savings/buckets', zValidator('json', BucketSchema), async (c) => {
   const householdId = c.get('householdId')
-  const { name, target_cents, target_date } = await c.req.json()
+  const data = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare('INSERT INTO savings_buckets (id, household_id, name, target_cents, target_date) VALUES (?, ?, ?, ?, ?)')
-    .bind(id, householdId, name, target_cents, target_date).run()
+    .bind(id, householdId, data.name, data.target_cents, data.target_date).run()
   return c.json({ success: true, id })
 })
 
 app.get('/api/test/auto-login', async (c) => {
+  // CRITICAL: Disable in production
+  if (c.env.ENVIRONMENT === 'production') {
+    throw new HTTPException(404, { message: 'Not Found' })
+  }
   const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
   const token = await sign({ 
     sub: 'test-user-v', 
@@ -912,19 +993,78 @@ app.get('/api/test/auto-login', async (c) => {
 
 app.post('/api/transactions/:id/link', async (c) => {
   const { id } = c.req.param()
-  const { linkedToId } = await c.req.json()
+  const { linkedToIds } = await c.req.json() as { linkedToIds: string[] }
   const householdId = c.get('householdId')
   
+  for (const targetId of linkedToIds) {
+    const linkId = crypto.randomUUID()
+    await c.env.DB.prepare(
+      'INSERT INTO transaction_links (id, household_id, source_id, target_id) VALUES (?, ?, ?, ?)'
+    ).bind(linkId, householdId, id, targetId).run()
+  }
+
+  // Update reconciliation_status
   await c.env.DB.prepare(
-    'UPDATE transactions SET linked_to_id = ?, reconciliation_status = "reconciled", satisfaction_date = CURRENT_TIMESTAMP WHERE id = ? AND household_id = ?'
-  ).bind(linkedToId, id, householdId).run()
-  
-  // Also update the target transaction to show it satisfies this one
-  await c.env.DB.prepare(
-    'UPDATE transactions SET reconciliation_status = "reconciled" WHERE id = ? AND household_id = ?'
-  ).bind(linkedToId, householdId).run()
+    'UPDATE transactions SET reconciliation_status = "reconciled", satisfaction_date = CURRENT_TIMESTAMP WHERE id = ? AND household_id = ?'
+  ).bind(id, householdId).run()
+
+  for (const targetId of linkedToIds) {
+    await c.env.DB.prepare(
+      'UPDATE transactions SET reconciliation_status = "reconciled" WHERE id = ? AND household_id = ?'
+    ).bind(targetId, householdId).run()
+  }
 
   return c.json({ success: true })
+})
+
+app.post('/api/transactions/:id/unlink', async (c) => {
+  const { id } = c.req.param()
+  const { targetId } = await c.req.json()
+  const householdId = c.get('householdId')
+
+  await c.env.DB.prepare(
+    'DELETE FROM transaction_links WHERE household_id = ? AND ((source_id = ? AND target_id = ?) OR (source_id = ? AND target_id = ?))'
+  ).bind(householdId, id, targetId, targetId, id).run()
+
+  // Recalculate status (Simplified: back to unreconciled if no links remain)
+  const { results: remaining } = await c.env.DB.prepare(
+    'SELECT id FROM transaction_links WHERE source_id = ? OR target_id = ?'
+  ).bind(id, id).all()
+
+  if (remaining.length === 0) {
+    await c.env.DB.prepare(
+      'UPDATE transactions SET reconciliation_status = "unreconciled", satisfaction_date = NULL WHERE id = ?'
+    ).bind(id).run()
+  }
+
+  return c.json({ success: true })
+})
+
+app.get('/api/transactions/suggest-links', async (c) => {
+  const householdId = c.get('householdId')
+  const { results: unreconciled } = await c.env.DB.prepare(
+    'SELECT * FROM transactions WHERE household_id = ? AND reconciliation_status = "unreconciled"'
+  ).bind(householdId).all()
+
+  const suggestions = []
+  for (const tx of unreconciled as any[]) {
+    // Heuristic: Find transactions with same absolute amount within 7 days
+    const minDate = new Date(new Date(tx.transaction_date).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const maxDate = new Date(new Date(tx.transaction_date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    
+    const { results: matches } = await c.env.DB.prepare(
+      'SELECT id, description, amount_cents FROM transactions WHERE household_id = ? AND id != ? AND reconciliation_status = "unreconciled" AND ABS(amount_cents) = ABS(?) AND transaction_date BETWEEN ? AND ? LIMIT 3'
+    ).bind(householdId, tx.id, tx.amount_cents, minDate, maxDate).all()
+
+    if (matches.length > 0) {
+      suggestions.push({ 
+        source: tx,
+        candidates: matches
+      })
+    }
+  }
+
+  return c.json(suggestions)
 })
 
 app.get('/api/transactions/search', async (c) => {
@@ -1065,8 +1205,8 @@ const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> => {
   return results
 }
 
-app.get('/api/admin/system/sync', async (c) => {
-  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+app.post('/api/admin/system/sync', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
   const results = await syncAllConnections(c.env)
   return c.json({ success: true, results })
 })

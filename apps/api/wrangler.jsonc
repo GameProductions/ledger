@@ -47,7 +47,8 @@
     "COLUMN_TAX_API_KEY": "replace-me",
     "ARRAY_API_KEY": "replace-me",
     "RESEND_API_KEY": "replace-me",
-    "ENCRYPTION_KEY": "replace-me"
+    "ENCRYPTION_KEY": "replace-me",
+    "ENVIRONMENT": "development"
   },
   "durable_objects": {
     "bindings": [

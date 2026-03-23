@@ -7,8 +7,10 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
     "discord-interactions": "^4.4.0",
-    "hono": "^4.12.8"
+    "hono": "^4.12.8",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260317.1",

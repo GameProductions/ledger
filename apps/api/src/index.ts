@@ -64,19 +64,37 @@ const authMiddleware = async (c: any, next: any) => {
 // --- RLI MIDDLEWARE ---
 app.use('/api/*', authMiddleware)
 app.use('/api/*', async (c, next) => {
-  const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
-  const token = c.req.header('Authorization')?.split(' ')[1]
-  if (!token) {
-    return c.json({ error: 'Unauthorized: No token provided' }, 401)
+  const authHeader = c.req.header('Authorization')
+  const householdHeader = c.req.header('x-household-id')
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  
+  const token = authHeader.split(' ')[1]
+
+  // 1. Check for Personal Access Tokens (PATs) first
+  if (token.startsWith('cash_')) {
+    const { results } = await c.env.DB.prepare(
+      'SELECT household_id FROM personal_access_tokens WHERE id = ?'
+    ).bind(token).all()
+    
+    if (results.length > 0) {
+      c.set('householdId', results[0].household_id)
+      // For PATs, we don't have a userId, so we'll set a placeholder or null
+      c.set('userId', 'pat-user') 
+      await next()
+      return
+    }
   }
 
+  // 2. Standard JWT Auth
   try {
-    const payload = await verify(token, jwtSecret)
+    const payload = await verify(token, c.env.JWT_SECRET)
     c.set('userId', payload.sub)
     
     // Check for Household Context
-    const headerHouseholdId = c.req.header('x-household-id')
-    const activeHouseholdId = headerHouseholdId || payload.householdId
+    const activeHouseholdId = householdHeader || payload.householdId
     
     // VERIFY User belongs to this household
     const { results } = await c.env.DB.prepare(
@@ -476,6 +494,33 @@ app.post('/api/coach/ask', async (c) => {
   }
 
   return c.json({ answer })
+})
+
+// Developer Settings (PATs & Webhooks)
+app.post('/api/developer/tokens', async (c) => {
+  const householdId = c.get('householdId')
+  const { name } = await c.req.json()
+  const id = `cash_${crypto.randomUUID().replace(/-/g, '')}`
+  await c.env.DB.prepare('INSERT INTO personal_access_tokens (id, household_id, name) VALUES (?, ?, ?)')
+    .bind(id, householdId, name).run()
+  return c.json({ token: id })
+})
+
+app.get('/api/developer/tokens', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT id, name, created_at FROM personal_access_tokens WHERE household_id = ?')
+    .bind(householdId).all()
+  return c.json(results)
+})
+
+app.post('/api/developer/webhooks', async (c) => {
+  const householdId = c.get('householdId')
+  const { url } = await c.req.json()
+  const id = crypto.randomUUID()
+  const secret = crypto.randomUUID().replace(/-/g, '')
+  await c.env.DB.prepare('INSERT INTO webhooks (id, household_id, url, secret) VALUES (?, ?, ?, ?)')
+    .bind(id, householdId, url, secret).run()
+  return c.json({ id, secret })
 })
 
 // Discord Interactions

@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { jwt } from 'hono/jwt'
+import { jwt, sign, verify } from 'hono/jwt'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { logger } from 'hono/logger'
@@ -79,7 +79,7 @@ const logAudit = async (c: any, tableName: string, recordId: string, action: str
 // --- AUTH MIDDLEWARE ---
 const authMiddleware = async (c: any, next: any) => {
   const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
-  const middleware = jwt({ secret: jwtSecret })
+  const middleware = jwt({ secret: jwtSecret, alg: 'HS256' })
   return middleware(c, next)
 }
 
@@ -112,8 +112,8 @@ app.use('/api/*', async (c, next) => {
 
   // 2. Standard JWT Auth
   try {
-    const payload = await verify(token, c.env.JWT_SECRET)
-    c.set('userId', payload.sub)
+    const payload = await verify(token, c.env.JWT_SECRET, 'HS256') as any
+    c.set('userId', String(payload.sub))
     
     // Check for Household Context
     const activeHouseholdId = householdHeader || payload.householdId
@@ -127,7 +127,7 @@ app.use('/api/*', async (c, next) => {
       return c.json({ error: 'Access Denied to this Household' }, 403)
     }
     
-    c.set('householdId', activeHouseholdId)
+    c.set('householdId', String(activeHouseholdId))
     await next()
   } catch (e) {
     // Sanitized logging for production
@@ -136,6 +136,7 @@ app.use('/api/*', async (c, next) => {
 })
 
 app.get('/', (c) => {
+  return c.text('CASH API - Status: Active')
 })
 
 // --- AUTH ENDPOINTS ---
@@ -148,7 +149,7 @@ app.post('/auth/login', async (c) => {
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
   }
   const secret = c.env.JWT_SECRET || 'yolo-secret-change-me'
-  const token = await jwt.sign(payload, secret)
+  const token = await sign(payload, secret, 'HS256')
   return c.json({ token, username })
 })
 

@@ -12,7 +12,7 @@ const ImportWizard: React.FC = () => {
     setUploading(true)
     
     // In a real app, we'd parse this or send to a specialized endpoint
-    // For YOLO mode, we'll simulate the upload to a new /api/import/csv endpoint
+    // We simulate the upload to a new /api/import/csv endpoint
     const formData = new FormData()
     formData.append('csv', file)
 

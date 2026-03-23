@@ -100,7 +100,7 @@ app.use('/api/*', async (c, next) => {
   const count = (REQUESTS.get(key) || 0) + 1
   REQUESTS.set(key, count)
   
-  if (count > 2000) { // Increased threshold with hourly reset for YOLO stability
+  if (count > 2000) { // Increased threshold with hourly reset for Stability
     return c.json({ error: 'Too Many Requests' }, 429)
   }
   await next()
@@ -145,7 +145,8 @@ const authMiddleware = async (c: any, next: any) => {
     if (!authHeader) throw new HTTPException(401, { message: 'Missing Authorization Header' })
     
     const token = authHeader.replace('Bearer ', '')
-    const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
+    const jwtSecret = c.env.JWT_SECRET
+    if (!jwtSecret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
     
     // 1. Check for Personal Access Tokens (PATs) first
     if (token.startsWith('cash_')) {
@@ -242,14 +243,15 @@ const JoinHouseholdSchema = z.object({
 
 // --- AUTH ENDPOINTS ---
 app.post('/auth/login', async (c) => {
-  // Mock login for YOLO mode
+  // Mock login
   const { username } = await c.req.json()
   const payload = {
     sub: 'user-123',
     householdId: 'household-abc',
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
   }
-  const secret = c.env.JWT_SECRET || 'yolo-secret-change-me'
+  const secret = c.env.JWT_SECRET
+  if (!secret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
   const token = await sign(payload, secret, 'HS256')
   return c.json({ token, username })
 })
@@ -571,7 +573,7 @@ app.get('/api/budgets', async (c) => {
   ).bind(householdId).all()
   
   // Get monthly spend per category
-  // For YOLO mode, we'll just sum all transactions for simplicity (real app would filter by month)
+  // For Dev Mode, we'll just sum all transactions for simplicity (real app would filter by month)
   const { results: spends } = await c.env.DB.prepare(
     'SELECT category_id, SUM(amount_cents) as total_spend FROM transactions WHERE household_id = ? GROUP BY category_id'
   ).bind(householdId).all()
@@ -596,7 +598,7 @@ app.post('/api/import/csv', async (c) => {
   
   if (!csvFile) return c.json({ error: 'No file' }, 400)
   
-  // In YOLO mode, we simulate a successful import of 12 transactions
+  // In Dev Mode, we simulate a successful import of 12 transactions
   // Real implementation would use a CSV parser (e.g. PapaParse or simple split)
   return c.json({ success: true, count: 12, householdId })
 })
@@ -742,7 +744,7 @@ app.get('/api/analytics/summary', async (c) => {
     days = 30
   }
 
-  // 3. Health Score Logic (Simplified YOLO logic)
+  // 3. Health Score Logic (Simplified Logic)
   const currentMonthSpend = (transactions as any[]).reduce((sum, tx) => sum + tx.amount_cents, 0)
   const budgetRatio = totalMonthlyBudget > 0 ? currentMonthSpend / totalMonthlyBudget : 0
   let healthScore = Math.max(0, Math.min(100, Math.round(100 - (budgetRatio * 40))))
@@ -786,7 +788,7 @@ app.get('/api/report/summary', async (c) => {
 // Households: Invites
 app.post('/api/households/invite', async (c) => {
   const householdId = c.get('householdId')
-  // In YOLO mode, we generate a simple random token. In production, use signed JWT.
+  // In Dev Mode, we generate a simple random token. In production, use signed JWT.
   const token = Math.random().toString(36).substring(2, 15)
   // Store token in KV or D1 (omitted for brevity, simulated success)
   return c.json({ inviteToken: token, url: `http://localhost:5173/join?token=${token}` })
@@ -850,7 +852,7 @@ app.post('/api/coach/ask', async (c) => {
   const { results: transactions } = await c.env.DB.prepare('SELECT amount_cents FROM transactions WHERE household_id = ?').bind(householdId).all()
   const totalSpend = (transactions as any[]).reduce((sum, tx) => sum + tx.amount_cents, 0)
 
-  // 2. Simple Heuristics (YOLO AI)
+  // 2. Simple Heuristics (AI)
   let answer = "I'm analyzing your data... "
   if (question.toLowerCase().includes('afford')) {
     answer = `Based on your safety number and recent spending of $${(totalSpend/100).toFixed(2)}, you are in a good position for moderate purchases.`
@@ -920,7 +922,7 @@ app.post('/api/privacy/shred', zValidator('json', z.object({ reason: z.string().
   const { months } = await c.req.json()
   const { reason } = c.req.valid('json')
   await c.env.DB.prepare('UPDATE users SET status = "suspended" WHERE id = ?').bind(userId).run()
-  // YOLO implementation: Delete transactions older than X months
+  // Implementation: Delete transactions older than X months
   const date = new Date()
   date.setMonth(date.getMonth() - months)
   const isoDate = date.toISOString()
@@ -980,7 +982,7 @@ app.get('/api/test/auto-login', async (c) => {
   if (c.env.ENVIRONMENT === 'production') {
     throw new HTTPException(404, { message: 'Not Found' })
   }
-  const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
+  const jwtSecret = c.env.JWT_SECRET || 'secret-change-me'
   const token = await sign({ 
     sub: 'test-user-v', 
     householdId: 'h-1', 

@@ -1,4 +1,4 @@
--- Seed Data for CASH (YOLO Mode)
+-- Seed Data for CASH
 
 -- Insert a default household
 INSERT INTO households (id, name, currency, country_code) VALUES
@@ -7,7 +7,7 @@ INSERT INTO households (id, name, currency, country_code) VALUES
 
 -- Insert users
 INSERT INTO users (id, email, display_name) VALUES
-('user-123', 'yolo@example.com', 'YOLO User');
+('user-123', 'admin@example.com', 'Administrator');
 
 -- Map users to households
 INSERT INTO user_households (user_id, household_id, role) VALUES

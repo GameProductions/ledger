@@ -35,19 +35,8 @@
   ],
   "vars": {
     "DISCORD_WEBHOOK_URL": "",
-    "METHOD_API_KEY": "replace-me",
-    "ARCADIA_API_KEY": "replace-me",
-    "PLAID_CLIENT_ID": "replace-me",
-    "PLAID_SECRET": "replace-me",
-    "PRIVACY_API_KEY": "replace-me",
-    "AKOYA_CLIENT_ID": "replace-me",
-    "AKOYA_SECRET": "replace-me",
-    "ARGYLE_API_KEY": "replace-me",
-    "ARGYLE_SECRET": "replace-me",
-    "COLUMN_TAX_API_KEY": "replace-me",
-    "ARRAY_API_KEY": "replace-me",
-    "RESEND_API_KEY": "replace-me",
-    "ENCRYPTION_KEY": "replace-me",
+    "RESEND_API_KEY": "",
+    "ENCRYPTION_KEY": "",
     "ENVIRONMENT": "development"
   },
   "durable_objects": {

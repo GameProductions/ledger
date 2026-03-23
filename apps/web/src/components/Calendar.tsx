@@ -5,7 +5,7 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ transactions }) => {
-  // Simple 1-month calendar for March 2026 (YOLO mode)
+  // Simple 1-month calendar for March 2026
   const daysInMonth = 31
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
   

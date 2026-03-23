@@ -5,7 +5,7 @@ interface SpendingChartProps {
 }
 
 const SpendingChart: React.FC<SpendingChartProps> = ({ data }) => {
-  // Simple SVG Line Chart (YOLO implementation)
+  // Simple SVG Line Chart (Implementation)
   const width = 300
   const height = 100
   const padding = 10

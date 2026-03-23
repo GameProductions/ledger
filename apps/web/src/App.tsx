@@ -236,6 +236,15 @@ const Dashboard: React.FC = () => {
             <button type="submit" className="primary">Add</button>
           </form>
         </section>
+
+        <footer style={{ gridColumn: 'span 3', marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center', opacity: 0.5, fontSize: '0.8rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1rem' }}>
+            <span>🔒 Secure (HSTS)</span>
+            <span>⚡ Edge 200ms</span>
+            <span>💎 v1.5.0 Gold</span>
+          </div>
+          <p>© 2026 GameProductions - Unified Financial Command</p>
+        </footer>
       </main>
 
       {toast && <div className="status-toast flex-center"><span>●</span> {toast}</div>}

@@ -3,6 +3,7 @@ import { jwt } from 'hono/jwt'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { logger } from 'hono/logger'
+import { InteractionType, InteractionResponseType, verifyKey } from 'discord-interactions'
 
 type Bindings = {
   DB: D1Database
@@ -683,15 +684,27 @@ app.get('/api/system/status', (c) => {
 
 // Discord Interactions
 app.post('/discord/interactions', async (c) => {
-  const body = await c.req.json() as any
+  const signature = c.req.header('X-Signature-Ed25519')
+  const timestamp = c.req.header('X-Signature-Timestamp')
+  const body = await c.req.text()
   
-  // Handle Slash Commands
-  if (body.type === 2) {
-    const { name } = body.data
+  const isValidRequest = verifyKey(body, signature || '', timestamp || '', c.env.DISCORD_PUBLIC_KEY)
+  
+  if (!isValidRequest) {
+    return c.text('Bad request signature', 401)
+  }
+
+  const interaction = JSON.parse(body)
+
+  if (interaction.type === InteractionType.PING) {
+    return c.json({ type: InteractionResponseType.PONG })
+  }
+
+  if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+    const { name } = interaction.data
     if (name === 'cash-safety') {
-      // Simulate fetching safety number for the user's default household
       return c.json({
-        type: 4,
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
           content: "🛡️ **CASH Safety Number**: You have **$1,420.50** spendable cash until your next payday. Drive safe!"
         }
@@ -699,7 +712,7 @@ app.post('/discord/interactions', async (c) => {
     }
   }
 
-  return c.json({ type: 1 }) // PING response
+  return c.json({ type: InteractionResponseType.PONG })
 })
 
 export default {

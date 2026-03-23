@@ -1,6 +1,9 @@
 {
   "name": "cash-api",
   "main": "src/index.ts",
+  "routes": [
+    "api.gpnet.dev/cash/*"
+  ],
   "compatibility_date": "2024-03-22",
   "d1_databases": [
     {

@@ -1,7 +1,6 @@
 -- CASH Database Schema (Cloudflare D1)
 
--- Households: Multi-tenant containers
-CREATE TABLE households (
+CREATE TABLE IF NOT EXISTS households (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -9,8 +8,7 @@ CREATE TABLE households (
     country_code TEXT DEFAULT 'US'
 );
 
--- Users: Core identity
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     display_name TEXT,
@@ -18,8 +16,7 @@ CREATE TABLE users (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- User-Household Mapping: Multi-tenancy join
-CREATE TABLE user_households (
+CREATE TABLE IF NOT EXISTS user_households (
     user_id TEXT NOT NULL,
     household_id TEXT NOT NULL,
     role TEXT DEFAULT 'member', -- admin, member, readonly
@@ -28,19 +25,17 @@ CREATE TABLE user_households (
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
--- Accounts: Financial accounts (Bank, Cash, etc.)
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
-    type TEXT NOT NULL, -- e.g., 'checking', 'savings', 'credit', 'cash'
+    type TEXT NOT NULL, 
     balance_cents INTEGER DEFAULT 0,
     currency TEXT DEFAULT 'USD',
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
--- Categories: Categorization with rollover and budget logic
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -52,19 +47,17 @@ CREATE TABLE categories (
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
--- Pay Schedules: Frequency and next-date logic
-CREATE TABLE pay_schedules (
+CREATE TABLE IF NOT EXISTS pay_schedules (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
-    frequency TEXT NOT NULL, -- e.g., 'weekly', 'biweekly', 'monthly'
+    frequency TEXT NOT NULL, 
     next_pay_date DATE,
     estimated_amount_cents INTEGER,
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
--- Transactions: The primary ledger
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     account_id TEXT NOT NULL,
@@ -72,7 +65,7 @@ CREATE TABLE transactions (
     amount_cents INTEGER NOT NULL,
     description TEXT,
     transaction_date DATE DEFAULT (DATE('now')),
-    status TEXT DEFAULT 'pending', -- 'pending', 'accounted_for', 'reconciled'
+    status TEXT DEFAULT 'pending', 
     is_recurring BOOLEAN DEFAULT FALSE,
     receipt_r2_key TEXT,
     FOREIGN KEY (household_id) REFERENCES households(id),
@@ -80,8 +73,7 @@ CREATE TABLE transactions (
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
--- Shared Balances: Split expense tracking
-CREATE TABLE shared_balances (
+CREATE TABLE IF NOT EXISTS shared_balances (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     from_user_id TEXT NOT NULL,
@@ -92,8 +84,7 @@ CREATE TABLE shared_balances (
     FOREIGN KEY (transaction_id) REFERENCES transactions(id)
 );
 
--- Subscriptions: Trial and recurring service tracking
-CREATE TABLE subscriptions (
+CREATE TABLE IF NOT EXISTS subscriptions (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -106,16 +97,14 @@ CREATE TABLE subscriptions (
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
--- Holidays: Banking reference
-CREATE TABLE holidays (
+CREATE TABLE IF NOT EXISTS holidays (
     id TEXT PRIMARY KEY,
     date DATE NOT NULL,
     name TEXT NOT NULL,
     country_code TEXT DEFAULT 'US'
 );
 
--- Templates: Quick-entry presets
-CREATE TABLE templates (
+CREATE TABLE IF NOT EXISTS templates (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -128,16 +117,46 @@ CREATE TABLE templates (
     FOREIGN KEY (account_id) REFERENCES accounts(id)
 );
 
--- Audit Logs: Immutable history
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     actor_id TEXT NOT NULL,
     table_name TEXT NOT NULL,
     record_id TEXT NOT NULL,
-    action TEXT NOT NULL, -- 'create', 'update', 'delete'
+    action TEXT NOT NULL, 
     old_values_json TEXT,
     new_values_json TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS personal_access_tokens (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    name TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_used_at DATETIME,
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS webhooks (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    secret TEXT,
+    events TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS savings_buckets (
+  id TEXT PRIMARY KEY,
+  household_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  target_cents INTEGER NOT NULL,
+  current_cents INTEGER DEFAULT 0,
+  target_date DATETIME,
+  category_id TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (household_id) REFERENCES households(id)
 );

@@ -19,6 +19,9 @@ import ThemeSwitcher from './components/ThemeSwitcher'
 import DeveloperSettings from './components/DeveloperSettings'
 import AuditChronicle from './components/AuditChronicle'
 import PrivacySettings from './components/PrivacySettings'
+import FutureFlow from './components/FutureFlow'
+import GoalSeek from './components/GoalSeek'
+import SavingsBuckets from './components/SavingsBuckets'
 
 const Dashboard: React.FC = () => {
   const { logout } = useAuth()
@@ -181,6 +184,9 @@ const Dashboard: React.FC = () => {
           </ul>
         </section>
 
+        <FutureFlow />
+        <GoalSeek />
+        <SavingsBuckets />
         <PrivacySettings />
         <AuditChronicle />
         <Subscriptions />

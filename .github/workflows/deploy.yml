@@ -17,6 +17,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 'a5b3081992c9b5b608c5a39fea5a18d0'
           workingDirectory: 'apps/api'
           command: deploy --minify
           secrets: |

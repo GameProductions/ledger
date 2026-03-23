@@ -1,6 +1,21 @@
 {
   "name": "cash-api",
   "main": "src/index.ts",
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  },
   "routes": [
     "api.gpnet.dev/cash/*"
   ],
@@ -19,9 +34,7 @@
     }
   ],
   "vars": {
-    "JWT_SECRET": "yolo-secret-change-me",
-    "DISCORD_TOKEN": "replace-me",
-    "DISCORD_PUBLIC_KEY": "replace-me"
+    "DISCORD_WEBHOOK_URL": "replace-me"
   },
   "durable_objects": {
     "bindings": [

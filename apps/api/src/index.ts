@@ -689,7 +689,7 @@ app.post('/discord/interactions', async (c) => {
   const timestamp = c.req.header('X-Signature-Timestamp')
   const body = await c.req.text()
   
-  const isValidRequest = verifyKey(body, signature || '', timestamp || '', c.env.DISCORD_PUBLIC_KEY)
+  const isValidRequest = await verifyKey(body, signature || '', timestamp || '', c.env.DISCORD_PUBLIC_KEY)
   
   if (!isValidRequest) {
     return c.text('Bad request signature', 401)

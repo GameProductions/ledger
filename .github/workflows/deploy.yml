@@ -17,7 +17,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
           workingDirectory: "apps/api"
-          wranglerVersion: "wrangler@4.76.0"
+          wranglerVersion: "4.76.0"
           command: deploy --minify --name cash-api
           secrets: |
             DISCORD_TOKEN

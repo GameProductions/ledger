@@ -49,4 +49,5 @@ jobs:
           ARGYLE_API_KEY: ${{ secrets.ARGYLE_API_KEY }}
           ARGYLE_SECRET: ${{ secrets.ARGYLE_SECRET }}
           COLUMN_TAX_API_KEY: ${{ secrets.COLUMN_TAX_API_KEY }}
+          ARRAY_API_KEY: ${{ secrets.ARRAY_API_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

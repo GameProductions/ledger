@@ -9,18 +9,32 @@ const ThemeSwitcher: React.FC = () => {
   }, [theme])
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '2rem', border: '1px solid var(--glass-border)' }}>
+      <span style={{ fontSize: '0.7rem', opacity: 0.6, marginRight: '0.4rem' }}>THEME</span>
       <button 
         onClick={() => setTheme('emerald')}
-        style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#10b981', padding: 0, border: theme === 'emerald' ? '2px solid white' : 'none' }}
+        title="Emerald (Default)"
+        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#10b981', padding: 0, border: theme === 'emerald' ? '2px solid white' : 'none', cursor: 'pointer' }}
       />
       <button 
         onClick={() => setTheme('sapphire')}
-        style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#3b82f6', padding: 0, border: theme === 'sapphire' ? '2px solid white' : 'none' }}
+        title="Sapphire"
+        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#3b82f6', padding: 0, border: theme === 'sapphire' ? '2px solid white' : 'none', cursor: 'pointer' }}
       />
       <button 
         onClick={() => setTheme('ruby')}
-        style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#ef4444', padding: 0, border: theme === 'ruby' ? '2px solid white' : 'none' }}
+        title="Ruby"
+        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#ef4444', padding: 0, border: theme === 'ruby' ? '2px solid white' : 'none', cursor: 'pointer' }}
+      />
+      <button 
+        onClick={() => setTheme('luxury')}
+        title="Luxury (Gold & Black)"
+        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#d4af37', padding: 0, border: theme === 'luxury' ? '2px solid white' : 'none', cursor: 'pointer' }}
+      />
+      <button 
+        onClick={() => setTheme('professional')}
+        title="Professional (Slate)"
+        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#64748b', padding: 0, border: theme === 'professional' ? '2px solid white' : 'none', cursor: 'pointer' }}
       />
     </div>
   )

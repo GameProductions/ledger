@@ -25,6 +25,7 @@ import SavingsBuckets from './components/SavingsBuckets'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import AdminDashboard from './components/AdminDashboard'
 import TermsOfService from './components/TermsOfService'
+import SeasonalAssets from './components/SeasonalAssets'
 
 const Login: React.FC = () => {
   const { login } = useAuth()
@@ -75,6 +76,9 @@ const Dashboard: React.FC = () => {
   const { data: insightsData } = useApi('/api/analytics/insights')
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [toast, setToast] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [linkingTx, setLinkingTx] = useState<any>(null)
   
   const showToast = (msg: string) => {
     setToast(msg)
@@ -114,6 +118,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="dashboard reveal">
+      <SeasonalAssets />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -128,6 +133,33 @@ const Dashboard: React.FC = () => {
           )}
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="search-box card" style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '2rem' }}>
+            <span>🔍</span>
+            <input 
+              type="text" 
+              placeholder="Search transactions..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', width: '200px' }}
+            />
+          </div>
+          <div className="filter-chips" style={{ display: 'flex', gap: '0.5rem' }}>
+            {['all', 'unreconciled', 'reconciled'].map(s => (
+              <button 
+                key={s}
+                onClick={() => setFilterStatus(s)}
+                style={{ 
+                  fontSize: '0.7rem', 
+                  padding: '0.3rem 0.8rem', 
+                  background: filterStatus === s ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                  color: filterStatus === s ? 'white' : 'var(--text-secondary)',
+                  border: '1px solid var(--glass-border)'
+                }}
+              >
+                {s.toUpperCase()}
+              </button>
+            ))}
+          </div>
           {globalRole === 'super_admin' && (
             <button 
               onClick={() => window.location.hash = '#/admin'}
@@ -188,23 +220,39 @@ const Dashboard: React.FC = () => {
               </button>
             </section>
 
-            <section className="card">
+            <section className="card" style={{ gridColumn: 'span 1' }}>
               <h3>Recent Transactions</h3>
               <div style={{ marginTop: '1rem', display: 'grid', gap: '0.8rem' }}>
-                {transactions?.map((tx: any) => (
+                {transactions?.filter((tx: any) => {
+                  const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
+                  const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
+                  return matchesSearch && matchesStatus
+                }).map((tx: any) => (
                   <div key={tx.id} className="slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                    <div>
-                      <div style={{ fontWeight: '600' }}>{tx.description}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {tx.description}
+                        {tx.reconciliation_status === 'reconciled' && <span style={{ fontSize: '0.6rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', padding: '0.1rem 0.4rem', borderRadius: '1rem' }}>Satisifed</span>}
+                      </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{tx.transaction_date}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <span style={{ fontWeight: '700' }}>${(tx.amount_cents / 100).toFixed(2)}</span>
-                      <button 
-                        onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
-                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', background: tx.status === 'reconciled' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)' }}
-                      >
-                        {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button 
+                          onClick={() => setLinkingTx(tx)}
+                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                          title="Link to another transaction"
+                        >
+                          🔗
+                        </button>
+                        <button 
+                          onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
+                          style={{ padding: '0.2rem 0.6rem', fontSize: '0.7rem', background: tx.status === 'reconciled' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', borderRadius: '0.4rem' }}
+                        >
+                          {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -305,6 +353,46 @@ const Dashboard: React.FC = () => {
       </main>
 
       {toast && <div className="status-toast flex-center"><span>●</span> {toast}</div>}
+
+      {linkingTx && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card reveal" style={{ width: '100%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>Link: {linkingTx.description}</h3>
+              <button onClick={() => setLinkingTx(null)} style={{ background: 'transparent', color: 'var(--text-secondary)', fontSize: '1.5rem' }}>×</button>
+            </div>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              Select a transaction to satisfy this entry (e.g., link a charge to a payment).
+            </p>
+            <div style={{ display: 'grid', gap: '0.5rem' }}>
+              {transactions?.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
+                <div 
+                  key={t.id} 
+                  className="card" 
+                  onClick={async () => {
+                    await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/link`, {
+                      method: 'POST',
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
+                        'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                      },
+                      body: JSON.stringify({ linkedToId: t.id })
+                    })
+                    mutateTx()
+                    setLinkingTx(null)
+                    showToast('Transactions Linked')
+                  }}
+                  style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', padding: '0.8rem', background: 'rgba(255,255,255,0.03)' }}
+                >
+                  <span>{t.description}</span>
+                  <span style={{ fontWeight: '700' }}>${(t.amount_cents / 100).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

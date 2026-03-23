@@ -22,6 +22,8 @@ import PrivacySettings from './components/PrivacySettings'
 import FutureFlow from './components/FutureFlow'
 import GoalSeek from './components/GoalSeek'
 import SavingsBuckets from './components/SavingsBuckets'
+import PrivacyPolicy from './components/PrivacyPolicy'
+import TermsOfService from './components/TermsOfService'
 
 const Dashboard: React.FC = () => {
   const { logout } = useAuth()
@@ -241,7 +243,11 @@ const Dashboard: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1rem' }}>
             <span>🔒 Secure (HSTS)</span>
             <span>⚡ Edge 200ms</span>
-            <span>💎 v1.5.0 Gold</span>
+            <span>💎 v1.5.6 Gold</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '1rem', opacity: 0.8 }}>
+            <a href="#/privacy" style={{ color: 'white', textDecoration: 'none' }}>Privacy</a>
+            <a href="#/terms" style={{ color: 'white', textDecoration: 'none' }}>Terms</a>
           </div>
           <p>© 2026 GameProductions - Unified Financial Command</p>
         </footer>
@@ -287,6 +293,11 @@ const Login: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { token } = useAuth()
+  const hash = window.location.hash
+  
+  if (hash === '#/privacy') return <PrivacyPolicy />
+  if (hash === '#/terms') return <TermsOfService />
+  
   return token ? <Dashboard /> : <Login />
 }
 

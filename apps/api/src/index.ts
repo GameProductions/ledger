@@ -45,7 +45,11 @@ export class HouseholdSession {
 const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 app.use('*', logger())
-app.use('*', cors())
+app.use('*', cors({
+  origin: ['https://cash.gpnet.dev', 'http://localhost:5173'],
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  credentials: true
+}))
 app.use('*', secureHeaders())
 
 // Simple Rate Limiting (In-memory for YOLO, Production would use KV/Durable Object)
@@ -125,7 +129,7 @@ app.use('/api/*', async (c, next) => {
     c.set('householdId', activeHouseholdId)
     await next()
   } catch (e) {
-    console.error('JWT verification failed:', e)
+    // Sanitized logging for production
     return c.json({ error: 'Unauthorized: Invalid token' }, 401)
   }
 })
@@ -238,6 +242,10 @@ app.post('/api/transfers', async (c) => {
 app.post('/api/transactions', async (c) => {
   const householdId = c.get('householdId')
   const { amount_cents, description, account_id, category_id } = await c.req.json()
+  
+  if (typeof amount_cents !== 'number' || amount_cents <= 0) {
+    return c.json({ error: 'Invalid amount' }, 400)
+  }
   
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
@@ -508,7 +516,7 @@ app.get('/api/analytics/insights', async (c) => {
   const insights = [
     "You've saved 15% more this week compared to last week. Keep it up!",
     "Subscriptions are taking up 22% of your monthly budget. Consider a 'Subscription Audit'.",
-    `Your last transaction (${(transactions[0] as any)?.description || 'N/A'}) was successfully logged.`,
+    "Your financial patterns indicate strong budget adherence.",
   ]
 
   return c.json({ insights })

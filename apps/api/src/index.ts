@@ -135,7 +135,6 @@ app.use('/api/*', async (c, next) => {
 })
 
 app.get('/', (c) => {
-  return c.text('CASH API - Status: Active (YOLO Mode)')
 })
 
 // --- AUTH ENDPOINTS ---

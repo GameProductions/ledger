@@ -124,9 +124,48 @@ button.primary:hover {
   animation: pulse 2s infinite ease-in-out;
 }
 
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.reveal {
+  animation: reveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.stagger > * {
+  opacity: 0;
+}
+
+.stagger > *:nth-child(1) { animation: reveal 0.5s 0.1s forwards; }
+.stagger > *:nth-child(2) { animation: reveal 0.5s 0.2s forwards; }
+.stagger > *:nth-child(3) { animation: reveal 0.5s 0.3s forwards; }
+.stagger > *:nth-child(4) { animation: reveal 0.5s 0.4s forwards; }
+.stagger > *:nth-child(5) { animation: reveal 0.5s 0.5s forwards; }
+
+.status-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--primary);
+    padding: 0.8rem 1.5rem;
+    border-radius: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideUp 0.3s ease-out;
 }
 
 @media (max-width: 768px) {

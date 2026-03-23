@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { useApi } from './hooks/useApi'
 import Subscriptions from './components/Subscriptions'
@@ -23,16 +23,55 @@ import FutureFlow from './components/FutureFlow'
 import GoalSeek from './components/GoalSeek'
 import SavingsBuckets from './components/SavingsBuckets'
 import PrivacyPolicy from './components/PrivacyPolicy'
+import AdminDashboard from './components/AdminDashboard'
 import TermsOfService from './components/TermsOfService'
 
+const Login: React.FC = () => {
+  const { login } = useAuth()
+  const [username, setUsername] = useState('')
+
+  const handleLogin = async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    })
+    const authData = await res.json()
+    if (authData.token) {
+      // Fetch full profile to get globalRole
+      const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+        headers: { 'Authorization': `Bearer ${authData.token}` }
+      })
+      const profile = await profileRes.json()
+      login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
+    }
+  }
+
+  return (
+    <div className="flex-center" style={{ minHeight: '80vh' }}>
+      <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Welcome to CASH</h2>
+        <input 
+          type="text" 
+          placeholder="Enter Username" 
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+        />
+        <button className="primary" style={{ width: '100%' }} onClick={handleLogin}>Log In</button>
+      </div>
+    </div>
+  )
+}
+
 const Dashboard: React.FC = () => {
-  const { logout } = useAuth()
-  const { data: accounts } = useApi('/api/accounts')
-  const { data: transactions } = useApi('/api/transactions')
+  const { logout, globalRole } = useAuth()
+  const { data: accounts, mutate: mutateAccounts } = useApi('/api/accounts')
+  const { data: transactions, mutate: mutateTx } = useApi('/api/transactions')
   const { data: templates } = useApi('/api/templates')
-  const { data: status } = useApi('/api/household/status')
+  const { data: status } = useApi('/api/household/status', { refreshInterval: 10000 })
   const [timeframe, setTimeframe] = useState('paycheck')
-  const { data: analytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
+  const { data: analytics, mutate: mutateAnalytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
   const { data: insightsData } = useApi('/api/analytics/insights')
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [toast, setToast] = useState<string | null>(null)
@@ -69,11 +108,12 @@ const Dashboard: React.FC = () => {
       },
       body: JSON.stringify({ reconciled: !current })
     })
-    window.location.reload()
+    mutateTx()
+    showToast('Transaction Updated')
   }
 
   return (
-    <div className="dashboard">
+    <div className="dashboard reveal">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -88,6 +128,14 @@ const Dashboard: React.FC = () => {
           )}
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {globalRole === 'super_admin' && (
+            <button 
+              onClick={() => window.location.hash = '#/admin'}
+              style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}
+            >
+              🛡️ Admin Console
+            </button>
+          )}
           <div className="view-toggle card" style={{ padding: '0.4rem', borderRadius: '0.8rem' }}>
             <button className={view === 'list' ? 'primary' : ''} onClick={() => setView('list')} style={{ marginRight: '0.5rem' }}>List</button>
             <button className={view === 'calendar' ? 'primary' : ''} onClick={() => setView('calendar')}>Calendar</button>
@@ -99,7 +147,7 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <main style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <main className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         {view === 'list' ? (
           <>
             <section className="card" style={{ gridColumn: 'span 1' }}>
@@ -144,7 +192,7 @@ const Dashboard: React.FC = () => {
               <h3>Recent Transactions</h3>
               <div style={{ marginTop: '1rem', display: 'grid', gap: '0.8rem' }}>
                 {transactions?.map((tx: any) => (
-                  <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                  <div key={tx.id} className="slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
                     <div>
                       <div style={{ fontWeight: '600' }}>{tx.description}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{tx.transaction_date}</div>
@@ -258,47 +306,26 @@ const Dashboard: React.FC = () => {
   )
 }
 
-const Login: React.FC = () => {
-  const { login } = useAuth()
-  const [username, setUsername] = useState('')
-
-  const handleLogin = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username })
-    })
-    const data = await res.json()
-    if (data.token) {
-      login(data.token, { userId: username })
-    }
-  }
-
-  return (
-    <div className="flex-center" style={{ minHeight: '80vh' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Welcome to CASH</h2>
-        <input 
-          type="text" 
-          placeholder="Enter Username" 
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
-        />
-        <button className="primary" style={{ width: '100%' }} onClick={handleLogin}>Log In</button>
-      </div>
-    </div>
-  )
-}
-
 const AppContent: React.FC = () => {
-  const { token } = useAuth()
-  const hash = window.location.hash
-  
-  if (hash === '#/privacy') return <PrivacyPolicy />
-  if (hash === '#/terms') return <TermsOfService />
-  
-  return token ? <Dashboard /> : <Login />
+  const { user, loading, globalRole } = useAuth()
+  const [currentHash, setCurrentHash] = useState(window.location.hash)
+
+  useEffect(() => {
+    const handleHashChange = () => setCurrentHash(window.location.hash)
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  if (loading) return <div className="loading flex-center" style={{ height: '100vh' }}>Loading CASH...</div>
+
+  if (!user) return <Login />
+
+  // SPA Routing Logic
+  if (currentHash === '#/admin' && globalRole === 'super_admin') return <AdminDashboard />
+  if (currentHash === '#/privacy') return <PrivacyPolicy />
+  if (currentHash === '#/terms') return <TermsOfService />
+
+  return <Dashboard />
 }
 
 const App: React.FC = () => (
@@ -307,4 +334,4 @@ const App: React.FC = () => (
   </AuthProvider>
 )
 
-export default App 
+export default App

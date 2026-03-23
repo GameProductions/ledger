@@ -13,11 +13,49 @@ type Bindings = {
   DISCORD_TOKEN: string
   DISCORD_WEBHOOK_URL: string
   DISCORD_PUBLIC_KEY: string
+  ENCRYPTION_KEY: string
+  RESEND_API_KEY: string
+  ARRAY_API_KEY: string
 }
 
 type Variables = {
   householdId: string
   userId: string
+  globalRole: string
+}
+
+// --- UTILITIES: Encryption (AES-GCM) ---
+const encrypt = async (text: string, key: string) => {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(text)
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', encoder.encode(key.padEnd(32, '0').slice(0, 32)),
+    { name: 'AES-GCM' }, false, ['encrypt']
+  )
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data)
+  return btoa(JSON.stringify({
+    iv: Array.from(iv),
+    data: Array.from(new Uint8Array(encrypted))
+  }))
+}
+
+const decrypt = async (encryptedData: string, key: string) => {
+  try {
+    const encoder = new TextEncoder()
+    const { iv, data } = JSON.parse(atob(encryptedData))
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', encoder.encode(key.padEnd(32, '0').slice(0, 32)),
+      { name: 'AES-GCM' }, false, ['decrypt']
+    )
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(iv) },
+      cryptoKey, new Uint8Array(data)
+    )
+    return new TextDecoder().decode(decrypted)
+  } catch (e) {
+    return 'DECRYPTION_FAILED'
+  }
 }
 
 // --- DURABLE OBJECT: HouseholdSession ---
@@ -69,11 +107,11 @@ app.use('/api/*', async (c, next) => {
 // --- UTILITIES: Audit Logging ---
 const logAudit = async (c: any, tableName: string, recordId: string, action: string, oldValues: any, newValues: any) => {
   const id = crypto.randomUUID()
-  const householdId = c.get('householdId')
-  const actorId = c.get('userId')
+  const householdId = c.get('householdId') || 'system'
+  const actorId = c.get('userId') || 'system'
   await c.env.DB.prepare(
-    'INSERT INTO audit_logs (id, household_id, actor_id, table_name, record_id, action, old_values_json, new_values_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, householdId, actorId, tableName, recordId, action, JSON.stringify(oldValues), JSON.stringify(newValues)).run()
+    'INSERT INTO system_audit_logs (id, user_id, action, target, details_json) VALUES (?, ?, ?, ?, ?)'
+  ).bind(id, actorId, action, `${tableName}:${recordId}`, JSON.stringify({ oldValues, newValues, householdId })).run()
 }
 
 // --- AUTH MIDDLEWARE ---
@@ -88,6 +126,7 @@ app.use('/api/*', authMiddleware)
 app.use('/api/*', async (c, next) => {
   const authHeader = c.req.header('Authorization')
   const householdHeader = c.req.header('x-household-id')
+  const jwtSecret = c.env.JWT_SECRET || 'yolo-secret-change-me'
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401)
@@ -103,8 +142,8 @@ app.use('/api/*', async (c, next) => {
     
     if (results.length > 0) {
       c.set('householdId', String(results[0].household_id))
-      // For PATs, we don't have a userId, so we'll set a placeholder or null
       c.set('userId', 'pat-user') 
+      c.set('globalRole', 'user')
       await next()
       return
     }
@@ -112,25 +151,43 @@ app.use('/api/*', async (c, next) => {
 
   // 2. Standard JWT Auth
   try {
-    const payload = await verify(token, c.env.JWT_SECRET, 'HS256') as any
+    const payload = await verify(token, jwtSecret, 'HS256') as any
     c.set('userId', String(payload.sub))
+    
+    // Track Activity: Update last_active_at for the user
+    c.executionCtx.waitUntil(
+      c.env.DB.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .bind(payload.sub).run()
+    )
+    
+    // Fetch Global Role and Status
+    const { results: userRes } = await c.env.DB.prepare(
+      'SELECT global_role, status FROM users WHERE id = ?'
+    ).bind(payload.sub).all()
+
+    if (userRes.length === 0 || userRes[0].status === 'suspended') {
+      return c.json({ error: 'Account Suspended or Not Found' }, 403)
+    }
+    
+    c.set('globalRole', String(userRes[0].global_role))
     
     // Check for Household Context
     const activeHouseholdId = householdHeader || payload.householdId
     
-    // VERIFY User belongs to this household
-    const { results } = await c.env.DB.prepare(
-      'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
-    ).bind(payload.sub, activeHouseholdId).all()
-    
-    if (results.length === 0) {
-      return c.json({ error: 'Access Denied to this Household' }, 403)
+    // If NOT super_admin, verify User belongs to this household
+    if (userRes[0].global_role !== 'super_admin') {
+      const { results } = await c.env.DB.prepare(
+        'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
+      ).bind(payload.sub, activeHouseholdId).all()
+      
+      if (results.length === 0) {
+        return c.json({ error: 'Access Denied to this Household' }, 403)
+      }
     }
     
     c.set('householdId', String(activeHouseholdId))
     await next()
   } catch (e) {
-    // Sanitized logging for production
     return c.json({ error: 'Unauthorized: Invalid token' }, 401)
   }
 })
@@ -175,9 +232,100 @@ app.get('/api/categories', async (c) => {
 app.get('/api/accounts', async (c) => {
   const householdId = c.get('householdId')
   const { results } = await c.env.DB.prepare(
-    'SELECT id, name, type, balance_cents, currency_code FROM accounts WHERE household_id = ?'
+    'SELECT id, name, type, balance_cents, currency FROM accounts WHERE household_id = ?'
   ).bind(householdId).all()
   return c.json(results)
+})
+
+// --- NEW FINANCIAL MODELS ---
+
+// Installment Plans (BNPL)
+app.get('/api/installments', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+app.post('/api/installments', async (c) => {
+  const householdId = c.get('householdId')
+  const data = await c.req.json()
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO installment_plans (id, household_id, name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, frequency, next_payment_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).bind(id, householdId, data.name, data.total_amount_cents, data.installment_amount_cents, data.total_installments, data.remaining_installments, data.frequency, data.next_payment_date).run()
+  return c.json({ success: true, id })
+})
+
+// Credit Cards
+app.get('/api/credit-cards', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM credit_cards WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+app.post('/api/credit-cards', async (c) => {
+  const householdId = c.get('householdId')
+  const data = await c.req.json()
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO credit_cards (id, household_id, account_id, credit_limit_cents, interest_rate_apy, statement_closing_day, payment_due_day) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).bind(id, householdId, data.account_id, data.credit_limit_cents, data.interest_rate_apy, data.statement_closing_day, data.payment_due_day).run()
+  return c.json({ success: true, id })
+})
+
+// P2P Lending (Personal Loans)
+app.get('/api/p2p/loans', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM personal_loans WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+app.post('/api/p2p/loans', async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const data = await c.req.json()
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO personal_loans (id, household_id, lender_user_id, borrower_name, borrower_contact, total_amount_cents, remaining_balance_cents, interest_rate_apy, term_months, origination_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).bind(id, householdId, userId, data.borrower_name, data.borrower_contact, data.total_amount_cents, data.total_amount_cents, data.interest_rate_apy || 0, data.term_months, data.origination_date).run()
+  return c.json({ success: true, id })
+})
+
+app.post('/api/p2p/loans/:id/payments', async (c) => {
+  const loanId = c.req.param('id')
+  const data = await c.req.json()
+  const id = crypto.randomUUID()
+  
+  // 1. Log Payment
+  await c.env.DB.prepare(
+    'INSERT INTO loan_payments (id, loan_id, amount_cents, platform, external_id, method) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, loanId, data.amount_cents, data.platform, data.external_id, data.method).run()
+  
+  // 2. Update Balance
+  await c.env.DB.prepare(
+    'UPDATE personal_loans SET remaining_balance_cents = remaining_balance_cents - ? WHERE id = ?'
+  ).bind(data.amount_cents, loanId).run()
+  
+  // 3. Send Receipt (Optional/YOLO) via Resend
+  if (c.env.RESEND_API_KEY && data.email) {
+    c.executionCtx.waitUntil(
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'CASH <receipts@gpnet.dev>',
+          to: data.email,
+          subject: `Payment Receipt: ${data.amount_cents / 100}`,
+          html: `<p>Thank you for your payment of $${(data.amount_cents / 100).toFixed(2)}!</p>`
+        })
+      })
+    )
+  }
+
+  return c.json({ success: true, id })
 })
 
 // Transfers
@@ -427,6 +575,68 @@ app.post('/api/subscriptions', async (c) => {
   return c.json({ success: true, id })
 })
 
+// Utilities
+app.get('/api/utilities', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM variable_schedules WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+// Milestones
+app.get('/api/milestones', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM milestone_plans WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+// --- SUPER ADMIN ENDPOINTS ---
+
+app.get('/api/admin/users', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+  const { results } = await c.env.DB.prepare('SELECT id, email, display_name, global_role, status, created_at FROM users').all()
+  return c.json(results)
+})
+
+app.patch('/api/admin/users/:id', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+  const id = c.req.param('id')
+  const { global_role, status } = await c.req.json()
+  await c.env.DB.prepare('UPDATE users SET global_role = ?, status = ? WHERE id = ?').bind(global_role, status, id).run()
+  await logAudit(c, 'users', id, 'admin_update', {}, { global_role, status })
+  return c.json({ success: true })
+})
+
+app.get('/api/admin/connections', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+  const { results } = await c.env.DB.prepare('SELECT id, household_id, provider, status, last_sync_at FROM external_connections').all()
+  return c.json(results)
+})
+
+app.post('/api/admin/connections', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+  const data = await c.req.json()
+  const id = data.id || crypto.randomUUID()
+  
+  // Encrypt token if provided
+  let encryptedToken = data.access_token
+  if (data.access_token && c.env.ENCRYPTION_KEY) {
+    encryptedToken = await encrypt(data.access_token, c.env.ENCRYPTION_KEY)
+  }
+
+  await c.env.DB.prepare(
+    'INSERT INTO external_connections (id, household_id, provider, access_token, status) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET access_token = EXCLUDED.access_token, status = EXCLUDED.status'
+  ).bind(id, data.household_id, data.provider, encryptedToken, data.status).run()
+  
+  await logAudit(c, 'external_connections', id, 'upsert', {}, { provider: data.provider })
+  return c.json({ success: true, id })
+})
+
+app.get('/api/admin/audit', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_audit_logs ORDER BY created_at DESC LIMIT 100').all()
+  return c.json(results)
+})
+
 // Analytics & Predictions
 app.get('/api/analytics/summary', async (c) => {
   const householdId = c.get('householdId')
@@ -437,6 +647,11 @@ app.get('/api/analytics/summary', async (c) => {
   const { results: transactions } = await c.env.DB.prepare('SELECT amount_cents, category_id, transaction_date FROM transactions WHERE household_id = ?').bind(householdId).all()
   const { results: subs } = await c.env.DB.prepare('SELECT amount_cents FROM subscriptions WHERE household_id = ?').bind(householdId).all()
   const { results: categories } = await c.env.DB.prepare('SELECT monthly_budget_cents FROM categories WHERE household_id = ?').bind(householdId).all()
+  
+  // --- NEW FINANCIALS ---
+  const { results: installments } = await c.env.DB.prepare('SELECT installment_amount_cents FROM installment_plans WHERE household_id = ? AND status = "active"').bind(householdId).all()
+  const { results: ccMin } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ? AND type = "credit"').bind(householdId).all()
+  const { results: utilities } = await c.env.DB.prepare('SELECT avg_amount_cents FROM variable_schedules WHERE household_id = ?').bind(householdId).all()
 
   const totalBalance = (accounts as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
   const totalMonthlySubs = (subs as any[]).reduce((sum, s) => sum + s.amount_cents, 0)
@@ -452,16 +667,20 @@ app.get('/api/analytics/summary', async (c) => {
   }
 
   // 3. Health Score Logic (Simplified YOLO logic)
-  // Score = 100 - (Spend / Budget * 50) + (Balance / Budget * 10)
   const currentMonthSpend = (transactions as any[]).reduce((sum, tx) => sum + tx.amount_cents, 0)
   const budgetRatio = totalMonthlyBudget > 0 ? currentMonthSpend / totalMonthlyBudget : 0
   let healthScore = Math.max(0, Math.min(100, Math.round(100 - (budgetRatio * 40))))
 
-  // 4. Dynamic Safety Number
-  // Safety = Balance - (Fixed Costs for window) - (Discretionary trend)
+  // 4. Enhanced Dynamic Safety Number
+  // Safety = Balance - (Subs) - (Installments) - (Utility Buffer) - (CC Min approx 2%)
   const dailyFixed = totalMonthlySubs / 30
   const totalFixedInWindow = dailyFixed * days
-  const safetyNumberCents = totalBalance - totalFixedInWindow
+  
+  const totalInstallments = (installments as any[]).reduce((sum, i) => sum + i.installment_amount_cents, 0)
+  const totalUtilities = (utilities as any[]).reduce((sum, u) => sum + u.avg_amount_cents, 0)
+  const creditCardMin = (ccMin as any[]).reduce((sum, cc) => sum + (cc.balance_cents * 0.02), 0) // Assume 2% min payment
+
+  const safetyNumberCents = totalBalance - totalFixedInWindow - totalInstallments - (totalUtilities / 30 * days) - creditCardMin
 
   return c.json({
     healthScore,
@@ -470,7 +689,8 @@ app.get('/api/analytics/summary', async (c) => {
     daysRemaining: days,
     indicators: {
       budgetAdherence: budgetRatio < 1 ? 'good' : 'warning',
-      savingsRate: 'neutral'
+      savingsRate: 'neutral',
+      debtLoad: (totalInstallments + creditCardMin) > (totalBalance * 0.5) ? 'high' : 'ok'
     }
   })
 })
@@ -527,7 +747,7 @@ app.get('/api/analytics/insights', async (c) => {
 app.get('/api/user/profile', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(
-    'SELECT id, email, display_name, created_at FROM users WHERE id = ?'
+    'SELECT id, email, display_name, global_role, status, created_at FROM users WHERE id = ?'
   ).bind(userId).all()
   return c.json(results[0])
 })

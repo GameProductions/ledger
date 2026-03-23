@@ -43,7 +43,7 @@ export class HouseholdSession {
   }
 }
 
-const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+const app = new Hono<{ Bindings: Bindings, Variables: Variables }>().basePath('/cash')
 
 app.use('*', logger())
 app.use('*', cors({

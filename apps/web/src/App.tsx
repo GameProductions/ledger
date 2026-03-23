@@ -17,6 +17,8 @@ import SpendingHeatmap from './components/SpendingHeatmap'
 import AICoach from './components/AICoach'
 import ThemeSwitcher from './components/ThemeSwitcher'
 import DeveloperSettings from './components/DeveloperSettings'
+import AuditChronicle from './components/AuditChronicle'
+import PrivacySettings from './components/PrivacySettings'
 
 const Dashboard: React.FC = () => {
   const { logout } = useAuth()
@@ -179,6 +181,8 @@ const Dashboard: React.FC = () => {
           </ul>
         </section>
 
+        <PrivacySettings />
+        <AuditChronicle />
         <Subscriptions />
         <BudgetProgress />
         <WhatIfLedger />

@@ -1,0 +1,83 @@
+import { sign } from 'hono/jwt'
+import { HTTPException } from 'hono/http-exception'
+import { Bindings } from '../types'
+import { verifyPassword, verifyTOTP } from '../auth-utils'
+
+export class AuthService {
+  constructor(private env: Bindings) {}
+
+  async validateCredentials(email: string, password: string) {
+    const user: any = await this.env.DB.prepare(
+      'SELECT * FROM users WHERE email = ?'
+    ).bind(email).first()
+
+    if (!user) throw new HTTPException(401, { message: 'Invalid credentials' })
+    
+    const isMatch = await verifyPassword(password, user.password_hash)
+    if (!isMatch) { 
+      throw new HTTPException(401, { message: 'Invalid credentials' })
+    }
+
+    return user
+  }
+
+  async verify2FA(user: any, totpCode?: string) {
+    if (user.totp_enabled) {
+      if (!totpCode) return { requires2FA: true }
+      const isValid = await verifyTOTP(user.totp_secret, totpCode)
+      if (!isValid) throw new HTTPException(401, { message: 'Invalid 2FA code' })
+    }
+    return { requires2FA: false }
+  }
+
+  async generateToken(userId: string, householdId: string = 'h-1') {
+    const payload = {
+      sub: userId,
+      householdId,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
+    }
+    
+    if (!this.env.JWT_SECRET) throw new HTTPException(500, { message: 'Internal error' })
+    return await sign(payload, this.env.JWT_SECRET)
+  }
+
+  async findOrCreateDiscordUser(profile: { id: string, email: string, avatar: string }) {
+    let identity: any = await this.env.DB.prepare(
+      'SELECT user_id FROM user_identities WHERE provider = "discord" AND provider_user_id = ?'
+    ).bind(profile.id).first()
+
+    let userId = identity?.user_id
+
+    if (!userId) {
+      const user: any = await this.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(profile.email).first()
+      if (user) {
+        userId = user.id
+      } else {
+        userId = crypto.randomUUID()
+        await this.env.DB.prepare('INSERT INTO users (id, email, display_name, avatar_url) VALUES (?, ?, ?, ?)')
+          .bind(userId, profile.email, 'Discord User', profile.avatar).run()
+      }
+      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id) VALUES (?, ?, ?, ?)')
+        .bind(crypto.randomUUID(), userId, 'discord', profile.id).run()
+    }
+
+    return userId
+  }
+
+  async setupTOTP(userId: string) {
+    const secret = await generateTOTPSecret()
+    await this.env.DB.prepare('UPDATE users SET totp_secret = ? WHERE id = ?')
+      .bind(secret, userId).run()
+    return secret
+  }
+
+  async verifyAndEnableTOTP(userId: string, code: string) {
+    const user: any = await this.env.DB.prepare('SELECT totp_secret FROM users WHERE id = ?').bind(userId).first()
+    const isValid = await verifyTOTP(user.totp_secret, code)
+    if (isValid) {
+      await this.env.DB.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').bind(userId).run()
+      return true
+    }
+    return false
+  }
+}

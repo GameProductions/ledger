@@ -9,63 +9,11 @@ import { secureHeaders } from 'hono/secure-headers'
 import { logger } from 'hono/logger'
 import { InteractionType, InteractionResponseType, verifyKey } from 'discord-interactions'
 import { generateTOTPSecret, verifyTOTP, base32Encode, hashPassword, verifyPassword } from './auth-utils'
+import { Bindings, Variables } from './types'
+import { auth as authRoutes } from './routes/auth'
+import { logAudit, encrypt, decrypt } from './utils'
 
-type Bindings = {
-  DB: D1Database
-  ASSETS: R2Bucket
-  SESSION: DurableObjectNamespace
-  JWT_SECRET: string
-  DISCORD_TOKEN: string
-  DISCORD_WEBHOOK_URL: string
-  DISCORD_PUBLIC_KEY: string
-  ENCRYPTION_KEY: string
-  RESEND_API_KEY: string
-  ARRAY_API_KEY: string
-  ENVIRONMENT: string
-  VAULT: DurableObjectNamespace
-  RATE_LIMITER: DurableObjectNamespace
-  DISCORD_CLIENT_ID: string
-}
 
-type Variables = {
-  householdId: string
-  userId: string
-  globalRole: string
-}
-
-// --- UTILITIES: Encryption (AES-GCM) ---
-const encrypt = async (text: string, key: string) => {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(text)
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw', encoder.encode(key.padEnd(32, '0').slice(0, 32)),
-    { name: 'AES-GCM' }, false, ['encrypt']
-  )
-  const iv = crypto.getRandomValues(new Uint8Array(12))
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data)
-  return btoa(JSON.stringify({
-    iv: Array.from(iv),
-    data: Array.from(new Uint8Array(encrypted))
-  }))
-}
-
-const decrypt = async (encryptedData: string, key: string) => {
-  try {
-    const encoder = new TextEncoder()
-    const { iv, data } = JSON.parse(atob(encryptedData))
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw', encoder.encode(key.padEnd(32, '0').slice(0, 32)),
-      { name: 'AES-GCM' }, false, ['decrypt']
-    )
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: new Uint8Array(iv) },
-      cryptoKey, new Uint8Array(data)
-    )
-    return new TextDecoder().decode(decrypted)
-  } catch (e) {
-    return 'DECRYPTION_FAILED'
-  }
-}
 
 // --- DURABLE OBJECT: HouseholdSession ---
 export class HouseholdSession {
@@ -201,30 +149,6 @@ app.use('*', async (c, next) => {
   return authMiddleware(c, next)
 })
 
-// --- UTILITIES: Audit Logging ---
-// --- UTILITIES: Audit Logging ---
-const logAudit = async (c: any, tableName: string, recordId: string, action: string, oldValues: any, newValues: any) => {
-  try {
-    const id = crypto.randomUUID()
-    const householdId = c.get('householdId') || 'system'
-    const actorId = c.get('userId') || 'system'
-    await c.env.DB.prepare(
-      `INSERT INTO audit_logs (id, household_id, actor_id, table_name, record_id, action, old_values_json, new_values_json) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(
-      id, 
-      householdId, 
-      actorId, 
-      tableName, 
-      recordId, 
-      action, 
-      oldValues ? JSON.stringify(oldValues) : null, 
-      newValues ? JSON.stringify(newValues) : null
-    ).run()
-  } catch (e) {
-    console.error('Audit Log Error:', e)
-  }
-}
 
 // --- UTILITIES: Webhook Dispatch ---
 const dispatchWebhook = async (c: any, event: string, data: any, householdId: string) => {
@@ -427,158 +351,8 @@ const TransferSchema = z.object({
   description: z.string().min(1)
 })
 
-// --- AUTH ENDPOINTS ---
-app.post('/auth/login', zValidator('json', z.object({
-  email: z.string().min(1),
-  password: z.string().min(1),
-  totpCode: z.string().optional()
-}), (result, c) => {
-  if (!result.success) {
-    console.error('[Login Validation Failed]', {
-      error: result.error,
-      contentType: c.req.header('Content-Type'),
-      path: c.req.path
-    })
-    return c.json({ success: false, error: result.error }, 400)
-  }
-}), async (c) => {
-  const { email, password, totpCode } = c.req.valid('json')
-  console.log('[Login Attempt]', { email })
-  
-  const user: any = await c.env.DB.prepare(
-    'SELECT * FROM users WHERE email = ?'
-  ).bind(email).first()
-
-  if (!user) throw new HTTPException(401, { message: 'Invalid credentials' })
-  
-  // PASSWORD VERIFICATION (Hardened with PBKDF2)
-  const isMatch = await verifyPassword(password, user.password_hash)
-  if (!isMatch) { 
-    throw new HTTPException(401, { message: 'Invalid credentials' })
-  }
-
-  // 2FA CHECK
-  if (user.totp_enabled) {
-    if (!totpCode) {
-      return c.json({ requires2FA: true }, 202)
-    }
-    const isValid = await verifyTOTP(user.totp_secret, totpCode)
-    if (!isValid) throw new HTTPException(401, { message: 'Invalid 2FA code' })
-  }
-
-  const payload = {
-    sub: user.id,
-    householdId: 'h-1', // Default or fetch first household
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
-  }
-  
-  const secret = c.env.JWT_SECRET
-  if (!secret) throw new HTTPException(500, { message: 'Internal error' })
-  const token = await sign(payload, secret)
-  
-  await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
-  return c.json({ token, user: { id: user.id, email: user.email, displayName: user.display_name } })
-})
-
-// --- TOTP SETUP ---
-app.post('/api/auth/totp/setup', async (c) => {
-  const userId = c.get('userId')
-  const secret = await generateTOTPSecret()
-  
-  await c.env.DB.prepare('UPDATE users SET totp_secret = ? WHERE id = ?')
-    .bind(secret, userId).run()
-
-  const otpauth = `otpauth://totp/LEDGER:${userId}?secret=${secret}&issuer=LEDGER`
-  return c.json({ secret, qrUrl: otpauth })
-})
-
-app.post('/api/auth/totp/verify', zValidator('json', z.object({ code: z.string() })), async (c) => {
-  const userId = c.get('userId')
-  const { code } = c.req.valid('json')
-  
-  const user: any = await c.env.DB.prepare('SELECT totp_secret FROM users WHERE id = ?').bind(userId).first()
-  const isValid = await verifyTOTP(user.totp_secret, code)
-  
-  if (isValid) {
-    await c.env.DB.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').bind(userId).run()
-    return c.json({ success: true })
-  }
-  return c.json({ success: false }, 400)
-})
-
-app.get('/auth/login/discord', (c) => {
-  const clientId = c.env.DISCORD_CLIENT_ID || '123'
-  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent('https://api.gpnet.dev/ledger/auth/callback/discord')}&response_type=code&scope=identify%20email`
-  return c.redirect(url)
-})
-
-app.get('/auth/callback/discord', async (c) => {
-  const code = c.req.query('code')
-  // Exchange code for token and fetch profile
-  // For implementation, we assume successful handshake
-  const discordProfile = { id: 'd-123', email: 'user@example.com', avatar: 'https://...' }
-  
-  // Check if identity exists
-  let existingIdentity: any = await c.env.DB.prepare(
-    'SELECT user_id FROM user_identities WHERE provider = "discord" AND provider_user_id = ?'
-  ).bind(discordProfile.id).first()
-
-  let userId = existingIdentity?.user_id
-
-  if (!userId) {
-    // Check if user exists by email
-    const user: any = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(discordProfile.email).first()
-    if (user) {
-      userId = user.id
-    } else {
-      // Create new user
-      userId = crypto.randomUUID()
-      await c.env.DB.prepare('INSERT INTO users (id, email, display_name, avatar_url) VALUES (?, ?, ?, ?)')
-        .bind(userId, discordProfile.email, 'Discord User', discordProfile.avatar).run()
-    }
-    // Link identity
-    await c.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id) VALUES (?, ?, ?, ?)')
-      .bind(crypto.randomUUID(), userId, 'discord', discordProfile.id).run()
-  }
-
-  const token = await sign({ sub: userId, householdId: 'h-1' }, c.env.JWT_SECRET)
-  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/login?token=${token}`)
-})
-
-// --- WEBAUTHN / PASSKEYS ---
-app.post('/auth/passkeys/register-options', async (c) => {
-  const challenge = crypto.randomUUID()
-  // In a real app, store this challenge in KV with a TTL
-  // For now, we'll return it and expect it back for verification (less secure, but avoids KV dependency)
-  return c.json({ challenge, user: { id: 'user-1', name: 'User' } })
-})
-
-app.post('/auth/passkeys/register-verify', async (c) => {
-  const { attestation, challenge, userId } = await c.req.json()
-  // Verification logic (simplified)
-  const id = crypto.randomUUID()
-  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id) VALUES (?, ?, ?, ?)')
-    .bind(id, userId, attestation.publicKey, attestation.id).run()
-  return c.json({ success: true })
-})
-
-app.post('/auth/passkeys/login-options', async (c) => {
-  const challenge = crypto.randomUUID()
-  return c.json({ challenge })
-})
-
-app.post('/auth/passkeys/login-verify', async (c) => {
-  const { assertion, challenge } = await c.req.json()
-  const credId = assertion.id
-  
-  const passkey: any = await c.env.DB.prepare('SELECT * FROM passkeys WHERE credential_id = ?').bind(credId).first()
-  if (!passkey) throw new HTTPException(401, { message: 'Passkey not found' })
-
-  // Real verification here...
-  
-  const token = await sign({ sub: passkey.user_id, householdId: 'h-1' }, c.env.JWT_SECRET)
-  return c.json({ token })
-})
+// --- AUTH ENDPOINTS (MODULARIZED) ---
+app.route('/auth', authRoutes)
 
 app.get('/api/me', (c) => {
   return c.json({

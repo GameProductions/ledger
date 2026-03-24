@@ -138,9 +138,11 @@ app.use('*', async (c, next) => {
     '/ledger', 
     '/ledger/', 
     '/ledger/auth/login', 
+    '/ledger/auth/admin/claim',
     '/ledger/ping',
     '/ping',
-    '/auth/login'
+    '/auth/login',
+    '/auth/admin/claim'
   ]
 
   const isExcluded = exclusions.some(e => path === e || path === e + '/') || 
@@ -1454,10 +1456,10 @@ app.get('/api/test/auto-login', async (c) => {
   const jwtSecret = c.env.JWT_SECRET || 'secret-change-me'
   const token = await sign({ 
     sub: 'test-user-v', 
-    householdId: 'h-1', 
+    householdId: 'household-abc', 
     globalRole: 'super_admin' 
   }, jwtSecret)
-  return c.json({ token, householdId: 'h-1' })
+  return c.json({ token, householdId: 'household-abc' })
 })
 
 // --- RECONCILIATION & SEARCH (PHASE 7) ---
@@ -1708,7 +1710,7 @@ app.post('/discord/interactions', async (c) => {
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     const { name } = interaction.data
-    const householdId = 'h-1' // Default for interactions
+    const householdId = 'household-abc' // Default for interactions
     
     if (name === 'ledger-safety') {
       const { results: accounts } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()

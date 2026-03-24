@@ -154,6 +154,8 @@ export async function verifyWebAuthnRegistration(
 }
 
 // --- PASSWORD HASHING (PBKDF2) ---
+const DEFAULT_ITERATIONS = 100000
+
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
   const salt = crypto.getRandomValues(new Uint8Array(16))
@@ -163,7 +165,7 @@ export async function hashPassword(password: string): Promise<string> {
   const pbkdf2Params = {
     name: 'PBKDF2',
     salt,
-    iterations: 600000,
+    iterations: DEFAULT_ITERATIONS,
     hash: 'SHA-256'
   }
   const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
@@ -171,7 +173,7 @@ export async function hashPassword(password: string): Promise<string> {
   // Format: iterations.salt_base64.hash_base64
   const saltBase64 = btoa(String.fromCharCode(...salt))
   const hashBase64 = btoa(String.fromCharCode(...new Uint8Array(derivedBits)))
-  return `600000.${saltBase64}.${hashBase64}`
+  return `${DEFAULT_ITERATIONS}.${saltBase64}.${hashBase64}`
 }
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {

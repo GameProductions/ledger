@@ -1,7 +1,7 @@
 import { sign } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings } from '../types'
-import { verifyPassword, verifyTOTP } from '../auth-utils'
+import { verifyPassword, verifyTOTP, hashPassword } from '../auth-utils'
 
 export class AuthService {
   constructor(private env: Bindings) {}
@@ -30,7 +30,7 @@ export class AuthService {
     return { requires2FA: false }
   }
 
-  async generateToken(userId: string, householdId: string = 'h-1') {
+  async generateToken(userId: string, householdId: string = 'household-abc') {
     const payload = {
       sub: userId,
       householdId,
@@ -79,5 +79,44 @@ export class AuthService {
       return true
     }
     return false
+  }
+
+  async createAdminInvite(role: string = 'super_admin') {
+    const token = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 32)
+    
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 24) // 24h expiry
+
+    await this.env.DB.prepare(
+      'INSERT INTO admin_invitations (token, role, expires_at) VALUES (?, ?, ?)'
+    ).bind(token, role, expiresAt.toISOString()).run()
+
+    return token
+  }
+
+  async consumeAdminInvite(token: string, username: string, password: string, email: string) {
+    // 1. Verify invitation
+    const invite: any = await this.env.DB.prepare(
+      'SELECT * FROM admin_invitations WHERE token = ? AND is_claimed = 0 AND expires_at > CURRENT_TIMESTAMP'
+    ).bind(token).first()
+
+    if (!invite) throw new HTTPException(400, { message: 'Invalid or expired invitation' })
+
+    // 2. Create User
+    const userId = crypto.randomUUID()
+    const passwordHash = await hashPassword(password)
+    
+    await this.env.DB.batch([
+      this.env.DB.prepare(
+        'INSERT INTO users (id, username, email, password_hash, global_role, status) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(userId, username, email, passwordHash, invite.role, 'active'),
+      this.env.DB.prepare(
+        'UPDATE admin_invitations SET is_claimed = 1 WHERE token = ?'
+      ).bind(token)
+    ])
+
+    return userId
   }
 }

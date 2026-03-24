@@ -103,6 +103,90 @@ const Login: React.FC = () => {
   )
 }
 
+const ClaimInvite: React.FC = () => {
+  const { showToast } = useToast()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  
+  const query = new URLSearchParams(window.location.search || window.location.hash.split('?')[1])
+  const token = query.get('token')
+
+  const handleClaim = async () => {
+    if (!token) {
+      showToast('Missing invitation token', 'error')
+      return
+    }
+    setLoading(true)
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const res = await fetch(`${apiUrl}/auth/admin/claim`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, username, password, email })
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        showToast(`Claim Failed: ${error.error || 'Unknown error'}`, 'error')
+        return
+      }
+
+      showToast('Invite claimed! You can now log in.', 'success')
+      window.location.hash = '#/login'
+    } catch (e) {
+      showToast('Network error during claim.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!token) return <div className="flex-center" style={{ minHeight: '80vh' }}>Invalid Invitation</div>
+
+  return (
+    <div className="flex-center" style={{ minHeight: '80vh' }}>
+      <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
+          <h2 style={{ margin: 0 }}>Join as Admin</h2>
+          <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>Create your super admin account</p>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); handleClaim(); }}>
+          <input 
+            type="text" 
+            placeholder="Username" 
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+            required
+          />
+          <input 
+            type="email" 
+            placeholder="Email Address" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+            required
+          />
+          <input 
+            type="password" 
+            placeholder="Choose Password (min 8 chars)" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem', marginBottom: '2rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+            required
+            minLength={8}
+          />
+          <button type="submit" className="primary" style={{ width: '100%' }} disabled={loading}>
+            {loading ? 'Processing...' : 'Claim Invitation'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 const Dashboard: React.FC = () => {
   const { logout, globalRole } = useAuth()
   const { data: accounts } = useApi('/api/accounts')
@@ -798,6 +882,7 @@ const AppContent: React.FC = () => {
   // Public Routes (No session required)
   if (currentHash === '#/privacy') return <PrivacyPolicy />
   if (currentHash === '#/terms') return <TermsOfService />
+  if (currentHash.startsWith('#/claim')) return <ClaimInvite />
 
   if (!user) return <Login />
 

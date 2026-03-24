@@ -110,4 +110,29 @@ auth.post('/passkeys/login-verify', async (c) => {
   return c.json({ token })
 })
 
+// --- ADMIN INVITATIONS ---
+auth.post('/admin/invite', async (c) => {
+  // Requires authenticated super_admin or secret (for first time setup)
+  // For simplicity here, we'll allow it if a super_admin is logged in
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  
+  const authService = new AuthService(c.env)
+  const token = await authService.createAdminInvite()
+  return c.json({ token, url: `${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/claim?token=${token}` })
+})
+
+auth.post('/admin/claim', zValidator('json', z.object({
+  token: z.string(),
+  username: z.string().min(3),
+  password: z.string().min(8),
+  email: z.string().email()
+})), async (c) => {
+  const { token, username, password, email } = c.req.valid('json')
+  const authService = new AuthService(c.env)
+  const userId = await authService.consumeAdminInvite(token, username, password, email)
+  
+  await logAudit(c, 'users', userId, 'claim_invite', null, { username, email })
+  return c.json({ success: true, userId })
+})
+
 export { auth }

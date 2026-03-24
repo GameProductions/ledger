@@ -38,7 +38,8 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -53,7 +54,8 @@ const Login: React.FC = () => {
 
       const authData = await res.json()
       if (authData.token) {
-        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+        const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
           headers: { 'Authorization': `Bearer ${authData.token}` }
         })
         const profile = await profileRes.json()
@@ -491,7 +493,7 @@ const Dashboard: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
               <span style={{ fontWeight: '600', color: 'var(--primary)' }}>LEDGER</span>
-              <span style={{ opacity: 0.7 }}>v1.5.6 Gold</span>
+              <span style={{ opacity: 0.7 }}>v1.5.7 Gold</span>
             </div>
             <div style={{ display: 'flex', gap: '2rem' }}>
               <a href="#/privacy" style={{ color: 'white', textDecoration: 'none', transition: 'opacity 0.2s' }}>Privacy Policy</a>

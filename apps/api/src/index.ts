@@ -177,18 +177,27 @@ app.use('/auth/*', async (c, next) => {
 
 app.use('*', async (c, next) => {
   const path = c.req.path
+  const method = c.req.method
+  
   // Account for basePath in exclusions
-  if (
-    path === '/ledger' || 
-    path === '/ledger/' || 
-    path === '/ledger/auth/login' || 
-    path === '/auth/login' || 
-    path === '/ping' ||
-    path.includes('/debug/') || 
-    path.includes('/discord/interactions')
-  ) {
+  const exclusions = [
+    '/ledger', 
+    '/ledger/', 
+    '/ledger/auth/login', 
+    '/ledger/ping',
+    '/ping',
+    '/auth/login'
+  ]
+
+  const isExcluded = exclusions.some(e => path === e || path === e + '/') || 
+                    path.includes('/debug/') || 
+                    path.includes('/discord/interactions') ||
+                    (method === 'OPTIONS')
+
+  if (isExcluded) {
     return await next()
   }
+
   return authMiddleware(c, next)
 })
 
@@ -423,7 +432,16 @@ app.post('/auth/login', zValidator('json', z.object({
   email: z.string().min(1),
   password: z.string().min(1),
   totpCode: z.string().optional()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error('[Login Validation Failed]', {
+      error: result.error,
+      contentType: c.req.header('Content-Type'),
+      path: c.req.path
+    })
+    return c.json({ success: false, error: result.error }, 400)
+  }
+}), async (c) => {
   const { email, password, totpCode } = c.req.valid('json')
   console.log('[Login Attempt]', { email })
   
@@ -1041,14 +1059,6 @@ app.patch('/api/transactions/:id/reconcile', async (c) => {
   return c.json({ success: true })
 })
 
-// Transaction Fetching (Updated to include all)
-app.get('/api/transactions', async (c) => {
-  const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM transactions WHERE household_id = ? ORDER BY transaction_date DESC LIMIT 50'
-  ).bind(householdId).all()
-  return c.json(results)
-})
 
 // Templates
 app.get('/api/templates', async (c) => {
@@ -1514,7 +1524,7 @@ app.get('/api/developer/tokens', async (c) => {
 })
 
 
-const CURRENT_VERSION = 'v1.5.7'
+const CURRENT_VERSION = 'v1.5.8'
 const VERSION_UPDATES = [
   { version: 'v1.5.7', title: 'Onboarding & Security', description: 'Premium guided tours and PBKDF2 security hardening.' },
   { version: 'v1.5.6', title: 'Provider Visibility', description: 'Designate providers as private, household, or public.' },

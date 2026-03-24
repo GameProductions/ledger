@@ -6,8 +6,8 @@ INSERT INTO households (id, name, currency, country_code) VALUES
 ('household-xyz', 'Business Expense', 'USD', 'US');
 
 -- Insert users
-INSERT INTO users (id, email, display_name) VALUES
-('user-123', 'admin@example.com', 'Administrator');
+INSERT INTO users (id, email, display_name, password_hash) VALUES
+('user-123', 'admin@example.com', 'Administrator', '600000.GjPm629Y/SmlfFGyj69eHQ==.lNwxHA0v1UyiMiqwtpUgUeMfDZtT4nt3bly1SSD4HqQ=');
 
 -- Map users to households
 INSERT INTO user_households (user_id, household_id, role) VALUES

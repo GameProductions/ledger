@@ -391,7 +391,7 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        <div style={{ gridColumn: 'span 3' }}>
+        <div style={{ gridColumn: '1 / -1' }}>
           <OnboardingChecklist />
         </div>
         {view === 'list' ? (

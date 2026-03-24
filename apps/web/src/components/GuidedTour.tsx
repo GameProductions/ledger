@@ -76,7 +76,7 @@ export const GuidedTour: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-modal flex items-center justify-center bg-overlay backdrop-blur p-4"
       >
         <motion.div
           initial={{ scale: 0.9, y: 20 }}
@@ -95,29 +95,29 @@ export const GuidedTour: React.FC = () => {
 
           <button 
             onClick={skipTour}
-            className="absolute top-4 right-4 text-text-secondary hover:text-white transition-colors"
+            className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
           >
             <X size={20} />
           </button>
 
           <div className="pt-4">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+              <div className="w-10 h-10 rounded-full bg-primary-20 flex items-center justify-center text-primary">
                 {isWelcome ? <Trophy size={24} /> : <CheckCircle size={24} />}
               </div>
               <h2 className="text-xl font-bold">{isWelcome && updates.length > 0 ? "What's New" : step.title}</h2>
             </div>
 
-            <p className="text-text-secondary mb-4 leading-relaxed">
+            <p className="text-secondary mb-4 leading-relaxed">
               {step.content}
             </p>
 
             {isWelcome && updates.length > 0 && (
-              <div className="mb-8 space-y-3 bg-white/5 p-4 rounded-lg border border-white/10">
+              <div className="mb-6 flex flex-column gap-3 bg-white/5 p-4 rounded-lg border border-white/10">
                 {updates.map(u => (
                   <div key={u.version}>
                     <div className="text-xs font-bold text-primary mb-1">{u.title} ({u.version})</div>
-                    <div className="text-xs text-text-secondary">{u.description}</div>
+                    <div className="text-xs text-secondary">{u.description}</div>
                   </div>
                 ))}
               </div>
@@ -140,7 +140,7 @@ export const GuidedTour: React.FC = () => {
                 </button>
               </div>
 
-              <span className="text-xs text-text-secondary font-mono">
+              <span className="text-xs text-secondary font-mono">
                 STEP {currentIdx + 1} / {steps.length}
               </span>
             </div>

@@ -34,13 +34,28 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network-First for navigation (index.html) to ensure we get the latest hashed assets link
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('/index.html')));
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
     return;
   }
   
+  // Cache-First for assets (hashed by Vite)
   event.respondWith(
     caches.match(event.request)
-      .then(response => response || fetch(event.request))
+      .then(response => response || fetch(event.request).then(fetchRes => {
+          return caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, fetchRes.clone());
+            return fetchRes;
+          });
+      }))
   );
 });

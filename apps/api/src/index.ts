@@ -1427,9 +1427,9 @@ app.get('/api/developer/tokens', async (c) => {
 })
 
 
-const CURRENT_VERSION = 'v1.5.9'
+const CURRENT_VERSION = 'v1.15.0'
 const VERSION_UPDATES = [
-  { version: 'v1.5.8', title: 'Layout Stabilization', description: 'Major refactor of the dashboard grid and API connectivity fixes.' },
+  { version: 'v1.15.0', title: 'Layout Stabilization & Grid', description: 'Major refactor of the dashboard grid, API connectivity fixes, and schema synchronization.' },
   { version: 'v1.5.7', title: 'Onboarding & Security', description: 'Premium guided tours and PBKDF2 security hardening.' },
   { version: 'v1.5.6', title: 'Provider Visibility', description: 'Designate providers as private, household, or public.' },
   { version: 'v1.5.5', title: 'Audit Analytics', description: 'New forensic security dashboard.' }

@@ -244,7 +244,12 @@ const authMiddleware = async (c: any, next: any) => {
     
     const userId = user.id
     const globalRole = user.global_role
-    const activeHouseholdId = householdHeader || payload.householdId
+    let activeHouseholdId = householdHeader || payload.householdId
+    
+    // Legacy compatibility for production migration
+    if (activeHouseholdId === 'h-1') {
+      activeHouseholdId = 'household-abc'
+    }
 
     // If NOT super_admin, verify User belongs to this household
     if (globalRole !== 'super_admin') {

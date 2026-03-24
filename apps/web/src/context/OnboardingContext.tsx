@@ -36,7 +36,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const fetchOnboardingStatus = async () => {
     try {
-      const res = await fetch(`${API_URL}/user/onboarding`, {
+      const res = await fetch(`${API_URL}/api/user/onboarding`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (res.ok) {
@@ -60,7 +60,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const completeStep = async (step: string, isLast?: boolean, version?: string) => {
     try {
-      const res = await fetch(`${API_URL}/user/onboarding/step`, {
+      const res = await fetch(`${API_URL}/api/user/onboarding/step`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

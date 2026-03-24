@@ -58,7 +58,19 @@ const AdminDashboard: React.FC = () => {
       <main className="stagger">
         {activeTab === 'users' && (
           <section className="card reveal">
-            <h3>Registered Users</h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3>Registered Users</h3>
+              <button className="primary" onClick={() => {
+                const email = prompt('Enter user email to invite:')
+                if (email) {
+                  fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/invite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
+                    body: JSON.stringify({ email })
+                  }).then(() => mutateUsers())
+                }
+              }}>+ Invite New Admin</button>
+            </div>
             {loadingUsers ? <p>Loading users...</p> : (
               <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse' }}>
                 <thead>
@@ -79,20 +91,36 @@ const AdminDashboard: React.FC = () => {
                       <td>{u.global_role}</td>
                       <td>{u.status}</td>
                       <td>
-                        <select 
-                          style={{ background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', color: 'white', padding: '0.2rem' }}
-                          onChange={(e) => handleUpdateUser(u.id, { global_role: e.target.value, status: u.status })}
-                          value={u.global_role}
-                        >
-                          <option value="user">User</option>
-                          <option value="super_admin">Super Admin</option>
-                        </select>
-                        <button 
-                          style={{ marginLeft: '0.5rem', background: u.status === 'suspended' ? 'var(--primary)' : 'rgba(239, 68, 68, 0.2)', color: u.status === 'suspended' ? 'white' : '#ef4444' }}
-                          onClick={() => handleUpdateUser(u.id, { global_role: u.global_role, status: u.status === 'active' ? 'suspended' : 'active' })}
-                        >
-                          {u.status === 'active' ? 'Suspend' : 'Reactivate'}
-                        </button>
+                        <div className="flex gap-2">
+                          <select 
+                            style={{ background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', color: 'white', padding: '0.2rem' }}
+                            onChange={(e) => handleUpdateUser(u.id, { global_role: e.target.value, status: u.status })}
+                            value={u.global_role}
+                          >
+                            <option value="user">User</option>
+                            <option value="super_admin">Super Admin</option>
+                          </select>
+                          <button 
+                            style={{ background: u.status === 'suspended' ? 'var(--primary)' : 'rgba(239, 68, 68, 0.2)', color: u.status === 'suspended' ? 'white' : '#ef4444' }}
+                            onClick={() => handleUpdateUser(u.id, { global_role: u.global_role, status: u.status === 'active' ? 'suspended' : 'active' })}
+                          >
+                            {u.status === 'active' ? 'Suspend' : 'Activate'}
+                          </button>
+                          <button 
+                            className="text-red-400 hover:bg-red-500/20"
+                            style={{ background: 'none', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                            onClick={() => {
+                              if (confirm('Permanently delete this user? This cannot be undone.')) {
+                                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${u.id}`, {
+                                  method: 'DELETE',
+                                  headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
+                                }).then(() => mutateUsers())
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

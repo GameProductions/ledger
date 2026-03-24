@@ -208,7 +208,7 @@ const ClaimInvite: React.FC = () => {
   )
 }
 
-const Dashboard: React.FC = () => {
+const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView: _setView }) => {
   const { user } = useAuth()
   const { data: accounts } = useApi('/api/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/transactions')
@@ -217,7 +217,6 @@ const Dashboard: React.FC = () => {
   const [timeframe, setTimeframe] = useState('paycheck')
   const { data: analytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
   const { data: insightsData } = useApi('/api/analytics/insights')
-  const [view, setView] = useState<'list' | 'calendar'>('list')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -292,22 +291,6 @@ const Dashboard: React.FC = () => {
   }
 
 
-  const handleExport = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/csv`, {
-      headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
-      }
-    })
-    const blob = await res.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ledger-export-${Date.now()}.csv`
-    a.click()
-    showToast('Export Started')
-  }
-
   const toggleReconcile = async (txId: string, current: boolean) => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${txId}/reconcile`, {
       method: 'PATCH',
@@ -371,11 +354,6 @@ const Dashboard: React.FC = () => {
               </button>
             ))}
           </div>
-          <div className="view-toggle card" style={{ padding: '0.4rem', borderRadius: '0.8rem' }}>
-            <button className={view === 'list' ? 'primary' : ''} onClick={() => setView('list')} style={{ marginRight: '0.5rem' }}>List</button>
-            <button className={view === 'calendar' ? 'primary' : ''} onClick={() => setView('calendar')}>Calendar</button>
-          </div>
-          <button onClick={handleExport} style={{ background: 'var(--secondary)', color: 'white' }}>Export CSV</button>
         </div>
       </header>
 
@@ -870,6 +848,7 @@ const Dashboard: React.FC = () => {
 const AppContent: React.FC = () => {
   const { user, globalRole } = useAuth()
   const [currentHash, setCurrentHash] = useState(window.location.hash)
+  const [view, setView] = useState<'list' | 'calendar'>('list')
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
@@ -888,10 +867,10 @@ const AppContent: React.FC = () => {
   const isAdmin = currentHash === '#/admin' && globalRole === 'super_admin'
   
   return (
-    <>
-      <UserMenu />
-      {isAdmin ? <AdminDashboard /> : <Dashboard />}
-    </>
+    <div style={{ position: 'relative' }}>
+      <UserMenu view={view} setView={setView} />
+      {isAdmin ? <AdminDashboard /> : <Dashboard view={view} setView={setView} />}
+    </div>
   )
 }
 

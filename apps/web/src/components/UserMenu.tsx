@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Shield, LogOut, Palette, ChevronDown, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import ThemeSwitcher from './ThemeSwitcher'
+import { Settings, Shield, LogOut, Palette, ChevronDown, X, List, Calendar as CalendarIcon, Download } from 'lucide-react'
 
-const UserMenu: React.FC = () => {
+const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
   const { logout, globalRole } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
@@ -31,12 +31,26 @@ const UserMenu: React.FC = () => {
     window.location.reload()
   }
 
-  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`
+  const handleExport = async () => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/csv`, {
+      headers: { 
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
+      }
+    })
+    const blob = await res.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ledger-export-${Date.now()}.csv`
+    a.click()
+  }
 
+  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`
   const isHome = !window.location.hash || window.location.hash === '#/'
 
   return (
-    <div className="fixed top-6 right-6 z-[2000]">
+    <div className="absolute top-0 right-0 z-[2000]">
       {/* Menu Trigger */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
@@ -73,7 +87,7 @@ const UserMenu: React.FC = () => {
                 {!isHome && (
                   <button 
                     onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left font-bold"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
                     style={{ background: 'none', border: 'none' }}
                   >
                     <ChevronDown size={18} className="text-primary -rotate-90" />
@@ -96,10 +110,46 @@ const UserMenu: React.FC = () => {
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
                     style={{ background: 'none', border: 'none' }}
                   >
-                    <Shield size={18} className="text-secondary" />
-                    <span>Admin Console</span>
+                    <Shield size={18} className="text-indigo-400" />
+                    <span>Admin Control Center</span>
                   </button>
                 )}
+
+                {setView && (
+                  <div className="px-3 py-2 border-t border-glass-border mt-2">
+                    <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => { setView('list'); setIsOpen(false); }}
+                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs transition-all ${view === 'list' ? 'bg-primary text-white' : 'bg-white/5 text-secondary hover:text-white'}`}
+                        style={{ border: 'none' }}
+                      >
+                        <List size={14} />
+                        <span>List</span>
+                      </button>
+                      <button 
+                        onClick={() => { setView('calendar'); setIsOpen(false); }}
+                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs transition-all ${view === 'calendar' ? 'bg-primary text-white' : 'bg-white/5 text-secondary hover:text-white'}`}
+                        style={{ border: 'none' }}
+                      >
+                        <CalendarIcon size={14} />
+                        <span>Calendar</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t border-glass-border mt-2 pt-2 px-3 pb-2">
+                   <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">System Actions</div>
+                   <button 
+                    onClick={() => { handleExport(); setIsOpen(false); }}
+                    className="w-full flex items-center gap-3 py-1 rounded-lg hover:text-primary text-xs text-secondary transition-colors text-left"
+                    style={{ background: 'none', border: 'none' }}
+                   >
+                     <Download size={14} />
+                     <span>Export Ledger (CSV)</span>
+                   </button>
+                </div>
 
                 <div className="border-t border-glass-border mt-2 pt-1">
                   <button 

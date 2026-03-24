@@ -11,7 +11,7 @@ const checklistItems = [
 ]
 
 export const OnboardingChecklist: React.FC = () => {
-  const { completedSteps, isCompleted, startTour } = useOnboarding()
+  const { completedSteps, isCompleted, startTour, skipTour } = useOnboarding()
 
   if (isCompleted && completedSteps.length >= checklistItems.length) return null
 
@@ -81,7 +81,7 @@ export const OnboardingChecklist: React.FC = () => {
           </button>
         )}
         <button 
-          onClick={() => {}} 
+          onClick={skipTour} 
           className="text-xs text-secondary hover:text-white transition-colors"
           style={{ background: 'none', border: 'none' }}
         >

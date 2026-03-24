@@ -324,9 +324,10 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="dashboard reveal">
-      <SeasonalAssets />
+    <>
       <GuidedTour />
+      <div className="dashboard reveal">
+        <SeasonalAssets />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -874,6 +875,7 @@ const Dashboard: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   )
 }
 

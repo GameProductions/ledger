@@ -77,8 +77,10 @@ export const GuidedTour: React.FC = () => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-modal flex items-center justify-center bg-overlay backdrop-blur p-4"
+        onClick={skipTour}
       >
         <motion.div
+          onClick={(e) => e.stopPropagation()}
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           className="card max-w-md w-full relative overflow-hidden"
@@ -96,6 +98,7 @@ export const GuidedTour: React.FC = () => {
           <button 
             onClick={skipTour}
             className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
+            style={{ background: 'none', border: 'none' }}
           >
             <X size={20} />
           </button>

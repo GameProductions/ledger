@@ -274,6 +274,13 @@ button.primary:hover {
 
 /* --- UTILITIES --- */
 .fixed { position: fixed; }
+.tracking-wider { letter-spacing: 0.05em; }
+.uppercase { text-transform: uppercase; }
+.absolute { position: absolute; }
+.relative { position: relative; }
+.top-4 { top: 1rem; }
+.right-4 { right: 1rem; }
+.overflow-hidden { overflow: hidden; }
 .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
 .z-modal { z-index: 2000; }
 .flex { display: flex; }
@@ -300,8 +307,7 @@ button.primary:hover {
 .font-bold { font-weight: 700; }
 .text-xl { font-size: 1.25rem; }
 .text-xs { font-size: 0.75rem; }
-.tracking-wider { letter-spacing: 0.05em; }
-.uppercase { text-transform: uppercase; }
+.line-through { text-decoration: line-through; }
 
 @media (max-width: 768px) {
   #root {

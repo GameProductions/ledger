@@ -244,12 +244,7 @@ const authMiddleware = async (c: any, next: any) => {
     
     const userId = user.id
     const globalRole = user.global_role
-    let activeHouseholdId = householdHeader || payload.householdId
-    
-    // Legacy compatibility for production migration
-    if (activeHouseholdId === 'h-1') {
-      activeHouseholdId = 'household-abc'
-    }
+    const activeHouseholdId = householdHeader || payload.householdId
 
     // If NOT super_admin, verify User belongs to this household
     if (globalRole !== 'super_admin') {
@@ -1461,10 +1456,10 @@ app.get('/api/test/auto-login', async (c) => {
   const jwtSecret = c.env.JWT_SECRET || 'secret-change-me'
   const token = await sign({ 
     sub: 'test-user-v', 
-    householdId: 'household-abc', 
+    householdId: 'ledger-main-001', 
     globalRole: 'super_admin' 
   }, jwtSecret)
-  return c.json({ token, householdId: 'household-abc' })
+  return c.json({ token, householdId: 'ledger-main-001' })
 })
 
 // --- RECONCILIATION & SEARCH (PHASE 7) ---
@@ -1715,7 +1710,7 @@ app.post('/discord/interactions', async (c) => {
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     const { name } = interaction.data
-    const householdId = 'household-abc' // Default for interactions
+    const householdId = 'ledger-main-001' // Default for interactions
     
     if (name === 'ledger-safety') {
       const { results: accounts } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()

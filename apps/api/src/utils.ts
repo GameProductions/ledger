@@ -10,7 +10,7 @@ export const logAudit = async (
   newData: any
 ) => {
   const actorId = c.get('userId') || 'system'
-  const householdId = c.get('householdId') || 'household-abc'
+  const householdId = c.get('householdId') || 'ledger-main-001'
   const id = crypto.randomUUID()
   
   await c.env.DB.prepare(

@@ -30,7 +30,7 @@ export class AuthService {
     return { requires2FA: false }
   }
 
-  async generateToken(userId: string, householdId: string = 'household-abc') {
+  async generateToken(userId: string, householdId: string = 'ledger-main-001') {
     const payload = {
       sub: userId,
       householdId,

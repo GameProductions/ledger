@@ -297,7 +297,8 @@ const TransactionSchema = z.object({
   description: z.string().min(1).max(255),
   account_id: z.string().uuid().or(z.string().regex(/^(acc-|plaid-|privacy-|retirement-|method-)/)),
   category_id: z.string().uuid().or(z.string().regex(/^(cat-|plaid-|privacy-)/)),
-  transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+  transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  owner_id: z.string().optional()
 })
 
 const PaginationSchema = z.object({
@@ -318,7 +319,17 @@ const ProfileSchema = z.object({
 })
 
 const JoinHouseholdSchema = z.object({
-  inviteCode: z.string().min(6)
+  token: z.string()
+})
+
+const CreateHouseholdSchema = z.object({
+  name: z.string().min(1).max(100),
+  currency: z.string().length(3).optional().default('USD')
+})
+
+const UpdateUserAdminSchema = z.object({
+  global_role: z.enum(['user', 'super_admin']).optional(),
+  status: z.enum(['active', 'suspended', 'deactivated']).optional()
 })
 
 const WebhookSchema = z.object({
@@ -345,7 +356,13 @@ const SubscriptionSchema = z.object({
   billing_cycle: z.enum(['weekly', 'monthly', 'yearly']),
   next_billing_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   account_id: z.string().optional(),
-  payment_mode: z.enum(['manual', 'autopay']).optional()
+  payment_mode: z.enum(['manual', 'autopay']).optional(),
+  owner_id: z.string().optional()
+})
+
+const OwnershipTransferSchema = z.object({
+  new_owner_id: z.string(),
+  transfer_history: z.boolean().optional().default(false)
 })
 
 const CreditCardSchema = z.object({
@@ -382,7 +399,11 @@ app.get('/api/me', (c) => {
   })
 })
 
-// --- CORE API ROUTES ---
+const UpdateHouseholdSchema = z.object({
+  name: z.string().min(1).max(100)
+})
+
+// --- ROUTES: Accounts (Phase 2) ---
 
 // Categories
 app.get('/api/categories', async (c) => {
@@ -989,12 +1010,53 @@ app.get('/api/export/csv', async (c) => {
 })
 
 // Households
+app.post('/api/households', zValidator('json', CreateHouseholdSchema), async (c) => {
+  const userId = c.get('userId')
+  const { name, currency } = c.req.valid('json')
+  const id = `h-${crypto.randomUUID().slice(0, 8)}`
+  
+  await c.env.DB.batch([
+    c.env.DB.prepare('INSERT INTO households (id, name, currency) VALUES (?, ?, ?)').bind(id, name, currency || 'USD'),
+    c.env.DB.prepare('INSERT INTO user_households (user_id, household_id, role) VALUES (?, ?, ?)').bind(userId, id, 'admin')
+  ])
+  
+  await logAudit(c, 'households', id, 'CREATE', null, { name, currency })
+  return c.json({ success: true, id, name }, 201)
+})
+
 app.get('/api/households', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(
     'SELECT h.*, uh.role FROM households h JOIN user_households uh ON h.id = uh.household_id WHERE uh.user_id = ?'
   ).bind(userId).all()
   return c.json(results)
+})
+
+app.patch('/api/households/:id', zValidator('json', UpdateHouseholdSchema), async (c) => {
+  const { id } = c.req.param()
+  const { name } = c.req.valid('json')
+  const authHouseholdId = c.get('householdId')
+  const globalRole = c.get('globalRole')
+
+  // Verify access: super_admin or admin of THIS household
+  if (globalRole !== 'super_admin') {
+     const membership = await c.env.DB.prepare(
+       'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
+     ).bind(c.get('userId'), id).first()
+     
+     if (!membership || (membership.role !== 'admin' && membership.role !== 'super_admin')) {
+       throw new HTTPException(403, { message: 'Forbidden: Insufficient permissions to rename household' })
+     }
+  }
+
+  const existing = await c.env.DB.prepare('SELECT name FROM households WHERE id = ?').bind(id).first()
+  if (!existing) throw new HTTPException(404, { message: 'Household not found' })
+
+  await c.env.DB.prepare('UPDATE households SET name = ? WHERE id = ?').bind(name, id).run()
+  
+  await logAudit(c, 'households', id, 'UPDATE', { name: (existing as any).name }, { name })
+
+  return c.json({ success: true, name })
 })
 
 // Subscriptions
@@ -1008,15 +1070,55 @@ app.get('/api/subscriptions', async (c) => {
 
 app.post('/api/subscriptions', zValidator('json', SubscriptionSchema), async (c) => {
   const householdId = c.get('householdId')
-  const { name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode } = c.req.valid('json')
+  const { name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode, owner_id } = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
-    `INSERT INTO subscriptions (id, household_id, name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, householdId, name, amount_cents, billing_cycle, next_billing_date, account_id || null, payment_mode || 'manual').run()
+    `INSERT INTO subscriptions (id, household_id, name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode, owner_id) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, householdId, name, amount_cents, billing_cycle, next_billing_date, account_id || null, payment_mode || 'manual', owner_id || c.get('userId')).run()
   
-  await logAudit(c, 'subscriptions', id, 'create', null, { name, amount_cents, billing_cycle, payment_mode })
+  await logAudit(c, 'subscriptions', id, 'create', null, { name, amount_cents, billing_cycle, payment_mode, owner_id })
   return c.json({ success: true, id })
+})
+
+app.post('/api/subscriptions/:id/transfer', zValidator('json', OwnershipTransferSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const { new_owner_id, transfer_history } = c.req.valid('json')
+
+  const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (!sub) return c.json({ error: 'Subscription not found' }, 404)
+
+  const queries = [
+    c.env.DB.prepare('UPDATE subscriptions SET owner_id = ? WHERE id = ?').bind(new_owner_id, id)
+  ]
+
+  if (transfer_history) {
+    // Transfer all transactions that match this subscription's name within the same household
+    queries.push(
+      c.env.DB.prepare('UPDATE transactions SET owner_id = ? WHERE household_id = ? AND description LIKE ?')
+        .bind(new_owner_id, householdId, `%${(sub as any).name}%`)
+    )
+  }
+
+  await c.env.DB.batch(queries)
+  await logAudit(c, 'subscriptions', id, 'TRANSFER_OWNERSHIP', { old_owner: (sub as any).owner_id }, { new_owner_id, transfer_history })
+
+  return c.json({ success: true })
+})
+
+app.post('/api/transactions/:id/transfer', zValidator('json', z.object({ new_owner_id: z.string() })), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const { new_owner_id } = c.req.valid('json')
+  
+  const tx = await c.env.DB.prepare('SELECT owner_id FROM transactions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (!tx) return c.json({ error: 'Transaction not found' }, 404)
+
+  await c.env.DB.prepare('UPDATE transactions SET owner_id = ? WHERE id = ?').bind(new_owner_id, id).run()
+  await logAudit(c, 'transactions', id, 'TRANSFER_OWNERSHIP', { old_owner: (tx as any).owner_id }, { new_owner_id })
+  
+  return c.json({ success: true })
 })
 
 app.patch('/api/subscriptions/:id', zValidator('json', SubscriptionSchema.partial()), async (c) => {
@@ -1690,6 +1792,54 @@ const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> => {
   }
   return results
 }
+
+// --- ADMIN: System-wide Management ---
+
+app.get('/api/admin/users', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { results } = await c.env.DB.prepare('SELECT id, email, username, global_role, status, created_at, last_active_at FROM users ORDER BY created_at DESC').all()
+  return c.json(results)
+})
+
+app.patch('/api/admin/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId } = c.req.param()
+  const { global_role, status } = c.req.valid('json')
+  
+  const old = await c.env.DB.prepare('SELECT global_role, status FROM users WHERE id = ?').bind(userId).first()
+  if (!old) throw new HTTPException(404, { message: 'User not found' })
+
+  await c.env.DB.prepare('UPDATE users SET global_role = COALESCE(?, global_role), status = COALESCE(?, status) WHERE id = ?')
+    .bind(global_role, status, userId).run()
+    
+  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status })
+  return c.json({ success: true })
+})
+
+app.get('/api/admin/audit', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_audit_logs ORDER BY created_at DESC LIMIT 50').all()
+  return c.json(results)
+})
+
+app.get('/api/admin/connections', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { results } = await c.env.DB.prepare('SELECT id, household_id, provider, status, last_sync_at FROM external_connections').all()
+  return c.json(results)
+})
+
+app.post('/api/admin/connections', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { household_id, provider, access_token } = await c.req.json() as any
+  const id = `conn-${crypto.randomUUID().slice(0, 8)}`
+  
+  const encrypted = await encrypt(access_token, c.env.ENCRYPTION_KEY)
+  await c.env.DB.prepare('INSERT INTO external_connections (id, household_id, provider, access_token, status) VALUES (?, ?, ?, ?, ?)')
+    .bind(id, household_id, provider, encrypted, 'active').run()
+    
+  await logAudit(c, 'external_connections', id, 'ADMIN_CREATE', null, { household_id, provider })
+  return c.json({ success: true, id })
+})
 
 app.post('/api/admin/system/sync', async (c) => {
   if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })

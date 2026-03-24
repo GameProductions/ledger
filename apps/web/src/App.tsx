@@ -32,6 +32,24 @@ import { GuidedTour } from './components/GuidedTour'
 import { OnboardingChecklist } from './components/OnboardingChecklist'
 import { ToastProvider, useToast } from './context/ToastContext'
 
+const Footer: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
+  <footer style={{ marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem', ...style }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <span style={{ fontWeight: '600', color: 'var(--primary)' }}>LEDGER</span>
+        <span style={{ opacity: 0.7 }}>v{import.meta.env.VITE_APP_VERSION}</span>
+      </div>
+      <div style={{ display: 'flex', gap: '2rem' }}>
+        <a href="#/privacy" style={{ color: 'white', textDecoration: 'none' }}>Privacy Policy</a>
+        <a href="#/terms" style={{ color: 'white', textDecoration: 'none' }}>Terms of Service</a>
+      </div>
+    </div>
+    <div style={{ textAlign: 'center', opacity: 0.5, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+      © {new Date().getFullYear()} GameProductions - Unified Financial Command
+    </div>
+  </footer>
+)
+
 const Login: React.FC = () => {
   const { login } = useAuth()
   const { showToast } = useToast()
@@ -75,6 +93,7 @@ const Login: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
           <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
+          <p style={{ opacity: 0.5, fontSize: '0.8rem', marginTop: '0.5rem' }}>v{import.meta.env.VITE_APP_VERSION}</p>
         </div>
         <form 
           onSubmit={(e) => { 
@@ -99,6 +118,7 @@ const Login: React.FC = () => {
           <button type="submit" className="primary" style={{ width: '100%' }}>Log In</button>
         </form>
       </div>
+      <Footer style={{ maxWidth: '400px', width: '100%', marginTop: '2rem' }} />
     </div>
   )
 }
@@ -188,7 +208,7 @@ const ClaimInvite: React.FC = () => {
 }
 
 const Dashboard: React.FC = () => {
-  const { logout, globalRole } = useAuth()
+  const { user, logout, globalRole } = useAuth()
   const { data: accounts } = useApi('/api/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/transactions')
   const { data: templates } = useApi('/api/templates')
@@ -211,12 +231,12 @@ const Dashboard: React.FC = () => {
   const [depositAmount, setDepositAmount] = useState('')
 
   useEffect(() => {
-    if (useAuth().user?.settings_json) {
+    if (user?.settings_json) {
        try {
-         setSettings(JSON.parse(useAuth().user.settings_json))
+         setSettings(JSON.parse(user.settings_json))
        } catch(e) {}
     }
-  }, [useAuth().user])
+  }, [user])
 
   const updateSettings = async (newSettings: any) => {
     setSettings(newSettings)
@@ -582,21 +602,7 @@ const Dashboard: React.FC = () => {
           </form>
         </section>
 
-        <footer style={{ gridColumn: 'span 3', marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-              <span style={{ fontWeight: '600', color: 'var(--primary)' }}>LEDGER</span>
-              <span style={{ opacity: 0.7 }}>v1.5.7 Gold</span>
-            </div>
-            <div style={{ display: 'flex', gap: '2rem' }}>
-              <a href="#/privacy" style={{ color: 'white', textDecoration: 'none', transition: 'opacity 0.2s' }}>Privacy Policy</a>
-              <a href="#/terms" style={{ color: 'white', textDecoration: 'none', transition: 'opacity 0.2s' }}>Terms of Service</a>
-            </div>
-          </div>
-          <div style={{ textAlign: 'center', opacity: 0.5, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-            © {new Date().getFullYear()} GameProductions - Unified Financial Command
-          </div>
-        </footer>
+        <Footer style={{ gridColumn: 'span 3' }} />
       </main>
 
       {toast && <div className="status-toast flex-center"><span>●</span> {toast}</div>}

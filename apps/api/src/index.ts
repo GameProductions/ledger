@@ -244,7 +244,20 @@ const authMiddleware = async (c: any, next: any) => {
     
     const userId = user.id
     const globalRole = user.global_role
-    const activeHouseholdId = householdHeader || payload.householdId
+    let activeHouseholdId = householdHeader || payload.householdId
+
+    // Verify Household exists to prevent Foreign Key errors in logAudit
+    const householdExists = await c.env.DB.prepare(
+      'SELECT id FROM households WHERE id = ?'
+    ).bind(activeHouseholdId).first()
+
+    if (!householdExists) {
+      if (globalRole === 'super_admin') {
+        activeHouseholdId = 'ledger-main-001'
+      } else {
+        throw new HTTPException(401, { message: 'Invalid or missing Household' })
+      }
+    }
 
     // If NOT super_admin, verify User belongs to this household
     if (globalRole !== 'super_admin') {

@@ -15,7 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token'))
   const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || 'null'))
-  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id') || 'household-abc')
+  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id'))
   const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || 'user')
 
   const login = (newToken: string, newUser: any) => {
@@ -25,11 +25,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('ledger_token', newToken)
     localStorage.setItem('ledger_user', JSON.stringify(newUser))
     localStorage.setItem('ledger_global_role', newUser.globalRole || 'user')
-    // Default household on login if not set
-    if (!householdId) {
-      setHouseholdId('household-abc')
-      localStorage.setItem('ledger_household_id', 'household-abc')
-    }
+    const hId = newUser.householdId || 'ledger-main-001'
+    setHouseholdId(hId)
+    localStorage.setItem('ledger_household_id', hId)
   }
 
   const logout = () => {

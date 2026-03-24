@@ -92,7 +92,7 @@ const Login: React.FC = () => {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-            <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
+            <img src="/assets/icon.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
             <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
             <p style={{ opacity: 0.5, fontSize: '0.8rem', marginTop: '0.5rem' }}>v{import.meta.env.VITE_APP_VERSION}</p>
           </div>
@@ -170,7 +170,7 @@ const ClaimInvite: React.FC = () => {
     <div className="flex-center" style={{ minHeight: '80vh' }}>
       <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
+          <img src="/assets/icon.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
           <h2 style={{ margin: 0 }}>Join as Admin</h2>
           <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>Create your super admin account</p>
         </div>
@@ -330,7 +330,7 @@ const Dashboard: React.FC = () => {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '2.5rem' }} />
+            <img src="/assets/icon.png" alt="LEDGER Logo" style={{ height: '2.5rem' }} />
             <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               LEDGER
             </h1>

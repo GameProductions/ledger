@@ -8,7 +8,8 @@ CREATE TABLE households (
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     currency TEXT DEFAULT 'USD',
-    country_code TEXT DEFAULT 'US'
+    country_code TEXT DEFAULT 'US',
+    unallocated_balance_cents INTEGER DEFAULT 0
 );
 
 CREATE TABLE users (
@@ -106,6 +107,8 @@ CREATE TABLE categories (
     monthly_budget_cents INTEGER DEFAULT 0,
     rollover_enabled BOOLEAN DEFAULT FALSE,
     emergency_fund BOOLEAN DEFAULT FALSE,
+    envelope_balance_cents INTEGER DEFAULT 0,
+    is_envelope BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 

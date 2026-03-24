@@ -997,6 +997,14 @@ app.post('/api/transactions', zValidator('json', TransactionSchema), async (c) =
     'INSERT INTO transactions (id, household_id, account_id, category_id, amount_cents, description, transaction_date) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).bind(id, householdId, data.account_id, data.category_id, data.amount_cents, data.description, date).run()
   
+  // Envelope Deduction Logic
+  if (data.category_id) {
+    const category: any = await c.env.DB.prepare('SELECT is_envelope FROM categories WHERE id = ?').bind(data.category_id).first()
+    if (category?.is_envelope) {
+      await c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents - ? WHERE id = ?').bind(data.amount_cents, data.category_id).run()
+    }
+  }
+
   // Webhook Dispatch
   c.executionCtx.waitUntil(dispatchWebhook(c, 'transaction.created', { id, description: data.description, amount_cents: data.amount_cents }, householdId))
 
@@ -1069,31 +1077,71 @@ app.post('/api/household/join', async (c) => {
   return c.json(await res.json())
 })
 
-// Budgets
+// Budgets & Envelopes
 app.get('/api/budgets', async (c) => {
   const householdId = c.get('householdId')
   
-  // Get all categories for the household
-  const { results: categories } = await c.env.DB.prepare(
-    'SELECT * FROM categories WHERE household_id = ?'
-  ).bind(householdId).all()
-  
-  // Get monthly spend per category
-  // For Dev Mode, we'll just sum all transactions for simplicity (real app would filter by month)
-  const { results: spends } = await c.env.DB.prepare(
-    'SELECT category_id, SUM(amount_cents) as total_spend FROM transactions WHERE household_id = ? GROUP BY category_id'
-  ).bind(householdId).all()
+  const household: any = await c.env.DB.prepare('SELECT unallocated_balance_cents FROM households WHERE id = ?').bind(householdId).first()
+  const { results: categories } = await c.env.DB.prepare('SELECT * FROM categories WHERE household_id = ?').bind(householdId).all()
+  const { results: spends } = await c.env.DB.prepare('SELECT category_id, SUM(amount_cents) as total_spend FROM transactions WHERE household_id = ? GROUP BY category_id').bind(householdId).all()
   
   const budgets = categories.map((cat: any) => {
     const spend = spends.find((s: any) => s.category_id === cat.id)?.total_spend || 0
     return {
       ...cat,
-      spend_cents: spend,
-      rollover_cents: cat.rollover_enabled ? 2500 : 0 // Mocked rollover for now
+      spend_cents: spend
     }
   })
   
-  return c.json(budgets)
+  return c.json({
+    unallocated_balance_cents: household?.unallocated_balance_cents || 0,
+    budgets
+  })
+})
+
+app.post('/api/budget/fund', zValidator('json', z.object({
+  category_id: z.string(),
+  amount_cents: z.number().positive()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { category_id, amount_cents } = c.req.valid('json')
+
+  // Atomic Update: Transfer from household unallocated to category envelope
+  const batch = await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE households SET unallocated_balance_cents = unallocated_balance_cents - ? WHERE id = ?').bind(amount_cents, householdId),
+    c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ? AND household_id = ?').bind(amount_cents, category_id, householdId)
+  ])
+
+  return c.json({ success: true })
+})
+
+app.post('/api/budget/deposit', zValidator('json', z.object({
+  amount_cents: z.number().positive(),
+  account_id: z.string().optional()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { amount_cents, account_id } = c.req.valid('json')
+
+  // In a real app, this might create a "funding" transaction
+  await c.env.DB.prepare('UPDATE households SET unallocated_balance_cents = unallocated_balance_cents + ? WHERE id = ?').bind(amount_cents, householdId).run()
+
+  return c.json({ success: true })
+})
+
+app.post('/api/budget/transfer', zValidator('json', z.object({
+  from_category_id: z.string(),
+  to_category_id: z.string(),
+  amount_cents: z.number().positive()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { from_category_id, to_category_id, amount_cents } = c.req.valid('json')
+
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents - ? WHERE id = ? AND household_id = ?').bind(amount_cents, from_category_id, householdId),
+    c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ? AND household_id = ?').bind(amount_cents, to_category_id, householdId)
+  ])
+
+  return c.json({ success: true })
 })
 
 // Import

@@ -96,6 +96,12 @@ const Dashboard: React.FC = () => {
   const [linkingTx, setLinkingTx] = useState<any>(null)
   const [settings, setSettings] = useState<any>({ dashboard_layout: {} }) // Default
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
+  const { data: budgetsData, mutate: mutateBudgets } = useApi('/api/budgets')
+  const [showFundModal, setShowFundModal] = useState(false)
+  const [fundAmount, setFundAmount] = useState('')
+  const [fundCategoryId, setFundCategoryId] = useState('')
+  const [showDepositModal, setShowDepositModal] = useState(false)
+  const [depositAmount, setDepositAmount] = useState('')
 
   useEffect(() => {
     if (useAuth().user?.settings_json) {
@@ -120,6 +126,41 @@ const Dashboard: React.FC = () => {
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
+  }
+
+
+  const handleDeposit = async () => {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/budget/deposit`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+      },
+      body: JSON.stringify({ amount_cents: parseFloat(depositAmount) * 100 })
+    })
+    mutateBudgets()
+    setShowDepositModal(false)
+    setDepositAmount('')
+    showToast('Deposit Successful')
+  }
+
+  const handleFund = async () => {
+    if (!fundCategoryId) return
+    await fetch(`${import.meta.env.VITE_API_URL}/api/budget/fund`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+      },
+      body: JSON.stringify({ 
+        category_id: fundCategoryId,
+        amount_cents: parseFloat(fundAmount) * 100 
+      })
+    })
+    mutateBudgets()
+    setShowFundModal(false)
+    setFundAmount('')
+    showToast('Envelope Funded')
   }
 
 
@@ -246,6 +287,46 @@ const Dashboard: React.FC = () => {
                 <p style={{ color: 'var(--text-secondary)' }}>Spendable cash remaining for selected window</p>
               </section>
             )}
+
+            <section className="card" style={{ gridColumn: 'span 1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3>Envelope Budgeting</h3>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    onClick={() => setShowDepositModal(true)}
+                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid var(--glass-border)' }}
+                  >
+                    Deposit
+                  </button>
+                  <button 
+                    onClick={() => setShowFundModal(true)}
+                    style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid var(--glass-border)' }}
+                  >
+                    Fund
+                  </button>
+                </div>
+              </div>
+              <div style={{ marginTop: '1rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)' }}>
+                  ${((budgetsData?.unallocated_balance_cents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Unallocated Pool</div>
+                
+                <div style={{ display: 'grid', gap: '0.8rem' }}>
+                  {budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => (
+                    <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.5rem' }}>
+                      <div>
+                        <span style={{ marginRight: '0.5rem' }}>{b.icon}</span>
+                        <span style={{ fontSize: '0.9rem' }}>{b.name}</span>
+                      </div>
+                      <div style={{ fontWeight: '600', color: (b.envelope_balance_cents || 0) < 0 ? 'var(--danger)' : 'white' }}>
+                        ${((b.envelope_balance_cents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
 
             {settings.dashboard_layout?.healthScore !== false && (
               <section className="card" style={{ gridColumn: 'span 1' }}>
@@ -563,6 +644,120 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       <Customizer settings={settings} onUpdate={updateSettings} />
+
+      {showFundModal && (
+        <div className="modal-overlay" onClick={() => setShowFundModal(false)}>
+          <div className="modal card slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h3>Fund Envelope</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Allocate money from your unallocated pool into a specific category.</p>
+            <div style={{ marginTop: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Select Envelope</label>
+              <select 
+                value={fundCategoryId} 
+                onChange={(e) => setFundCategoryId(e.target.value)}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', marginBottom: '1rem' }}
+              >
+                <option value="">Choose a category...</option>
+                {budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => (
+                  <option key={b.id} value={b.id}>{b.icon} {b.name}</option>
+                ))}
+              </select>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Amount ($)</label>
+              <input 
+                type="number" 
+                value={fundAmount}
+                onChange={(e) => setFundAmount(e.target.value)}
+                placeholder="0.00"
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', marginBottom: '1.5rem' }}
+              />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={() => setShowFundModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--glass-border)' }}>Cancel</button>
+                <button className="primary" onClick={handleFund} style={{ flex: 1 }}>Allocate Funds</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDepositModal && (
+        <div className="modal-overlay" onClick={() => setShowDepositModal(false)}>
+          <div className="modal card slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h3>Deposit to Pool</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Add funds to your "To Be Allocated" unallocated pool.</p>
+            <div style={{ marginTop: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Amount ($)</label>
+              <input 
+                type="number" 
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="0.00"
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', marginBottom: '1.5rem' }}
+              />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={() => setShowDepositModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--glass-border)' }}>Cancel</button>
+                <button className="primary" onClick={handleDeposit} style={{ flex: 1 }}>Deposit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFundModal && (
+        <div className="modal-overlay" onClick={() => setShowFundModal(false)}>
+          <div className="modal card slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h3>Fund Envelope</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Allocate money from your unallocated pool into a specific category.</p>
+            <div style={{ marginTop: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Select Envelope</label>
+              <select 
+                value={fundCategoryId} 
+                onChange={(e) => setFundCategoryId(e.target.value)}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', marginBottom: '1rem' }}
+              >
+                <option value="">Choose a category...</option>
+                {budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => (
+                  <option key={b.id} value={b.id}>{b.icon} {b.name}</option>
+                ))}
+              </select>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Amount ($)</label>
+              <input 
+                type="number" 
+                value={fundAmount}
+                onChange={(e) => setFundAmount(e.target.value)}
+                placeholder="0.00"
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', marginBottom: '1.5rem' }}
+              />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={() => setShowFundModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--glass-border)' }}>Cancel</button>
+                <button className="primary" onClick={handleFund} style={{ flex: 1 }}>Allocate Funds</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDepositModal && (
+        <div className="modal-overlay" onClick={() => setShowDepositModal(false)}>
+          <div className="modal card slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <h3>Deposit to Pool</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Add funds to your "To Be Allocated" unallocated pool.</p>
+            <div style={{ marginTop: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Amount ($)</label>
+              <input 
+                type="number" 
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="0.00"
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white', marginBottom: '1.5rem' }}
+              />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button onClick={() => setShowDepositModal(false)} style={{ flex: 1, background: 'transparent', border: '1px solid var(--glass-border)' }}>Cancel</button>
+                <button className="primary" onClick={handleDeposit} style={{ flex: 1 }}>Deposit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

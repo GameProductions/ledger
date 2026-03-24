@@ -13,6 +13,6 @@
     "deploy:web": "npm run deploy -w apps/web"
   },
   "devDependencies": {
-    "wrangler": "^4.76.0"
+    "wrangler": "^4.77.0"
   }
 }

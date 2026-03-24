@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from './AuthContext'
 
 interface OnboardingContextType {
   completedSteps: string[]
@@ -15,6 +16,7 @@ interface OnboardingContextType {
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
 
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { token } = useAuth()
   const [completedSteps, setCompletedSteps] = useState<string[]>([])
   const [isCompleted, setIsCompleted] = useState(false)
   const [activeStep, setActiveStep] = useState<string | null>(null)
@@ -25,13 +27,17 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const API_URL = import.meta.env.VITE_API_URL || '/api'
 
   useEffect(() => {
-    fetchOnboardingStatus()
-  }, [])
+    if (token) {
+      fetchOnboardingStatus()
+    } else {
+      setIsLoading(false)
+    }
+  }, [token])
 
   const fetchOnboardingStatus = async () => {
     try {
       const res = await fetch(`${API_URL}/user/onboarding`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       })
       if (res.ok) {
         const data = await res.json()
@@ -58,7 +64,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ step, isLast, version })
       })

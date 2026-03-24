@@ -47,7 +47,6 @@ const AdminDashboard: React.FC = () => {
     <div className="admin-dashboard dashboard reveal" style={{ padding: '2rem' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <h1 style={{ margin: 0, fontSize: '2rem', color: 'var(--secondary)' }}>Super Admin Console</h1>
-        <button className="primary" onClick={() => window.location.hash = ''}>Back to Dashboard</button>
       </header>
 
       <div className="card reveal" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', animationDelay: '0.1s' }}>

@@ -376,7 +376,6 @@ const Dashboard: React.FC = () => {
             <button className={view === 'calendar' ? 'primary' : ''} onClick={() => setView('calendar')}>Calendar</button>
           </div>
           <button onClick={handleExport} style={{ background: 'var(--secondary)', color: 'white' }}>Export CSV</button>
-          <UserMenu />
         </div>
       </header>
 
@@ -886,9 +885,14 @@ const AppContent: React.FC = () => {
   if (!user) return <Login />
 
   // Protected Admin Routes
-  if (currentHash === '#/admin' && globalRole === 'super_admin') return <AdminDashboard />
-
-  return <Dashboard />
+  const isAdmin = currentHash === '#/admin' && globalRole === 'super_admin'
+  
+  return (
+    <>
+      <UserMenu />
+      {isAdmin ? <AdminDashboard /> : <Dashboard />}
+    </>
+  )
 }
 
 const App: React.FC = () => (

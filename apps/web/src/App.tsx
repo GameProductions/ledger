@@ -74,21 +74,28 @@ const Login: React.FC = () => {
           <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
           <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
         </div>
-        <input 
-          type="email" 
-          placeholder="Email Address" 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
-        />
-        <button className="primary" style={{ width: '100%' }} onClick={handleLogin}>Log In</button>
+        <form 
+          onSubmit={(e) => { 
+            e.preventDefault(); 
+            handleLogin(); 
+          }}
+        >
+          <input 
+            type="email" 
+            placeholder="Email Address" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+          />
+          <input 
+            type="password" 
+            placeholder="Password" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+          />
+          <button type="submit" className="primary" style={{ width: '100%' }}>Log In</button>
+        </form>
       </div>
     </div>
   )

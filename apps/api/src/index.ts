@@ -85,7 +85,7 @@ export class HouseholdSession {
   }
 }
 
-export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>().basePath('/ledger')
 
 // 1. Global Security Hardening
 app.use('*', logger())
@@ -139,7 +139,14 @@ app.use('/auth/*', async (c, next) => {
 
 app.use('*', async (c, next) => {
   const path = c.req.path
-  if (path === '/' || path === '/auth/login' || path.includes('/debug/')) {
+  // Account for basePath in exclusions
+  if (
+    path === '/ledger' || 
+    path === '/ledger/' || 
+    path === '/ledger/auth/login' || 
+    path.includes('/debug/') || 
+    path.includes('/discord/interactions')
+  ) {
     return await next()
   }
   return authMiddleware(c, next)

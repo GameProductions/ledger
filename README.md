@@ -24,4 +24,4 @@ docker compose up -d
 Access the Web UI at `http://localhost:8080`.
 
 ## Documentation
-For detailed architecture and feature walk-throughs, see [walkthrough.md](file:///Users/morenicano/.gemini/antigravity/brain/15d2c455-a010-4435-84f2-5ee8aefc9f1a/walkthrough.md).
+For detailed architecture and feature walk-throughs, see [walkthrough.md](file:///Users/morenicano/.gemini/antigravity/brain/8475cb0d-d421-4e48-b005-f896415e5389/walkthrough.md).

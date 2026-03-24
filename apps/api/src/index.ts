@@ -420,11 +420,12 @@ const TransferSchema = z.object({
 
 // --- AUTH ENDPOINTS ---
 app.post('/auth/login', zValidator('json', z.object({
-  email: z.string().min(3),
+  email: z.string().min(1),
   password: z.string().min(1),
   totpCode: z.string().optional()
 })), async (c) => {
   const { email, password, totpCode } = c.req.valid('json')
+  console.log('[Login Attempt]', { email })
   
   const user: any = await c.env.DB.prepare(
     'SELECT * FROM users WHERE email = ?'

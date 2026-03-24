@@ -18,7 +18,7 @@ jobs:
           accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
           workingDirectory: "apps/api"
           wranglerVersion: "4.76.0"
-          command: deploy --minify --name cash-api
+          command: deploy --minify --name ledger-api
           secrets: |
             JWT_SECRET
             ENCRYPTION_KEY

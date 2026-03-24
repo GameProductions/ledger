@@ -6,16 +6,16 @@ import Calendar from './components/Calendar'
 import BudgetProgress from './components/BudgetProgress'
 import WhatIfLedger from './components/WhatIfLedger'
 import HouseholdSwitcher from './components/HouseholdSwitcher'
-import ImportWizard from './components/ImportWizard'
-import UserProfile from './components/UserProfile'
-import HealthScore from './components/HealthScore'
+import UserMenu from './components/UserMenu'
+import SeasonalAssets from './components/SeasonalAssets'
 import SpendingChart from './components/SpendingChart'
 import SmartInsights from './components/SmartInsights'
 import InviteManager from './components/InviteManager'
 import TransferForm from './components/TransferForm'
 import SpendingHeatmap from './components/SpendingHeatmap'
+import ImportWizard from './components/ImportWizard'
+import HealthScore from './components/HealthScore'
 import AICoach from './components/AICoach'
-import ThemeSwitcher from './components/ThemeSwitcher'
 import DeveloperSettings from './components/DeveloperSettings'
 import AuditChronicle from './components/AuditChronicle'
 import PrivacySettings from './components/PrivacySettings'
@@ -25,7 +25,6 @@ import SavingsBuckets from './components/SavingsBuckets'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import AdminDashboard from './components/AdminDashboard'
 import TermsOfService from './components/TermsOfService'
-import SeasonalAssets from './components/SeasonalAssets'
 import Customizer from './components/Customizer'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { GuidedTour } from './components/GuidedTour'
@@ -210,7 +209,7 @@ const ClaimInvite: React.FC = () => {
 }
 
 const Dashboard: React.FC = () => {
-  const { user, logout, globalRole } = useAuth()
+  const { user } = useAuth()
   const { data: accounts } = useApi('/api/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/transactions')
   const { data: templates } = useApi('/api/templates')
@@ -330,12 +329,12 @@ const Dashboard: React.FC = () => {
         <SeasonalAssets />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <a href="#/" style={{ display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none', color: 'inherit' }}>
             <img src="/assets/icon.png" alt="LEDGER Logo" style={{ height: '2.5rem' }} />
             <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               LEDGER
             </h1>
-          </div>
+          </a>
           <HouseholdSwitcher />
           {status && (
             <div style={{ fontSize: '0.8rem', color: 'var(--primary)', background: 'rgba(16, 185, 129, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -372,22 +371,12 @@ const Dashboard: React.FC = () => {
               </button>
             ))}
           </div>
-          {globalRole === 'super_admin' && (
-            <button 
-              onClick={() => window.location.hash = '#/admin'}
-              style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: '1px solid rgba(99, 102, 241, 0.2)' }}
-            >
-              🛡️ Admin Console
-            </button>
-          )}
           <div className="view-toggle card" style={{ padding: '0.4rem', borderRadius: '0.8rem' }}>
             <button className={view === 'list' ? 'primary' : ''} onClick={() => setView('list')} style={{ marginRight: '0.5rem' }}>List</button>
             <button className={view === 'calendar' ? 'primary' : ''} onClick={() => setView('calendar')}>Calendar</button>
           </div>
           <button onClick={handleExport} style={{ background: 'var(--secondary)', color: 'white' }}>Export CSV</button>
-          <ThemeSwitcher />
-          <UserProfile />
-          <button onClick={logout}>Logout</button>
+          <UserMenu />
         </div>
       </header>
 

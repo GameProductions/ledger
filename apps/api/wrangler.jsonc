@@ -34,9 +34,9 @@
     }
   ],
   "vars": {
-    "DISCORD_WEBHOOK_URL": "",
-    "RESEND_API_KEY": "",
-    "ENCRYPTION_KEY": "",
+    "DISCORD_WEBHOOK_URL": "DISCORD_WEBHOOK_URL",
+    "RESEND_API_KEY": "RESEND_API_KEY",
+    "ENCRYPTION_KEY": "ENCRYPTION_KEY",
     "ENVIRONMENT": "development"
   },
   "durable_objects": {

@@ -76,9 +76,15 @@ export class RateLimiter {
     const url = new URL(request.url)
     const ip = url.searchParams.get('ip') || 'anon'
     const limit = parseInt(url.searchParams.get('limit') || '100')
-    const current: number = (await this.state.storage.get(ip)) || 0
+    const windowMinute = Math.floor(Date.now() / 60000)
+    const key = `${ip}:${windowMinute}`
+    
+    const current: number = (await this.state.storage.get(key)) || 0
     if (current >= limit) return new Response('Rate limit exceeded', { status: 429 })
-    await this.state.storage.put(ip, current + 1)
+    
+    await this.state.storage.put(key, current + 1)
+    
+    // Optional: Cleanup old keys in the background
     return new Response(JSON.stringify({ remaining: limit - current - 1 }))
   }
 }
@@ -118,7 +124,7 @@ app.use('/auth/*', async (c, next) => {
   const ip = c.req.header('cf-connecting-ip') || 'anon'
   const id = c.env.RATE_LIMITER.idFromName(`auth:${ip}`)
   const obj = c.env.RATE_LIMITER.get(id)
-  const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=10`, c.req.url))
+  const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=50`, c.req.url))
   if (res.status === 429) return c.json({ error: 'Too many requests' }, 429)
   await next()
 })

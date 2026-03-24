@@ -7,7 +7,7 @@ import { Settings, Shield, LogOut, Palette, ChevronDown, X, List, Calendar as Ca
 
 const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
   const { user, logout, globalRole } = useAuth()
-  const { data: profile, isLoading } = useApi('/api/user/profile')
+  const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [name, setName] = useState('')

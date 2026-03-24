@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL
 
-export const useApi = (path: string, options: { refreshInterval?: number } = {}) => {
+export const useApi = <T = any>(path: string, options: { refreshInterval?: number } = {}) => {
   const { token } = useAuth()
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
   const [trigger, setTrigger] = useState(0)

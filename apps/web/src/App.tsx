@@ -31,8 +31,8 @@ import { GuidedTour } from './components/GuidedTour'
 import { OnboardingChecklist } from './components/OnboardingChecklist'
 import { ToastProvider, useToast } from './context/ToastContext'
 
-const Footer: React.FC<{ style?: React.CSSProperties }> = ({ style }) => (
-  <footer style={{ marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem', ...style }}>
+const Footer: React.FC<{ style?: React.CSSProperties; className?: string }> = ({ style, className }) => (
+  <footer className={className} style={{ marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem', ...style }}>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
       <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
         <span style={{ fontWeight: '600', color: 'var(--primary)' }}>LEDGER</span>

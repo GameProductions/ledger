@@ -1,8 +1,12 @@
 import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
+import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
 
 const Subscriptions: React.FC = () => {
-  const { data: subs, loading } = useApi('/api/subscriptions')
+  const { token, householdId } = useAuth()
+  const { showToast } = useToast()
+  const { data: subs, loading, mutate } = useApi('/api/subscriptions')
   const [showAdd, setShowAdd] = useState(false)
 
   if (loading) return <div>Loading subscriptions...</div>
@@ -20,11 +24,13 @@ const Subscriptions: React.FC = () => {
         <form style={{ marginBottom: '1.5rem', display: 'grid', gap: '0.5rem' }} onSubmit={(e) => {
           e.preventDefault()
           const formData = new FormData(e.currentTarget)
-          fetch('http://localhost:8787/api/subscriptions', {
+          const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+          fetch(`${apiUrl}/api/subscriptions`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+              'Authorization': `Bearer ${token}`,
+              'x-household-id': householdId || ''
             },
             body: JSON.stringify({
               name: formData.get('name'),
@@ -33,8 +39,9 @@ const Subscriptions: React.FC = () => {
               next_billing_date: formData.get('date')
             })
           }).then(() => {
-            alert('Subscription added!')
+            showToast('Subscription added!', 'success')
             setShowAdd(false)
+            mutate()
           })
         }}>
           <input name="name" placeholder="Service Name (Netflix, etc)" required style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />

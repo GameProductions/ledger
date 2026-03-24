@@ -1,8 +1,10 @@
 import React from 'react'
+import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 
 const PrivacySettings: React.FC = () => {
   const { token, householdId } = useAuth()
+  const { showToast, showConfirm } = useToast()
 
   const downloadFullExport = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/full`, {
@@ -21,7 +23,8 @@ const PrivacySettings: React.FC = () => {
   }
 
   const shredOldData = async () => {
-    if (!confirm('This will permanently delete transactions older than 12 months. Proceed?')) return
+    const confirmed = await showConfirm('This will permanently delete transactions older than 12 months. Proceed?')
+    if (!confirmed) return
     await fetch(`${import.meta.env.VITE_API_URL}/api/privacy/shred`, {
       method: 'POST',
       headers: { 
@@ -31,7 +34,7 @@ const PrivacySettings: React.FC = () => {
       },
       body: JSON.stringify({ months: 12 })
     })
-    alert('Shredding complete.')
+    showToast('Shredding complete.', 'success')
   }
 
   return (

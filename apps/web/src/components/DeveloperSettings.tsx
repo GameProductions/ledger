@@ -1,15 +1,17 @@
 import React, { useState } from 'react'
+import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 
 const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
+  const { showToast, showPrompt } = useToast()
   const { data: tokens } = useApi('/api/developer/tokens')
   const [newToken, setNewToken] = useState<string | null>(null)
   const [webhookUrl, setWebhookUrl] = useState('')
 
   const createToken = async () => {
-    const name = prompt('Name for this token?')
+    const name = await showPrompt('Name for this token?')
     if (!name) return
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/developer/tokens`, {
       method: 'POST',
@@ -36,7 +38,7 @@ const DeveloperSettings: React.FC = () => {
       body: JSON.stringify({ url: webhookUrl })
     })
     setWebhookUrl('')
-    alert('Webhook added!')
+    showToast('Webhook added!', 'success')
   }
 
   return (

@@ -30,9 +30,11 @@ import Customizer from './components/Customizer'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { GuidedTour } from './components/GuidedTour'
 import { OnboardingChecklist } from './components/OnboardingChecklist'
+import { ToastProvider, useToast } from './context/ToastContext'
 
 const Login: React.FC = () => {
   const { login } = useAuth()
+  const { showToast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -48,7 +50,7 @@ const Login: React.FC = () => {
       if (!res.ok) {
         const error = await res.json()
         console.error('Login Failed:', error)
-        alert(`Login Failed: ${error.error || 'Unknown error'}`)
+        showToast(`Login Failed: ${error.error || 'Unknown error'}`, 'error')
         return
       }
 
@@ -63,7 +65,7 @@ const Login: React.FC = () => {
       }
     } catch (e) {
       console.error('Login Network Error:', e)
-      alert('Network error during login. Please check your connection.')
+      showToast('Network error during login. Please check your connection.', 'error')
     }
   }
 
@@ -807,9 +809,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AuthProvider>
-    <OnboardingProvider>
-      <AppContent />
-    </OnboardingProvider>
+    <ToastProvider>
+      <OnboardingProvider>
+        <AppContent />
+      </OnboardingProvider>
+    </ToastProvider>
   </AuthProvider>
 )
 

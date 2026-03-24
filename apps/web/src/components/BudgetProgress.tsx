@@ -10,7 +10,7 @@ const BudgetProgress: React.FC = () => {
     <section className="card">
       <h3>Budget Progress</h3>
       <div style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
-        {budgets?.map((budget: any) => {
+        {Array.isArray(budgets) && budgets.map((budget: any) => {
           const totalAvailable = budget.monthly_budget_cents + budget.rollover_cents
           const progress = Math.min((budget.spend_cents / totalAvailable) * 100, 100)
           

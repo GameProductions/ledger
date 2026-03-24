@@ -8,7 +8,7 @@ const AuditChronicle: React.FC = () => {
     <section className="card" style={{ gridColumn: 'span 1' }}>
       <h3 style={{ marginBottom: '1.5rem' }}>📖 Household Chronicle</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-        {logs?.map((log: any) => (
+        {Array.isArray(logs) && logs.map((log: any) => (
           <div key={log.id} style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--primary)', position: 'relative' }}>
             <div style={{ position: 'absolute', left: '-5px', top: '0', width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }}></div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>

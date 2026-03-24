@@ -7,8 +7,8 @@ const FutureFlow: React.FC = () => {
     <section className="card" style={{ gridColumn: 'span 2' }}>
       <h3 style={{ marginBottom: '1rem' }}>🔮 Future Flow (180-Day Projection)</h3>
       <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', gap: '5%', padding: '1rem 0' }}>
-        {projection?.map((p: any) => {
-          const height = Math.min(100, Math.max(10, (p.balanceCents / (projection[0].balanceCents || 1)) * 100))
+        {Array.isArray(projection) && projection.map((p: any) => {
+          const height = Math.min(100, Math.max(10, (p.balanceCents / (projection[0]?.balanceCents || 1)) * 100))
           return (
             <div key={p.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ width: '100%', background: 'linear-gradient(to top, var(--primary), transparent)', height: `${height}%`, borderRadius: '4px 4px 0 0', opacity: 0.6 }}></div>

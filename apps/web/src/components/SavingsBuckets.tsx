@@ -8,7 +8,7 @@ const SavingsBuckets: React.FC = () => {
     <section className="card">
       <h3 style={{ marginBottom: '1.5rem' }}>📥 Virtual Savings Buckets</h3>
       <div style={{ display: 'grid', gap: '1rem' }}>
-        {buckets?.map((b: any) => (
+        {Array.isArray(buckets) && buckets.map((b: any) => (
           <div key={b.id}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
               <span>{b.name}</span>

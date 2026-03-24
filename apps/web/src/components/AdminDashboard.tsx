@@ -71,7 +71,7 @@ const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users?.map((u: any) => (
+                  {Array.isArray(users) && users.map((u: any) => (
                     <tr key={u.id} className="slide-up" style={{ borderBottom: '1px solid var(--glass-border)' }}>
                       <td style={{ padding: '1rem 0' }}>
                         <div style={{ fontWeight: '600' }}>{u.display_name || 'Anonymous'}</div>
@@ -109,7 +109,7 @@ const AdminDashboard: React.FC = () => {
               <h3>Active Connections</h3>
               {loadingConn ? <p>Loading connections...</p> : (
                 <div style={{ marginTop: '1rem' }}>
-                  {connections?.map((c: any) => (
+                  {Array.isArray(connections) && connections.map((c: any) => (
                     <div key={c.id} className="slide-up" style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: '700' }}>{c.provider}</div>
@@ -149,7 +149,7 @@ const AdminDashboard: React.FC = () => {
             <h3>System Audit Chronicle</h3>
             {loadingAudit ? <p>Loading audit logs...</p> : (
               <div style={{ marginTop: '1rem' }}>
-                {audit?.map((log: any) => (
+                {Array.isArray(audit) && audit.map((log: any) => (
                   <div key={log.id} className="slide-up" style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontWeight: '700', color: 'var(--secondary)' }}>{log.action}</span>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 const AICoach: React.FC = () => {
   const { token, householdId } = useAuth()
   const [messages, setMessages] = useState<{ role: 'user' | 'coach', text: string }[]>([
-    { role: 'coach', text: "Hello! I'm your CASH Coach. Ask me anything about your finances." }
+    { role: 'coach', text: "Hello! I'm your LEDGER Coach. Ask me anything about your finances." }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)

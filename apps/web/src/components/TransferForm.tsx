@@ -16,8 +16,8 @@ const TransferForm: React.FC = () => {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-        'x-household-id': localStorage.getItem('cash_household_id') || ''
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_household_id') || ''
       },
       body: JSON.stringify({
         from_account_id: from,

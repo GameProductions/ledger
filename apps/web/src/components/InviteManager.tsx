@@ -8,8 +8,8 @@ const InviteManager: React.FC = () => {
     const res = await fetch('http://localhost:8787/api/households/invite', {
       method: 'POST',
       headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-        'x-household-id': localStorage.getItem('cash_household_id') || ''
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_household_id') || ''
       }
     })
     const data = await res.json()

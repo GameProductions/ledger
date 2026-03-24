@@ -1,5 +1,5 @@
 {
-  "name": "cash-api",
+  "name": "ledger-api",
   "main": "src/index.ts",
   "observability": {
     "enabled": false,
@@ -17,20 +17,20 @@
     }
   },
   "routes": [
-    "api.gpnet.dev/cash/*"
+    "api.gpnet.dev/ledger/*"
   ],
   "compatibility_date": "2024-03-22",
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "cash-db",
+      "database_name": "ledger-db",
       "database_id": "dfd7fa4a-91a4-42a6-be16-465491b0467a"
     }
   ],
   "r2_buckets": [
     {
       "binding": "ASSETS",
-      "bucket_name": "cash-prd-assets"
+      "bucket_name": "ledger-prd-assets"
     }
   ],
   "vars": {

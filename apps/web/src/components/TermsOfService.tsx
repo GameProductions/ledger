@@ -9,12 +9,12 @@ const TermsOfService: React.FC = () => {
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Acceptance of Terms</h3>
-        <p>By accessing or using the CASH platform (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
+        <p>By accessing or using the LEDGER platform (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
         <h3>2. Description of Service</h3>
-        <p>CASH is a financial management tool provided by GameProductions. We utilize a "Sovereign Data" model where your information is stored in encrypted edge databases (Cloudflare D1).</p>
+        <p>LEDGER is a financial management tool provided by GameProductions. We utilize a "Sovereign Data" model where your information is stored in encrypted edge databases (Cloudflare D1).</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

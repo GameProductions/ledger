@@ -1,5 +1,5 @@
 {
-  "name": "cash",
+  "name": "ledger",
   "private": true,
   "workspaces": [
     "apps/*",

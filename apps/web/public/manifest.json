@@ -1,6 +1,6 @@
 {
-  "short_name": "CASH",
-  "name": "CASH Financial Command",
+  "short_name": "LEDGER",
+  "name": "LEDGER Financial Command",
   "description": "Unified financial edge console with predictive analytics and AI coaching.",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",

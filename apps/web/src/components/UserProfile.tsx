@@ -15,7 +15,7 @@ const UserProfile: React.FC = () => {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
       },
       body: JSON.stringify({ display_name: name })
     })

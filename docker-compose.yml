@@ -6,14 +6,14 @@ services:
     restart: unless-stopped
     environment:
       - PORT=8787
-      - DATABASE_PATH=/data/cash.db
+      - DATABASE_PATH=/data/ledger.db
       - JWT_SECRET=${JWT_SECRET:-dev-secret-hush}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-128a5f5152feecd29746e8c0e768393e}
       - ENVIRONMENT=production
     volumes:
-      - cash-data:/data
+      - ledger-data:/data
     networks:
-      - cash-network
+      - ledger-network
 
   web:
     build:
@@ -25,13 +25,13 @@ services:
     ports:
       - "8080:80"
     networks:
-      - cash-network
+      - ledger-network
     depends_on:
       - api
 
 volumes:
-  cash-data:
+  ledger-data:
 
 networks:
-  cash-network:
+  ledger-network:
     driver: bridge

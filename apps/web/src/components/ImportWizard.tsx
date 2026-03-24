@@ -38,7 +38,7 @@ const ImportWizard: React.FC = () => {
     <section className="card" style={{ gridColumn: 'span 2' }}>
       <h3>Data Ingestion Wizard</h3>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-        Upload a bank CSV to bulk-populate your ledger.
+        Upload a bank CSV to bulk-populate your cash.
       </p>
       
       <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>

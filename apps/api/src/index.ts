@@ -19,6 +19,7 @@ type Bindings = {
   ENCRYPTION_KEY: string
   RESEND_API_KEY: string
   ARRAY_API_KEY: string
+  ENVIRONMENT: string
 }
 
 type Variables = {
@@ -84,7 +85,7 @@ export class HouseholdSession {
   }
 }
 
-export const app = new Hono<{ Bindings: Bindings }>()
+export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // 1. Global Security Hardening
 app.use('*', logger())
@@ -177,8 +178,8 @@ const dispatchWebhook = async (c: any, event: string, data: any, householdId: st
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Cash-Signature': hook.secret as string,
-            'X-Cash-Event': event
+            'X-Ledger-Signature': hook.secret as string,
+            'X-Ledger-Event': event
           },
           body: JSON.stringify({
             id: crypto.randomUUID(),
@@ -211,7 +212,7 @@ const authMiddleware = async (c: any, next: any) => {
     if (!jwtSecret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
     
     // 1. Check for Personal Access Tokens (PATs) first
-    if (token.startsWith('cash_')) {
+    if (token.startsWith('ledger_')) {
       const { results } = await c.env.DB.prepare(
         'SELECT household_id FROM personal_access_tokens WHERE id = ?'
       ).bind(token).all()
@@ -271,7 +272,7 @@ const authMiddleware = async (c: any, next: any) => {
 }
 
 app.get('/', (c) => {
-  return c.text('CASH API - Status: Active')
+  return c.text('LEDGER API - Status: Active')
 })
 
 // --- SCHEMAS ---
@@ -430,7 +431,7 @@ app.post('/api/p2p/loans/:id/payments', async (c) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: 'CASH <receipts@gpnet.dev>',
+          from: 'LEDGER <receipts@gpnet.dev>',
           to: data.email,
           subject: `Payment Receipt: ${data.amount_cents / 100}`,
           html: `<p>Thank you for your payment of $${(data.amount_cents / 100).toFixed(2)}!</p>`
@@ -665,7 +666,7 @@ app.get('/api/export/csv', async (c) => {
   
   return c.text(csv, 200, {
     'Content-Type': 'text/csv',
-    'Content-Disposition': `attachment; filename="cash-export-${Date.now()}.csv"`
+    'Content-Disposition': `attachment; filename="ledger-export-${Date.now()}.csv"`
   })
 })
 
@@ -917,7 +918,7 @@ app.post('/api/coach/ask', async (c) => {
 app.post('/api/developer/tokens', async (c) => {
   const householdId = c.get('householdId')
   const { name } = await c.req.json()
-  const id = `cash_${crypto.randomUUID().replace(/-/g, '')}`
+  const id = `ledger_${crypto.randomUUID().replace(/-/g, '')}`
   await c.env.DB.prepare('INSERT INTO personal_access_tokens (id, household_id, name) VALUES (?, ?, ?)')
     .bind(id, householdId, name).run()
   return c.json({ token: id })
@@ -951,7 +952,7 @@ app.get('/api/export/full', async (c) => {
   }
   
   return c.json(fullExport, 200, {
-    'Content-Disposition': `attachment; filename="cash-full-export-${householdId}.json"`
+    'Content-Disposition': `attachment; filename="ledger-full-export-${householdId}.json"`
   })
 })
 
@@ -1271,11 +1272,11 @@ app.post('/discord/interactions', async (c) => {
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     const { name } = interaction.data
-    if (name === 'cash-safety') {
+    if (name === 'ledger-safety') {
       return c.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: "🛡️ **CASH Safety Number**: You have **$1,420.50** spendable cash until your next payday. Drive safe!"
+          content: "🛡️ **LEDGER Safety Number**: You have **$1,420.50** spendable cash until your next payday. Drive safe!"
         }
       })
     }

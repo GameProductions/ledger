@@ -9,7 +9,7 @@ const PrivacyPolicy: React.FC = () => {
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Introduction</h3>
-        <p>This Privacy Policy describes how CASH ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency and data sovereignty.</p>
+        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency and data sovereignty.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

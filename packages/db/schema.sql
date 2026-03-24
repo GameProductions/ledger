@@ -1,4 +1,4 @@
--- CASH Database Schema (Cloudflare D1)
+-- LEDGER Database Schema (Cloudflare D1)
 
 CREATE TABLE IF NOT EXISTS households (
     id TEXT PRIMARY KEY,

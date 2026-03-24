@@ -1,4 +1,4 @@
--- Seed Data for CASH
+-- Seed Data for LEDGER
 
 -- Insert a default household
 INSERT INTO households (id, name, currency, country_code) VALUES

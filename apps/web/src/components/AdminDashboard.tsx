@@ -12,7 +12,7 @@ const AdminDashboard: React.FC = () => {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
       },
       body: JSON.stringify(updates)
     })
@@ -34,7 +34,7 @@ const AdminDashboard: React.FC = () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
       },
       body: JSON.stringify(data)
     })

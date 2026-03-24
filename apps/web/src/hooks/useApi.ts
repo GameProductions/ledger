@@ -23,7 +23,7 @@ export const useApi = (path: string, options: { refreshInterval?: number } = {})
       const res = await fetch(`${API_URL}${path}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+          'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
         }
       })
       const json = await res.json()

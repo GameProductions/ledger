@@ -52,7 +52,7 @@ const Login: React.FC = () => {
   return (
     <div className="flex-center" style={{ minHeight: '80vh' }}>
       <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Welcome to CASH</h2>
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Welcome to LEDGER</h2>
         <input 
           type="text" 
           placeholder="Enter Username" 
@@ -68,19 +68,19 @@ const Login: React.FC = () => {
 
 const Dashboard: React.FC = () => {
   const { logout, globalRole } = useAuth()
-  const { data: accounts, mutate: mutateAccounts } = useApi('/api/accounts')
+  const { data: accounts } = useApi('/api/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/transactions')
   const { data: templates } = useApi('/api/templates')
   const { data: status } = useApi('/api/household/status', { refreshInterval: 10000 })
   const [timeframe, setTimeframe] = useState('paycheck')
-  const { data: analytics, mutate: mutateAnalytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
+  const { data: analytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
   const { data: insightsData } = useApi('/api/analytics/insights')
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
-  const [settings, setSettings] = useState<any>(JSON.parse(logout ? '{}' : '{"dashboard_layout":{}}')) // Fallback
+  const [settings, setSettings] = useState<any>({ dashboard_layout: {} }) // Default
 
   useEffect(() => {
     if (useAuth().user?.settings_json) {
@@ -96,7 +96,7 @@ const Dashboard: React.FC = () => {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
       },
       body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
     })
@@ -111,15 +111,15 @@ const Dashboard: React.FC = () => {
   const handleExport = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/csv`, {
       headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-        'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
       }
     })
     const blob = await res.blob()
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `cash-export-${Date.now()}.csv`
+    a.download = `ledger-export-${Date.now()}.csv`
     a.click()
     showToast('Export Started')
   }
@@ -129,8 +129,8 @@ const Dashboard: React.FC = () => {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-        'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
       },
       body: JSON.stringify({ reconciled: !current })
     })
@@ -144,7 +144,7 @@ const Dashboard: React.FC = () => {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
           <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            CASH
+            LEDGER
           </h1>
           <HouseholdSwitcher />
           {status && (
@@ -346,8 +346,8 @@ const Dashboard: React.FC = () => {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-                'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+                'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
               },
               body: JSON.stringify({
                 amount_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
@@ -366,7 +366,7 @@ const Dashboard: React.FC = () => {
         <footer style={{ gridColumn: 'span 3', marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-              <span style={{ fontWeight: '600', color: 'var(--primary)' }}>CASH</span>
+              <span style={{ fontWeight: '600', color: 'var(--primary)' }}>LEDGER</span>
               <span style={{ opacity: 0.7 }}>v1.5.6 Gold</span>
             </div>
             <div style={{ display: 'flex', gap: '2rem' }}>
@@ -413,8 +413,8 @@ const Dashboard: React.FC = () => {
                         method: 'POST',
                         headers: { 
                           'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-                          'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+                          'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
                         },
                         body: JSON.stringify({ linkedToIds: [t.id] })
                       })
@@ -443,7 +443,6 @@ const Dashboard: React.FC = () => {
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>ALL CANDIDATES</div>
             <div style={{ display: 'grid', gap: '0.5rem' }}>
               {transactions?.filter((t: any) => t.id !== linkingTx.id).map((t: any) => {
-                const isSelected = false // This will be handled by a local selection state if we want multi-click, but for now we'll stick to 1-click multi-link trigger
                 return (
                   <div 
                     key={t.id} 
@@ -453,8 +452,8 @@ const Dashboard: React.FC = () => {
                         method: 'POST',
                         headers: { 
                           'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-                          'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+                          'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
                         },
                         body: JSON.stringify({ linkedToIds: [t.id] })
                       })
@@ -496,8 +495,8 @@ const Dashboard: React.FC = () => {
                     method: 'POST',
                     headers: { 
                       'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${localStorage.getItem('cash_token')}`,
-                      'x-household-id': localStorage.getItem('cash_household_id') || 'household-abc'
+                      'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+                      'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
                     },
                     body: JSON.stringify({ targetId: 'all' }) // Backend needs to handle this or we need the targetId
                   })

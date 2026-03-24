@@ -16,7 +16,7 @@ const PrivacySettings: React.FC = () => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `cash-sovereign-export-${Date.now()}.json`
+    a.download = `ledger-sovereign-export-${Date.now()}.json`
     a.click()
   }
 

@@ -13,22 +13,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('cash_token'))
-  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('cash_user') || 'null'))
-  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('cash_household_id') || 'household-abc')
-  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('cash_global_role') || 'user')
+  const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token'))
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || 'null'))
+  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id') || 'household-abc')
+  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || 'user')
 
   const login = (newToken: string, newUser: any) => {
     setToken(newToken)
     setUser(newUser)
     setGlobalRole(newUser.globalRole || 'user')
-    localStorage.setItem('cash_token', newToken)
-    localStorage.setItem('cash_user', JSON.stringify(newUser))
-    localStorage.setItem('cash_global_role', newUser.globalRole || 'user')
+    localStorage.setItem('ledger_token', newToken)
+    localStorage.setItem('ledger_user', JSON.stringify(newUser))
+    localStorage.setItem('ledger_global_role', newUser.globalRole || 'user')
     // Default household on login if not set
     if (!householdId) {
       setHouseholdId('household-abc')
-      localStorage.setItem('cash_household_id', 'household-abc')
+      localStorage.setItem('ledger_household_id', 'household-abc')
     }
   }
 
@@ -37,15 +37,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null)
     setHouseholdId(null)
     setGlobalRole(null)
-    localStorage.removeItem('cash_token')
-    localStorage.removeItem('cash_user')
-    localStorage.removeItem('cash_household_id')
-    localStorage.removeItem('cash_global_role')
+    localStorage.removeItem('ledger_token')
+    localStorage.removeItem('ledger_user')
+    localStorage.removeItem('ledger_household_id')
+    localStorage.removeItem('ledger_global_role')
   }
 
   const handleSetHouseholdId = (id: string) => {
     setHouseholdId(id)
-    localStorage.setItem('cash_household_id', id)
+    localStorage.setItem('ledger_household_id', id)
     window.location.reload() // Force reload to refresh all useApi hooks
   }
 

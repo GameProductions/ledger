@@ -1,5 +1,5 @@
-# CASH 💸
-Unified Financial Command: A professional, secure household budget and expense tracker.
+# LEDGER 💸
+Unified Financial Command: Live Evaluation of Daily Gains & Expense Records.
 
 ## Features
 - **Deterministic Tracking**: Precise accounting with a multi-household architecture.

@@ -4,7 +4,7 @@ import Database from 'better-sqlite3'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-const DB_PATH = process.env.DATABASE_PATH || './cash.db'
+const DB_PATH = process.env.DATABASE_PATH || './ledger.db'
 const db = new Database(DB_PATH)
 
 // --- D1 SHIM ---
@@ -103,7 +103,7 @@ if (existsSync(migrationsDir)) {
 
 // --- START SERVER ---
 const port = parseInt(process.env.PORT || '8787')
-console.log(`[Node] CASH API starting on port ${port}...`)
+console.log(`[Node] LEDGER API starting on port ${port}...`)
 
 serve({
   fetch: (request) => {

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 
 const ThemeSwitcher: React.FC = () => {
-  const [theme, setTheme] = useState(localStorage.getItem('cash_theme') || 'emerald')
+  const [theme, setTheme] = useState(localStorage.getItem('ledger_theme') || 'emerald')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('cash_theme', theme)
+    localStorage.setItem('ledger_theme', theme)
     
     // Attempt to sync with server-side settings
-    const token = localStorage.getItem('cash_token')
+    const token = localStorage.getItem('ledger_token')
     if (token) {
       fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
         method: 'PATCH',

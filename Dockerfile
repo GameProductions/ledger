@@ -30,7 +30,7 @@ COPY --from=build-api /app/apps/api ./apps/api
 COPY --from=build-api /app/packages/db ./packages/db
 WORKDIR /app/apps/api
 EXPOSE 8787
-ENV DATABASE_PATH=/data/cash.db
+ENV DATABASE_PATH=/data/ledger.db
 CMD ["npx", "tsx", "src/serve.ts"]
 
 # --- PRODUCTION WEB ---

@@ -7,7 +7,7 @@ interface CustomizerProps {
 }
 
 const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
-  const { token } = useAuth()
+  const { } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleWidget = (widgetId: string) => {

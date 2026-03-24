@@ -1,11 +1,32 @@
 -- LEDGER Database Schema (Cloudflare D1)
 
+DROP TABLE IF EXISTS installment_plans;
+DROP TABLE IF EXISTS variable_schedules;
+DROP TABLE IF EXISTS milestone_plans;
+DROP TABLE IF EXISTS user_onboarding;
+DROP TABLE IF EXISTS webhooks;
+DROP TABLE IF EXISTS personal_access_tokens;
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS templates;
+DROP TABLE IF EXISTS holidays;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS shared_balances;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS pay_schedules;
+DROP TABLE IF EXISTS savings_buckets;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS user_households;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS households;
+
 CREATE TABLE IF NOT EXISTS households (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     currency TEXT DEFAULT 'USD',
-    country_code TEXT DEFAULT 'US'
+    country_code TEXT DEFAULT 'US',
+    unallocated_balance_cents INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -42,6 +63,7 @@ CREATE TABLE IF NOT EXISTS categories (
     icon TEXT,
     color TEXT,
     monthly_budget_cents INTEGER DEFAULT 0,
+    envelope_balance_cents INTEGER DEFAULT 0,
     rollover_enabled BOOLEAN DEFAULT FALSE,
     emergency_fund BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (household_id) REFERENCES households(id)
@@ -159,4 +181,41 @@ CREATE TABLE IF NOT EXISTS savings_buckets (
   category_id TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS user_onboarding (
+    user_id TEXT PRIMARY KEY,
+    completed_steps_json TEXT DEFAULT '[]',
+    is_completed BOOLEAN DEFAULT FALSE,
+    last_viewed_version TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS milestone_plans (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    target_amount_cents INTEGER NOT NULL,
+    target_date DATE,
+    status TEXT DEFAULT 'active',
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS variable_schedules (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    avg_amount_cents INTEGER NOT NULL,
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS installment_plans (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    total_amount_cents INTEGER NOT NULL,
+    installment_amount_cents INTEGER NOT NULL,
+    status TEXT DEFAULT 'active',
+    FOREIGN KEY (household_id) REFERENCES households(id)
 );

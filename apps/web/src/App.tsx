@@ -308,7 +308,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
   return (
     <>
       <GuidedTour />
-      <div className="dashboard reveal">
+      <div className="dashboard-grid reveal">
         <SeasonalAssets />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -357,7 +357,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
         </div>
       </header>
 
-      <main className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <main className="stagger dashboard-grid">
         <div style={{ gridColumn: '1 / -1' }}>
           <OnboardingChecklist />
         </div>
@@ -494,10 +494,6 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
                 </div>
               </section>
             )}
-            <AICoach />
-            <TransferForm />
-            <InviteManager />
-            {settings.dashboard_layout?.smartInsights !== false && <SmartInsights insights={insightsData?.insights || []} />}
           </>
         ) : (
           <section className="card" style={{ gridColumn: 'span 3' }}>
@@ -506,7 +502,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
           </section>
         )}
 
-        <section className="card">
+        <section className="card" style={{ gridColumn: 'span 1' }}>
           <h3>Your Accounts</h3>
           <ul style={{ listStyle: 'none', marginTop: '1rem' }}>
             {accounts?.map((acc: any) => (
@@ -518,6 +514,10 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
           </ul>
         </section>
 
+        <AICoach />
+        <TransferForm />
+        <InviteManager />
+        {settings.dashboard_layout?.smartInsights !== false && <SmartInsights insights={insightsData?.insights || []} />}
         <FutureFlow />
         <GoalSeek />
         {settings.dashboard_layout?.savingsBuckets !== false && <SavingsBuckets />}
@@ -529,7 +529,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
         <DeveloperSettings />
         <ImportWizard />
 
-        <section className="card" style={{ gridColumn: 'span 3' }}>
+        <section className="card dashboard-span-full">
           <h3>Quick Entry</h3>
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
             {templates?.map((tpl: any) => (
@@ -571,7 +571,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
           </form>
         </section>
 
-        <Footer style={{ gridColumn: 'span 3' }} />
+        <Footer className="dashboard-span-full" />
       </main>
 
       {toast && <div className="status-toast flex-center"><span>●</span> {toast}</div>}

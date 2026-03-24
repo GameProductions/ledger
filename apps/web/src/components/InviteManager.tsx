@@ -5,7 +5,7 @@ const InviteManager: React.FC = () => {
   const [link, setLink] = useState('')
 
   const generateInvite = async () => {
-    const res = await fetch('http://localhost:8787/api/households/invite', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/households/invite`, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,

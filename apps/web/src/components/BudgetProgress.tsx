@@ -2,16 +2,22 @@ import React from 'react'
 import { useApi } from '../hooks/useApi'
 
 const BudgetProgress: React.FC = () => {
-  const { data: budgets, loading } = useApi('/api/budgets')
+  const { data, loading } = useApi<{ budgets: any[], unallocated_balance_cents: number }>('/api/budgets')
 
   if (loading) return <div>Loading budgets...</div>
+  const budgets = data?.budgets || []
 
   return (
     <section className="card">
-      <h3>Budget Progress</h3>
-      <div style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
-        {Array.isArray(budgets) && budgets.map((budget: any) => {
-          const totalAvailable = budget.monthly_budget_cents + budget.rollover_cents
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h3 style={{ margin: 0 }}>Budget Progress</h3>
+        <span style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', background: 'var(--bg-dark)', borderRadius: '1rem', color: 'var(--primary)' }}>
+          ${((data?.unallocated_balance_cents || 0) / 100).toFixed(2)} Unallocated
+        </span>
+      </div>
+      <div style={{ display: 'grid', gap: '1.5rem' }}>
+        {budgets.map((budget: any) => {
+          const totalAvailable = (budget.monthly_budget_cents || 0) + (budget.envelope_balance_cents || 0)
           const progress = Math.min((budget.spend_cents / totalAvailable) * 100, 100)
           
           return (

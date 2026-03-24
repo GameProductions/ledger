@@ -11,7 +11,7 @@ const UserProfile: React.FC = () => {
   }, [profile])
 
   const handleUpdate = async () => {
-    await fetch('http://localhost:8787/api/user/profile', {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',

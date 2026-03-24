@@ -12,7 +12,7 @@ const TransferForm: React.FC = () => {
     e.preventDefault()
     setLoading(true)
     
-    await fetch('http://localhost:8787/api/transfers', {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/transfers`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json', 

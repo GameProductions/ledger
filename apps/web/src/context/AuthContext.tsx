@@ -13,10 +13,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token'))
-  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || 'null'))
-  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id'))
-  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || 'user')
+  const isDev = import.meta.env.DEV;
+  const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null))
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","display_name":"Administrator","email":"admin@example.com"}' : 'null')))
+  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id') || (isDev ? 'household-abc' : null))
+  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || (isDev ? 'super_admin' : 'user'))
 
   const login = (newToken: string, newUser: any) => {
     setToken(newToken)

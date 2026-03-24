@@ -6,8 +6,8 @@ import ThemeSwitcher from './ThemeSwitcher'
 import { Settings, Shield, LogOut, Palette, ChevronDown, X, List, Calendar as CalendarIcon, Download } from 'lucide-react'
 
 const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
-  const { logout, globalRole } = useAuth()
-  const { data: profile } = useApi('/api/user/profile')
+  const { user, logout, globalRole } = useAuth()
+  const { data: profile, isLoading } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [name, setName] = useState('')
@@ -16,7 +16,6 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
     if (profile) setName(profile.display_name)
   }, [profile])
 
-  if (!profile) return null
 
   const handleUpdateProfile = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
@@ -46,7 +45,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
     a.click()
   }
 
-  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`
+  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
   const isHome = !window.location.hash || window.location.hash === '#/'
 
   return (
@@ -62,7 +61,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
           alt="User Avatar" 
           className="w-8 h-8 rounded-full border border-primary shadow-lg"
         />
-        <span className="text-sm font-semibold text-white ml-1">{profile.display_name || 'User'}</span>
+        <span className="text-sm font-semibold text-white ml-1">{(profile?.display_name || user?.displayName || 'User')}</span>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -80,7 +79,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="text-[10px] text-primary uppercase tracking-widest font-black mb-1">Authenticated Account</div>
-                <div className="text-sm text-white font-medium truncate opacity-80">{profile.email}</div>
+                <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
               </div>
 
               <div className="space-y-1">

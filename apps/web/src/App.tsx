@@ -88,37 +88,39 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="flex-center" style={{ minHeight: '80vh' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
-          <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
-          <p style={{ opacity: 0.5, fontSize: '0.8rem', marginTop: '0.5rem' }}>v{import.meta.env.VITE_APP_VERSION}</p>
+    <div className="flex-center" style={{ minHeight: '100vh', flexDirection: 'column', padding: '2rem 0' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
+            <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
+            <p style={{ opacity: 0.5, fontSize: '0.8rem', marginTop: '0.5rem' }}>v{import.meta.env.VITE_APP_VERSION}</p>
+          </div>
+          <form 
+            onSubmit={(e) => { 
+              e.preventDefault(); 
+              handleLogin(); 
+            }}
+          >
+            <input 
+              type="text" 
+              placeholder="Username" 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+            />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+            />
+            <button type="submit" className="primary" style={{ width: '100%' }}>Log In</button>
+          </form>
         </div>
-        <form 
-          onSubmit={(e) => { 
-            e.preventDefault(); 
-            handleLogin(); 
-          }}
-        >
-          <input 
-            type="text" 
-            placeholder="Username" 
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
-          />
-          <input 
-            type="password" 
-            placeholder="Password" 
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
-          />
-          <button type="submit" className="primary" style={{ width: '100%' }}>Log In</button>
-        </form>
       </div>
-      <Footer style={{ maxWidth: '400px', width: '100%', marginTop: '2rem' }} />
+      <Footer style={{ width: '100%', marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)' }} />
     </div>
   )
 }

@@ -84,14 +84,22 @@ export class HouseholdSession {
   }
 }
 
-const app = new Hono<{ Bindings: Bindings }>().basePath('/cash')
+const app = new Hono<{ Bindings: Bindings }>()
 
 // 1. Global Security Hardening
 app.use('*', logger())
 app.use('*', cors())
 app.use('*', secureHeaders())
 
-// Simple Rate Limiting (In-memory for YOLO, Production would use KV/Durable Object)
+app.onError((err, c) => {
+  console.error('[Global Error]', err)
+  return c.json({
+    error: err.message,
+    status: (err as any).status || 500
+  }, (err as any).status || 500)
+})
+
+// Simple Rate Limiting (In-memory for development, Production would use KV/Durable Object)
 const REQUESTS = new Map<string, number>()
 app.use('/api/*', async (c, next) => {
   const ip = c.req.header('cf-connecting-ip') || 'anon'
@@ -128,6 +136,14 @@ app.use('/auth/*', async (c, next) => {
   await next()
 })
 
+app.use('*', async (c, next) => {
+  const path = c.req.path
+  if (path === '/' || path === '/auth/login' || path.includes('/debug/')) {
+    return await next()
+  }
+  return authMiddleware(c, next)
+})
+
 // --- UTILITIES: Audit Logging ---
 const logAudit = async (c: any, tableName: string, recordId: string, action: string, oldValues: any, newValues: any) => {
   const id = crypto.randomUUID()
@@ -136,6 +152,52 @@ const logAudit = async (c: any, tableName: string, recordId: string, action: str
   await c.env.DB.prepare(
     'INSERT INTO system_audit_logs (id, user_id, action, target, details_json) VALUES (?, ?, ?, ?, ?)'
   ).bind(id, actorId, action, `${tableName}:${recordId}`, JSON.stringify({ oldValues, newValues, householdId })).run()
+}
+
+// --- UTILITIES: Webhook Dispatch ---
+const dispatchWebhook = async (c: any, event: string, data: any, householdId: string) => {
+  if (!householdId) return
+
+  const { results: hooks } = await c.env.DB.prepare(
+    'SELECT id, url, secret, event_list FROM webhooks WHERE household_id = ? AND is_active = 1'
+  ).bind(householdId).all()
+
+  for (const hook of hooks) {
+    const events = (hook.event_list as string).split(',')
+    if (events.includes('*') || events.includes(event)) {
+      const deliveryId = crypto.randomUUID()
+      
+      // Log Attempt
+      await c.env.DB.prepare(
+        'INSERT INTO webhook_delivery_logs (id, webhook_id, event, status_code) VALUES (?, ?, ?, ?)'
+      ).bind(deliveryId, hook.id, event, 0).run() // 0 = Attempting
+      
+      c.executionCtx.waitUntil(
+        fetch(hook.url as string, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Cash-Signature': hook.secret as string,
+            'X-Cash-Event': event
+          },
+          body: JSON.stringify({
+            id: crypto.randomUUID(),
+            event,
+            timestamp: new Date().toISOString(),
+            data
+          })
+        }).then(async (res) => {
+          await c.env.DB.prepare(
+            'UPDATE webhook_delivery_logs SET status_code = ? WHERE id = ?'
+          ).bind(res.status, deliveryId).run()
+        }).catch(async (err) => {
+          await c.env.DB.prepare(
+            'UPDATE webhook_delivery_logs SET error = ? WHERE id = ?'
+          ).bind(err.message, deliveryId).run()
+        })
+      )
+    }
+  }
 }
 
 // --- AUTH MIDDLEWARE ---
@@ -216,8 +278,8 @@ app.get('/', (c) => {
 const TransactionSchema = z.object({
   amount_cents: z.number().int(),
   description: z.string().min(1).max(255),
-  account_id: z.string().uuid().or(z.string().regex(/^acc-/)),
-  category_id: z.string().uuid().or(z.string().regex(/^cat-/)),
+  account_id: z.string().uuid().or(z.string().regex(/^(acc-|plaid-|privacy-|retirement-|method-)/)),
+  category_id: z.string().uuid().or(z.string().regex(/^(cat-|plaid-|privacy-)/)),
   transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
 })
 
@@ -234,11 +296,17 @@ const BucketSchema = z.object({
 
 const ProfileSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
-  email: z.string().email().optional()
+  email: z.string().email().optional(),
+  settings_json: z.string().optional()
 })
 
 const JoinHouseholdSchema = z.object({
   inviteCode: z.string().min(6)
+})
+
+const WebhookSchema = z.object({
+  url: z.string().url(),
+  event_list: z.string().min(1)
 })
 
 // --- AUTH ENDPOINTS ---
@@ -246,8 +314,8 @@ app.post('/auth/login', async (c) => {
   // Mock login
   const { username } = await c.req.json()
   const payload = {
-    sub: 'user-123',
-    householdId: 'household-abc',
+    sub: 'system',
+    householdId: 'h-1',
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
   }
   const secret = c.env.JWT_SECRET
@@ -352,7 +420,7 @@ app.post('/api/p2p/loans/:id/payments', async (c) => {
     'UPDATE personal_loans SET remaining_balance_cents = remaining_balance_cents - ? WHERE id = ?'
   ).bind(data.amount_cents, loanId).run()
   
-  // 3. Send Receipt (Optional/YOLO) via Resend
+  // 3. Send Receipt (Optional) via Resend
   if (c.env.RESEND_API_KEY && data.email) {
     c.executionCtx.waitUntil(
       fetch('https://api.resend.com/emails', {
@@ -391,21 +459,9 @@ app.post('/api/transfers', async (c) => {
     'UPDATE accounts SET balance_cents = balance_cents + ? WHERE id = ? AND household_id = ?'
   ).bind(amount_cents, to_account_id, householdId).run()
   
-  // Webhook Dispatch for Transfer
-  const { results: webhooks } = await c.env.DB.prepare(
-    'SELECT url, secret FROM webhooks WHERE household_id = ?'
-  ).bind(householdId).all()
+  // Dispatch Webhook
+  c.executionCtx.waitUntil(dispatchWebhook(c, 'transfer.created', { id, from_account_id, to_account_id, amount_cents }, householdId))
 
-  for (const hook of webhooks) {
-    c.executionCtx.waitUntil(
-      fetch(hook.url as string, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Cash-Secret': hook.secret as string },
-        body: JSON.stringify({ event: 'transfer.created', data: { id, from_account_id, to_account_id, amount_cents } })
-      })
-    )
-  }
-  
   // Discord Alert for Transfer
   if (c.env.DISCORD_WEBHOOK_URL) {
     await fetch(c.env.DISCORD_WEBHOOK_URL, {
@@ -480,27 +536,15 @@ app.post('/api/transactions', zValidator('json', TransactionSchema), async (c) =
   ).bind(id, householdId, data.account_id, data.category_id, data.amount_cents, data.description, date).run()
   
   // Webhook Dispatch
-  const { results: webhooks } = await c.env.DB.prepare(
-    'SELECT url, secret FROM webhooks WHERE household_id = ?'
-  ).bind(householdId).all()
+  c.executionCtx.waitUntil(dispatchWebhook(c, 'transaction.created', { id, description: data.description, amount_cents: data.amount_cents }, householdId))
 
-  for (const hook of webhooks) {
-    c.executionCtx.waitUntil(
-      fetch(hook.url as string, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Cash-Secret': hook.secret as string },
-        body: JSON.stringify({ event: 'transaction.created', data: { id, description, amount_cents } })
-      })
-    )
-  }
-  
   // Discord Alert
   if (c.env.DISCORD_WEBHOOK_URL) {
     await fetch(c.env.DISCORD_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: `💸 **New Transaction logged!**\n**Desc:** ${description}\n**Amount:** $${(amount_cents / 100).toFixed(2)}\n**Household:** ${householdId}`
+        content: `💸 **New Transaction logged!**\n**Desc:** ${data.description}\n**Amount:** $${(data.amount_cents / 100).toFixed(2)}\n**Household:** ${householdId}`
       })
     }).catch(err => console.error('Discord Webhook failed', err))
   }
@@ -825,7 +869,7 @@ app.get('/api/analytics/insights', async (c) => {
 app.get('/api/user/profile', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(
-    'SELECT id, email, display_name, global_role, status, created_at FROM users WHERE id = ?'
+    'SELECT id, email, display_name, global_role, status, settings_json, created_at FROM users WHERE id = ?'
   ).bind(userId).all()
   return c.json(results[0])
 })
@@ -836,6 +880,10 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
   
   if (data.display_name) {
     await c.env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?').bind(data.display_name, userId).run()
+  }
+  if (data.settings_json) {
+    // Use json_patch for shallow merge of top-level keys
+    await c.env.DB.prepare('UPDATE users SET settings_json = json_patch(COALESCE(settings_json, "{}"), ?) WHERE id = ?').bind(data.settings_json, userId).run()
   }
   if (data.email) {
     await c.env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(data.email, userId).run()
@@ -882,15 +930,6 @@ app.get('/api/developer/tokens', async (c) => {
   return c.json(results)
 })
 
-app.post('/api/developer/webhooks', async (c) => {
-  const householdId = c.get('householdId')
-  const { url } = await c.req.json()
-  const id = crypto.randomUUID()
-  const secret = crypto.randomUUID().replace(/-/g, '')
-  await c.env.DB.prepare('INSERT INTO webhooks (id, household_id, url, secret) VALUES (?, ?, ?, ?)')
-    .bind(id, householdId, url, secret).run()
-  return c.json({ id, secret })
-})
 
 // Forensic & Sovereignty Endpoints
 app.get('/api/audit', async (c) => {
@@ -1244,6 +1283,44 @@ app.post('/discord/interactions', async (c) => {
 
   return c.json({ type: InteractionResponseType.PONG })
 })
+// Developer: Webhooks
+app.get('/api/developer/webhooks', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT id, url, event_types, is_active, created_at FROM webhooks WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+app.post('/api/developer/webhooks', zValidator('json', WebhookSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const { url, event_list } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const secret = `wh_sec_${crypto.randomUUID().slice(0, 8)}`
+  
+  await c.env.DB.prepare(
+    'INSERT INTO webhooks (id, household_id, url, secret, event_list) VALUES (?, ?, ?, ?, ?)'
+  ).bind(id, householdId, url, secret, event_list).run()
+  
+  return c.json({ success: true, id, secret })
+})
+
+app.delete('/api/developer/webhooks/:id', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  await c.env.DB.prepare('DELETE FROM webhooks WHERE id = ? AND household_id = ?').bind(id, householdId).run()
+  return c.json({ success: true })
+})
+
+
+app.onError((err, c) => {
+  const isProduction = c.env.ENVIRONMENT === 'production'
+  console.error('[Global Error]', err)
+  return c.json({
+    error: isProduction ? 'Internal Server Error' : err.message,
+    status: (err as any).status || 500,
+    stack: isProduction ? undefined : err.stack
+  }, (err as any).status || 500)
+})
+
 
 export default {
   fetch: app.fetch,

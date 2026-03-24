@@ -6,6 +6,19 @@ const ThemeSwitcher: React.FC = () => {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('cash_theme', theme)
+    
+    // Attempt to sync with server-side settings
+    const token = localStorage.getItem('cash_token')
+    if (token) {
+      fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ settings_json: JSON.stringify({ theme }) })
+      }).catch(() => {}) // Silently fail for theme sync
+    }
   }, [theme])
 
   return (

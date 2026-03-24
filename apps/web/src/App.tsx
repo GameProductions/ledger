@@ -26,6 +26,7 @@ import PrivacyPolicy from './components/PrivacyPolicy'
 import AdminDashboard from './components/AdminDashboard'
 import TermsOfService from './components/TermsOfService'
 import SeasonalAssets from './components/SeasonalAssets'
+import Customizer from './components/Customizer'
 
 const Login: React.FC = () => {
   const { login } = useAuth()
@@ -79,7 +80,28 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
-  
+  const [settings, setSettings] = useState<any>(JSON.parse(logout ? '{}' : '{"dashboard_layout":{}}')) // Fallback
+
+  useEffect(() => {
+    if (useAuth().user?.settings_json) {
+       try {
+         setSettings(JSON.parse(useAuth().user.settings_json))
+       } catch(e) {}
+    }
+  }, [useAuth().user])
+
+  const updateSettings = async (newSettings: any) => {
+    setSettings(newSettings)
+    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('cash_token')}`
+      },
+      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+    })
+  }
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
@@ -182,86 +204,92 @@ const Dashboard: React.FC = () => {
       <main className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
         {view === 'list' ? (
           <>
-            <section className="card" style={{ gridColumn: 'span 1' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>Safety Number</h3>
-                <select 
-                  value={timeframe} 
-                  onChange={(e) => setTimeframe(e.target.value)}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer' }}
-                >
-                  <option value="paycheck">Until Payday</option>
-                  <option value="month">Until End of Month</option>
-                  <option value="30d">Rolling 30 Days</option>
-                </select>
-              </div>
-              <div className="safety-number-container">
-                ${((analytics?.safetyNumberCents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </div>
-              <p style={{ color: 'var(--text-secondary)' }}>Spendable cash remaining for selected window</p>
-            </section>
-
-            <section className="card" style={{ gridColumn: 'span 1' }}>
-              <h3>Financial Intelligence</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1rem' }}>
-                <HealthScore score={analytics?.healthScore || 0} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Spending Trend</div>
-                  <SpendingChart data={transactions || []} />
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>Activity Heatmap</div>
-                  <SpendingHeatmap transactions={transactions || []} />
+            {settings.dashboard_layout?.healthScore !== false && (
+              <section className="card" style={{ gridColumn: 'span 1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3>Safety Number</h3>
+                  <select 
+                    value={timeframe} 
+                    onChange={(e) => setTimeframe(e.target.value)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer' }}
+                  >
+                    <option value="paycheck">Until Payday</option>
+                    <option value="month">Until End of Month</option>
+                    <option value="30d">Rolling 30 Days</option>
+                  </select>
                 </div>
-              </div>
-              <button 
-                onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/report/summary`, '_blank')}
-                style={{ marginTop: '1.5rem', width: '100%', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.2)' }}
-              >
-                📥 Generate Monthly Digest (PDF)
-              </button>
-            </section>
+                <div className="safety-number-container">
+                  ${((analytics?.safetyNumberCents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </div>
+                <p style={{ color: 'var(--text-secondary)' }}>Spendable cash remaining for selected window</p>
+              </section>
+            )}
 
-            <section className="card" style={{ gridColumn: 'span 1' }}>
-              <h3>Recent Transactions</h3>
-              <div style={{ marginTop: '1rem', display: 'grid', gap: '0.8rem' }}>
-                {transactions?.filter((tx: any) => {
-                  const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
-                  const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
-                  return matchesSearch && matchesStatus
-                }).map((tx: any) => (
-                  <div key={tx.id} className="slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {tx.description}
-                        {tx.reconciliation_status === 'reconciled' && <span style={{ fontSize: '0.6rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', padding: '0.1rem 0.4rem', borderRadius: '1rem' }}>Satisifed</span>}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{tx.transaction_date}</div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <span style={{ fontWeight: '700' }}>${(tx.amount_cents / 100).toFixed(2)}</span>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button 
-                          onClick={() => setLinkingTx(tx)}
-                          style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.2)' }}
-                          title="Link to another transaction"
-                        >
-                          🔗
-                        </button>
-                        <button 
-                          onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
-                          style={{ padding: '0.2rem 0.6rem', fontSize: '0.7rem', background: tx.status === 'reconciled' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', borderRadius: '0.4rem' }}
-                        >
-                          {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
-                        </button>
-                      </div>
-                    </div>
+            {settings.dashboard_layout?.healthScore !== false && (
+              <section className="card" style={{ gridColumn: 'span 1' }}>
+                <h3>Financial Intelligence</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1rem' }}>
+                  <HealthScore score={analytics?.healthScore || 0} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Spending Trend</div>
+                    <SpendingChart data={transactions || []} />
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>Activity Heatmap</div>
+                    <SpendingHeatmap transactions={transactions || []} />
                   </div>
-                ))}
-              </div>
-            </section>
+                </div>
+                <button 
+                  onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/report/summary`, '_blank')}
+                  style={{ marginTop: '1.5rem', width: '100%', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                >
+                  📥 Generate Monthly Digest (PDF)
+                </button>
+              </section>
+            )}
+
+            {settings.dashboard_layout?.recentTransactions !== false && (
+              <section className="card" style={{ gridColumn: 'span 1' }}>
+                <h3>Recent Transactions</h3>
+                <div style={{ marginTop: '1rem', display: 'grid', gap: '0.8rem' }}>
+                  {transactions?.filter((tx: any) => {
+                    const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
+                    const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
+                    return matchesSearch && matchesStatus
+                  }).map((tx: any) => (
+                    <div key={tx.id} className="slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {tx.description}
+                          {tx.reconciliation_status === 'reconciled' && <span style={{ fontSize: '0.6rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', padding: '0.1rem 0.4rem', borderRadius: '1rem' }}>Satisifed</span>}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{tx.transaction_date}</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontWeight: '700' }}>${(tx.amount_cents / 100).toFixed(2)}</span>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button 
+                            onClick={() => setLinkingTx(tx)}
+                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                            title="Link to another transaction"
+                          >
+                            🔗
+                          </button>
+                          <button 
+                            onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
+                            style={{ padding: '0.2rem 0.6rem', fontSize: '0.7rem', background: tx.status === 'reconciled' ? 'var(--primary)' : 'transparent', border: '1px solid var(--primary)', borderRadius: '0.4rem' }}
+                          >
+                            {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
             <AICoach />
             <TransferForm />
             <InviteManager />
-            <SmartInsights insights={insightsData?.insights || []} />
+            {settings.dashboard_layout?.smartInsights !== false && <SmartInsights insights={insightsData?.insights || []} />}
           </>
         ) : (
           <section className="card" style={{ gridColumn: 'span 3' }}>
@@ -284,7 +312,7 @@ const Dashboard: React.FC = () => {
 
         <FutureFlow />
         <GoalSeek />
-        <SavingsBuckets />
+        {settings.dashboard_layout?.savingsBuckets !== false && <SavingsBuckets />}
         <PrivacySettings />
         <AuditChronicle />
         <Subscriptions />
@@ -485,6 +513,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+      <Customizer settings={settings} onUpdate={updateSettings} />
     </div>
   )
 }

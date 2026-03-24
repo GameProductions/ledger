@@ -19,7 +19,29 @@ jobs:
           workingDirectory: "apps/api"
           wranglerVersion: "4.76.0"
           command: deploy --minify --name cash-api
+          secrets: |
+            JWT_SECRET
+            ENCRYPTION_KEY
+            METHOD_API_KEY
+            PLAID_CLIENT_ID
+            PLAID_SECRET
+            AKOYA_CLIENT_ID
+            AKOYA_SECRET
+            DISCORD_TOKEN
+            DISCORD_PUBLIC_KEY
+            DISCORD_WEBHOOK_URL
+            RESEND_API_KEY
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          METHOD_API_KEY: ${{ secrets.METHOD_API_KEY }}
+          PLAID_CLIENT_ID: ${{ secrets.PLAID_CLIENT_ID }}
+          PLAID_SECRET: ${{ secrets.PLAID_SECRET }}
+          AKOYA_CLIENT_ID: ${{ secrets.AKOYA_CLIENT_ID }}
+          AKOYA_SECRET: ${{ secrets.AKOYA_SECRET }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ENVIRONMENT: production

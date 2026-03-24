@@ -84,7 +84,7 @@ export class HouseholdSession {
   }
 }
 
-const app = new Hono<{ Bindings: Bindings }>()
+export const app = new Hono<{ Bindings: Bindings }>()
 
 // 1. Global Security Hardening
 app.use('*', logger())

@@ -35,7 +35,7 @@ import { ToastProvider, useToast } from './context/ToastContext'
 const Login: React.FC = () => {
   const { login } = useAuth()
   const { showToast } = useToast()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
@@ -44,7 +44,7 @@ const Login: React.FC = () => {
       const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, password })
       })
       
       if (!res.ok) {
@@ -61,7 +61,7 @@ const Login: React.FC = () => {
           headers: { 'Authorization': `Bearer ${authData.token}` }
         })
         const profile = await profileRes.json()
-        login(authData.token, { ...profile, userId: email, globalRole: profile.global_role })
+        login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
       }
     } catch (e) {
       console.error('Login Network Error:', e)
@@ -83,10 +83,10 @@ const Login: React.FC = () => {
           }}
         >
           <input 
-            type="email" 
-            placeholder="Email Address" 
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text" 
+            placeholder="Username" 
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
           />
           <input 

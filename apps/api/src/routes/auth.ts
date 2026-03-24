@@ -11,7 +11,7 @@ const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 // Since logAudit is in index.ts, we might need to pass it or move it to a utility
 
 auth.post('/login', zValidator('json', z.object({
-  email: z.string().min(1),
+  username: z.string().min(1),
   password: z.string().min(1),
   totpCode: z.string().optional()
 }), (result, c) => {
@@ -24,11 +24,11 @@ auth.post('/login', zValidator('json', z.object({
     return c.json({ success: false, error: result.error }, 400)
   }
 }), async (c) => {
-  const { email, password, totpCode } = c.req.valid('json')
+  const { username, password, totpCode } = c.req.valid('json')
   const authService = new AuthService(c.env)
   
   try {
-    const user = await authService.validateCredentials(email, password)
+    const user = await authService.validateCredentials(username, password)
     const twoFactor = await authService.verify2FA(user, totpCode)
     
     if (twoFactor.requires2FA) {

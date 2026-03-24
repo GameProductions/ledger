@@ -6,10 +6,10 @@ import { verifyPassword, verifyTOTP } from '../auth-utils'
 export class AuthService {
   constructor(private env: Bindings) {}
 
-  async validateCredentials(email: string, password: string) {
+  async validateCredentials(username: string, password: string) {
     const user: any = await this.env.DB.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).bind(email).first()
+      'SELECT * FROM users WHERE username = ?'
+    ).bind(username).first()
 
     if (!user) throw new HTTPException(401, { message: 'Invalid credentials' })
     

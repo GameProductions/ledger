@@ -48,8 +48,8 @@ docker compose up -d
 ```
 3. Access the Web UI at `http://localhost:8080`.
 4. Use the default credentials to log in:
-   - **Email**: `admin@example.com`
-   - **Password**: `admin`
+   - **Username**: `admin`
+   - **Password**: `password123`
 5. The API will be available at `http://localhost:8787`.
 
 ---

@@ -182,6 +182,8 @@ app.use('*', async (c, next) => {
     path === '/ledger' || 
     path === '/ledger/' || 
     path === '/ledger/auth/login' || 
+    path === '/auth/login' || 
+    path === '/ping' ||
     path.includes('/debug/') || 
     path.includes('/discord/interactions')
   ) {
@@ -418,8 +420,8 @@ const TransferSchema = z.object({
 
 // --- AUTH ENDPOINTS ---
 app.post('/auth/login', zValidator('json', z.object({
-  email: z.string().email(),
-  password: z.string(),
+  email: z.string().min(3),
+  password: z.string().min(1),
   totpCode: z.string().optional()
 })), async (c) => {
   const { email, password, totpCode } = c.req.valid('json')

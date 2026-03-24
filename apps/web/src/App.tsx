@@ -37,19 +37,31 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-    const authData = await res.json()
-    if (authData.token) {
-      // Fetch full profile to get globalRole
-      const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
-        headers: { 'Authorization': `Bearer ${authData.token}` }
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       })
-      const profile = await profileRes.json()
-      login(authData.token, { ...profile, userId: email, globalRole: profile.global_role })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        console.error('Login Failed:', error)
+        alert(`Login Failed: ${error.error || 'Unknown error'}`)
+        return
+      }
+
+      const authData = await res.json()
+      if (authData.token) {
+        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+          headers: { 'Authorization': `Bearer ${authData.token}` }
+        })
+        const profile = await profileRes.json()
+        login(authData.token, { ...profile, userId: email, globalRole: profile.global_role })
+      }
+    } catch (e) {
+      console.error('Login Network Error:', e)
+      alert('Network error during login. Please check your connection.')
     }
   }
 

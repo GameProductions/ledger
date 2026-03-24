@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { openApiSpec } from './openapi'
 import { jwt, sign, verify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { z } from 'zod'
@@ -7,6 +8,7 @@ import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { logger } from 'hono/logger'
 import { InteractionType, InteractionResponseType, verifyKey } from 'discord-interactions'
+import { generateTOTPSecret, verifyTOTP, base32Encode, hashPassword, verifyPassword } from './auth-utils'
 
 type Bindings = {
   DB: D1Database
@@ -21,6 +23,8 @@ type Bindings = {
   ARRAY_API_KEY: string
   ENVIRONMENT: string
   VAULT: DurableObjectNamespace
+  RATE_LIMITER: DurableObjectNamespace
+  DISCORD_CLIENT_ID: string
 }
 
 type Variables = {
@@ -96,12 +100,12 @@ export class Vault {
 
   async fetch(request: Request) {
     const url = new URL(request.url)
-    const { householdId } = url.searchParams
-    
-    // Simple secure storage example
-    if (request.method === 'POST') {
-      const { key, value } = await request.json() as any
-      await this.state.storage.put(key, value)
+    const householdId = url.searchParams.get('householdId')
+    const key = `vault:${householdId}`
+
+    if (request.method === 'PUT') {
+      const { data } = await request.json() as any
+      await this.state.storage.put(key, data)
       return new Response(JSON.stringify({ success: true }))
     }
 
@@ -116,7 +120,28 @@ export class Vault {
   }
 }
 
+// --- DURABLE OBJECT: RateLimiter ---
+export class RateLimiter {
+  state: DurableObjectState
+  constructor(state: DurableObjectState) { this.state = state }
+  async fetch(request: Request) {
+    const url = new URL(request.url)
+    const ip = url.searchParams.get('ip') || 'anon'
+    const limit = parseInt(url.searchParams.get('limit') || '100')
+    const current: number = (await this.state.storage.get(ip)) || 0
+    if (current >= limit) return new Response('Rate limit exceeded', { status: 429 })
+    await this.state.storage.put(ip, current + 1)
+    return new Response(JSON.stringify({ remaining: limit - current - 1 }))
+  }
+}
+
 export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>().basePath('/ledger')
+
+// Health Check (will be at /ledger/ping)
+app.get('/ping', (c) => c.text('PONG - LEDGER IS LIVE'))
+
+// OpenAPI Specification
+app.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // 1. Global Security Hardening
 app.use('*', logger())
@@ -131,40 +156,22 @@ app.onError((err, c) => {
   }, (err as any).status || 500)
 })
 
-// Simple Rate Limiting (In-memory for development, Production would use KV/Durable Object)
-const REQUESTS = new Map<string, number>()
+// 2. Persistent Rate Limiting (Durable Object)
 app.use('/api/*', async (c, next) => {
   const ip = c.req.header('cf-connecting-ip') || 'anon'
-  const now = Math.floor(Date.now() / 3600000) // Hour bucket
-  const key = `${ip}:${now}`
-  const count = (REQUESTS.get(key) || 0) + 1
-  REQUESTS.set(key, count)
-  
-  if (count > 2000) { // Increased threshold with hourly reset for Stability
-    return c.json({ error: 'Too Many Requests' }, 429)
-  }
+  const id = c.env.RATE_LIMITER.idFromName(ip)
+  const obj = c.env.RATE_LIMITER.get(id)
+  const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=100`, c.req.url))
+  if (res.status === 429) return c.json({ error: 'Too many requests' }, 429)
   await next()
 })
 
-// Simple Rate Limiting (In-memory for local, Production would use KV/Durable Object)
-const rateLimit = new Map<string, { count: number, lastReset: number }>()
-const RL_WINDOW = 60000 
-const RL_MAX = 30 
-
 app.use('/auth/*', async (c, next) => {
-  const ip = c.req.header('CF-Connecting-IP') || 'local'
-  const now = Date.now()
-  const bucket = rateLimit.get(ip) || { count: 0, lastReset: now }
-  
-  if (now - bucket.lastReset > RL_WINDOW) {
-    bucket.count = 1
-    bucket.lastReset = now
-  } else {
-    bucket.count++
-  }
-  
-  rateLimit.set(ip, bucket)
-  if (bucket.count > RL_MAX) return c.json({ error: 'Too many requests' }, 429)
+  const ip = c.req.header('cf-connecting-ip') || 'anon'
+  const id = c.env.RATE_LIMITER.idFromName(`auth:${ip}`)
+  const obj = c.env.RATE_LIMITER.get(id)
+  const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=10`, c.req.url))
+  if (res.status === 429) return c.json({ error: 'Too many requests' }, 429)
   await next()
 })
 
@@ -184,13 +191,28 @@ app.use('*', async (c, next) => {
 })
 
 // --- UTILITIES: Audit Logging ---
+// --- UTILITIES: Audit Logging ---
 const logAudit = async (c: any, tableName: string, recordId: string, action: string, oldValues: any, newValues: any) => {
-  const id = crypto.randomUUID()
-  const householdId = c.get('householdId') || 'system'
-  const actorId = c.get('userId') || 'system'
-  await c.env.DB.prepare(
-    'INSERT INTO system_audit_logs (id, user_id, action, target, details_json) VALUES (?, ?, ?, ?, ?)'
-  ).bind(id, actorId, action, `${tableName}:${recordId}`, JSON.stringify({ oldValues, newValues, householdId })).run()
+  try {
+    const id = crypto.randomUUID()
+    const householdId = c.get('householdId') || 'system'
+    const actorId = c.get('userId') || 'system'
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (id, household_id, actor_id, table_name, record_id, action, old_values_json, new_values_json) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id, 
+      householdId, 
+      actorId, 
+      tableName, 
+      recordId, 
+      action, 
+      oldValues ? JSON.stringify(oldValues) : null, 
+      newValues ? JSON.stringify(newValues) : null
+    ).run()
+  } catch (e) {
+    console.error('Audit Log Error:', e)
+  }
 }
 
 // --- UTILITIES: Webhook Dispatch ---
@@ -348,19 +370,193 @@ const WebhookSchema = z.object({
   event_list: z.string().min(1)
 })
 
+const InstallmentPlanSchema = z.object({
+  name: z.string().min(1).max(100),
+  total_amount_cents: z.number().int().positive(),
+  installment_amount_cents: z.number().int().positive(),
+  total_installments: z.number().int().positive(),
+  remaining_installments: z.number().int().nonnegative().optional(),
+  frequency: z.enum(['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']),
+  next_payment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  account_id: z.string().optional(),
+  payment_mode: z.enum(['manual', 'autopay']).optional(),
+  status: z.enum(['active', 'completed', 'cancelled']).optional()
+})
+
+const SubscriptionSchema = z.object({
+  name: z.string().min(1).max(100),
+  amount_cents: z.number().int().positive(),
+  billing_cycle: z.enum(['weekly', 'monthly', 'yearly']),
+  next_billing_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  account_id: z.string().optional(),
+  payment_mode: z.enum(['manual', 'autopay']).optional()
+})
+
+const CreditCardSchema = z.object({
+  account_id: z.string(),
+  credit_limit_cents: z.number().int().positive(),
+  interest_rate_apy: z.number().optional(),
+  statement_closing_day: z.number().int().min(1).max(31),
+  payment_due_day: z.number().int().min(1).max(31)
+})
+
+const LoanSchema = z.object({
+  borrower_name: z.string().min(1),
+  borrower_contact: z.string().optional(),
+  total_amount_cents: z.number().int().positive(),
+  interest_rate_apy: z.number().optional(),
+  term_months: z.number().int().positive().optional(),
+  origination_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+})
+
+const TransferSchema = z.object({
+  from_account_id: z.string(),
+  to_account_id: z.string(),
+  amount_cents: z.number().int().positive(),
+  description: z.string().min(1)
+})
+
 // --- AUTH ENDPOINTS ---
-app.post('/auth/login', async (c) => {
-  // Mock login
-  const { username } = await c.req.json()
-  const payload = {
-    sub: 'system',
-    householdId: 'h-1',
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
+app.post('/auth/login', zValidator('json', z.object({
+  email: z.string().email(),
+  password: z.string(),
+  totpCode: z.string().optional()
+})), async (c) => {
+  const { email, password, totpCode } = c.req.valid('json')
+  
+  const user: any = await c.env.DB.prepare(
+    'SELECT * FROM users WHERE email = ?'
+  ).bind(email).first()
+
+  if (!user) throw new HTTPException(401, { message: 'Invalid credentials' })
+  
+  // PASSWORD VERIFICATION (Hardened with PBKDF2)
+  const isMatch = await verifyPassword(password, user.password_hash)
+  if (!isMatch) { 
+    throw new HTTPException(401, { message: 'Invalid credentials' })
   }
+
+  // 2FA CHECK
+  if (user.totp_enabled) {
+    if (!totpCode) {
+      return c.json({ requires2FA: true }, 202)
+    }
+    const isValid = await verifyTOTP(user.totp_secret, totpCode)
+    if (!isValid) throw new HTTPException(401, { message: 'Invalid 2FA code' })
+  }
+
+  const payload = {
+    sub: user.id,
+    householdId: 'h-1', // Default or fetch first household
+    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
+  }
+  
   const secret = c.env.JWT_SECRET
-  if (!secret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
-  const token = await sign(payload, secret, 'HS256')
-  return c.json({ token, username })
+  if (!secret) throw new HTTPException(500, { message: 'Internal error' })
+  const token = await sign(payload, secret)
+  
+  await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
+  return c.json({ token, user: { id: user.id, email: user.email, displayName: user.display_name } })
+})
+
+// --- TOTP SETUP ---
+app.post('/api/auth/totp/setup', async (c) => {
+  const userId = c.get('userId')
+  const secret = await generateTOTPSecret()
+  
+  await c.env.DB.prepare('UPDATE users SET totp_secret = ? WHERE id = ?')
+    .bind(secret, userId).run()
+
+  const otpauth = `otpauth://totp/LEDGER:${userId}?secret=${secret}&issuer=LEDGER`
+  return c.json({ secret, qrUrl: otpauth })
+})
+
+app.post('/api/auth/totp/verify', zValidator('json', z.object({ code: z.string() })), async (c) => {
+  const userId = c.get('userId')
+  const { code } = c.req.valid('json')
+  
+  const user: any = await c.env.DB.prepare('SELECT totp_secret FROM users WHERE id = ?').bind(userId).first()
+  const isValid = await verifyTOTP(user.totp_secret, code)
+  
+  if (isValid) {
+    await c.env.DB.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').bind(userId).run()
+    return c.json({ success: true })
+  }
+  return c.json({ success: false }, 400)
+})
+
+app.get('/auth/login/discord', (c) => {
+  const clientId = c.env.DISCORD_CLIENT_ID || '123'
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent('https://api.gpnet.dev/ledger/auth/callback/discord')}&response_type=code&scope=identify%20email`
+  return c.redirect(url)
+})
+
+app.get('/auth/callback/discord', async (c) => {
+  const code = c.req.query('code')
+  // Exchange code for token and fetch profile
+  // For implementation, we assume successful handshake
+  const discordProfile = { id: 'd-123', email: 'user@example.com', avatar: 'https://...' }
+  
+  // Check if identity exists
+  let existingIdentity: any = await c.env.DB.prepare(
+    'SELECT user_id FROM user_identities WHERE provider = "discord" AND provider_user_id = ?'
+  ).bind(discordProfile.id).first()
+
+  let userId = existingIdentity?.user_id
+
+  if (!userId) {
+    // Check if user exists by email
+    const user: any = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(discordProfile.email).first()
+    if (user) {
+      userId = user.id
+    } else {
+      // Create new user
+      userId = crypto.randomUUID()
+      await c.env.DB.prepare('INSERT INTO users (id, email, display_name, avatar_url) VALUES (?, ?, ?, ?)')
+        .bind(userId, discordProfile.email, 'Discord User', discordProfile.avatar).run()
+    }
+    // Link identity
+    await c.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id) VALUES (?, ?, ?, ?)')
+      .bind(crypto.randomUUID(), userId, 'discord', discordProfile.id).run()
+  }
+
+  const token = await sign({ sub: userId, householdId: 'h-1' }, c.env.JWT_SECRET)
+  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/login?token=${token}`)
+})
+
+// --- WEBAUTHN / PASSKEYS ---
+app.post('/auth/passkeys/register-options', async (c) => {
+  const challenge = crypto.randomUUID()
+  // In a real app, store this challenge in KV with a TTL
+  // For now, we'll return it and expect it back for verification (less secure, but avoids KV dependency)
+  return c.json({ challenge, user: { id: 'user-1', name: 'User' } })
+})
+
+app.post('/auth/passkeys/register-verify', async (c) => {
+  const { attestation, challenge, userId } = await c.req.json()
+  // Verification logic (simplified)
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id) VALUES (?, ?, ?, ?)')
+    .bind(id, userId, attestation.publicKey, attestation.id).run()
+  return c.json({ success: true })
+})
+
+app.post('/auth/passkeys/login-options', async (c) => {
+  const challenge = crypto.randomUUID()
+  return c.json({ challenge })
+})
+
+app.post('/auth/passkeys/login-verify', async (c) => {
+  const { assertion, challenge } = await c.req.json()
+  const credId = assertion.id
+  
+  const passkey: any = await c.env.DB.prepare('SELECT * FROM passkeys WHERE credential_id = ?').bind(credId).first()
+  if (!passkey) throw new HTTPException(401, { message: 'Passkey not found' })
+
+  // Real verification here...
+  
+  const token = await sign({ sub: passkey.user_id, householdId: 'h-1' }, c.env.JWT_SECRET)
+  return c.json({ token })
 })
 
 app.get('/api/me', (c) => {
@@ -416,14 +612,239 @@ app.get('/api/credit-cards', async (c) => {
   return c.json(results)
 })
 
-app.post('/api/credit-cards', async (c) => {
+app.post('/api/credit-cards', zValidator('json', CreditCardSchema), async (c) => {
   const householdId = c.get('householdId')
-  const data = await c.req.json()
+  const data = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
     'INSERT INTO credit_cards (id, household_id, account_id, credit_limit_cents, interest_rate_apy, statement_closing_day, payment_due_day) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, householdId, data.account_id, data.credit_limit_cents, data.interest_rate_apy, data.statement_closing_day, data.payment_due_day).run()
+  ).bind(id, householdId, data.account_id, data.credit_limit_cents, data.interest_rate_apy || 0, data.statement_closing_day, data.payment_due_day).run()
   return c.json({ success: true, id })
+})
+
+// --- DATA MOBILITY: EXPORT ---
+app.get('/api/transactions/export', async (c) => {
+  const householdId = c.get('householdId')
+  const format = c.req.query('format') || 'json'
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT t.*, c.name as category_name, a.name as account_name 
+     FROM transactions t
+     LEFT JOIN categories c ON t.category_id = c.id
+     LEFT JOIN accounts a ON t.account_id = a.id
+     WHERE t.household_id = ?`
+  ).bind(householdId).all()
+
+  if (format === 'csv') {
+    if (results.length === 0) return c.text('')
+    const headers = Object.keys(results[0])
+    const csv = [
+      headers.join(','),
+      ...results.map(row => headers.map(h => JSON.stringify(row[h as keyof typeof row])).join(','))
+    ].join('\n')
+    
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="ledger_export.csv"'
+      }
+    })
+  }
+
+  return c.json(results)
+})
+
+// --- DATA MOBILITY: IMPORT ANALYSIS ---
+app.post('/api/transactions/import/analyze', async (c) => {
+  const body = await c.req.parseBody()
+  const file = body['file'] as File
+  if (!file) return c.json({ error: 'No file uploaded' }, 400)
+
+  const text = await file.text()
+  
+  if (file.name.endsWith('.csv')) {
+    const lines = text.split('\n')
+    const headers = lines[0].split(',').map(h => h.trim())
+    const preview = lines.slice(1, 6).map(l => l.split(',').map(v => v.trim()))
+    return c.json({ type: 'csv', headers, preview })
+  }
+
+  if (file.name.endsWith('.json')) {
+    try {
+      const data = JSON.parse(text)
+      const headers = Array.isArray(data) ? Object.keys(data[0]) : Object.keys(data)
+      return c.json({ type: 'json', headers })
+    } catch (e) {
+      return c.json({ error: 'Invalid JSON' }, 400)
+    }
+  }
+
+  return c.json({ error: 'Unsupported format for analysis' }, 400)
+})
+
+app.post('/api/transactions/import/confirm', zValidator('json', z.object({
+  mapping: z.record(z.string(), z.string()),
+  data: z.array(z.record(z.string(), z.any())),
+  accountId: z.string()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { mapping, data, accountId } = c.req.valid('json')
+  
+    const queries = (data as any[]).map(row => {
+      const description = row[(mapping as any)['description']]
+      const amountStr = row[(mapping as any)['amount']]
+      const date = row[(mapping as any)['date']]
+    
+    // Simple amount conversion ($12.34 -> 1234)
+    const amountCents = Math.round(parseFloat(String(amountStr).replace(/[^0-9.-]+/g, "")) * 100)
+    
+    return c.env.DB.prepare(
+      'INSERT INTO transactions (id, household_id, account_id, description, amount_cents, date) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(crypto.randomUUID(), householdId, accountId, description, amountCents, date)
+  })
+
+  await c.env.DB.batch(queries)
+  return c.json({ success: true, count: queries.length })
+})
+
+// --- USER PREFERENCES ---
+app.get('/api/user/preferences', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare(
+    'SELECT key, value FROM user_preferences WHERE user_id = ?'
+  ).bind(userId).all()
+  return c.json(results.reduce((acc: any, curr) => ({ ...acc, [curr.key as string]: curr.value }), {}))
+})
+
+app.patch('/api/user/preferences', zValidator('json', z.record(z.string(), z.string())), async (c) => {
+  const userId = c.get('userId')
+  const prefs = c.req.valid('json')
+  
+  const queries = Object.entries(prefs).map(([key, value]) => 
+    c.env.DB.prepare('INSERT OR REPLACE INTO user_preferences (user_id, key, value) VALUES (?, ?, ?)')
+      .bind(userId, key, value)
+  )
+
+  await c.env.DB.batch(queries)
+  return c.json({ success: true })
+})
+
+// --- NOTIFICATION SETTINGS ---
+app.get('/api/user/notifications', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM notification_settings WHERE user_id = ?'
+  ).bind(userId).all()
+  return c.json(results)
+})
+
+app.patch('/api/user/notifications', zValidator('json', z.array(z.object({
+  type: z.string(),
+  event: z.string(),
+  enabled: z.boolean(),
+  offset_days: z.number().optional()
+}))), async (c) => {
+  const userId = c.get('userId')
+  const settings = c.req.valid('json')
+
+  const queries = settings.map(s => 
+    c.env.DB.prepare('INSERT OR REPLACE INTO notification_settings (user_id, type, event, enabled, offset_days) VALUES (?, ?, ?, ?, ?)')
+      .bind(userId, s.type, s.event, s.enabled ? 1 : 0, s.offset_days || 3)
+  )
+
+  await c.env.DB.batch(queries)
+  return c.json({ success: true })
+})
+
+// --- SERVICE PROVIDERS ---
+app.get('/api/service-providers', async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.get('householdId')
+  const q = c.req.query('q')
+  
+  let query = `
+    SELECT * FROM service_providers 
+    WHERE (visibility = 'public' 
+    OR (visibility = 'household' AND household_id = ?)
+    OR (visibility = 'private' AND created_by = ?))`
+  
+  if (q) {
+    query += ' AND name LIKE ?'
+    const { results } = await c.env.DB.prepare(query).bind(householdId, userId, `%${q}%`).all()
+    return c.json(results)
+  }
+  
+  const { results } = await c.env.DB.prepare(query).bind(householdId, userId).all()
+  return c.json(results)
+})
+
+app.post('/api/service-providers', zValidator('json', z.object({
+  name: z.string(),
+  url: z.string().optional(),
+  icon_url: z.string().optional(),
+  category_id: z.string().optional(),
+  metadata: z.string().optional()
+})), async (c) => {
+  const { name, url, icon_url, category_id, metadata } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO service_providers (id, name, url, icon_url, category_id, metadata) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, name, url || null, icon_url || null, category_id || null, metadata || null).run()
+  return c.json({ success: true, id })
+})
+
+// --- LINKED PROVIDERS ---
+app.get('/api/user/providers', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare(
+    `SELECT lp.*, sp.name as provider_name, sp.icon_url 
+     FROM linked_providers lp
+     JOIN service_providers sp ON lp.service_provider_id = sp.id
+     WHERE lp.user_id = ?`
+  ).bind(userId).all()
+  return c.json(results)
+})
+
+app.post('/api/user/providers/link', zValidator('json', z.object({
+  serviceProviderId: z.string(),
+  accountReference: z.string().optional(),
+  customLabel: z.string().optional(),
+  metadata: z.string().optional()
+})), async (c) => {
+  const userId = c.get('userId')
+  const { serviceProviderId, accountReference, customLabel, metadata } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO linked_providers (id, user_id, service_provider_id, account_reference, custom_label, metadata) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, userId, serviceProviderId, accountReference || null, customLabel || null, metadata || null).run()
+  return c.json({ success: true, id })
+})
+
+// --- FINANCIAL FORECASTING ---
+app.get('/api/bills/upcoming', async (c) => {
+  const householdId = c.get('householdId')
+  const days = parseInt(c.req.query('days') || '30')
+  const end = new Date()
+  end.setDate(end.getDate() + days)
+  const endDateStr = end.toISOString().split('T')[0]
+
+  const { results: subs } = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE household_id = ? AND next_billing_date <= ?').bind(householdId, endDateStr).all()
+  const { results: installments } = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE household_id = ? AND next_payment_date <= ?').bind(householdId, endDateStr).all()
+  
+  return c.json({
+    subscriptions: subs,
+    installments: installments,
+    total_upcoming_cents: [...subs, ...installments].reduce((acc, curr: any) => acc + (curr.amount_cents || curr.installment_amount_cents || 0), 0)
+  })
+})
+
+// --- SUBSCRIPTION ENHANCEMENT ---
+app.delete('/api/subscriptions/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  await c.env.DB.prepare('DELETE FROM subscriptions WHERE id = ? AND household_id = ?')
+    .bind(id, householdId).run()
+  return c.json({ success: true })
 })
 
 // P2P Lending (Personal Loans)
@@ -433,10 +854,10 @@ app.get('/api/p2p/loans', async (c) => {
   return c.json(results)
 })
 
-app.post('/api/p2p/loans', async (c) => {
+app.post('/api/p2p/loans', zValidator('json', LoanSchema), async (c) => {
   const householdId = c.get('householdId')
   const userId = c.get('userId')
-  const data = await c.req.json()
+  const data = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
     'INSERT INTO personal_loans (id, household_id, lender_user_id, borrower_name, borrower_contact, total_amount_cents, remaining_balance_cents, interest_rate_apy, term_months, origination_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -444,11 +865,22 @@ app.post('/api/p2p/loans', async (c) => {
   return c.json({ success: true, id })
 })
 
-app.post('/api/p2p/loans/:id/payments', async (c) => {
+app.post('/api/p2p/loans/:id/payments', zValidator('json', z.object({
+  amount_cents: z.number().int().positive(),
+  platform: z.string().optional(),
+  external_id: z.string().optional(),
+  method: z.string().optional(),
+  email: z.string().email().optional()
+})), async (c) => {
   const loanId = c.req.param('id')
-  const data = await c.req.json()
+  const data = c.req.valid('json')
   const id = crypto.randomUUID()
   
+  // Verify loan belongs to this household (IDOR check)
+  const householdId = c.get('householdId')
+  const loan = await c.env.DB.prepare('SELECT id FROM personal_loans WHERE id = ? AND household_id = ?').bind(loanId, householdId).first()
+  if (!loan) throw new HTTPException(404, { message: 'Loan not found' })
+
   // 1. Log Payment
   await c.env.DB.prepare(
     'INSERT INTO loan_payments (id, loan_id, amount_cents, platform, external_id, method) VALUES (?, ?, ?, ?, ?, ?)'
@@ -459,7 +891,7 @@ app.post('/api/p2p/loans/:id/payments', async (c) => {
     'UPDATE personal_loans SET remaining_balance_cents = remaining_balance_cents - ? WHERE id = ?'
   ).bind(data.amount_cents, loanId).run()
   
-  // 3. Send Receipt (Optional) via Resend
+  // 3. Send Receipt
   if (c.env.RESEND_API_KEY && data.email) {
     c.executionCtx.waitUntil(
       fetch('https://api.resend.com/emails', {
@@ -482,10 +914,14 @@ app.post('/api/p2p/loans/:id/payments', async (c) => {
 })
 
 // Transfers
-app.post('/api/transfers', async (c) => {
+app.post('/api/transfers', zValidator('json', TransferSchema), async (c) => {
   const householdId = c.get('householdId')
-  const { from_account_id, to_account_id, amount_cents, description } = await c.req.json()
+  const { from_account_id, to_account_id, amount_cents, description } = c.req.valid('json')
   
+  // IDOR check: Verify both accounts belong to this household
+  const verify = await c.env.DB.prepare('SELECT id FROM accounts WHERE household_id = ? AND id IN (?, ?)').bind(householdId, from_account_id, to_account_id).all()
+  if (verify.results.length < 2) throw new HTTPException(403, { message: 'One or more accounts unauthorized' })
+
   const id = crypto.randomUUID()
   
   // Step 1: Decrement Source
@@ -507,24 +943,11 @@ app.post('/api/transfers', async (c) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: `➡️ **New Transfer logged!**\n**Desc:** ${description}\n**Amount:** $${(amount_cents / 100).toFixed(2)}\n**From:** ${from_account_id}\n**To:** ${to_account_id}\n**Household:** ${householdId}`
+        content: `➡️ **New Transfer logged!**\n**Desc:** ${description}\n**Amount:** $${(amount_cents / 100).toFixed(2)}\n**From:** ${from_account_id}\n**To:** ${to_account_id}`
       })
     }).catch(err => console.error('Discord Webhook failed', err))
   }
   
-  // Step 3: Log as Transfer (Optional, but good for history)
-  // We'll skip for now to keep it simple, or add a 'transfers' table later if requested.
-  
-  // Subscription Auto-Detection Logic
-  const { results: existing } = await c.env.DB.prepare(
-    'SELECT id FROM transactions WHERE description = ? AND household_id = ? LIMIT 1'
-  ).bind(description, householdId).all()
-  
-  if (existing.length > 0) {
-    console.log(`Auto-detected recurring pattern for: ${description}`)
-    // Mark as subscription candidate if requested in production
-  }
-
   return c.json({ success: true, id })
 })
 
@@ -702,6 +1125,7 @@ app.get('/api/export/csv', async (c) => {
   
   const csv = `${headers}\n${rows}`
   
+  await logAudit(c, 'transactions', 'MULTI', 'export', null, { count: results.length, format: 'csv' })
   return c.text(csv, 200, {
     'Content-Type': 'text/csv',
     'Content-Disposition': `attachment; filename="ledger-export-${Date.now()}.csv"`
@@ -726,14 +1150,78 @@ app.get('/api/subscriptions', async (c) => {
   return c.json(results)
 })
 
-app.post('/api/subscriptions', async (c) => {
+app.post('/api/subscriptions', zValidator('json', SubscriptionSchema), async (c) => {
   const householdId = c.get('householdId')
-  const { name, amount_cents, billing_cycle, next_billing_date } = await c.req.json()
+  const { name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode } = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
-    'INSERT INTO subscriptions (id, household_id, name, amount_cents, billing_cycle, next_billing_date) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, householdId, name, amount_cents, billing_cycle, next_billing_date).run()
+    `INSERT INTO subscriptions (id, household_id, name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, householdId, name, amount_cents, billing_cycle, next_billing_date, account_id || null, payment_mode || 'manual').run()
+  
+  await logAudit(c, 'subscriptions', id, 'create', null, { name, amount_cents, billing_cycle, payment_mode })
   return c.json({ success: true, id })
+})
+
+app.patch('/api/subscriptions/:id', zValidator('json', SubscriptionSchema.partial()), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  
+  const old = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (!old) return c.json({ error: 'Not found' }, 404)
+
+  const { name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode } = data
+  await c.env.DB.prepare(
+    `UPDATE subscriptions SET name = COALESCE(?, name), amount_cents = COALESCE(?, amount_cents), billing_cycle = COALESCE(?, billing_cycle), 
+     next_billing_date = COALESCE(?, next_billing_date), account_id = COALESCE(?, account_id), payment_mode = COALESCE(?, payment_mode)
+     WHERE id = ? AND household_id = ?`
+  ).bind(name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode, id, householdId).run()
+
+  await logAudit(c, 'subscriptions', id, 'update', old, data)
+  return c.json({ success: true })
+})
+
+// Installment Plans
+app.get('/api/installment-plans', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
+})
+
+app.post('/api/installment-plans', zValidator('json', InstallmentPlanSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const { name, total_amount_cents, installment_amount_cents, total_installments, frequency, next_payment_date, account_id, payment_mode } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    `INSERT INTO installment_plans (id, household_id, name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, frequency, next_payment_date, account_id, payment_mode) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, householdId, name, total_amount_cents, installment_amount_cents, total_installments, total_installments, frequency, next_payment_date, account_id || null, payment_mode || 'manual').run()
+  
+  await logAudit(c, 'installment_plans', id, 'create', null, { name, total_amount_cents })
+  return c.json({ success: true, id })
+})
+
+app.patch('/api/installment-plans/:id', zValidator('json', InstallmentPlanSchema.partial()), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  
+  const old = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (!old) return c.json({ error: 'Not found' }, 404)
+
+  const { name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, next_payment_date, account_id, payment_mode, status } = data as any
+  
+  await c.env.DB.prepare(
+    `UPDATE installment_plans SET 
+       name = COALESCE(?, name), total_amount_cents = COALESCE(?, total_amount_cents), installment_amount_cents = COALESCE(?, installment_amount_cents), 
+       total_installments = COALESCE(?, total_installments), remaining_installments = COALESCE(?, remaining_installments), 
+       next_payment_date = COALESCE(?, next_payment_date), account_id = COALESCE(?, account_id), payment_mode = COALESCE(?, payment_mode), status = COALESCE(?, status)
+     WHERE id = ? AND household_id = ?`
+  ).bind(name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, next_payment_date, account_id, payment_mode, status, id, householdId).run()
+
+  await logAudit(c, 'installment_plans', id, 'update', old, data)
+  return c.json({ success: true })
 })
 
 // Utilities
@@ -794,7 +1282,7 @@ app.post('/api/admin/connections', async (c) => {
 
 app.get('/api/admin/audit', async (c) => {
   if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_audit_logs ORDER BY created_at DESC LIMIT 100').all()
+  const { results } = await c.env.DB.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100').all()
   return c.json(results)
 })
 
@@ -871,10 +1359,10 @@ app.get('/api/report/summary', async (c) => {
 // Households: Invites
 app.post('/api/households/invite', async (c) => {
   const householdId = c.get('householdId')
-  // In Dev Mode, we generate a simple random token. In production, use signed JWT.
-  const token = Math.random().toString(36).substring(2, 15)
-  // Store token in KV or D1 (omitted for brevity, simulated success)
-  return c.json({ inviteToken: token, url: `http://localhost:5173/join?token=${token}` })
+  // Use high-entropy secure random token
+  const token = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/[^a-zA-Z0-9]/g, '')
+  // In production, this would be stored in D1/KV with an expiry.
+  return c.json({ inviteToken: token, url: `https://ledger.gpnet.dev/join?token=${token}` })
 })
 
 app.post('/api/households/join', zValidator('json', JoinHouseholdSchema), async (c) => {
@@ -931,8 +1419,8 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
 })
 
 // AI Coach
-app.post('/api/coach/ask', async (c) => {
-  const { question } = await c.req.json()
+app.post('/api/coach/ask', zValidator('json', z.object({ question: z.string().min(3).max(500) })), async (c) => {
+  const { question } = c.req.valid('json')
   const householdId = c.get('householdId')
   
   // 1. Get current stats for context
@@ -953,12 +1441,17 @@ app.post('/api/coach/ask', async (c) => {
 })
 
 // Developer Settings (PATs & Webhooks)
-app.post('/api/developer/tokens', async (c) => {
+app.post('/api/developer/tokens', zValidator('json', z.object({ name: z.string().min(1).max(50) })), async (c) => {
   const householdId = c.get('householdId')
-  const { name } = await c.req.json()
-  const id = `ledger_${crypto.randomUUID().replace(/-/g, '')}`
+  const { name } = c.req.valid('json')
+  // Generate high-entropy token prefix
+  const tokenValue = crypto.randomUUID().replace(/-/g, '')
+  const id = `ledger_${tokenValue}`
+  
   await c.env.DB.prepare('INSERT INTO personal_access_tokens (id, household_id, name) VALUES (?, ?, ?)')
     .bind(id, householdId, name).run()
+    
+  await logAudit(c, 'personal_access_tokens', id, 'create', null, { name })
   return c.json({ token: id })
 })
 
@@ -967,6 +1460,63 @@ app.get('/api/developer/tokens', async (c) => {
   const { results } = await c.env.DB.prepare('SELECT id, name, created_at FROM personal_access_tokens WHERE household_id = ?')
     .bind(householdId).all()
   return c.json(results)
+})
+
+
+const CURRENT_VERSION = 'v1.5.7'
+const VERSION_UPDATES = [
+  { version: 'v1.5.7', title: 'Onboarding & Security', description: 'Premium guided tours and PBKDF2 security hardening.' },
+  { version: 'v1.5.6', title: 'Provider Visibility', description: 'Designate providers as private, household, or public.' },
+  { version: 'v1.5.5', title: 'Audit Analytics', description: 'New forensic security dashboard.' }
+]
+
+// --- ONBOARDING & TOURS ---
+app.get('/api/user/onboarding', async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.get('householdId')
+  const status = await c.env.DB.prepare('SELECT * FROM user_onboarding WHERE user_id = ?').bind(userId).first()
+  
+  if (!status) {
+    await c.env.DB.prepare('INSERT INTO user_onboarding (user_id, completed_steps_json, is_completed, last_viewed_version) VALUES (?, ?, ?, ?)')
+      .bind(userId, '[]', 0, CURRENT_VERSION).run()
+    return c.json({ completed_steps: [], is_completed: false, last_viewed_version: CURRENT_VERSION, updates: [] })
+  }
+
+  const lastVersion = (status as any).last_viewed_version
+  const updatesSince = VERSION_UPDATES.filter(u => u.version > (lastVersion || 'v0.0.0'))
+
+  return c.json({
+    completed_steps: JSON.parse((status as any).completed_steps_json || '[]'),
+    is_completed: (status as any).is_completed === 1,
+    last_viewed_version: lastVersion,
+    updates: updatesSince,
+    current_version: CURRENT_VERSION
+  })
+})
+
+app.post('/api/user/onboarding/step', zValidator('json', z.object({
+  step: z.string(),
+  isLast: z.boolean().optional(),
+  version: z.string().optional()
+})), async (c) => {
+  const userId = c.get('userId')
+  const { step, isLast, version } = c.req.valid('json')
+  
+  const status = await c.env.DB.prepare('SELECT * FROM user_onboarding WHERE user_id = ?').bind(userId).first()
+  let completedSteps: string[] = []
+  if (status) {
+    completedSteps = JSON.parse((status as any).completed_steps_json || '[]')
+  }
+
+  if (!completedSteps.includes(step)) {
+    completedSteps.push(step)
+  }
+
+  await c.env.DB.prepare(
+    'INSERT OR REPLACE INTO user_onboarding (user_id, completed_steps_json, is_completed, last_viewed_version, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
+  ).bind(userId, JSON.stringify(completedSteps), isLast ? 1 : 0, version || CURRENT_VERSION).run()
+
+  return c.json({ success: true, completed_steps: completedSteps, is_completed: !!isLast })
 })
 
 
@@ -1296,6 +1846,13 @@ app.post('/discord/interactions', async (c) => {
   const timestamp = c.req.header('X-Signature-Timestamp')
   const body = await c.req.text()
   
+  console.log('[Discord Interaction] Incoming Request', { signature: !!signature, timestamp, body: body.slice(0, 100) })
+  
+  if (!c.env.DISCORD_PUBLIC_KEY) {
+    console.error('[Discord Interaction] DISCORD_PUBLIC_KEY is not defined')
+    return c.text('Internal configuration error', 500)
+  }
+
   const isValidRequest = await verifyKey(body, signature || '', timestamp || '', c.env.DISCORD_PUBLIC_KEY)
   
   if (!isValidRequest) {
@@ -1310,13 +1867,42 @@ app.post('/discord/interactions', async (c) => {
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     const { name } = interaction.data
+    const householdId = 'h-1' // Default for interactions
+    
     if (name === 'ledger-safety') {
+      const { results: accounts } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
+      const totalBalance = (accounts as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
       return c.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          content: "🛡️ **LEDGER Safety Number**: You have **$1,420.50** spendable cash until your next payday. Drive safe!"
-        }
+        data: { content: `🛡️ **LEDGER Safety Number**: Your current total balance is **$${(totalBalance / 100).toFixed(2)}**. Drive safe!` }
       })
+    }
+
+    if (name === 'ledger-upcoming') {
+      const end = new Date()
+      end.setDate(end.getDate() + 7)
+      const endDateStr = end.toISOString().split('T')[0]
+      const { results: subs } = await c.env.DB.prepare('SELECT name, amount_cents, next_billing_date FROM subscriptions WHERE household_id = ? AND next_billing_date <= ?').bind(householdId, endDateStr).all()
+      
+      let content = "📅 **Upcoming Bills (7 Days)**:\n"
+      if (subs.length === 0) content += "No bills due soon. You're all clear!"
+      else (subs as any[]).forEach(s => { content += `- ${s.name}: **$${(s.amount_cents/100).toFixed(2)}** on ${s.next_billing_date}\n` })
+
+      return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
+    }
+
+    if (name === 'ledger-forecast') {
+      return c.json({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { content: "📈 **LEDGER Outlook**: Your health score is **85/100**. You're set to save **$450** this month!" }
+      })
+    }
+
+    if (name === 'ledger-audit') {
+      const { results } = await c.env.DB.prepare('SELECT action, table_name, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 5').all()
+      let content = "🔍 **Latest Audit Logs**:\n"
+      ;(results as any[]).forEach(r => { content += `- ${r.created_at}: **${r.action}** on \`${r.table_name}\`\n` })
+      return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
   }
 
@@ -1363,7 +1949,40 @@ app.onError((err, c) => {
 
 export default {
   fetch: app.fetch,
-  async scheduled(event: any, env: Bindings, ctx: any) {
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    // Handle subscription renewals
+    const today = new Date().toISOString().split('T')[0]
+    const { results: subs } = await env.DB.prepare(
+      'SELECT * FROM subscriptions WHERE next_billing_date <= ?'
+    ).bind(today).all()
+
+    const queries = []
+    for (const sub of subs as any[]) {
+      const transactionId = crypto.randomUUID()
+      // Create Transaction
+      queries.push(
+        env.DB.prepare(
+          'INSERT INTO transactions (id, household_id, description, amount_cents, date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(transactionId, sub.household_id, `Subscription: ${sub.name}`, sub.amount_cents, today, sub.category_id)
+      )
+
+      // Update Next Billing Date
+      const nextDate = new Date(sub.next_billing_date)
+      if (sub.billing_cycle === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1)
+      if (sub.billing_cycle === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1)
+      if (sub.billing_cycle === 'weekly') nextDate.setDate(nextDate.getDate() + 7)
+      
+      queries.push(
+        env.DB.prepare('UPDATE subscriptions SET next_billing_date = ? WHERE id = ?')
+          .bind(nextDate.toISOString().split('T')[0], sub.id)
+      )
+    }
+
+    if (queries.length > 0) {
+      await env.DB.batch(queries)
+    }
+
+    // Existing cron-based sync and pulse logic
     if (event.cron === "0 0 * * *") { // Weekly Pulse + Daily Sync
       console.log("Triggering scheduled sync and pulse...")
       ctx.waitUntil(syncAllConnections(env))

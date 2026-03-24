@@ -1,5 +1,6 @@
 import { serve } from '@hono/node-server'
 import { app, HouseholdSession } from './index'
+// @ts-expect-error
 import Database from 'better-sqlite3'
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -120,7 +121,7 @@ serve({
       DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY || ''
     }
     return app.fetch(request, env, {
-      waitUntil: (p) => p.catch(console.error)
+      waitUntil: (p: Promise<any>) => p.catch(console.error)
     } as any)
   },
   port

@@ -27,6 +27,9 @@ import AdminDashboard from './components/AdminDashboard'
 import TermsOfService from './components/TermsOfService'
 import SeasonalAssets from './components/SeasonalAssets'
 import Customizer from './components/Customizer'
+import { OnboardingProvider } from './context/OnboardingContext'
+import { GuidedTour } from './components/GuidedTour'
+import { OnboardingChecklist } from './components/OnboardingChecklist'
 
 const Login: React.FC = () => {
   const { login } = useAuth()
@@ -52,7 +55,10 @@ const Login: React.FC = () => {
   return (
     <div className="flex-center" style={{ minHeight: '80vh' }}>
       <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Welcome to LEDGER</h2>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />
+          <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
+        </div>
         <input 
           type="text" 
           placeholder="Enter Username" 
@@ -81,6 +87,7 @@ const Dashboard: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
   const [settings, setSettings] = useState<any>({ dashboard_layout: {} }) // Default
+  const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
 
   useEffect(() => {
     if (useAuth().user?.settings_json) {
@@ -141,11 +148,15 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard reveal">
       <SeasonalAssets />
+      <GuidedTour />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            LEDGER
-          </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <img src="/assets/ledger_logo_premium_transparent.png" alt="LEDGER Logo" style={{ height: '2.5rem' }} />
+            <h1 style={{ margin: 0, fontSize: '2rem', background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              LEDGER
+            </h1>
+          </div>
           <HouseholdSwitcher />
           {status && (
             <div style={{ fontSize: '0.8rem', color: 'var(--primary)', background: 'rgba(16, 185, 129, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -202,6 +213,9 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        <div style={{ gridColumn: 'span 3' }}>
+          <OnboardingChecklist />
+        </div>
         {view === 'list' ? (
           <>
             {settings.dashboard_layout?.healthScore !== false && (
@@ -256,6 +270,15 @@ const Dashboard: React.FC = () => {
                     return matchesSearch && matchesStatus
                   }).map((tx: any) => (
                     <div key={tx.id} className="slide-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', borderBottom: '1px solid var(--glass-border)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedTxIds.includes(tx.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedTxIds([...selectedTxIds, tx.id])
+                          else setSelectedTxIds(selectedTxIds.filter(id => id !== tx.id))
+                        }}
+                        style={{ marginRight: '1rem', width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {tx.description}
@@ -381,6 +404,25 @@ const Dashboard: React.FC = () => {
       </main>
 
       {toast && <div className="status-toast flex-center"><span>●</span> {toast}</div>}
+
+      {/* Floating Calculation Bar */}
+      {selectedTxIds.length > 0 && (
+        <div className="status-toast reveal" style={{ bottom: '6rem', width: 'auto', minWidth: '300px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem', border: '1px solid var(--secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontWeight: '800', color: 'var(--secondary)' }}>{selectedTxIds.length} SELECTED</span>
+            <div style={{ height: '20px', width: '1px', background: 'var(--glass-border)' }}></div>
+            <span style={{ fontWeight: '800' }}>
+              TOTAL: ${((transactions?.filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + t.amount_cents, 0) || 0) / 100).toFixed(2)}
+            </span>
+          </div>
+          <button 
+            onClick={() => setSelectedTxIds([])}
+            style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', fontSize: '0.8rem' }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {linkingTx && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
@@ -541,7 +583,9 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AuthProvider>
-    <AppContent />
+    <OnboardingProvider>
+      <AppContent />
+    </OnboardingProvider>
   </AuthProvider>
 )
 

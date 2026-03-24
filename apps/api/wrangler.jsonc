@@ -45,6 +45,10 @@
       {
         "name": "VAULT",
         "class_name": "Vault"
+      },
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "RateLimiter"
       }
     ]
   },
@@ -56,6 +60,10 @@
     {
       "tag": "v2",
       "new_classes": ["Vault"]
+    },
+    {
+      "tag": "v3",
+      "new_classes": ["RateLimiter"]
     }
   ],
   "triggers": {

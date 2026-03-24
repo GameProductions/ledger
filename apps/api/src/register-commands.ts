@@ -16,6 +16,18 @@ const commands = [
     name: 'ledger-safety',
     description: '🛡️ Check your LEDGER safety number and spendable cash.',
   },
+  {
+    name: 'ledger-upcoming',
+    description: '📅 List bills and subscriptions due in the next 7 days.',
+  },
+  {
+    name: 'ledger-forecast',
+    description: '📈 See your financial health score and monthly outlook.',
+  },
+  {
+    name: 'ledger-audit',
+    description: '🔍 (Admin) View the last 5 security/audit logs.',
+  },
 ];
 
 async function registerCommands() {

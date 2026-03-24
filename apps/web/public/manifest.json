@@ -10,15 +10,9 @@
   "background_color": "#0a0a0b",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/assets/ledger_logo_premium_transparent.png",
       "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "type": "image/png",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "purpose": "any maskable"
     }
   ],

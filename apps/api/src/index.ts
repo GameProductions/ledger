@@ -20,6 +20,7 @@ type Bindings = {
   RESEND_API_KEY: string
   ARRAY_API_KEY: string
   ENVIRONMENT: string
+  VAULT: DurableObjectNamespace
 }
 
 type Variables = {
@@ -81,6 +82,36 @@ export class HouseholdSession {
     if (url.pathname === '/status') {
       return new Response(JSON.stringify({ activeCount: this.users.size }))
     }
+    return new Response('Not Found', { status: 404 })
+  }
+}
+
+// --- DURABLE OBJECT: Vault ---
+export class Vault {
+  state: DurableObjectState
+
+  constructor(state: DurableObjectState) {
+    this.state = state
+  }
+
+  async fetch(request: Request) {
+    const url = new URL(request.url)
+    const { householdId } = url.searchParams
+    
+    // Simple secure storage example
+    if (request.method === 'POST') {
+      const { key, value } = await request.json() as any
+      await this.state.storage.put(key, value)
+      return new Response(JSON.stringify({ success: true }))
+    }
+
+    if (request.method === 'GET') {
+      const key = url.searchParams.get('key')
+      if (!key) return new Response('Key required', { status: 400 })
+      const value = await this.state.storage.get(key)
+      return new Response(JSON.stringify({ value }))
+    }
+
     return new Response('Not Found', { status: 404 })
   }
 }

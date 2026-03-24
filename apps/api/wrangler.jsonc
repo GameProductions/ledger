@@ -44,6 +44,10 @@
       {
         "name": "SESSION",
         "class_name": "HouseholdSession"
+      },
+      {
+        "name": "VAULT",
+        "class_name": "Vault"
       }
     ]
   },
@@ -51,10 +55,14 @@
     {
       "tag": "v1",
       "new_classes": ["HouseholdSession"]
+    },
+    {
+      "tag": "v2",
+      "new_classes": ["Vault"]
     }
   ],
   "triggers": {
     "crons": ["0 0 * * SUN"]
   },
-  "migrations_dir": "../../packages/db/migrations"
+  }
 }

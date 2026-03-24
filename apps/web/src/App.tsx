@@ -33,13 +33,14 @@ import { OnboardingChecklist } from './components/OnboardingChecklist'
 
 const Login: React.FC = () => {
   const { login } = useAuth()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   const handleLogin = async () => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username })
+      body: JSON.stringify({ email, password })
     })
     const authData = await res.json()
     if (authData.token) {
@@ -48,7 +49,7 @@ const Login: React.FC = () => {
         headers: { 'Authorization': `Bearer ${authData.token}` }
       })
       const profile = await profileRes.json()
-      login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
+      login(authData.token, { ...profile, userId: email, globalRole: profile.global_role })
     }
   }
 
@@ -60,10 +61,17 @@ const Login: React.FC = () => {
           <h2 style={{ margin: 0 }}>Welcome to LEDGER</h2>
         </div>
         <input 
-          type="text" 
-          placeholder="Enter Username" 
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          type="email" 
+          placeholder="Email Address" 
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           style={{ width: '100%', padding: '0.8rem', marginBottom: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }}
         />
         <button className="primary" style={{ width: '100%' }} onClick={handleLogin}>Log In</button>

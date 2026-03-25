@@ -7,7 +7,7 @@ import { Settings, Shield, LogOut, Palette, ChevronDown, X, List, Calendar as Ca
 
 const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
   const { user, logout, globalRole } = useAuth()
-  const { data: profile } = useApi('/api/user/profile')
+  const { data: profile, mutate } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [name, setName] = useState('')
@@ -23,16 +23,32 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
 
 
   const handleUpdateProfile = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
-      method: 'PATCH',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-      },
-      body: JSON.stringify({ display_name: name, avatar_url: avatar })
-    })
-    setShowSettings(false)
-    window.location.reload()
+    try {
+      const body = JSON.stringify({ 
+        display_name: name, 
+        avatar_url: avatar || null 
+      })
+      console.log('[UserMenu] Updating Profile:', body)
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+        },
+        body
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        console.error('[UserMenu] Update Failed:', err)
+        alert(`Update Failed: ${err.error || 'Unknown error'}`)
+        return
+      }
+      setShowSettings(false)
+      if (mutate) mutate()
+      else window.location.reload()
+    } catch (e) {
+      console.error('[UserMenu] Network Error:', e)
+    }
   }
 
   const handleExport = async () => {
@@ -210,23 +226,26 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                   <img src={avatar || avatarUrl} alt="Preview" className="w-20 h-20 rounded-full border-2 border-primary shadow-2xl" />
                   <div className="text-center">
                     <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Profile Avatar</label>
-                    <div className="flex flex-wrap justify-center gap-2 px-4">
+                    <div className="flex flex-wrap justify-center gap-3 px-4">
                       {/* Connected Accounts Icons */}
-                      {accounts?.map((acc: any) => (
+                      {accounts?.filter(acc => acc.icon).map((acc: any) => (
                         <button 
                           key={acc.id}
-                          onClick={() => setAvatar(`https://api.dicebear.com/7.x/identicon/svg?seed=${acc.name}`)}
-                          className={`w-8 h-8 rounded-lg border transition-all ${avatar.includes(acc.name) ? 'border-primary ring-2 ring-primary/20' : 'border-glass-border opacity-50 hover:opacity-100'}`}
+                          onClick={() => setAvatar(`https://c.1password.com/richicons/images/login/120/${acc.icon}.png`)}
+                          className={`w-10 h-10 rounded-xl border-2 transition-all p-1 bg-white/10 ${avatar.includes(acc.icon) ? 'border-primary shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-glass-border opacity-50 hover:opacity-100 hover:scale-110'}`}
                           title={`Use ${acc.name} icon`}
                         >
-                          <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${acc.name}`} alt={acc.name} className="w-full h-full rounded-md" />
+                          <img src={`https://c.1password.com/richicons/images/login/120/${acc.icon}.png`} alt={acc.name} className="w-full h-full rounded-lg" />
                         </button>
                       ))}
+                      {/* Default Robot Fallback */}
                       <button 
                         onClick={() => setAvatar('')}
-                        className={`w-8 h-8 rounded-lg border flex items-center justify-center text-[10px] font-bold ${!avatar ? 'border-primary text-primary' : 'border-glass-border text-secondary'}`}
+                        className={`w-10 h-10 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${!avatar ? 'border-primary bg-primary/20 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:opacity-100'}`}
+                        title="Automatic Bot Avatar"
                       >
-                        Auto
+                        <span className="text-[14px] leading-tight">🤖</span>
+                        <span className="text-[8px] font-bold uppercase">Auto</span>
                       </button>
                     </div>
                   </div>

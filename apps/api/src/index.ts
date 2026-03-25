@@ -322,7 +322,7 @@ const ProfileSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
   settings_json: z.string().optional(),
-  avatar_url: z.string().url().or(z.string().length(0)).optional()
+  avatar_url: z.string().url().or(z.string().length(0)).nullable().optional()
 })
 
 const JoinHouseholdSchema = z.object({
@@ -1369,6 +1369,7 @@ app.get('/api/user/profile', async (c) => {
 app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
   const userId = c.get('userId')
   const data = c.req.valid('json')
+  console.log('[PATCH Profile] Data:', JSON.stringify(data), 'User:', userId)
   
   if (data.display_name) {
     await c.env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?').bind(data.display_name, userId).run()

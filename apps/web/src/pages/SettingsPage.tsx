@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, X, Save, ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Settings, Save } from 'lucide-react'
+import { MainLayout } from '../components/layout/MainLayout'
 
 const SettingsPage: React.FC = () => {
-  const { user, token, logout } = useAuth()
+  const { user, token } = useAuth()
   const { data: profile, mutate } = useApi('/api/user/profile')
   const { data: accounts } = useApi<any[]>('/api/accounts')
   const [name, setName] = useState('')
@@ -54,7 +54,7 @@ const SettingsPage: React.FC = () => {
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   return (
-    <div className="min-h-screen p-8 bg-viewport overflow-y-auto">
+    <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -72,12 +72,6 @@ const SettingsPage: React.FC = () => {
               <p className="text-secondary uppercase tracking-widest text-[10px] font-bold opacity-60">Manage your identity and account security</p>
             </div>
           </div>
-          <button 
-            onClick={logout}
-            className="px-4 py-2 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/10 transition-colors text-sm font-bold"
-          >
-            Sign Out
-          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -90,9 +84,6 @@ const SettingsPage: React.FC = () => {
                   alt="Profile" 
                   className="w-32 h-32 rounded-full border-4 border-primary/20 shadow-2xl group-hover:border-primary transition-all duration-500"
                 />
-                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                  <span className="text-[10px] font-bold uppercase tracking-widest">Update</span>
-                </div>
               </div>
               <div>
                 <h2 className="text-xl font-bold">{name || 'User'}</h2>
@@ -131,18 +122,16 @@ const SettingsPage: React.FC = () => {
                     <div>
                       <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">Profile Avatar</label>
                       <div className="flex flex-wrap gap-3 mb-4">
-                        {/* Connected Accounts Icons */}
                         {accounts?.filter(acc => acc.icon).map((acc: any) => (
                           <button 
                             key={acc.id}
-                            onClick={() => setAvatar(`https://c.1password.com/richicons/images/login/120/${acc.icon}.png`)}
+                            onClick={() => setAvatar(`https://richicons.com/images/login/120/${acc.icon}.png`)}
                             className={`w-12 h-12 rounded-xl border-2 transition-all p-1 bg-white/10 ${avatar.includes(acc.icon) ? 'border-primary shadow-[0_0_20px_rgba(16,185,129,0.3)] scale-110' : 'border-glass-border opacity-50 hover:opacity-100 hover:scale-105'}`}
                             title={`Use ${acc.name} icon`}
                           >
-                            <img src={`https://c.1password.com/richicons/images/login/120/${acc.icon}.png`} alt={acc.name} className="w-full h-full rounded-lg" />
+                            <img src={`https://richicons.com/images/login/120/${acc.icon}.png`} alt={acc.name} className="w-full h-full rounded-lg" />
                           </button>
                         ))}
-                        {/* Default Robot Fallback */}
                         <button 
                           onClick={() => setAvatar('')}
                           className={`w-12 h-12 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${!avatar ? 'border-primary bg-primary/20 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:opacity-100 hover:scale-105'}`}
@@ -153,16 +142,15 @@ const SettingsPage: React.FC = () => {
                         </button>
                       </div>
                       <div className="space-y-4">
-              <label className="block text-xs font-bold text-secondary uppercase tracking-widest">Avatar Override (URL)</label>
-              <input 
-                type="text" 
-                value={avatar} 
-                onChange={(e) => setAvatar(e.target.value)}
-                className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-sm text-white focus:border-primary outline-none transition-all"
-                placeholder="https://example.com/photo.jpg"
-              />
-              <p className="text-[10px] text-secondary opacity-60">Paste a direct link to any image. We'll automatically resize it for you.</p>
-            </div>
+                        <label className="block text-xs font-bold text-secondary uppercase tracking-widest">Avatar Override (URL)</label>
+                        <input 
+                          type="text" 
+                          value={avatar} 
+                          onChange={(e) => setAvatar(e.target.value)}
+                          className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-sm text-white focus:border-primary outline-none transition-all"
+                          placeholder="https://example.com/photo.jpg"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -182,7 +170,6 @@ const SettingsPage: React.FC = () => {
                         <option key={tz} value={tz}>{tz}</option>
                       ))}
                     </select>
-                    <p className="text-[10px] text-secondary opacity-60 mt-2">This ensures your recurring transactions and budget resets happen at the correct local time.</p>
                   </div>
                 </div>
 
@@ -197,19 +184,10 @@ const SettingsPage: React.FC = () => {
                    </button>
                 </div>
              </section>
-
-             {/* Security Placeholder */}
-             <section className="card p-8 opacity-50 cursor-not-allowed grayscale">
-                <h3 className="text-lg font-bold mb-1">Security & Authentication</h3>
-                <p className="text-xs text-secondary mb-6">Manage Multi-Factor Authentication and linked login methods.</p>
-                <div className="p-4 border border-dashed border-glass-border rounded-xl text-center text-xs text-secondary">
-                  Security management is being refactored for the v1.17 release.
-                </div>
-             </section>
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   )
 }
 

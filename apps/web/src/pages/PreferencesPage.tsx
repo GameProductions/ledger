@@ -1,12 +1,12 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Palette, Layout, Shield, ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Palette, Layout } from 'lucide-react'
 import ThemeSwitcher from '../components/ThemeSwitcher'
+import { MainLayout } from '../components/layout/MainLayout'
 
 const PreferencesPage: React.FC = () => {
-  const { token, householdId } = useAuth()
+  const { token } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
   const settings = JSON.parse(profile?.settings_json || '{}')
 
@@ -20,7 +20,7 @@ const PreferencesPage: React.FC = () => {
       },
       body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
     })
-    window.location.reload() // Reload to apply layout changes
+    window.location.reload()
   }
 
   const toggleWidget = (widgetId: string) => {
@@ -48,7 +48,7 @@ const PreferencesPage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen p-8 bg-viewport overflow-y-auto">
+    <MainLayout>
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <button 
@@ -67,7 +67,6 @@ const PreferencesPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Appearance Section */}
           <div className="space-y-8">
             <section className="card p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -96,32 +95,8 @@ const PreferencesPage: React.FC = () => {
                 ))}
               </div>
             </section>
-
-            <section className="card p-8 bg-emerald-500/5 border-emerald-500/20">
-              <div className="flex items-center gap-3 mb-6">
-                <Shield size={20} className="text-emerald-500" />
-                <h3 className="text-lg font-bold text-emerald-500">Localization</h3>
-              </div>
-              <p className="text-xs text-secondary mb-6">Set your primary timezone to ensure all budget resets and recurring transactions happen at your local wall-clock time.</p>
-              <select 
-                value={profile?.timezone || 'UTC'}
-                onChange={(e) => {
-                  fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ timezone: e.target.value })
-                  }).then(() => window.location.reload())
-                }}
-                className="w-full p-4 bg-black/40 border border-emerald-500/30 rounded-xl text-sm font-bold text-emerald-400 focus:outline-none focus:border-emerald-500 transition-all"
-              >
-                {['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo'].map(tz => (
-                  <option key={tz} value={tz}>{tz.replace('_', ' ')}</option>
-                ))}
-              </select>
-            </section>
           </div>
 
-          {/* Functional Section */}
           <div className="space-y-8">
             <section className="card p-8">
               <div className="flex items-center gap-3 mb-6">
@@ -147,34 +122,10 @@ const PreferencesPage: React.FC = () => {
                 ))}
               </div>
             </section>
-
-            <section className="card p-8 border-dashed border-primary/20">
-               <div className="flex items-center gap-3 mb-6">
-                <Shield size={20} className="text-primary" />
-                <h3 className="text-lg font-bold">Data Control</h3>
-              </div>
-              <p className="text-xs text-secondary mb-6">Manage your household data sovereignty and privacy.</p>
-              <div className="space-y-4">
-                <button 
-                  className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-left hover:bg-white/10 transition-all"
-                  onClick={() => alert('Exporting all data...')}
-                >
-                  <div className="text-xs font-bold">Download Full Data Vault</div>
-                  <div className="text-[10px] text-secondary">Export all transactions and settings in JSON format</div>
-                </button>
-                <button 
-                  className="w-full p-4 bg-red-500/5 border border-red-500/20 rounded-xl text-left hover:bg-red-500/10 transition-all text-red-400"
-                  onClick={() => alert('Data shredding feature available in next update')}
-                >
-                  <div className="text-xs font-bold">Shred Lifecycle Data</div>
-                  <div className="text-[10px] text-red-400/60">Permanently delete data older than 1 year</div>
-                </button>
-              </div>
-            </section>
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   )
 }
 

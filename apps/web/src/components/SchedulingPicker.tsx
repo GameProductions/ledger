@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, RotateCcw } from 'lucide-react';
+import { Clock, RotateCcw } from 'lucide-react';
 
 export type FrequencyType = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
 

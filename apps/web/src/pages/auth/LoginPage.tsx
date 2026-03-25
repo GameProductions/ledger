@@ -14,6 +14,31 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split('?')[1]);
+    const token = params.get('token');
+    if (token) {
+      handleTokenLogin(token);
+    }
+  }, []);
+
+  const handleTokenLogin = async (token: string) => {
+    setLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const profile = await profileRes.json();
+      login(token, { ...profile, userId: profile.id, globalRole: profile.global_role });
+      window.location.hash = '#/';
+    } catch (e) {
+      showToast('OAuth login failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     setLoading(true)
     try {
@@ -92,6 +117,28 @@ const LoginPage: React.FC = () => {
               Initialize Session
             </Button>
           </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-secondary"><span className="bg-[#0f172a] px-4">Or continue with</span></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/google`}
+              className="flex items-center justify-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs font-bold"
+            >
+              <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" className="w-4 h-4" />
+              Google
+            </button>
+            <button 
+              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/discord`}
+              className="flex items-center justify-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs font-bold"
+            >
+              <img src="https://assets-assets.adobe.com/link/f3a9a13b-8d0b-4e0c-99f3-80f08e75a8a8/discord-mark-blue.png" className="w-4 h-4" />
+              Discord
+            </button>
+          </div>
         </div>
       </div>
       <div className="w-full max-w-4xl">

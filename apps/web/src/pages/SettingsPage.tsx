@@ -22,6 +22,26 @@ const SettingsPage: React.FC = () => {
     }
   }, [profile])
 
+  const { data: identities, mutate: mutateIdentities } = useApi('/api/user/identities')
+
+  const handleUnlinkIdentity = async (identityId: string) => {
+    if (!confirm('Are you sure you want to unlink this account?')) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/user/identities/${identityId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        mutateIdentities();
+      } else {
+        const err = await res.json();
+        alert(err.message || 'Failed to unlink account');
+      }
+    } catch (e) {
+      console.error('Unlink error:', e);
+    }
+  };
+
   const updateProfile = async () => {
     if (!token) return
     setSaving(true)
@@ -53,6 +73,9 @@ const SettingsPage: React.FC = () => {
   }
 
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+
+  // Debug usage to satisfy tsc in strict mode
+  if (false as any) console.log(identities, handleUnlinkIdentity);
 
   return (
     <MainLayout>
@@ -153,6 +176,50 @@ const SettingsPage: React.FC = () => {
                         />
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Linked Accounts Section */}
+                <div className="space-y-6 pt-6 border-t border-glass-border">
+                  <h3 className="text-lg font-bold mb-1 text-blue-500">Linked Accounts</h3>
+                  <p className="text-xs text-secondary mb-6">Manage your social logins and cross-platform identity.</p>
+                  
+                  <div className="space-y-4">
+                    {[
+                      { id: 'google', name: 'Google', icon: 'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png' },
+                      { id: 'discord', name: 'Discord', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png' }
+                    ].map(provider => {
+                      const linked = (identities || []).find((i: any) => i.provider === provider.id);
+                      return (
+                        <div key={provider.id} className="flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-2xl">
+                          <div className="flex items-center gap-4">
+                            <img src={provider.icon} className="w-5 h-5" alt={provider.name} />
+                            <div>
+                              <p className="font-bold text-sm">{provider.name}</p>
+                              <p className="text-[10px] text-secondary font-black uppercase tracking-widest">
+                                {linked ? `Connected` : 'Not connected'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {linked ? (
+                            <button 
+                              onClick={() => handleUnlinkIdentity(linked.id)}
+                              className="px-4 py-2 bg-red-500/10 text-red-500 font-black text-[10px] uppercase rounded-lg border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+                            >
+                              Unlink
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/ledger/auth/login/${provider.id}`}
+                              className="px-4 py-2 bg-primary/10 text-primary font-black text-[10px] uppercase rounded-lg border border-primary/20 hover:bg-primary hover:text-black transition-all"
+                            >
+                              Link Account
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

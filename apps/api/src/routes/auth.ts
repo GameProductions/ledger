@@ -62,20 +62,85 @@ auth.post('/totp/verify', zValidator('json', z.object({ code: z.string() })), as
 })
 
 auth.get('/login/discord', (c) => {
-  const clientId = c.env.DISCORD_CLIENT_ID || '123'
-  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent('https://api.gpnet.dev/ledger/auth/callback/discord')}&response_type=code&scope=identify%20email`
+  const clientId = c.env.DISCORD_CLIENT_ID
+  const redirectUri = `${new URL(c.req.url).origin}/ledger/auth/callback/discord`
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email`
   return c.redirect(url)
 })
 
 auth.get('/callback/discord', async (c) => {
+  const code = c.req.query('code')
+  if (!code) throw new HTTPException(400, { message: 'Missing code' })
+
   const authService = new AuthService(c.env)
-  // exchange logic...
-  const discordProfile = { id: 'd-123', email: 'user@example.com', avatar: 'https://...' }
-  const userId = await authService.findOrCreateDiscordUser(discordProfile)
-  const token = await authService.generateToken(userId)
   
-  await logAudit(c, 'users', userId, 'login', null, { strategy: 'discord' })
-  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/login?token=${token}`)
+  // 1. Exchange code for token
+  const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      client_id: c.env.DISCORD_CLIENT_ID || '',
+      client_secret: c.env.DISCORD_CLIENT_SECRET || '',
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: `${new URL(c.req.url).origin}/ledger/auth/callback/discord`
+    })
+  })
+  const tokenData = await tokenRes.json() as any
+  
+  // 2. Fetch profile
+  const userRes = await fetch('https://discord.com/api/users/@me', {
+    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+  })
+  const profile = await userRes.json() as any
+  
+  const userId = await authService.findOrCreateSocialUser('discord', {
+    id: profile.id,
+    email: profile.email,
+    name: profile.username,
+    avatar: `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
+  })
+  
+  const token = await authService.generateToken(userId)
+  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+})
+
+auth.get('/login/google', (c) => {
+  const clientId = c.env.GOOGLE_CLIENT_ID
+  const redirectUri = `${new URL(c.req.url).origin}/ledger/auth/callback/google`
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`
+  return c.redirect(url)
+})
+
+auth.get('/callback/google', async (c) => {
+  const code = c.req.query('code')
+  const authService = new AuthService(c.env)
+  
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      client_id: c.env.GOOGLE_CLIENT_ID || '',
+      client_secret: c.env.GOOGLE_CLIENT_SECRET || '',
+      code: code || '',
+      grant_type: 'authorization_code',
+      redirect_uri: `${new URL(c.req.url).origin}/ledger/auth/callback/google`
+    })
+  })
+  const tokenData = await tokenRes.json() as any
+  
+  const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+  })
+  const profile = await userRes.json() as any
+  
+  const userId = await authService.findOrCreateSocialUser('google', {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name,
+    avatar: profile.picture
+  })
+  
+  const token = await authService.generateToken(userId)
+  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
 })
 
 // --- WEBAUTHN / PASSKEYS ---

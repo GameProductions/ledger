@@ -41,10 +41,10 @@ export class AuthService {
     return await sign(payload, this.env.JWT_SECRET)
   }
 
-  async findOrCreateDiscordUser(profile: { id: string, email: string, avatar: string }) {
+  async findOrCreateSocialUser(provider: string, profile: { id: string, email: string, avatar?: string, name?: string }) {
     let identity: any = await this.env.DB.prepare(
-      'SELECT user_id FROM user_identities WHERE provider = "discord" AND provider_user_id = ?'
-    ).bind(profile.id).first()
+      'SELECT user_id FROM user_identities WHERE provider = ? AND provider_user_id = ?'
+    ).bind(provider, profile.id).first()
 
     let userId = identity?.user_id
 
@@ -55,10 +55,13 @@ export class AuthService {
       } else {
         userId = crypto.randomUUID()
         await this.env.DB.prepare('INSERT INTO users (id, email, display_name, avatar_url) VALUES (?, ?, ?, ?)')
-          .bind(userId, profile.email, 'Discord User', profile.avatar).run()
+          .bind(userId, profile.email, profile.name || `${provider} User`, profile.avatar).run()
       }
+      
+      // Link the new/existing user to this social identity
+      const identityId = crypto.randomUUID()
       await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id) VALUES (?, ?, ?, ?)')
-        .bind(crypto.randomUUID(), userId, 'discord', profile.id).run()
+        .bind(identityId, userId, provider, profile.id).run()
     }
 
     return userId

@@ -2142,6 +2142,30 @@ app.post('/api/admin/system/sync', async (c) => {
   return c.json({ success: true, results })
 })
 
+app.get('/api/user/identities', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare(
+    'SELECT id, provider, provider_user_id, created_at FROM user_identities WHERE user_id = ?'
+  ).bind(userId).all()
+  return c.json(results)
+})
+
+app.delete('/api/user/identities/:id', async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  
+  // Ensure the user doesn't delete their last identity if they don't have a password
+  const user: any = await c.env.DB.prepare('SELECT password_hash FROM users WHERE id = ?').bind(userId).first()
+  const { results: identities } = await c.env.DB.prepare('SELECT id FROM user_identities WHERE user_id = ?').bind(userId).all()
+  
+  if (!user.password_hash && identities.length <= 1) {
+    throw new HTTPException(400, { message: 'Cannot remove last identity without a password set' })
+  }
+
+  await c.env.DB.prepare('DELETE FROM user_identities WHERE id = ? AND user_id = ?').bind(id, userId).run()
+  return c.json({ success: true })
+})
+
 app.get('/api/pcc/search/global', async (c) => {
   if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
   const q = c.req.query('q') || ''

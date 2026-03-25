@@ -1313,6 +1313,20 @@ app.get('/api/pcc/search', async (c) => {
   return c.json({ users, registry })
 })
 
+// 8. Theme Broadcast
+app.get('/api/theme/broadcast', async (c) => {
+  const config = await c.env.DB.prepare('SELECT value_json FROM system_configs WHERE key = "broadcast_theme_id"').first()
+  if (!config) return c.json({ themeId: null })
+  return c.json({ themeId: JSON.parse((config as any).value_json) })
+})
+
+app.post('/api/pcc/theme/broadcast', async (c) => {
+  const { themeId } = await c.req.json()
+  await c.env.DB.prepare('INSERT OR REPLACE INTO system_configs (id, key, value_json, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
+    .bind(crypto.randomUUID(), 'broadcast_theme_id', JSON.stringify(themeId)).run()
+  return c.json({ success: true })
+})
+
 // Analytics & Predictions
 app.get('/api/analytics/summary', async (c) => {
   const householdId = c.get('householdId')

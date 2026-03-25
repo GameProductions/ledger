@@ -87,8 +87,8 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="flex-center" style={{ minHeight: '100vh', flexDirection: 'column', padding: '2rem 0' }}>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+    <div className="flex-center" style={{ flexDirection: 'column', padding: '2rem 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <img src="/assets/icon.png" alt="LEDGER Logo" style={{ height: '4rem', marginBottom: '1rem' }} />

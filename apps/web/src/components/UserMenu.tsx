@@ -138,6 +138,11 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                   </div>
                 )}
 
+                <div className="px-3 py-2 border-t border-glass-border">
+                  <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Personalization</div>
+                  <ThemeSwitcher />
+                </div>
+
                 <div className="border-t border-glass-border mt-2 pt-2 px-3 pb-2">
                    <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">System Actions</div>
                    <button 
@@ -211,11 +216,9 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                 <div className="pt-4 border-t border-glass-border">
                   <label className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-widest mb-4">
                     <Palette size={14} className="text-primary" />
-                    <span>Personalization & Branding</span>
+                    <span>Appearance & Branding</span>
                   </label>
-                  <div className="p-4 bg-white/5 rounded-xl border border-glass-border">
-                    <ThemeSwitcher />
-                  </div>
+                  <ThemeSwitcher />
                 </div>
 
                 <div className="flex gap-4 pt-4">

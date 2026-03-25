@@ -87,6 +87,36 @@ const SchedulingPicker: React.FC<SchedulingPickerProps> = ({ value, onChange }) 
         </div>
       )}
 
+      {/* Weekly/Bi-Weekly specific options */}
+      {(value.frequency_type === 'weekly' || value.frequency_type === 'biweekly') && (
+        <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
+          <label className="text-[10px] uppercase tracking-widest font-black text-primary mb-3 block">Days of the Week</label>
+          <div className="flex flex-wrap gap-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+              <button
+                key={day}
+                type="button"
+                onClick={() => {
+                  const days = value.days_of_week ? value.days_of_week.split(',') : [];
+                  const dayStr = i.toString();
+                  const newDays = days.includes(dayStr) 
+                    ? days.filter(d => d !== dayStr) 
+                    : [...days, dayStr];
+                  updateField('days_of_week', newDays.sort().join(','));
+                }}
+                className={`flex-1 p-2 text-[10px] font-bold rounded-lg transition-all ${
+                  (value.days_of_week || '').split(',').includes(i.toString())
+                    ? 'bg-primary text-white shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]' 
+                    : 'bg-white/5 text-secondary hover:bg-white/10'
+                }`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Termination logic */}
       <div className="pt-4 border-t border-white/5">
         <label className="flex items-center gap-3 cursor-pointer group">

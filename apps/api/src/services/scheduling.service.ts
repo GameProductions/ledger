@@ -1,5 +1,5 @@
 import { addDays, addMonths, addYears, format, parseISO, startOfDay, setDate } from 'date-fns';
-import { formatInTimeZone, toDate, utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { formatInTimeZone, toDate, toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 export type FrequencyType = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly';
 
@@ -15,71 +15,72 @@ export interface Schedule {
   timezone: string;
   last_run_at?: string;
   next_run_at: string;
+  executed_count?: number; 
 }
 
 export class SchedulingService {
   /**
    * Calculates the next UTC occurrence timestamp for a given schedule.
-   * This is "Wall Clock" aware, meaning it respects the user's localized time
-   * even across Daylight Saving Time shifts.
+   * Returns null if the schedule has reached its terminal state (end_date or total_installments).
    */
-  static calculateNextOccurrence(schedule: Schedule, fromDate: Date = new Date()): Date {
+  static calculateNextOccurrence(schedule: Schedule, fromDate: Date = new Date(), currentExecutionCount: number = 0): Date | null {
     const tz = schedule.timezone || 'UTC';
     
-    // 1. Determine the "Base Date" for calculation.
-    // If it has never run, start from the start_date.
-    // If it has run, start from the last_run_at (which is UTC).
+    // 1. Terminal Check: Installments
+    if (schedule.total_installments && currentExecutionCount >= schedule.total_installments) {
+      return null;
+    }
+
+    // 2. Determine the "Base Date" for calculation.
     const baseDateUtc = schedule.last_run_at ? parseISO(schedule.last_run_at) : parseISO(schedule.start_date);
-    
-    // 2. Convert the Base Date to the local "Wall Clock" time
-    let localDate = utcToZonedTime(baseDateUtc, tz);
+    let localDate = toZonedTime(baseDateUtc, tz);
 
     // 3. Perform the arithmetic based on frequency
-    let nextLocalDate = localDate;
     const interval = schedule.frequency_interval || 1;
+    let nextLocalDate = localDate;
 
-    switch (schedule.frequency_type) {
-      case 'daily':
-        nextLocalDate = addDays(localDate, interval);
-        break;
-      case 'weekly':
-        nextLocalDate = addDays(localDate, 7 * interval);
-        break;
-      case 'biweekly':
-        nextLocalDate = addDays(localDate, 14 * interval);
-        break;
-      case 'monthly':
-        nextLocalDate = addMonths(localDate, interval);
-        if (schedule.day_of_month) {
-          // Force to specific day if requested (e.g. always 15th)
-          nextLocalDate = setDate(nextLocalDate, Math.min(schedule.day_of_month, 28)); // Simple guard
-        }
-        break;
-      case 'yearly':
-        nextLocalDate = addYears(localDate, interval);
-        break;
+    const increment = (date: Date): Date => {
+      switch (schedule.frequency_type) {
+        case 'daily':
+          return addDays(date, interval);
+        case 'weekly':
+          return addDays(date, 7 * interval);
+        case 'biweekly':
+          return addDays(date, 14 * interval);
+        case 'monthly':
+          let nextMonth = addMonths(date, interval);
+          if (schedule.day_of_month) {
+            nextMonth = setDate(nextMonth, Math.min(schedule.day_of_month, 28));
+          }
+          return nextMonth;
+        case 'yearly':
+          return addYears(date, interval);
+        default:
+          return addDays(date, interval);
+      }
+    };
+
+    nextLocalDate = increment(nextLocalDate);
+
+    // 4. Catch-up logic (if fromDate is specified and next occurrence is in the past)
+    while (fromZonedTime(nextLocalDate, tz) <= fromDate) {
+      nextLocalDate = increment(nextLocalDate);
     }
 
-    // 4. If the calculated date is STILL in the past relative to fromDate, 
-    // keep incrementing (used for catch-up scenarios)
-    while (zonedTimeToUtc(nextLocalDate, tz) <= fromDate) {
-        switch (schedule.frequency_type) {
-            case 'daily': nextLocalDate = addDays(nextLocalDate, interval); break;
-            case 'weekly': nextLocalDate = addDays(nextLocalDate, 7 * interval); break;
-            case 'biweekly': nextLocalDate = addDays(nextLocalDate, 14 * interval); break;
-            case 'monthly': nextLocalDate = addMonths(nextLocalDate, interval); break;
-            case 'yearly': nextLocalDate = addYears(nextLocalDate, interval); break;
-        }
+    const nextUtc = fromZonedTime(nextLocalDate, tz);
+
+    // 5. Terminal Check: End Date
+    if (schedule.end_date && nextUtc > parseISO(schedule.end_date)) {
+      return null;
     }
 
-    // 5. Convert back to UTC for storage
-    return zonedTimeToUtc(nextLocalDate, tz);
+    return nextUtc;
   }
 
   /**
    * Checks if a schedule should be executed now.
    */
-  static shouldExecute(schedule: Schedule, now: Date = new Date()): boolean {
+  static shouldExecute(schedule: Schedule & { status: string }, now: Date = new Date()): boolean {
     const nextRun = parseISO(schedule.next_run_at);
     return nextRun <= now && schedule.status === 'active';
   }

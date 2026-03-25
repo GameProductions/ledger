@@ -1934,6 +1934,44 @@ app.post('/api/admin/system/sync', async (c) => {
   return c.json({ success: true, results })
 })
 
+app.post('/api/admin/system/migrate-schedules', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  
+  const { results: subs } = await c.env.DB.prepare('SELECT * FROM subscriptions').all()
+  const queries = []
+  
+  for (const sub of subs as any[]) {
+    const existing = await c.env.DB.prepare('SELECT id FROM schedules WHERE target_type = "subscription" AND target_id = ?').bind(sub.id).first()
+    
+    if (!existing) {
+      const scheduleId = crypto.randomUUID()
+      // Use next_billing_date if available, else start now.
+      const nextRunDate = sub.next_billing_date ? new Date(sub.next_billing_date) : new Date()
+      
+      queries.push(c.env.DB.prepare(
+        'INSERT INTO schedules (id, target_type, target_id, household_id, start_date, frequency_type, frequency_interval, next_run_at, status, timezone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        scheduleId, 
+        'subscription', 
+        sub.id, 
+        sub.household_id, 
+        nextRunDate.toISOString().split('T')[0], 
+        sub.billing_cycle || 'monthly', 
+        1, 
+        nextRunDate.toISOString(), 
+        'active',
+        'UTC'
+      ))
+    }
+  }
+  
+  if (queries.length > 0) {
+    await c.env.DB.batch(queries)
+  }
+  
+  return c.json({ success: true, migrated_count: queries.length })
+})
+
 app.post('/discord/interactions', async (c) => {
   const signature = c.req.header('X-Signature-Ed25519')
   const timestamp = c.req.header('X-Signature-Timestamp')
@@ -2056,6 +2094,7 @@ export default {
     for (const schedule of dueSchedules as any[]) {
       const queries = [];
       const historyId = crypto.randomUUID();
+      const currentCount = (schedule.executed_count || 0) + 1;
       
       try {
         // Execute Action
@@ -2064,18 +2103,39 @@ export default {
           if (sub) {
             const txId = crypto.randomUUID();
             queries.push(env.DB.prepare(
-              'INSERT INTO transactions (id, household_id, description, amount_cents, date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
-            ).bind(txId, schedule.household_id, `Subscription: ${(sub as any).name}`, (sub as any).amount_cents, nowIso.split('T')[0], (sub as any).category_id));
+              'INSERT INTO transactions (id, household_id, account_id, description, amount_cents, transaction_date, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).bind(txId, schedule.household_id, (sub as any).account_id || 'acc-manual', `Subscription: ${(sub as any).name}`, (sub as any).amount_cents, nowIso.split('T')[0], (sub as any).category_id));
+          }
+        } else if (schedule.target_type === 'budget_reset') {
+          // Logic for Budget Reset: Move 'unallocated_balance_cents' to specific categories based on target_id (category_id)
+          const category = await env.DB.prepare('SELECT household_id, monthly_budget_cents FROM categories WHERE id = ?').bind(schedule.target_id).first();
+          if (category) {
+            const amount = (category as any).monthly_budget_cents;
+            // 1. Decrement Household Unallocated
+            queries.push(env.DB.prepare(
+              'UPDATE households SET unallocated_balance_cents = unallocated_balance_cents - ? WHERE id = ?'
+            ).bind(amount, schedule.household_id));
+            // 2. Increment Category Envelope
+            queries.push(env.DB.prepare(
+              'UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ?'
+            ).bind(amount, schedule.target_id));
           }
         }
         
         // Calculate Next
-        const nextOccurrence = SchedulingService.calculateNextOccurrence(schedule, now);
+        const nextOccurrence = SchedulingService.calculateNextOccurrence(schedule, now, currentCount);
         
-        // Update Schedule
-        queries.push(env.DB.prepare(
-          'UPDATE schedules SET last_run_at = ?, next_run_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        ).bind(nowIso, nextOccurrence.toISOString(), schedule.id));
+        if (nextOccurrence) {
+          // Update Schedule for next run
+          queries.push(env.DB.prepare(
+            'UPDATE schedules SET last_run_at = ?, next_run_at = ?, executed_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+          ).bind(nowIso, nextOccurrence.toISOString(), currentCount, schedule.id));
+        } else {
+          // Mark as Completed
+          queries.push(env.DB.prepare(
+            'UPDATE schedules SET last_run_at = ?, next_run_at = ?, executed_count = ?, status = "completed", updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+          ).bind(nowIso, nowIso, currentCount, schedule.id));
+        }
         
         // Log History
         queries.push(env.DB.prepare(

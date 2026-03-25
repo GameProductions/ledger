@@ -10,12 +10,14 @@ const SettingsPage: React.FC = () => {
   const { data: accounts } = useApi<any[]>('/api/accounts')
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState('')
+  const [timezone, setTimezone] = useState('UTC')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (profile) {
       setName(profile.display_name || '')
       setAvatar(profile.avatar_url || '')
+      setTimezone(profile.timezone || 'UTC')
     }
   }, [profile])
 
@@ -31,7 +33,8 @@ const SettingsPage: React.FC = () => {
         },
         body: JSON.stringify({ 
           display_name: name, 
-          avatar_url: avatar || null 
+          avatar_url: avatar || null,
+          timezone: timezone
         })
       })
       if (!res.ok) {
@@ -161,6 +164,25 @@ const SettingsPage: React.FC = () => {
               <p className="text-[10px] text-secondary opacity-60">Paste a direct link to any image. We'll automatically resize it for you.</p>
             </div>
                     </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6 pt-6 border-t border-glass-border">
+                  <h3 className="text-lg font-bold mb-1">Regional Settings</h3>
+                  <p className="text-xs text-secondary mb-6">Configure how dates and times are handled for your schedules.</p>
+                  
+                  <div>
+                    <label className="block text-[10px] font-black text-secondary uppercase tracking-widest mb-2">Primary Timezone</label>
+                    <select 
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white focus:border-primary outline-none transition-all font-bold"
+                    >
+                      {Intl.supportedValuesOf('timeZone').map(tz => (
+                        <option key={tz} value={tz}>{tz}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-secondary opacity-60 mt-2">This ensures your recurring transactions and budget resets happen at the correct local time.</p>
                   </div>
                 </div>
 

@@ -143,7 +143,8 @@ app.use('*', async (c, next) => {
     '/ledger/ping',
     '/ping',
     '/auth/login',
-    '/auth/admin/claim'
+    '/auth/admin/claim',
+    '/ledger/api/test/auto-login'
   ]
 
   const isExcluded = exclusions.some(e => path === e || path === e + '/') || 

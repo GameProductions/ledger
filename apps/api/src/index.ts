@@ -212,12 +212,6 @@ const authMiddleware = async (c: any, next: any) => {
     if (!authHeader) throw new HTTPException(401, { message: 'Missing Authorization Header' })
     
     const token = authHeader.replace('Bearer ', '')
-    if (token === 'dummy-token') {
-      c.set('userId', 'user-123')
-      c.set('householdId', 'household-abc')
-      c.set('globalRole', 'super_admin')
-      return await next()
-    }
     const jwtSecret = c.env.JWT_SECRET
     if (!jwtSecret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
     
@@ -1764,10 +1758,10 @@ app.post('/api/savings/buckets', zValidator('json', BucketSchema), async (c) => 
 
 app.get('/api/test/auto-login', async (c) => {
   // CRITICAL: Disable in production
-  if (c.env.ENVIRONMENT === 'production') {
+  if (c.env.ENVIRONMENT === 'production' || !c.env.JWT_SECRET) {
     throw new HTTPException(404, { message: 'Not Found' })
   }
-  const jwtSecret = c.env.JWT_SECRET || 'secret-change-me'
+  const jwtSecret = c.env.JWT_SECRET
   const token = await sign({ 
     sub: 'test-user-v', 
     householdId: 'ledger-main-001', 

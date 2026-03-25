@@ -54,7 +54,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
   const isHome = !window.location.hash || window.location.hash === '#/'
 
   return (
-    <div className="absolute top-0 right-0 z-[2000]">
+    <div className="z-[2000]">
       {/* Menu Trigger */}
       <button 
         onClick={() => setIsOpen(!isOpen)}

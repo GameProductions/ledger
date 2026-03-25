@@ -354,6 +354,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
               </button>
             ))}
           </div>
+          <UserMenu view={view} setView={_setView} />
         </div>
       </header>
 
@@ -868,7 +869,6 @@ const AppContent: React.FC = () => {
   
   return (
     <div style={{ position: 'relative' }}>
-      <UserMenu view={view} setView={setView} />
       {isAdmin ? <AdminDashboard /> : <Dashboard view={view} setView={setView} />}
     </div>
   )

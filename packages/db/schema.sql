@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     display_name TEXT,
     password_hash TEXT,
+    avatar_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

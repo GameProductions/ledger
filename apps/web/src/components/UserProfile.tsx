@@ -38,7 +38,7 @@ const UserProfile: React.FC = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }} onClick={() => setEditing(true)}>
-          <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
+          <img src={profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
           <span style={{ fontWeight: 600 }}>{profile.display_name || 'Set Name'}</span>
         </div>
       )}

@@ -11,9 +11,14 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
   const [isOpen, setIsOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [name, setName] = useState('')
+  const [avatar, setAvatar] = useState('')
+  const { data: accounts } = useApi<any[]>('/api/accounts')
 
   useEffect(() => {
-    if (profile) setName(profile.display_name)
+    if (profile) {
+      setName(profile.display_name || '')
+      setAvatar(profile.avatar_url || '')
+    }
   }, [profile])
 
 
@@ -24,7 +29,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
       },
-      body: JSON.stringify({ display_name: name })
+      body: JSON.stringify({ display_name: name, avatar_url: avatar })
     })
     setShowSettings(false)
     window.location.reload()
@@ -45,7 +50,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
     a.click()
   }
 
-  const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
   const isHome = !window.location.hash || window.location.hash === '#/'
 
   return (
@@ -201,6 +206,41 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
               </div>
 
               <div className="space-y-6">
+                <div className="flex flex-col items-center gap-4 py-4 bg-white/5 rounded-2xl border border-glass-border">
+                  <img src={avatar || avatarUrl} alt="Preview" className="w-20 h-20 rounded-full border-2 border-primary shadow-2xl" />
+                  <div className="text-center">
+                    <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Profile Avatar</label>
+                    <div className="flex flex-wrap justify-center gap-2 px-4">
+                      {/* Connected Accounts Icons */}
+                      {accounts?.map((acc: any) => (
+                        <button 
+                          key={acc.id}
+                          onClick={() => setAvatar(`https://api.dicebear.com/7.x/identicon/svg?seed=${acc.name}`)}
+                          className={`w-8 h-8 rounded-lg border transition-all ${avatar.includes(acc.name) ? 'border-primary ring-2 ring-primary/20' : 'border-glass-border opacity-50 hover:opacity-100'}`}
+                          title={`Use ${acc.name} icon`}
+                        >
+                          <img src={`https://api.dicebear.com/7.x/identicon/svg?seed=${acc.name}`} alt={acc.name} className="w-full h-full rounded-md" />
+                        </button>
+                      ))}
+                      <button 
+                        onClick={() => setAvatar('')}
+                        className={`w-8 h-8 rounded-lg border flex items-center justify-center text-[10px] font-bold ${!avatar ? 'border-primary text-primary' : 'border-glass-border text-secondary'}`}
+                      >
+                        Auto
+                      </button>
+                    </div>
+                  </div>
+                  <div className="w-full px-8">
+                    <input 
+                      type="text" 
+                      value={avatar} 
+                      onChange={(e) => setAvatar(e.target.value)}
+                      className="w-full p-2 bg-white/5 border border-glass-border rounded-lg text-[10px] text-secondary focus:border-primary outline-none text-center"
+                      placeholder="Or paste a custom image URL..."
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-secondary uppercase tracking-widest mb-2">Display Name</label>
                   <input 

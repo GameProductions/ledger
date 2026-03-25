@@ -321,7 +321,8 @@ const BucketSchema = z.object({
 const ProfileSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
-  settings_json: z.string().optional()
+  settings_json: z.string().optional(),
+  avatar_url: z.string().url().or(z.string().length(0)).optional()
 })
 
 const JoinHouseholdSchema = z.object({
@@ -1360,7 +1361,7 @@ app.get('/api/analytics/insights', async (c) => {
 app.get('/api/user/profile', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(
-    'SELECT id, email, display_name, global_role, status, settings_json, created_at FROM users WHERE id = ?'
+    'SELECT id, email, display_name, avatar_url, global_role, status, settings_json, created_at FROM users WHERE id = ?'
   ).bind(userId).all()
   return c.json(results[0])
 })
@@ -1378,6 +1379,9 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
   }
   if (data.email) {
     await c.env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(data.email, userId).run()
+  }
+  if (data.avatar_url) {
+    await c.env.DB.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').bind(data.avatar_url, userId).run()
   }
   return c.json({ success: true })
 })

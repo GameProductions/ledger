@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { ToastProvider } from './context/ToastContext'
 import LoginPage from './pages/auth/LoginPage'
@@ -57,11 +58,13 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AuthProvider>
-    <ToastProvider>
-      <OnboardingProvider>
-        <AppContent />
-      </OnboardingProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <OnboardingProvider>
+          <AppContent />
+        </OnboardingProvider>
+      </ToastProvider>
+    </ThemeProvider>
   </AuthProvider>
 )
 

@@ -1,54 +1,54 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { useTheme, ThemeRegistry } from '../context/ThemeContext'
 
 const ThemeSwitcher: React.FC = () => {
-  const [theme, setTheme] = useState(localStorage.getItem('ledger_theme') || 'emerald')
+  const { theme: activeTheme, setTheme } = useTheme()
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('ledger_theme', theme)
-    
-    // Attempt to sync with server-side settings
-    const token = localStorage.getItem('ledger_token')
-    if (token) {
-      fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ settings_json: JSON.stringify({ theme }) })
-      }).catch(() => {}) // Silently fail for theme sync
-    }
-  }, [theme])
+  const categories = ['Classic', 'Premium', 'Experimental'] as const
 
   return (
-    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.4rem 1rem', borderRadius: '2rem', border: '1px solid var(--glass-border)' }}>
-      <span style={{ fontSize: '0.7rem', opacity: 0.6, marginRight: '0.4rem' }}>THEME</span>
-      <button 
-        onClick={() => setTheme('emerald')}
-        title="Emerald (Default)"
-        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#10b981', padding: 0, border: theme === 'emerald' ? '2px solid white' : 'none', cursor: 'pointer' }}
-      />
-      <button 
-        onClick={() => setTheme('sapphire')}
-        title="Sapphire"
-        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#3b82f6', padding: 0, border: theme === 'sapphire' ? '2px solid white' : 'none', cursor: 'pointer' }}
-      />
-      <button 
-        onClick={() => setTheme('ruby')}
-        title="Ruby"
-        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#ef4444', padding: 0, border: theme === 'ruby' ? '2px solid white' : 'none', cursor: 'pointer' }}
-      />
-      <button 
-        onClick={() => setTheme('luxury')}
-        title="Luxury (Gold & Black)"
-        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#d4af37', padding: 0, border: theme === 'luxury' ? '2px solid white' : 'none', cursor: 'pointer' }}
-      />
-      <button 
-        onClick={() => setTheme('professional')}
-        title="Professional (Slate)"
-        style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#64748b', padding: 0, border: theme === 'professional' ? '2px solid white' : 'none', cursor: 'pointer' }}
-      />
+    <div className="space-y-6">
+      {categories.map(category => (
+        <div key={category} className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-glass-border" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-60">
+              {category} Range
+            </span>
+            <div className="h-px flex-1 bg-glass-border" />
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {ThemeRegistry.filter(t => t.category === category).map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={`flex flex-col gap-3 p-4 rounded-2xl border-2 transition-all text-left relative overflow-hidden group ${activeTheme.id === t.id ? 'border-primary bg-primary/5' : 'border-glass-border bg-white/5 hover:border-white/20'}`}
+              >
+                <div className="flex justify-between items-start z-10">
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${activeTheme.id === t.id ? 'text-primary' : 'text-secondary'}`}>
+                    {t.name}
+                  </span>
+                  {activeTheme.id === t.id && (
+                    <span className="text-primary text-xs">✓</span>
+                  )}
+                </div>
+                
+                <div className="flex gap-1.5 z-10">
+                  <div className="w-4 h-4 rounded-full shadow-lg" style={{ background: t.colors.primary }} />
+                  <div className="w-4 h-4 rounded-full shadow-lg" style={{ background: t.colors.secondary }} />
+                </div>
+
+                {/* Theme Preview Background */}
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none"
+                  style={{ background: t.colors.gradient }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

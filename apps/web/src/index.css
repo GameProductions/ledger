@@ -43,6 +43,24 @@
   --bg-gradient: radial-gradient(circle at top left, #450a0a, #0a0a0b);
 }
 
+[data-theme='carbon'] {
+  --primary: #ffffff;
+  --secondary: #475569;
+  --bg-dark: #000000;
+  --card-bg: rgba(30, 41, 59, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --bg-gradient: linear-gradient(to bottom, #111827 0%, #000000 100%);
+}
+
+[data-theme='ember'] {
+  --primary: #f97316;
+  --secondary: #fbbf24;
+  --bg-dark: #0c0a09;
+  --card-bg: rgba(69, 26, 3, 0.3);
+  --glass-border: rgba(249, 115, 22, 0.2);
+  --bg-gradient: radial-gradient(circle at 50% 120%, #451a03 0%, #0c0a09 100%);
+}
+
 body {
   background-color: var(--bg-dark);
   color: var(--text-main);

@@ -442,3 +442,17 @@ CREATE INDEX idx_audit_logs_household ON audit_logs(household_id);
 CREATE INDEX idx_audit_logs_actor ON audit_logs(actor_id);
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at);
 CREATE INDEX idx_webhooks_household ON webhooks(household_id);
+
+CREATE TABLE reports (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    type TEXT NOT NULL, 
+    period_start DATE,
+    period_end DATE,
+    data_json TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE INDEX idx_reports_household_period ON reports(household_id, period_start, period_end);
+CREATE INDEX idx_reports_type ON reports(type);

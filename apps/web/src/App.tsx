@@ -8,6 +8,7 @@ import ClaimInvitePage from './pages/auth/ClaimInvitePage'
 import DashboardPage from './pages/DashboardPage'
 import SettingsPage from './pages/SettingsPage'
 import PreferencesPage from './pages/PreferencesPage'
+import ReportsPage from './pages/ReportsPage'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
 import PCCDashboard from './pages/pcc/PCCDashboard'
@@ -51,6 +52,7 @@ const AppContent: React.FC = () => {
   // 4. Authenticated Component Routes
   if (currentHash === '#/settings') return <SettingsPage />
   if (currentHash === '#/preferences') return <PreferencesPage />
+  if (currentHash === '#/reports') return <ReportsPage />
 
   // 5. Default Route: Dashboard
   return <DashboardPage view={view} setView={setView} />

@@ -1330,70 +1330,134 @@ app.post('/api/pcc/theme/broadcast', async (c) => {
 // Analytics & Predictions
 app.get('/api/analytics/summary', async (c) => {
   const householdId = c.get('householdId')
-  const timeframe = c.req.query('timeframe') || 'paycheck' // paycheck, month, 30d
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
   
-  // 1. Get Accounts and Transactions
-  const { results: accounts } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
-  const { results: transactions } = await c.env.DB.prepare('SELECT amount_cents, category_id, transaction_date FROM transactions WHERE household_id = ?').bind(householdId).all()
-  const { results: subs } = await c.env.DB.prepare('SELECT amount_cents FROM subscriptions WHERE household_id = ?').bind(householdId).all()
-  const { results: categories } = await c.env.DB.prepare('SELECT monthly_budget_cents FROM categories WHERE household_id = ?').bind(householdId).all()
+  // 1. Monthly Stats
+  const { results: income } = await c.env.DB.prepare('SELECT SUM(amount_cents) as total FROM transactions WHERE household_id = ? AND amount_cents > 0 AND transaction_date >= ?').bind(householdId, startOfMonth).all()
+  const { results: expense } = await c.env.DB.prepare('SELECT SUM(ABS(amount_cents)) as total FROM transactions WHERE household_id = ? AND amount_cents < 0 AND transaction_date >= ?').bind(householdId, startOfMonth).all()
   
-  // --- NEW FINANCIALS ---
-  const { results: installments } = await c.env.DB.prepare('SELECT installment_amount_cents FROM installment_plans WHERE household_id = ? AND status = "active"').bind(householdId).all()
-  const { results: ccMin } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ? AND type = "credit"').bind(householdId).all()
-  const { results: utilities } = await c.env.DB.prepare('SELECT avg_amount_cents FROM variable_schedules WHERE household_id = ?').bind(householdId).all()
-
-  const totalBalance = (accounts as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
-  const totalMonthlySubs = (subs as any[]).reduce((sum, s) => sum + s.amount_cents, 0)
-  const totalMonthlyBudget = (categories as any[]).reduce((sum, cat) => sum + cat.monthly_budget_cents, 0)
-
-  // 2. Calculate dynamic window days
-  let days = 15 // Default to "Next Paycheck" window
-  if (timeframe === 'month') {
-    const now = new Date()
-    days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()
-  } else if (timeframe === '30d') {
-    days = 30
-  }
-
-  // 3. Health Score Logic (Simplified Logic)
-  const currentMonthSpend = (transactions as any[]).reduce((sum, tx) => sum + tx.amount_cents, 0)
-  const budgetRatio = totalMonthlyBudget > 0 ? currentMonthSpend / totalMonthlyBudget : 0
-  let healthScore = Math.max(0, Math.min(100, Math.round(100 - (budgetRatio * 40))))
-
-  // 4. Enhanced Dynamic Safety Number
-  // Safety = Balance - (Subs) - (Installments) - (Utility Buffer) - (CC Min approx 2%)
-  const dailyFixed = totalMonthlySubs / 30
-  const totalFixedInWindow = dailyFixed * days
+  const totalIncome = (income as any)[0].total || 0
+  const totalExpense = (expense as any)[0].total || 0
+  const savings = totalIncome - totalExpense
+  const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
   
-  const totalInstallments = (installments as any[]).reduce((sum, i) => sum + i.installment_amount_cents, 0)
-  const totalUtilities = (utilities as any[]).reduce((sum, u) => sum + u.avg_amount_cents, 0)
-  const creditCardMin = (ccMin as any[]).reduce((sum, cc) => sum + (cc.balance_cents * 0.02), 0) // Assume 2% min payment
-
-  const safetyNumberCents = totalBalance - totalFixedInWindow - totalInstallments - (totalUtilities / 30 * days) - creditCardMin
-
+  // 2. Burn Rate (Last 30 days)
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const { results: recentExpense } = await c.env.DB.prepare('SELECT SUM(ABS(amount_cents)) as total FROM transactions WHERE household_id = ? AND amount_cents < 0 AND transaction_date >= ?').bind(householdId, thirtyDaysAgo).all()
+  const burnRate = (recentExpense as any)[0].total / 30
+  
   return c.json({
-    healthScore,
-    safetyNumberCents,
-    timeframe,
-    daysRemaining: days,
-    indicators: {
-      budgetAdherence: budgetRatio < 1 ? 'good' : 'warning',
-      savingsRate: 'neutral',
-      debtLoad: (totalInstallments + creditCardMin) > (totalBalance * 0.5) ? 'high' : 'ok'
-    }
+    healthScore: 85, // Simple placeholder for now
+    monthlyIncome: totalIncome,
+    monthlyExpense: totalExpense,
+    savingsRate: Math.round(savingsRate),
+    dailyBurnRate: Math.round(burnRate),
+    safetyNumberCents: (savings * 6) // Example: 6 months of savings
   })
 })
 
-// Reports
-app.get('/api/report/summary', async (c) => {
+app.post('/api/reports/snapshot', async (c) => {
   const householdId = c.get('householdId')
-  // Return a summary for "PDF" generation (simulated)
+  const { type } = await c.req.json() as { type: string }
+  
+  const id = crypto.randomUUID()
+  let data = {}
+  
+  if (type === 'net_worth_snapshot') {
+    const { results: accs } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
+    const netWorth = (accs as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
+    data = { net_worth_cents: netWorth }
+  } else if (type === 'monthly_summary') {
+     // Fetch summary data...
+     data = { summary: 'Monthly performance locked.' }
+  }
+
+  await c.env.DB.prepare('INSERT INTO reports (id, household_id, type, data_json) VALUES (?, ?, ?, ?)')
+    .bind(id, householdId, type, JSON.stringify(data)).run()
+    
+  return c.json({ success: true, id })
+})
+
+app.get('/api/transactions/export/csv', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT transaction_date, description, amount_cents FROM transactions WHERE household_id = ? ORDER BY transaction_date DESC').bind(householdId).all()
+  
+  let csv = 'Date,Description,Amount\n'
+  ;(results as any[]).forEach(r => {
+    csv += `${r.transaction_date},"${r.description.replace(/"/g, '""')}",${(r.amount_cents / 100).toFixed(2)}\n`
+  })
+  
+  c.header('Content-Type', 'text/csv')
+  c.header('Content-Disposition', 'attachment; filename=ledger_transactions.csv')
+  return c.text(csv)
+})
+
+// Reports
+app.get('/api/reports', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare(
+    'SELECT id, type, period_start, period_end, created_at FROM reports WHERE household_id = ? ORDER BY created_at DESC'
+  ).bind(householdId).all()
+  return c.json(results)
+})
+
+app.get('/api/reports/:id', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const report = await c.env.DB.prepare(
+    'SELECT * FROM reports WHERE id = ? AND household_id = ?'
+  ).bind(id, householdId).first()
+  
+  if (!report) throw new HTTPException(404, { message: 'Report not found' })
+  
   return c.json({
-    generatedAt: new Date().toISOString(),
-    householdId,
-    title: "Monthly Financial Digest",
-    sections: ["Cash Flow", "Budget Adherence", "Top Categories"]
+    ...report,
+    data: JSON.parse((report as any).data_json)
+  })
+})
+
+app.get('/api/analytics/category-spending', async (c) => {
+  const householdId = c.get('householdId')
+  const timeframe = c.req.query('timeframe') || '30d'
+  
+  const days = timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 365
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - days)
+  const startDateStr = startDate.toISOString().split('T')[0]
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT c.name, c.color, SUM(ABS(t.amount_cents)) as total_cents 
+     FROM transactions t
+     JOIN categories c ON t.category_id = c.id
+     WHERE t.household_id = ? AND t.amount_cents < 0 AND t.transaction_date >= ?
+     GROUP BY c.id
+     ORDER BY total_cents DESC`
+  ).bind(householdId, startDateStr).all()
+
+  return c.json(results)
+})
+
+app.get('/api/analytics/net-worth', async (c) => {
+  const householdId = c.get('householdId')
+  
+  // 1. Current Balances
+  const { results: accs } = await c.env.DB.prepare('SELECT type, balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
+  const netWorthCents = (accs as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
+  
+  // 2. Historical Snapshots (Last 6 months)
+  const { results: snapshots } = await c.env.DB.prepare(
+    'SELECT created_at, data_json FROM reports WHERE household_id = ? AND type = "net_worth_snapshot" ORDER BY created_at DESC LIMIT 6'
+  ).bind(householdId).all()
+
+  const history = snapshots.map((s: any) => ({
+    date: s.created_at.split('T')[0],
+    value: JSON.parse(s.data_json).net_worth_cents
+  })).reverse()
+
+  return c.json({
+    current_net_worth_cents: netWorthCents,
+    history
   })
 })
 

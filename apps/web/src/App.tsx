@@ -26,6 +26,8 @@ import PrivacyPolicy from './components/PrivacyPolicy'
 import AdminDashboard from './components/AdminDashboard'
 import TermsOfService from './components/TermsOfService'
 import Customizer from './components/Customizer'
+import SettingsPage from './pages/SettingsPage'
+import PreferencesPage from './pages/PreferencesPage'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { GuidedTour } from './components/GuidedTour'
 import { OnboardingChecklist } from './components/OnboardingChecklist'
@@ -860,6 +862,36 @@ const AppContent: React.FC = () => {
   // Public Routes (No session required)
   if (currentHash === '#/privacy') return <PrivacyPolicy />
   if (currentHash === '#/terms') return <TermsOfService />
+  if (currentHash === '#/settings') return (
+    <div className="dashboard-grid">
+      <header className="dashboard-header card dashboard-span-full flex justify-between items-center" style={{ border: '1px solid var(--primary)', padding: '0.75rem 1.5rem' }}>
+        <div className="flex items-center gap-3">
+          <img src="/assets/icon.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+          <h1 className="text-lg font-black tracking-tighter">LEDGER</h1>
+        </div>
+        <UserMenu />
+      </header>
+      <div className="dashboard-span-full">
+        <SettingsPage />
+      </div>
+      <Footer className="dashboard-span-full" />
+    </div>
+  )
+  if (currentHash === '#/preferences') return (
+    <div className="dashboard-grid">
+      <header className="dashboard-header card dashboard-span-full flex justify-between items-center" style={{ border: '1px solid var(--primary)', padding: '0.75rem 1.5rem' }}>
+        <div className="flex items-center gap-3">
+          <img src="/assets/icon.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+          <h1 className="text-lg font-black tracking-tighter">LEDGER</h1>
+        </div>
+        <UserMenu />
+      </header>
+      <div className="dashboard-span-full">
+        <PreferencesPage />
+      </div>
+      <Footer className="dashboard-span-full" />
+    </div>
+  )
   if (currentHash.startsWith('#/claim')) return <ClaimInvite />
 
   if (!user) return <Login />

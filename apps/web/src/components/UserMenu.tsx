@@ -1,76 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import ThemeSwitcher from './ThemeSwitcher'
-import { Settings, Shield, LogOut, Palette, ChevronDown, X, List, Calendar as CalendarIcon, Download } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon } from 'lucide-react'
 
 const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
   const { user, logout, globalRole } = useAuth()
-  const { data: profile, mutate } = useApi('/api/user/profile')
+  const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [name, setName] = useState('')
-  const [avatar, setAvatar] = useState('')
-  const { data: accounts } = useApi<any[]>('/api/accounts')
 
-  useEffect(() => {
-    if (profile) {
-      setName(profile.display_name || '')
-      setAvatar(profile.avatar_url || '')
-    }
-  }, [profile])
-
-
-  const handleUpdateProfile = async () => {
-    try {
-      const body = JSON.stringify({ 
-        display_name: name, 
-        avatar_url: avatar || null 
-      })
-      console.log('[UserMenu] Updating Profile:', body)
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-        },
-        body
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        console.error('[UserMenu] Update Failed:', err)
-        alert(`Update Failed: ${err.error || 'Unknown error'}`)
-        return
-      }
-      setShowSettings(false)
-      if (mutate) mutate()
-      else window.location.reload()
-    } catch (e) {
-      console.error('[UserMenu] Network Error:', e)
-    }
-  }
-
-  const handleExport = async () => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/csv`, {
-      headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
-      }
-    })
-    const blob = await res.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ledger-export-${Date.now()}.csv`
-    a.click()
-  }
-
-  const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
   const isHome = !window.location.hash || window.location.hash === '#/'
+  const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   return (
-    <div className="z-[2000]">
+    <div className="z-[2000] relative">
       {/* Menu Trigger */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
@@ -116,12 +59,21 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                 )}
 
                 <button 
-                  onClick={() => { setShowSettings(true); setIsOpen(false); }}
+                  onClick={() => { window.location.hash = '#/settings'; setIsOpen(false); }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
                   style={{ background: 'none', border: 'none' }}
                 >
                   <Settings size={18} className="text-primary" />
                   <span>User Settings</span>
+                </button>
+
+                <button 
+                  onClick={() => { window.location.hash = '#/preferences'; setIsOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
+                  style={{ background: 'none', border: 'none' }}
+                >
+                  <Palette size={18} className="text-secondary" />
+                  <span>Preferences</span>
                 </button>
 
                 {globalRole === 'super_admin' && (
@@ -135,7 +87,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                   </button>
                 )}
 
-                {setView && (
+                {setView && isHome && (
                   <div className="px-3 py-2 border-t border-glass-border mt-2">
                     <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
                     <div className="grid grid-cols-2 gap-2">
@@ -159,23 +111,6 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                   </div>
                 )}
 
-                <div className="px-3 py-2 border-t border-glass-border">
-                  <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Personalization</div>
-                  <ThemeSwitcher />
-                </div>
-
-                <div className="border-t border-glass-border mt-2 pt-2 px-3 pb-2">
-                   <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">System Actions</div>
-                   <button 
-                    onClick={() => { handleExport(); setIsOpen(false); }}
-                    className="w-full flex items-center gap-3 py-1 rounded-lg hover:text-primary text-xs text-secondary transition-colors text-left"
-                    style={{ background: 'none', border: 'none' }}
-                   >
-                     <Download size={14} />
-                     <span>Export Ledger (CSV)</span>
-                   </button>
-                </div>
-
                 <div className="border-t border-glass-border mt-2 pt-1">
                   <button 
                     onClick={logout}
@@ -189,104 +124,6 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
               </div>
             </motion.div>
           </>
-        )}
-      </AnimatePresence>
-
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {showSettings && (
-          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-overlay backdrop-blur">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="card max-w-lg w-full p-8 relative shadow-2xl"
-              style={{ border: '1px solid var(--primary)' }}
-            >
-              <button 
-                onClick={() => setShowSettings(false)} 
-                className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
-                style={{ background: 'none', border: 'none', padding: '0.5rem' }}
-              >
-                <X size={20} />
-              </button>
-
-              <div className="flex items-center gap-3 mb-8 border-b border-glass-border pb-4">
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                  <Settings size={28} />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight">User Settings</h2>
-                  <p className="text-xs text-secondary uppercase tracking-widest">Manage your profile and platform preferences</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="flex flex-col items-center gap-4 py-4 bg-white/5 rounded-2xl border border-glass-border">
-                  <img src={avatar || avatarUrl} alt="Preview" className="w-20 h-20 rounded-full border-2 border-primary shadow-2xl" />
-                  <div className="text-center">
-                    <label className="block text-[10px] font-bold text-secondary uppercase tracking-widest mb-2">Profile Avatar</label>
-                    <div className="flex flex-wrap justify-center gap-3 px-4">
-                      {/* Connected Accounts Icons */}
-                      {accounts?.filter(acc => acc.icon).map((acc: any) => (
-                        <button 
-                          key={acc.id}
-                          onClick={() => setAvatar(`https://c.1password.com/richicons/images/login/120/${acc.icon}.png`)}
-                          className={`w-10 h-10 rounded-xl border-2 transition-all p-1 bg-white/10 ${avatar.includes(acc.icon) ? 'border-primary shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-glass-border opacity-50 hover:opacity-100 hover:scale-110'}`}
-                          title={`Use ${acc.name} icon`}
-                        >
-                          <img src={`https://c.1password.com/richicons/images/login/120/${acc.icon}.png`} alt={acc.name} className="w-full h-full rounded-lg" />
-                        </button>
-                      ))}
-                      {/* Default Robot Fallback */}
-                      <button 
-                        onClick={() => setAvatar('')}
-                        className={`w-10 h-10 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${!avatar ? 'border-primary bg-primary/20 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:opacity-100'}`}
-                        title="Automatic Bot Avatar"
-                      >
-                        <span className="text-[14px] leading-tight">🤖</span>
-                        <span className="text-[8px] font-bold uppercase">Auto</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="w-full px-8">
-                    <input 
-                      type="text" 
-                      value={avatar} 
-                      onChange={(e) => setAvatar(e.target.value)}
-                      className="w-full p-2 bg-white/5 border border-glass-border rounded-lg text-[10px] text-secondary focus:border-primary outline-none text-center"
-                      placeholder="Or paste a custom image URL..."
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-secondary uppercase tracking-widest mb-2">Display Name</label>
-                  <input 
-                    type="text" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white focus:border-primary outline-none transition-all"
-                    placeholder="General Kenobi"
-                  />
-                  <p className="text-[10px] text-secondary mt-2 opacity-60">This is how you will appear across the LEDGER platform.</p>
-                </div>
-
-                <div className="pt-4 border-t border-glass-border">
-                  <label className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-widest mb-4">
-                    <Palette size={14} className="text-primary" />
-                    <span>Appearance & Branding</span>
-                  </label>
-                  <ThemeSwitcher />
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button className="flex-1" onClick={() => setShowSettings(false)} style={{ background: 'none', border: '1px solid var(--glass-border)' }}>Cancel</button>
-                  <button className="primary flex-1" onClick={handleUpdateProfile}>Save Changes</button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
         )}
       </AnimatePresence>
     </div>

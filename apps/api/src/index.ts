@@ -1783,25 +1783,48 @@ app.post('/api/transactions/:id/link', async (c) => {
   const { linkedToIds } = await c.req.json() as { linkedToIds: string[] }
   const householdId = c.get('householdId')
   
+  // 1. Fetch source transaction
+  const sourceTx = await c.env.DB.prepare(
+    'SELECT amount_cents FROM transactions WHERE id = ? AND household_id = ?'
+  ).bind(id, householdId).first() as any
+  
+  if (!sourceTx) throw new HTTPException(404, { message: 'Source transaction not found' })
+
+  // 2. Insert links
   for (const targetId of linkedToIds) {
     const linkId = crypto.randomUUID()
     await c.env.DB.prepare(
-      'INSERT INTO transaction_links (id, household_id, source_id, target_id) VALUES (?, ?, ?, ?)'
+      'INSERT OR IGNORE INTO transaction_links (id, household_id, source_id, target_id) VALUES (?, ?, ?, ?)'
     ).bind(linkId, householdId, id, targetId).run()
   }
 
-  // Update reconciliation_status
-  await c.env.DB.prepare(
-    'UPDATE transactions SET reconciliation_status = "reconciled", satisfaction_date = CURRENT_TIMESTAMP WHERE id = ? AND household_id = ?'
-  ).bind(id, householdId).run()
+  // 3. Calculate new total progress for this source
+  const { results: links } = await c.env.DB.prepare(
+    'SELECT t.amount_cents FROM transaction_links l JOIN transactions t ON l.target_id = t.id WHERE l.source_id = ?'
+  ).bind(id).all()
+  
+  const totalLinkedCents = (links as any[]).reduce((sum, link) => sum + Math.abs(link.amount_cents), 0)
+  const isFullyReconciled = totalLinkedCents >= Math.abs(sourceTx.amount_cents)
 
+  // 4. Update source status
+  await c.env.DB.prepare(
+    'UPDATE transactions SET reconciliation_status = ?, reconciliation_progress_cents = ?, satisfaction_date = ? WHERE id = ? AND household_id = ?'
+  ).bind(
+    isFullyReconciled ? 'reconciled' : 'partial',
+    totalLinkedCents,
+    isFullyReconciled ? new Date().toISOString() : null,
+    id,
+    householdId
+  ).run()
+
+  // 5. Mark targets as reconciled (Simplified: once a target is linked, it's considered reconciled to its source)
   for (const targetId of linkedToIds) {
     await c.env.DB.prepare(
       'UPDATE transactions SET reconciliation_status = "reconciled" WHERE id = ? AND household_id = ?'
     ).bind(targetId, householdId).run()
   }
 
-  return c.json({ success: true })
+  return c.json({ success: true, status: isFullyReconciled ? 'reconciled' : 'partial', progress_cents: totalLinkedCents })
 })
 
 app.post('/api/transactions/:id/unlink', async (c) => {
@@ -1830,23 +1853,35 @@ app.post('/api/transactions/:id/unlink', async (c) => {
 app.get('/api/transactions/suggest-links', async (c) => {
   const householdId = c.get('householdId')
   const { results: unreconciled } = await c.env.DB.prepare(
-    'SELECT * FROM transactions WHERE household_id = ? AND reconciliation_status = "unreconciled"'
+    'SELECT * FROM transactions WHERE household_id = ? AND reconciliation_status != "reconciled" LIMIT 5'
   ).bind(householdId).all()
 
   const suggestions = []
   for (const tx of unreconciled as any[]) {
-    // Heuristic: Find transactions with same absolute amount within 7 days
-    const minDate = new Date(new Date(tx.transaction_date).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const maxDate = new Date(new Date(tx.transaction_date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    // 1. Find exact matches within ±4 days
+    const minDate = new Date(new Date(tx.transaction_date).getTime() - 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const maxDate = new Date(new Date(tx.transaction_date).getTime() + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     
-    const { results: matches } = await c.env.DB.prepare(
-      'SELECT id, description, amount_cents FROM transactions WHERE household_id = ? AND id != ? AND reconciliation_status = "unreconciled" AND ABS(amount_cents) = ABS(?) AND transaction_date BETWEEN ? AND ? LIMIT 3'
-    ).bind(householdId, tx.id, tx.amount_cents, minDate, maxDate).all()
+    // Check for opposite signs (Transfers) or same sign (Multi-entry match)
+    const { results: candidates } = await c.env.DB.prepare(`
+      SELECT id, description, amount_cents, account_id 
+      FROM transactions 
+      WHERE household_id = ? 
+      AND id != ? 
+      AND reconciliation_status = "unreconciled" 
+      AND (ABS(amount_cents) = ABS(?) OR ABS(amount_cents) BETWEEN ABS(?) * 0.95 AND ABS(?) * 1.05)
+      AND transaction_date BETWEEN ? AND ? 
+      LIMIT 5
+    `).bind(householdId, tx.id, tx.amount_cents, tx.amount_cents, tx.amount_cents, minDate, maxDate).all()
 
-    if (matches.length > 0) {
+    if (candidates.length > 0) {
       suggestions.push({ 
         source: tx,
-        candidates: matches
+        candidates: (candidates as any[]).map(c => ({
+          ...c,
+          confidence: Math.abs(c.amount_cents) === Math.abs(tx.amount_cents) ? 'high' : 'medium',
+          type: (c.amount_cents === -tx.amount_cents) ? 'transfer' : 'match'
+        }))
       })
     }
   }
@@ -2044,6 +2079,29 @@ app.post('/api/admin/system/sync', async (c) => {
   if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
   const results = await syncAllConnections(c.env)
   return c.json({ success: true, results })
+})
+
+app.get('/api/pcc/search/global', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const q = c.req.query('q') || ''
+  const limit = parseInt(c.req.query('limit') || '20')
+
+  const { results: transactions } = await c.env.DB.prepare(`
+    SELECT t.*, h.name as household_name 
+    FROM transactions t 
+    JOIN households h ON t.household_id = h.id 
+    WHERE t.description LIKE ? OR ABS(t.amount_cents) = ABS(?) 
+    ORDER BY t.transaction_date DESC 
+    LIMIT ?
+  `).bind(`%${q}%`, isNaN(parseFloat(q)) ? -1 : parseFloat(q) * 100, limit).all()
+
+  const { results: users } = await c.env.DB.prepare(`
+    SELECT id, email, display_name, global_role, status FROM users 
+    WHERE email LIKE ? OR display_name LIKE ? 
+    LIMIT ?
+  `).bind(`%${q}%`, `%${q}%`, limit).all()
+
+  return c.json({ transactions, users })
 })
 
 app.post('/api/admin/system/migrate-schedules', async (c) => {

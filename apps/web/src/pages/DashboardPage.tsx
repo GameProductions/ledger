@@ -32,6 +32,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: analytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
   const { data: insightsData } = useApi('/api/analytics/insights')
   const { data: projections } = useApi('/api/analytics/projection')
+  const { data: smartSuggestions } = useApi('/api/transactions/suggest-links')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -278,6 +279,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                             {tx.reconciliation_status === 'reconciled' && (
                               <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Satisfied</span>
                             )}
+                            {tx.reconciliation_status === 'partial' && (
+                              <span className="text-[8px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (${(tx.reconciliation_progress_cents/100).toFixed(0)})</span>
+                            )}
                           </div>
                           <div className="text-[10px] text-secondary uppercase font-bold opacity-60">{tx.transaction_date}</div>
                         </div>
@@ -430,11 +434,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div>
                 <div className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-3">Smart Suggestions</div>
                 <div className="space-y-2">
-                  {transactions?.filter((t: any) => 
-                    t.id !== linkingTx.id && 
-                    t.reconciliation_status === 'unreconciled' &&
-                    Math.abs(t.amount_cents) === Math.abs(linkingTx.amount_cents)
-                  ).map((t: any) => (
+                  {smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates.map((t: any) => (
                     <div 
                       key={`suggest-${t.id}`}
                       onClick={async () => {
@@ -442,21 +442,29 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           method: 'POST',
                           headers: { 
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-                            'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
+                            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
                           },
                           body: JSON.stringify({ linkedToIds: [t.id] })
                         })
                         mutateTx()
                         setLinkingTx(null)
-                        showToast('Auto-Matched Successfully')
+                        showToast('Smart Match Applied')
                       }}
-                      className="cursor-pointer flex justify-between p-4 bg-primary/10 border border-primary/50 rounded-xl hover:bg-primary/20 transition-all animate-pulse"
+                      className="cursor-pointer flex justify-between p-4 bg-primary/10 border border-primary/50 rounded-xl hover:bg-primary/20 transition-all border-dashed"
                     >
-                      <span className="font-bold">✨ {t.description}</span>
-                      <span className="font-black tracking-tighter">${(t.amount_cents / 100).toFixed(2)}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm">✨</span>
+                        <div>
+                          <p className="font-bold text-sm">{t.description}</p>
+                          <p className="text-[10px] uppercase font-black text-primary opacity-60">{t.type} • {t.confidence} confidence</p>
+                        </div>
+                      </div>
+                      <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amount_cents) / 100).toFixed(2)}</span>
                     </div>
                   ))}
+                  {(!smartSuggestions || smartSuggestions.find((s: any) => s.source.id === linkingTx.id)?.candidates.length === 0) && (
+                    <p className="text-[10px] text-secondary italic opacity-50 px-2 py-4">Scanning records for patterns...</p>
+                  )}
                 </div>
               </div>
 

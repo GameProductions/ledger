@@ -12,6 +12,7 @@ import { generateTOTPSecret, verifyTOTP, base32Encode, hashPassword, verifyPassw
 import { Bindings, Variables } from './types'
 import { auth as authRoutes } from './routes/auth'
 import { logAudit, encrypt, decrypt } from './utils'
+import { SchedulingService } from './services/scheduling.service'
 
 
 
@@ -332,7 +333,8 @@ const ProfileSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
   email: z.string().email().optional(),
   settings_json: z.string().optional(),
-  avatar_url: z.string().url().or(z.string().length(0)).nullable().optional()
+  avatar_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  timezone: z.string().min(1).max(50).optional()
 })
 
 const JoinHouseholdSchema = z.object({
@@ -1450,9 +1452,11 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
     await c.env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(data.email, userId).run()
   }
   
-  // Explicitly handle null/empty avatar_url
   if (data.avatar_url !== undefined) {
     await c.env.DB.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').bind(data.avatar_url || null, userId).run()
+  }
+  if (data.timezone) {
+    await c.env.DB.prepare('UPDATE users SET timezone = ? WHERE id = ?').bind(data.timezone, userId).run()
   }
   
   return c.json({ success: true })
@@ -2039,39 +2043,57 @@ app.onError((err, c) => {
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-    // Handle subscription renewals
-    const today = new Date().toISOString().split('T')[0]
-    const { results: subs } = await env.DB.prepare(
-      'SELECT * FROM subscriptions WHERE next_billing_date <= ?'
-    ).bind(today).all()
+    const now = new Date();
+    const nowIso = now.toISOString();
 
-    const queries = []
-    for (const sub of subs as any[]) {
-      const transactionId = crypto.randomUUID()
-      // Create Transaction
-      queries.push(
-        env.DB.prepare(
-          'INSERT INTO transactions (id, household_id, description, amount_cents, date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(transactionId, sub.household_id, `Subscription: ${sub.name}`, sub.amount_cents, today, sub.category_id)
-      )
+    // 1. Process Unified Schedules
+    const { results: dueSchedules } = await env.DB.prepare(
+      'SELECT * FROM schedules WHERE next_run_at <= ? AND status = "active"'
+    ).bind(nowIso).all();
 
-      // Update Next Billing Date
-      const nextDate = new Date(sub.next_billing_date)
-      if (sub.billing_cycle === 'monthly') nextDate.setMonth(nextDate.getMonth() + 1)
-      if (sub.billing_cycle === 'yearly') nextDate.setFullYear(nextDate.getFullYear() + 1)
-      if (sub.billing_cycle === 'weekly') nextDate.setDate(nextDate.getDate() + 7)
+    console.log(`[Scheduler] Found ${dueSchedules.length} due schedules.`);
+
+    for (const schedule of dueSchedules as any[]) {
+      const queries = [];
+      const historyId = crypto.randomUUID();
       
-      queries.push(
-        env.DB.prepare('UPDATE subscriptions SET next_billing_date = ? WHERE id = ?')
-          .bind(nextDate.toISOString().split('T')[0], sub.id)
-      )
+      try {
+        // Execute Action
+        if (schedule.target_type === 'subscription') {
+          const sub = await env.DB.prepare('SELECT * FROM subscriptions WHERE id = ?').bind(schedule.target_id).first();
+          if (sub) {
+            const txId = crypto.randomUUID();
+            queries.push(env.DB.prepare(
+              'INSERT INTO transactions (id, household_id, description, amount_cents, date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
+            ).bind(txId, schedule.household_id, `Subscription: ${(sub as any).name}`, (sub as any).amount_cents, nowIso.split('T')[0], (sub as any).category_id));
+          }
+        }
+        
+        // Calculate Next
+        const nextOccurrence = SchedulingService.calculateNextOccurrence(schedule, now);
+        
+        // Update Schedule
+        queries.push(env.DB.prepare(
+          'UPDATE schedules SET last_run_at = ?, next_run_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        ).bind(nowIso, nextOccurrence.toISOString(), schedule.id));
+        
+        // Log History
+        queries.push(env.DB.prepare(
+          'INSERT INTO schedule_history (id, schedule_id, household_id, occurrence_at, action_status) VALUES (?, ?, ?, ?, ?)'
+        ).bind(historyId, schedule.id, schedule.household_id, nowIso, 'executed'));
+
+        if (queries.length > 0) {
+          await env.DB.batch(queries);
+        }
+      } catch (e: any) {
+        console.error(`[Scheduler] Failed to process schedule ${schedule.id}:`, e);
+        await env.DB.prepare(
+          'INSERT INTO schedule_history (id, schedule_id, household_id, occurrence_at, action_status, details_json) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), schedule.id, schedule.household_id, nowIso, 'failed', JSON.stringify({ error: e.message })).run();
+      }
     }
 
-    if (queries.length > 0) {
-      await env.DB.batch(queries)
-    }
-
-    // Existing cron-based sync and pulse logic
+    // 2. Existing cron-based sync and pulse logic
     if (event.cron === "0 0 * * *") { // Weekly Pulse + Daily Sync
       console.log("Triggering scheduled sync and pulse...")
       ctx.waitUntil(syncAllConnections(env))

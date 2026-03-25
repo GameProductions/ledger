@@ -96,6 +96,29 @@ const PreferencesPage: React.FC = () => {
                 ))}
               </div>
             </section>
+
+            <section className="card p-8 bg-emerald-500/5 border-emerald-500/20">
+              <div className="flex items-center gap-3 mb-6">
+                <Shield size={20} className="text-emerald-500" />
+                <h3 className="text-lg font-bold text-emerald-500">Localization</h3>
+              </div>
+              <p className="text-xs text-secondary mb-6">Set your primary timezone to ensure all budget resets and recurring transactions happen at your local wall-clock time.</p>
+              <select 
+                value={profile?.timezone || 'UTC'}
+                onChange={(e) => {
+                  fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ timezone: e.target.value })
+                  }).then(() => window.location.reload())
+                }}
+                className="w-full p-4 bg-black/40 border border-emerald-500/30 rounded-xl text-sm font-bold text-emerald-400 focus:outline-none focus:border-emerald-500 transition-all"
+              >
+                {['UTC', 'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo'].map(tz => (
+                  <option key={tz} value={tz}>{tz.replace('_', ' ')}</option>
+                ))}
+              </select>
+            </section>
           </div>
 
           {/* Functional Section */}

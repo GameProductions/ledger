@@ -2142,12 +2142,81 @@ app.post('/api/admin/system/sync', async (c) => {
   return c.json({ success: true, results })
 })
 
+app.post('/api/export/gsheets', async (c) => {
+  const userId = c.get('userId')
+  const { filename, data, columns } = await c.req.json() as any
+  
+  const identity: any = await c.env.DB.prepare(
+    'SELECT access_token FROM user_identities WHERE user_id = ? AND provider = "google"'
+  ).bind(userId).first()
+  
+  if (!identity?.access_token) {
+    throw new HTTPException(400, { message: 'Google account not linked or missing permissions' })
+  }
+
+  try {
+    const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${identity.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ properties: { title: filename } })
+    })
+    const sheet = await createRes.json() as any
+    const spreadsheetId = sheet.spreadsheetId
+
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1:append?valueInputOption=USER_ENTERED`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${identity.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        values: [
+          columns.map((c: any) => c.header),
+          ...data.map((row: any) => columns.map((c: any) => row[c.key]))
+        ]
+      })
+    })
+
+    return c.json({ url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}` })
+  } catch (err) {
+    console.error('[Google Sheets Export Error]', err)
+    throw new HTTPException(500, { message: 'Failed to export to Google Sheets' })
+  }
+})
+
 app.get('/api/user/identities', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(
     'SELECT id, provider, provider_user_id, created_at FROM user_identities WHERE user_id = ?'
   ).bind(userId).all()
   return c.json(results)
+})
+
+app.post('/api/snapshots', async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const { name, data, expiresInDays } = await c.req.json() as any
+  
+  const id = crypto.randomUUID()
+  const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString() : null
+  
+  await c.env.DB.prepare(
+    'INSERT INTO data_snapshots (id, household_id, user_id, snapshot_name, data_json, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, householdId, userId, name, JSON.stringify(data), expiresAt).run()
+
+  return c.json({ id, url: `#/snapshot/${id}` })
+})
+
+// PUBLIC ENDPOINT (NO AUTH)
+app.get('/api/public/snapshots/:id', async (c) => {
+  const { id } = c.req.param()
+  const snapshot: any = await c.env.DB.prepare(
+    'SELECT * FROM data_snapshots WHERE id = ? AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)'
+  ).bind(id).first()
+  
+  if (!snapshot) throw new HTTPException(404, { message: 'Snapshot not found or expired' })
+  return c.json({
+    name: snapshot.snapshot_name,
+    data: JSON.parse(snapshot.data_json),
+    created_at: snapshot.created_at
+  })
 })
 
 app.delete('/api/user/identities/:id', async (c) => {

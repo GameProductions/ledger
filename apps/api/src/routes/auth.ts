@@ -98,6 +98,10 @@ auth.get('/callback/discord', async (c) => {
     email: profile.email,
     name: profile.username,
     avatar: `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
+  }, {
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token,
+    expires_in: tokenData.expires_in
   })
   
   const token = await authService.generateToken(userId)
@@ -107,7 +111,7 @@ auth.get('/callback/discord', async (c) => {
 auth.get('/login/google', (c) => {
   const clientId = c.env.GOOGLE_CLIENT_ID
   const redirectUri = `${new URL(c.req.url).origin}/ledger/auth/callback/google`
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile`
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile%20https://www.googleapis.com/auth/spreadsheets&access_type=offline&prompt=consent`
   return c.redirect(url)
 })
 
@@ -137,6 +141,10 @@ auth.get('/callback/google', async (c) => {
     email: profile.email,
     name: profile.name,
     avatar: profile.picture
+  }, {
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token,
+    expires_in: tokenData.expires_in
   })
   
   const token = await authService.generateToken(userId)

@@ -10,6 +10,7 @@ import SettingsPage from './pages/SettingsPage'
 import PreferencesPage from './pages/PreferencesPage'
 import ReportsPage from './pages/ReportsPage'
 import DataInteropPage from './pages/DataInteropPage'
+import SnapshotViewer from './pages/SnapshotViewer'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
 import PCCDashboard from './pages/pcc/PCCDashboard'
@@ -55,6 +56,7 @@ const AppContent: React.FC = () => {
   if (currentHash === '#/preferences') return <PreferencesPage />
   if (currentHash === '#/reports') return <ReportsPage />
   if (currentHash === '#/data') return <DataInteropPage />
+  if (currentHash.startsWith('#/snapshot/')) return <SnapshotViewer />
 
   // 5. Default Route: Dashboard
   return <DashboardPage view={view} setView={setView} />

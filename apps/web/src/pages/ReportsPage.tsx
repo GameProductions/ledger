@@ -55,6 +55,33 @@ const ReportsPage: React.FC = () => {
 
   const totalSpend = categorySpending.reduce((sum, c) => sum + c.total_cents, 0);
 
+  const shareSnapshot = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/snapshots`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          name: `Financial Snapshot - ${new Date().toLocaleDateString()}`,
+          data: categorySpending.map(c => ({ 
+            date: new Date().toLocaleDateString(), 
+            description: c.name, 
+            amount: (c.total_cents / 100).toFixed(2) 
+          })),
+          expiresInDays: 7
+        })
+      });
+      const { url } = await res.json();
+      const absoluteUrl = `${window.location.origin}${window.location.pathname}${url}`;
+      await navigator.clipboard.writeText(absoluteUrl);
+      showToast('Snapshot URL copied to clipboard (Expires in 7 days)', 'success');
+    } catch (e) {
+      showToast('Failed to share snapshot', 'error');
+    }
+  };
+
   const generateSnapshot = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/reports/snapshot`, {
@@ -96,6 +123,12 @@ const ReportsPage: React.FC = () => {
               className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all"
             >
               Export CSV
+            </button>
+            <button 
+              onClick={shareSnapshot}
+              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-xl text-xs font-bold text-blue-400 transition-all"
+            >
+              Share Snapshot
             </button>
             <button 
               onClick={generateSnapshot}

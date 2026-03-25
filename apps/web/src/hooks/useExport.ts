@@ -83,6 +83,27 @@ export const useExport = () => {
        });
        
        doc.save(`${filename}.pdf`);
+    } else if (format === 'gsheets' as any) {
+      // Proxy through backend for security
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/export/gsheets`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify({ filename, data, columns })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          alert(err.message || 'Failed to export to Google Sheets');
+          return;
+        }
+        const { url } = await res.json();
+        window.open(url, '_blank');
+      } catch (err) {
+        alert('Failed to export to Google Sheets.');
+      }
     }
   };
 

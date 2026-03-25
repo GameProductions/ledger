@@ -41,7 +41,7 @@ export class AuthService {
     return await sign(payload, this.env.JWT_SECRET)
   }
 
-  async findOrCreateSocialUser(provider: string, profile: { id: string, email: string, avatar?: string, name?: string }) {
+  async findOrCreateSocialUser(provider: string, profile: { id: string, email: string, avatar?: string, name?: string }, tokens?: { access_token: string, refresh_token?: string, expires_in?: number }) {
     let identity: any = await this.env.DB.prepare(
       'SELECT user_id FROM user_identities WHERE provider = ? AND provider_user_id = ?'
     ).bind(provider, profile.id).first()
@@ -58,10 +58,15 @@ export class AuthService {
           .bind(userId, profile.email, profile.name || `${provider} User`, profile.avatar).run()
       }
       
-      // Link the new/existing user to this social identity
       const identityId = crypto.randomUUID()
-      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id) VALUES (?, ?, ?, ?)')
-        .bind(identityId, userId, provider, profile.id).run()
+      const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(identityId, userId, provider, profile.id, tokens?.access_token, tokens?.refresh_token, expiresAt).run()
+    } else if (tokens) {
+      // Update tokens for existing identity
+      const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      await this.env.DB.prepare('UPDATE user_identities SET access_token = ?, refresh_token = ?, token_expires_at = ? WHERE provider = ? AND provider_user_id = ?')
+        .bind(tokens.access_token, tokens.refresh_token, expiresAt, provider, profile.id).run()
     }
 
     return userId

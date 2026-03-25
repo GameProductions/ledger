@@ -15,23 +15,68 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
     if (e.target.files) setFile(e.target.files[0]);
   };
 
+  const parseLegacyFormat = (text: string, type: 'qif' | 'ofx'): any[] => {
+    const rows: any[] = [];
+    if (type === 'qif') {
+      const entries = text.split('^');
+      entries.forEach(entry => {
+        const row: any = {};
+        const lines = entry.split('\n');
+        lines.forEach(line => {
+          if (line.startsWith('D')) row.Date = line.substring(1).trim();
+          if (line.startsWith('T')) row.Amount = line.substring(1).trim();
+          if (line.startsWith('P')) row.Description = line.substring(1).trim();
+        });
+        if (row.Date && row.Amount) rows.push(row);
+      });
+    } else if (type === 'ofx') {
+      const matches = text.matchAll(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/g);
+      for (const match of matches) {
+        const content = match[1];
+        const row: any = {};
+        row.Date = content.match(/<DTPOSTED>(.*?)(\r|\n|<|$)/)?.[1]?.trim() || '';
+        row.Amount = content.match(/<TRNAMT>(.*?)(\r|\n|<|$)/)?.[1]?.trim() || '';
+        row.Description = content.match(/<NAME>(.*?)(\r|\n|<|$)/)?.[1]?.trim() || '';
+        if (row.Date && row.Amount) rows.push(row);
+      }
+    }
+    return rows;
+  };
+
   const handleStage = async () => {
     if (!file) return;
     setStaging(true);
+    
+    const sendToSandbox = async (rows: any[]) => {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/sandbox/stage`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+        },
+        body: JSON.stringify({ filename: file.name, rows })
+      });
+      return await res.json();
+    };
+
+    if (file.name.endsWith('.qif') || file.name.endsWith('.ofx')) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const text = e.target?.result as string;
+        const rows = parseLegacyFormat(text, file.name.endsWith('.qif') ? 'qif' : 'ofx');
+        await sendToSandbox(rows);
+        fetchSandbox();
+        setStaging(false);
+      };
+      reader.readAsText(file);
+      return;
+    }
+
     Papa.parse(file, {
       header: true,
       complete: async (results) => {
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/sandbox/stage`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-            },
-            body: JSON.stringify({ filename: file.name, rows: results.data })
-          });
-          const data = await res.json();
-          console.log('Staged:', data);
+          await sendToSandbox(results.data);
           fetchSandbox();
         } catch (err) {
           console.error('Staging failed:', err);
@@ -87,10 +132,10 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
 
       {!file && activeSandbox.length === 0 && (
         <label className="block border-2 border-dashed border-white/10 rounded-3xl p-12 text-center hover:border-emerald-500/50 transition-all cursor-pointer group">
-          <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+          <input type="file" accept=".csv,.qif,.ofx" onChange={handleFileUpload} className="hidden" />
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📄</div>
-          <p className="font-bold text-lg mb-2">Drop your CSV here</p>
-          <p className="text-xs text-gray-500 font-black uppercase tracking-widest">Supports Chase, Amex, Apple Card exports</p>
+          <p className="font-bold text-lg mb-2">Drop your file here</p>
+          <p className="text-xs text-gray-500 font-black uppercase tracking-widest">Supports CSV, QIF, and OFX formats</p>
         </label>
       )}
 

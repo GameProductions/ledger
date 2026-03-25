@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { ArrowLeft, Settings, Save } from 'lucide-react'
 import { MainLayout } from '../components/layout/MainLayout'
+import { PrivacySettings } from '../components/PrivacySettings'
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
@@ -184,6 +185,8 @@ const SettingsPage: React.FC = () => {
                    </button>
                 </div>
              </section>
+
+             <PrivacySettings />
           </div>
         </div>
       </div>

@@ -1327,6 +1327,32 @@ app.post('/api/pcc/theme/broadcast', async (c) => {
   return c.json({ success: true })
 })
 
+// 9. System Audit (Health Monitor)
+app.get('/api/pcc/audit/system', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_audit_logs ORDER BY created_at DESC LIMIT 100').all()
+  return c.json(results)
+})
+
+// --- WEBHOOKS (INBOUND) ---
+
+app.post('/api/webhooks/plaid', async (c) => {
+  const payload = await c.req.json() as any
+  console.log('[Webhook] Plaid:', payload.webhook_code)
+  
+  if (payload.webhook_code === 'INITIAL_UPDATE' || payload.webhook_code === 'HISTORICAL_UPDATE' || payload.webhook_code === 'DEFAULT_UPDATE') {
+    // Trigger sync for specific item if possible, or all
+    ctx.waitUntil(syncAllConnections(c.env))
+  }
+  
+  return c.json({ received: true })
+})
+
+app.post('/api/webhooks/akoya', async (c) => {
+  console.log('[Webhook] Akoya pulse received')
+  ctx.waitUntil(syncAllConnections(c.env))
+  return c.json({ received: true })
+})
+
 // Analytics & Predictions
 app.get('/api/analytics/summary', async (c) => {
   const householdId = c.get('householdId')
@@ -1667,21 +1693,29 @@ app.get('/api/export/full', async (c) => {
   })
 })
 
-app.post('/api/privacy/shred', zValidator('json', z.object({ reason: z.string().min(5) })), async (c) => {
+app.post('/api/privacy/shred', zValidator('json', z.object({ reason: z.string().min(5), months: z.number().optional() })), async (c) => {
   const userId = c.get('userId')
   const householdId = c.get('householdId')
-  const { months } = await c.req.json()
-  const { reason } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE users SET status = "suspended" WHERE id = ?').bind(userId).run()
-  // Implementation: Delete transactions older than X months
+  const { months, reason } = c.req.valid('json')
+  
+  const m = months || 12
   const date = new Date()
-  date.setMonth(date.getMonth() - months)
+  date.setMonth(date.getMonth() - m)
   const isoDate = date.toISOString()
   
-  const { success } = await c.env.DB.prepare('DELETE FROM transactions WHERE household_id = ? AND transaction_date < ?')
+  // 1. Delete Transactions
+  const { success: txSuccess } = await c.env.DB.prepare('DELETE FROM transactions WHERE household_id = ? AND transaction_date < ?')
     .bind(householdId, isoDate).run()
     
-  return c.json({ success, deletedUntil: isoDate })
+  // 2. Anonymize Audit Logs
+  await c.env.DB.prepare('UPDATE audit_logs SET old_values_json = "[SHREDDED]", new_values_json = "[SHREDDED]" WHERE household_id = ? AND created_at < ?')
+    .bind(householdId, isoDate).run()
+    
+  // 3. Log Shredding Action
+  await c.env.DB.prepare('INSERT INTO system_audit_logs (id, user_id, action, target, details_json) VALUES (?, ?, ?, ?, ?)')
+    .bind(crypto.randomUUID(), userId, 'PRIVACY_SHRED', householdId, JSON.stringify({ months: m, reason })).run()
+    
+  return c.json({ success: txSuccess, deletedUntil: isoDate })
 })
 
 app.get('/api/analytics/projection', async (c) => {

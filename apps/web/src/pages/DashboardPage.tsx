@@ -15,7 +15,7 @@ import HealthScore from '../components/HealthScore'
 import AICoach from '../components/AICoach'
 import DeveloperSettings from '../components/DeveloperSettings'
 import AuditChronicle from '../components/AuditChronicle'
-import PrivacySettings from '../components/PrivacySettings'
+import { PrivacySettings } from '../components/PrivacySettings'
 import FutureFlow from '../components/FutureFlow'
 import GoalSeek from '../components/GoalSeek'
 import SavingsBuckets from '../components/SavingsBuckets'
@@ -31,6 +31,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [timeframe, setTimeframe] = useState('paycheck')
   const { data: analytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
   const { data: insightsData } = useApi('/api/analytics/insights')
+  const { data: projections } = useApi('/api/analytics/projection')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -133,6 +134,32 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   ${((analytics?.safetyNumberCents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
+              </section>
+            )}
+
+            {settings.dashboard_layout?.healthScore !== false && (
+              <section className="card">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold">Projected Outlook</h3>
+                  <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
+                </div>
+                <div className="text-3xl font-black text-white mb-2">
+                  ${((projections?.[projections.length - 1]?.balanceCents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                </div>
+                <div className="flex items-center gap-2 mb-4">
+                   <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
+                   <span className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Liquid Capital</span>
+                </div>
+                <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
+                  {projections?.slice(0, 6).map((p: any, i: number) => (
+                    <div 
+                      key={i} 
+                      className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"
+                      style={{ width: '16.66%', opacity: 0.3 + (i * 0.1) }}
+                      title={`${p.date}: $${(p.balanceCents/100).toFixed(0)}`}
+                    />
+                  ))}
+                </div>
               </section>
             )}
 

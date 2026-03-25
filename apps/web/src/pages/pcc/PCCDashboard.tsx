@@ -3,25 +3,29 @@ import PCCPortal from './PCCPortal';
 
 const PCCDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
+  const [systemLogs, setSystemLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = import.meta.env.VITE_API_URL;
-        const res = await fetch(`${apiUrl}/api/pcc/stats`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setStats(data);
+        const [statsRes, logsRes] = await Promise.all([
+          fetch(`${apiUrl}/api/pcc/stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/pcc/audit/system`, { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        const statsData = await statsRes.json();
+        const logsData = await logsRes.json();
+        setStats(statsData);
+        setSystemLogs(logsData);
       } catch (err) {
-        console.error('Failed to fetch PCC stats:', err);
+        console.error('Failed to fetch PCC data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchStats();
+    fetchData();
   }, []);
 
   if (loading) return <PCCPortal activePath="#/system-pcc/dashboard"><div className="animate-pulse">Loading Command Hub...</div></PCCPortal>;
@@ -47,29 +51,36 @@ const PCCDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 p-8 rounded-3xl bg-white/5 border border-white/5">
-          <h3 className="text-lg font-bold mb-6">System Health Matrix</h3>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-500">⚡</div>
-                <div>
-                  <p className="font-bold">API Gateway</p>
-                  <p className="text-xs text-gray-500">Responsive - 24ms Average</p>
+          <h3 className="text-lg font-bold mb-6">System Event Chronicle</h3>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {systemLogs.length > 0 ? (
+              systemLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
+                      log.action.includes('SUCCESS') ? 'bg-emerald-500/10 text-emerald-500' : 
+                      log.action.includes('FAILURE') ? 'bg-red-500/10 text-red-500' : 
+                      'bg-blue-500/10 text-blue-500'
+                    }`}>
+                      {log.action.includes('SYNC') ? '🔄' : '🔔'}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">{log.action.replace(/_/g, ' ')}</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-tight">{log.target} • {new Date(log.created_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded-full border ${
+                    log.action.includes('SUCCESS') ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                    log.action.includes('FAILURE') ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
+                    'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                  }`}>
+                    Processed
+                  </span>
                 </div>
-              </div>
-              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase rounded-full">Operational</span>
-            </div>
-            {/* Additional health indicators */}
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 translate-x-1 opacity-80">
-               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-500">☁️</div>
-                <div>
-                  <p className="font-bold">Cloudflare Workers</p>
-                  <p className="text-xs text-gray-500">Connected - 9 Regions</p>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-blue-500/20 text-blue-500 text-[10px] font-black uppercase rounded-full">Linked</span>
-            </div>
+              ))
+            ) : (
+              <div className="py-20 text-center text-gray-500 text-sm italic">No system events recorded.</div>
+            )}
           </div>
         </div>
 

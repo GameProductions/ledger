@@ -11,6 +11,7 @@ import PreferencesPage from './pages/PreferencesPage'
 import ReportsPage from './pages/ReportsPage'
 import DataInteropPage from './pages/DataInteropPage'
 import SnapshotViewer from './pages/SnapshotViewer'
+import BackupHub from './pages/BackupHub'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
 import PCCDashboard from './pages/pcc/PCCDashboard'
@@ -57,6 +58,7 @@ const AppContent: React.FC = () => {
   if (currentHash === '#/reports') return <ReportsPage />
   if (currentHash === '#/data') return <DataInteropPage />
   if (currentHash.startsWith('#/snapshot/')) return <SnapshotViewer />
+  if (currentHash === '#/backup') return <BackupHub />
 
   // 5. Default Route: Dashboard
   return <DashboardPage view={view} setView={setView} />

@@ -2142,6 +2142,105 @@ app.post('/api/admin/system/sync', async (c) => {
   return c.json({ success: true, results })
 })
 
+app.get('/api/backup/export', async (c) => {
+  const householdId = c.get('householdId')
+  const [txs, cats, scheds] = await Promise.all([
+    c.env.DB.prepare('SELECT * FROM transactions WHERE household_id = ?').bind(householdId).all(),
+    c.env.DB.prepare('SELECT * FROM categories WHERE household_id = ?').bind(householdId).all(),
+    c.env.DB.prepare('SELECT * FROM schedules WHERE household_id = ?').bind(householdId).all()
+  ])
+  
+  return c.json({
+    version: '1.28.0',
+    timestamp: new Date().toISOString(),
+    householdId,
+    data: { transactions: txs.results, categories: cats.results, schedules: scheds.results }
+  })
+})
+
+app.post('/api/backup/restore', async (c) => {
+  const householdId = c.get('householdId')
+  const { data } = await c.req.json() as any
+  
+  // Atomic restore: Upsert categories, upsert schedules, upsert transactions
+  // This preserves IDs to prevent duplicates if restoring the same file multiple times
+  const queries = []
+  
+  if (data.categories) {
+    for (const cat of data.categories) {
+      queries.push(c.env.DB.prepare('INSERT OR REPLACE INTO categories (id, household_id, name, type, color, icon) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(cat.id, householdId, cat.name, cat.type, cat.color, cat.icon))
+    }
+  }
+  
+  if (data.schedules) {
+    for (const s of data.schedules) {
+      queries.push(c.env.DB.prepare('INSERT OR REPLACE INTO schedules (id, household_id, name, amount_cents, category_id, type, interval, next_occurrence, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(s.id, householdId, s.name, s.amount_cents, s.category_id, s.type, s.interval, s.next_occurrence, s.status))
+    }
+  }
+
+  if (data.transactions) {
+    for (const tx of data.transactions) {
+      queries.push(c.env.DB.prepare('INSERT OR REPLACE INTO transactions (id, household_id, user_id, amount_cents, category_id, description, transaction_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(tx.id, householdId, tx.user_id, tx.amount_cents, tx.category_id, tx.description, tx.transaction_date, tx.status))
+    }
+  }
+
+  await c.env.DB.batch(queries)
+  return c.json({ success: true, count: queries.length })
+})
+
+app.post('/api/backup/cloud/:provider', async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.get('householdId')
+  const provider = c.req.param('provider')
+  
+  const identity: any = await c.env.DB.prepare(
+    'SELECT access_token FROM user_identities WHERE user_id = ? AND provider = ?'
+  ).bind(userId, provider).first()
+  
+  if (!identity?.access_token) throw new HTTPException(400, { message: `${provider} not linked` })
+
+  const backupData = await (await fetch(`${new URL(c.req.url).origin}/ledger/api/backup/export`, {
+    headers: { 'Authorization': c.req.header('Authorization') || '' }
+  })).json()
+  
+  const filename = `ledger_backup_${householdId}_${new Date().toISOString().split('T')[0]}.json`
+  const content = JSON.stringify(backupData)
+
+  if (provider === 'google') {
+    // GDrive multipart upload
+    const metadata = { name: filename, parents: [] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', new Blob([content], { type: 'application/json' }));
+    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${identity.access_token}` },
+      body: form
+    })
+  } else if (provider === 'dropbox') {
+    await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${identity.access_token}`,
+        'Dropbox-API-Arg': JSON.stringify({ path: `/${filename}`, mode: 'overwrite', autorename: true, mute: false }),
+        'Content-Type': 'application/octet-stream'
+      },
+      body: content
+    })
+  } else if (provider === 'onedrive') {
+    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${filename}:/content`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${identity.access_token}`, 'Content-Type': 'application/json' },
+      body: content
+    })
+  }
+
+  return c.json({ success: true, provider, filename })
+})
+
 app.post('/api/export/gsheets', async (c) => {
   const userId = c.get('userId')
   const { filename, data, columns } = await c.req.json() as any

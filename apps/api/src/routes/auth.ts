@@ -151,6 +151,93 @@ auth.get('/callback/google', async (c) => {
   return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
 })
 
+// --- DROPBOX ---
+auth.get('/login/dropbox', (c) => {
+  const clientId = c.env.DROPBOX_CLIENT_ID
+  const redirectUri = `${new URL(c.req.url).origin}/ledger/auth/callback/dropbox`
+  const url = `https://www.dropbox.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`
+  return c.redirect(url)
+})
+
+auth.get('/callback/dropbox', async (c) => {
+  const code = c.req.query('code')
+  const authService = new AuthService(c.env)
+  const tokenRes = await fetch('https://api.dropbox.com/oauth2/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      client_id: c.env.DROPBOX_CLIENT_ID || '',
+      client_secret: c.env.DROPBOX_CLIENT_SECRET || '',
+      code: code || '',
+      grant_type: 'authorization_code',
+      redirect_uri: `${new URL(c.req.url).origin}/ledger/auth/callback/dropbox`
+    })
+  })
+  const tokenData = await tokenRes.json() as any
+  
+  const userRes = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(null)
+  })
+  const profile = await userRes.json() as any
+  
+  const userId = await authService.findOrCreateSocialUser('dropbox', {
+    id: profile.account_id,
+    email: profile.email,
+    name: profile.name.display_name,
+    avatar: profile.profile_photo_url
+  }, {
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token,
+    expires_in: tokenData.expires_in
+  })
+  
+  const token = await authService.generateToken(userId)
+  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+})
+
+// --- ONEDRIVE ---
+auth.get('/login/onedrive', (c) => {
+  const clientId = c.env.ONEDRIVE_CLIENT_ID
+  const redirectUri = `${new URL(c.req.url).origin}/ledger/auth/callback/onedrive`
+  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=files.readwrite%20offline_access%20User.Read`
+  return c.redirect(url)
+})
+
+auth.get('/callback/onedrive', async (c) => {
+  const code = c.req.query('code')
+  const authService = new AuthService(c.env)
+  const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    method: 'POST',
+    body: new URLSearchParams({
+      client_id: c.env.ONEDRIVE_CLIENT_ID || '',
+      client_secret: c.env.ONEDRIVE_CLIENT_SECRET || '',
+      code: code || '',
+      grant_type: 'authorization_code',
+      redirect_uri: `${new URL(c.req.url).origin}/ledger/auth/callback/onedrive`
+    })
+  })
+  const tokenData = await tokenRes.json() as any
+  
+  const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+  })
+  const profile = await userRes.json() as any
+  
+  const userId = await authService.findOrCreateSocialUser('onedrive', {
+    id: profile.id,
+    email: profile.mail || profile.userPrincipalName,
+    name: profile.displayName
+  }, {
+    access_token: tokenData.access_token,
+    refresh_token: tokenData.refresh_token,
+    expires_in: tokenData.expires_in
+  })
+  
+  const token = await authService.generateToken(userId)
+  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+})
+
 // --- WEBAUTHN / PASSKEYS ---
 auth.post('/passkeys/register-options', async (c) => {
   const challenge = crypto.randomUUID()

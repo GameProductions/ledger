@@ -187,7 +187,9 @@ const SettingsPage: React.FC = () => {
                   <div className="space-y-4">
                     {[
                       { id: 'google', name: 'Google', icon: 'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png' },
-                      { id: 'discord', name: 'Discord', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png' }
+                      { id: 'discord', name: 'Discord', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png' },
+                      { id: 'dropbox', name: 'Dropbox', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111381.png' },
+                      { id: 'onedrive', name: 'OneDrive', icon: 'https://cdn-icons-png.flaticon.com/512/888/888874.png' }
                     ].map(provider => {
                       const linked = (identities || []).find((i: any) => i.provider === provider.id);
                       return (

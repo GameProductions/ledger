@@ -244,6 +244,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         />
                     </div>
                     <div className="flex gap-1">
+                      <a 
+                        href="#/data" 
+                        className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border bg-white/5 border-glass-border text-secondary hover:text-white transition-all flex items-center gap-2"
+                      >
+                        <span>📥</span> Interop
+                      </a>
                       {['all', 'unreconciled', 'reconciled'].map(s => (
                         <button 
                           key={s}

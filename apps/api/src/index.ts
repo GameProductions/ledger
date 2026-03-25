@@ -1827,6 +1827,67 @@ app.post('/api/transactions/:id/link', async (c) => {
   return c.json({ success: true, status: isFullyReconciled ? 'reconciled' : 'partial', progress_cents: totalLinkedCents })
 })
 
+app.get('/api/sandbox', async (c) => {
+  const householdId = c.get('householdId')
+  const status = c.req.query('status') || 'pending'
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM import_sandbox WHERE household_id = ? AND status = ? ORDER BY created_at DESC'
+  ).bind(householdId, status).all()
+  return c.json(results.map(r => ({
+    ...r,
+    raw_data: JSON.parse((r as any).raw_data_json),
+    mapped_data: (r as any).mapped_data_json ? JSON.parse((r as any).mapped_data_json) : null
+  })))
+})
+
+app.post('/api/sandbox/stage', async (c) => {
+  const householdId = c.get('householdId')
+  const { filename, rows } = await c.req.json() as { filename: string, rows: any[] }
+  const userId = c.get('userId')
+  
+  const batch = rows.map(row => {
+    const id = crypto.randomUUID()
+    return c.env.DB.prepare(
+      'INSERT INTO import_sandbox (id, household_id, user_id, source_filename, raw_data_json) VALUES (?, ?, ?, ?, ?)'
+    ).bind(id, householdId, userId, filename, JSON.stringify(row))
+  })
+
+  await c.env.DB.batch(batch)
+  return c.json({ success: true, count: rows.length })
+})
+
+app.post('/api/sandbox/commit', async (c) => {
+  const householdId = c.get('householdId')
+  const { ids } = await c.req.json() as { ids: string[] }
+  
+  const sandboxRecords = await c.env.DB.prepare(
+    `SELECT * FROM import_sandbox WHERE id IN (${ids.map(() => '?').join(',')}) AND household_id = ?`
+  ).bind(...ids, householdId).all()
+
+  const txQueries = []
+  const sandboxUpdates = []
+
+  for (const record of sandboxRecords.results as any[]) {
+    const mapped = JSON.parse(record.mapped_data_json)
+    if (!mapped) continue
+
+    const txId = crypto.randomUUID()
+    txQueries.push(c.env.DB.prepare(
+      'INSERT INTO transactions (id, household_id, account_id, amount_cents, description, transaction_date, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(txId, householdId, mapped.account_id, mapped.amount_cents, mapped.description, mapped.transaction_date, mapped.category_id))
+    
+    sandboxUpdates.push(c.env.DB.prepare(
+      'UPDATE import_sandbox SET status = "committed" WHERE id = ?'
+    ).bind(record.id))
+  }
+
+  if (txQueries.length > 0) {
+    await c.env.DB.batch([...txQueries, ...sandboxUpdates])
+  }
+
+  return c.json({ success: true, committed: txQueries.length })
+})
+
 app.post('/api/transactions/:id/unlink', async (c) => {
   const { id } = c.req.param()
   const { targetId } = await c.req.json()

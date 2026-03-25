@@ -316,6 +316,11 @@ button.primary:hover {
   width: 100%;
 }
 
+.dashboard-header-wrapper {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
 .dashboard-span-full {
   grid-column: 1 / -1 !important;
 }

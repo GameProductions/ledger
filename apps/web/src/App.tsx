@@ -308,7 +308,7 @@ const Dashboard: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'ca
   return (
     <>
       <GuidedTour />
-      <div className="dashboard-grid reveal">
+      <div className="dashboard-header-wrapper reveal">
         <SeasonalAssets />
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>

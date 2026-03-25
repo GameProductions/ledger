@@ -32,6 +32,12 @@ import { OnboardingProvider } from './context/OnboardingContext'
 import { GuidedTour } from './components/GuidedTour'
 import { OnboardingChecklist } from './components/OnboardingChecklist'
 import { ToastProvider, useToast } from './context/ToastContext'
+import PCCDashboard from './pages/pcc/PCCDashboard'
+import PCCConfig from './pages/pcc/PCCConfig'
+import PCCRegistry from './pages/pcc/PCCRegistry'
+import PCCUsers from './pages/pcc/PCCUsers'
+import PCCSearch from './pages/pcc/PCCSearch'
+import PCCAudit from './pages/pcc/PCCAudit'
 
 const Footer: React.FC<{ style?: React.CSSProperties; className?: string }> = ({ style, className }) => (
   <footer className={className} style={{ marginTop: '4rem', padding: '2rem', borderTop: '1px solid var(--glass-border)', opacity: 0.6, fontSize: '0.8rem', ...style }}>
@@ -896,12 +902,21 @@ const AppContent: React.FC = () => {
 
   if (!user) return <Login />
 
-  // Protected Admin Routes
-  const isAdmin = currentHash === '#/admin' && globalRole === 'super_admin'
-  
+  // PCC Portal Routing (Super Admin Only)
+  if (currentHash.startsWith('#/system-pcc')) {
+    if (globalRole !== 'super_admin') return <Login />
+    if (currentHash === '#/system-pcc/dashboard') return <PCCDashboard />
+    if (currentHash === '#/system-pcc/config') return <PCCConfig />
+    if (currentHash === '#/system-pcc/registry') return <PCCRegistry />
+    if (currentHash === '#/system-pcc/users') return <PCCUsers />
+    if (currentHash === '#/system-pcc/search') return <PCCSearch />
+    if (currentHash === '#/system-pcc/audit') return <PCCAudit />
+    return <PCCDashboard />
+  }
+
   return (
     <div style={{ position: 'relative' }}>
-      {isAdmin ? <AdminDashboard /> : <Dashboard view={view} setView={setView} />}
+      <Dashboard view={view} setView={setView} />
     </div>
   )
 }

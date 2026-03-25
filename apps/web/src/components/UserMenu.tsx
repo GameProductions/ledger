@@ -78,12 +78,12 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
 
                 {globalRole === 'super_admin' && (
                   <button 
-                    onClick={() => { window.location.hash = '#/admin'; setIsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
+                    onClick={() => { window.location.hash = '#/system-pcc/dashboard'; setIsOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"
                     style={{ background: 'none', border: 'none' }}
                   >
-                    <Shield size={18} className="text-indigo-400" />
-                    <span>Admin Control Center</span>
+                    <Shield size={18} className="text-emerald-500 group-hover:animate-pulse" />
+                    <span className="group-hover:text-emerald-400 transition-colors">Platform Command Center</span>
                   </button>
                 )}
 
@@ -113,7 +113,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
 
                 <div className="border-t border-glass-border mt-2 pt-1">
                   <button 
-                    onClick={logout}
+                    onClick={(e) => { e.stopPropagation(); logout(); setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-sm text-red-400 transition-colors text-left"
                     style={{ background: 'none', border: 'none' }}
                   >

@@ -293,6 +293,16 @@ const authMiddleware = async (c: any, next: any) => {
   }
 }
 
+// 4. Platform Command Center (PCC) Middleware
+const pccMiddleware = async (c: any, next: any) => {
+  const role = c.get('globalRole')
+  if (role !== 'super_admin') {
+    console.warn(`[PCC Access Denied] User ${c.get('userId')} attempted access with role ${role}`)
+    return c.json({ error: 'Forbidden: Super Admin access required' }, 403)
+  }
+  await next()
+}
+
 app.get('/', (c) => {
   return c.text('LEDGER API - Status: Active')
 })
@@ -1203,52 +1213,102 @@ app.get('/api/milestones', async (c) => {
   return c.json(results)
 })
 
-// --- SUPER ADMIN ENDPOINTS ---
+// --- PLATFORM COMMAND CENTER (PCC) ---
 
-app.get('/api/admin/users', async (c) => {
-  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
-  const { results } = await c.env.DB.prepare('SELECT id, email, display_name, global_role, status, created_at FROM users').all()
+app.use('/api/pcc/*', pccMiddleware)
+
+// 1. Dashboard Stats
+app.get('/api/pcc/stats', async (c) => {
+  const { results: userCount } = await c.env.DB.prepare('SELECT count(*) as count FROM users').all()
+  const { results: activeToday } = await c.env.DB.prepare('SELECT count(*) as count FROM users WHERE last_active_at > date("now", "-1 day")').all()
+  const { results: householdCount } = await c.env.DB.prepare('SELECT count(*) as count FROM households').all()
+  
+  return c.json({
+    totalUsers: (userCount as any)[0].count,
+    activeToday: (activeToday as any)[0].count,
+    totalHouseholds: (householdCount as any)[0].count,
+    version: '1.18.0'
+  })
+})
+
+// 2. System Configuration (Universal Switchboard)
+app.get('/api/pcc/config', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_config ORDER BY config_key ASC').all()
   return c.json(results)
 })
 
-app.patch('/api/admin/users/:id', async (c) => {
-  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
+app.patch('/api/pcc/config/:id', async (c) => {
   const id = c.req.param('id')
-  const { global_role, status } = await c.req.json()
-  await c.env.DB.prepare('UPDATE users SET global_role = ?, status = ? WHERE id = ?').bind(global_role, status, id).run()
-  await logAudit(c, 'users', id, 'admin_update', {}, { global_role, status })
+  const { config_value } = await c.req.json()
+  await c.env.DB.prepare('UPDATE system_config SET config_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
+  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
   return c.json({ success: true })
 })
 
-app.get('/api/admin/connections', async (c) => {
-  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
-  const { results } = await c.env.DB.prepare('SELECT id, household_id, provider, status, last_sync_at FROM external_connections').all()
+// 3. Feature Flags
+app.get('/api/pcc/features', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_feature_flags ORDER BY feature_key ASC').all()
   return c.json(results)
 })
 
-app.post('/api/admin/connections', async (c) => {
-  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
-  const data = await c.req.json()
-  const id = data.id || crypto.randomUUID()
-  
-  // Encrypt token if provided
-  let encryptedToken = data.access_token
-  if (data.access_token && c.env.ENCRYPTION_KEY) {
-    encryptedToken = await encrypt(data.access_token, c.env.ENCRYPTION_KEY)
-  }
-
+app.patch('/api/pcc/features/:id', async (c) => {
+  const id = c.req.param('id')
+  const { enabled_globally, target_user_ids } = await c.req.json()
   await c.env.DB.prepare(
-    'INSERT INTO external_connections (id, household_id, provider, access_token, status) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET access_token = EXCLUDED.access_token, status = EXCLUDED.status'
-  ).bind(id, data.household_id, data.provider, encryptedToken, data.status).run()
-  
-  await logAudit(c, 'external_connections', id, 'upsert', {}, { provider: data.provider })
+    'UPDATE system_feature_flags SET enabled_globally = ?, target_user_ids = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).bind(enabled_globally, target_user_ids, id).run()
+  await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabled_globally })
+  return c.json({ success: true })
+})
+
+// 4. Universal Registry (Bills & Categories)
+app.get('/api/pcc/registry', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_registry ORDER BY type ASC, name ASC').all()
+  return c.json(results)
+})
+
+app.post('/api/pcc/registry', async (c) => {
+  const data = await c.req.json()
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, data.item_type, data.name, data.logo_url, data.website_url, JSON.stringify(data.metadata_json)).run()
   return c.json({ success: true, id })
 })
 
-app.get('/api/admin/audit', async (c) => {
-  if (c.get('globalRole') !== 'super_admin') return c.json({ error: 'Forbidden' }, 403)
-  const { results } = await c.env.DB.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100').all()
+// 5. User Management
+app.get('/api/pcc/users', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT id, email, display_name, global_role, status, created_at, last_active_at FROM users ORDER BY created_at DESC').all()
   return c.json(results)
+})
+
+app.patch('/api/pcc/users/:id', async (c) => {
+  const id = c.req.param('id')
+  const { global_role, status } = await c.req.json()
+  await c.env.DB.prepare('UPDATE users SET global_role = ?, status = ? WHERE id = ?').bind(global_role, status, id).run()
+  return c.json({ success: true })
+})
+
+// 6. Audit Vault
+app.get('/api/pcc/audit', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 200').all()
+  return c.json(results)
+})
+
+// 7. Global Search (God Mode)
+app.get('/api/pcc/search', async (c) => {
+  const q = c.req.query('q') || ''
+  if (q.length < 2) return c.json({ users: [], registry: [] })
+
+  const { results: users } = await c.env.DB.prepare(
+    'SELECT id, email, display_name FROM users WHERE email LIKE ? OR display_name LIKE ? LIMIT 10'
+  ).bind(`%${q}%`, `%${q}%`).all()
+
+  const { results: registry } = await c.env.DB.prepare(
+    'SELECT id, name, item_type FROM system_registry WHERE name LIKE ? LIMIT 10'
+  ).bind(`%${q}%`).all()
+
+  return c.json({ users, registry })
 })
 
 // Analytics & Predictions

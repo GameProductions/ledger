@@ -34,7 +34,8 @@
     }
   ],
   "vars": {
-    "ENVIRONMENT": "development"
+    "ENVIRONMENT": "development",
+    "JWT_SECRET": "ledger-local-secret-key-2024"
   },
   "durable_objects": {
     "bindings": [

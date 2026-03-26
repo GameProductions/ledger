@@ -140,11 +140,7 @@ app.use('*', async (c, next) => {
     '/ledger/', 
     '/ledger/auth/login', 
     '/ledger/auth/admin/claim',
-    '/ledger/ping',
-    '/ping',
-    '/auth/login',
-    '/auth/admin/claim',
-    '/ledger/api/test/auto-login'
+    '/auth/admin/claim'
   ]
 
   const isExcluded = exclusions.some(e => path === e || path === e + '/') || 
@@ -2350,6 +2346,23 @@ app.get('/api/pcc/search/global', async (c) => {
   `).bind(`%${q}%`, `%${q}%`, limit).all()
 
   return c.json({ transactions, users })
+})
+
+app.post('/api/support/issues', async (c) => {
+  const body = await c.req.json()
+  const user = c.get('userId')
+  const household = c.get('householdId')
+
+  await logAudit(c, 'SUPPORT_ISSUE_CREATED', {
+    userId: user,
+    householdId: household,
+    subject: body.subject,
+    category: body.category,
+    message: body.message,
+    metadata: body.metadata
+  })
+
+  return c.json({ success: true, message: 'Issue logged in system audit trail' })
 })
 
 app.post('/api/admin/system/migrate-schedules', async (c) => {

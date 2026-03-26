@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle } from 'lucide-react'
 
 const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
   const { user, logout, globalRole } = useAuth()
@@ -74,6 +74,15 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                 >
                   <Palette size={18} className="text-secondary" />
                   <span>Preferences</span>
+                </button>
+
+                <button 
+                  onClick={() => { window.location.hash = '#/help'; setIsOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
+                  style={{ background: 'none', border: 'none' }}
+                >
+                  <HelpCircle size={18} className="text-blue-400" />
+                  <span>Help & Support</span>
                 </button>
 
                 {globalRole === 'super_admin' && (

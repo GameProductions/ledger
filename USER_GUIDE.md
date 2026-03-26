@@ -4,7 +4,13 @@ Welcome to LEDGER (Live Evaluation of Daily Gains & Expense Records). This guide
 
 ## 🚀 Getting Started
 
-### 1. Premium Onboarding
+### 1. Sovereign Deployment (Docker)
+LEDGER is designed for easy self-hosting. 
+1. Ensure `docker.env` is present in the root (it contains your secure random keys).
+2. Run `docker compose up -d`.
+3. The platform will automatically perform health checks to ensure the API is ready before serving the Web interface.
+
+### 2. Premium Onboarding
 Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features (like the recent **v2.0.0** update), you'll see a "What's New" notification to keep you up to speed.
 
 ### 2. The Dashboard

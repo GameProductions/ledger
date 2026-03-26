@@ -60,13 +60,13 @@ Take total command of your infrastructure. Deploy the entire LEDGER ecosystem—
 2. Clone the repository and navigate to the root.
 3. Run the stack:
 ```bash
-docker compose up -d
-```
-3. Access the Web UI at `http://localhost:8080`.
-4. Use the default credentials to log in:
-   - **Username**: `admin`
-   - **Password**: `password123`
 5. The API will be available at `http://localhost:8787`.
+
+#### Configuration (`docker.env`)
+The platform is pre-configured with a secure `docker.env` file containing randomly generated high-entropy keys (`JWT_SECRET`, `ENCRYPTION_KEY`). **Do not share this file publicly.**
+
+#### Health & Resilience
+LEDGER v2.0.0 uses hard-coded Docker health checks. The `web` service will automatically wait until the `api` is fully initialized and healthy before starting, ensuring a seamless first-run experience.
 
 ---
 

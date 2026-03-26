@@ -4,18 +4,20 @@ services:
       context: .
       target: api
     restart: unless-stopped
+    env_file: docker.env
     environment:
       - PORT=8787
       - DATABASE_PATH=/data/ledger.db
-      - JWT_SECRET=${JWT_SECRET:-dev-secret-hush}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-128a5f5152feecd29746e8c0e768393e}
-      - ENVIRONMENT=production
-      - PLATFORM_DEFAULT_CURRENCY=${PLATFORM_DEFAULT_CURRENCY:-USD}
-      - PLATFORM_SUPPORTED_CURRENCIES=${PLATFORM_SUPPORTED_CURRENCIES:-USD,EUR,GBP,JPY,CAD,AUD}
     volumes:
       - ledger-data:/data
     networks:
       - ledger-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/ledger/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
   web:
     build:
@@ -29,7 +31,14 @@ services:
     networks:
       - ledger-network
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
 
 volumes:
   ledger-data:

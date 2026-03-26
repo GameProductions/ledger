@@ -3,7 +3,7 @@ import React from 'react';
 export const GlassFooter: React.FC = () => {
   return (
     <footer className="mt-16 p-8 border-t border-glass-border opacity-60 text-xs reveal">
-      <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+      <div className="flex flex-col items-center gap-4 mb-4">
         <div className="flex gap-6 items-center">
           <span className="font-black text-primary tracking-tighter">LEDGER</span>
           <span className="opacity-70 font-bold">V{import.meta.env.VITE_APP_VERSION}</span>

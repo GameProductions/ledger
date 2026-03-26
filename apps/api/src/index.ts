@@ -138,10 +138,12 @@ app.use('*', async (c, next) => {
   const exclusions = [
     '/ledger', 
     '/ledger/', 
-    '/ledger/auth/login', 
-    '/ledger/auth/admin/claim',
-    '/league/auth/admin/claim',
+    '/ledger/auth/login/discord',
+    '/ledger/auth/login/google',
+    '/ledger/auth/login/dropbox',
+    '/ledger/auth/login/onedrive',
     '/ledger/api/theme/broadcast',
+    '/api/theme/broadcast',
     '/ledger/ping'
   ]
 
@@ -1638,7 +1640,10 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
     await c.env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?').bind(data.display_name, userId).run()
   }
   if (data.settings_json) {
-    await c.env.DB.prepare('UPDATE users SET settings_json = json_patch(COALESCE(settings_json, "{}"), ?) WHERE id = ?').bind(data.settings_json, userId).run()
+  if (data.settings_json) {
+    // Direct update is safer since frontend sends complete merged object
+    await c.env.DB.prepare('UPDATE users SET settings_json = ? WHERE id = ?').bind(data.settings_json, userId).run()
+  }
   }
   if (data.email) {
     await c.env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(data.email, userId).run()

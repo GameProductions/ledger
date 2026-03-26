@@ -124,14 +124,20 @@ const LoginPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <button 
-              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/google`}
+              onClick={() => {
+                const baseApi = import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '');
+                window.location.href = `${baseApi}/ledger/auth/login/google`;
+              }}
               className="sso-button"
             >
               <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="Google" />
               Google
             </button>
             <button 
-              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/discord`}
+              onClick={() => {
+                const baseApi = import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '');
+                window.location.href = `${baseApi}/ledger/auth/login/discord`;
+              }}
               className="sso-button"
             >
               <img 

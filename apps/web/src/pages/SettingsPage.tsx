@@ -4,6 +4,9 @@ import { useApi } from '../hooks/useApi'
 import { ArrowLeft, Settings, Save } from 'lucide-react'
 import { MainLayout } from '../components/layout/MainLayout'
 import { PrivacySettings } from '../components/PrivacySettings'
+import { useToast } from '../context/ToastContext'
+import { Modal } from '../components/ui/Modal'
+import { Button } from '../components/ui/Button'
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
@@ -13,6 +16,8 @@ const SettingsPage: React.FC = () => {
   const [avatar, setAvatar] = useState('')
   const [timezone, setTimezone] = useState('UTC')
   const [saving, setSaving] = useState(false)
+  const { showToast } = useToast()
+  const [confirmUnlinkId, setConfirmUnlinkId] = useState<string | null>(null)
 
   useEffect(() => {
     if (profile) {
@@ -25,20 +30,22 @@ const SettingsPage: React.FC = () => {
   const { data: identities, mutate: mutateIdentities } = useApi('/api/user/identities')
 
   const handleUnlinkIdentity = async (identityId: string) => {
-    if (!confirm('Are you sure you want to unlink this account?')) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/user/identities/${identityId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '')}/ledger/api/user/identities/${identityId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
+        showToast('Identity unlinked successfully', 'success');
         mutateIdentities();
       } else {
         const err = await res.json();
-        alert(err.message || 'Failed to unlink account');
+        showToast(err.message || 'Failed to unlink account', 'error');
       }
     } catch (e) {
-      console.error('Unlink error:', e);
+      showToast('Network error during unlink', 'error');
+    } finally {
+      setConfirmUnlinkId(null);
     }
   };
 
@@ -60,11 +67,11 @@ const SettingsPage: React.FC = () => {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert(`Update Failed: ${err.error || 'Unknown error'}`)
+        showToast(`Update Failed: ${err.error || 'Unknown error'}`, 'error')
         return
       }
       if (mutate) mutate()
-      alert('Profile Updated Successfully')
+      showToast('Profile Updated Successfully', 'success')
     } catch (e) {
       console.error('[SettingsPage] Update Error:', e)
     } finally {
@@ -213,7 +220,10 @@ const SettingsPage: React.FC = () => {
                             </button>
                           ) : (
                             <button 
-                              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/ledger/auth/login/${provider.id}`}
+                              onClick={() => {
+                                const baseApi = import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '');
+                                window.location.href = `${baseApi}/ledger/auth/login/${provider.id}`;
+                              }}
                               className="px-4 py-2 bg-primary/10 text-primary font-black text-[10px] uppercase rounded-lg border border-primary/20 hover:bg-primary hover:text-black transition-all"
                             >
                               Link Account
@@ -256,6 +266,23 @@ const SettingsPage: React.FC = () => {
              </section>
 
              <PrivacySettings />
+
+             <Modal 
+                isOpen={!!confirmUnlinkId} 
+                onClose={() => setConfirmUnlinkId(null)}
+                title="Unlink Account?"
+                footer={
+                  <>
+                    <Button variant="secondary" onClick={() => setConfirmUnlinkId(null)}>Cancel</Button>
+                    <Button variant="primary" onClick={() => confirmUnlinkId && handleUnlinkIdentity(confirmUnlinkId)}>Confirm Unlink</Button>
+                  </>
+                }
+              >
+                <div className="space-y-4">
+                  <p className="text-secondary">Are you sure you want to unlink this third-party identity from your LEDGER profile?</p>
+                  <p className="text-xs text-secondary opacity-60">You will still be able to log in with other linked methods or your primary credentials.</p>
+                </div>
+              </Modal>
           </div>
         </div>
       </div>

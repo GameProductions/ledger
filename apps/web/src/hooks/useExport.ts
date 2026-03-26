@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { jsPDF } from 'jspdf';
+import { useToast } from '../context/ToastContext';
 
 interface ExportOptions {
   format: 'csv' | 'xlsx' | 'pdf';
@@ -9,6 +10,7 @@ interface ExportOptions {
 }
 
 export const useExport = () => {
+  const { showToast } = useToast();
   const exportData = async (options: ExportOptions) => {
     const { format, filename, data, columns } = options;
 
@@ -96,13 +98,13 @@ export const useExport = () => {
         });
         if (!res.ok) {
           const err = await res.json();
-          alert(err.message || 'Failed to export to Google Sheets');
+          showToast(err.message || 'Failed to export to Google Sheets', 'error');
           return;
         }
         const { url } = await res.json();
         window.open(url, '_blank');
       } catch (err) {
-        alert('Failed to export to Google Sheets.');
+        showToast('Failed to export to Google Sheets.', 'error');
       }
     }
   };

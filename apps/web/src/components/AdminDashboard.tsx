@@ -1,11 +1,18 @@
 import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
+import { useToast } from '../context/ToastContext'
+import { Modal } from './ui/Modal'
+import { Button } from './ui/Button'
 
 const AdminDashboard: React.FC = () => {
   const { data: users, loading: loadingUsers, mutate: mutateUsers } = useApi('/api/admin/users')
   const { data: connections, loading: loadingConn, mutate: mutateConn } = useApi('/api/admin/connections')
   const { data: audit, loading: loadingAudit, mutate: mutateAudit } = useApi('/api/admin/audit')
   const [activeTab, setActiveTab] = useState<'users' | 'connections' | 'audit'>('users')
+  const { showToast } = useToast()
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
 
   const handleUpdateUser = async (userId: string, updates: any) => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, {
@@ -60,16 +67,7 @@ const AdminDashboard: React.FC = () => {
           <section className="card reveal">
             <div className="flex justify-between items-center mb-6">
               <h3>Registered Users</h3>
-              <button className="primary" onClick={() => {
-                const email = prompt('Enter user email to invite:')
-                if (email) {
-                  fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/invite`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
-                    body: JSON.stringify({ email })
-                  }).then(() => mutateUsers())
-                }
-              }}>+ Invite New Admin</button>
+              <button className="primary" onClick={() => setInviteModalOpen(true)}>+ Invite New Admin</button>
             </div>
             {loadingUsers ? <p>Loading users...</p> : (
               <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse' }}>
@@ -109,14 +107,7 @@ const AdminDashboard: React.FC = () => {
                           <button 
                             className="text-red-400 hover:bg-red-500/20"
                             style={{ background: 'none', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-                            onClick={() => {
-                              if (confirm('Permanently delete this user? This cannot be undone.')) {
-                                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${u.id}`, {
-                                  method: 'DELETE',
-                                  headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
-                                }).then(() => mutateUsers())
-                              }
-                            }}
+                            onClick={() => setConfirmDeleteId(u.id)}
                           >
                             Delete
                           </button>
@@ -195,6 +186,66 @@ const AdminDashboard: React.FC = () => {
           </section>
         )}
       </main>
+
+      <Modal 
+        isOpen={!!confirmDeleteId} 
+        onClose={() => setConfirmDeleteId(null)}
+        title="Delete User Permanently?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+            <Button variant="primary" onClick={() => {
+              if (confirmDeleteId) {
+                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${confirmDeleteId}`, {
+                  method: 'DELETE',
+                  headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
+                }).then(() => {
+                  mutateUsers();
+                  showToast('User deleted successfully', 'success');
+                  setConfirmDeleteId(null);
+                }).catch(() => showToast('Failed to delete user', 'error'));
+              }
+            }}>Confirm Delete</Button>
+          </>
+        }
+      >
+        <p className="text-secondary">Are you absolutely sure? This will permanently remove the user and all linked data. <strong>This cannot be undone.</strong></p>
+      </Modal>
+
+      <Modal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+        title="Invite New Administrator"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setInviteModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={() => {
+                if (!inviteEmail) return;
+                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/invite`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
+                  body: JSON.stringify({ email: inviteEmail })
+                }).then(() => {
+                  mutateUsers();
+                  showToast(`Invitation sent to ${inviteEmail}`, 'success');
+                  setInviteModalOpen(false);
+                  setInviteEmail('');
+                }).catch(() => showToast('Failed to send invitation', 'error'));
+            }}>Send Invitation</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-secondary">Enter the email address of the user you wish to authorize as a Super Admin.</p>
+          <input 
+            type="email" 
+            placeholder="admin@example.com"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white focus:border-primary outline-none transition-all"
+          />
+        </div>
+      </Modal>
     </div>
   )
 }

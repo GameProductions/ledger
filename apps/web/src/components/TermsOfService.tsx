@@ -5,7 +5,7 @@ const TermsOfService: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Terms of Service</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: March 23, 2026</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: March 25, 2026 (v1.30.0)</p>
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Acceptance of Terms</h3>
@@ -14,7 +14,7 @@ const TermsOfService: React.FC = () => {
 
       <section style={{ marginBottom: '2rem' }}>
         <h3>2. Description of Service</h3>
-        <p>LEDGER is a financial management tool provided by GameProductions. We utilize a "Sovereign Data" model where your information is stored in encrypted edge databases (Cloudflare D1).</p>
+        <p>LEDGER is a financial management tool provided by GameProductions. We utilize a "Sovereign Data" model where your information is stored in encrypted edge databases (Cloudflare D1) and <strong>optionally synchronized with your personal cloud storage providers for redundancy and whole-household restoration.</strong></p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -23,8 +23,8 @@ const TermsOfService: React.FC = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h3>4. User Conduct</h3>
-        <p>You are responsible for maintaining the confidentiality of your session and tokens. Unauthorized access attempts or interference with the API may lead to immediate account termination.</p>
+        <h3>4. User Conduct & Security</h3>
+        <p>You are responsible for maintaining the confidentiality of your session, tokens, and <strong>third-party cloud credentials.</strong> Unauthorized access attempts or interference with the API may lead to immediate account termination. <strong>You acknowledge that automated cloud backups depend on the available storage and uptime of your chosen providers.</strong></p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

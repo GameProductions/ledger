@@ -5,13 +5,14 @@ Welcome to LEDGER (Live Evaluation of Daily Gains & Expense Records). This guide
 ## 🚀 Getting Started
 
 ### 1. Premium Onboarding
-Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features (like the recent **v1.31.0** update), you'll see a "What's New" notification to keep you up to speed.
+Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features (like the recent **v2.0.0** update), you'll see a "What's New" notification to keep you up to speed.
 
 ### 2. The Dashboard
 - **Safety Number**: This is your most important metric. It represents how much you can safely spend today without missing any upcoming bills or falling below your budget targets.
 - **Onboarding Checklist**: Track your setup progress directly from the dashboard widget.
 - **Health Score**: A real-time assessment of your financial habits.
 - **Budget Rollover**: Surplus funds from "Rollover Enabled" categories carry over to the next month automatically.
+- **Universal Currency**: Customize your display currency in Preferences. Choose from USD, EUR, or GBP (with more coming soon). This synchronizes across all devices and the Discord bot.
 
 ## 💳 Managing Transactions
 

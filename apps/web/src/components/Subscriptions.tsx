@@ -3,6 +3,8 @@ import { useApi } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 
+import { Price } from './Price'
+
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
@@ -82,8 +84,9 @@ const Subscriptions: React.FC = () => {
                 {sub.is_trial ? `Trial Ends: ${sub.trial_end_date}` : `Due: ${sub.next_billing_date}`}
               </div>
             </div>
-            <div style={{ fontWeight: '700', color: 'var(--expense)' }}>
-              ${(sub.amount_cents / 100).toFixed(2)}
+            <div className="flex flex-col items-end">
+              <Price amountCents={sub.amount_cents} className="font-black tracking-tighter" />
+              <div className="text-[10px] text-secondary uppercase font-bold tracking-widest opacity-60">{sub.billing_cycle}</div>
             </div>
           </div>
         ))}

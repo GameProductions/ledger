@@ -5,7 +5,7 @@ const PrivacyPolicy: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Privacy Policy</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: March 25, 2026 (v1.31.0)</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: March 25, 2026 (v2.0.0)</p>
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Introduction</h3>
@@ -14,7 +14,15 @@ const PrivacyPolicy: React.FC = () => {
 
       <section style={{ marginBottom: '2rem' }}>
         <h3>2. Information Collection</h3>
-        <p>We collect information you provide directly, including account metadata, financial transaction records, receipt attachments (via R2 storage), and authentication tokens. We utilize local storage, encrypted Cloudflare D1 databases, and <strong>authorized third-party cloud storage (Google Drive, Dropbox, OneDrive)</strong> for data persistence and multi-cloud backups.</p>
+        <p>We collect information you provide directly, including account metadata, financial transaction records, receipt attachments (via R2 storage), and authentication tokens. We utilize local storage, encrypted Cloudflare D1 databases, and <strong>authorized third-party cloud storage (Google Drive, Dropbox, OneDrive)</strong> for data persistence and multi-cloud backups.
+        <br/><br/>
+        Specifically, we collect and store:
+        <ul>
+          <li><strong>Financial Profiles</strong>: Your accounts, transactions, and budgets are stored in a sovereign edge database (Cloudflare D1).</li>
+          <li><strong>Redundancy Backups</strong>: Encrypted backups are optionally pushed to your personal cloud storage (GDrive/Dropbox/OneDrive).</li>
+          <li><strong>Platform Preferences</strong>: Visual settings (Theme, UI Style, Currency Type) are stored in your encrypted user profile.</li>
+        </ul>
+        </p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

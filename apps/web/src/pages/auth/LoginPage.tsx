@@ -71,15 +71,15 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-viewport">
-      <div className="w-full max-w-md reveal">
-        <div className="card p-8 space-y-8 bg-[#0f172a]/80 backdrop-blur-2xl border-glass-border shadow-2xl">
+    <div className="min-h-screen flex flex-col items-center bg-viewport p-4">
+      <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md reveal">
+        <div className="card p-8 space-y-8 bg-deep-slate-80 backdrop-blur-2xl border-glass-border shadow-2xl w-full">
           <div className="text-center space-y-4">
-            <img src={theme.logoUrl} alt="LEDGER Logo" className="h-20 mx-auto" />
+            <img src={theme.logoUrl} alt="LEDGER Logo" className="h-16 mx-auto opacity-90 hover-scale-105 transition-transform" />
             <div>
               <h2 className="text-2xl font-black tracking-tighter">Welcome to LEDGER</h2>
-              <p className="text-[10px] text-secondary uppercase tracking-[0.2em] font-bold opacity-60">
-                v{import.meta.env.VITE_APP_VERSION} — Unified Financial Command
+              <p className="text-tiny text-secondary uppercase tracking-loose font-bold opacity-60">
+                v{import.meta.env.VITE_APP_VERSION}
               </p>
             </div>
           </div>
@@ -119,29 +119,29 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
-            <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-secondary"><span className="bg-[#0f172a] px-4">Or continue with</span></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white-10"></div></div>
+            <div className="relative flex justify-center text-tiny uppercase font-black tracking-widest text-secondary"><span className="bg-deep-slate px-4">Or continue with</span></div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/google`}
-              className="flex items-center justify-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs font-bold"
+              className="sso-button"
             >
-              <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" className="w-4 h-4" />
+              <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="Google" />
               Google
             </button>
             <button 
               onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/discord`}
-              className="flex items-center justify-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-xs font-bold"
+              className="sso-button"
             >
-              <img src="https://assets-assets.adobe.com/link/f3a9a13b-8d0b-4e0c-99f3-80f08e75a8a8/discord-mark-blue.png" className="w-4 h-4" />
+              <img src="https://assets.gpnet.dev/icons/discord-white.svg" alt="Discord" onError={(e) => (e.currentTarget.src = "https://cdn.simpleicons.org/discord/white")} />
               Discord
             </button>
           </div>
         </div>
       </div>
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl mt-auto">
         <GlassFooter />
       </div>
     </div>

@@ -15,6 +15,7 @@ import HealthScore from '../components/HealthScore'
 import AICoach from '../components/AICoach'
 import DeveloperSettings from '../components/DeveloperSettings'
 import AuditChronicle from '../components/AuditChronicle'
+import { Price } from '../components/Price'
 import { PrivacySettings } from '../components/PrivacySettings'
 import FutureFlow from '../components/FutureFlow'
 import GoalSeek from '../components/GoalSeek'
@@ -132,7 +133,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   </select>
                 </div>
                 <div className="safety-number-container">
-                  ${((analytics?.safetyNumberCents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <Price amountCents={analytics?.safetyNumberCents || 0} />
                 </div>
                 <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
               </section>
@@ -145,7 +146,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
                 </div>
                 <div className="text-3xl font-black text-white mb-2">
-                  ${((projections?.[projections.length - 1]?.balanceCents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                  <Price amountCents={projections?.[projections.length - 1]?.balanceCents || 0} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                    <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
@@ -184,7 +185,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
               <div className="mt-4">
                 <div className="text-3xl font-black text-primary mb-1">
-                  ${((budgetsData?.unallocated_balance_cents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
                 </div>
                 <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Pool</div>
                 
@@ -196,7 +197,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <span className="text-sm font-bold">{b.name}</span>
                       </div>
                       <div className={`font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
-                        ${((b.envelope_balance_cents || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        <Price amountCents={b.envelope_balance_cents || 0} />
                       </div>
                     </div>
                   ))}
@@ -286,14 +287,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                               <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Satisfied</span>
                             )}
                             {tx.reconciliation_status === 'partial' && (
-                              <span className="text-[8px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (${(tx.reconciliation_progress_cents/100).toFixed(0)})</span>
+                              <span className="text-[8px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (<Price amountCents={tx.reconciliation_progress_cents} options={{ minimumFractionDigits: 0 }} />)</span>
                             )}
                           </div>
                           <div className="text-[10px] text-secondary uppercase font-bold opacity-60">{tx.transaction_date}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-6">
-                        <span className="text-lg font-black tracking-tighter">${(tx.amount_cents / 100).toFixed(2)}</span>
+                        <Price amountCents={tx.amount_cents} className="text-lg font-black tracking-tighter" />
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           {tx.receipt_r2_key ? (
                             <button 
@@ -364,7 +365,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             {accounts?.map((acc: any) => (
               <div key={acc.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-glass-border">
                 <span className="text-sm font-bold text-secondary">{acc.name}</span>
-                <span className="font-black tracking-tighter">${(acc.balance_cents / 100).toFixed(2)}</span>
+                <Price amountCents={acc.balance_cents} className="font-black tracking-tighter" />
               </div>
             )) || <p className="text-xs text-secondary italic">No accounts found.</p>}
           </div>
@@ -443,7 +444,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} Selected</span>
             <div className="h-4 w-px bg-glass-border" />
             <span className="text-xl font-black tracking-tighter">
-              ${((transactions?.filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + t.amount_cents, 0) || 0) / 100).toFixed(2)}
+              <Price amountCents={transactions?.filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + t.amount_cents, 0) || 0} />
             </span>
           </div>
           <button 
@@ -461,7 +462,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="text-xl font-black m-0">Reconcile: {linkingTx.description}</h3>
-                <span className="text-2xl font-black tracking-tighter text-primary">${(linkingTx.amount_cents / 100).toFixed(2)}</span>
+                <Price amountCents={linkingTx.amount_cents} className="text-2xl font-black tracking-tighter text-primary" />
               </div>
               <button onClick={() => setLinkingTx(null)} className="text-2xl opacity-50 hover:opacity-100 transition-opacity">×</button>
             </div>

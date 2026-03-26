@@ -1,7 +1,8 @@
-# LEDGER 💸
-Unified Financial Command: Live Evaluation of Daily Gains & Expense Records.
+# LEDGER v2.0.0
+> **Sovereign Financial Infrastructure** | The Feature Parity Milestone
+ of Daily Gains & Expense Records.
 
-LEDGER (v1.5.7) is a production-grade personal and household finance platform built for speed, transparency, and elite security.
+LEDGER (v2.0.0) is a production-grade personal and household finance platform built for speed, transparency, and elite security.
 
 ## 🚀 Key Features
 
@@ -15,11 +16,12 @@ LEDGER (v1.5.7) is a production-grade personal and household finance platform bu
 - **Safety Number™**: Real-time spending headroom based on upcoming bills and income.
 - **Multi-Select Calculation**: Instant sum totals via a premium floating calculation bar.
 - **Bill Forecasting**: Rolling 30-day and "Until Payday" projections.
+- **Universal Currency Engine**: Per-user currency preferences (USD, EUR, GBP) and platform-wide defaults.
 - **Provider Visibility**: Granular access control (Private, Household, Public) for service providers.
 
 ### 👥 Collaboration & Onboarding
 - **Multi-User Households**: Collaborative finance with administrative role management.
-- **Premium Onboarding**: Version-aware guided tours with "What's New" tracking (v1.5.7).
+- **Premium Onboarding**: Version-aware guided tours with "What's New" tracking (v2.0.0).
 - **Discord Bot**: Fully interactive slash commands (`/ledger-*`) for your server.
 
 ---
@@ -33,16 +35,30 @@ npm run deploy:api
 npm run deploy:web
 ```
 
-### 2. Self-Hosting (Docker)
-Run the entire stack (API, Web UI, and DB) using Docker Compose:
+### 2. Sovereign Self-Hosting (Docker Compose)
+Take total command of your infrastructure. Deploy the entire LEDGER ecosystem—API, Web UI, and Database—to your own private hardware in seconds. 
+
+#### Why Self-Host?
+- **Absolute Privacy**: Your data never leaves your perimeter.
+- **Elite Performance**: Optimized multi-stage builds for lightning-fast response times.
+- **Zero Configuration**: Ready-to-run environment with Docker Compose.
 
 #### Prerequisites
 - Docker & Docker Compose
 - `JWT_SECRET` and `ENCRYPTION_KEY` environment variables.
 
 #### Setup
-1. Clone the repository and navigate to the root.
-2. Run the stack:
+1. **Pull the Image (Recommended)**:
+   Avoid local builds by pulling the pre-built v2.0.0 image from your preferred registry:
+   ```bash
+   # From GitHub Container Registry
+   docker pull ghcr.io/gameproductions/ledger:v2.0.0
+
+   # From Docker Hub
+   docker pull gameproductions/ledger:v2.0.0
+   ```
+2. Clone the repository and navigate to the root.
+3. Run the stack:
 ```bash
 docker compose up -d
 ```

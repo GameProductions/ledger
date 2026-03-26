@@ -1,4 +1,5 @@
 import React from 'react'
+import { Price } from './Price'
 import { useApi } from '../hooks/useApi'
 
 const SavingsBuckets: React.FC = () => {
@@ -17,8 +18,8 @@ const SavingsBuckets: React.FC = () => {
             <div style={{ width: '100%', height: '8px', background: 'var(--bg-dark)', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${(b.current_cents / b.target_cents) * 100}%`, height: '100%', background: 'var(--primary)' }}></div>
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
-              Goal: ${(b.target_cents / 100).toLocaleString()}
+            <div className="text-[10px] text-secondary font-medium">
+              Goal: <Price amountCents={b.target_cents} options={{ minimumFractionDigits: 0 }} />
             </div>
           </div>
         )) || <p style={{ color: 'var(--text-secondary)' }}>No buckets yet.</p>}

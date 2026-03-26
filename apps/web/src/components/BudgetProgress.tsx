@@ -1,5 +1,6 @@
 import React from 'react'
 import { useApi } from '../hooks/useApi'
+import { Price } from './Price'
 
 const BudgetProgress: React.FC = () => {
   const { data, loading } = useApi<{ budgets: any[], unallocated_balance_cents: number }>('/api/budgets')
@@ -24,9 +25,9 @@ const BudgetProgress: React.FC = () => {
             <div key={budget.id}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
                 <span>{budget.icon} {budget.name}</span>
-                <span style={{ fontWeight: '600' }}>
-                  ${(budget.spend_cents / 100).toFixed(0)} / ${(totalAvailable / 100).toFixed(0)}
-                </span>
+                <div className="text-xs font-black tracking-tighter flex items-center gap-2">
+                  <Price amountCents={budget.spend_cents} hideCents /> / <Price amountCents={totalAvailable} hideCents />
+                </div>
               </div>
               <div style={{ height: '8px', background: 'var(--bg-dark)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
                 <div style={{ 

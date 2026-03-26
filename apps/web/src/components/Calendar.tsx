@@ -1,4 +1,5 @@
 import React from 'react'
+import { Price } from './Price'
 
 interface CalendarProps {
   transactions: any[]
@@ -30,8 +31,8 @@ const Calendar: React.FC<CalendarProps> = ({ transactions }) => {
             <div style={{ marginBottom: '0.3rem', opacity: 0.6 }}>{day}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
               {dayTxs.map((tx: any) => (
-                <div key={tx.id} style={{ fontSize: '0.65rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: 'var(--primary)', padding: '0.1rem 0.3rem', borderRadius: '0.2rem' }}>
-                  ${(tx.amount_cents / 100).toFixed(0)} {tx.description}
+                <div key={tx.id} className="text-[10px] p-1 bg-primary/10 text-primary rounded truncate">
+                  <Price amountCents={tx.amount_cents} options={{ minimumFractionDigits: 0 }} /> {tx.description}
                 </div>
               ))}
             </div>

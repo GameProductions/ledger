@@ -1,6 +1,6 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
-import { ChevronRight, ExternalLink, Zap, Shield, RefreshCw } from 'lucide-react';
+import { ChevronRight, ArrowRight, Zap, Shield, RefreshCw } from 'lucide-react';
 
 export const GuidesPage: React.FC = () => {
   const guides = [
@@ -21,6 +21,12 @@ export const GuidesPage: React.FC = () => {
       duration: '10 min read',
       icon: <RefreshCw size={20} className="text-emerald-400" />,
       topics: ['Variable Recurrences', 'Subscription Detection', 'Cron Patterns']
+    },
+    {
+      title: 'Universal Currency Configuration',
+      duration: '4 min read',
+      icon: <Zap size={20} className="text-primary" />,
+      topics: ['Preference Selection', 'Global Defaults', 'PCC Switchboard']
     }
   ];
 
@@ -81,6 +87,10 @@ export const FAQPage: React.FC = () => {
     {
       q: "How secure is my bank connection?",
       a: "We use AES-GCM 256-bit encryption for all external tokens. We never store your bank passwords; we only hold revocable OAuth access tokens granted by providers like Plaid or Akoya."
+    },
+    {
+      q: "Can I track multiple currencies simultaneously?",
+      a: "v2.0.0 introduces the Universal Currency Engine, allowing you to set a display currency (USD, EUR, GBP) for your entire ledger. Multi-currency portfolio tracking (where different accounts have different currencies) is planned for a future Phase 15 release."
     }
   ];
 

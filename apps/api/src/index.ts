@@ -179,6 +179,19 @@ const getQuickChartUrl = (type: 'pie' | 'bar', labels: string[], data: number[],
 
 
 // --- UTILITIES: Webhook Dispatch ---
+const isValidWebhookUrl = (url: string) => {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'https:') return false
+    const hostname = parsed.hostname.toLowerCase()
+    const blacklist = ['localhost', '127.0.0.1', '0.0.0.0', '::1', 'metadata.google.internal', '169.254.169.254']
+    if (blacklist.includes(hostname)) return false
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 const dispatchWebhook = async (c: any, event: string, data: any, householdId: string) => {
   if (!householdId) return
 
@@ -187,6 +200,11 @@ const dispatchWebhook = async (c: any, event: string, data: any, householdId: st
   ).bind(householdId).all()
 
   for (const hook of hooks) {
+    if (!isValidWebhookUrl(hook.url as string)) {
+      console.warn(`[Webhook] Insecure URL blocked: ${hook.url}`)
+      continue
+    }
+
     const events = (hook.event_list as string).split(',')
     if (events.includes('*') || events.includes(event)) {
       const deliveryId = crypto.randomUUID()
@@ -227,10 +245,12 @@ const dispatchWebhook = async (c: any, event: string, data: any, householdId: st
 // --- AUTH MIDDLEWARE ---
 const authMiddleware = async (c: any, next: any) => {
   try {
-    const authHeader = c.req.header('Authorization')
-    if (!authHeader) throw new HTTPException(401, { message: 'Missing Authorization Header' })
+    let token = c.req.header('Authorization')?.replace('Bearer ', '')
+    if (!token) {
+      token = c.req.query('auth_token')
+    }
     
-    const token = authHeader.replace('Bearer ', '')
+    if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
     const jwtSecret = c.env.JWT_SECRET
     if (!jwtSecret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
     
@@ -1618,6 +1638,15 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
   return c.json({ success: true })
 })
 
+// --- PUBLIC CONFIGURATION ---
+app.get('/api/config', async (c) => {
+  const { results: configs } = await c.env.DB.prepare('SELECT config_key, config_value FROM system_config').all()
+  const { results: features } = await c.env.DB.prepare('SELECT feature_key, enabled_globally FROM system_feature_flags').all()
+  const configMap = (configs as any[]).reduce((acc, curr) => ({ ...acc, [curr.config_key]: curr.config_value }), {})
+  const featureMap = (features as any[]).reduce((acc, curr) => ({ ...acc, [curr.feature_key]: !!curr.enabled_globally }), {})
+  return c.json({ version: CURRENT_VERSION, config: configMap, features: featureMap })
+})
+
 // AI Coach
 app.post('/api/coach/ask', zValidator('json', z.object({ question: z.string().min(3).max(500) })), async (c) => {
   const { question } = c.req.valid('json')
@@ -1663,7 +1692,7 @@ app.get('/api/developer/tokens', async (c) => {
 })
 
 
-const CURRENT_VERSION = 'v1.31.0'
+const CURRENT_VERSION = 'v2.0.0'
 const VERSION_UPDATES = [
   { version: 'v1.31.0', title: 'Feature Parity & Rollovers', description: 'Budget rollovers, subscription trial alerts, and receipt management.' },
   { version: 'v1.15.0', title: 'Universal Interop', description: 'Advanced CSV/JSON imports and export engine.' },
@@ -1732,12 +1761,18 @@ app.get('/api/audit', async (c) => {
 app.get('/api/export/full', async (c) => {
   const householdId = c.get('householdId')
   
-  const tables = ['accounts', 'transactions', 'categories', 'subscriptions', 'audit_logs']
+  const tables = {
+    accounts: c.env.DB.prepare('SELECT * FROM accounts WHERE household_id = ?'),
+    transactions: c.env.DB.prepare('SELECT * FROM transactions WHERE household_id = ?'),
+    categories: c.env.DB.prepare('SELECT * FROM categories WHERE household_id = ?'),
+    subscriptions: c.env.DB.prepare('SELECT * FROM subscriptions WHERE household_id = ?'),
+    audit_logs: c.env.DB.prepare('SELECT * FROM audit_logs WHERE household_id = ?')
+  }
   const fullExport: any = { householdId, timestamp: new Date().toISOString(), data: {} }
   
-  for (const table of tables) {
-    const { results } = await c.env.DB.prepare(`SELECT * FROM ${table} WHERE household_id = ?`).bind(householdId).all()
-    fullExport.data[table] = results
+  for (const [name, stmt] of Object.entries(tables)) {
+    const { results } = await stmt.bind(householdId).all()
+    fullExport.data[name] = results
   }
   
   return c.json(fullExport, 200, {
@@ -2254,9 +2289,24 @@ app.post('/api/backup/cloud/:provider', async (c) => {
   
   if (!identity?.access_token) throw new HTTPException(400, { message: `${provider} not linked` })
 
-  const backupData = await (await fetch(`${new URL(c.req.url).origin}/ledger/api/backup/export`, {
-    headers: { 'Authorization': c.req.header('Authorization') || '' }
-  })).json()
+  const tables = {
+    transactions: c.env.DB.prepare('SELECT * FROM transactions WHERE household_id = ?'),
+    categories: c.env.DB.prepare('SELECT * FROM categories WHERE household_id = ?'),
+    schedules: c.env.DB.prepare('SELECT * FROM schedules WHERE household_id = ?')
+  }
+  const exportData: any = { 
+    version: '1.28.0', 
+    timestamp: new Date().toISOString(), 
+    householdId, 
+    data: {} 
+  }
+  
+  for (const [name, stmt] of Object.entries(tables)) {
+    const { results } = await stmt.bind(householdId).all()
+    exportData.data[name] = results
+  }
+  
+  const backupData = exportData
   
   const filename = `ledger_backup_${householdId}_${new Date().toISOString().split('T')[0]}.json`
   const content = JSON.stringify(backupData)

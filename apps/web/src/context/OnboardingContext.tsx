@@ -22,7 +22,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [activeStep, setActiveStep] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [updates, setUpdates] = useState<any[]>([])
-  const [currentVersion, setCurrentVersion] = useState('v1.31.0')
+  const [currentVersion, setCurrentVersion] = useState('v2.0.0')
 
   const API_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -44,7 +44,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setCompletedSteps(data.completed_steps)
         setIsCompleted(data.is_completed)
         setUpdates(data.updates || [])
-        setCurrentVersion(data.current_version || 'v1.5.7')
+        setCurrentVersion(data.current_version || 'v2.0.0')
         
         // Show tour if there are new updates OR if onboarding not started
         if (data.updates?.length > 0 || (!data.is_completed && data.completed_steps.length === 0)) {

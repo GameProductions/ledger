@@ -54,7 +54,7 @@ export const HelpCenter: React.FC = () => {
               className="group p-8 bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 rounded-3xl transition-all duration-500 hover:-translate-y-2 backdrop-blur-3xl"
             >
               <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                {React.cloneElement(cat.icon as React.ReactElement, { size: 28 })}
+                {React.cloneElement(cat.icon as any, { size: 28 })}
               </div>
               <h3 className="text-xl font-bold text-white mb-3 tracking-tight">{cat.title}</h3>
               <p className="text-secondary text-sm leading-relaxed mb-6">{cat.description}</p>
@@ -84,7 +84,7 @@ export const HelpCenter: React.FC = () => {
 
         <footer className="text-center pt-12 border-t border-white/5">
           <p className="text-secondary text-sm font-medium">
-            LEDGER Documentation v1.31.0 &bull; Built for total financial sovereignty.
+            LEDGER Documentation v2.0.0 &bull; Universal Currency Ready.
           </p>
         </footer>
       </div>

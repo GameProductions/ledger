@@ -222,3 +222,21 @@ CREATE TABLE IF NOT EXISTS installment_plans (
     status TEXT DEFAULT 'active',
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
+CREATE TABLE IF NOT EXISTS system_feature_flags (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+    feature_key TEXT NOT NULL UNIQUE,
+    enabled_globally INTEGER DEFAULT 0,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_config (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+    config_key TEXT NOT NULL UNIQUE,
+    config_value TEXT,
+    value_type TEXT DEFAULT 'string',
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

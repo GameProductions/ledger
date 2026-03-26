@@ -1,6 +1,6 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
-import { Play, Star, Map, Compass } from 'lucide-react';
+import { Play, Star, Shield, Compass } from 'lucide-react';
 
 export const ToursPage: React.FC = () => {
   const tours = [
@@ -38,7 +38,7 @@ export const ToursPage: React.FC = () => {
             <div key={i} className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] space-y-6 flex flex-col justify-between group">
               <div className="space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  {React.cloneElement(tour.icon as React.ReactElement, { size: 28 })}
+                  {React.cloneElement(tour.icon as any, { size: 28 })}
                 </div>
                 <h3 className="text-xl font-bold tracking-tight">{tour.title}</h3>
                 <p className="text-sm text-secondary font-medium leading-relaxed">{tour.description}</p>

@@ -95,6 +95,28 @@ const PreferencesPage: React.FC = () => {
                 ))}
               </div>
             </section>
+            <section className="card p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Palette size={20} className="text-primary" />
+                <h3 className="text-lg font-bold">Currency Configuration</h3>
+              </div>
+              <p className="text-xs text-secondary mb-6">Choose your primary display currency. This affects all price formatting across the platform.</p>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { id: 'USD', name: 'US Dollar ($)' },
+                  { id: 'EUR', name: 'Euro (€)' },
+                  { id: 'GBP', name: 'British Pound (£)' }
+                ].map(c => (
+                  <button 
+                    key={c.id}
+                    onClick={() => updateSettings({ ...settings, currency: c.id })}
+                    className={`p-3 rounded-xl border-2 transition-all text-[10px] font-black uppercase tracking-widest ${settings.currency === c.id || (!settings.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
 
           <div className="space-y-8">

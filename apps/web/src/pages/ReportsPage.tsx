@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+
+import { Price } from '../components/Price';
 import { MainLayout } from '../components/layout/MainLayout';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
@@ -144,8 +146,8 @@ const ReportsPage: React.FC = () => {
           <Card className="lg:col-span-2 p-8 h-full flex flex-col justify-between overflow-hidden relative">
              <div className="relative z-10">
                 <div className="text-[10px] uppercase tracking-widest text-secondary font-bold opacity-50 mb-1">Aggregate Net Worth</div>
-                <div className="text-5xl font-black tracking-tighter">
-                  ${(netWorth.current_net_worth_cents / 100).toLocaleString()}
+                <div className="text-3xl font-black text-white">
+                  <Price amountCents={netWorth.current_net_worth_cents} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+4.2%</span>

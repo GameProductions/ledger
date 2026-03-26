@@ -9,7 +9,7 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', ...p
   return (
     <div className="space-y-2 w-full">
       {label && (
-        <label className="block text-[10px] font-black text-secondary uppercase tracking-widest ml-1">
+        <label className="block text-[10px] font-black text-secondary uppercase tracking-widest text-center">
           {label}
         </label>
       )}

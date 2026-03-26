@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PCCPortal from './PCCPortal';
+import { Price } from '../../components/Price';
 
 const PCCSearch: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -59,7 +60,7 @@ const PCCSearch: React.FC = () => {
                        <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tighter">{tx.id} • {tx.transaction_date}</p>
                     </div>
                     <div className="text-right">
-                       <p className="font-black text-lg">${(tx.amount_cents / 100).toFixed(2)}</p>
+                       <Price amountCents={tx.amount_cents} className="font-black text-lg" />
                        <p className="text-[8px] text-gray-600 uppercase font-black">{tx.reconciliation_status}</p>
                     </div>
                   </div>

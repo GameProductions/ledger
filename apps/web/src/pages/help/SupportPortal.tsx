@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Send, CheckCircle, Info } from 'lucide-react';
 
 export const SupportPortal: React.FC = () => {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({

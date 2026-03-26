@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { Price } from './Price'
 import { useApi } from '../hooks/useApi'
 
 const WhatIfLedger: React.FC = () => {
@@ -42,7 +43,7 @@ const WhatIfLedger: React.FC = () => {
               />
               <span style={{ textDecoration: disabledSubs.includes(sub.id) ? 'line-through' : 'none' }}>{sub.name}</span>
             </div>
-            <span style={{ fontWeight: '600' }}>${(sub.amount_cents / 100).toFixed(2)}</span>
+            <Price amountCents={sub.amount_cents} className="font-bold" />
           </label>
         ))}
       </div>

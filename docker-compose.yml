@@ -10,6 +10,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:-dev-secret-hush}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-128a5f5152feecd29746e8c0e768393e}
       - ENVIRONMENT=production
+      - PLATFORM_DEFAULT_CURRENCY=${PLATFORM_DEFAULT_CURRENCY:-USD}
+      - PLATFORM_SUPPORTED_CURRENCIES=${PLATFORM_SUPPORTED_CURRENCIES:-USD,EUR,GBP,JPY,CAD,AUD}
     volumes:
       - ledger-data:/data
     networks:

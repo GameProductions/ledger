@@ -14,7 +14,7 @@ export const GlassFooter: React.FC = () => {
         </div>
       </div>
       <div className="text-center opacity-40 border-t border-white/5 pt-4 font-bold uppercase tracking-[0.2em] text-[9px]">
-        © {new Date().getFullYear()} GameProductions — Unified Financial Command
+        © {new Date().getFullYear()} GameProductions
       </div>
     </footer>
   );

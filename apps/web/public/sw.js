@@ -52,10 +52,18 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => response || fetch(event.request).then(fetchRes => {
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, fetchRes.clone());
+          if (!fetchRes || fetchRes.status !== 200 || fetchRes.type !== 'basic') {
             return fetchRes;
+          }
+          const responseToCache = fetchRes.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
           });
+          return fetchRes;
+      }).catch(err => {
+          console.warn('[SW] Fetch failed for:', event.request.url);
+          // Return null or a fallback if needed
+          return null;
       }))
   );
 });

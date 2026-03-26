@@ -134,7 +134,11 @@ const LoginPage: React.FC = () => {
               onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/discord`}
               className="sso-button"
             >
-              <img src="https://assets.gpnet.dev/icons/discord-white.svg" alt="Discord" onError={(e) => (e.currentTarget.src = "https://cdn.simpleicons.org/discord/white")} />
+              <img 
+                src="https://cdn.simpleicons.org/discord/white" 
+                alt="Discord" 
+                onError={(e) => (e.currentTarget.src = "https://assets.gpnet.dev/icons/discord-white.svg")} 
+              />
               Discord
             </button>
           </div>

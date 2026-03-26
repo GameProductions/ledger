@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface MobileNavProps {
-  activeView: string;
-  onViewChange: (view: string) => void;
+  activeView?: string;
+  onViewChange?: (view: string) => void;
 }
 
 const MobileNav: React.FC<MobileNavProps> = ({ activeView, onViewChange }) => {
@@ -19,7 +19,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ activeView, onViewChange }) => {
         {navItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onViewChange(item.id)}
+            onClick={() => onViewChange?.(item.id)}
             className={`flex flex-col items-center gap-1 transition-all ${
               activeView === item.id 
                 ? 'text-primary scale-110' 

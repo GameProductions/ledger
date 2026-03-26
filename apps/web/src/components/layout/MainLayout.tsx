@@ -40,7 +40,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
         </div>
       </main>
 
-      <MobileNav activeView={view} onViewChange={setView} />
+      {view && setView && (
+        <MobileNav activeView={view} onViewChange={setView as (v: string) => void} />
+      )}
     </div>
   );
 };

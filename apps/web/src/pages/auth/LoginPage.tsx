@@ -70,75 +70,73 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="login-page-wrapper bg-viewport">
-      <div className="login-content-center">
-        <div className="w-full max-w-md reveal">
-          <div className="card p-8 space-y-8 bg-deep-slate-80 backdrop-blur-2xl border-glass-border shadow-2xl w-full">
-            <div className="text-center space-y-4">
-              <img src={theme.logoUrl} alt="LEDGER Logo" className="h-16 mx-auto opacity-90 hover-scale-105 transition-transform" />
-              <div>
-                <h2 className="text-2xl font-black tracking-tighter">Welcome to LEDGER</h2>
-                <p className="text-tiny text-secondary uppercase tracking-loose font-bold opacity-60 text-center">
-                  v{import.meta.env.VITE_APP_VERSION}
-                </p>
-              </div>
+    <div className="flex-1 flex flex-col items-center justify-center p-8">
+      <div className="w-full max-w-md reveal">
+        <div className="card p-8 space-y-8 bg-deep-slate-80 backdrop-blur-2xl border-glass-border shadow-2xl w-full">
+          <div className="text-center space-y-4">
+            <img src={theme.logoUrl} alt="LEDGER Logo" className="h-16 mx-auto opacity-90 hover-scale-105 transition-transform" />
+            <div>
+              <h2 className="text-2xl font-black tracking-tighter text-center">Welcome to LEDGER</h2>
+              <p className="text-tiny text-secondary uppercase tracking-loose font-bold opacity-60 text-center">
+                v{import.meta.env.VITE_APP_VERSION}
+              </p>
             </div>
+          </div>
 
-            <form 
-              className="space-y-6"
-              onSubmit={(e) => { 
-                e.preventDefault(); 
-                handleLogin(); 
-              }}
+          <form 
+            className="space-y-6"
+            onSubmit={(e) => { 
+              e.preventDefault(); 
+              handleLogin(); 
+            }}
+          >
+            <Input 
+              label="Username / ID"
+              type="text" 
+              placeholder="e.g. skywalker_77" 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+            <Input 
+              label="Secure Password"
+              type="password" 
+              placeholder="••••••••" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <Button 
+              type="submit" 
+              variant="primary" 
+              size="lg" 
+              className="w-full"
+              loading={loading}
             >
-              <Input 
-                label="Username / ID"
-                type="text" 
-                placeholder="e.g. skywalker_77" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-              <Input 
-                label="Secure Password"
-                type="password" 
-                placeholder="••••••••" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Button 
-                type="submit" 
-                variant="primary" 
-                size="lg" 
-                className="w-full"
-                loading={loading}
-              >
-                Sign in
-              </Button>
-            </form>
+              Sign in
+            </Button>
+          </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white-10"></div></div>
-              <div className="relative flex justify-center text-tiny uppercase font-black tracking-widest text-secondary"><span className="bg-deep-slate px-4">Or continue with</span></div>
-            </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white-10"></div></div>
+            <div className="relative flex justify-center text-tiny uppercase font-black tracking-widest text-secondary"><span className="bg-deep-slate px-4">Or continue with</span></div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/google`}
-                className="sso-button"
-              >
-                <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="Google" />
-                Google
-              </button>
-              <button 
-                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/discord`}
-                className="sso-button"
-              >
-                <img src="https://assets.gpnet.dev/icons/discord-white.svg" alt="Discord" onError={(e) => (e.currentTarget.src = "https://cdn.simpleicons.org/discord/white")} />
-                Discord
-              </button>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/google`}
+              className="sso-button"
+            >
+              <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="Google" />
+              Google
+            </button>
+            <button 
+              onClick={() => window.location.href = `${import.meta.env.VITE_API_URL}/ledger/auth/login/discord`}
+              className="sso-button"
+            >
+              <img src="https://assets.gpnet.dev/icons/discord-white.svg" alt="Discord" onError={(e) => (e.currentTarget.src = "https://cdn.simpleicons.org/discord/white")} />
+              Discord
+            </button>
           </div>
         </div>
       </div>

@@ -456,3 +456,119 @@ CREATE TABLE reports (
 
 CREATE INDEX idx_reports_household_period ON reports(household_id, period_start, period_end);
 CREATE INDEX idx_reports_type ON reports(type);
+
+-- --- PCC & SYSTEM (Phase 10+) ---
+
+CREATE TABLE IF NOT EXISTS system_feature_flags (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+    feature_key TEXT NOT NULL UNIQUE,
+    enabled_globally INTEGER DEFAULT 0,
+    target_user_ids TEXT DEFAULT '[]',
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_config (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+    config_key TEXT NOT NULL UNIQUE,
+    config_value TEXT,
+    value_type TEXT DEFAULT 'string',
+    description TEXT,
+    is_public INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_registry (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+    item_type TEXT NOT NULL,
+    name TEXT NOT NULL,
+    logo_url TEXT,
+    website_url TEXT,
+    metadata_json TEXT DEFAULT '{}',
+    is_enabled INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pcc_audit_logs (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+    admin_id TEXT NOT NULL,
+    action_key TEXT NOT NULL,
+    target_type TEXT,
+    target_id TEXT,
+    details_json TEXT DEFAULT '{}',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS webhook_delivery_logs (
+    id TEXT PRIMARY KEY,
+    webhook_id TEXT NOT NULL,
+    event TEXT NOT NULL,
+    status_code INTEGER DEFAULT 0,
+    error TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (webhook_id) REFERENCES webhooks(id)
+);
+
+-- --- ADVANCED FEATURES (Phase 20+) ---
+
+CREATE TABLE IF NOT EXISTS schedules (
+    id TEXT PRIMARY KEY,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    household_id TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    total_installments INTEGER,
+    frequency_type TEXT NOT NULL,
+    frequency_interval INTEGER DEFAULT 1,
+    day_of_month INTEGER,
+    days_of_week TEXT,
+    timezone TEXT DEFAULT 'UTC',
+    last_run_at DATETIME,
+    next_run_at DATETIME NOT NULL,
+    status TEXT DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS schedule_history (
+    id TEXT PRIMARY KEY,
+    schedule_id TEXT NOT NULL,
+    household_id TEXT NOT NULL,
+    occurrence_at DATETIME NOT NULL,
+    action_status TEXT NOT NULL,
+    details_json TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (schedule_id) REFERENCES schedules(id),
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS data_snapshots (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    data_json TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME,
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE IF NOT EXISTS import_sandbox (
+    id TEXT PRIMARY KEY,
+    household_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    source_filename TEXT,
+    raw_data_json TEXT NOT NULL,
+    mapped_data_json TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (household_id) REFERENCES households(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_schedules_next_run ON schedules(next_run_at);
+CREATE INDEX idx_sandbox_household_status ON import_sandbox(household_id, status);

@@ -1663,10 +1663,10 @@ app.get('/api/developer/tokens', async (c) => {
 })
 
 
-const CURRENT_VERSION = 'v1.15.0'
+const CURRENT_VERSION = 'v1.31.0'
 const VERSION_UPDATES = [
-  { version: 'v1.15.0', title: 'Layout Stabilization & Grid', description: 'Major refactor of the dashboard grid, API connectivity fixes, and schema synchronization.' },
-  { version: 'v1.5.7', title: 'Onboarding & Security', description: 'Premium guided tours and PBKDF2 security hardening.' },
+  { version: 'v1.31.0', title: 'Feature Parity & Rollovers', description: 'Budget rollovers, subscription trial alerts, and receipt management.' },
+  { version: 'v1.15.0', title: 'Universal Interop', description: 'Advanced CSV/JSON imports and export engine.' },
   { version: 'v1.5.6', title: 'Provider Visibility', description: 'Designate providers as private, household, or public.' },
   { version: 'v1.5.5', title: 'Audit Analytics', description: 'New forensic security dashboard.' }
 ]

@@ -37,8 +37,20 @@ const steps = [
   {
     id: 'subscriptions',
     title: 'Audit Subscriptions',
-    content: 'Add your recurring bills and subscriptions to see your future cash flow.',
+    content: 'Add your recurring bills and subscriptions to see your future cash flow. We also alert you 3 days before trials end!',
     target: '#subscription-section'
+  },
+  {
+    id: 'rollovers',
+    title: 'Budget Rollovers',
+    content: 'Enable rollovers on any category to carry over surplus funds to the next month automatically.',
+    target: '#budget-section'
+  },
+  {
+    id: 'receipts',
+    title: 'Receipt Management',
+    content: 'Attach digital receipts to any transaction by clicking the folder icon. Secure, R2-backed storage.',
+    target: '.transaction-item'
   }
 ]
 

@@ -22,7 +22,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [activeStep, setActiveStep] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [updates, setUpdates] = useState<any[]>([])
-  const [currentVersion, setCurrentVersion] = useState('v1.5.7')
+  const [currentVersion, setCurrentVersion] = useState('v1.31.0')
 
   const API_URL = import.meta.env.VITE_API_URL || '/api'
 

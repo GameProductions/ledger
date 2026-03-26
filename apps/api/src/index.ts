@@ -384,9 +384,21 @@ const UpdateUserAdminSchema = z.object({
   status: z.enum(['active', 'suspended', 'deactivated']).optional()
 })
 
-const WebhookSchema = z.object({
-  url: z.string().url(),
-  event_list: z.string().min(1)
+const SystemRegistrySchema = z.object({
+  item_type: z.string(),
+  name: z.string().min(1).max(100),
+  logo_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  website_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  metadata_json: z.any().optional()
+})
+
+const UpdateSystemConfigSchema = z.object({
+  config_value: z.string()
+})
+
+const UpdateSystemFeatureSchema = z.object({
+  enabled_globally: z.boolean(),
+  target_user_ids: z.string().nullable().optional()
 })
 
 const InstallmentPlanSchema = z.object({
@@ -1311,9 +1323,9 @@ app.get('/api/pcc/config', async (c) => {
   return c.json(results)
 })
 
-app.patch('/api/pcc/config/:id', async (c) => {
+app.patch('/api/pcc/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
-  const { config_value } = await c.req.json()
+  const { config_value } = c.req.valid('json')
   await c.env.DB.prepare('UPDATE system_config SET config_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
   await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
   return c.json({ success: true })
@@ -1325,12 +1337,12 @@ app.get('/api/pcc/features', async (c) => {
   return c.json(results)
 })
 
-app.patch('/api/pcc/features/:id', async (c) => {
+app.patch('/api/pcc/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
   const id = c.req.param('id')
-  const { enabled_globally, target_user_ids } = await c.req.json()
+  const { enabled_globally, target_user_ids } = c.req.valid('json')
   await c.env.DB.prepare(
     'UPDATE system_feature_flags SET enabled_globally = ?, target_user_ids = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-  ).bind(enabled_globally, target_user_ids, id).run()
+  ).bind(enabled_globally ? 1 : 0, target_user_ids, id).run()
   await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabled_globally })
   return c.json({ success: true })
 })
@@ -1341,12 +1353,13 @@ app.get('/api/pcc/registry', async (c) => {
   return c.json(results)
 })
 
-app.post('/api/pcc/registry', async (c) => {
-  const data = await c.req.json()
+app.post('/api/pcc/registry', zValidator('json', SystemRegistrySchema), async (c) => {
+  const data = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
     'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
   ).bind(id, data.item_type, data.name, data.logo_url, data.website_url, JSON.stringify(data.metadata_json)).run()
+  await logAudit(c, 'system_registry', id, 'CREATE_REGISTRY_ITEM', {}, data)
   return c.json({ success: true, id })
 })
 
@@ -1356,10 +1369,11 @@ app.get('/api/pcc/users', async (c) => {
   return c.json(results)
 })
 
-app.patch('/api/pcc/users/:id', async (c) => {
+app.patch('/api/pcc/users/:id', zValidator('json', UpdateUserAdminSchema), async (c) => {
   const id = c.req.param('id')
-  const { global_role, status } = await c.req.json()
+  const { global_role, status } = c.req.valid('json')
   await c.env.DB.prepare('UPDATE users SET global_role = ?, status = ? WHERE id = ?').bind(global_role, status, id).run()
+  await logAudit(c, 'users', id, 'ADMIN_UPDATE_USER', {}, { global_role, status })
   return c.json({ success: true })
 })
 

@@ -1,31 +1,34 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense, lazy } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { CurrencyProvider } from './context/CurrencyContext'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { ToastProvider } from './context/ToastContext'
 import { GlobalLayout } from './components/layout/GlobalLayout'
-import LoginPage from './pages/auth/LoginPage'
-import ClaimInvitePage from './pages/auth/ClaimInvitePage'
-import DashboardPage from './pages/DashboardPage'
-import SettingsPage from './pages/SettingsPage'
-import PreferencesPage from './pages/PreferencesPage'
-import ReportsPage from './pages/ReportsPage'
-import DataInteropPage from './pages/DataInteropPage'
-import SnapshotViewer from './pages/SnapshotViewer'
-import BackupHub from './pages/BackupHub'
-import { HelpCenter } from './pages/help/HelpCenter'
-import { GuidesPage, FAQPage } from './pages/help/GuidesPage'
-import { SupportPortal } from './pages/help/SupportPortal'
-import { ToursPage } from './pages/help/ToursPage'
-import PrivacyPolicy from './components/PrivacyPolicy'
-import TermsOfService from './components/TermsOfService'
-import PCCDashboard from './pages/pcc/PCCDashboard'
-import PCCConfig from './pages/pcc/PCCConfig'
-import PCCRegistry from './pages/pcc/PCCRegistry'
-import PCCUsers from './pages/pcc/PCCUsers'
-import PCCSearch from './pages/pcc/PCCSearch'
-import PCCAudit from './pages/pcc/PCCAudit'
+
+// Lazy load pages for better performance
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
+const ClaimInvitePage = lazy(() => import('./pages/auth/ClaimInvitePage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const PreferencesPage = lazy(() => import('./pages/PreferencesPage'))
+const ReportsPage = lazy(() => import('./pages/ReportsPage'))
+const DataInteropPage = lazy(() => import('./pages/DataInteropPage'))
+const SnapshotViewer = lazy(() => import('./pages/SnapshotViewer'))
+const BackupHub = lazy(() => import('./pages/BackupHub'))
+const HelpCenter = lazy(() => import('./pages/help/HelpCenter').then(m => ({ default: m.HelpCenter })))
+const GuidesPage = lazy(() => import('./pages/help/GuidesPage').then(m => ({ default: m.GuidesPage })))
+const FAQPage = lazy(() => import('./pages/help/GuidesPage').then(m => ({ default: m.FAQPage })))
+const SupportPortal = lazy(() => import('./pages/help/SupportPortal').then(m => ({ default: m.SupportPortal })))
+const ToursPage = lazy(() => import('./pages/help/ToursPage').then(m => ({ default: m.ToursPage })))
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./components/TermsOfService'))
+const PCCDashboard = lazy(() => import('./pages/pcc/PCCDashboard'))
+const PCCConfig = lazy(() => import('./pages/pcc/PCCConfig'))
+const PCCRegistry = lazy(() => import('./pages/pcc/PCCRegistry'))
+const PCCUsers = lazy(() => import('./pages/pcc/PCCUsers'))
+const PCCSearch = lazy(() => import('./pages/pcc/PCCSearch'))
+const PCCAudit = lazy(() => import('./pages/pcc/PCCAudit'))
 
 const AppContent: React.FC = () => {
   const { user, globalRole } = useAuth()
@@ -79,7 +82,9 @@ const AppContent: React.FC = () => {
 
   return (
     <GlobalLayout>
-      {renderView()}
+      <Suspense fallback={null}>
+        {renderView()}
+      </Suspense>
     </GlobalLayout>
   )
 }

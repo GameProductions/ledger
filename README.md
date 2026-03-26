@@ -62,15 +62,17 @@ Take total command of your infrastructure. Deploy the entire LEDGER ecosystem—
 ```bash
 5. The API will be available at `http://localhost:8787`.
 
-#### Configuration
-LEDGER v2.0.0 uses a standard environment renaming workflow to maintain security while being Git-friendly:
+#### Automated Configuration
+LEDGER v2.0.0 features a "Zero-Touch" security bootstrapping flow:
 
-1. **Rename**: Change `docker.env` to `.env` (this filename is required to be detected by Docker Compose).
-2. **Generate**: The `docker-compose.yml` is pre-configured to utilize the keys in your `.env`. If you need to refresh them, run:
+1. **One-Command Setup**: Run the following to automatically clone the template and generate unique, high-entropy keys:
    ```bash
-   # Run this to generate new high-entropy keys
-   sed -i "s/JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 32)/" .env
-   sed -i "s/ENCRYPTION_KEY=.*/ENCRYPTION_KEY=$(openssl rand -hex 16)/" .env
+   docker compose run --rm setup
+   ```
+2. **Persistence**: This creates a local `.env` file that is ignored by Git, ensuring your keys are private and persistent.
+3. **Launch**: Once setup is complete, run:
+   ```bash
+   docker compose up -d
    ```
 
 #### Health & Resilience

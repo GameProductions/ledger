@@ -42,6 +42,27 @@ services:
       retries: 3
       start_period: 5s
 
+  setup:
+    image: alpine:latest
+    container_name: ledger-setup
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "
+        if [ ! -f .env ]; then
+          echo 'Initializing LEDGER environment...' &&
+          cp docker.env .env &&
+          JWT_GEN=\$$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1) &&
+          ENC_GEN=\$$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1) &&
+          sed -i \"s/JWT_SECRET=.*/JWT_SECRET=\$JWT_GEN/\" .env &&
+          sed -i \"s/ENCRYPTION_KEY=.*/ENCRYPTION_KEY=\$ENC_GEN/\" .env &&
+          echo 'SUCCESS: .env initialized with high-entropy unique keys.'
+        else
+          echo 'SKIPPED: .env already exists. Maintaining existing security keys.'
+        fi
+      "
+
 volumes:
   ledger-data:
 

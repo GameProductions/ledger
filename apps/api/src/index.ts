@@ -148,6 +148,8 @@ app.use('*', async (c, next) => {
   ]
 
   const isExcluded = exclusions.some(e => path === e || path === e + '/') || 
+                    path.endsWith('/api/theme/broadcast') ||
+                    path.endsWith('/api/config') ||
                     path.includes('/debug/') || 
                     path.includes('/discord/interactions') ||
                     (method === 'OPTIONS')
@@ -1661,11 +1663,13 @@ app.patch('/api/user/profile', zValidator('json', ProfileSchema), async (c) => {
 
 // --- PUBLIC CONFIGURATION ---
 app.get('/api/config', async (c) => {
-  const { results: configs } = await c.env.DB.prepare('SELECT config_key, config_value FROM system_config').all()
-  const { results: features } = await c.env.DB.prepare('SELECT feature_key, enabled_globally FROM system_feature_flags').all()
-  const configMap = (configs as any[]).reduce((acc, curr) => ({ ...acc, [curr.config_key]: curr.config_value }), {})
-  const featureMap = (features as any[]).reduce((acc, curr) => ({ ...acc, [curr.feature_key]: !!curr.enabled_globally }), {})
-  return c.json({ version: CURRENT_VERSION, config: configMap, features: featureMap })
+  try {
+    const { results: configs } = await c.env.DB.prepare('SELECT key, value_json FROM system_configs').all()
+    const configMap = (configs as any[]).reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value_json }), {})
+    return c.json({ version: CURRENT_VERSION, config: configMap, features: {} })
+  } catch (err) {
+    return c.json({ version: CURRENT_VERSION, config: {}, features: {}, error: 'Config fetch failed' }, 200)
+  }
 })
 
 // AI Coach

@@ -7,7 +7,7 @@ export const GlobalLayout: React.FC<{ children: React.ReactNode }> = ({ children
       <div className="flex-1 flex flex-col w-full">
         {children}
       </div>
-      <div className="w-full">
+      <div className="w-full mt-auto">
         <GlassFooter />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { CurrencyProvider } from './context/CurrencyContext'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { ToastProvider } from './context/ToastContext'
+import { GlobalLayout } from './components/layout/GlobalLayout'
 import LoginPage from './pages/auth/LoginPage'
 import ClaimInvitePage from './pages/auth/ClaimInvitePage'
 import DashboardPage from './pages/DashboardPage'
@@ -37,41 +38,50 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
-  // 1. Public Routes (No session required)
-  if (currentHash === '#/privacy') return <PrivacyPolicy />
-  if (currentHash === '#/terms') return <TermsOfService />
-  if (currentHash.startsWith('#/claim')) return <ClaimInvitePage />
+  // Helper to render the actual component
+  const renderView = () => {
+    // 1. Public Routes (No session required)
+    if (currentHash === '#/privacy') return <PrivacyPolicy />
+    if (currentHash === '#/terms') return <TermsOfService />
+    if (currentHash.startsWith('#/claim')) return <ClaimInvitePage />
 
-  // 2. Auth Guard
-  if (!user) return <LoginPage />
+    // 2. Auth Guard
+    if (!user) return <LoginPage />
 
-  // 3. System-Wide Portal (PCC) Super-Admin Only
-  if (currentHash.startsWith('#/system-pcc')) {
-    if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
-    if (currentHash === '#/system-pcc/dashboard') return <PCCDashboard />
-    if (currentHash === '#/system-pcc/config') return <PCCConfig />
-    if (currentHash === '#/system-pcc/registry') return <PCCRegistry />
-    if (currentHash === '#/system-pcc/users') return <PCCUsers />
-    if (currentHash === '#/system-pcc/search') return <PCCSearch />
-    if (currentHash === '#/system-pcc/audit') return <PCCAudit />
-    return <PCCDashboard />
+    // 3. System-Wide Portal (PCC) Super-Admin Only
+    if (currentHash.startsWith('#/system-pcc')) {
+      if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
+      if (currentHash === '#/system-pcc/dashboard') return <PCCDashboard />
+      if (currentHash === '#/system-pcc/config') return <PCCConfig />
+      if (currentHash === '#/system-pcc/registry') return <PCCRegistry />
+      if (currentHash === '#/system-pcc/users') return <PCCUsers />
+      if (currentHash === '#/system-pcc/search') return <PCCSearch />
+      if (currentHash === '#/system-pcc/audit') return <PCCAudit />
+      return <PCCDashboard />
+    }
+
+    // 4. Authenticated Component Routes
+    if (currentHash === '#/settings') return <SettingsPage />
+    if (currentHash === '#/preferences') return <PreferencesPage />
+    if (currentHash === '#/reports') return <ReportsPage />
+    if (currentHash === '#/data') return <DataInteropPage />
+    if (currentHash.startsWith('#/snapshot/')) return <SnapshotViewer />
+    if (currentHash === '#/backup') return <BackupHub />
+    if (currentHash === '#/help') return <HelpCenter />
+    if (currentHash === '#/help/guides') return <GuidesPage />
+    if (currentHash === '#/help/faq') return <FAQPage />
+    if (currentHash === '#/help/support') return <SupportPortal />
+    if (currentHash === '#/help/tours') return <ToursPage />
+
+    // 5. Default Route: Dashboard
+    return <DashboardPage view={view} setView={setView} />
   }
 
-  // 4. Authenticated Component Routes
-  if (currentHash === '#/settings') return <SettingsPage />
-  if (currentHash === '#/preferences') return <PreferencesPage />
-  if (currentHash === '#/reports') return <ReportsPage />
-  if (currentHash === '#/data') return <DataInteropPage />
-  if (currentHash.startsWith('#/snapshot/')) return <SnapshotViewer />
-  if (currentHash === '#/backup') return <BackupHub />
-  if (currentHash === '#/help') return <HelpCenter />
-  if (currentHash === '#/help/guides') return <GuidesPage />
-  if (currentHash === '#/help/faq') return <FAQPage />
-  if (currentHash === '#/help/support') return <SupportPortal />
-  if (currentHash === '#/help/tours') return <ToursPage />
-
-  // 5. Default Route: Dashboard
-  return <DashboardPage view={view} setView={setView} />
+  return (
+    <GlobalLayout>
+      {renderView()}
+    </GlobalLayout>
+  )
 }
 
 const App: React.FC = () => (

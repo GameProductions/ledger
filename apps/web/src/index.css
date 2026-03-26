@@ -73,6 +73,7 @@ body {
   flex-direction: column;
   background-attachment: fixed;
   background-image: var(--bg-gradient);
+  overflow-x: hidden;
 }
 
 #root {

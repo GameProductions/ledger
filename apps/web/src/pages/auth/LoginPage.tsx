@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { useToast } from '../../context/ToastContext'
-import { GlassFooter } from '../../components/ui/GlassFooter'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 
@@ -142,9 +141,6 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-      <div className="w-full max-w-4xl">
-        <GlassFooter />
       </div>
     </div>
   )

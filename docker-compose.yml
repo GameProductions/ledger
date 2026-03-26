@@ -4,10 +4,12 @@ services:
       context: .
       target: api
     restart: unless-stopped
-    env_file: docker.env
+    env_file: .env
     environment:
       - PORT=8787
       - DATABASE_PATH=/data/ledger.db
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     volumes:
       - ledger-data:/data
     networks:

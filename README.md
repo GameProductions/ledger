@@ -62,8 +62,16 @@ Take total command of your infrastructure. Deploy the entire LEDGER ecosystem—
 ```bash
 5. The API will be available at `http://localhost:8787`.
 
-#### Configuration (`docker.env`)
-The platform is pre-configured with a secure `docker.env` file containing randomly generated high-entropy keys (`JWT_SECRET`, `ENCRYPTION_KEY`). **Do not share this file publicly.**
+#### Configuration
+LEDGER v2.0.0 uses a standard environment renaming workflow to maintain security while being Git-friendly:
+
+1. **Rename**: Change `docker.env` to `.env` (this filename is required to be detected by Docker Compose).
+2. **Generate**: The `docker-compose.yml` is pre-configured to utilize the keys in your `.env`. If you need to refresh them, run:
+   ```bash
+   # Run this to generate new high-entropy keys
+   sed -i "s/JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 32)/" .env
+   sed -i "s/ENCRYPTION_KEY=.*/ENCRYPTION_KEY=$(openssl rand -hex 16)/" .env
+   ```
 
 #### Health & Resilience
 LEDGER v2.0.0 uses hard-coded Docker health checks. The `web` service will automatically wait until the `api` is fully initialized and healthy before starting, ensuring a seamless first-run experience.

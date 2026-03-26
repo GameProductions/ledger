@@ -1,8 +1,7 @@
-# LEDGER v2.0.0
-> **Sovereign Financial Infrastructure** | The Feature Parity Milestone
- of Daily Gains & Expense Records.
+# LEDGER
+> **Sovereign Financial Infrastructure** | Live Evaluation of Daily Gains & Expense Records
 
-LEDGER (v2.0.0) is a production-grade personal and household finance platform built for speed, transparency, and elite security.
+LEDGER is a production-grade personal and household finance platform built for speed, transparency, and elite security.
 
 ## 🚀 Key Features
 
@@ -21,7 +20,7 @@ LEDGER (v2.0.0) is a production-grade personal and household finance platform bu
 
 ### 👥 Collaboration & Onboarding
 - **Multi-User Households**: Collaborative finance with administrative role management.
-- **Premium Onboarding**: Version-aware guided tours with "What's New" tracking (v2.0.0).
+- **Premium Onboarding**: Version-aware guided tours with "What's New" tracking.
 - **Discord Bot**: Fully interactive slash commands (`/ledger-*`) for your server.
 
 ---
@@ -36,7 +35,7 @@ npm run deploy:web
 ```
 
 ### 2. Sovereign Self-Hosting (Docker Compose)
-Take total command of your infrastructure. Deploy the entire LEDGER ecosystem—API, Web UI, and Database—to your own private hardware in seconds. 
+Take total command of your infrastructure. Deploy the entire ecosystem—API, Web UI, and Database—to your own private hardware in seconds. 
 
 #### Why Self-Host?
 - **Absolute Privacy**: Your data never leaves your perimeter.
@@ -45,43 +44,44 @@ Take total command of your infrastructure. Deploy the entire LEDGER ecosystem—
 
 #### Prerequisites
 - Docker & Docker Compose
-- `JWT_SECRET` and `ENCRYPTION_KEY` environment variables.
+- **Note**: Security keys (`JWT_SECRET`, `ENCRYPTION_KEY`) are automatically generated when using the Docker Compose setup flow.
 
 #### Setup
 1. **Pull the Image (Recommended)**:
-   Avoid local builds by pulling the pre-built v2.0.0 image from your preferred registry:
-   ```bash
-   # From GitHub Container Registry
-   docker pull ghcr.io/gameproductions/ledger:v2.0.0
+  Avoid local builds by pulling the pre-built image from your preferred registry:
+  ```bash
+  # From GitHub Container Registry
+  docker pull ghcr.io/gameproductions/ledger:latest
 
-   # From Docker Hub
-   docker pull gameproductions/ledger:v2.0.0
-   ```
+  # From Docker Hub
+  docker pull gameproductions/ledger:latest
+  ```
 2. Clone the repository and navigate to the root.
 3. Run the stack:
 ```bash
 5. The API will be available at `http://localhost:8787`.
 
 #### Automated Configuration
-LEDGER v2.0.0 features a "Zero-Touch" security bootstrapping flow:
+LEDGER features a "Zero-Touch" security bootstrapping flow:
 
 1. **One-Command Setup**: Run the following to automatically clone the template and generate unique, high-entropy keys:
-   ```bash
-   docker compose run --rm setup
-   ```
+  ```bash
+  docker compose run --rm setup
+  ```
 2. **Persistence**: This creates a local `.env` file that is ignored by Git, ensuring your keys are private and persistent.
 3. **Launch**: Once setup is complete, run:
-   ```bash
-   docker compose up -d
-   ```
+  ```bash
+  docker compose up -d
+  ```
 
 #### Health & Resilience
-LEDGER v2.0.0 uses hard-coded Docker health checks. The `web` service will automatically wait until the `api` is fully initialized and healthy before starting, ensuring a seamless first-run experience.
+LEDGER uses hard-coded Docker health checks. The `web` service will automatically wait until the `api` is fully initialized and healthy before starting, ensuring a seamless first-run experience.
 
 ---
 
-## 📖 Documentation
-- [User Guide](file:///Users/morenicano/Documents/coding/projects/bots/ledger/USER_GUIDE.md): Navigation and feature how-tos.
-- [Walkthrough](file:///Users/morenicano/.gemini/antigravity/brain/8475cb0d-d421-4e48-b005-f896415e5389/walkthrough.md): Technical details and accomplishments.
-- [Feature List](file:///Users/morenicano/.gemini/antigravity/brain/8475cb0d-d421-4e48-b005-f896415e5389/feature_list.md): Detailed breakdown of all platform capabilities.
-- [Discord Listing](file:///Users/morenicano/.gemini/antigravity/brain/8475cb0d-d421-4e48-b005-f896415e5389/discord_listing.md): Description for the Discord Developer Portal.
+## 📖 Included Documentation
+The following documentation assets are included in the repository and container:
+- **User Guide**: Navigation and feature how-tos.
+- **Walkthrough**: Technical details and platform evolution.
+- **Feature List**: Detailed breakdown of all platform capabilities.
+- **Discord Listing**: Description for the Discord Developer Portal.

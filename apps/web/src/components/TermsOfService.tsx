@@ -5,7 +5,7 @@ const TermsOfService: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Terms of Service</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: March 25, 2026 (v2.0.0)</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: March 25, 2026</p>
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Acceptance of Terms</h3>

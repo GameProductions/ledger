@@ -90,7 +90,7 @@ export const FAQPage: React.FC = () => {
     },
     {
       q: "Can I track multiple currencies simultaneously?",
-      a: "v2.0.0 introduces the Universal Currency Engine, allowing you to set a display currency (USD, EUR, GBP) for your entire ledger. Multi-currency portfolio tracking (where different accounts have different currencies) is planned for a future Phase 15 release."
+      a: "The Universal Currency Engine allows you to set a display currency (USD, EUR, GBP) for your entire ledger. Multi-currency portfolio tracking (where different accounts have different currencies) is planned for a future Phase 15 release."
     }
   ];
 

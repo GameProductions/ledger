@@ -11,7 +11,7 @@ LEDGER is designed for "Zero-Touch" rapid deployment.
 3. **Health Check**: The platform will verify the API's readiness before serving the Web interface.
 
 ### 2. Premium Onboarding
-Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features (like the recent **v2.0.0** update), you'll see a "What's New" notification to keep you up to speed.
+Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features, you'll see a "What's New" notification to keep you up to speed.
 
 ### 2. The Dashboard
 - **Safety Number**: This is your most important metric. It represents how much you can safely spend today without missing any upcoming bills or falling below your budget targets.
@@ -62,4 +62,4 @@ LEDGER lives where you work. Use these slash commands in your Discord server:
 - `/ledger-audit`: View recent security events for your account.
 
 ---
-*For support or feature requests, contact the LEDGER development team.*
+*For support or feature requests, contact the development team.*

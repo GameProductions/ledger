@@ -77,6 +77,9 @@ const LoginPage: React.FC = () => {
             <img src={theme.logoUrl} alt="LEDGER Logo" className="h-16 mx-auto opacity-90 hover-scale-105 transition-transform" />
             <div>
               <h2 className="text-2xl font-black tracking-tighter text-center">Welcome to LEDGER</h2>
+              <p className="text-tiny text-secondary uppercase tracking-loose font-bold opacity-60 text-center">
+                v{import.meta.env.VITE_APP_VERSION}
+              </p>
             </div>
           </div>
 

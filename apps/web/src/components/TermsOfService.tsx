@@ -5,7 +5,7 @@ const TermsOfService: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Terms of Service</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: March 25, 2026 (v1.30.0)</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: March 25, 2026 (v1.31.0)</p>
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Acceptance of Terms</h3>
@@ -19,7 +19,7 @@ const TermsOfService: React.FC = () => {
 
       <section style={{ marginBottom: '2rem' }}>
         <h3>3. Accuracy of Data</h3>
-        <p>The "Safety Number", "Goal-Seek", and other financial metrics are estimates based on user-provided data. GameProductions is not a licensed financial advisor and provides this data for informational purposes only.</p>
+        <p>The "Safety Number", "Budget Rollover Engine", "Goal-Seek", and other financial metrics are estimates based on user-provided data. GameProductions is not a licensed financial advisor and provides this data for informational purposes only. Automated rollovers are based on system calculations at the end of each CRON cycle.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -32,10 +32,14 @@ const TermsOfService: React.FC = () => {
         <p>GameProductions shall not be liable for any financial losses, data inaccuracies, or damages resulting from the use of this edge-computing platform.</p>
       </section>
 
-      <section>
+      <section style={{ marginBottom: '2rem' }}>
         <h3>6. Governing Law</h3>
         <p>These terms are governed by the laws of the jurisdiction in which GameProductions operates. We reserve the right to modify these terms at any time.</p>
       </section>
+      
+      <footer style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+        <p>Updated as of March 25, 2026. This document is updated whenever significant changes are made to the LEDGER terms of engagement.</p>
+      </footer>
     </div>
   )
 }

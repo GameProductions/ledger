@@ -1,6 +1,5 @@
 import React from 'react';
 import { GlassHeader } from '../ui/GlassHeader';
-import { GlassFooter } from '../ui/GlassFooter';
 import { useTheme } from '../../context/ThemeContext';
 
 interface MainLayoutProps {
@@ -39,10 +38,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
           {children}
         </div>
       </main>
-
-      <div className={`w-full transition-all duration-700 ${isLuxury ? 'max-w-5xl mx-auto' : 'max-w-7xl mx-auto'} px-4`}>
-        <GlassFooter />
-      </div>
     </div>
   );
 };

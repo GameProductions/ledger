@@ -1,5 +1,6 @@
 import React from 'react';
 import { GlassHeader } from '../ui/GlassHeader';
+import MobileNav from '../ui/MobileNav';
 import { useTheme } from '../../context/ThemeContext';
 
 interface MainLayoutProps {
@@ -18,9 +19,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
       <GlassHeader view={view} setView={setView} />
       
       <main className={`flex-1 w-full transition-all duration-700 ${
-        isLuxury ? 'max-w-5xl mx-auto px-8 pt-40 pb-24' : 
-        isBusiness ? 'max-w-[100vw] px-6 pt-28 pb-12 flex space-x-8' : 
-        'max-w-7xl mx-auto px-4 pt-32 pb-16'
+        isLuxury ? 'max-w-5xl mx-auto px-4 sm:px-8 pt-28 sm:pt-40 pb-24' : 
+        isBusiness ? 'max-w-[100vw] px-3 sm:px-6 pt-24 sm:pt-28 pb-12 flex flex-col sm:flex-row sm:space-x-8' : 
+        'max-w-7xl mx-auto px-3 sm:px-4 pt-24 sm:pt-32 pb-16'
       }`}>
         {isBusiness && (
           <aside className="hidden lg:block w-64 flex-shrink-0 card p-4 h-[calc(100vh-8rem)] sticky top-28 bg-deep/40 backdrop-blur-xl border-glass-border">
@@ -38,6 +39,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
           {children}
         </div>
       </main>
+
+      <MobileNav activeView={view} onViewChange={setView} />
     </div>
   );
 };

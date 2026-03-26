@@ -407,7 +407,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             ))}
           </div>
 
-          <form className="flex gap-4" onSubmit={(e) => {
+          <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={(e) => {
             e.preventDefault()
             const formData = new FormData(e.currentTarget)
             fetch(`${import.meta.env.VITE_API_URL}/api/transactions`, {
@@ -428,9 +428,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                mutateTx();
             })
           }}>
-            <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold" required />
-            <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold" required />
-            <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px]">Publish</button>
+            <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm sm:text-base" required />
+            <div className="flex gap-2 sm:contents">
+              <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm sm:text-base" required />
+              <button type="submit" className="px-4 sm:px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px] py-4 sm:py-0">Publish</button>
+            </div>
           </form>
         </section>
       </div>
@@ -439,19 +441,19 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
       {/* Floating Calculation Bar */}
       {selectedTxIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] p-1 bg-[#0f172a]/95 backdrop-blur-2xl border border-secondary rounded-2xl shadow-2xl reveal flex items-center gap-6 min-w-[400px]">
-          <div className="flex items-center gap-4 pl-6">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} Selected</span>
+        <div className="fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-[100] p-1 bg-[#0f172a]/95 backdrop-blur-2xl border border-secondary rounded-2xl shadow-2xl reveal flex items-center gap-3 sm:gap-6 min-w-[300px] sm:min-w-[400px]">
+          <div className="flex items-center gap-2 sm:gap-4 pl-4 sm:pl-6">
+            <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
             <div className="h-4 w-px bg-glass-border" />
-            <span className="text-xl font-black tracking-tighter">
+            <span className="text-lg sm:text-xl font-black tracking-tighter">
               <Price amountCents={transactions?.filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + t.amount_cents, 0) || 0} />
             </span>
           </div>
           <button 
             onClick={() => setSelectedTxIds([])}
-            className="ml-auto px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest"
+            className="ml-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest whitespace-nowrap"
           >
-            Clear Selection
+            Clear
           </button>
         </div>
       )}

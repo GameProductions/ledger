@@ -5,14 +5,21 @@ Welcome to LEDGER (Live Evaluation of Daily Gains & Expense Records). This guide
 ## 🚀 Getting Started
 
 ### 1. Premium Onboarding
-Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features (like the recent **v1.5.7** update), you'll see a "What's New" notification to keep you up to speed.
+Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features (like the recent **v1.31.0** update), you'll see a "What's New" notification to keep you up to speed.
 
 ### 2. The Dashboard
 - **Safety Number**: This is your most important metric. It represents how much you can safely spend today without missing any upcoming bills or falling below your budget targets.
 - **Onboarding Checklist**: Track your setup progress directly from the dashboard widget.
 - **Health Score**: A real-time assessment of your financial habits.
+- **Budget Rollover**: Surplus funds from "Rollover Enabled" categories carry over to the next month automatically.
 
 ## 💳 Managing Transactions
+
+### Receipt Uploads
+Keep your house in order by attaching digital receipts to any transaction.
+1. Click the 📁 icon on any transaction record.
+2. Select your file (PDF, PNG, JPG).
+3. View it anytime by clicking the 📄 icon.
 
 ### Multi-Select Calculation
 Need to know the total of a specific group of transactions?
@@ -36,11 +43,15 @@ When adding a Service Provider (e.g., your landlord or a local utility):
 - **E2EE Vault**: Sensitive data is encrypted before it ever hits our persistent storage.
 - **Audit Logs**: View a history of all sensitive actions in your account settings.
 
+### Subscription Trials
+LEDGER monitors your free trials. If a subscription has a trial end date, you will receive an automated alert 3 days before it converts to a paid plan. Look for the **TRIAL** badge on your subscription cards.
+
 ## 🤖 Discord Integration
 LEDGER lives where you work. Use these slash commands in your Discord server:
 - `/ledger-safety`: Check your current spendable headroom.
 - `/ledger-upcoming`: See a summary of bills due in the next 7 days.
 - `/ledger-forecast`: Get a projection of your end-of-month balance.
+- `/ledger-report`: View a visual pie chart of your current budget distribution.
 - `/ledger-audit`: View recent security events for your account.
 
 ---

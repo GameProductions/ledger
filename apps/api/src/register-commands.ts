@@ -25,6 +25,10 @@ const commands = [
     description: '📈 See your financial health score and monthly outlook.',
   },
   {
+    name: 'ledger-report',
+    description: '📊 Generate a visual budget distribution chart.',
+  },
+  {
     name: 'ledger-audit',
     description: '🔍 (Admin) View the last 5 security/audit logs.',
   },

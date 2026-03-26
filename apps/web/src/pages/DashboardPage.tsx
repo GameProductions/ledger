@@ -295,6 +295,38 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       <div className="flex items-center gap-6">
                         <span className="text-lg font-black tracking-tighter">${(tx.amount_cents / 100).toFixed(2)}</span>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {tx.receipt_r2_key ? (
+                            <button 
+                              onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/${tx.id}/receipt?auth_token=${localStorage.getItem('ledger_token')}`, '_blank')}
+                              className="p-2 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20"
+                              title="View Receipt"
+                            >
+                              📄
+                            </button>
+                          ) : (
+                            <label className="p-2 bg-white/5 text-secondary border border-glass-border rounded-lg hover:bg-white/10 cursor-pointer" title="Upload Receipt">
+                              📁
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0]
+                                  if (!file) return
+                                  const formData = new FormData()
+                                  formData.append('file', file)
+                                  await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${tx.id}/receipt`, {
+                                    method: 'POST',
+                                    headers: { 
+                                      'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+                                    },
+                                    body: formData
+                                  })
+                                  mutateTx()
+                                  showToast('Receipt Uploaded')
+                                }}
+                              />
+                            </label>
+                          )}
                           <button 
                             onClick={() => setLinkingTx(tx)}
                             className="p-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20"

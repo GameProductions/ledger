@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS categories (
     monthly_budget_cents INTEGER DEFAULT 0,
     envelope_balance_cents INTEGER DEFAULT 0,
     rollover_enabled BOOLEAN DEFAULT FALSE,
+    rollover_cents INTEGER DEFAULT 0,
     emergency_fund BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
@@ -115,6 +116,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     billing_cycle TEXT NOT NULL,
     next_billing_date DATE,
     trial_end_date DATE,
+    is_trial BOOLEAN DEFAULT FALSE,
     category_id TEXT,
     FOREIGN KEY (household_id) REFERENCES households(id),
     FOREIGN KEY (category_id) REFERENCES categories(id)

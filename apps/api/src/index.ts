@@ -155,6 +155,28 @@ app.use('*', async (c, next) => {
   return authMiddleware(c, next)
 })
 
+// --- UTILITIES: Discord Charts (Phase 14) ---
+const getQuickChartUrl = (type: 'pie' | 'bar', labels: string[], data: number[], title: string) => {
+  const chartConfig = {
+    type: type,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: title,
+        data: data,
+        backgroundColor: [
+          '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
+        ]
+      }]
+    },
+    options: {
+      title: { display: true, text: title, fontColor: '#fff' },
+      legend: { labels: { fontColor: '#fff' } }
+    }
+  }
+  return `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&bg=%231e1e1e`
+}
+
 
 // --- UTILITIES: Webhook Dispatch ---
 const dispatchWebhook = async (c: any, event: string, data: any, householdId: string) => {
@@ -758,6 +780,45 @@ app.post('/api/p2p/loans/:id/payments', zValidator('json', z.object({
   }
 
   return c.json({ success: true, id })
+})
+
+// --- RECEIPTS (Phase 14) ---
+app.post('/api/transactions/:id/receipt', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const body = await c.req.parseBody()
+  const file = body['file'] as File
+  
+  if (!file) return c.json({ error: 'No file uploaded' }, 400)
+  if (!c.env.RECEIPTS_BUCKET) return c.json({ error: 'R2 Bucket not configured' }, 500)
+
+  const key = `receipts/${householdId}/${id}-${Date.now()}`
+  await c.env.RECEIPTS_BUCKET.put(key, await file.arrayBuffer(), {
+    httpMetadata: { contentType: file.type }
+  })
+
+  await c.env.DB.prepare(
+    'UPDATE transactions SET receipt_r2_key = ? WHERE id = ? AND household_id = ?'
+  ).bind(key, id, householdId).run()
+
+  return c.json({ success: true, key })
+})
+
+app.get('/api/transactions/:id/receipt', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  
+  const tx = await c.env.DB.prepare('SELECT receipt_r2_key FROM transactions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (!tx || !(tx as any).receipt_r2_key) return c.json({ error: 'Receipt not found' }, 404)
+
+  const object = await c.env.RECEIPTS_BUCKET.get((tx as any).receipt_r2_key)
+  if (!object) return c.json({ error: 'Object not found in R2' }, 404)
+
+  const headers = new Headers()
+  object.writeHttpMetadata(headers)
+  headers.set('etag', object.httpEtag)
+
+  return new Response(object.body, { headers })
 })
 
 // Transfers
@@ -2453,10 +2514,25 @@ app.post('/discord/interactions', async (c) => {
       return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
 
-    if (name === 'ledger-forecast') {
+    if (name === 'ledger-forecast' || name === 'ledger-report') {
+      const { results: categories } = await c.env.DB.prepare(
+        'SELECT name, envelope_balance_cents FROM categories WHERE household_id = ? LIMIT 5'
+      ).bind(householdId).all()
+      
+      const labels = (categories as any[]).map(cat => cat.name)
+      const data = (categories as any[]).map(cat => cat.envelope_balance_cents / 100)
+      const chartUrl = getQuickChartUrl('pie', labels, data, 'Budget Distribution')
+
       return c.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: "📈 **LEDGER Outlook**: Your health score is **85/100**. You're set to save **$450** this month!" }
+        data: { 
+          content: "📈 **LEDGER Health Report**: Here is your current budget distribution across categories.",
+          embeds: [{
+            title: "Budget Distribution",
+            image: { url: chartUrl },
+            color: 0x6366f1
+          }]
+        }
       })
     }
 
@@ -2539,17 +2615,35 @@ export default {
           }
         } else if (schedule.target_type === 'budget_reset') {
           // Logic for Budget Reset: Move 'unallocated_balance_cents' to specific categories based on target_id (category_id)
-          const category = await env.DB.prepare('SELECT household_id, monthly_budget_cents FROM categories WHERE id = ?').bind(schedule.target_id).first();
+          const category = await env.DB.prepare('SELECT household_id, monthly_budget_cents, envelope_balance_cents, rollover_enabled FROM categories WHERE id = ?').bind(schedule.target_id).first();
           if (category) {
-            const amount = (category as any).monthly_budget_cents;
-            // 1. Decrement Household Unallocated
-            queries.push(env.DB.prepare(
-              'UPDATE households SET unallocated_balance_cents = unallocated_balance_cents - ? WHERE id = ?'
-            ).bind(amount, schedule.household_id));
-            // 2. Increment Category Envelope
-            queries.push(env.DB.prepare(
-              'UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ?'
-            ).bind(amount, schedule.target_id));
+            const data = category as any;
+            const monthlyBudget = data.monthly_budget_cents;
+            const currentEnvelope = data.envelope_balance_cents;
+            const isRollover = data.rollover_enabled === 1 || data.rollover_enabled === true;
+
+            if (isRollover) {
+              // 1. Decrement Household Unallocated by the full monthly budget
+              queries.push(env.DB.prepare(
+                'UPDATE households SET unallocated_balance_cents = unallocated_balance_cents - ? WHERE id = ?'
+              ).bind(monthlyBudget, schedule.household_id));
+              // 2. Add budget to envelope and track the rollover amount
+              queries.push(env.DB.prepare(
+                'UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ?, rollover_cents = ? WHERE id = ?'
+              ).bind(monthlyBudget, currentEnvelope, schedule.target_id));
+            } else {
+              // No Rollover: Reset to monthly budget
+              const surplus = currentEnvelope;
+              const adjustment = monthlyBudget - surplus;
+              // 1. Adjust Household Unallocated (could be positive if giving back surplus)
+              queries.push(env.DB.prepare(
+                'UPDATE households SET unallocated_balance_cents = unallocated_balance_cents - ? WHERE id = ?'
+              ).bind(adjustment, schedule.household_id));
+              // 2. Set envelope to exactly monthly budget
+              queries.push(env.DB.prepare(
+                'UPDATE categories SET envelope_balance_cents = ?, rollover_cents = 0 WHERE id = ?'
+              ).bind(monthlyBudget, schedule.target_id));
+            }
           }
         }
         
@@ -2584,20 +2678,44 @@ export default {
       }
     }
 
-    // 2. Existing cron-based sync and pulse logic
-    if (event.cron === "0 0 * * *") { // Weekly Pulse + Daily Sync
-      console.log("Triggering scheduled sync and pulse...")
-      ctx.waitUntil(syncAllConnections(env))
+    // 3. Daily Maintenance (00:00 UTC)
+    if (event.cron === "0 0 * * *") {
+      console.log("Triggering daily maintenance (sync + alerts)...");
       
-      const webhookUrl = env.DISCORD_WEBHOOK_URL
-      if (webhookUrl && new Date().getDay() === 0) { // Still send pulse on Sundays
-         await fetch(webhookUrl, {
+      // A. Sync Connections
+      ctx.waitUntil(syncAllConnections(env));
+      
+      // B. Weekly Pulse (Sundays)
+      const webhookUrl = env.DISCORD_WEBHOOK_URL;
+      if (webhookUrl && new Date().getDay() === 0) {
+         ctx.waitUntil(fetch(webhookUrl, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
              content: "📈 **Weekly Pulse**: Your household's financial health is looking strong! Verified data sync completed."
            })
-         })
+         }));
+      }
+
+      // C. Subscription Trial Alerts
+      const threeDaysOut = new Date();
+      threeDaysOut.setDate(threeDaysOut.getDate() + 3);
+      const targetDate = threeDaysOut.toISOString().split('T')[0];
+
+      const { results: expiringTrials } = await env.DB.prepare(
+        'SELECT * FROM subscriptions WHERE trial_end_date = ? AND is_trial = 1'
+      ).bind(targetDate).all();
+
+      for (const sub of expiringTrials as any[]) {
+        if (webhookUrl) {
+          ctx.waitUntil(fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: `🔔 **LEDGER Trial Alert**: Your trial for **${sub.name}** ends in 3 days (${sub.trial_end_date}). Ensure you have **$${(sub.amount_cents / 100).toFixed(2)}** ready for the first billing!`
+            })
+          }));
+        }
       }
     }
   }

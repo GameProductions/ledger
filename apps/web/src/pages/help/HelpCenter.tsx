@@ -16,7 +16,8 @@ export const HelpCenter: React.FC = () => {
       title: 'Frequently Asked Questions',
       description: 'Quick answers to common questions about security and sync.',
       icon: <HelpCircle className="text-purple-400" />,
-      hash: '#/help/faq'
+      hash: '#/help/faq',
+      topics: ['Variable Recurrences', 'Subscription Detection', 'Trial Alerts', 'Budget Rollovers']
     },
     {
       id: 'tours',
@@ -83,7 +84,7 @@ export const HelpCenter: React.FC = () => {
 
         <footer className="text-center pt-12 border-t border-white/5">
           <p className="text-secondary text-sm font-medium">
-            LEDGER Documentation v1.29.0 &bull; Built for total financial sovereignty.
+            LEDGER Documentation v1.31.0 &bull; Built for total financial sovereignty.
           </p>
         </footer>
       </div>

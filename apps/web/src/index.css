@@ -77,31 +77,9 @@ body {
 }
 
 #root {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
-  width: 100vw;
-  overflow-x: hidden;
-}
-
-.login-page-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 100vh;
-  width: 100%;
-  padding: 1rem;
-  box-sizing: border-box;
-}
-
-.login-content-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
 }
 
 .card {

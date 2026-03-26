@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
                 className="w-full"
                 loading={loading}
               >
-                Initialize Session
+                Sign in
               </Button>
             </form>
 

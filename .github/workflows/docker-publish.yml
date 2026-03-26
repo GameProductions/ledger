@@ -39,7 +39,7 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            ${{ env.IMAGE_NAME }}
+            morenicano/ledger
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}

@@ -6,18 +6,25 @@ import { verifyPassword, verifyTOTP, hashPassword } from '../auth-utils'
 export class AuthService {
   constructor(private env: Bindings) {}
 
-  async validateCredentials(username: string, password: string) {
+  async validateCredentials(identifier: string, password: string) {
+    console.log('[Auth] Attempting login for:', identifier)
+    
     const user: any = await this.env.DB.prepare(
-      'SELECT * FROM users WHERE username = ?'
-    ).bind(username).first()
+      'SELECT * FROM users WHERE username = ? OR email = ?'
+    ).bind(identifier, identifier).first()
 
-    if (!user) throw new HTTPException(401, { message: 'Invalid credentials' })
+    if (!user) {
+      console.warn('[Auth] User not found:', identifier)
+      throw new HTTPException(401, { message: 'Invalid credentials' })
+    }
     
     const isMatch = await verifyPassword(password, user.password_hash)
     if (!isMatch) { 
+      console.warn('[Auth] Password mismatch for:', identifier)
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
+    console.log('[Auth] Login successful for:', user.username)
     return user
   }
 

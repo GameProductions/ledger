@@ -77,9 +77,6 @@ const LoginPage: React.FC = () => {
             <img src={theme.logoUrl} alt="LEDGER Logo" className="h-16 mx-auto opacity-90 hover-scale-105 transition-transform" />
             <div>
               <h2 className="text-2xl font-black tracking-tighter text-center">Welcome to LEDGER</h2>
-              <p className="text-tiny text-secondary uppercase tracking-loose font-bold opacity-60 text-center">
-                v{import.meta.env.VITE_APP_VERSION}
-              </p>
             </div>
           </div>
 
@@ -117,9 +114,10 @@ const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white-10"></div></div>
-            <div className="relative flex justify-center text-tiny uppercase font-black tracking-widest text-secondary"><span className="bg-deep-slate px-4">Or continue with</span></div>
+          <div className="flex items-center gap-4 text-tiny uppercase font-black tracking-widest text-secondary opacity-50">
+            <div className="flex-1 border-t border-glass-border"></div>
+            <span>Or continue with</span>
+            <div className="flex-1 border-t border-glass-border"></div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -147,6 +145,12 @@ const LoginPage: React.FC = () => {
               />
               Discord
             </button>
+          </div>
+          
+          <div className="text-center opacity-40 hover:opacity-100 transition-opacity">
+            <p className="text-tiny font-black tracking-widest text-secondary uppercase">
+               LEDGER v{import.meta.env.VITE_APP_VERSION}
+            </p>
           </div>
         </div>
       </div>

@@ -24,8 +24,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Classic',
     layoutVariant: 'standard',
     colors: { primary: '#10b981', secondary: '#3b82f6', gradient: 'radial-gradient(circle at 0% 0%, #1e293b 0%, #0f172a 50%, #020617 100%)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   },
   {
     id: 'sapphire',
@@ -33,8 +33,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Classic',
     layoutVariant: 'standard',
     colors: { primary: '#3b82f6', secondary: '#8b5cf6', gradient: 'radial-gradient(circle at top left, #1e1b4b, #030617)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   },
   {
     id: 'ruby',
@@ -42,8 +42,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Classic',
     layoutVariant: 'standard',
     colors: { primary: '#ef4444', secondary: '#f97316', gradient: 'radial-gradient(circle at top left, #450a0a, #0a0a0b)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   },
   {
     id: 'luxury',
@@ -51,8 +51,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Premium',
     layoutVariant: 'luxury',
     colors: { primary: '#d4af37', secondary: '#fcd34d', gradient: 'radial-gradient(circle at top right, #1a1a1a, #000000)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   },
   {
     id: 'professional',
@@ -60,8 +60,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Classic',
     layoutVariant: 'business',
     colors: { primary: '#64748b', secondary: '#3b82f6', gradient: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   },
   {
     id: 'carbon',
@@ -69,8 +69,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Premium',
     layoutVariant: 'business',
     colors: { primary: '#ffffff', secondary: '#475569', gradient: 'linear-gradient(to bottom, #111827, #000000)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   },
   {
     id: 'ember',
@@ -78,8 +78,8 @@ export const ThemeRegistry: Theme[] = [
     category: 'Experimental',
     layoutVariant: 'luxury',
     colors: { primary: '#f97316', secondary: '#fbbf24', gradient: 'radial-gradient(circle at 50% 120%, #451a03, #0c0a09)' },
-    logoUrl: '/assets/icon.png',
-    iconUrl: '/assets/icon.png'
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   }
 ];
 

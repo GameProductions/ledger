@@ -250,7 +250,12 @@ const LoginPage: React.FC = () => {
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs"
             >
-              <img src="https://assets.gpnet.dev/icons/discord-white.svg" alt="D" className="w-4 h-4 opacity-80" />
+              <img 
+                src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/discord.svg" 
+                alt="D" 
+                className="w-4 h-4 opacity-80 invert brightness-0" 
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+              />
               Discord
             </button>
           </div>

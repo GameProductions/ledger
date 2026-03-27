@@ -1,6 +1,6 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
-import { ChevronRight, ArrowRight, Zap, Shield, RefreshCw, Fingerprint, Key, Lock } from 'lucide-react';
+import { ChevronRight, ArrowRight, Zap, Shield, RefreshCw, Fingerprint } from 'lucide-react';
 
 export const GuidesPage: React.FC = () => {
   const guides = [

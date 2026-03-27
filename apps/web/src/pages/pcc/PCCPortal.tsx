@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import UserMenu from '../../components/UserMenu';
-import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock } from 'lucide-react';
 
 interface PCCPortalProps {
   children: React.ReactNode;
@@ -120,7 +120,5 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
     </div>
   );
 };
-
-export default PCCPortal;
 
 export default PCCPortal;

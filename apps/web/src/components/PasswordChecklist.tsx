@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Check, X } from 'lucide-react';
 
 interface Requirement {

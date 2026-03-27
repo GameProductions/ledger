@@ -1,4 +1,8 @@
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Terminal, Cpu, Database, Users, Activity, LayoutDashboard } from 'lucide-react'
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
+import { useApi } from '../hooks/useApi'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard } from 'lucide-react'
 
 const UserMenu: React.FC<{ 
   view?: string, 

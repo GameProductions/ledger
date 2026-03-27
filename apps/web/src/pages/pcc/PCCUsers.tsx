@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
-import { MoreHorizontal, User, Shield, Trash2, GitMerge, Info, Mail, Calendar, Activity, Lock, Globe, ExternalLink, X, Search, CheckCircle2, AlertCircle, Fingerprint, Key, RefreshCw, Edit3, Terminal, ShieldAlert, Unlock } from 'lucide-react';
+import { MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SUB-COMPONENT: Forensic Details Modal ---

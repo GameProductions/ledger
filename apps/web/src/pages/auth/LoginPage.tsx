@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Fingerprint, Key, RefreshCw, Lock } from 'lucide-react'
+import { Fingerprint, RefreshCw } from 'lucide-react'
 import { Modal } from '../../components/ui/Modal'
 import { PasswordChecklist } from '../../components/PasswordChecklist'
 

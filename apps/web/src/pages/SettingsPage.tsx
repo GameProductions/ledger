@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, ShieldCheck, Lock } from 'lucide-react'
 import { MainLayout } from '../components/layout/MainLayout'
-import { PrivacySettings } from '../components/PrivacySettings'
 import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
@@ -12,7 +11,6 @@ import { PasswordChecklist } from '../components/PasswordChecklist'
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
   const { data: profile, mutate } = useApi('/api/user/profile')
-  const { data: accounts } = useApi<any[]>('/api/accounts')
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState('')
   const [timezone, setTimezone] = useState('UTC')

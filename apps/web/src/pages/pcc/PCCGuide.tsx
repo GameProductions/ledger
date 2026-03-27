@@ -1,6 +1,6 @@
 import React from 'react';
 import PCCPortal from './PCCPortal';
-import { BookOpen, Shield, Fingerprint, Lock, Activity, Zap, Info, AlertTriangle, Terminal, Key, RefreshCw } from 'lucide-react';
+import { Shield, Fingerprint, Lock, Activity, Zap, Terminal, Key, RefreshCw } from 'lucide-react';
 
 const PCCGuide: React.FC = () => {
   const sections = [

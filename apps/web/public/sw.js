@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ledger-v1.15.1';
+const CACHE_NAME = 'ledger-v2.2.0';
 const assetsToCache = [
   '/',
   '/index.html',
@@ -18,11 +18,14 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      })
-    ))
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then(keys => Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      ))
+    ])
   );
 });
 

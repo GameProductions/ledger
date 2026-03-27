@@ -98,6 +98,17 @@ app.get('/ping', (c) => c.text('PONG - LEDGER IS LIVE'))
 // OpenAPI Specification
 app.get('/openapi.json', (c) => c.json(openApiSpec))
 
+// Microsoft Identity Association (for verification)
+app.get('/.well-known/microsoft-identity-association.json', (c) => {
+  return c.json({
+    associatedApplications: [
+      {
+        applicationId: "f9927aec-9a57-463c-971b-95f9dc0e7f16"
+      }
+    ]
+  })
+})
+
 // 1. Global Security Hardening
 app.use('*', logger())
 app.use('*', cors())

@@ -38,7 +38,15 @@ auth.post('/login', zValidator('json', z.object({
     const token = await authService.generateToken(user.id)
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
-    return c.json({ token, user: { id: user.id, email: user.email, displayName: user.display_name } })
+    return c.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        displayName: user.display_name,
+        force_password_change: !!user.force_password_change
+      } 
+    })
   } catch (e: any) {
     return c.json({ error: e.message || 'Unauthorized' }, e.status || 401)
   }
@@ -244,11 +252,41 @@ auth.post('/passkeys/register-options', async (c) => {
   return c.json({ challenge, user: { id: c.get('userId') || 'new-user', name: 'User' } })
 })
 
-auth.post('/passkeys/register-verify', async (c) => {
-  const { attestation, challenge, userId } = await c.req.json()
+auth.post('/passkeys/register-verify', zValidator('json', z.object({
+  attestation: z.any(),
+  challenge: z.string(),
+  userId: z.string(),
+  name: z.string().optional()
+})), async (c) => {
+  const { attestation, userId, name } = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id) VALUES (?, ?, ?, ?)')
-    .bind(id, userId, attestation.publicKey, attestation.id).run()
+  const aaguid = attestation.aaguid || 'unknown' // In real WebAuthn, this is in the authenticatorData
+  
+  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id, name, aaguid) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, userId, attestation.publicKey, attestation.id, name || 'New Passkey', aaguid).run()
+    
+  await logAudit(c, 'passkeys', id, 'REGISTER', null, { name, aaguid })
+  return c.json({ success: true, id })
+})
+
+auth.patch('/passkeys/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  const { name } = c.req.valid('json')
+  const authService = new AuthService(c.env)
+  
+  await authService.updatePasskeyName(id, userId, name)
+  await logAudit(c, 'passkeys', id, 'RENAME', null, { name })
+  return c.json({ success: true })
+})
+
+auth.delete('/passkeys/:id', async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  const authService = new AuthService(c.env)
+  
+  await authService.removePasskey(id, userId)
+  await logAudit(c, 'passkeys', id, 'REMOVE')
   return c.json({ success: true })
 })
 
@@ -268,6 +306,34 @@ auth.post('/passkeys/login-verify', async (c) => {
   const token = await authService.generateToken(passkey.user_id)
   await logAudit(c, 'users', passkey.user_id, 'login', null, { strategy: 'passkey' })
   return c.json({ token })
+})
+
+// --- PASSWORD LIFECYCLE (v2.4.0) ---
+
+auth.post('/password/reset-request', zValidator('json', z.object({ identifier: z.string() })), async (c) => {
+  const { identifier } = c.req.valid('json')
+  const authService = new AuthService(c.env)
+  const token = await authService.requestPasswordReset(identifier)
+  
+  // In a real app, this would send an email. For now, we'll return it in dev or log it.
+  console.log(`[AUTH] Password reset requested for ${identifier}. Token: ${token}`)
+  return c.json({ success: true, message: 'Check console for reset token (Development Mode)' })
+})
+
+auth.post('/password/reset', zValidator('json', z.object({ token: z.string(), newPassword: z.string().min(8) })), async (c) => {
+  const { token, newPassword } = c.req.valid('json')
+  const authService = new AuthService(c.env)
+  await authService.resetPassword(token, newPassword)
+  return c.json({ success: true })
+})
+
+auth.post('/password/change', zValidator('json', z.object({ newPassword: z.string().min(8) })), async (c) => {
+  const userId = c.get('userId')
+  const { newPassword } = c.req.valid('json')
+  const authService = new AuthService(c.env)
+  await authService.changePassword(userId, newPassword)
+  await logAudit(c, 'users', userId, 'PASSWORD_CHANGE')
+  return c.json({ success: true })
 })
 
 // --- ADMIN INVITATIONS ---

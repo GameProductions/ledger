@@ -134,4 +134,70 @@ export class AuthService {
 
     return userId
   }
+
+  // --- PASSWORD LIFECYCLE (v2.4.0) ---
+
+  async requestPasswordReset(identifier: string) {
+    const user: any = await this.env.DB.prepare('SELECT id FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first()
+    if (!user) return null // Silent fail for security
+
+    const token = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 3600000).toISOString() // 1h
+    
+    await this.env.DB.prepare(
+      'INSERT INTO password_resets (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
+    ).bind(crypto.randomUUID(), user.id, token, expiresAt).run()
+
+    return token
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const reset: any = await this.env.DB.prepare(
+      'SELECT * FROM password_resets WHERE token = ? AND is_used = 0 AND expires_at > CURRENT_TIMESTAMP'
+    ).bind(token).first()
+
+    if (!reset) throw new HTTPException(400, { message: 'Invalid or expired reset token' })
+
+    const passwordHash = await hashPassword(newPassword)
+    await this.env.DB.batch([
+      this.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?').bind(passwordHash, reset.user_id),
+      this.env.DB.prepare('UPDATE password_resets SET is_used = 1 WHERE token = ?').bind(token)
+    ])
+    return true
+  }
+
+  async changePassword(userId: string, newPassword: string) {
+    const passwordHash = await hashPassword(newPassword)
+    await this.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?').bind(passwordHash, userId).run()
+    return true
+  }
+
+  async adminResetPassword(userId: string, newPassword: string, isTemporary: boolean = false) {
+    const passwordHash = await hashPassword(newPassword)
+    await this.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = ? WHERE id = ?')
+      .bind(passwordHash, isTemporary ? 1 : 0, userId).run()
+    return true
+  }
+
+  // --- PASSKEY MANAGEMENT (v2.4.0) ---
+
+  async updatePasskeyName(passkeyId: string, userId: string, name: string, isAdmin: boolean = false) {
+    const query = isAdmin 
+      ? 'UPDATE passkeys SET name = ? WHERE id = ?' 
+      : 'UPDATE passkeys SET name = ? WHERE id = ? AND user_id = ?'
+    const params = isAdmin ? [name, passkeyId] : [name, passkeyId, userId]
+    
+    await this.env.DB.prepare(query).bind(...params).run()
+    return true
+  }
+
+  async removePasskey(passkeyId: string, userId: string, isAdmin: boolean = false) {
+    const query = isAdmin 
+      ? 'DELETE FROM passkeys WHERE id = ?' 
+      : 'DELETE FROM passkeys WHERE id = ? AND user_id = ?'
+    const params = isAdmin ? [passkeyId] : [passkeyId, userId]
+    
+    await this.env.DB.prepare(query).bind(...params).run()
+    return true
+  }
 }

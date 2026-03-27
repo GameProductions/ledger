@@ -1,31 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
-import { MoreHorizontal, User, Shield, Trash2, GitMerge, Info, Mail, Calendar, Activity, Lock, Globe, ExternalLink, X, Search, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MoreHorizontal, User, Shield, Trash2, GitMerge, Info, Mail, Calendar, Activity, Lock, Globe, ExternalLink, X, Search, CheckCircle2, AlertCircle, Fingerprint, Key, RefreshCw, Edit3, Terminal, ShieldAlert, Unlock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- SUB-COMPONENT: Forensic Details Modal ---
 const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ userId, onClose }) => {
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+  const [manualPass, setManualPass] = useState('');
+  const [isTemp, setIsTemp] = useState(true);
+
+  const fetchDetails = async () => {
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/admin/users/${userId}/details`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setDetails(data);
+    } catch (err) {
+      console.error('Failed to fetch user details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const token = localStorage.getItem('ledger_token');
-        const apiUrl = import.meta.env.VITE_API_URL;
-        const res = await fetch(`${apiUrl}/api/admin/users/${userId}/details`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setDetails(data);
-      } catch (err) {
-        console.error('Failed to fetch user details:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDetails();
   }, [userId]);
+
+  const handleAdminResetPassword = async () => {
+    if (!manualPass) return;
+    setResetting(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      await fetch(`${apiUrl}/api/admin/users/${userId}/password/reset`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: manualPass, isTemporary: isTemp })
+      });
+      alert('Password reset successfully');
+      setManualPass('');
+      fetchDetails();
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const handleAdminRenamePasskey = async (id: string, oldName: string) => {
+    const name = prompt('New Passkey Name:', oldName);
+    if (!name) return;
+    const token = localStorage.getItem('ledger_token');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    await fetch(`${apiUrl}/api/admin/users/${userId}/passkeys/${id}`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    fetchDetails();
+  };
+
+  const handleAdminRemovePasskey = async (id: string) => {
+    if (!confirm('Remove this Passkey?')) return;
+    const token = localStorage.getItem('ledger_token');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    await fetch(`${apiUrl}/api/admin/users/${userId}/passkeys/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    fetchDetails();
+  };
 
   if (loading) return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -38,129 +85,210 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-4xl bg-[#0d0d0d] border border-white/10 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+        className="relative w-full max-w-5xl bg-[#0d0d0d] border border-white/10 rounded-[2rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden"
       >
         {/* Header */}
-        <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-emerald-500/5 to-transparent">
+        <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-emerald-500/10 via-transparent to-blue-500/10">
           <div className="flex items-center gap-6">
-            <img 
-              src={details.profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${details.profile.id}`} 
-              className="w-20 h-20 rounded-2xl border-2 border-emerald-500/30 shadow-2xl" 
-              alt="User"
-            />
+            <div className="relative">
+               <img 
+                 src={details.profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${details.profile.id}`} 
+                 className="w-24 h-24 rounded-[1.5rem] border-4 border-white/5 shadow-2xl" 
+                 alt="User"
+               />
+               <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-black border-4 border-[#0d0d0d]">
+                  <Shield size={16} />
+               </div>
+            </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-black tracking-tight">{details.profile.display_name || 'Anonymous'}</h2>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${details.profile.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
-                  {details.profile.status}
+              <div className="flex items-center gap-4">
+                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details.profile.display_name || 'Anonymous Intelligence'}</h2>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${details.profile.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
+                   {details.profile.status}
                 </span>
               </div>
-              <p className="text-slate-500 font-mono text-xs mt-1">{details.profile.email}</p>
+              <p className="text-slate-500 font-mono text-xs mt-1 opacity-60 tracking-tight">{details.profile.email} • ID: {userId}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-3 hover:bg-white/5 rounded-full transition-colors text-slate-500 hover:text-white">
+          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center hover:bg-white/5 rounded-2xl transition-all text-slate-500 hover:text-white">
             <X size={24} />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 border-b border-white/5">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 border-b border-white/5">
           {/* Identity Pulse */}
-          <div className="p-8 border-r border-white/5 space-y-6">
-            <div className="flex items-center gap-2 text-emerald-500 mb-2">
-              <Activity size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Identity Pulse</span>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] text-slate-600 uppercase font-black tracking-wide">Join Date</label>
-                <div className="text-sm text-slate-300 flex items-center gap-2 mt-1">
-                  <Calendar size={14} className="opacity-40" />
-                  {new Date(details.profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] text-slate-600 uppercase font-black tracking-wide">Last Active</label>
-                <div className="text-sm text-slate-300 flex items-center gap-2 mt-1">
-                  <Activity size={14} className="opacity-40" />
-                  {details.profile.last_active_at ? new Date(details.profile.last_active_at).toLocaleString() : 'Never'}
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] text-slate-600 uppercase font-black tracking-wide">Global Authority</label>
-                <div className="text-xs font-black text-white mt-1 uppercase tracking-widest px-2 py-1 bg-white/5 rounded inline-block border border-white/5">
-                  {details.profile.global_role}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Security Posture */}
-          <div className="p-8 border-r border-white/5 space-y-6 bg-black/20">
-            <div className="flex items-center gap-2 text-primary mb-2">
-              <Lock size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Security Posture</span>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                <div className="flex items-center gap-3">
-                  <Shield size={16} className={details.security.mfa_enabled ? 'text-emerald-500' : 'text-slate-600'} />
-                  <span className="text-xs font-bold text-slate-300">MFA (TOTP)</span>
-                </div>
-                {details.security.mfa_enabled ? <CheckCircle2 size={16} className="text-emerald-500" /> : <AlertCircle size={16} className="text-orange-500/50" />}
+          <div className="p-8 border-r border-white/5 space-y-8">
+            <div>
+              <div className="flex items-center gap-2 text-emerald-500 mb-6">
+                <Activity size={16} />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Telemetry</span>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 opacity-50">
-                <div className="flex items-center gap-3">
-                  <Lock size={16} className="text-slate-600" />
-                  <span className="text-xs font-bold text-slate-300">Biometric Passkeys</span>
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Registration</label>
+                  <div className="text-sm text-slate-300 font-bold">
+                    {new Date(details.profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
                 </div>
-                <div className="text-[10px] font-black text-slate-600">INACTIVE</div>
+                <div>
+                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Last Interaction</label>
+                  <div className="text-sm text-slate-300 font-bold">
+                    {details.profile.last_active_at ? new Date(details.profile.last_active_at).toLocaleString() : 'No History'}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Authority Clearance</label>
+                  <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-black text-white uppercase tracking-widest inline-block mt-2">
+                    {details.profile.global_role}
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div>
-                <label className="text-[10px] text-slate-600 uppercase font-black tracking-wide">Linked Ecosystems</label>
-                <div className="flex gap-2 mt-2">
-                  {details.social_links.length > 0 ? details.social_links.map((link: any) => (
-                    <div key={link.provider} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:border-white/20 transition-all cursor-pointer">
-                      <Globe size={14} className="text-blue-400" />
-                    </div>
-                  )) : <span className="text-[10px] text-slate-700 font-bold italic">No External Links</span>}
+            <div className="pt-8 border-t border-white/5">
+                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-4">Linked Identites</label>
+                <div className="flex flex-wrap gap-2">
+                   {details.social_links.length > 0 ? details.social_links.map((link: any) => (
+                      <div key={link.provider} title={link.provider} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400">
+                         <Globe size={18} />
+                      </div>
+                   )) : <span className="text-[10px] text-slate-700 italic font-bold">Isolated Node</span>}
                 </div>
-              </div>
             </div>
           </div>
 
-          {/* Forensic History */}
-          <div className="p-8 space-y-6">
-            <div className="flex items-center gap-2 text-secondary mb-2">
-              <Terminal size={16} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Forensic Activity Log</span>
+          {/* Biometric Registry */}
+          <div className="p-8 border-r border-white/5 bg-black/40 lg:col-span-2 space-y-8">
+              <div className="flex items-center justify-between mb-2">
+                 <div className="flex items-center gap-2 text-primary">
+                   <Fingerprint size={18} />
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">Biometric Registry</span>
+                 </div>
+                 <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black">{details.security.passkeys?.length || 0} Registered</span>
+              </div>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                 {details.security.passkeys?.length > 0 ? details.security.passkeys.map((pk: any) => (
+                    <div key={pk.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all">
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary">
+                             <Fingerprint size={20} />
+                          </div>
+                          <div>
+                             <p className="text-sm font-bold tracking-tight text-white">{pk.name}</p>
+                             <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{pk.aaguid || 'Unknown Provider'}</p>
+                          </div>
+                       </div>
+                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleAdminRenamePasskey(pk.id, pk.name)}
+                            className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"
+                          >
+                             <Edit3 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleAdminRemovePasskey(pk.id)}
+                            className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-all"
+                          >
+                             <Trash2 size={14} />
+                          </button>
+                       </div>
+                    </div>
+                 )) : (
+                    <div className="h-40 flex flex-col items-center justify-center text-slate-700 border-2 border-dashed border-white/5 rounded-3xl space-y-3">
+                       <ShieldAlert size={32} className="opacity-20" />
+                       <span className="text-[10px] font-black uppercase tracking-widest">No Passkeys Detected</span>
+                    </div>
+                 )}
+              </div>
+
+              {/* Forensic Overrides */}
+              <div className="pt-8 border-t border-white/5 space-y-6">
+                 <div className="flex items-center gap-2 text-orange-500">
+                    <ShieldAlert size={18} />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Forensic Overrides</span>
+                 </div>
+                 
+                 <div className="space-y-4">
+                    <div className="relative">
+                       <input 
+                        type="password"
+                        placeholder="Manual Password Injection..."
+                        value={manualPass}
+                        onChange={(e) => setManualPass(e.target.value)}
+                        className="w-full bg-white/5 border border-white/5 p-4 rounded-xl text-xs font-bold outline-none focus:border-orange-500/50 transition-all"
+                       />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                       <label className="flex items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={isTemp} 
+                            onChange={(e) => setIsTemp(e.target.checked)}
+                            className="accent-orange-500"
+                          />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">Temporary Credential</span>
+                       </label>
+                       
+                       <button 
+                        onClick={handleAdminResetPassword}
+                        disabled={resetting || !manualPass}
+                        className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-[10px] rounded-xl transition-all"
+                       >
+                         Execute Reset
+                       </button>
+                    </div>
+                 </div>
+              </div>
+          </div>
+
+          {/* Forensic Audit Log */}
+          <div className="p-8 space-y-6 bg-deep-slate-90/50">
+            <div className="flex items-center gap-2 text-slate-500 mb-6">
+              <Terminal size={18} />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">System Chronicle</span>
             </div>
             
-            <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {details.history.length > 0 ? details.history.map((log: any, idx: number) => (
-                <div key={idx} className="text-[10px] border-l-2 border-emerald-500/20 pl-3 py-1">
-                  <div className="text-slate-400 font-bold">{log.action.replace(/_/g, ' ')}</div>
-                  <div className="text-slate-600 mt-0.5">{new Date(log.created_at).toLocaleString()}</div>
+                <div key={idx} className="relative pl-5 border-l border-white/10 py-1 hover:border-emerald-500 transition-colors">
+                  <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-white/10" />
+                  <div className="text-[10px] font-black uppercase text-slate-300 tracking-tight">{log.action.replace(/_/g, ' ')}</div>
+                  <div className="text-[9px] text-slate-600 font-mono mt-1">{new Date(log.created_at).toLocaleString()}</div>
                 </div>
               )) : (
-                <div className="text-center py-8 opacity-20 italic text-xs">No Recent Audit Trail</div>
+                <div className="text-center py-12 opacity-10 italic text-[10px] font-black uppercase tracking-widest">Pristine Audit Trail</div>
               )}
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 bg-black/40 flex items-center justify-between">
-          <div className="text-[10px] text-slate-600 font-mono tracking-tighter uppercase">
-            Platform Forensic Record | ID: {userId}
+        <div className="p-8 bg-black/60 flex items-center justify-between border-t border-white/5">
+          <div className="flex items-center gap-6">
+             <div className="flex flex-col">
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600">Secure Protocol</span>
+                <span className="text-[10px] font-black text-slate-400 font-mono">PCC_DIRECTORY_V2.4</span>
+             </div>
+             <div className="h-8 w-px bg-white/5" />
+             <div className="flex flex-col">
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600">Access Key</span>
+                <span className="text-[10px] font-black text-emerald-500/60 font-mono">AUTHORIZED_ADMIN</span>
+             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-lg text-xs font-black transition-all">
-            <ExternalLink size={14} />
-            GENERATE FULL AUDIT Dossier
-          </button>
+          
+          <div className="flex gap-4">
+             <button className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                <RefreshCw size={14} />
+                Full Resync
+             </button>
+             <button className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                <ExternalLink size={16} />
+                Generate Forensic Dossier
+             </button>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -374,7 +502,5 @@ const PCCUsers: React.FC = () => {
     </PCCPortal>
   );
 };
-
-export default PCCUsers;
 
 export default PCCUsers;

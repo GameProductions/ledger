@@ -2274,11 +2274,17 @@ app.get('/api/admin/users/:userId/details', async (c) => {
     'SELECT id, provider, status, created_at FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ?)'
   ).bind(userId).all()
 
-  // 3. Social/Auth Links (Simplified mock for now based on current schema)
-  const socialLinks = [] 
-  if (user.username && user.username.startsWith('discord_')) socialLinks.push({ provider: 'discord', id: user.username })
+  // 3. Social/Auth Links
+  const { results: socialLinks } = await c.env.DB.prepare(
+    'SELECT id, provider, provider_user_id as provider_id, created_at FROM user_identities WHERE user_id = ?'
+  ).bind(userId).all()
 
-  // 4. Recent Forensic History
+  // 4. Passkeys (v2.4.0)
+  const { results: passkeys } = await c.env.DB.prepare(
+    'SELECT id, name, aaguid, created_at FROM passkeys WHERE user_id = ?'
+  ).bind(userId).all()
+
+  // 5. Recent Forensic History
   const { results: history } = await c.env.DB.prepare(`
     SELECT action, target, created_at, details_json 
     FROM audit_logs 
@@ -2290,12 +2296,94 @@ app.get('/api/admin/users/:userId/details', async (c) => {
     profile: user,
     security: {
       mfa_enabled: !!user.has_2fa,
-      passkeys_count: 0 // Placeholder
+      passkeys: passkeys,
+      force_password_change: !!user.force_password_change
     },
     linked_accounts: connections,
     social_links: socialLinks,
     history: history
   })
+})
+
+app.patch('/api/admin/users/:userId/passkeys/:id', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId, id } = c.req.param()
+  const { name } = await c.req.json() as any
+  
+  const authService = new AuthService(c.env)
+  await authService.updatePasskeyName(id, userId, name, true)
+  
+  await logAudit(c, 'passkeys', id, 'ADMIN_RENAME', null, { targetUserId: userId, newName: name })
+  return c.json({ success: true })
+})
+
+app.delete('/api/admin/users/:userId/passkeys/:id', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId, id } = c.req.param()
+  
+  const authService = new AuthService(c.env)
+  await authService.removePasskey(id, userId, true)
+  
+  await logAudit(c, 'passkeys', id, 'ADMIN_REMOVE', null, { targetUserId: userId })
+  return c.json({ success: true })
+})
+
+app.post('/api/admin/users/:userId/password/reset', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId } = c.req.param()
+  const { newPassword, isTemporary } = await c.req.json() as any
+  
+  const authService = new AuthService(c.env)
+  await authService.adminResetPassword(userId, newPassword, isTemporary)
+  
+  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', null, { isTemporary })
+  return c.json({ success: true })
+})
+
+app.post('/api/user/profile/sync', async (c) => {
+  const userId = c.get('userId')
+  const { provider, identityId } = await c.req.json() as any
+  
+  const identity: any = await c.env.DB.prepare(
+    'SELECT access_token, provider_user_id FROM user_identities WHERE id = ? AND user_id = ?'
+  ).bind(identityId, userId).first()
+  if (!identity) throw new HTTPException(404, { message: 'Identity not found' })
+
+  let avatar_url = null
+  let display_name = null
+  
+  try {
+    if (provider === 'discord' && identity.access_token) {
+        const res = await fetch('https://discord.com/api/users/@me', {
+          headers: { 'Authorization': `Bearer ${identity.access_token}` }
+        })
+        const data = await res.json() as any
+        if (data.id) {
+          display_name = data.username
+          avatar_url = data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : null
+        }
+    } else if (provider === 'google' && identity.access_token) {
+        const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { 'Authorization': `Bearer ${identity.access_token}` }
+        })
+        const data = await res.json() as any
+        if (data.id) {
+          display_name = data.name
+          avatar_url = data.picture
+        }
+    }
+  } catch (err) {
+    console.error(`[SYNC_FAILURE] Provider: ${provider}`, err)
+  }
+  
+  // Use fallback if API fails or not implemented
+  if (!display_name) display_name = `User_${identity.provider_user_id.slice(0, 8)}`
+
+  await c.env.DB.prepare('UPDATE users SET display_name = COALESCE(?, display_name), avatar_url = COALESCE(?, avatar_url) WHERE id = ?')
+    .bind(display_name, avatar_url, userId).run()
+
+  await logAudit(c, 'users', userId, 'PROFILE_SYNC', null, { provider, identityId })
+  return c.json({ success: true, profile: { display_name, avatar_url } })
 })
 
 app.delete('/api/admin/users/:userId', async (c) => {
@@ -2581,16 +2669,24 @@ app.get('/api/public/snapshots/:id', async (c) => {
 app.delete('/api/user/identities/:id', async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
+  const keepSettings = c.req.query('keep_settings') === 'true'
   
-  // Ensure the user doesn't delete their last identity if they don't have a password
-  const user: any = await c.env.DB.prepare('SELECT password_hash FROM users WHERE id = ?').bind(userId).first()
+  const user: any = await c.env.DB.prepare('SELECT username, password_hash, display_name, avatar_url FROM users WHERE id = ?').bind(userId).first()
   const { results: identities } = await c.env.DB.prepare('SELECT id FROM user_identities WHERE user_id = ?').bind(userId).all()
   
   if (!user.password_hash && identities.length <= 1) {
     throw new HTTPException(400, { message: 'Cannot remove last identity without a password set' })
   }
 
+  if (!keepSettings) {
+    // Reset assets to default baseline
+    const defaultAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${user.username}`
+    await c.env.DB.prepare('UPDATE users SET display_name = ?, avatar_url = ? WHERE id = ?')
+      .bind(user.username, defaultAvatar, userId).run()
+  }
+
   await c.env.DB.prepare('DELETE FROM user_identities WHERE id = ? AND user_id = ?').bind(id, userId).run()
+  await logAudit(c, 'identities', id, 'UNLINK', null, { keepSettings })
   return c.json({ success: true })
 })
 

@@ -24,14 +24,9 @@ export { HouseholdSession, Vault, RateLimiter } from './durable-objects'
 // Root App (Supporting both root domain and /ledger/ prefix)
 export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// 1. Root-Level verification (Microsoft Identity)
-app.get('/.well-known/microsoft-identity-association.json', (c) => {
-  return c.json({
-    associatedApplications: [
-      { applicationId: "f9927aec-9a57-463c-971b-95f9dc0e7f16" }
-    ]
-  })
-})
+// 🛑 PROTOCOL ZERO: Root-Level verification placeholder
+
+// 1. Root-Level verification placeholder (moved below middleware for better header support)
 
 // 2. Global Middleware
 app.use('*', logger())
@@ -79,6 +74,20 @@ const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 // Health & Docs
 ledger.get('/ping', (c) => c.text('PONG - LEDGER v3.0.0 IS LIVE'))
 ledger.get('/openapi.json', (c) => c.json(openApiSpec))
+
+// 1. Root-Level verification (Microsoft Identity) - Redundant on both routers
+const msVerification = (c: any) => {
+  c.header('Content-Type', 'application/json; charset=utf-8')
+  c.header('Access-Control-Allow-Origin', '*')
+  return c.json({
+    associatedApplications: [
+      { applicationId: "f9927aec-9a57-463c-971b-95f9dc0e7f16" }
+    ]
+  })
+}
+
+ledger.get('/.well-known/microsoft-identity-association.json', msVerification)
+app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
 // Feature Routes
 ledger.route('/auth', authRoutes)

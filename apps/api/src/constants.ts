@@ -30,5 +30,6 @@ export const AUTH_EXCLUSIONS = [
   '/ledger/auth/password/reset',
   '/ledger/auth/admin/claim',
   '/ledger/api/theme/broadcast',
-  '/api/theme/broadcast'
+  '/api/theme/broadcast',
+  '/.well-known/microsoft-identity-association.json'
 ]

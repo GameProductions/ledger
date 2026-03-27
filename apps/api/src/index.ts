@@ -111,7 +111,14 @@ app.get('/.well-known/microsoft-identity-association.json', (c) => {
 
 // 1. Global Security Hardening
 app.use('*', logger())
-app.use('*', cors())
+app.use('*', cors({
+  origin: ['https://ledger.gpnet.dev', 'http://localhost:5173'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+  maxAge: 600,
+  credentials: true,
+}))
 app.use('*', secureHeaders())
 
 app.onError((err, c) => {

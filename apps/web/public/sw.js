@@ -3,9 +3,10 @@ const assetsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/favicon.svg'
+  '/assets/icon-192.png',
+  '/assets/icon-512.png',
+  '/assets/maskable-icon-512.png',
+  '/assets/favicon.png'
 ];
 
 self.addEventListener('install', event => {
@@ -31,6 +32,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+  
+  // Only handle http and https schemes (ignore chrome-extension://, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
   
   // Skip API requests and cross-origin calls
   if (url.hostname.includes('api.gpnet.dev') || event.request.method !== 'GET') {

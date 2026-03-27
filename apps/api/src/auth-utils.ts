@@ -171,15 +171,19 @@ export async function hashPassword(password: string): Promise<string> {
   const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
   
   // Format: iterations.salt_base64.hash_base64
-  const saltBase64 = btoa(String.fromCharCode(...salt))
-  const hashBase64 = btoa(String.fromCharCode(...new Uint8Array(derivedBits)))
+  const saltBase64 = btoa(String.fromCharCode.apply(null, Array.from(salt)))
+  const hashBase64 = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(derivedBits))))
   return `${DEFAULT_ITERATIONS}.${saltBase64}.${hashBase64}`
 }
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
     const [iterations, saltBase64, expectedHashBase64] = storedHash.split('.')
-    const salt = new Uint8Array(atob(saltBase64).split('').map(c => c.charCodeAt(0)))
+    const binarySalt = atob(saltBase64)
+    const salt = new Uint8Array(binarySalt.length)
+    for (let i = 0; i < binarySalt.length; i++) {
+      salt[i] = binarySalt.charCodeAt(i)
+    }
     const encoder = new TextEncoder()
     const keyMaterial = await crypto.subtle.importKey(
       'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']
@@ -191,9 +195,13 @@ export async function verifyPassword(password: string, storedHash: string): Prom
       hash: 'SHA-256'
     }
     const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
-    const actualHashBase64 = btoa(String.fromCharCode(...new Uint8Array(derivedBits)))
-    return actualHashBase64 === expectedHashBase64
-  } catch (e) {
+    const actualHashBase64 = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(derivedBits))))
+    
+    const isMatched = actualHashBase64 === expectedHashBase64
+    if (!isMatched) console.warn('[Auth] Password hash mismatch')
+    return isMatched
+  } catch (e: any) {
+    console.error('[Auth] Password verification error:', e.message)
     return false
   }
 }

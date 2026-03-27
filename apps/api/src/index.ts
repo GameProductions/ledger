@@ -405,7 +405,9 @@ const CreateHouseholdSchema = z.object({
 
 const UpdateUserAdminSchema = z.object({
   global_role: z.enum(['user', 'super_admin']).optional(),
-  status: z.enum(['active', 'suspended', 'deactivated']).optional()
+  status: z.enum(['active', 'suspended', 'deactivated', 'pending']).optional(),
+  display_name: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional()
 })
 
 const SystemRegistrySchema = z.object({
@@ -1342,7 +1344,7 @@ app.get('/api/pcc/stats', async (c) => {
     totalUsers: (userCount as any)[0].count,
     activeToday: (activeToday as any)[0].count,
     totalHouseholds: (householdCount as any)[0].count,
-    version: '1.18.0'
+    version: CURRENT_VERSION
   })
 })
 
@@ -1740,8 +1742,10 @@ app.get('/api/developer/tokens', async (c) => {
 })
 
 
-const CURRENT_VERSION = 'v2.0.0'
+const CURRENT_VERSION = 'v2.3.0'
 const VERSION_UPDATES = [
+  { version: 'v2.3.0', title: 'Forensic Admin Hub', description: 'Advanced user management, account merging, and deep forensic auditing.' },
+  { version: 'v2.2.2', title: 'Stability & UI Refresh', description: 'Authentication performance fixes and refined global footer.' },
   { version: 'v1.31.0', title: 'Feature Parity & Rollovers', description: 'Budget rollovers, subscription trial alerts, and receipt management.' },
   { version: 'v1.15.0', title: 'Universal Interop', description: 'Advanced CSV/JSON imports and export engine.' },
   { version: 'v1.5.6', title: 'Provider Visibility', description: 'Designate providers as private, household, or public.' },
@@ -2234,16 +2238,122 @@ app.get('/api/admin/users', async (c) => {
 app.patch('/api/admin/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
   if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
   const { userId } = c.req.param()
-  const { global_role, status } = c.req.valid('json')
+  const { global_role, status, display_name, email } = c.req.valid('json')
   
-  const old = await c.env.DB.prepare('SELECT global_role, status FROM users WHERE id = ?').bind(userId).first()
+  const old = await c.env.DB.prepare('SELECT global_role, status, display_name, email FROM users WHERE id = ?').bind(userId).first()
   if (!old) throw new HTTPException(404, { message: 'User not found' })
 
-  await c.env.DB.prepare('UPDATE users SET global_role = COALESCE(?, global_role), status = COALESCE(?, status) WHERE id = ?')
-    .bind(global_role, status, userId).run()
+  await c.env.DB.prepare(`
+    UPDATE users SET 
+      global_role = COALESCE(?, global_role), 
+      status = COALESCE(?, status),
+      display_name = COALESCE(?, display_name),
+      email = COALESCE(?, email) 
+    WHERE id = ?
+  `).bind(global_role, status, display_name, email, userId).run()
     
-  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status })
+  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status, display_name, email })
   return c.json({ success: true })
+})
+
+app.get('/api/admin/users/:userId/details', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId } = c.req.param()
+  
+  // 1. Profile & Security Status
+  const user = await c.env.DB.prepare(`
+    SELECT id, email, username, display_name, avatar_url, global_role, status, created_at, last_active_at,
+    (CASE WHEN totp_secret IS NOT NULL THEN 1 ELSE 0 END) as has_2fa
+    FROM users WHERE id = ?
+  `).bind(userId).first() as any
+  
+  if (!user) throw new HTTPException(404, { message: 'User not found' })
+
+  // 2. Linked Accounts
+  const { results: connections } = await c.env.DB.prepare(
+    'SELECT id, provider, status, created_at FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ?)'
+  ).bind(userId).all()
+
+  // 3. Social/Auth Links (Simplified mock for now based on current schema)
+  const socialLinks = [] 
+  if (user.username && user.username.startsWith('discord_')) socialLinks.push({ provider: 'discord', id: user.username })
+
+  // 4. Recent Forensic History
+  const { results: history } = await c.env.DB.prepare(`
+    SELECT action, target, created_at, details_json 
+    FROM audit_logs 
+    WHERE user_id = ? OR (target = 'users' AND target_id = ?)
+    ORDER BY created_at DESC LIMIT 15
+  `).bind(userId, userId).all()
+
+  return c.json({
+    profile: user,
+    security: {
+      mfa_enabled: !!user.has_2fa,
+      passkeys_count: 0 // Placeholder
+    },
+    linked_accounts: connections,
+    social_links: socialLinks,
+    history: history
+  })
+})
+
+app.delete('/api/admin/users/:userId', async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId } = c.req.param()
+  
+  // Verify target is not a super_admin (safety)
+  const target = await c.env.DB.prepare('SELECT global_role FROM users WHERE id = ?').bind(userId).first() as any
+  if (!target) throw new HTTPException(404, { message: 'User not found' })
+  if (target.global_role === 'super_admin' && c.get('userId') !== userId) {
+    throw new HTTPException(403, { message: 'Cannot delete other super admins' })
+  }
+
+  // Soft delete / Purge logic
+  const batch = [
+    c.env.DB.prepare('DELETE FROM user_households WHERE user_id = ?').bind(userId),
+    c.env.DB.prepare('DELETE FROM user_preferences WHERE user_id = ?').bind(userId),
+    c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId)
+  ]
+  
+  await c.env.DB.batch(batch)
+  await logAudit(c, 'users', userId, 'ADMIN_PURGE', { role: target.global_role }, { status: 'deleted' })
+  
+  return c.json({ success: true })
+})
+
+app.post('/api/admin/users/:userId/merge', zValidator('json', z.object({ targetUserId: z.string() })), async (c) => {
+  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  const { userId: sourceUserId } = c.req.param()
+  const { targetUserId } = c.req.valid('json')
+
+  // Source = User to be REMOVED
+  // Target = User to KEEP (the master account)
+  
+  const source = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(sourceUserId).first()
+  const target = await c.env.DB.prepare('SELECT id FROM users WHERE id = ?').bind(targetUserId).first()
+  
+  if (!source || !target) throw new HTTPException(404, { message: 'One or both users not found' })
+
+  // 1. Audit before deletion
+  await logAudit(c, 'users', sourceUserId, 'ACCOUNT_MERGE_SOURCE', null, { mergedInto: targetUserId })
+  await logAudit(c, 'users', targetUserId, 'ACCOUNT_MERGE_TARGET', null, { mergedFrom: sourceUserId })
+
+  // 2. Transfer logic
+  const batch = [
+    // Move household memberships
+    c.env.DB.prepare('UPDATE OR IGNORE user_households SET user_id = ? WHERE user_id = ?').bind(targetUserId, sourceUserId),
+    // Move ownership of transactions
+    c.env.DB.prepare('UPDATE transactions SET owner_id = ? WHERE owner_id = ?').bind(targetUserId, sourceUserId),
+    // Move ownership of subscriptions
+    c.env.DB.prepare('UPDATE subscriptions SET owner_id = ? WHERE owner_id = ?').bind(targetUserId, sourceUserId),
+    // Cleanup source
+    c.env.DB.prepare('DELETE FROM user_households WHERE user_id = ?').bind(sourceUserId),
+    c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(sourceUserId)
+  ]
+
+  await c.env.DB.batch(batch)
+  return c.json({ success: true, masterUserId: targetUserId })
 })
 
 app.get('/api/admin/audit', async (c) => {

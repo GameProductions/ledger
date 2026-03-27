@@ -1,16 +1,28 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/AuthContext'
-import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Terminal, Cpu, Database, Users, Activity, LayoutDashboard } from 'lucide-react'
 
-const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => void }> = ({ view, setView }) => {
+const UserMenu: React.FC<{ 
+  view?: string, 
+  setView?: (v: 'list'|'calendar') => void,
+  isPcc?: boolean 
+}> = ({ view, setView, isPcc = false }) => {
   const { user, logout, globalRole } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+
+  const menuItems = isPcc ? [
+    { icon: LayoutDashboard, label: 'Command Hub', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
+    { icon: Cpu, label: 'System Switchboard', hash: '#/system-pcc/config', color: 'text-blue-400' },
+    { icon: Database, label: 'Universal Registry', hash: '#/system-pcc/registry', color: 'text-orange-400' },
+    { icon: Users, label: 'User Management', hash: '#/system-pcc/users', color: 'text-primary' },
+    { icon: Activity, label: 'Audit Vault', hash: '#/system-pcc/audit', color: 'text-secondary' },
+  ] : [
+    { icon: Settings, label: 'User Settings', hash: '#/settings', color: 'text-primary' },
+    { icon: Palette, label: 'Preferences', hash: '#/preferences', color: 'text-secondary' },
+    { icon: HelpCircle, label: 'Help & Support', hash: '#/help', color: 'text-blue-400' },
+  ]
 
   return (
     <div className="z-[2000] relative">
@@ -25,7 +37,10 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
           alt="User Avatar" 
           className="w-8 h-8 rounded-full border border-primary shadow-lg"
         />
-        <span className="text-sm font-semibold text-white ml-1">{(profile?.display_name || user?.displayName || 'User')}</span>
+        <div className="flex flex-col items-start ml-1 leading-none">
+          <span className="text-xs font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
+          {isPcc && <span className="text-[8px] text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>}
+        </div>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -42,50 +57,48 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
               style={{ background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--primary)' }}
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
-                <div className="text-[10px] text-primary uppercase tracking-widest font-black mb-1">Authenticated Account</div>
+                <div className="text-[10px] text-primary uppercase tracking-widest font-black mb-1">
+                  {isPcc ? 'Administrative Access' : 'Authenticated Account'}
+                </div>
                 <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
               </div>
 
               <div className="space-y-1">
-                {!isHome && (
+                {isPcc ? (
                   <button 
                     onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-emerald-400 transition-colors text-left"
                     style={{ background: 'none', border: 'none' }}
                   >
-                    <ChevronDown size={18} className="text-primary -rotate-90" />
-                    <span>Return to Dashboard</span>
+                    <LayoutDashboard size={18} className="text-emerald-500" />
+                    <span>Exit God Mode</span>
                   </button>
+                ) : (
+                  !isHome && (
+                    <button 
+                      onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
+                      style={{ background: 'none', border: 'none' }}
+                    >
+                      <LayoutDashboard size={18} className="text-primary" />
+                      <span>Return to Dashboard</span>
+                    </button>
+                  )
                 )}
 
-                <button 
-                  onClick={() => { window.location.hash = '#/settings'; setIsOpen(false); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
-                  style={{ background: 'none', border: 'none' }}
-                >
-                  <Settings size={18} className="text-primary" />
-                  <span>User Settings</span>
-                </button>
+                {menuItems.map((item) => (
+                  <button 
+                    key={item.hash}
+                    onClick={() => { window.location.hash = item.hash; setIsOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left group"
+                    style={{ background: 'none', border: 'none' }}
+                  >
+                    <item.icon size={18} className={item.color} />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
 
-                <button 
-                  onClick={() => { window.location.hash = '#/preferences'; setIsOpen(false); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
-                  style={{ background: 'none', border: 'none' }}
-                >
-                  <Palette size={18} className="text-secondary" />
-                  <span>Preferences</span>
-                </button>
-
-                <button 
-                  onClick={() => { window.location.hash = '#/help'; setIsOpen(false); }}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
-                  style={{ background: 'none', border: 'none' }}
-                >
-                  <HelpCircle size={18} className="text-blue-400" />
-                  <span>Help & Support</span>
-                </button>
-
-                {globalRole === 'super_admin' && (
+                {!isPcc && globalRole === 'super_admin' && (
                   <button 
                     onClick={() => { window.location.hash = '#/system-pcc/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"
@@ -96,7 +109,7 @@ const UserMenu: React.FC<{ view?: string, setView?: (v: 'list'|'calendar') => vo
                   </button>
                 )}
 
-                {setView && isHome && (
+                {!isPcc && setView && isHome && (
                   <div className="px-3 py-2 border-t border-glass-border mt-2">
                     <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
                     <div className="grid grid-cols-2 gap-2">

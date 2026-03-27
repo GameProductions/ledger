@@ -10,7 +10,7 @@ const PCCAudit: React.FC = () => {
       try {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = import.meta.env.VITE_API_URL;
-        const res = await fetch(`${apiUrl}/api/pcc/audit`, {
+        const res = await fetch(`${apiUrl}/api/admin/audit`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();

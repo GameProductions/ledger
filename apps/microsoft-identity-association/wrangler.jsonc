@@ -1,0 +1,8 @@
+{
+  "name": "microsoft-identity-association",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-03-22",
+  "routes": [
+    "gpnet.dev/.well-known/microsoft-identity-association.json"
+  ]
+}

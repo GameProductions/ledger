@@ -1,0 +1,11 @@
+{
+  "name": "microsoft-identity-association",
+  "version": "2.2.2",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.77.0"
+  }
+}

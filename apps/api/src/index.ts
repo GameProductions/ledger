@@ -1598,6 +1598,26 @@ app.get('/api/pcc/audit/system', async (c) => {
   return c.json(results)
 })
 
+// 10. Forensic Codex (Walkthrough History)
+app.get('/api/pcc/walkthroughs', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_walkthroughs ORDER BY created_at DESC').all()
+  return c.json(results)
+})
+
+app.post('/api/pcc/walkthroughs', zValidator('json', z.object({
+  version: z.string(),
+  title: z.string(),
+  content_md: z.string()
+})), async (c) => {
+  const { version, title, content_md } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO system_walkthroughs (id, version, title, content_md, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
+  ).bind(id, version, title, content_md).run()
+  await logAudit(c, 'system_walkthroughs', id, 'SYNC_WALKTHROUGH', {}, { version, title })
+  return c.json({ success: true, id })
+})
+
 // --- WEBHOOKS (INBOUND) ---
 
 app.post('/api/webhooks/plaid', async (c) => {

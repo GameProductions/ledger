@@ -57,7 +57,7 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
         <div className="flex items-center gap-8">
           <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
             <Shield size={16} className="text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Forensic Layer v2.4.0 Active</span>
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Forensic Layer v2.5.1 Active</span>
           </div>
           <UserMenu isPcc={true} />
         </div>

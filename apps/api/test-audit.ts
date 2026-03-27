@@ -49,6 +49,7 @@ async function runSuite() {
   await runTest('/ledger/api/financials/accounts', 'GET', 401)
   
   // 4. Auth Exclusions
+  await runTest('/ledger/auth/login', 'POST', 400) // 400 because body is missing, but should NOT be 401
   await runTest('/api/theme/broadcast', 'GET', 200)
   await runTest('/ledger/api/theme/broadcast', 'GET', 200)
   

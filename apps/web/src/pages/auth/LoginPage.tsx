@@ -147,14 +147,9 @@ const LoginPage: React.FC = () => {
             </button>
           </div>
           
-          <div className="text-center opacity-40 hover:opacity-100 transition-opacity">
-            <p className="text-tiny font-black tracking-widest text-secondary uppercase">
-               LEDGER v{import.meta.env.VITE_APP_VERSION}
-            </p>
           </div>
         </div>
       </div>
-    </div>
   )
 }
 

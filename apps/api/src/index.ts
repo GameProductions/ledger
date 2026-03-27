@@ -473,6 +473,11 @@ const UpdateHouseholdSchema = z.object({
   name: z.string().min(1).max(100)
 })
 
+const WebhookSchema = z.object({
+  url: z.string().url(),
+  events: z.string() // Comma-separated or JSON
+})
+
 // --- ROUTES: Accounts (Phase 2) ---
 
 // Categories
@@ -2624,19 +2629,19 @@ app.post('/discord/interactions', async (c) => {
 // Developer: Webhooks
 app.get('/api/developer/webhooks', async (c) => {
   const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare('SELECT id, url, event_types, is_active, created_at FROM webhooks WHERE household_id = ?').bind(householdId).all()
+  const { results } = await c.env.DB.prepare('SELECT id, url, secret, events, created_at FROM webhooks WHERE household_id = ?').bind(householdId).all()
   return c.json(results)
 })
 
 app.post('/api/developer/webhooks', zValidator('json', WebhookSchema), async (c) => {
   const householdId = c.get('householdId')
-  const { url, event_list } = c.req.valid('json')
+  const { url, events } = c.req.valid('json')
   const id = crypto.randomUUID()
   const secret = `wh_sec_${crypto.randomUUID().slice(0, 8)}`
   
   await c.env.DB.prepare(
-    'INSERT INTO webhooks (id, household_id, url, secret, event_list) VALUES (?, ?, ?, ?, ?)'
-  ).bind(id, householdId, url, secret, event_list).run()
+    'INSERT INTO webhooks (id, household_id, url, secret, events) VALUES (?, ?, ?, ?, ?)'
+  ).bind(id, householdId, url, secret, events).run()
   
   return c.json({ success: true, id, secret })
 })

@@ -1,5 +1,5 @@
-# LEDGER
-> **Sovereign Financial Infrastructure** | Live Evaluation of Daily Gains & Expense Records
+# LEDGER v3.0.0
+> **Sovereign Financial Infrastructure** | The Evolutionary Leap
 
 LEDGER is a production-grade personal and household finance platform built for speed, transparency, and elite security.
 

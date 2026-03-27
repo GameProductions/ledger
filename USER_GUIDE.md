@@ -1,4 +1,4 @@
-# LEDGER: User Guide & Documentation
+# LEDGER v3.0.0: User Guide & Documentation
 
 Welcome to LEDGER (Live Evaluation of Daily Gains & Expense Records). This guide will help you navigate the platform and maximize your financial intelligence.
 

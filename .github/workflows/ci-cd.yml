@@ -127,5 +127,14 @@ jobs:
           draft: false
           prerelease: false
           body: |
-            ### LEDGER v2.4.0: Biometric Identity & Forensic Governance 🛡️🧬🏺
-            This release establishes the modern biometric security baseline.
+            ### LEDGER v3.0.0: The Evolutionary Leap 🛡️🧬🏺
+            This major release transitions the LEDGER platform into a state-of-the-art domain-driven modular architecture.
+            
+            #### 🚀 Major Architectural Enhancements
+            - **Domain-Driven Modularization**: Completely decoupled core system logic into specialized route, service, and middleware modules.
+            - **Root-Domain Routing**: Support for root-domain verification (e.g., Microsoft Identity Association) and a flexible API gateway.
+            - **Centralized Validation**: Unified Zod schema management across the entire platform.
+            - **Durable State Sovereignty**: Refined Durable Object architecture for persistent rate limiting and secure session management.
+            - **Forensic Interoperability**: Advanced analytics, reporting, and developer-centric integration hubs.
+            
+            Establishing the next generation of sovereign financial infrastructure.

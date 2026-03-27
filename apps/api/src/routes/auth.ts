@@ -361,4 +361,4 @@ auth.post('/admin/claim', zValidator('json', z.object({
   return c.json({ success: true, userId })
 })
 
-export { auth }
+export default auth

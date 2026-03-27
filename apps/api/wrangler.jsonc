@@ -5,7 +5,9 @@
     "enabled": false
   },
   "routes": [
-    "api.gpnet.dev/ledger/*"
+    "api.gpnet.dev/ledger/*",
+    "api.gpnet.dev/.well-known/*",
+    "api.gpnet.dev/*"
   ],
   "compatibility_date": "2024-03-22",
   "compatibility_flags": ["nodejs_compat"],

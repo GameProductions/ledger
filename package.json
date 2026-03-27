@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/*",
+    "apps/microsoft-identity-association",
     "packages/*"
   ],
   "version": "2.2.2",

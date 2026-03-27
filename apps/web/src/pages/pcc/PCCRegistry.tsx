@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
+
 
 const PCCRegistry: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -53,14 +55,14 @@ const PCCRegistry: React.FC = () => {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Item Type</label>
-                <select 
-                  value={newItem.item_type} 
-                  onChange={(e) => setNewItem({ ...newItem, item_type: e.target.value })}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm"
-                >
-                  <option value="biller">Biller / Service</option>
-                  <option value="category">Global Category</option>
-                </select>
+                <SearchableSelect 
+                  options={[
+                    { value: 'biller', label: 'Biller / Service' },
+                    { value: 'category', label: 'Global Category' }
+                  ]}
+                  value={newItem.item_type}
+                  onChange={(val) => setNewItem({ ...newItem, item_type: val })}
+                />
               </div>
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Display Name</label>

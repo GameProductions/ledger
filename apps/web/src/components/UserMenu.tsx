@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard } from 'lucide-react'
 
 const UserMenu: React.FC<{ 
   view?: string, 
@@ -24,6 +24,7 @@ const UserMenu: React.FC<{
     { icon: Activity, label: 'Audit Vault', hash: '#/system-pcc/audit', color: 'text-secondary' },
   ] : [
     { icon: Settings, label: 'User Settings', hash: '#/settings', color: 'text-primary' },
+    { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
     { icon: Palette, label: 'Preferences', hash: '#/preferences', color: 'text-secondary' },
     { icon: HelpCircle, label: 'Help & Support', hash: '#/help', color: 'text-blue-400' },
   ]

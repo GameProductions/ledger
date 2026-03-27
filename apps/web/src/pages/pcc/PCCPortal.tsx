@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import UserMenu from '../../components/UserMenu';
-import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock, Globe, Zap } from 'lucide-react';
 
 interface PCCPortalProps {
   children: React.ReactNode;
@@ -26,6 +26,8 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   const navItems = [
     { name: 'Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
     { name: 'Directory', path: '#/system-pcc/users', icon: Users },
+    { name: 'Providers', path: '#/system-pcc/providers', icon: Globe },
+    { name: 'Processors', path: '#/system-pcc/processors', icon: Zap },
     { name: 'Audit Trail', path: '#/system-pcc/audit', icon: Activity },
     { name: 'Registry', path: '#/system-pcc/registry', icon: Database },
     { name: 'Global Search', path: '#/system-pcc/search', icon: Search },

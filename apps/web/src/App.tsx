@@ -29,6 +29,9 @@ const PCCRegistry = lazy(() => import('./pages/pcc/PCCRegistry'))
 const PCCUsers = lazy(() => import('./pages/pcc/PCCUsers'))
 const PCCSearch = lazy(() => import('./pages/pcc/PCCSearch'))
 const PCCAudit = lazy(() => import('./pages/pcc/PCCAudit'))
+const PCCProviders = lazy(() => import('./pages/pcc/PCCProviders'))
+const PCCProcessors = lazy(() => import('./pages/pcc/PCCProcessors'))
+const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 
 const AppContent: React.FC = () => {
   const { user, globalRole } = useAuth()
@@ -60,6 +63,8 @@ const AppContent: React.FC = () => {
       if (currentHash === '#/system-pcc/users') return <PCCUsers />
       if (currentHash === '#/system-pcc/search') return <PCCSearch />
       if (currentHash === '#/system-pcc/audit') return <PCCAudit />
+      if (currentHash === '#/system-pcc/providers') return <PCCProviders />
+      if (currentHash === '#/system-pcc/processors') return <PCCProcessors />
       return <PCCDashboard />
     }
 
@@ -67,6 +72,7 @@ const AppContent: React.FC = () => {
     if (currentHash === '#/settings') return <SettingsPage />
     if (currentHash === '#/preferences') return <PreferencesPage />
     if (currentHash === '#/reports') return <ReportsPage />
+    if (currentHash === '#/payments') return <PaymentCentralPage />
     if (currentHash === '#/data') return <DataInteropPage />
     if (currentHash.startsWith('#/snapshot/')) return <SnapshotViewer />
     if (currentHash === '#/backup') return <BackupHub />

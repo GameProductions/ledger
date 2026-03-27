@@ -23,6 +23,8 @@ import SavingsBuckets from '../components/SavingsBuckets'
 import { MainLayout } from '../components/layout/MainLayout'
 import { GuidedTour } from '../components/GuidedTour'
 import { OnboardingChecklist } from '../components/OnboardingChecklist'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
+
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user } = useAuth()
@@ -122,15 +124,16 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <section className="card">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">Safety Number</h3>
-                  <select 
-                    value={timeframe} 
-                    onChange={(e) => setTimeframe(e.target.value)}
-                    className="bg-transparent border-none text-primary text-xs font-bold cursor-pointer outline-none"
-                  >
-                    <option value="paycheck">Until Payday</option>
-                    <option value="month">Until End of Month</option>
-                    <option value="30d">Rolling 30 Days</option>
-                  </select>
+                  <SearchableSelect 
+                    options={[
+                      { value: 'paycheck', label: 'Until Payday' },
+                      { value: 'month', label: 'Until End of Month' },
+                      { value: '30d', label: 'Rolling 30 Days' }
+                    ]}
+                    value={timeframe}
+                    onChange={(val) => setTimeframe(val)}
+                    className="min-w-[140px]"
+                  />
                 </div>
                 <div className="safety-number-container">
                   <Price amountCents={analytics?.safetyNumberCents || 0} />
@@ -582,16 +585,17 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Select Envelope</label>
-                <select 
-                  value={fundCategoryId} 
-                  onChange={(e) => setFundCategoryId(e.target.value)}
-                  className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold"
-                >
-                  <option value="">Choose a category...</option>
-                  {budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => (
-                    <option key={b.id} value={b.id}>{b.icon} {b.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect 
+                  options={budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => ({
+                    value: b.id,
+                    label: b.name,
+                    icon: <span className="text-sm">{b.icon}</span>,
+                    metadata: { subtext: `$${((b.envelope_balance_cents || 0)/100).toFixed(2)}` }
+                  })) || []}
+                  value={fundCategoryId}
+                  onChange={(val) => setFundCategoryId(val)}
+                  placeholder="Choose an envelope..."
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>

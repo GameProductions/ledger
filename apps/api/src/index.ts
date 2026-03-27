@@ -479,6 +479,40 @@ const TransferSchema = z.object({
   description: z.string().min(1)
 })
 
+const BillingProcessorSchema = z.object({
+  name: z.string().min(1).max(100),
+  website_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  branding_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  support_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  subscription_id_notes: z.string().max(500).optional()
+})
+
+const ProviderSchema = z.object({
+  name: z.string().min(1).max(100),
+  website_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  branding_url: z.string().url().or(z.string().length(0)).nullable().optional(),
+  billing_processor_id: z.string().uuid().or(z.string().length(0)).nullable().optional(),
+  is_3rd_party_capable: z.boolean().optional().default(false)
+})
+
+const UserPaymentMethodSchema = z.object({
+  name: z.string().min(1).max(100),
+  type: z.enum(['credit_card', 'debit_card', 'bank_account', 'paypal', 'apple_pay', 'google_pay', 'other']),
+  last_four: z.string().length(4).optional().nullable(),
+  branding_url: z.string().url().or(z.string().length(0)).nullable().optional()
+})
+
+const UserLinkedAccountSchema = z.object({
+  provider_id: z.string().uuid(),
+  payment_method_id: z.string().uuid().nullable().optional(),
+  email_attached: z.string().email().or(z.string().length(0)).nullable().optional(),
+  membership_start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  membership_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  subscription_id: z.string().uuid().nullable().optional(),
+  notes: z.string().max(1000).optional(),
+  status: z.enum(['active', 'cancelled', 'expired', 'pending']).optional().default('active')
+})
+
 // --- AUTH ENDPOINTS (MODULARIZED) ---
 app.route('/auth', authRoutes)
 
@@ -1316,6 +1350,55 @@ app.patch('/api/installment-plans/:id', zValidator('json', InstallmentPlanSchema
   return c.json({ success: true })
 })
 
+// --- USER: Payment Methods ---
+app.get('/api/user/payment-methods', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM user_payment_methods WHERE user_id = ? AND is_active = 1').bind(userId).all()
+  return c.json(results)
+})
+
+app.post('/api/user/payment-methods', zValidator('json', UserPaymentMethodSchema), async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO user_payment_methods (id, user_id, household_id, name, type, last_four, branding_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).bind(id, userId, householdId, data.name, data.type, data.last_four, data.branding_url).run()
+  return c.json({ success: true, id })
+})
+
+// --- USER: Linked Accounts ---
+app.get('/api/user/linked-accounts', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare(`
+    SELECT la.*, p.name as provider_name, p.branding_url as provider_branding, pm.name as payment_method_name 
+    FROM user_linked_accounts la 
+    JOIN providers p ON la.provider_id = p.id 
+    LEFT JOIN user_payment_methods pm ON la.payment_method_id = pm.id 
+    WHERE la.user_id = ?
+  `).bind(userId).all()
+  return c.json(results)
+})
+
+app.post('/api/user/linked-accounts', zValidator('json', UserLinkedAccountSchema), async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    `INSERT INTO user_linked_accounts (id, user_id, household_id, provider_id, payment_method_id, email_attached, membership_start_date, membership_end_date, subscription_id, notes, status) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, userId, householdId, data.provider_id, data.payment_method_id, data.email_attached, data.membership_start_date, data.membership_end_date, data.subscription_id, data.notes, data.status).run()
+  
+  // Link to subscription if provided
+  if (data.subscription_id) {
+    await c.env.DB.prepare('UPDATE subscriptions SET provider_account_id = ? WHERE id = ? AND household_id = ?').bind(id, data.subscription_id, householdId).run()
+  }
+
+  return c.json({ success: true, id })
+})
+
 // Utilities
 app.get('/api/utilities', async (c) => {
   const householdId = c.get('householdId')
@@ -1333,6 +1416,71 @@ app.get('/api/milestones', async (c) => {
 // --- PLATFORM COMMAND CENTER (PCC) ---
 
 app.use('/api/pcc/*', pccMiddleware)
+
+// --- PCC: Billing Processors ---
+app.get('/api/pcc/processors', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM billing_processors ORDER BY name ASC').all()
+  return c.json(results)
+})
+
+app.post('/api/pcc/processors', zValidator('json', BillingProcessorSchema), async (c) => {
+  const data = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO billing_processors (id, name, website_url, branding_url, support_url, subscription_id_notes) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, data.name, data.website_url, data.branding_url, data.support_url, data.subscription_id_notes).run()
+  await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
+  return c.json({ success: true, id })
+})
+
+app.patch('/api/pcc/processors/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  const { name, website_url, branding_url, support_url, subscription_id_notes } = data
+  await c.env.DB.prepare(
+    `UPDATE billing_processors SET 
+     name = COALESCE(?, name), website_url = COALESCE(?, website_url), branding_url = COALESCE(?, branding_url), 
+     support_url = COALESCE(?, support_url), subscription_id_notes = COALESCE(?, subscription_id_notes), updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`
+  ).bind(name, website_url, branding_url, support_url, subscription_id_notes, id).run()
+  await logAudit(c, 'billing_processors', id, 'admin_update', null, data)
+  return c.json({ success: true })
+})
+
+// --- PCC: Providers ---
+app.get('/api/pcc/providers', async (c) => {
+  const { results } = await c.env.DB.prepare(`
+    SELECT p.*, bp.name as billing_processor_name 
+    FROM providers p 
+    LEFT JOIN billing_processors bp ON p.billing_processor_id = bp.id 
+    ORDER BY p.name ASC
+  `).all()
+  return c.json(results)
+})
+
+app.post('/api/pcc/providers', zValidator('json', ProviderSchema), async (c) => {
+  const data = c.req.valid('json')
+  const id = crypto.randomUUID()
+  await c.env.DB.prepare(
+    'INSERT INTO providers (id, name, website_url, branding_url, billing_processor_id, is_3rd_party_capable) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, data.name, data.website_url, data.branding_url, data.billing_processor_id, data.is_3rd_party_capable ? 1 : 0).run()
+  await logAudit(c, 'providers', id, 'admin_create', null, data)
+  return c.json({ success: true, id })
+})
+
+app.patch('/api/pcc/providers/:id', zValidator('json', ProviderSchema.partial()), async (c) => {
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  const { name, website_url, branding_url, billing_processor_id, is_3rd_party_capable } = data
+  await c.env.DB.prepare(
+    `UPDATE providers SET 
+     name = COALESCE(?, name), website_url = COALESCE(?, website_url), branding_url = COALESCE(?, branding_url), 
+     billing_processor_id = COALESCE(?, billing_processor_id), is_3rd_party_capable = COALESCE(?, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`
+  ).bind(name, website_url, branding_url, billing_processor_id, is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null, id).run()
+  await logAudit(c, 'providers', id, 'admin_update', null, data)
+  return c.json({ success: true })
+})
 
 // 1. Dashboard Stats
 app.get('/api/pcc/stats', async (c) => {
@@ -1742,7 +1890,7 @@ app.get('/api/developer/tokens', async (c) => {
 })
 
 
-const CURRENT_VERSION = 'v2.3.0'
+const CURRENT_VERSION = 'v2.5.0'
 const VERSION_UPDATES = [
   { version: 'v2.3.0', title: 'Forensic Admin Hub', description: 'Advanced user management, account merging, and deep forensic auditing.' },
   { version: 'v2.2.2', title: 'Stability & UI Refresh', description: 'Authentication performance fixes and refined global footer.' },

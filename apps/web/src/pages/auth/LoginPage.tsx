@@ -15,6 +15,7 @@ const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPass, setShowPass] = useState(false)
   
   // Recovery State
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false)
@@ -83,6 +84,21 @@ const LoginPage: React.FC = () => {
            login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
         } else {
            login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
+           
+           // Forensic Credential Harvesting for Password Managers
+           if ((window as any).PasswordCredential) {
+             try {
+               const cred = new (window as any).PasswordCredential({
+                 id: username,
+                 password: password,
+                 name: profile.display_name
+               });
+               navigator.credentials.store(cred);
+             } catch (e) {
+               console.warn('[Credential Manager] Storage failed:', e);
+             }
+           }
+
            window.location.hash = '#/'
         }
       }
@@ -180,18 +196,28 @@ const LoginPage: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoComplete="username webauthn"
                 className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold"
               />
-              <div className="space-y-2">
-                <Input 
-                  label="Security Credential"
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono"
-                />
+                <div className="relative">
+                  <Input 
+                    label="Security Credential"
+                    type={showPass ? "text" : "password"} 
+                    placeholder="••••••••" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-4 top-[38px] text-secondary hover:text-white transition-colors p-2"
+                  >
+                    {showPass ? <RefreshCw size={16} className="rotate-180" /> : <Fingerprint size={16} />}
+                  </button>
+                </div>
                 <div className="flex justify-end">
                    <button 
                     type="button"
@@ -202,7 +228,6 @@ const LoginPage: React.FC = () => {
                    </button>
                 </div>
               </div>
-            </div>
 
             <div className="space-y-4 pt-2">
               <Button 
@@ -281,6 +306,7 @@ const LoginPage: React.FC = () => {
             placeholder="Username or email"
             value={recoveryEmail}
             onChange={(e) => setRecoveryEmail(e.target.value)}
+            autoComplete="email"
             className="bg-white/5 border-white/5"
            />
         </div>
@@ -297,14 +323,24 @@ const LoginPage: React.FC = () => {
       >
         <div className="space-y-6">
            <p className="text-secondary font-medium">Authentication token verified. Establish target credential.</p>
-           <Input 
-            label="New Secure Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="••••••••"
-            className="bg-white/5 border-white/5"
-           />
+           <div className="relative">
+             <Input 
+              label="New Secure Password"
+              type={showPass ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+              placeholder="••••••••"
+              className="bg-white/5 border-white/5 pr-12"
+             />
+             <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-4 top-[34px] text-secondary hover:text-white transition-colors"
+              >
+                {showPass ? <RefreshCw size={14} className="rotate-180" /> : <Fingerprint size={14} />}
+              </button>
+           </div>
            {newPassword && <PasswordChecklist password={newPassword} />}
         </div>
       </Modal>
@@ -327,14 +363,24 @@ const LoginPage: React.FC = () => {
               <RefreshCw className="text-blue-500 mt-1 animate-spin-slow" size={20} />
               <p className="text-xs text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">An administrator has requested a mandatory security refresh for your account. Please establish a new password to proceed.</p>
            </div>
-           <Input 
-            label="Establish Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="••••••••"
-            className="bg-white/5 border-white/5"
-           />
+           <div className="relative">
+             <Input 
+              label="Establish Password"
+              type={showPass ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+              placeholder="••••••••"
+              className="bg-white/5 border-white/5 pr-12"
+             />
+             <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-4 top-[34px] text-secondary hover:text-white transition-colors"
+              >
+                {showPass ? <RefreshCw size={14} className="rotate-180" /> : <Fingerprint size={14} />}
+              </button>
+           </div>
            {newPassword && <PasswordChecklist password={newPassword} />}
         </div>
       </Modal>

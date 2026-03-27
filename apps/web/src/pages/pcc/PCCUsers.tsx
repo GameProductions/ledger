@@ -10,6 +10,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
   const [resetting, setResetting] = useState(false);
   const [manualPass, setManualPass] = useState('');
   const [isTemp, setIsTemp] = useState(true);
+  const [showPass, setShowPass] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -213,12 +214,20 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
                  <div className="space-y-4">
                     <div className="relative">
                        <input 
-                        type="password"
+                        type={showPass ? "text" : "password"}
                         placeholder="Manual Password Injection..."
                         value={manualPass}
                         onChange={(e) => setManualPass(e.target.value)}
-                        className="w-full bg-white/5 border border-white/5 p-4 rounded-xl text-xs font-bold outline-none focus:border-orange-500/50 transition-all"
+                        autoComplete="new-password"
+                        className="w-full bg-white/5 border border-white/5 p-4 rounded-xl text-xs font-bold outline-none focus:border-orange-500/50 transition-all pr-12"
                        />
+                       <button
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors"
+                       >
+                        {showPass ? <RefreshCw size={14} /> : <Fingerprint size={14} />}
+                       </button>
                     </div>
                     
                     <div className="flex items-center justify-between">

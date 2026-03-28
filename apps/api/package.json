@@ -1,7 +1,7 @@
 {
   "name": "api",
   "type": "module",
-  "version": "3.11.9",
+  "version": "3.11.10",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",

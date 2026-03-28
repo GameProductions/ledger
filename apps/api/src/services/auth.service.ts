@@ -2,6 +2,7 @@ import { sign } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings } from '../types'
 import { verifyPassword, verifyTOTP, hashPassword } from '../auth-utils'
+import { EmailService } from './email.service'
 
 export class AuthService {
   constructor(private env: Bindings) {}
@@ -148,7 +149,7 @@ export class AuthService {
   // --- PASSWORD LIFECYCLE (v2.4.0) ---
 
   async requestPasswordReset(identifier: string) {
-    const user: any = await this.env.DB.prepare('SELECT id FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first()
+    const user: any = await this.env.DB.prepare('SELECT id, email FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first()
     if (!user) return null // Silent fail for security
 
     const token = crypto.randomUUID()
@@ -157,6 +158,10 @@ export class AuthService {
     await this.env.DB.prepare(
       'INSERT INTO password_resets (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
     ).bind(crypto.randomUUID(), user.id, token, expiresAt).run()
+
+    // Trigger Email Integration
+    const emailService = new EmailService(this.env)
+    await emailService.sendPasswordResetEmail(user.email, token)
 
     return token
   }

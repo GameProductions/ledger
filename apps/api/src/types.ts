@@ -10,7 +10,8 @@ export type Bindings = {
   DISCORD_PUBLIC_KEY: string
   ENCRYPTION_KEY: string
   RESEND_API_KEY: string
-  ARRAY_API_KEY: string
+  FROM_EMAIL: string
+  WEB_URL: string
   ENVIRONMENT: string
   VAULT: DurableObjectNamespace
   RATE_LIMITER: DurableObjectNamespace

@@ -122,6 +122,14 @@ ledger.route('/api/pcc', pccRoutes)
 
 ledger.route('/discord', discordRoutes)
 
+// 🌉 Bridge Routes: Maintain backward compatibility for legacy frontend paths
+ledger.route('/api/households', userRoutes)
+ledger.route('/api/budgets', planningRoutes)
+ledger.route('/api/analytics', financialsRoutes)
+ledger.route('/api/savings', planningRoutes)
+ledger.route('/api/pcc/audit', pccRoutes) // Nested bridge for specific legacy audit calls
+ledger.route('/api/onboarding', userRoutes) // Direct bridge for onboarding
+
 // Mount ledger app on root as well as /ledger for compatibility
 app.route('/ledger', ledger)
 app.route('/', ledger) // Evolutionary Leap: Supports root domain directly

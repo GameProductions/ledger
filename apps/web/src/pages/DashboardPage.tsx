@@ -193,7 +193,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Pool</div>
                 
                 <div className="space-y-2">
-                  {budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => (
+                  {Array.isArray(budgetsData?.budgets) && budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
                     <div key={b.id} className="flex justify-between items-center p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all">
                       <div className="flex items-center gap-3">
                         <span className="text-lg">{b.icon}</span>
@@ -267,7 +267,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   </div>
                 </div>
                 <div className="space-y-1">
-                  {transactions?.filter((tx: any) => {
+                  {Array.isArray(transactions) && transactions.filter((tx: any) => {
                     const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
                     const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
                     return matchesSearch && matchesStatus
@@ -365,12 +365,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         <section className="card">
           <h3 className="text-lg font-bold mb-6">Your Connected Accounts</h3>
           <div className="space-y-3">
-            {accounts?.map((acc: any) => (
+            {Array.isArray(accounts) ? accounts.map((acc: any) => (
               <div key={acc.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-glass-border">
                 <span className="text-sm font-bold text-secondary">{acc.name}</span>
                 <Price amountCents={acc.balance_cents} className="font-black tracking-tighter" />
               </div>
-            )) || <p className="text-xs text-secondary italic">No accounts found.</p>}
+            )) : <p className="text-xs text-secondary italic">No accounts found.</p>}
           </div>
         </section>
 
@@ -394,7 +394,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <p className="text-[10px] text-secondary uppercase font-bold opacity-60 mb-6">Instantly record manual entries</p>
           
           <div className="flex flex-wrap gap-2 mb-6">
-            {templates?.map((tpl: any) => (
+            {Array.isArray(templates) && templates.map((tpl: any) => (
               <button 
                 key={tpl.id} 
                 onClick={() => {

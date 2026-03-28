@@ -40,7 +40,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
-  const [settings, setSettings] = useState<any>({ dashboard_layout: {} })
+  const [_settings, setSettings] = useState<any>({ dashboard_layout: {} })
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
   const { data: budgetsData, mutate: mutateBudgets } = useApi('/api/planning/budgets')
   const [showFundModal, setShowFundModal] = useState(false)

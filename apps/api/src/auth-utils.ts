@@ -171,19 +171,16 @@ export async function hashPassword(password: string): Promise<string> {
   const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
   
   // Format: iterations.salt_base64.hash_base64
-  const saltBase64 = btoa(String.fromCharCode.apply(null, Array.from(salt)))
-  const hashBase64 = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(derivedBits))))
+  const saltBase64 = Buffer.from(salt).toString('base64')
+  const hashBase64 = Buffer.from(new Uint8Array(derivedBits)).toString('base64')
   return `${DEFAULT_ITERATIONS}.${saltBase64}.${hashBase64}`
 }
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
     const [iterations, saltBase64, expectedHashBase64] = storedHash.split('.')
-    const binarySalt = atob(saltBase64)
-    const salt = new Uint8Array(binarySalt.length)
-    for (let i = 0; i < binarySalt.length; i++) {
-      salt[i] = binarySalt.charCodeAt(i)
-    }
+    const salt = Buffer.from(saltBase64, 'base64')
+    
     const encoder = new TextEncoder()
     const keyMaterial = await crypto.subtle.importKey(
       'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']
@@ -195,7 +192,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
       hash: 'SHA-256'
     }
     const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
-    const actualHashBase64 = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(derivedBits))))
+    const actualHashBase64 = Buffer.from(new Uint8Array(derivedBits)).toString('base64')
     
     const isMatched = actualHashBase64 === expectedHashBase64
     if (!isMatched) console.warn('[Auth] Password hash mismatch')
@@ -207,11 +204,6 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 }
 
 function base64ToBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64.replace(/-/g, '+').replace(/_/g, '/'))
-  const len = binaryString.length
-  const bytes = new Uint8Array(len)
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  return bytes.buffer
+  const buf = Buffer.from(base64.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 }

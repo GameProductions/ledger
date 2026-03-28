@@ -22,24 +22,24 @@ pcc.get('/stats', async (c) => {
   const { results: householdCount } = await c.env.DB.prepare('SELECT count(*) as count FROM households').all()
   
   return c.json({
-    totalUsers: (userCount as any)[0].count,
-    activeToday: (activeToday as any)[0].count,
-    totalHouseholds: (householdCount as any)[0].count,
+    totalUsers: (userCount?.[0] as any)?.count || 0,
+    activeToday: (activeToday?.[0] as any)?.count || 0,
+    totalHouseholds: (householdCount?.[0] as any)?.count || 0,
     version: CURRENT_VERSION
   })
 })
 
 // System Configuration
 pcc.get('/config', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_config ORDER BY key ASC').all()
-  return c.json(results)
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_configs ORDER BY key ASC').all()
+  return c.json(results || [])
 })
 
 pcc.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
   const { config_value } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE system_config SET value_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
-  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
+  await c.env.DB.prepare('UPDATE system_configs SET value_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
+  await logAudit(c, 'system_configs', id, 'UPDATE_CONFIG', {}, { config_value })
   return c.json({ success: true })
 })
 

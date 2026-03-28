@@ -64,7 +64,7 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
 user.get('/onboarding', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare('SELECT * FROM user_onboarding WHERE user_id = ?').bind(userId).all()
-  return c.json(results)
+  return c.json(results || [])
 })
 
 // Households

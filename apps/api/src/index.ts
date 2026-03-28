@@ -77,13 +77,13 @@ ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)
 ledger.get('/api/config', async (c) => {
-  const { results: configs } = await c.env.DB.prepare('SELECT key, value_json FROM system_config').all()
+  const { results: configs } = await c.env.DB.prepare('SELECT key, value_json FROM system_configs').all()
   return c.json(configs.reduce((acc: any, curr) => ({ ...acc, [curr.key as string]: JSON.parse(curr.value_json as string) }), {}))
 })
 
 ledger.get('/api/theme/broadcast', async (c) => {
   try {
-    const config = await c.env.DB.prepare('SELECT value_json FROM system_config WHERE key = "broadcast_theme_id"').first()
+    const config = await c.env.DB.prepare('SELECT value_json FROM system_configs WHERE key = "broadcast_theme_id"').first()
     if (!config) return c.json({ themeId: null })
     return c.json({ themeId: JSON.parse((config as any).value_json) })
   } catch (e) {
@@ -93,7 +93,7 @@ ledger.get('/api/theme/broadcast', async (c) => {
 
 ledger.post('/api/theme/broadcast', async (c) => {
   const { themeId } = await c.req.json()
-  await c.env.DB.prepare('INSERT OR REPLACE INTO system_config (id, key, value_json, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
+  await c.env.DB.prepare('INSERT OR REPLACE INTO system_configs (id, key, value_json, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
     .bind(crypto.randomUUID(), 'broadcast_theme_id', JSON.stringify(themeId)).run()
   return c.json({ success: true })
 })

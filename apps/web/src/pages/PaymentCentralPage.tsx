@@ -47,10 +47,17 @@ const PaymentCentralPage: React.FC = () => {
         fetch(`${apiUrl}/api/planning/subscriptions`, { headers })
       ]);
       
-      setPaymentMethods(await methodsRes.json());
-      setLinkedAccounts(await accountsRes.json());
-      setProviders(await providersRes.json());
-      setSubscriptions(await subsRes.json());
+      const [methodsData, accountsData, providersData, subsData] = await Promise.all([
+        methodsRes.json(),
+        accountsRes.json(),
+        providersRes.json(),
+        subsRes.json()
+      ]);
+      
+      setPaymentMethods(Array.isArray(methodsData) ? methodsData : []);
+      setLinkedAccounts(Array.isArray(accountsData) ? accountsData : []);
+      setProviders(Array.isArray(providersData) ? providersData : []);
+      setSubscriptions(Array.isArray(subsData) ? subsData : []);
     } catch (err) {
       console.error('Failed to fetch payment data:', err);
     } finally {

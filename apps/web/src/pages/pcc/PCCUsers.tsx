@@ -391,7 +391,6 @@ const PCCUsers: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/40 backdrop-blur-3xl shadow-2xl">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">

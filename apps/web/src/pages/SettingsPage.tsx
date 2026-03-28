@@ -21,7 +21,6 @@ const SettingsPage: React.FC = () => {
   // Password State
   const [newPassword, setNewPassword] = useState('')
   const [changingPass, setChangingPass] = useState(false)
-  const [showPass, setShowPass] = useState(false)
 
   // Passkey State
   const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/user/passkeys') // Consolidated user-facing passkey list
@@ -288,24 +287,16 @@ const SettingsPage: React.FC = () => {
                
                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary block">New Secure Password</label>
-                    <div className="relative">
-                      <input 
-                        type={showPass ? "text" : "password"} 
+                    <Input 
+                        label="New Secure Password"
+                        type="password" 
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         autoComplete="new-password"
-                        className="w-full bg-white/5 border border-white/5 p-4 rounded-xl outline-none focus:border-blue-500 transition-all font-mono text-sm pr-12"
+                        showReveal
+                        className="bg-white/5 border-white/5 font-mono text-sm"
                         placeholder="••••••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPass(!showPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors"
-                      >
-                        {showPass ? <RefreshCw size={16} /> : <Fingerprint size={16} />}
-                      </button>
-                    </div>
+                    />
                   </div>
                   
                   {newPassword && <PasswordChecklist password={newPassword} />}

@@ -15,7 +15,6 @@ const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showPass, setShowPass] = useState(false)
   
   // Recovery State
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false)
@@ -199,25 +198,17 @@ const LoginPage: React.FC = () => {
                 autoComplete="username webauthn"
                 className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold"
               />
-                <div className="relative">
                   <Input 
                     label="Password"
-                    type={showPass ? "text" : "password"} 
+                    type="password" 
                     placeholder="••••••••" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono pr-12"
+                    showReveal
+                    className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-4 top-[38px] text-secondary hover:text-white transition-colors p-2"
-                  >
-                    {showPass ? <RefreshCw size={16} className="rotate-180" /> : <Fingerprint size={16} />}
-                  </button>
-                </div>
                 <div className="flex justify-end">
                    <button 
                     type="button"
@@ -322,24 +313,17 @@ const LoginPage: React.FC = () => {
         }
       >
         <div className="space-y-6">
-           <p className="text-secondary font-medium">Authentication token verified. Establish target credential.</p>
            <div className="relative">
              <Input 
               label="New Secure Password"
-              type={showPass ? "text" : "password"}
+              type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               autoComplete="new-password"
               placeholder="••••••••"
-              className="bg-white/5 border-white/5 pr-12"
+              showReveal
+              className="bg-white/5 border-white/5"
              />
-             <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-4 top-[34px] text-secondary hover:text-white transition-colors"
-              >
-                {showPass ? <RefreshCw size={14} className="rotate-180" /> : <Fingerprint size={14} />}
-              </button>
            </div>
            {newPassword && <PasswordChecklist password={newPassword} />}
         </div>
@@ -366,20 +350,14 @@ const LoginPage: React.FC = () => {
            <div className="relative">
              <Input 
               label="Establish Password"
-              type={showPass ? "text" : "password"}
+              type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               autoComplete="new-password"
               placeholder="••••••••"
-              className="bg-white/5 border-white/5 pr-12"
+              showReveal
+              className="bg-white/5 border-white/5"
              />
-             <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-4 top-[34px] text-secondary hover:text-white transition-colors"
-              >
-                {showPass ? <RefreshCw size={14} className="rotate-180" /> : <Fingerprint size={14} />}
-              </button>
            </div>
            {newPassword && <PasswordChecklist password={newPassword} />}
         </div>

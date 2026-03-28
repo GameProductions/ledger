@@ -1,6 +1,7 @@
-export const CURRENT_VERSION = 'v3.11.8'
+export const CURRENT_VERSION = 'v3.11.9'
 
 export const VERSION_UPDATES = [
+  { version: 'v3.11.9', title: 'Security Alignment (PBKDF2 Revert)', description: 'Reverted to 100k iteration PBKDF2 for legacy account restoration and stability.' },
   { version: 'v3.11.8', title: 'Total Modernization', description: 'Complete elimination of legacy routing and transition to a standardized modular architecture.' },
   { version: 'v3.10.0', title: 'Tabbed Dashboard (Evolutionary Leap)', description: 'Consolidated financial management into a sleek, tabbed interface for enhanced navigation.' },
   { version: 'v3.0.0', title: 'Modular Architecture Baseline', description: 'Initial transition to a domain-driven modular structure.' },
@@ -27,7 +28,7 @@ export const AUTH_EXCLUSIONS = [
   '/auth/passkeys/login-verify',
   '/auth/password/reset-request',
   '/auth/password/reset',
-  '/auth/admin/claim',
+  '/auth/debug-verify',
   '/api/theme/broadcast',
   '/.well-known/microsoft-identity-association.json'
 ]

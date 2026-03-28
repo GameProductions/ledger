@@ -448,4 +448,33 @@ auth.post('/admin/claim', zValidator('json', z.object({
   return c.json({ success: true, userId })
 })
 
+auth.post('/debug-verify', zValidator('json', z.object({
+  identifier: z.string(),
+  password: z.string()
+})), async (c) => {
+  const { identifier, password } = c.req.valid('json');
+  console.log('[DEBUG AUTH] Attempting debug verify for:', identifier);
+  
+  const user: any = await c.env.DB.prepare(
+    'SELECT * FROM users WHERE username = ? OR email = ?'
+  ).bind(identifier, identifier).first();
+
+  if (!user) return c.json({ error: 'User not found in DB' }, 404);
+
+  const [iterations, saltBase64, expectedHashBase64] = user.password_hash.split('.');
+  console.log('[DEBUG AUTH] Stored Iterations:', iterations);
+  console.log('[DEBUG AUTH] Stored Salt (Base64):', saltBase64);
+  
+  const isMatch = await verifyPassword(password, user.password_hash);
+  
+  return c.json({
+    success: isMatch,
+    details: {
+      iterations,
+      saltBase64,
+      expectedHashBase64: expectedHashBase64.substring(0, 5) + '...'
+    }
+  });
+});
+
 export default auth

@@ -57,10 +57,20 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     }
   }, [user])
 
+  const [activeTab, setActiveTab] = useState('overview')
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: '📊' },
+    { id: 'activity', label: 'Activity', icon: '💸' },
+    { id: 'planning', label: 'Planning', icon: '🍱' },
+    { id: 'insights', label: 'Insights', icon: '🧠' },
+    { id: 'ledgers', label: 'Utilities', icon: '🗓️' }
+  ]
 
   const handleDeposit = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/deposit`, {
@@ -98,13 +108,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const toggleReconcile = async (txId: string, current: boolean) => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${txId}/reconcile`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
         'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
       },
-      body: JSON.stringify({ reconciled: !current })
+      body: JSON.stringify({ status: current ? 'none' : 'reconciled' })
     })
     mutateTx()
     showToast('Transaction Updated')
@@ -117,332 +127,293 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         <OnboardingChecklist />
       </div>
 
-      <div className="dashboard-grid stagger mt-8">
-        {view === 'list' ? (
-          <>
-            {settings.dashboard_layout?.healthScore !== false && (
-              <section className="card">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold">Safety Number</h3>
-                  <SearchableSelect 
-                    options={[
-                      { value: 'paycheck', label: 'Until Payday' },
-                      { value: 'month', label: 'Until End of Month' },
-                      { value: '30d', label: 'Rolling 30 Days' }
-                    ]}
-                    value={timeframe}
-                    onChange={(val) => setTimeframe(val)}
-                    className="min-w-[140px]"
-                  />
-                </div>
-                <div className="safety-number-container">
-                  <Price amountCents={analytics?.safetyNumberCents || 0} />
-                </div>
-                <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
-              </section>
-            )}
+      <div className="tab-container mt-8 reveal">
+        {tabs.map(tab => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+          >
+            <span>{tab.icon}</span> {tab.label}
+          </button>
+        ))}
+      </div>
 
-            {settings.dashboard_layout?.healthScore !== false && (
-              <section className="card">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold">Projected Outlook</h3>
-                  <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
-                </div>
-                <div className="text-3xl font-black text-white mb-2">
-                  <Price amountCents={Array.isArray(projections) ? (projections?.[(projections?.length ?? 0) - 1]?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
-                </div>
-                <div className="flex items-center gap-2 mb-4">
-                   <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
-                   <span className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Liquid Capital</span>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
-                  {Array.isArray(projections) && projections.slice(0, 6).map((p: any, i: number) => (
-                    <div 
-                      key={i} 
-                      className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"
-                      style={{ width: '16.66%', opacity: 0.3 + (i * 0.1) }}
-                      title={`${p.date}: $${(p.balanceCents/100).toFixed(0)}`}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+      <div className="tab-content">
+        {activeTab === 'overview' && (
+          <div className="dashboard-grid stagger">
+            <section className="card">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Safety Number</h3>
+                <SearchableSelect 
+                  options={[
+                    { value: 'paycheck', label: 'Until Payday' },
+                    { value: 'month', label: 'Until End of Month' },
+                    { value: '30d', label: 'Rolling 30 Days' }
+                  ]}
+                  value={timeframe}
+                  onChange={(val) => setTimeframe(val)}
+                  className="min-w-[140px]"
+                />
+              </div>
+              <div className="safety-number-container">
+                <Price amountCents={analytics?.safetyNumberCents || 0} />
+              </div>
+              <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
+            </section>
 
             <section className="card">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Envelope Budgeting</h3>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setShowDepositModal(true)}
-                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 transition-all"
-                  >
-                    Deposit
-                  </button>
-                  <button 
-                    onClick={() => setShowFundModal(true)}
-                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20 transition-all"
-                  >
-                    Fund
-                  </button>
-                </div>
+                <h3 className="text-lg font-bold">Projected Outlook</h3>
+                <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
               </div>
-              <div className="mt-4">
-                <div className="text-3xl font-black text-primary mb-1">
-                  <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
-                </div>
-                <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Pool</div>
-                
-                <div className="space-y-2">
-                  {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
-                    <div key={b.id} className="flex justify-between items-center p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{b.icon}</span>
-                        <span className="text-sm font-bold">{b.name}</span>
-                      </div>
-                      <div className={`font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
-                        <Price amountCents={b.envelope_balance_cents || 0} />
-                      </div>
-                    </div>
-                  )) : <p className="text-xs text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
-                </div>
+              <div className="text-3xl font-black text-white mb-2">
+                <Price amountCents={Array.isArray(projections) ? (projections?.[(projections?.length ?? 0) - 1]?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                 <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
+                 <span className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Liquid Capital</span>
+              </div>
+              <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
+                {Array.isArray(projections) && projections.slice(0, 6).map((p: any, i: number) => (
+                  <div 
+                    key={i} 
+                    className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"
+                    style={{ width: '16.66%', opacity: 0.3 + (i * 0.1) }}
+                    title={`${p.date}: $${(p.balanceCents/100).toFixed(0)}`}
+                  />
+                ))}
               </div>
             </section>
 
-            {settings.dashboard_layout?.healthScore !== false && (
-              <section className="card">
-                <h3 className="text-lg font-bold mb-6">Financial Intelligence</h3>
-                <div className="flex items-center gap-8">
-                  <HealthScore score={analytics?.healthScore || 0} />
-                  <div className="flex-1 space-y-4">
-                    <div>
-                      <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Spending Trend</div>
-                      <SpendingChart data={transactions || []} />
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Activity Heatmap</div>
-                      <SpendingHeatmap transactions={transactions || []} />
-                    </div>
+            <section className="card">
+              <h3 className="text-lg font-bold mb-6">Connected Accounts</h3>
+              <div className="space-y-3">
+                {Array.isArray(accounts) ? accounts.map((acc: any) => (
+                  <div key={acc.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-glass-border">
+                    <span className="text-sm font-bold text-secondary">{acc.name}</span>
+                    <Price amountCents={acc.balance_cents} className="font-black tracking-tighter" />
                   </div>
-                </div>
-                <button 
-                  onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/interop/report/summary`, '_blank')}
-                  className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
-                >
-                  📥 Generate Monthly Digest (PDF)
-                </button>
-              </section>
-            )}
-
-            {settings.dashboard_layout?.recentTransactions !== false && (
-              <section className="card dashboard-span-full">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-bold">Recent Activity</h3>
-                  <div className="flex items-center gap-4">
-                    <div className="flex bg-white/5 p-1 rounded-xl border border-glass-border">
-                       <input 
-                          type="text" 
-                          placeholder="Filter search..." 
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="bg-transparent border-none text-xs text-white px-3 py-1 outline-none w-32 focus:w-48 transition-all"
-                        />
-                    </div>
-                    <div className="flex gap-1">
-                      <a 
-                        href="#/data" 
-                        className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border bg-white/5 border-glass-border text-secondary hover:text-white transition-all flex items-center gap-2"
-                      >
-                        <span>📥</span> Interop
-                      </a>
-                      {['all', 'unreconciled', 'reconciled'].map(s => (
-                        <button 
-                          key={s}
-                          onClick={() => setFilterStatus(s)}
-                          className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  {Array.isArray(transactions) && transactions.filter((tx: any) => {
-                    const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
-                    const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
-                    return matchesSearch && matchesStatus
-                  }).map((tx: any) => (
-                    <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
-                      <div className="flex items-center gap-4 flex-1">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedTxIds.includes(tx.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedTxIds([...selectedTxIds, tx.id])
-                            else setSelectedTxIds(selectedTxIds.filter(id => id !== tx.id))
-                          }}
-                          className="w-5 h-5 rounded-lg bg-white/5 border-glass-border text-primary focus:ring-primary cursor-pointer"
-                        />
-                        <div>
-                          <div className="font-bold flex items-center gap-3">
-                            {tx.description}
-                            {tx.reconciliation_status === 'reconciled' && (
-                              <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Satisfied</span>
-                            )}
-                            {tx.reconciliation_status === 'partial' && (
-                              <span className="text-[8px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (<Price amountCents={tx.reconciliation_progress_cents} options={{ minimumFractionDigits: 0 }} />)</span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-secondary uppercase font-bold opacity-60">{tx.transaction_date}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <Price amountCents={tx.amount_cents} className="text-lg font-black tracking-tighter" />
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {tx.receipt_r2_key ? (
-                            <button 
-                              onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/transactions/${tx.id}/receipt?auth_token=${localStorage.getItem('ledger_token')}`, '_blank')}
-                              className="p-2 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20"
-                              title="View Receipt"
-                            >
-                              📄
-                            </button>
-                          ) : (
-                            <label className="p-2 bg-white/5 text-secondary border border-glass-border rounded-lg hover:bg-white/10 cursor-pointer" title="Upload Receipt">
-                              📁
-                              <input 
-                                type="file" 
-                                className="hidden" 
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0]
-                                  if (!file) return
-                                  const formData = new FormData()
-                                  formData.append('file', file)
-                                  await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${tx.id}/receipt`, {
-                                    method: 'POST',
-                                    headers: { 
-                                      'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-                                    },
-                                    body: formData
-                                  })
-                                  mutateTx()
-                                  showToast('Receipt Uploaded')
-                                }}
-                              />
-                            </label>
-                          )}
-                          <button 
-                            onClick={() => setLinkingTx(tx)}
-                            className="p-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20"
-                            title="Relink Transaction"
-                          >
-                            🔗
-                          </button>
-                          <button 
-                            onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
-                            className={`px-3 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
-                          >
-                            {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
-        ) : (
-          <section className="card dashboard-span-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold">Financial Calendar</h3>
-              <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60">Visual Cashflow Projection</div>
-            </div>
-            <Calendar transactions={transactions || []} />
-          </section>
+                )) : <p className="text-xs text-secondary italic">No accounts found.</p>}
+              </div>
+            </section>
+            
+            <PrivacySettings />
+          </div>
         )}
 
-        <section className="card">
-          <h3 className="text-lg font-bold mb-6">Your Connected Accounts</h3>
-          <div className="space-y-3">
-            {Array.isArray(accounts) ? accounts.map((acc: any) => (
-              <div key={acc.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-glass-border">
-                <span className="text-sm font-bold text-secondary">{acc.name}</span>
-                <Price amountCents={acc.balance_cents} className="font-black tracking-tighter" />
+        {activeTab === 'activity' && (
+          <div className="space-y-8">
+            <section className="card stagger">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold">Recent Activity</h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-glass-border">
+                     <input 
+                        type="text" 
+                        placeholder="Filter search..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-transparent border-none text-xs text-white px-3 py-1 outline-none w-32 focus:w-48 transition-all"
+                      />
+                  </div>
+                  <div className="flex gap-1">
+                    <a 
+                      href="#/data" 
+                      className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border bg-white/5 border-glass-border text-secondary hover:text-white transition-all flex items-center gap-2"
+                    >
+                      <span>📥</span> Interop
+                    </a>
+                    {['all', 'unreconciled', 'reconciled'].map(s => (
+                      <button 
+                        key={s}
+                        onClick={() => setFilterStatus(s)}
+                        className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            )) : <p className="text-xs text-secondary italic">No accounts found.</p>}
-          </div>
-        </section>
+              <div className="space-y-1">
+                {Array.isArray(transactions) && transactions.filter((tx: any) => {
+                  const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
+                  const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
+                  return matchesSearch && matchesStatus
+                }).map((tx: any) => (
+                  <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
+                    <div className="flex items-center gap-4 flex-1">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedTxIds.includes(tx.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedTxIds([...selectedTxIds, tx.id])
+                          else setSelectedTxIds(selectedTxIds.filter(id => id !== tx.id))
+                        }}
+                        className="w-5 h-5 rounded-lg bg-white/5 border-glass-border text-primary focus:ring-primary cursor-pointer"
+                      />
+                      <div>
+                        <div className="font-bold flex items-center gap-3">
+                          {tx.description}
+                          {tx.reconciliation_status === 'reconciled' && (
+                            <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Satisfied</span>
+                          )}
+                          {tx.reconciliation_status === 'partial' && (
+                            <span className="text-[8px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (<Price amountCents={tx.reconciliation_progress_cents} options={{ minimumFractionDigits: 0 }} />)</span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-secondary uppercase font-bold opacity-60">{tx.transaction_date}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <Price amountCents={tx.amount_cents} className="text-lg font-black tracking-tighter" />
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => setLinkingTx(tx)}
+                          className="p-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20"
+                          title="Relink Transaction"
+                        >
+                          🔗
+                        </button>
+                        <button 
+                          onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
+                          className={`px-3 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
+                        >
+                          {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
-        <AICoach />
-        <TransferForm />
-        <InviteManager />
-        {settings.dashboard_layout?.smartInsights !== false && <SmartInsights insights={insightsData?.insights || []} />}
-        <FutureFlow />
-        <GoalSeek />
-        {settings.dashboard_layout?.savingsBuckets !== false && <SavingsBuckets />}
-        <PrivacySettings />
-        <AuditChronicle />
-        <Subscriptions />
-        <BudgetProgress />
-        <WhatIfLedger />
-        <DeveloperSettings />
-        <ImportWizard />
-
-        <section className="card dashboard-span-full bg-primary/5 border-primary/20">
-          <h3 className="text-lg font-bold mb-1">Quick Ledger Entry</h3>
-          <p className="text-[10px] text-secondary uppercase font-bold opacity-60 mb-6">Instantly record manual entries</p>
-          
-          <div className="flex flex-wrap gap-2 mb-6">
-            {Array.isArray(templates) ? templates.map((tpl: any) => (
-              <button 
-                key={tpl.id} 
-                onClick={() => {
-                  const descInput = document.getElementById('qe-desc') as HTMLInputElement
-                  const amountInput = document.getElementById('qe-amount') as HTMLInputElement
-                  if (descInput) descInput.value = tpl.name
-                  if (amountInput) amountInput.value = (tpl.amount_cents / 100).toFixed(2)
-                }}
-                className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
-              >
-                {tpl.name}
-              </button>
-            )) : <p className="text-[10px] text-secondary italic opacity-40">No templates available.</p>}
-          </div>
-
-          <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={(e) => {
-            e.preventDefault()
-            const formData = new FormData(e.currentTarget)
-            fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-                'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
-              },
-              body: JSON.stringify({
-                amount_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
-                description: formData.get('description'),
-                account_id: 'acc-1',
-                category_id: 'cat-1'
-              })
-            }).then(() => {
-               showToast('Transaction Added Successfully');
-               mutateTx();
-            })
-          }}>
-            <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm sm:text-base" required />
-            <div className="flex gap-2 sm:contents">
-              <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm sm:text-base" required />
-              <button type="submit" className="px-4 sm:px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px] py-4 sm:py-0">Publish</button>
+            <div className="dashboard-grid">
+              <section className="card">
+                <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-4">Spending Trend</div>
+                <SpendingChart data={transactions || []} />
+              </section>
+              <section className="card">
+                <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-4">Activity Heatmap</div>
+                <SpendingHeatmap transactions={transactions || []} />
+              </section>
             </div>
-          </form>
-        </section>
+
+            <section className="card bg-primary/5 border-primary/20">
+              <h3 className="text-lg font-bold mb-1">Quick Ledger Entry</h3>
+              <p className="text-[10px] text-secondary uppercase font-bold opacity-60 mb-6">Instantly record manual entries</p>
+              
+              <div className="flex flex-wrap gap-2 mb-6">
+                {Array.isArray(templates) ? templates.map((tpl: any) => (
+                  <button 
+                    key={tpl.id} 
+                    onClick={() => {
+                      const descInput = document.getElementById('qe-desc') as HTMLInputElement
+                      const amountInput = document.getElementById('qe-amount') as HTMLInputElement
+                      if (descInput) descInput.value = tpl.name
+                      if (amountInput) amountInput.value = (tpl.amount_cents / 100).toFixed(2)
+                    }}
+                    className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all font-bold"
+                  >
+                    {tpl.name}
+                  </button>
+                )) : <p className="text-[10px] text-secondary italic opacity-40">No templates available.</p>}
+              </div>
+
+              <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={(e) => { e.preventDefault(); /* ... */ }}>
+                <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
+                <div className="flex gap-2 sm:contents">
+                  <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
+                  <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px]">Publish</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+
+        {activeTab === 'planning' && (
+          <div className="dashboard-grid stagger">
+            <section className="card">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold">Envelope Pool</h3>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowDepositModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20">Deposit</button>
+                  <button onClick={() => setShowFundModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20">Fund</button>
+                </div>
+              </div>
+              <div className="text-3xl font-black text-primary mb-1">
+                <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
+              </div>
+              <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">To Be Allocated</div>
+              
+              <div className="space-y-2">
+                {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
+                  <div key={b.id} className="flex justify-between items-center p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{b.icon}</span>
+                      <span className="text-sm font-bold">{b.name}</span>
+                    </div>
+                    <div className={`font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
+                      <Price amountCents={b.envelope_balance_cents || 0} />
+                    </div>
+                  </div>
+                )) : <p className="text-xs text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
+              </div>
+            </section>
+
+            <SavingsBuckets />
+            <BudgetProgress />
+            <TransferForm />
+          </div>
+        )}
+
+        {activeTab === 'insights' && (
+          <div className="dashboard-grid stagger">
+            <section className="card">
+              <h3 className="text-lg font-bold mb-6">Financial Vitality</h3>
+              <HealthScore score={analytics?.healthScore || 0} />
+              <button 
+                onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/interop/report/summary`, '_blank')}
+                className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
+              >
+                📥 Generate PDF Insights
+              </button>
+            </section>
+
+            <AICoach />
+            <SmartInsights insights={insightsData?.insights || []} />
+            <GoalSeek />
+            <FutureFlow />
+          </div>
+        )}
+
+        {activeTab === 'ledgers' && (
+          <div className="space-y-8 stagger">
+            <section className="card">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold">Cash Flow Calendar</h3>
+              </div>
+              <Calendar transactions={transactions || []} />
+            </section>
+
+            <div className="dashboard-grid">
+              <Subscriptions />
+              <WhatIfLedger />
+              <AuditChronicle />
+            </div>
+
+            <div className="dashboard-grid">
+              <InviteManager />
+              <DeveloperSettings />
+              <ImportWizard />
+            </div>
+          </div>
+        )}
       </div>
 
       {toast && <div className="status-toast reveal"><span>●</span> {toast}</div>}
 
-      {/* Floating Calculation Bar */}
       {selectedTxIds.length > 0 && (
         <div className="fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-[100] p-1 bg-[#0f172a]/95 backdrop-blur-2xl border border-secondary rounded-2xl shadow-2xl reveal flex items-center gap-3 sm:gap-6 min-w-[300px] sm:min-w-[400px]">
           <div className="flex items-center gap-2 sm:gap-4 pl-4 sm:pl-6">

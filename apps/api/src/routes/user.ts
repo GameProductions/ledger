@@ -11,7 +11,7 @@ import {
   UserLinkedAccountSchema 
 } from '../schemas'
 import { logAudit } from '../utils'
-import { CURRENT_VERSION } from '../constants'
+import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -64,14 +64,24 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
 // Onboarding Status
 user.get('/onboarding', async (c) => {
   const userId = c.get('userId')
-  const { results } = await c.env.DB.prepare('SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"').bind(userId).all()
   
-  const completedSteps = results?.map(r => r.step_id as string) || []
+  // 1. Get completed steps
+  const { results: stepResults } = await c.env.DB.prepare(
+    'SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"'
+  ).bind(userId).all()
+  const completedSteps = stepResults?.map(r => r.step_id as string) || []
+  
+  // 2. Get last viewed version
+  const user = await c.env.DB.prepare('SELECT last_viewed_version FROM users WHERE id = ?').bind(userId).first()
+  const lastVersion = (user as any)?.last_viewed_version || 'v1.0.0'
+  
+  // 3. Filter updates
+  const recentUpdates = VERSION_UPDATES.filter(v => v.version > lastVersion)
   
   return c.json({
     completed_steps: completedSteps,
     is_completed: completedSteps.length >= 4,
-    updates: [],
+    updates: recentUpdates,
     current_version: CURRENT_VERSION
   })
 })
@@ -82,11 +92,17 @@ user.post('/onboarding/step', zValidator('json', z.object({
   version: z.string().optional()
 })), async (c) => {
   const userId = c.get('userId')
-  const { step, isLast } = c.req.valid('json')
+  const { step, isLast, version } = c.req.valid('json')
   
+  // Update step status
   await c.env.DB.prepare(
     'INSERT OR REPLACE INTO user_onboarding (id, user_id, step_id, status, completed_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
   ).bind(crypto.randomUUID(), userId, step, 'completed').run()
+  
+  // Update last viewed version if provided
+  if (version) {
+    await c.env.DB.prepare('UPDATE users SET last_viewed_version = ? WHERE id = ?').bind(version, userId).run()
+  }
   
   const { results } = await c.env.DB.prepare('SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"').bind(userId).all()
   const completedSteps = results?.map(r => r.step_id as string) || []
@@ -213,6 +229,25 @@ user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema), async
 })
 
 // Linked Providers & Accounts
+user.get('/service-providers', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM service_providers ORDER BY name ASC').all()
+  return c.json(results)
+})
+
+user.get('/identities', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare('SELECT id, provider, provider_user_id, email, name, avatar_url, created_at FROM user_identities WHERE user_id = ?').bind(userId).all()
+  return c.json(results)
+})
+
+user.delete('/identities/:id', async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  await c.env.DB.prepare('DELETE FROM user_identities WHERE id = ? AND user_id = ?').bind(id, userId).run()
+  await logAudit(c, 'user_identities', id, 'DELETE')
+  return c.json({ success: true })
+})
+
 user.get('/providers', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(

@@ -1,7 +1,9 @@
-export const CURRENT_VERSION = 'v4.0.0'
+export const CURRENT_VERSION = 'v3.11.0'
 
 export const VERSION_UPDATES = [
-  { version: 'v3.0.0', title: 'Modular Architecture (Evolutionary Leap)', description: 'Complete system refactor into a domain-driven modular architecture with root-domain routing and centralized validation.' },
+  { version: 'v3.11.0', title: 'Total Modernization', description: 'Complete elimination of legacy routing and transition to a standardized modular architecture.' },
+  { version: 'v3.10.0', title: 'Tabbed Dashboard (Evolutionary Leap)', description: 'Consolidated financial management into a sleek, tabbed interface for enhanced navigation.' },
+  { version: 'v3.0.0', title: 'Modular Architecture Baseline', description: 'Initial transition to a domain-driven modular structure.' },
   { version: 'v2.3.0', title: 'Forensic Admin Hub', description: 'Advanced user management, account merging, and deep forensic auditing.' },
   { version: 'v2.2.2', title: 'Stability & UI Refresh', description: 'Authentication performance fixes and refined global footer.' },
   { version: 'v1.31.0', title: 'Feature Parity & Rollovers', description: 'Budget rollovers, subscription trial alerts, and receipt management.' },
@@ -11,25 +13,21 @@ export const VERSION_UPDATES = [
 ]
 
 export const AUTH_EXCLUSIONS = [
-  '/ledger', 
-  '/ledger/', 
-  '/ledger/ping',
   '/ping',
-  '/ledger/auth/login',
-  '/ledger/auth/login/discord',
-  '/ledger/auth/callback/discord',
-  '/ledger/auth/login/google',
-  '/ledger/auth/callback/google',
-  '/ledger/auth/login/dropbox',
-  '/ledger/auth/callback/dropbox',
-  '/ledger/auth/login/onedrive',
-  '/ledger/auth/callback/onedrive',
-  '/ledger/auth/passkeys/login-options',
-  '/ledger/auth/passkeys/login-verify',
-  '/ledger/auth/password/reset-request',
-  '/ledger/auth/password/reset',
-  '/ledger/auth/admin/claim',
-  '/ledger/api/theme/broadcast',
+  '/auth/login',
+  '/auth/login/discord',
+  '/auth/callback/discord',
+  '/auth/login/google',
+  '/auth/callback/google',
+  '/auth/login/dropbox',
+  '/auth/callback/dropbox',
+  '/auth/login/onedrive',
+  '/auth/callback/onedrive',
+  '/auth/passkeys/login-options',
+  '/auth/passkeys/login-verify',
+  '/auth/password/reset-request',
+  '/auth/password/reset',
+  '/auth/admin/claim',
   '/api/theme/broadcast',
   '/.well-known/microsoft-identity-association.json'
 ]

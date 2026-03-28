@@ -13,8 +13,17 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL,
     display_name TEXT,
     password_hash TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-, totp_secret TEXT, totp_enabled INTEGER DEFAULT 0, avatar_url TEXT, global_role TEXT DEFAULT 'user', status TEXT DEFAULT 'active', username TEXT, last_active_at DATETIME, settings_json TEXT);
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    totp_secret TEXT,
+    totp_enabled INTEGER DEFAULT 0,
+    avatar_url TEXT,
+    global_role TEXT DEFAULT 'user',
+    status TEXT DEFAULT 'active',
+    username TEXT,
+    last_active_at DATETIME,
+    settings_json TEXT,
+    last_viewed_version TEXT
+);
 INSERT INTO "users" ("id","email","display_name","password_hash","created_at","totp_secret","totp_enabled","avatar_url","global_role","status","username","last_active_at","settings_json") VALUES('user-123','yolo@example.com','Administrator',NULL,'2026-03-22 22:19:09',NULL,0,NULL,'user','active','yolo',NULL,NULL);
 INSERT INTO "users" ("id","email","display_name","password_hash","created_at","totp_secret","totp_enabled","avatar_url","global_role","status","username","last_active_at","settings_json") VALUES('admin-001','user@example.com','Admin User','100000.iRMQvBSFzYiD3dP/Pv+qEg==.mdZr4+wB46/uZwLB5KmE/zhImQJP3qcEGA07rAYIYts=','2026-03-24 17:50:43',NULL,0,NULL,'user','suspended','admin',NULL,NULL);
 INSERT INTO "users" ("id","email","display_name","password_hash","created_at","totp_secret","totp_enabled","avatar_url","global_role","status","username","last_active_at","settings_json") VALUES('c388400c-26a9-4b0e-b7d7-cdeb7aea18f4','ledger@gameproductions.net','Devon','100000.LeB4A1VHDbeyHXEGJ8BFpw==.RVvp89y3W3trOEISj5LxGJlStXisVP7uQmQO0DUwqeI=','2026-03-24 19:32:31',NULL,0,NULL,'super_admin','active','morenicano','2026-03-26 22:28:11','{"theme":"emerald","ui_style":"default","dashboard_layout":{"smartInsights":true,"savingsBuckets":true,"calendar":true,"recentTransactions":true,"healthScore":true}}');
@@ -166,21 +175,62 @@ CREATE TABLE savings_buckets (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (household_id) REFERENCES households(id)
 );
+
+CREATE TABLE user_payment_methods (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    household_id TEXT,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    last_four TEXT,
+    branding_url TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (household_id) REFERENCES households(id)
+);
+
+CREATE TABLE user_linked_accounts (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    household_id TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
+    payment_method_id TEXT,
+    email_attached TEXT,
+    membership_start_date DATE,
+    membership_end_date DATE,
+    subscription_id TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (household_id) REFERENCES households(id),
+    FOREIGN KEY (provider_id) REFERENCES service_providers(id),
+    FOREIGN KEY (payment_method_id) REFERENCES user_payment_methods(id)
+);
 CREATE TABLE passkeys (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
-    public_key BLOB NOT NULL,
-    credential_id TEXT UNIQUE NOT NULL,
-    counter INTEGER DEFAULT 0,
+    public_key TEXT NOT NULL,
+    credential_id TEXT NOT NULL,
+    name TEXT,
+    aaguid TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE TABLE user_identities (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
-    provider TEXT NOT NULL, -- 'discord', 'google'
+    provider TEXT NOT NULL,
     provider_user_id TEXT NOT NULL,
+    email TEXT,
+    name TEXT,
+    avatar_url TEXT,
+    access_token TEXT,
+    refresh_token TEXT,
+    expires_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(provider, provider_user_id),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -352,10 +402,11 @@ CREATE TABLE admin_invitations (
 );
 INSERT INTO "admin_invitations" ("token","role","is_claimed","created_at","expires_at") VALUES('WZFqgmU3oqi9KMz8jQN9oceAdAGvjaoR','super_admin',1,'2026-03-24 19:04:53','2026-03-25T19:04:43.027Z');
 CREATE TABLE user_onboarding (
-    user_id TEXT PRIMARY KEY,
-    completed_steps_json TEXT DEFAULT '[]',
-    is_completed BOOLEAN DEFAULT 0,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, last_viewed_version TEXT,
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    step_id TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    completed_at DATETIME,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 INSERT INTO "user_onboarding" ("user_id","completed_steps_json","is_completed","updated_at","last_viewed_version") VALUES('c388400c-26a9-4b0e-b7d7-cdeb7aea18f4','["welcome","security","vault","accounts","budget","subscriptions"]',1,'2026-03-24 22:07:03','v1.5.8');

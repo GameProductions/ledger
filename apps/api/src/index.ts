@@ -72,7 +72,7 @@ app.use('*', async (c, next) => {
 const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Health & Docs
-ledger.get('/ping', (c) => c.text('PONG - LEDGER v3.0.0 IS LIVE'))
+ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.11.0' : 'DEV'} IS LIVE`))
 ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)
@@ -122,26 +122,6 @@ ledger.route('/api/pcc', pccRoutes)
 
 ledger.route('/discord', discordRoutes)
 
-// 🌉 Bridge Routes: Maintain backward compatibility for legacy frontend paths
-ledger.get('/api/households', async (c) => {
-  const userId = c.get('userId')
-  const { results } = await c.env.DB.prepare('SELECT h.*, uh.role FROM households h JOIN user_households uh ON h.id = uh.household_id WHERE uh.user_id = ?').bind(userId).all()
-  return c.json(results)
-})
-ledger.get('/api/budgets', async (c) => {
-  const householdId = c.get('householdId')
-  const household: any = await c.env.DB.prepare('SELECT unallocated_balance_cents FROM households WHERE id = ?').bind(householdId).first()
-  const { results: categories } = await c.env.DB.prepare('SELECT * FROM categories WHERE household_id = ?').bind(householdId).all()
-  const { results: spends } = await c.env.DB.prepare('SELECT category_id, SUM(amount_cents) as total_spend FROM transactions WHERE household_id = ? GROUP BY category_id').bind(householdId).all()
-  const budgets = categories.map((cat: any) => ({ ...cat, spend_cents: spends.find((s: any) => s.category_id === cat.id)?.total_spend || 0 }))
-  return c.json({ unallocated_balance_cents: household?.unallocated_balance_cents || 0, budgets })
-})
-ledger.route('/api/savings', financialsRoutes) 
-ledger.route('/api/analytics', interopRoutes) 
-ledger.route('/api/interop/analytics', interopRoutes) 
-ledger.route('/api/interop', interopRoutes) 
-ledger.route('/api/pcc/audit', pccRoutes) 
-ledger.route('/api/onboarding', userRoutes) 
 
 // Mount ledger app on root as well as /ledger for compatibility
 app.route('/ledger', ledger)

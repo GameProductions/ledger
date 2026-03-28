@@ -12,12 +12,12 @@ const ImportWizard: React.FC = () => {
     setUploading(true)
     
     // In a real app, we'd parse this or send to a specialized endpoint
-    // We simulate the upload to a new /api/import/csv endpoint
+    // We simulate the upload to a new /api/financials/transactions/import/csv endpoint
     const formData = new FormData()
     formData.append('csv', file)
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/import/csv`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/import/csv`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

@@ -88,7 +88,7 @@ export const useExport = () => {
     } else if (format === 'gsheets' as any) {
       // Proxy through backend for security
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/export/gsheets`, {
+        const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/financials/transactions/export/gsheets`, {
           method: 'POST',
           headers: { 
             'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,

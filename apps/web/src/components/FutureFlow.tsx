@@ -1,7 +1,7 @@
 import { useApi } from '../hooks/useApi'
 
 const FutureFlow: React.FC = () => {
-  const { data: projection } = useApi('/api/analytics/projection')
+  const { data: projection } = useApi('/api/interop/analytics/projection')
 
   return (
     <section className="card" style={{ gridColumn: 'span 2' }}>

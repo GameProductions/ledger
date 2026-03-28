@@ -72,7 +72,7 @@ app.use('*', async (c, next) => {
 const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Health & Docs
-ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.11.3' : 'DEV'} IS LIVE`))
+ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.11.4' : 'DEV'} IS LIVE`))
 ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)
@@ -112,17 +112,13 @@ const msVerification = (c: any) => {
 ledger.get('/.well-known/microsoft-identity-association.json', msVerification)
 app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
-// Feature Routes
+// 6. Global Route Mounting
 ledger.route('/auth', authRoutes)
 ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)
 ledger.route('/api/interop', interopRoutes)
 ledger.route('/api/pcc', pccRoutes)
-
-// Routing Alignment: Support flat paths expected by the frontend
-ledger.route('/api/households', userRoutes) // Allows /api/households/... to be handled by the user router
-ledger.route('/api/reports', interopRoutes)  // Allows /api/reports/... to be handled by the interop router
 
 ledger.route('/discord', discordRoutes)
 

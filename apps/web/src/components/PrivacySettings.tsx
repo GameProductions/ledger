@@ -15,7 +15,7 @@ export const PrivacySettings: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/export/full`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/export/full`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const blob = await res.blob();

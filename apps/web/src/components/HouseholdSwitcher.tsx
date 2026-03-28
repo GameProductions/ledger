@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi'
 
 const HouseholdSwitcher: React.FC = () => {
   const { householdId, setHouseholdId } = useAuth()
-  const { data: households, loading } = useApi('/api/households')
+  const { data: households, loading } = useApi('/api/user/households')
 
   if (loading) return null
 

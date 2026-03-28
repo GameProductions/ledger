@@ -2,6 +2,7 @@
  * LEDGER Auth Utilities
  * Implements TOTP (RFC 6238) and WebAuthn helpers using Web Crypto API.
  */
+import { Buffer } from 'node:buffer'
 
 // --- BASE32 UTILS ---
 const B32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'

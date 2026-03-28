@@ -32,9 +32,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: transactions, mutate: mutateTx } = useApi('/api/financials/transactions')
   const { data: templates } = useApi('/api/planning/templates')
   const [timeframe, setTimeframe] = useState('paycheck')
-  const { data: analytics } = useApi(`/api/financials/analytics/summary?timeframe=${timeframe}`)
-  const { data: insightsData } = useApi('/api/financials/analytics/insights')
-  const { data: projections } = useApi('/api/financials/analytics/projection')
+  const { data: analytics } = useApi(`/api/interop/analytics/summary?timeframe=${timeframe}`)
+  const { data: insightsData } = useApi('/api/interop/analytics/insights')
+  const { data: projections } = useApi('/api/interop/analytics/projection')
   const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -149,14 +149,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
                 </div>
                 <div className="text-3xl font-black text-white mb-2">
-                  <Price amountCents={projections?.[(projections?.length ?? 0) - 1]?.balanceCents || 0} options={{ minimumFractionDigits: 0 }} />
+                  <Price amountCents={Array.isArray(projections) ? (projections?.[(projections?.length ?? 0) - 1]?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                    <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
                    <span className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Liquid Capital</span>
                 </div>
                 <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
-                  {projections?.slice(0, 6).map((p: any, i: number) => (
+                  {Array.isArray(projections) && projections.slice(0, 6).map((p: any, i: number) => (
                     <div 
                       key={i} 
                       className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"

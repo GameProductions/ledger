@@ -11,6 +11,7 @@ import {
   UserLinkedAccountSchema 
 } from '../schemas'
 import { logAudit } from '../utils'
+import { CURRENT_VERSION } from '../constants'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 

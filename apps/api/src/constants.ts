@@ -1,4 +1,4 @@
-export const CURRENT_VERSION = 'v3.1.6'
+export const CURRENT_VERSION = 'v3.1.7'
 
 export const VERSION_UPDATES = [
   { version: 'v3.0.0', title: 'Modular Architecture (Evolutionary Leap)', description: 'Complete system refactor into a domain-driven modular architecture with root-domain routing and centralized validation.' },

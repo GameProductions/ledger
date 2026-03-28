@@ -319,38 +319,47 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         )}
 
         {activeTab === 'planning' && (
-          <div className="dashboard-grid stagger">
+          <div className="space-y-8 stagger">
             <section className="card">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Envelope Pool</h3>
-                <div className="flex gap-2">
-                  <button onClick={() => setShowDepositModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20">Deposit</button>
-                  <button onClick={() => setShowFundModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20">Fund</button>
-                </div>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold">Cash Flow Calendar</h3>
               </div>
-              <div className="text-3xl font-black text-primary mb-1">
-                <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
-              </div>
-              <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">To Be Allocated</div>
-              
-              <div className="space-y-2">
-                {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
-                  <div key={b.id} className="flex justify-between items-center p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{b.icon}</span>
-                      <span className="text-sm font-bold">{b.name}</span>
-                    </div>
-                    <div className={`font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
-                      <Price amountCents={b.envelope_balance_cents || 0} />
-                    </div>
-                  </div>
-                )) : <p className="text-xs text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
-              </div>
+              <Calendar transactions={transactions || []} />
             </section>
 
-            <SavingsBuckets />
-            <BudgetProgress />
-            <TransferForm />
+            <div className="dashboard-grid stagger">
+              <section className="card">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold">Envelope Pool</h3>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowDepositModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20">Deposit</button>
+                    <button onClick={() => setShowFundModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20">Fund</button>
+                  </div>
+                </div>
+                <div className="text-3xl font-black text-primary mb-1">
+                  <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
+                </div>
+                <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">To Be Allocated</div>
+                
+                <div className="space-y-2">
+                  {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
+                    <div key={b.id} className="flex justify-between items-center p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{b.icon}</span>
+                        <span className="text-sm font-bold">{b.name}</span>
+                      </div>
+                      <div className={`font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
+                        <Price amountCents={b.envelope_balance_cents || 0} />
+                      </div>
+                    </div>
+                  )) : <p className="text-xs text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
+                </div>
+              </section>
+
+              <SavingsBuckets />
+              <BudgetProgress />
+              <TransferForm />
+            </div>
           </div>
         )}
 
@@ -376,13 +385,6 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
         {activeTab === 'ledgers' && (
           <div className="space-y-8 stagger">
-            <section className="card">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold">Cash Flow Calendar</h3>
-              </div>
-              <Calendar transactions={transactions || []} />
-            </section>
-
             <div className="dashboard-grid">
               <Subscriptions />
               <WhatIfLedger />

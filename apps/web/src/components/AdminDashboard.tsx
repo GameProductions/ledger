@@ -5,9 +5,9 @@ import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 
 const AdminDashboard: React.FC = () => {
-  const { data: users, loading: loadingUsers, mutate: mutateUsers } = useApi('/api/admin/users')
-  const { data: connections, loading: loadingConn, mutate: mutateConn } = useApi('/api/admin/connections')
-  const { data: audit, loading: loadingAudit, mutate: mutateAudit } = useApi('/api/admin/audit')
+  const { data: users, loading: loadingUsers, mutate: mutateUsers } = useApi('/api/pcc/users')
+  const { data: connections, loading: loadingConn, mutate: mutateConn } = useApi('/api/pcc/connections')
+  const { data: audit, loading: loadingAudit, mutate: mutateAudit } = useApi('/api/pcc/audit')
   const [activeTab, setActiveTab] = useState<'users' | 'connections' | 'audit'>('users')
   const { showToast } = useToast()
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -15,7 +15,7 @@ const AdminDashboard: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('')
 
   const handleUpdateUser = async (userId: string, updates: any) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/pcc/users/${userId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ const AdminDashboard: React.FC = () => {
       status: 'active'
     }
 
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/connections`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/pcc/connections`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ const AdminDashboard: React.FC = () => {
             <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
             <Button variant="primary" onClick={() => {
               if (confirmDeleteId) {
-                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${confirmDeleteId}`, {
+                fetch(`${import.meta.env.VITE_API_URL}/api/pcc/users/${confirmDeleteId}`, {
                   method: 'DELETE',
                   headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
                 }).then(() => {
@@ -221,7 +221,7 @@ const AdminDashboard: React.FC = () => {
             <Button variant="secondary" onClick={() => setInviteModalOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={() => {
                 if (!inviteEmail) return;
-                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/invite`, {
+                fetch(`${import.meta.env.VITE_API_URL}/api/pcc/admin/users/invite`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
                   body: JSON.stringify({ email: inviteEmail })

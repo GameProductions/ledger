@@ -267,4 +267,14 @@ user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema), async
   return c.json({ success: true, id })
 })
 
+// Passkeys Management
+user.get('/passkeys', async (c) => {
+  const userId = c.get('userId')
+  const { results } = await c.env.DB.prepare(
+    'SELECT id, name, aaguid, created_at FROM passkeys WHERE user_id = ?'
+  ).bind(userId).all()
+  return c.json(results)
+})
+
 export default user
+

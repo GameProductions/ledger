@@ -277,4 +277,14 @@ planning.post('/budget/transfer', zValidator('json', z.object({
   return c.json({ success: true })
 })
 
+// Transaction Templates
+planning.get('/templates', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM templates WHERE household_id = ?'
+  ).bind(householdId).all()
+  return c.json(results)
+})
+
 export default planning
+

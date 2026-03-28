@@ -24,7 +24,7 @@ const SettingsPage: React.FC = () => {
   const [showPass, setShowPass] = useState(false)
 
   // Passkey State
-  const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/admin/passkeys') // Need a user-facing passkey list too
+  const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/user/passkeys') // Consolidated user-facing passkey list
   const [editingPasskey, setEditingPasskey] = useState<any | null>(null)
   const [confirmDeletePasskey, setConfirmDeletePasskey] = useState<any | null>(null)
 

@@ -6,7 +6,7 @@ import { useApi } from '../hooks/useApi';
 
 const DataInteropPage: React.FC = () => {
   const { exportData } = useExport();
-  const { data: transactions } = useApi('/api/transactions');
+  const { data: transactions } = useApi('/api/financials/transactions');
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {

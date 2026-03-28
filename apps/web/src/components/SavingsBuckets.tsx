@@ -3,7 +3,7 @@ import { Price } from './Price'
 import { useApi } from '../hooks/useApi'
 
 const SavingsBuckets: React.FC = () => {
-  const { data: buckets } = useApi('/api/savings/buckets')
+  const { data: buckets } = useApi('/api/financials/buckets')
 
   return (
     <section className="card">

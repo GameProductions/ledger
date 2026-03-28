@@ -149,7 +149,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
                 </div>
                 <div className="text-3xl font-black text-white mb-2">
-                  <Price amountCents={projections?.[projections.length - 1]?.balanceCents || 0} options={{ minimumFractionDigits: 0 }} />
+                  <Price amountCents={projections?.[(projections?.length ?? 0) - 1]?.balanceCents || 0} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                    <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>

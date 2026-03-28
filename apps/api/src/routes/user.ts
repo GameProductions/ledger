@@ -63,8 +63,38 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
 // Onboarding Status
 user.get('/onboarding', async (c) => {
   const userId = c.get('userId')
-  const { results } = await c.env.DB.prepare('SELECT * FROM user_onboarding WHERE user_id = ?').bind(userId).all()
-  return c.json(results || [])
+  const { results } = await c.env.DB.prepare('SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"').bind(userId).all()
+  
+  const completedSteps = results?.map(r => r.step_id as string) || []
+  
+  return c.json({
+    completed_steps: completedSteps,
+    is_completed: completedSteps.length >= 4,
+    updates: [],
+    current_version: CURRENT_VERSION
+  })
+})
+
+user.post('/onboarding/step', zValidator('json', z.object({
+  step: z.string(),
+  isLast: z.boolean().optional(),
+  version: z.string().optional()
+})), async (c) => {
+  const userId = c.get('userId')
+  const { step, isLast } = c.req.valid('json')
+  
+  await c.env.DB.prepare(
+    'INSERT OR REPLACE INTO user_onboarding (id, user_id, step_id, status, completed_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
+  ).bind(crypto.randomUUID(), userId, step, 'completed').run()
+  
+  const { results } = await c.env.DB.prepare('SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"').bind(userId).all()
+  const completedSteps = results?.map(r => r.step_id as string) || []
+
+  return c.json({
+    success: true,
+    completed_steps: completedSteps,
+    is_completed: isLast || completedSteps.length >= 4
+  })
 })
 
 // Households

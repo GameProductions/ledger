@@ -137,6 +137,72 @@ user.post('/households', zValidator('json', CreateHouseholdSchema), async (c) =>
   return c.json({ success: true, id, name }, 201)
 })
 
+user.post('/households/invite', async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.req.header('x-household-id')
+  
+  if (!householdId) {
+    throw new HTTPException(400, { message: 'Missing x-household-id header' })
+  }
+
+  // 1. Verify user is admin of this household
+  const membership = await c.env.DB.prepare(
+    'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
+  ).bind(userId, householdId).first()
+  
+  if (!membership || (membership as any).role !== 'admin') {
+    throw new HTTPException(403, { message: 'Forbidden: Only household admins can generate invites' })
+  }
+
+  // 2. Generate token
+  const id = crypto.randomUUID()
+  const expiresAt = new Date()
+  expiresAt.setHours(expiresAt.getHours() + 24) // 24h expiry
+  
+  await c.env.DB.prepare(
+    'INSERT INTO household_invites (id, household_id, created_by, expires_at) VALUES (?, ?, ?, ?)'
+  ).bind(id, householdId, userId, expiresAt.toISOString()).run()
+  
+  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, { token: id })
+  
+  return c.json({ 
+    success: true, 
+    url: `#/households/join?token=${id}` 
+  })
+})
+
+user.post('/households/join', zValidator('json', JoinHouseholdSchema), async (c) => {
+  const userId = c.get('userId')
+  const { token } = c.req.valid('json')
+  
+  // 1. Validate invite
+  const invite: any = await c.env.DB.prepare(
+    'SELECT * FROM household_invites WHERE id = ? AND status = "pending"'
+  ).bind(token).first()
+  
+  if (!invite) throw new HTTPException(404, { message: 'Invitation not found or already accepted' })
+  if (new Date(invite.expires_at) < new Date()) {
+    await c.env.DB.prepare('UPDATE household_invites SET status = "expired" WHERE id = ?').bind(token).run()
+    throw new HTTPException(410, { message: 'Invitation expired' })
+  }
+
+  // 2. Check if already a member
+  const existing = await c.env.DB.prepare(
+    'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
+  ).bind(userId, invite.household_id).first()
+  if (existing) throw new HTTPException(409, { message: 'You are already a member of this household' })
+
+  // 3. Join
+  await c.env.DB.batch([
+    c.env.DB.prepare('INSERT INTO user_households (user_id, household_id, role) VALUES (?, ?, ?)').bind(userId, invite.household_id, 'member'),
+    c.env.DB.prepare('UPDATE household_invites SET status = "accepted" WHERE id = ?').bind(token).run()
+  ])
+  
+  await logAudit(c, 'households', invite.household_id, 'JOIN_VIA_INVITE', null, { userId })
+  
+  return c.json({ success: true, householdId: invite.household_id })
+})
+
 user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema), async (c) => {
   const { id } = c.req.param()
   const { name } = c.req.valid('json')

@@ -13,7 +13,8 @@ const InviteManager: React.FC = () => {
       }
     })
     const data = await res.json()
-    setLink(data.url)
+    const fullUrl = `${window.location.origin}/${data.url}`
+    setLink(fullUrl)
     setInvited(true)
   }
 

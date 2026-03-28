@@ -32,6 +32,7 @@ const PCCAudit = lazy(() => import('./pages/pcc/PCCAudit'))
 const PCCProviders = lazy(() => import('./pages/pcc/PCCProviders'))
 const PCCProcessors = lazy(() => import('./pages/pcc/PCCProcessors'))
 const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
+const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 
 const AppContent: React.FC = () => {
   const { user, globalRole } = useAuth()
@@ -52,6 +53,7 @@ const AppContent: React.FC = () => {
     if (path === '#/privacy') return <PrivacyPolicy />
     if (path === '#/terms') return <TermsOfService />
     if (path.startsWith('#/claim')) return <ClaimInvitePage />
+    if (path.startsWith('#/households/join')) return <JoinHouseholdPage />
 
     // 2. Auth Guard
     if (!user) return <LoginPage />

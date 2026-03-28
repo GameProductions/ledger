@@ -5,7 +5,6 @@
     "enabled": false
   },
   "routes": [
-    "api.gpnet.dev/ledger/*",
     "api.gpnet.dev/.well-known/*",
     "gpnet.dev/.well-known/*",
     "api.gpnet.dev/*"

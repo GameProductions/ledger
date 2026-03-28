@@ -1,7 +1,7 @@
-export const CURRENT_VERSION = 'v3.11.0'
+export const CURRENT_VERSION = 'v3.11.1'
 
 export const VERSION_UPDATES = [
-  { version: 'v3.11.0', title: 'Total Modernization', description: 'Complete elimination of legacy routing and transition to a standardized modular architecture.' },
+  { version: 'v3.11.1', title: 'Total Modernization', description: 'Complete elimination of legacy routing and transition to a standardized modular architecture.' },
   { version: 'v3.10.0', title: 'Tabbed Dashboard (Evolutionary Leap)', description: 'Consolidated financial management into a sleek, tabbed interface for enhanced navigation.' },
   { version: 'v3.0.0', title: 'Modular Architecture Baseline', description: 'Initial transition to a domain-driven modular structure.' },
   { version: 'v2.3.0', title: 'Forensic Admin Hub', description: 'Advanced user management, account merging, and deep forensic auditing.' },

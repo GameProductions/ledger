@@ -9,7 +9,7 @@ import { WebhookSchema } from '../schemas'
 const interop = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Analytics & Insights
-interop.get('/analytics/summary', async (c) => {
+interop.get('/summary', async (c) => {
   const householdId = c.get('householdId')
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
@@ -36,7 +36,7 @@ interop.get('/analytics/summary', async (c) => {
   })
 })
 
-interop.get('/analytics/category-spending', async (c) => {
+interop.get('/category-spending', async (c) => {
   const householdId = c.get('householdId')
   const timeframe = c.req.query('timeframe') || '30d'
   
@@ -57,7 +57,7 @@ interop.get('/analytics/category-spending', async (c) => {
   return c.json(results)
 })
 
-interop.get('/analytics/net-worth', async (c) => {
+interop.get('/net-worth', async (c) => {
   const householdId = c.get('householdId')
   
   const { results: accs } = await c.env.DB.prepare('SELECT type, balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
@@ -78,7 +78,7 @@ interop.get('/analytics/net-worth', async (c) => {
   })
 })
 
-interop.get('/analytics/insights', async (c) => {
+interop.get('/insights', async (c) => {
   const insights = [
     "You've saved 15% more this week compared to last week. Keep it up!",
     "Subscriptions are taking up 22% of your monthly budget. Consider a 'Subscription Audit'.",
@@ -87,7 +87,7 @@ interop.get('/analytics/insights', async (c) => {
   return c.json({ insights })
 })
 
-interop.get('/analytics/projection', async (c) => {
+interop.get('/projection', async (c) => {
   const householdId = c.get('householdId')
   // Mock projection for now: 180 days of balance estimation based on average daily spend
   const now = new Date()

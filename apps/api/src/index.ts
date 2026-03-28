@@ -136,9 +136,10 @@ ledger.get('/api/budgets', async (c) => {
   const budgets = categories.map((cat: any) => ({ ...cat, spend_cents: spends.find((s: any) => s.category_id === cat.id)?.total_spend || 0 }))
   return c.json({ unallocated_balance_cents: household?.unallocated_balance_cents || 0, budgets })
 })
-ledger.route('/api/savings', financialsRoutes) // /api/savings/buckets -> /api/savings/buckets (Matches sub-route)
-ledger.route('/api/analytics', interopRoutes) // /api/analytics/summary -> /api/analytics/summary (Matches interop sub-route)
-ledger.route('/api/financials/analytics', interopRoutes) // Bridge for current prefix mismatch
+ledger.route('/api/savings', financialsRoutes) 
+ledger.route('/api/analytics', interopRoutes) 
+ledger.route('/api/interop/analytics', interopRoutes) 
+ledger.route('/api/interop', interopRoutes) 
 ledger.route('/api/pcc/audit', pccRoutes) 
 ledger.route('/api/onboarding', userRoutes) 
 

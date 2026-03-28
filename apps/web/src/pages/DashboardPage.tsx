@@ -193,7 +193,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Pool</div>
                 
                 <div className="space-y-2">
-                  {Array.isArray(budgetsData?.budgets) && budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
+                  {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
                     <div key={b.id} className="flex justify-between items-center p-3 bg-white/5 border border-glass-border rounded-xl hover:border-primary/30 transition-all">
                       <div className="flex items-center gap-3">
                         <span className="text-lg">{b.icon}</span>
@@ -203,7 +203,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <Price amountCents={b.envelope_balance_cents || 0} />
                       </div>
                     </div>
-                  ))}
+                  )) : <p className="text-xs text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
                 </div>
               </div>
             </section>
@@ -394,7 +394,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <p className="text-[10px] text-secondary uppercase font-bold opacity-60 mb-6">Instantly record manual entries</p>
           
           <div className="flex flex-wrap gap-2 mb-6">
-            {Array.isArray(templates) && templates.map((tpl: any) => (
+            {Array.isArray(templates) ? templates.map((tpl: any) => (
               <button 
                 key={tpl.id} 
                 onClick={() => {
@@ -407,7 +407,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               >
                 {tpl.name}
               </button>
-            ))}
+            )) : <p className="text-[10px] text-secondary italic opacity-40">No templates available.</p>}
           </div>
 
           <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={(e) => {
@@ -586,12 +586,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Select Envelope</label>
                 <SearchableSelect 
-                  options={budgetsData?.budgets?.filter((b: any) => b.is_envelope).map((b: any) => ({
+                  options={Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => ({
                     value: b.id,
                     label: b.name,
                     icon: <span className="text-sm">{b.icon}</span>,
                     metadata: { subtext: `$${((b.envelope_balance_cents || 0)/100).toFixed(2)}` }
-                  })) || []}
+                  })) : []}
                   value={fundCategoryId}
                   onChange={(val) => setFundCategoryId(val)}
                   placeholder="Choose an envelope..."

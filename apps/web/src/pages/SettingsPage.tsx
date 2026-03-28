@@ -8,10 +8,13 @@ import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PasswordChecklist } from '../components/PasswordChecklist'
+import { PrivacySettings } from '../components/PrivacySettings'
+import { Price } from '../components/Price'
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
   const { data: profile, mutate } = useApi('/api/user/profile')
+  const { data: accounts } = useApi('/api/financials/accounts')
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState('')
   const [timezone, setTimezone] = useState('UTC')
@@ -487,6 +490,37 @@ const SettingsPage: React.FC = () => {
                 </div>
              </section>
           </div>
+        </div>
+
+        {/* Global Configuration & Sovereignty */}
+        <div className="mt-24 space-y-12 reveal delay-300">
+           <section className="space-y-6">
+              <div className="px-2">
+                 <h3 className="text-xl font-black italic tracking-tight">Financial Infrastructure</h3>
+                 <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Connected data sources and ledger entry points</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {Array.isArray(accounts) ? accounts.map((acc: any) => (
+                    <div key={acc.id} className="card p-6 flex justify-between items-center border-l-4 border-emerald-500/30">
+                       <div className="flex items-center gap-4">
+                          <div className="text-xl">💳</div>
+                          <div>
+                             <p className="font-bold text-sm tracking-tight">{acc.name}</p>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">Active Ledger</p>
+                          </div>
+                       </div>
+                       <Price amountCents={acc.balance_cents} className="text-lg font-black tracking-tighter" />
+                    </div>
+                 )) : (
+                    <div className="col-span-full p-10 border-2 border-dashed border-white/5 rounded-3xl text-center opacity-30 grayscale italic">
+                       <p className="text-xs font-bold uppercase tracking-widest">No active financial links detected</p>
+                    </div>
+                 )}
+              </div>
+           </section>
+
+           <PrivacySettings />
         </div>
 
         {/* MODALS */}

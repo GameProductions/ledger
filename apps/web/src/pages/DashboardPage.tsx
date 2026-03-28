@@ -185,17 +185,6 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
             </section>
 
-            <section className="card">
-              <h3 className="text-lg font-bold mb-6">Connected Accounts</h3>
-              <div className="space-y-3">
-                {Array.isArray(accounts) ? accounts.map((acc: any) => (
-                  <div key={acc.id} className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-glass-border">
-                    <span className="text-sm font-bold text-secondary">{acc.name}</span>
-                    <Price amountCents={acc.balance_cents} className="font-black tracking-tighter" />
-                  </div>
-                )) : <p className="text-xs text-secondary italic">No accounts found.</p>}
-              </div>
-            </section>
           </div>
         )}
 

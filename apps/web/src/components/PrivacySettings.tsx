@@ -108,7 +108,6 @@ export const PrivacySettings: React.FC = () => {
       </Card>
 
       {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <Card className="max-w-md w-full p-8 border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.2)]">
             <h3 className="text-2xl font-black text-red-500 mb-4">Confirm Shredding</h3>
             <p className="text-sm font-medium mb-6">Are you sure you want to delete all data older than **{shredMonths} months**? This cannot be undone.</p>

@@ -72,7 +72,7 @@ app.use('*', async (c, next) => {
 const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Health & Docs
-ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.11.2' : 'DEV'} IS LIVE`))
+ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.11.3' : 'DEV'} IS LIVE`))
 ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)

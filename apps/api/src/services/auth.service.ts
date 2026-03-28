@@ -24,6 +24,16 @@ export class AuthService {
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
+    // --- RE-HASH ON LOGIN (v3.11.3 Security Hardening) ---
+    // If successful, check if iterations are legacy (100k) and upgrade to 600k
+    const [iterations] = user.password_hash.split('.')
+    if (parseInt(iterations) < 600000) {
+      console.log('[Auth] Upgrading password hash iterations for:', user.username)
+      const newHash = await hashPassword(password)
+      await this.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+        .bind(newHash, user.id).run()
+    }
+
     console.log('[Auth] Login successful for:', user.username)
     return user
   }

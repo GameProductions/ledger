@@ -4,6 +4,8 @@ import { zValidator } from '@hono/zod-validator'
 import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
+import { setSignedCookie, getSignedCookie } from 'hono/cookie'
+import { HTTPException } from 'hono/http-exception'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -69,16 +71,30 @@ auth.post('/totp/verify', zValidator('json', z.object({ code: z.string() })), as
   return c.json({ success }, success ? 200 : 400)
 })
 
-auth.get('/login/discord', (c) => {
+auth.get('/login/discord', async (c) => {
   const clientId = c.env.DISCORD_CLIENT_ID
+  const state = crypto.randomUUID()
+  await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 300,
+  })
+  
   const redirectUri = `${new URL(c.req.url).origin}/auth/callback/discord`
-  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email`
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email&state=${state}`
   return c.redirect(url)
 })
 
 auth.get('/callback/discord', async (c) => {
   const code = c.req.query('code')
-  if (!code) throw new HTTPException(400, { message: 'Missing code' })
+  const state = c.req.query('state')
+  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+
+  if (!code || !state || state !== savedState) {
+    throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
+  }
 
   const authService = new AuthService(c.env)
   
@@ -116,15 +132,30 @@ auth.get('/callback/discord', async (c) => {
   return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
 })
 
-auth.get('/login/google', (c) => {
+auth.get('/login/google', async (c) => {
   const clientId = c.env.GOOGLE_CLIENT_ID
+  const state = crypto.randomUUID()
+  await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 300,
+  })
+
   const redirectUri = `${new URL(c.req.url).origin}/auth/callback/google`
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile%20https://www.googleapis.com/auth/spreadsheets&access_type=offline&prompt=consent`
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile%20https://www.googleapis.com/auth/spreadsheets&access_type=offline&prompt=consent&state=${state}`
   return c.redirect(url)
 })
 
 auth.get('/callback/google', async (c) => {
   const code = c.req.query('code')
+  const state = c.req.query('state')
+  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+
+  if (!code || !state || state !== savedState) {
+    throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
+  }
   const authService = new AuthService(c.env)
   
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -160,15 +191,30 @@ auth.get('/callback/google', async (c) => {
 })
 
 // --- DROPBOX ---
-auth.get('/login/dropbox', (c) => {
+auth.get('/login/dropbox', async (c) => {
   const clientId = c.env.DROPBOX_CLIENT_ID
+  const state = crypto.randomUUID()
+  await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 300,
+  })
+
   const redirectUri = `${new URL(c.req.url).origin}/auth/callback/dropbox`
-  const url = `https://www.dropbox.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`
+  const url = `https://www.dropbox.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&state=${state}`
   return c.redirect(url)
 })
 
 auth.get('/callback/dropbox', async (c) => {
   const code = c.req.query('code')
+  const state = c.req.query('state')
+  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+
+  if (!code || !state || state !== savedState) {
+    throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
+  }
   const authService = new AuthService(c.env)
   const tokenRes = await fetch('https://api.dropbox.com/oauth2/token', {
     method: 'POST',
@@ -205,15 +251,30 @@ auth.get('/callback/dropbox', async (c) => {
 })
 
 // --- ONEDRIVE ---
-auth.get('/login/onedrive', (c) => {
+auth.get('/login/onedrive', async (c) => {
   const clientId = c.env.ONEDRIVE_CLIENT_ID
+  const state = crypto.randomUUID()
+  await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 300,
+  })
+
   const redirectUri = `${new URL(c.req.url).origin}/auth/callback/onedrive`
-  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=files.readwrite%20offline_access%20User.Read`
+  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=files.readwrite%20offline_access%20User.Read&state=${state}`
   return c.redirect(url)
 })
 
 auth.get('/callback/onedrive', async (c) => {
   const code = c.req.query('code')
+  const state = c.req.query('state')
+  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+
+  if (!code || !state || state !== savedState) {
+    throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
+  }
   const authService = new AuthService(c.env)
   const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
     method: 'POST',
@@ -249,6 +310,13 @@ auth.get('/callback/onedrive', async (c) => {
 // --- WEBAUTHN / PASSKEYS ---
 auth.post('/passkeys/register-options', async (c) => {
   const challenge = crypto.randomUUID()
+  await setSignedCookie(c, 'webauthn_challenge', challenge, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 300,
+  })
   return c.json({ challenge, user: { id: c.get('userId') || 'new-user', name: 'User' } })
 })
 
@@ -258,7 +326,13 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
   userId: z.string(),
   name: z.string().optional()
 })), async (c) => {
-  const { attestation, userId, name } = c.req.valid('json')
+  const { attestation, userId, name, challenge: clientChallenge } = c.req.valid('json')
+  const savedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+
+  if (!savedChallenge || clientChallenge !== savedChallenge) {
+    throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
+  }
+
   const id = crypto.randomUUID()
   const aaguid = attestation.aaguid || 'unknown' // In real WebAuthn, this is in the authenticatorData
   
@@ -292,11 +366,24 @@ auth.delete('/passkeys/:id', async (c) => {
 
 auth.post('/passkeys/login-options', async (c) => {
   const challenge = crypto.randomUUID()
+  await setSignedCookie(c, 'webauthn_challenge', challenge, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 300,
+  })
   return c.json({ challenge })
 })
 
 auth.post('/passkeys/login-verify', async (c) => {
-  const { assertion, challenge } = await c.req.json()
+  const { assertion, challenge: clientChallenge } = await c.req.json()
+  const savedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+
+  if (!savedChallenge || clientChallenge !== savedChallenge) {
+    throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
+  }
+
   const credId = assertion.id
   
   const passkey: any = await c.env.DB.prepare('SELECT * FROM passkeys WHERE credential_id = ?').bind(credId).first()

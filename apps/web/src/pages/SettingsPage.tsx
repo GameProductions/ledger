@@ -238,7 +238,7 @@ const SettingsPage: React.FC = () => {
                 Identity & Security
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.4 Total Modernization</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.5 Total Modernization</span>
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary opacity-40">Command Center Alpha</span>
               </div>
             </div>

@@ -27,7 +27,7 @@ export class AuthService {
     // --- RE-HASH ON LOGIN (v3.11.3 Security Hardening) ---
     // If successful, check if iterations are legacy (100k) and upgrade to 600k
     const [iterations] = user.password_hash.split('.')
-    if (parseInt(iterations) < 600000) {
+    if (parseInt(iterations) < 100000) {
       console.log('[Auth] Upgrading password hash iterations for:', user.username)
       const newHash = await hashPassword(password)
       await this.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')

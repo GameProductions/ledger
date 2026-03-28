@@ -6,6 +6,7 @@ import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
+import { verifyPassword } from '../auth-utils'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 

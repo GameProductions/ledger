@@ -62,10 +62,15 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
 
 user.get('/onboarding', async (c) => {
   const userId = c.get('userId')
-  const { results: onboarding } = await c.env.DB.prepare(
-    'SELECT * FROM user_onboarding WHERE user_id = ?'
-  ).bind(userId).all()
-  return c.json(onboarding)
+  try {
+    const { results: onboarding } = await c.env.DB.prepare(
+      'SELECT * FROM user_onboarding WHERE user_id = ?'
+    ).bind(userId).all()
+    return c.json(onboarding)
+  } catch (e) {
+    console.error('[Onboarding] Table missing or query failed:', e)
+    return c.json([])
+  }
 })
 
 // Households
@@ -212,9 +217,9 @@ user.post('/providers/link', zValidator('json', z.object({
 user.get('/linked-accounts', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(`
-    SELECT la.*, p.name as provider_name, p.branding_url as provider_branding, pm.name as payment_method_name 
+    SELECT la.*, sp.name as provider_name, sp.icon_url as provider_branding, pm.name as payment_method_name 
     FROM user_linked_accounts la 
-    JOIN providers p ON la.provider_id = p.id 
+    JOIN service_providers sp ON la.provider_id = sp.id 
     LEFT JOIN user_payment_methods pm ON la.payment_method_id = pm.id 
     WHERE la.user_id = ?
   `).bind(userId).all()

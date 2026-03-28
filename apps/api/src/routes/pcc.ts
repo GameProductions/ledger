@@ -31,48 +31,72 @@ pcc.get('/stats', async (c) => {
 
 // System Configuration
 pcc.get('/config', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_config ORDER BY config_key ASC').all()
-  return c.json(results)
+  try {
+    const { results } = await c.env.DB.prepare('SELECT * FROM system_configs ORDER BY key ASC').all()
+    return c.json(results)
+  } catch (e) {
+    return c.json([])
+  }
 })
 
 pcc.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
   const { config_value } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE system_config SET config_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
-  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
-  return c.json({ success: true })
+  try {
+    await c.env.DB.prepare('UPDATE system_configs SET value_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
+    await logAudit(c, 'system_configs', id, 'UPDATE_CONFIG', {}, { config_value })
+    return c.json({ success: true })
+  } catch (e) {
+    throw new HTTPException(500, { message: 'Failed to update config' })
+  }
 })
 
 // Feature Flags
 pcc.get('/features', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_feature_flags ORDER BY feature_key ASC').all()
-  return c.json(results)
+  try {
+    const { results } = await c.env.DB.prepare('SELECT * FROM system_feature_flags ORDER BY feature_key ASC').all()
+    return c.json(results)
+  } catch (e) {
+    return c.json([])
+  }
 })
 
 pcc.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
   const id = c.req.param('id')
   const { enabled_globally, target_user_ids } = c.req.valid('json')
-  await c.env.DB.prepare(
-    'UPDATE system_feature_flags SET enabled_globally = ?, target_user_ids = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-  ).bind(enabled_globally ? 1 : 0, target_user_ids, id).run()
-  await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabled_globally })
-  return c.json({ success: true })
+  try {
+    await c.env.DB.prepare(
+      'UPDATE system_feature_flags SET enabled_globally = ?, target_user_ids = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(enabled_globally ? 1 : 0, target_user_ids, id).run()
+    await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabled_globally })
+    return c.json({ success: true })
+  } catch (e) {
+    throw new HTTPException(500, { message: 'Feature table not ready' })
+  }
 })
 
 // Universal Registry
 pcc.get('/registry', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_registry ORDER BY item_type ASC, name ASC').all()
-  return c.json(results)
+  try {
+    const { results } = await c.env.DB.prepare('SELECT * FROM system_registry ORDER BY item_type ASC, name ASC').all()
+    return c.json(results)
+  } catch (e) {
+    return c.json([])
+  }
 })
 
 pcc.post('/registry', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.item_type, data.name, data.logo_url, data.website_url, JSON.stringify(data.metadata_json)).run()
-  await logAudit(c, 'system_registry', id, 'CREATE_REGISTRY_ITEM', {}, data)
-  return c.json({ success: true, id })
+  try {
+    await c.env.DB.prepare(
+      'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, data.item_type, data.name, data.logo_url, data.website_url, JSON.stringify(data.metadata_json)).run()
+    await logAudit(c, 'system_registry', id, 'CREATE_REGISTRY_ITEM', {}, data)
+    return c.json({ success: true, id })
+  } catch (e) {
+    throw new HTTPException(500, { message: 'Registry table not ready' })
+  }
 })
 
 // User Management
@@ -118,18 +142,26 @@ pcc.get('/search', async (c) => {
 
 // Billing Processors
 pcc.get('/processors', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM billing_processors ORDER BY name ASC').all()
-  return c.json(results)
+  try {
+    const { results } = await c.env.DB.prepare('SELECT * FROM billing_processors ORDER BY name ASC').all()
+    return c.json(results)
+  } catch (e) {
+    return c.json([])
+  }
 })
 
 pcc.post('/processors', zValidator('json', BillingProcessorSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO billing_processors (id, name, website_url, branding_url, support_url, subscription_id_notes) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.name, data.website_url, data.branding_url, data.support_url, data.subscription_id_notes).run()
-  await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
-  return c.json({ success: true, id })
+  try {
+    await c.env.DB.prepare(
+      'INSERT INTO billing_processors (id, name, website_url, branding_url, support_url, subscription_id_notes) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, data.name, data.website_url, data.branding_url, data.support_url, data.subscription_id_notes).run()
+    await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
+    return c.json({ success: true, id })
+  } catch (e) {
+    throw new HTTPException(500, { message: 'Billing table not ready' })
+  }
 })
 
 pcc.patch('/processors/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
@@ -148,37 +180,49 @@ pcc.patch('/processors/:id', zValidator('json', BillingProcessorSchema.partial()
 
 // Providers
 pcc.get('/providers', async (c) => {
-  const { results } = await c.env.DB.prepare(`
-    SELECT p.*, bp.name as billing_processor_name 
-    FROM providers p 
-    LEFT JOIN billing_processors bp ON p.billing_processor_id = bp.id 
-    ORDER BY p.name ASC
-  `).all()
-  return c.json(results)
+  try {
+    const { results } = await c.env.DB.prepare(`
+      SELECT sp.*, bp.name as billing_processor_name 
+      FROM service_providers sp 
+      LEFT JOIN billing_processors bp ON sp.billing_processor_id = bp.id 
+      ORDER BY sp.name ASC
+    `).all()
+    return c.json(results)
+  } catch (e) {
+    return c.json([])
+  }
 })
 
 pcc.post('/providers', zValidator('json', ProviderSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO providers (id, name, website_url, branding_url, billing_processor_id, is_3rd_party_capable) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.name, data.website_url, data.branding_url, data.billing_processor_id, data.is_3rd_party_capable ? 1 : 0).run()
-  await logAudit(c, 'providers', id, 'admin_create', null, data)
-  return c.json({ success: true, id })
+  try {
+    await c.env.DB.prepare(
+      'INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, data.name, data.website_url || null, data.branding_url || null, data.billing_processor_id, data.is_3rd_party_capable ? 1 : 0).run()
+    await logAudit(c, 'service_providers', id, 'admin_create', null, data)
+    return c.json({ success: true, id })
+  } catch (e) {
+    throw new HTTPException(500, { message: 'Service providers table not ready' })
+  }
 })
 
 pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const { name, website_url, branding_url, billing_processor_id, is_3rd_party_capable } = data
-  await c.env.DB.prepare(
-    `UPDATE providers SET 
-     name = COALESCE(?, name), website_url = COALESCE(?, website_url), branding_url = COALESCE(?, branding_url), 
-     billing_processor_id = COALESCE(?, billing_processor_id), is_3rd_party_capable = COALESCE(?, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
-     WHERE id = ?`
-  ).bind(name, website_url, branding_url, billing_processor_id, is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null, id).run()
-  await logAudit(c, 'providers', id, 'admin_update', null, data)
-  return c.json({ success: true })
+  try {
+    await c.env.DB.prepare(
+      `UPDATE service_providers SET 
+       name = COALESCE(?, name), url = COALESCE(?, url), icon_url = COALESCE(?, icon_url), 
+       billing_processor_id = COALESCE(?, billing_processor_id), is_3rd_party_capable = COALESCE(?, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`
+    ).bind(name, website_url, branding_url, billing_processor_id, is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null, id).run()
+    await logAudit(c, 'service_providers', id, 'admin_update', null, data)
+    return c.json({ success: true })
+  } catch (e) {
+    throw new HTTPException(500, { message: 'Update failed' })
+  }
 })
 
 // Theme Broadcast
@@ -191,8 +235,12 @@ pcc.post('/theme/broadcast', async (c) => {
 
 // Walkthroughs
 pcc.get('/walkthroughs', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_walkthroughs ORDER BY created_at DESC').all()
-  return c.json(results)
+  try {
+    const { results } = await c.env.DB.prepare('SELECT * FROM system_walkthroughs ORDER BY created_at DESC').all()
+    return c.json(results)
+  } catch (e) {
+    return c.json([])
+  }
 })
 
 pcc.post('/walkthroughs', zValidator('json', z.object({

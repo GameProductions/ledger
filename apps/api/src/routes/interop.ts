@@ -192,9 +192,13 @@ interop.get('/config', async (c) => {
 })
 
 interop.get('/theme/broadcast', async (c) => {
-  const config = await c.env.DB.prepare('SELECT value_json FROM system_configs WHERE key = "broadcast_theme_id"').first()
-  if (!config) return c.json({ themeId: null })
-  return c.json({ themeId: JSON.parse((config as any).value_json) })
+  try {
+    const config = await c.env.DB.prepare('SELECT value_json FROM system_configs WHERE key = "broadcast_theme_id"').first()
+    if (!config) return c.json({ themeId: null })
+    return c.json({ themeId: JSON.parse((config as any).value_json) })
+  } catch (e) {
+    return c.json({ themeId: null })
+  }
 })
 
 // Developer: Personal Access Tokens (PATs)

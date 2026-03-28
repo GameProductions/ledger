@@ -392,7 +392,3 @@ const PaymentCentralPage: React.FC = () => {
 };
 
 export default PaymentCentralPage;
-  );
-};
-
-export default PaymentCentralPage;

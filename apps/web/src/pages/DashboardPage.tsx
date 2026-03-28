@@ -16,7 +16,6 @@ import AICoach from '../components/AICoach'
 import DeveloperSettings from '../components/DeveloperSettings'
 import AuditChronicle from '../components/AuditChronicle'
 import { Price } from '../components/Price'
-import { PrivacySettings } from '../components/PrivacySettings'
 import FutureFlow from '../components/FutureFlow'
 import GoalSeek from '../components/GoalSeek'
 import SavingsBuckets from '../components/SavingsBuckets'
@@ -197,8 +196,6 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 )) : <p className="text-xs text-secondary italic">No accounts found.</p>}
               </div>
             </section>
-            
-            <PrivacySettings />
           </div>
         )}
 
@@ -433,7 +430,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       )}
 
       {linkingTx && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[2000] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4">
           <div className="card w-full max-w-2xl reveal max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -547,7 +544,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       )}
 
       {showFundModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[2000] flex items-center justify-center p-4" onClick={() => setShowFundModal(false)}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4" onClick={() => setShowFundModal(false)}>
           <div className="card w-full max-w-md p-8 reveal space-y-6" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Fund Envelope</h3>
@@ -588,7 +585,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       )}
 
       {showDepositModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[2000] flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
           <div className="card w-full max-w-md p-8 reveal space-y-6" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Deposit to Pool</h3>

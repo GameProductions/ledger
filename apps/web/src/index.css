@@ -6,6 +6,7 @@
   --color-bg-dark: var(--bg-dark);
   --color-card-bg: var(--card-bg);
   --color-glass-border: var(--glass-border);
+  --z-index-modal: 10000;
 }
 
 :root {

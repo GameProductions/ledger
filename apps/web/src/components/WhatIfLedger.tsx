@@ -3,7 +3,7 @@ import { Price } from './Price'
 import { useApi } from '../hooks/useApi'
 
 const WhatIfLedger: React.FC = () => {
-  const { data: subs } = useApi('/api/subscriptions')
+  const { data: subs } = useApi('/api/planning/subscriptions')
   const [disabledSubs, setDisabledSubs] = useState<string[]>([])
   
   const originalTotal = useMemo(() => {

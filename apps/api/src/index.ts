@@ -97,8 +97,6 @@ ledger.route('/api/user', userRoutes)
 ledger.route('/api/interop', interopRoutes)
 ledger.route('/api/pcc', pccRoutes)
 
-// Legacy compatibility and shorter paths
-ledger.route('/api', interopRoutes) 
 ledger.route('/discord', discordRoutes)
 
 // Mount ledger app on root as well as /ledger for compatibility

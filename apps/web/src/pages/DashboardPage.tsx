@@ -28,21 +28,21 @@ import { SearchableSelect } from '../components/ui/SearchableSelect'
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user } = useAuth()
-  const { data: accounts } = useApi('/api/accounts')
-  const { data: transactions, mutate: mutateTx } = useApi('/api/transactions')
-  const { data: templates } = useApi('/api/templates')
+  const { data: accounts } = useApi('/api/financials/accounts')
+  const { data: transactions, mutate: mutateTx } = useApi('/api/financials/transactions')
+  const { data: templates } = useApi('/api/planning/templates')
   const [timeframe, setTimeframe] = useState('paycheck')
-  const { data: analytics } = useApi(`/api/analytics/summary?timeframe=${timeframe}`)
-  const { data: insightsData } = useApi('/api/analytics/insights')
-  const { data: projections } = useApi('/api/analytics/projection')
-  const { data: smartSuggestions } = useApi('/api/transactions/suggest-links')
+  const { data: analytics } = useApi(`/api/financials/analytics/summary?timeframe=${timeframe}`)
+  const { data: insightsData } = useApi('/api/financials/analytics/insights')
+  const { data: projections } = useApi('/api/financials/analytics/projection')
+  const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
   const [settings, setSettings] = useState<any>({ dashboard_layout: {} })
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
-  const { data: budgetsData, mutate: mutateBudgets } = useApi('/api/budgets')
+  const { data: budgetsData, mutate: mutateBudgets } = useApi('/api/planning/budgets')
   const [showFundModal, setShowFundModal] = useState(false)
   const [fundAmount, setFundAmount] = useState('')
   const [fundCategoryId, setFundCategoryId] = useState('')
@@ -63,7 +63,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const handleDeposit = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/budget/deposit`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/deposit`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const handleFund = async () => {
     if (!fundCategoryId) return
-    await fetch(`${import.meta.env.VITE_API_URL}/api/budget/fund`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/fund`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const toggleReconcile = async (txId: string, current: boolean) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${txId}/reconcile`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${txId}/reconcile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -225,7 +225,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   </div>
                 </div>
                 <button 
-                  onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/report/summary`, '_blank')}
+                  onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/interop/report/summary`, '_blank')}
                   className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
                 >
                   📥 Generate Monthly Digest (PDF)
@@ -318,7 +318,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                                   if (!file) return
                                   const formData = new FormData()
                                   formData.append('file', file)
-                                  await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${tx.id}/receipt`, {
+                                  await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${tx.id}/receipt`, {
                                     method: 'POST',
                                     headers: { 
                                       'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
@@ -413,7 +413,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={(e) => {
             e.preventDefault()
             const formData = new FormData(e.currentTarget)
-            fetch(`${import.meta.env.VITE_API_URL}/api/transactions`, {
+            fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -482,7 +482,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     <div 
                       key={`suggest-${t.id}`}
                       onClick={async () => {
-                        await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/link`, {
+                        await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/link`, {
                           method: 'POST',
                           headers: { 
                             'Content-Type': 'application/json',
@@ -519,7 +519,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     <div 
                       key={t.id} 
                       onClick={async () => {
-                        await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/link`, {
+                        await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/link`, {
                           method: 'POST',
                           headers: { 
                             'Content-Type': 'application/json',
@@ -553,7 +553,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             {linkingTx.reconciliation_status === 'reconciled' && (
               <button 
                 onClick={async () => {
-                  await fetch(`${import.meta.env.VITE_API_URL}/api/transactions/${linkingTx.id}/unlink`, {
+                  await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/unlink`, {
                     method: 'POST',
                     headers: { 
                       'Content-Type': 'application/json',

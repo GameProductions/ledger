@@ -87,6 +87,27 @@ interop.get('/analytics/insights', async (c) => {
   return c.json({ insights })
 })
 
+interop.get('/analytics/projection', async (c) => {
+  const householdId = c.get('householdId')
+  // Mock projection for now: 180 days of balance estimation based on average daily spend
+  const now = new Date()
+  const dates = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now)
+    d.setMonth(now.getMonth() + i)
+    return d.toISOString().split('T')[0]
+  })
+  
+  const { results: accs } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
+  let currentBalance = accs.reduce((sum, a: any) => sum + a.balance_cents, 0)
+  
+  const projection = dates.map(date => {
+    currentBalance += (Math.random() - 0.45) * 50000 // Simple random walk for demo
+    return { date, balanceCents: Math.round(currentBalance) }
+  })
+
+  return c.json(projection)
+})
+
 // Webhooks (Inbound)
 interop.post('/webhooks/plaid', async (c) => {
   const payload = await c.req.json() as any

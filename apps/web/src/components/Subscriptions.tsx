@@ -10,7 +10,7 @@ import { SearchableSelect } from './ui/SearchableSelect'
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
-  const { data: subs, loading, mutate } = useApi('/api/subscriptions')
+  const { data: subs, loading, mutate } = useApi('/api/planning/subscriptions')
   const { data: linkedAccounts } = useApi('/api/user/linked-accounts')
   const [showAdd, setShowAdd] = useState(false)
 
@@ -30,7 +30,7 @@ const Subscriptions: React.FC = () => {
           e.preventDefault()
           const formData = new FormData(e.currentTarget)
           const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-          fetch(`${apiUrl}/api/subscriptions`, {
+          fetch(`${apiUrl}/api/planning/subscriptions`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',

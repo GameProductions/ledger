@@ -2,7 +2,7 @@ import React from 'react'
 import { useApi } from '../hooks/useApi'
 
 const AuditChronicle: React.FC = () => {
-  const { data: logs } = useApi('/api/audit')
+  const { data: logs } = useApi('/api/pcc/audit')
 
   return (
     <section className="card" style={{ gridColumn: 'span 1' }}>

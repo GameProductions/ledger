@@ -129,6 +129,54 @@ financials.get('/transactions/export', async (c) => {
   return c.json(results)
 })
 
+financials.get('/transactions/suggest-links', async (c) => {
+  const householdId = c.get('householdId')
+  // Simple heuristic: transactions with same amount but opposite signs within 7 days
+  const { results } = await c.env.DB.prepare(`
+    SELECT t1.id as original_id, t2.id as suggested_id, t1.description, t2.description as suggested_description, t1.amount_cents
+    FROM transactions t1
+    JOIN transactions t2 ON t1.household_id = t2.household_id 
+      AND t1.amount_cents = -t2.amount_cents
+      AND ABS(julianday(t1.transaction_date) - julianday(t2.transaction_date)) <= 7
+    WHERE t1.household_id = ? AND t1.id < t2.id
+    LIMIT 5
+  `).bind(householdId).all()
+  return c.json(results)
+})
+
+financials.patch('/transactions/:id/reconcile', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const { reconciled } = await c.req.json() as { reconciled: boolean }
+  await c.env.DB.prepare('UPDATE transactions SET reconciliation_status = ? WHERE id = ? AND household_id = ?')
+    .bind(reconciled ? 'reconciled' : 'unreconciled', id, householdId).run()
+  return c.json({ success: true })
+})
+
+financials.post('/transactions/:id/link', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const { targetId } = await c.req.json() as { targetId: string }
+  // Logic to link two transactions (e.g. transfer source/sink)
+  await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = ?, reconciliation_status = "reconciled" WHERE id = ? AND household_id = ?')
+    .bind(targetId, id, householdId).run()
+  await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = ?, reconciliation_status = "reconciled" WHERE id = ? AND household_id = ?')
+    .bind(id, targetId, householdId).run()
+  return c.json({ success: true })
+})
+
+financials.post('/transactions/:id/unlink', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const tx = await c.env.DB.prepare('SELECT linked_transaction_id FROM transactions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (tx && (tx as any).linked_transaction_id) {
+    const targetId = (tx as any).linked_transaction_id
+    await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = NULL, reconciliation_status = "unreconciled" WHERE id = ?').bind(id).run()
+    await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = NULL, reconciliation_status = "unreconciled" WHERE id = ?').bind(targetId).run()
+  }
+  return c.json({ success: true })
+})
+
 // Transaction Import Analysis
 financials.post('/transactions/import/analyze', async (c: any) => {
   const body = await c.req.parseBody()
@@ -251,6 +299,13 @@ financials.post('/transfers', zValidator('json', TransferSchema), async (c) => {
   }
   
   return c.json({ success: true, id })
+})
+
+// Buckets
+financials.get('/buckets', async (c) => {
+  const householdId = c.get('householdId')
+  const { results } = await c.env.DB.prepare('SELECT * FROM savings_buckets WHERE household_id = ?').bind(householdId).all()
+  return c.json(results)
 })
 
 export default financials

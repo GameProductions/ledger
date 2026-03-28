@@ -154,7 +154,7 @@ export async function verifyWebAuthnRegistration(
 }
 
 // --- PASSWORD HASHING (PBKDF2) ---
-const DEFAULT_ITERATIONS = 100000
+const DEFAULT_ITERATIONS = 600000
 
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()

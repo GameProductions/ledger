@@ -1,8 +1,10 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import { Play, Star, Shield, Compass } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 export const ToursPage: React.FC = () => {
+  const { showToast } = useToast();
   const tours = [
     {
       title: 'Full Platform Walkthrough',
@@ -44,7 +46,10 @@ export const ToursPage: React.FC = () => {
                 <p className="text-sm text-secondary font-medium leading-relaxed">{tour.description}</p>
               </div>
               
-              <button className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white text-secondary hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+              <button 
+                onClick={() => showToast(`Starting "${tour.title}"... Coming Soon!`, 'info')}
+                className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white text-secondary hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+              >
                 <Play size={14} fill="currentColor" />
                 {tour.action}
               </button>

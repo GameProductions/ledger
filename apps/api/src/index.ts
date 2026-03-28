@@ -32,7 +32,7 @@ export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 app.use('*', logger())
 app.use('*', cors({
   origin: ['https://ledger.gpnet.dev', 'http://localhost:5173'],
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'x-household-id'],
   exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
   maxAge: 600,

@@ -46,41 +46,43 @@ const AppContent: React.FC = () => {
 
   // Helper to render the actual component
   const renderView = () => {
+    const path = currentHash.split('?')[0]
+    
     // 1. Public Routes (No session required)
-    if (currentHash === '#/privacy') return <PrivacyPolicy />
-    if (currentHash === '#/terms') return <TermsOfService />
-    if (currentHash.startsWith('#/claim')) return <ClaimInvitePage />
+    if (path === '#/privacy') return <PrivacyPolicy />
+    if (path === '#/terms') return <TermsOfService />
+    if (path.startsWith('#/claim')) return <ClaimInvitePage />
 
     // 2. Auth Guard
     if (!user) return <LoginPage />
 
     // 3. System-Wide Portal (PCC) Super-Admin Only
-    if (currentHash.startsWith('#/system-pcc')) {
+    if (path.startsWith('#/system-pcc')) {
       if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
-      if (currentHash === '#/system-pcc/dashboard') return <PCCDashboard />
-      if (currentHash === '#/system-pcc/config') return <PCCConfig />
-      if (currentHash === '#/system-pcc/registry') return <PCCRegistry />
-      if (currentHash === '#/system-pcc/users') return <PCCUsers />
-      if (currentHash === '#/system-pcc/search') return <PCCSearch />
-      if (currentHash === '#/system-pcc/audit') return <PCCAudit />
-      if (currentHash === '#/system-pcc/providers') return <PCCProviders />
-      if (currentHash === '#/system-pcc/processors') return <PCCProcessors />
+      if (path === '#/system-pcc/dashboard') return <PCCDashboard />
+      if (path === '#/system-pcc/config') return <PCCConfig />
+      if (path === '#/system-pcc/registry') return <PCCRegistry />
+      if (path === '#/system-pcc/users') return <PCCUsers />
+      if (path === '#/system-pcc/search') return <PCCSearch />
+      if (path === '#/system-pcc/audit') return <PCCAudit />
+      if (path === '#/system-pcc/providers') return <PCCProviders />
+      if (path === '#/system-pcc/processors') return <PCCProcessors />
       return <PCCDashboard />
     }
 
     // 4. Authenticated Component Routes
-    if (currentHash === '#/settings') return <SettingsPage />
-    if (currentHash === '#/preferences') return <PreferencesPage />
-    if (currentHash === '#/reports') return <ReportsPage />
-    if (currentHash === '#/payments') return <PaymentCentralPage />
-    if (currentHash === '#/data') return <DataInteropPage />
-    if (currentHash.startsWith('#/snapshot/')) return <SnapshotViewer />
-    if (currentHash === '#/backup') return <BackupHub />
-    if (currentHash === '#/help') return <HelpCenter />
-    if (currentHash === '#/help/guides') return <GuidesPage />
-    if (currentHash === '#/help/faq') return <FAQPage />
-    if (currentHash === '#/help/support') return <SupportPortal />
-    if (currentHash === '#/help/tours') return <ToursPage />
+    if (path === '#/settings') return <SettingsPage />
+    if (path === '#/preferences') return <PreferencesPage />
+    if (path === '#/reports') return <ReportsPage />
+    if (path === '#/payments') return <PaymentCentralPage />
+    if (path === '#/data') return <DataInteropPage />
+    if (path.startsWith('#/snapshot/')) return <SnapshotViewer />
+    if (path === '#/backup') return <BackupHub />
+    if (path === '#/help') return <HelpCenter />
+    if (path === '#/help/guides') return <GuidesPage />
+    if (path === '#/help/faq') return <FAQPage />
+    if (path === '#/help/support') return <SupportPortal />
+    if (path === '#/help/tours') return <ToursPage />
 
     // 5. Default Route: Dashboard
     return <DashboardPage view={view} setView={setView} />

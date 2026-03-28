@@ -30,6 +30,8 @@ const SettingsPage: React.FC = () => {
   const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/user/passkeys') // Consolidated user-facing passkey list
   const [editingPasskey, setEditingPasskey] = useState<any | null>(null)
   const [confirmDeletePasskey, setConfirmDeletePasskey] = useState<any | null>(null)
+  const [newPasskeyData, setNewPasskeyData] = useState<any | null>(null)
+  const [isEditingAlias, setIsEditingAlias] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -94,18 +96,28 @@ const SettingsPage: React.FC = () => {
       })
       const options = await optRes.json()
       
-      // 2. Client-side WebAuthn (Simplified mock for now as we don't have the library here)
-      // In real app, use @simplewebauthn/browser
-      const name = prompt('Name this Passkey (e.g. Work Laptop, iPhone):')
-      if (!name) return
+      // 2. Mock WebAuthn Verification
+      // In a real app, this would use the browser's credential manager
+      const attestation = { id: `cred-${crypto.randomUUID().slice(0,8)}`, publicKey: 'mock-key', aaguid: '00000000-0000-0000-0000-000000000000' }
+      
+      setNewPasskeyData({
+        attestation,
+        challenge: options.challenge,
+        userId: user?.id
+      })
+    } catch (e) {
+      showToast('Passkey registration failed', 'error')
+    }
+  }
 
+  const handleFinishPasskeyRegistration = async (name: string) => {
+    if (!newPasskeyData) return
+    try {
       const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
-          attestation: { id: 'mock-id', publicKey: 'mock-key', aaguid: '00000000-0000-0000-0000-000000000000' }, 
-          challenge: options.challenge, 
-          userId: user?.id,
+          ...newPasskeyData,
           name 
         })
       })
@@ -113,9 +125,13 @@ const SettingsPage: React.FC = () => {
       if (verifyRes.ok) {
         showToast('Passkey registered successfully', 'success')
         mutatePasskeys()
+        setNewPasskeyData(null)
+      } else {
+        const err = await verifyRes.json()
+        showToast(err.message || 'Verification failed', 'error')
       }
     } catch (e) {
-      showToast('Passkey registration failed', 'error')
+      showToast('Network error during registration', 'error')
     }
   }
 
@@ -260,8 +276,35 @@ const SettingsPage: React.FC = () => {
                   className="w-40 h-40 rounded-full border-4 border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] group-hover:border-primary transition-all duration-500 relative z-10"
                 />
               </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-black tracking-tight">{name || 'Operative'}</h2>
+              <div className="space-y-1 group">
+                {isEditingAlias ? (
+                  <div className="flex gap-2">
+                    <input 
+                      autoFocus
+                      className="bg-white/5 border border-white/10 rounded px-2 py-1 text-sm font-bold outline-none focus:border-primary w-full"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onBlur={() => {
+                        updateProfile()
+                        setIsEditingAlias(false)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          updateProfile()
+                          setIsEditingAlias(false)
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <h2 
+                    onClick={() => setIsEditingAlias(true)}
+                    className="text-2xl font-black tracking-tight cursor-pointer hover:text-primary transition-colors flex items-center justify-center gap-2"
+                  >
+                    {name || 'Operative'}
+                    <Edit3 size={14} className="opacity-0 group-hover:opacity-40" />
+                  </h2>
+                )}
                 <div className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center gap-2">
                    <ShieldCheck size={12} className="text-primary" />
                    {profile?.email || user?.email}
@@ -454,15 +497,12 @@ const SettingsPage: React.FC = () => {
              {/* Profile Preferences */}
              <section className="card p-10 space-y-10 reveal">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                   <div className="space-y-4">
+                   <div className="space-y-4 opacity-50">
                       <label className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary">Operating Alias</label>
-                      <input 
-                         type="text" 
-                         value={name} 
-                         onChange={(e) => setName(e.target.value)}
-                         className="w-full p-5 bg-white/5 border border-white/5 rounded-2xl text-xl font-black italic tracking-tighter outline-none focus:border-primary transition-all"
-                         placeholder="Alias"
-                      />
+                      <div className="flex items-center gap-3 text-secondary p-1 border-b border-white/5 cursor-not-allowed">
+                        <Edit3 size={14} />
+                        <span className="text-lg font-black italic tracking-tighter">Edit via profile card above</span>
+                      </div>
                    </div>
                    <div className="space-y-4">
                       <label className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary">Timezone Protocol</label>
@@ -590,6 +630,33 @@ const SettingsPage: React.FC = () => {
           }
         >
           <p className="text-secondary font-medium">This will permanently revoke biometric access for <strong>{confirmDeletePasskey?.name}</strong>. You must have another sign-in method active.</p>
+        </Modal>
+
+        {/* New Passkey Naming Modal */}
+        <Modal
+          isOpen={!!newPasskeyData}
+          onClose={() => setNewPasskeyData(null)}
+          title="Name Your New Sentinel"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setNewPasskeyData(null)}>Discard</Button>
+              <Button variant="primary" onClick={() => {
+                const nameInput = document.getElementById('passkey-name-input') as HTMLInputElement;
+                if (nameInput.value) handleFinishPasskeyRegistration(nameInput.value);
+              }}>Secure Key</Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-secondary text-sm">Hardware verification successful. Please provide a friendly name for this key to identify it later.</p>
+            <input 
+              id="passkey-name-input"
+              type="text" 
+              placeholder="e.g. Work MacBook Air, Pixel 8 Pro"
+              className="w-full bg-white/5 border border-white/5 p-4 rounded-xl outline-none focus:border-primary transition-all font-bold"
+              autoFocus
+            />
+          </div>
         </Modal>
 
       </div>

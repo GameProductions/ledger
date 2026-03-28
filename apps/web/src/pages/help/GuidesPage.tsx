@@ -1,6 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import { ChevronRight, ArrowRight, Zap, Shield, RefreshCw, Fingerprint } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 export const GuidesPage: React.FC = () => {
   const guides = [
@@ -42,6 +43,8 @@ export const GuidesPage: React.FC = () => {
     }
   ];
 
+  const { showToast } = useToast();
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto py-12 space-y-12">
@@ -53,7 +56,11 @@ export const GuidesPage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-6">
           {guides.map((guide, i) => (
-            <div key={i} className="group p-8 bg-black/40 hover:bg-gradient-to-r hover:from-white/10 hover:to-transparent border border-white/5 rounded-[2.5rem] transition-all cursor-pointer relative overflow-hidden">
+            <div 
+              key={i} 
+              onClick={() => showToast(`Opening "${guide.title}"... Content coming in v3.15`, 'info')}
+              className="group p-8 bg-black/40 hover:bg-gradient-to-r hover:from-white/10 hover:to-transparent border border-white/5 rounded-[2.5rem] transition-all cursor-pointer relative overflow-hidden"
+            >
               <div className="flex items-start justify-between relative z-10">
                 <div className="flex gap-6">
                   <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 shadow-2xl">

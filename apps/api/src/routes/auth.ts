@@ -81,7 +81,7 @@ auth.get('/login/discord', async (c) => {
     path: '/',
     secure: true,
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'None',
     maxAge: 300,
   })
   
@@ -145,7 +145,7 @@ auth.get('/login/google', async (c) => {
     path: '/',
     secure: true,
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'None',
     maxAge: 300,
   })
 
@@ -207,7 +207,7 @@ auth.get('/login/dropbox', async (c) => {
     path: '/',
     secure: true,
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'None',
     maxAge: 300,
   })
 
@@ -270,7 +270,7 @@ auth.get('/login/onedrive', async (c) => {
     path: '/',
     secure: true,
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'None',
     maxAge: 300,
   })
 
@@ -326,7 +326,7 @@ auth.post('/passkeys/register-options', async (c) => {
     path: '/',
     secure: true,
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'None',
     maxAge: 300,
   })
   return c.json({ challenge, user: { id: c.get('userId') || 'new-user', name: 'User' } })
@@ -382,7 +382,7 @@ auth.post('/passkeys/login-options', async (c) => {
     path: '/',
     secure: true,
     httpOnly: true,
-    sameSite: 'Lax',
+    sameSite: 'None',
     maxAge: 300,
   })
   return c.json({ challenge })

@@ -214,17 +214,20 @@ user.patch('/notifications', zValidator('json', z.array(z.object({
 user.get('/payment-methods', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare('SELECT * FROM user_payment_methods WHERE user_id = ? AND is_active = 1').bind(userId).all()
-  return c.json(results)
+  return c.json(results || [])
 })
 
 user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema), async (c) => {
   const userId = c.get('userId')
-  const householdId = c.get('householdId')
+  const householdId = c.get('householdId') || null
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
+  
   await c.env.DB.prepare(
     'INSERT INTO user_payment_methods (id, user_id, household_id, name, type, last_four, branding_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, userId, householdId, data.name, data.type, data.last_four, data.branding_url).run()
+  ).bind(id, userId, householdId, data.name, data.type, data.last_four || null, data.branding_url || null).run()
+  
+  await logAudit(c, 'user_payment_methods', id, 'CREATE', null, { name: data.name, type: data.type })
   return c.json({ success: true, id })
 })
 

@@ -347,7 +347,7 @@ user.post('/providers/link', zValidator('json', z.object({
 user.get('/linked-accounts', async (c) => {
   const userId = c.get('userId')
   const { results } = await c.env.DB.prepare(`
-    SELECT la.*, sp.name as provider_name, sp.icon_url as provider_branding, pm.provider_name as payment_method_name 
+    SELECT la.*, sp.name as provider_name, sp.icon_url as provider_branding, pm.name as payment_method_name 
     FROM user_linked_accounts la 
     JOIN service_providers sp ON la.provider_id = sp.id 
     LEFT JOIN user_payment_methods pm ON la.payment_method_id = pm.id 

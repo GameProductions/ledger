@@ -161,14 +161,20 @@ export class AuthService {
 
     // Trigger Email Integration
     const emailService = new EmailService(this.env)
-    await emailService.sendPasswordResetEmail(user.email, token)
+    try {
+      await emailService.sendPasswordResetEmail(user.email, token)
+    } catch (e) {
+      console.error('[AuthService] Failed to send recovery email:', e)
+      // We still return the token so dev recovery works via console/DB
+    }
 
     return token
   }
 
   async resetPassword(token: string, newPassword: string) {
+    // Standardize comparison by using unix timestamps or reliable string formats
     const reset: any = await this.env.DB.prepare(
-      'SELECT * FROM password_resets WHERE token = ? AND is_used = 0 AND expires_at > CURRENT_TIMESTAMP'
+      'SELECT * FROM password_resets WHERE token = ? AND is_used = 0 AND expires_at > DATETIME("now")'
     ).bind(token).first()
 
     if (!reset) throw new HTTPException(400, { message: 'Invalid or expired reset token' })

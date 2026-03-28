@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ledger-v2.4.0';
+const CACHE_NAME = 'ledger-v3.13.4';
 const assetsToCache = [
   '/',
   '/index.html',

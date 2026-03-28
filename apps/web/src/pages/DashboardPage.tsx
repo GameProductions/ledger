@@ -27,7 +27,7 @@ import { SearchableSelect } from '../components/ui/SearchableSelect'
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user } = useAuth()
-  const { data: accounts } = useApi('/api/financials/accounts')
+  const { data: _accounts } = useApi('/api/financials/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/financials/transactions')
   const { data: templates } = useApi('/api/planning/templates')
   const [timeframe, setTimeframe] = useState('paycheck')

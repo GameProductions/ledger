@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
-import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink } from 'lucide-react';
+import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink, ShieldAlert } from 'lucide-react';
+import { useToast } from '../../context/ToastContext';
 
 const PCCProcessors: React.FC = () => {
   const [processors, setProcessors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const { showToast } = useToast();
+  
   const [newItem, setNewItem] = useState({
     name: '',
     website_url: '',
@@ -22,7 +26,7 @@ const PCCProcessors: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      setProcessors(data);
+      setProcessors(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch processors:', err);
     } finally {
@@ -34,23 +38,68 @@ const PCCProcessors: React.FC = () => {
     fetchProcessors();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/processors`, {
-      method: 'POST',
+    
+    const url = editingId 
+      ? `${apiUrl}/api/pcc/processors/${editingId}`
+      : `${apiUrl}/api/pcc/processors`;
+    
+    const method = editingId ? 'PATCH' : 'POST';
+
+    const res = await fetch(url, {
+      method,
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(newItem)
     });
+
     if (res.ok) {
+      showToast(editingId ? 'Processor configuration updated' : 'New processor registered', 'success');
       setShowAdd(false);
+      setEditingId(null);
       setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
       fetchProcessors();
+    } else {
+      const err = await res.json();
+      showToast(err.message || 'Transmission failed', 'error');
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/processors"><div className="animate-pulse">Accessing Processor Registry...</div></PCCPortal>;
+  const handleEdit = (processor: any) => {
+    setEditingId(processor.id);
+    setNewItem({
+      name: processor.name,
+      website_url: processor.website_url || '',
+      branding_url: processor.branding_url || '',
+      support_url: processor.support_url || '',
+      subscription_id_notes: processor.subscription_id_notes || ''
+    });
+    setShowAdd(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('EXTERMINATION PROTOCOL: Are you sure you want to purge this processor? This action is logged.')) return;
+    
+    const token = localStorage.getItem('ledger_token');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const res = await fetch(`${apiUrl}/api/pcc/processors/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      showToast('Processor purged from registry', 'success');
+      fetchProcessors();
+    } else {
+      const err = await res.json();
+      showToast(err.message || 'Purge failed', 'error');
+    }
+  };
+
+  if (loading) return <PCCPortal activePath="#/system-pcc/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Accessing Processor Registry...</div></PCCPortal>;
 
   return (
     <PCCPortal activePath="#/system-pcc/processors">
@@ -60,18 +109,29 @@ const PCCProcessors: React.FC = () => {
           <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - 3rd Party Infrastructure</p>
         </div>
         <button 
-          onClick={() => setShowAdd(!showAdd)}
-          className="px-6 py-3 bg-blue-500 text-black font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2"
+          onClick={() => {
+            if (showAdd) {
+                setEditingId(null);
+                setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
+            }
+            setShowAdd(!showAdd);
+          }}
+          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-blue-500 text-black'} font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
-          {showAdd ? 'Cancel' : <><Plus size={16} /> Register Processor</>}
+          {showAdd ? 'Abort Action' : <><Plus size={16} /> Register Processor</>}
         </button>
       </div>
 
       {showAdd && (
-        <div className="mb-12 p-8 rounded-3xl bg-white/5 border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500">
-          <h3 className="text-xl font-bold mb-6">Processor Configuration</h3>
-          <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+        <div className="mb-12 p-10 rounded-[2.5rem] bg-white/5 border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500 shadow-2xl">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+               <ShieldAlert size={20} />
+            </div>
+            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Modify Strategy' : 'Initialize Infrastructure'}</h3>
+          </div>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Processor Name</label>
                 <input 
@@ -79,7 +139,7 @@ const PCCProcessors: React.FC = () => {
                   value={newItem.name} 
                   onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                   placeholder="e.g. Stripe, PayPal, Recurly"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                   required
                 />
               </div>
@@ -90,7 +150,7 @@ const PCCProcessors: React.FC = () => {
                   value={newItem.website_url} 
                   onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
                   placeholder="https://..."
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
               <div>
@@ -100,11 +160,11 @@ const PCCProcessors: React.FC = () => {
                   value={newItem.branding_url} 
                   onChange={(e) => setNewItem({ ...newItem, branding_url: e.target.value })}
                   placeholder="https://..."
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Site URL</label>
                 <input 
@@ -112,7 +172,7 @@ const PCCProcessors: React.FC = () => {
                   value={newItem.support_url} 
                   onChange={(e) => setNewItem({ ...newItem, support_url: e.target.value })}
                   placeholder="https://support.stripe.com"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
               <div>
@@ -122,10 +182,12 @@ const PCCProcessors: React.FC = () => {
                   onChange={(e) => setNewItem({ ...newItem, subscription_id_notes: e.target.value })}
                   placeholder="e.g. Look for keys starting with 'sub_' in the metadata."
                   rows={3}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all mt-2">Initialize Processor</button>
+              <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
+                {editingId ? 'Push Updates to Grid' : 'Initialize Processor'}
+              </button>
             </div>
           </form>
         </div>
@@ -133,54 +195,64 @@ const PCCProcessors: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {processors.map(processor => (
-          <div key={processor.id} className="p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all group relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all">
-                <button className="p-2 text-slate-500 hover:text-white"><Edit2 size={16} /></button>
-                <button className="p-2 text-slate-500 hover:text-red-500"><Trash2 size={16} /></button>
+          <div key={processor.id} className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all group relative overflow-visible shadow-lg">
+            <div className="absolute top-0 right-0 p-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-300">
+                <button 
+                  onClick={() => handleEdit(processor)}
+                  className="w-10 h-10 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-blue-500/20 transition-all shadow-xl"
+                >
+                    <Edit2 size={16} />
+                </button>
+                <button 
+                  onClick={() => handleDelete(processor.id)}
+                  className="w-10 h-10 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/20 transition-all shadow-xl"
+                >
+                    <Trash2 size={16} />
+                </button>
             </div>
             
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-black/40 flex items-center justify-center overflow-hidden border border-white/5">
+            <div className="flex items-center gap-5 mb-8">
+              <div className="w-20 h-20 rounded-3xl bg-black/40 flex items-center justify-center overflow-hidden border border-white/5 p-4 shadow-inner">
                 {processor.branding_url ? (
-                  <img src={processor.branding_url} alt="" className="w-10 h-10 object-contain" />
+                  <img src={processor.branding_url} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <CreditCard size={32} className="text-blue-500/40" />
                 )}
               </div>
               <div>
-                <h3 className="font-black text-lg tracking-tight">{processor.name}</h3>
-                <div className="flex gap-2 mt-1">
+                <h3 className="font-black text-xl tracking-tighter italic uppercase">{processor.name}</h3>
+                <div className="flex gap-3 mt-2">
                   {processor.website_url && (
-                    <a href={processor.website_url} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-blue-400"><Globe size={14} /></a>
+                    <a href={processor.website_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-blue-400 border border-white/5 transition-all"><Globe size={14} /></a>
                   )}
                   {processor.support_url && (
-                    <a href={processor.support_url} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-emerald-400"><LifeBuoy size={14} /></a>
+                    <a href={processor.support_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-emerald-400 border border-white/5 transition-all"><LifeBuoy size={14} /></a>
                   )}
                 </div>
               </div>
             </div>
 
             {processor.subscription_id_notes && (
-              <div className="mt-4 p-4 rounded-xl bg-black/20 border border-white/5">
-                <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest mb-2">ID IDENTIFICATION LOGIC</p>
-                <p className="text-[10px] text-slate-400 italic line-clamp-2">{processor.subscription_id_notes}</p>
+              <div className="mt-4 p-5 rounded-2xl bg-black/20 border border-white/5 shadow-inner">
+                <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest mb-2 opacity-60 italic">Identification Logic</p>
+                <p className="text-[10px] text-slate-400 leading-relaxed italic">{processor.subscription_id_notes}</p>
               </div>
             )}
             
-            <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-4">
+            <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6">
                <div>
-                  <p className="text-[8px] font-black text-slate-600 uppercase">Status</p>
-                  <p className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                  <p className="text-[8px] font-black text-slate-600 uppercase mb-1">Grid Status</p>
+                  <p className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Active Infrastructure
                   </p>
                </div>
-               <button className="text-[10px] font-black text-slate-500 uppercase hover:text-white flex items-center gap-1">Manage Connections <ExternalLink size={10} /></button>
+               <button className="text-[10px] font-black text-slate-500 uppercase hover:text-white flex items-center gap-1.5 transition-all hover:translate-x-1">Coverage <ExternalLink size={10} /></button>
             </div>
           </div>
         ))}
 
         {processors.length === 0 && (
-          <div className="col-span-full py-20 text-center rounded-[3rem] border border-dashed border-white/10 bg-white/2 overflow-hidden">
+          <div className="col-span-full py-32 text-center rounded-[3rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Infrastructure Logged</h4>
             <p className="text-xs text-slate-600 mt-2">Initialize your first 3rd party billing processor to begin coverage mapping.</p>
           </div>

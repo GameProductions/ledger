@@ -73,6 +73,9 @@ auth.post('/totp/verify', zValidator('json', z.object({ code: z.string() })), as
 
 auth.get('/login/discord', async (c) => {
   const clientId = c.env.DISCORD_CLIENT_ID
+  if (!clientId || clientId.includes('REPLACE_WITH')) {
+    throw new HTTPException(500, { message: 'Discord Authentication System Not Configured (Missing Client ID)' })
+  }
   const state = crypto.randomUUID()
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -134,6 +137,9 @@ auth.get('/callback/discord', async (c) => {
 
 auth.get('/login/google', async (c) => {
   const clientId = c.env.GOOGLE_CLIENT_ID
+  if (!clientId || clientId.includes('REPLACE_WITH')) {
+    throw new HTTPException(500, { message: 'Google Identity System Not Configured (Missing Client ID)' })
+  }
   const state = crypto.randomUUID()
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -193,6 +199,9 @@ auth.get('/callback/google', async (c) => {
 // --- DROPBOX ---
 auth.get('/login/dropbox', async (c) => {
   const clientId = c.env.DROPBOX_CLIENT_ID
+  if (!clientId || clientId.includes('REPLACE_WITH')) {
+    throw new HTTPException(500, { message: 'Dropbox Storage Integration Not Configured (Missing Client ID)' })
+  }
   const state = crypto.randomUUID()
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -253,6 +262,9 @@ auth.get('/callback/dropbox', async (c) => {
 // --- ONEDRIVE ---
 auth.get('/login/onedrive', async (c) => {
   const clientId = c.env.ONEDRIVE_CLIENT_ID
+  if (!clientId || clientId.includes('REPLACE_WITH')) {
+    throw new HTTPException(500, { message: 'OneDrive Cloud Storage Not Configured (Missing Client ID)' })
+  }
   const state = crypto.randomUUID()
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',

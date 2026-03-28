@@ -16,6 +16,13 @@ export type Bindings = {
   VAULT: DurableObjectNamespace
   RATE_LIMITER: DurableObjectNamespace
   DISCORD_CLIENT_ID: string
+  DISCORD_CLIENT_SECRET: string
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
+  DROPBOX_CLIENT_ID: string
+  DROPBOX_CLIENT_SECRET: string
+  ONEDRIVE_CLIENT_ID: string
+  ONEDRIVE_CLIENT_SECRET: string
 }
 
 export type Variables = {

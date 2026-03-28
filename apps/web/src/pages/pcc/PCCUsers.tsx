@@ -499,7 +499,6 @@ const PCCUsers: React.FC = () => {
             ))}
           </tbody>
         </table>
-      </div>
 
       {/* Detail Modal Overlay */}
       <AnimatePresence>

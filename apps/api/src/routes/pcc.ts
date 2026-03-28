@@ -68,11 +68,19 @@ pcc.get('/registry', async (c) => {
 pcc.post('/registry', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
+  const metadata = data.metadata_json || {}
   await c.env.DB.prepare(
     'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.item_type, data.name, data.logo_url, data.website_url, JSON.stringify(data.metadata_json)).run()
+  ).bind(id, data.item_type, data.name, data.logo_url || null, data.website_url || null, JSON.stringify(metadata)).run()
   await logAudit(c, 'system_registry', id, 'CREATE_REGISTRY_ITEM', {}, data)
   return c.json({ success: true, id })
+})
+
+pcc.delete('/registry/:id', async (c) => {
+  const id = c.req.param('id')
+  await c.env.DB.prepare('DELETE FROM system_registry WHERE id = ?').bind(id).run()
+  await logAudit(c, 'system_registry', id, 'DELETE_REGISTRY_ITEM')
+  return c.json({ success: true })
 })
 
 // User Management
@@ -146,6 +154,18 @@ pcc.patch('/processors/:id', zValidator('json', BillingProcessorSchema.partial()
   return c.json({ success: true })
 })
 
+pcc.delete('/processors/:id', async (c) => {
+  const id = c.req.param('id')
+  // Check for linked providers
+  const linked = await c.env.DB.prepare('SELECT count(*) as count FROM service_providers WHERE billing_processor_id = ?').bind(id).first()
+  if ((linked as any).count > 0) {
+    throw new HTTPException(400, { message: 'Cannot delete processor with active service provider links' })
+  }
+  await c.env.DB.prepare('DELETE FROM billing_processors WHERE id = ?').bind(id).run()
+  await logAudit(c, 'billing_processors', id, 'admin_delete')
+  return c.json({ success: true })
+})
+
 // Providers
 pcc.get('/providers', async (c) => {
   const { results } = await c.env.DB.prepare(`
@@ -183,6 +203,13 @@ pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async 
   } catch (e) {
     throw new HTTPException(500, { message: 'Update failed' })
   }
+})
+
+pcc.delete('/providers/:id', async (c) => {
+  const id = c.req.param('id')
+  await c.env.DB.prepare('DELETE FROM service_providers WHERE id = ?').bind(id).run()
+  await logAudit(c, 'service_providers', id, 'admin_delete')
+  return c.json({ success: true })
 })
 
 // Theme Broadcast (Moved to index.ts for /api/theme/broadcast access)

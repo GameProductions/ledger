@@ -1,67 +1,127 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
-
+import { useToast } from '../../context/ToastContext';
+import { Plus, Trash2, Zap, Building2, Search, ShieldAlert, ExternalLink } from 'lucide-react';
 
 const PCCRegistry: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newItem, setNewItem] = useState({ item_type: 'biller', name: '', logo_url: '', website_url: '' });
+  const [showAdd, setShowAdd] = useState(false);
+  const { showToast } = useToast();
+  
+  const [newItem, setNewItem] = useState({ 
+    item_type: 'processor', 
+    name: '', 
+    logo_url: '', 
+    website_url: '',
+    metadata_json: {} 
+  });
 
-  useEffect(() => {
-    const fetchRegistry = async () => {
-      try {
-        const token = localStorage.getItem('ledger_token');
-        const apiUrl = import.meta.env.VITE_API_URL;
-        const res = await fetch(`${apiUrl}/api/pcc/registry`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setItems(data);
-      } catch (err) {
-        console.error('Failed to fetch registry:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRegistry();
-  }, []);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/registry`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(newItem)
-    });
-    if (res.ok) {
-      const { id } = await res.json();
-      setItems([{ ...newItem, id, created_at: new Date().toISOString() }, ...items]);
-      setNewItem({ item_type: 'biller', name: '', logo_url: '', website_url: '' });
+  const fetchItems = async () => {
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/registry`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to fetch registry:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/registry"><div className="animate-pulse">Loading Universal Registry...</div></PCCPortal>;
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('ledger_token');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    
+    // Ensure metadata_json is a valid object if empty
+    const submissionData = {
+      ...newItem,
+      metadata_json: newItem.metadata_json || {}
+    };
+
+    const res = await fetch(`${apiUrl}/api/pcc/registry`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(submissionData)
+    });
+    
+    if (res.ok) {
+      showToast('Registry Item Broadcast Successful', 'success');
+      setShowAdd(false);
+      setNewItem({ item_type: 'processor', name: '', website_url: '', logo_url: '', metadata_json: {} });
+      fetchItems();
+    } else {
+      const err = await res.json();
+      showToast(err.message || 'Transmission Failed', 'error');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('REGISTRY PURGE: Are you sure you want to remove this item from the universal registry?')) return;
+    
+    const token = localStorage.getItem('ledger_token');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const res = await fetch(`${apiUrl}/api/pcc/registry/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (res.ok) {
+      showToast('Item Purged from Registry', 'success');
+      fetchItems();
+    } else {
+      showToast('Purge Failed', 'error');
+    }
+  };
+
+  if (loading) return <PCCPortal activePath="#/system-pcc/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Syncing Universal Registry...</div></PCCPortal>;
 
   return (
     <PCCPortal activePath="#/system-pcc/registry">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Creation Form */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-32 p-8 rounded-3xl bg-white/5 border border-white/5">
-            <h3 className="text-xl font-bold mb-6">Register New Utility</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
+      <div className="flex items-center justify-between mb-12">
+        <div>
+          <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-primary/50 underline-offset-8">Universal Registry</h2>
+          <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Platform Source of Truth</p>
+        </div>
+        <button 
+          onClick={() => setShowAdd(!showAdd)}
+          className="px-6 py-3 bg-white text-black font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2"
+        >
+          {showAdd ? 'Abort Action' : <><Plus size={16} /> Add Global Item</>}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="mb-12 p-10 rounded-[2.5rem] bg-white/5 border border-white/5 animate-in fade-in slide-in-from-top-4 duration-500 shadow-2xl">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+               <ShieldAlert size={20} />
+            </div>
+            <h3 className="text-xl font-black italic uppercase tracking-tight">Initialize Registry Item</h3>
+          </div>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Item Type</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Item Category</label>
                 <SearchableSelect 
-                  options={[
-                    { value: 'biller', label: 'Biller / Service' },
-                    { value: 'category', label: 'Global Category' }
-                  ]}
-                  value={newItem.item_type}
-                  onChange={(val) => setNewItem({ ...newItem, item_type: val })}
+                   options={[
+                     { value: 'processor', label: 'Billing Processor' },
+                     { value: 'provider', label: 'Service Provider' },
+                     { value: 'merchant', label: 'Merchant / Entity' }
+                   ]}
+                   value={newItem.item_type}
+                   onChange={(val) => setNewItem({ ...newItem, item_type: val as any })}
+                   placeholder="Select Type..."
                 />
               </div>
               <div>
@@ -70,51 +130,70 @@ const PCCRegistry: React.FC = () => {
                   type="text" 
                   value={newItem.name} 
                   onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  placeholder="e.g. Netflix"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm"
+                  placeholder="e.g. Netflix, Stripe, etc."
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
                   required
                 />
               </div>
+            </div>
+            <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo URL</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Canonical Website (Optional)</label>
                 <input 
-                  type="text" 
+                  type="url" 
+                  value={newItem.website_url} 
+                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo Asset URL</label>
+                <input 
+                  type="url" 
                   value={newItem.logo_url} 
                   onChange={(e) => setNewItem({ ...newItem, logo_url: e.target.value })}
                   placeholder="https://..."
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-3 bg-emerald-500 text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all mt-4">Add to Registry</button>
-            </form>
-          </div>
-        </div>
-
-        {/* Registry List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Universal Registry</h2>
-            <div className="flex gap-2">
-               <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none flex items-center">{items.filter(i => i.item_type === 'biller').length} Billers</span>
-               <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none flex items-center">{items.filter(i => i.item_type === 'category').length} Categories</span>
+              <button type="submit" className="w-full py-4 bg-primary text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">Broadcast to Registry</button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {items.map(item => (
-              <div key={item.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 group hover:border-emerald-500/20 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center overflow-hidden border border-white/5">
-                  {item.logo_url ? <img src={item.logo_url} alt="" className="w-8 h-8 object-contain" /> : <span className="text-lg">📦</span>}
-                </div>
-                <div>
-                  <p className="font-bold text-sm tracking-tight">{item.name}</p>
-                  <p className="text-[10px] uppercase font-black text-emerald-500/60 tracking-widest">{item.item_type}</p>
-                </div>
-                <button className="ml-auto opacity-0 group-hover:opacity-100 p-2 text-gray-500 hover:text-red-500 transition-all">✕</button>
-              </div>
-            ))}
-          </div>
+          </form>
         </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {items.map(item => (
+          <div key={item.id} className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 flex items-center justify-between group hover:border-primary/20 transition-all shadow-lg bg-gradient-to-br from-white/2 to-transparent">
+            <div className="flex items-center gap-5">
+               <div className="w-16 h-16 rounded-2xl bg-black/40 flex items-center justify-center border border-white/5 text-primary shadow-inner">
+                  {item.item_type === 'processor' ? <Zap size={24} /> : item.item_type === 'provider' ? <Building2 size={24} /> : <Search size={24} />}
+               </div>
+               <div>
+                  <h3 className="font-black text-xl tracking-tighter italic uppercase">{item.name}</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                     <span className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em]">{item.item_type}</span>
+                     <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                     <span className="text-[9px] font-black uppercase text-emerald-500/60 tracking-widest italic flex items-center gap-1.5 opacity-60">Verified <ExternalLink size={8} /></span>
+                  </div>
+               </div>
+            </div>
+            <button 
+              onClick={() => handleDelete(item.id)}
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-600 hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 shadow-xl"
+            >
+               <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+        
+        {items.length === 0 && (
+          <div className="col-span-full py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
+            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">Registry Empty</h4>
+            <p className="text-xs text-slate-600 mt-2">Initialize global entities to enable cross-platform identity mapping.</p>
+          </div>
+        )}
       </div>
     </PCCPortal>
   );

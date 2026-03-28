@@ -130,7 +130,6 @@ export const PrivacySettings: React.FC = () => {
                </div>
             </div>
           </Card>
-        </div>
       )}
     </div>
   );

@@ -185,13 +185,8 @@ pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async 
   }
 })
 
-// Theme Broadcast
-pcc.post('/theme/broadcast', async (c) => {
-  const { themeId } = await c.req.json()
-  await c.env.DB.prepare('INSERT OR REPLACE INTO system_config (id, key, value_json, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
-    .bind(crypto.randomUUID(), 'broadcast_theme_id', JSON.stringify(themeId)).run()
-  return c.json({ success: true })
-})
+// Theme Broadcast (Moved to index.ts for /api/theme/broadcast access)
+
 
 // Walkthroughs
 pcc.get('/walkthroughs', async (c) => {

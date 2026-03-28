@@ -176,8 +176,8 @@ const LoginPage: React.FC = () => {
           <div className="text-center space-y-6">
             <img src={theme.logoUrl} alt="LEDGER" className="h-20 mx-auto opacity-100 hover:scale-110 transition-transform duration-700 pointer-events-none" />
             <div className="space-y-1">
-              <h2 className="text-3xl font-black tracking-tighter text-center uppercase italic underline decoration-primary/40 underline-offset-8">Central Access Hub</h2>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary opacity-40">Biometric Identity Suite v2.4.0</p>
+              <h2 className="text-3xl font-black tracking-tighter text-center uppercase italic underline decoration-primary/40 underline-offset-8">LEDGER</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary opacity-40">Live Evaluation of Daily Gains & Expense Records</p>
             </div>
           </div>
 
@@ -190,7 +190,7 @@ const LoginPage: React.FC = () => {
           >
             <div className="space-y-6">
               <Input 
-                label="Electronic Identity"
+                label="User ID"
                 type="text" 
                 placeholder="Username or email" 
                 value={username}
@@ -201,7 +201,7 @@ const LoginPage: React.FC = () => {
               />
                 <div className="relative">
                   <Input 
-                    label="Security Credential"
+                    label="Password"
                     type={showPass ? "text" : "password"} 
                     placeholder="••••••••" 
                     value={password}

@@ -203,24 +203,12 @@ interop.get('/reports/:id', async (c) => {
 })
 
 // Public Config
-interop.get('/config', async (c) => {
-  try {
-    const { results: configs } = await c.env.DB.prepare('SELECT key, value_json FROM system_configs').all()
-    return c.json(configs.reduce((acc: any, curr) => ({ ...acc, [curr.key as string]: JSON.parse(curr.value_json as string) }), {}))
-  } catch (e) {
-    return c.json({ error: 'Failed to load public config' }, 500)
-  }
-})
+// Public Config (Moved to index.ts for /api/config access)
 
-interop.get('/theme/broadcast', async (c) => {
-  try {
-    const config = await c.env.DB.prepare('SELECT value_json FROM system_configs WHERE key = "broadcast_theme_id"').first()
-    if (!config) return c.json({ themeId: null })
-    return c.json({ themeId: JSON.parse((config as any).value_json) })
-  } catch (e) {
-    return c.json({ themeId: null })
-  }
-})
+
+// Theme Broadcast (Redundant, kept internal or removed if root-level is preferred)
+// Moved to index.ts for /api/theme/broadcast access
+
 
 // Developer: Personal Access Tokens (PATs)
 interop.post('/developer/tokens', zValidator('json', z.object({ name: z.string().min(1).max(50) })), async (c) => {

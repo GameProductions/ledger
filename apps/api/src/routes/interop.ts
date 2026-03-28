@@ -97,12 +97,17 @@ interop.get('/projection', async (c) => {
     return d.toISOString().split('T')[0]
   })
   
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const { results: income } = await c.env.DB.prepare('SELECT SUM(amount_cents) as total FROM transactions WHERE household_id = ? AND amount_cents > 0 AND transaction_date >= ?').bind(householdId, thirtyDaysAgo).all()
+  const { results: expense } = await c.env.DB.prepare('SELECT SUM(ABS(amount_cents)) as total FROM transactions WHERE household_id = ? AND amount_cents < 0 AND transaction_date >= ?').bind(householdId, thirtyDaysAgo).all()
+  const monthlySurplus = ((income as any)[0].total || 0) - ((expense as any)[0].total || 0)
+
   const { results: accs } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
-  let currentBalance = accs.reduce((sum, a: any) => sum + a.balance_cents, 0)
+  const startingBalance = (accs as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
   
-  const projection = dates.map(date => {
-    currentBalance += (Math.random() - 0.45) * 50000 // Simple random walk for demo
-    return { date, balanceCents: Math.round(currentBalance) }
+  const projection = dates.map((date, i) => {
+    const projectedBalance = startingBalance + (monthlySurplus * (i + 1))
+    return { date, balanceCents: Math.round(projectedBalance) }
   })
 
   return c.json(projection)

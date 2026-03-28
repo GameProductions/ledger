@@ -8,7 +8,8 @@ import {
   CreateHouseholdSchema, 
   UpdateHouseholdSchema, 
   UserPaymentMethodSchema, 
-  UserLinkedAccountSchema 
+  UserLinkedAccountSchema,
+  JoinHouseholdSchema
 } from '../schemas'
 import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'

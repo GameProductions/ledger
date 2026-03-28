@@ -6,6 +6,7 @@ import { MainLayout } from '../components/layout/MainLayout'
 import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 import { PasswordChecklist } from '../components/PasswordChecklist'
 
 const SettingsPage: React.FC = () => {
@@ -291,7 +292,7 @@ const SettingsPage: React.FC = () => {
                         label="New Secure Password"
                         type="password" 
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
                         autoComplete="new-password"
                         showReveal
                         className="bg-white/5 border-white/5 font-mono text-sm"

@@ -43,8 +43,8 @@ const PaymentCentralPage: React.FC = () => {
       const [methodsRes, accountsRes, providersRes, subsRes] = await Promise.all([
         fetch(`${apiUrl}/api/user/payment-methods`, { headers }),
         fetch(`${apiUrl}/api/user/linked-accounts`, { headers }),
-        fetch(`${apiUrl}/api/service-providers`, { headers }),
-        fetch(`${apiUrl}/api/subscriptions`, { headers })
+        fetch(`${apiUrl}/api/user/service-providers`, { headers }),
+        fetch(`${apiUrl}/api/planning/subscriptions`, { headers })
       ]);
       
       setPaymentMethods(await methodsRes.json());

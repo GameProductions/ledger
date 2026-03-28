@@ -17,6 +17,12 @@ const steps = [
     target: '#user-profile-button'
   },
   {
+    id: 'dashboard',
+    title: 'Consolidated Tabs',
+    content: 'Navigate between Overview, Activity, Planning, and Insights with our new consolidated tab system.',
+    target: '#dashboard-tabs'
+  },
+  {
     id: 'vault',
     title: 'Initialize Vault',
     content: 'Secure your PII with end-to-end encryption.',

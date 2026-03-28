@@ -28,7 +28,7 @@ const PCCConfig: React.FC = () => {
 
   const handleUpdateConfig = async (id: string, value: string) => {
     const token = localStorage.getItem('ledger_token');
-    await fetch(`/ledger/api/pcc/config/${id}`, {
+    await fetch(`/api/pcc/config/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ config_value: value })
@@ -38,7 +38,7 @@ const PCCConfig: React.FC = () => {
 
   const handleToggleFeature = async (id: string, enabled: boolean) => {
     const token = localStorage.getItem('ledger_token');
-    await fetch(`/ledger/api/pcc/features/${id}`, {
+    await fetch(`/api/pcc/features/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled_globally: enabled ? 1 : 0 })

@@ -5,7 +5,7 @@ const PrivacyPolicy: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Privacy Policy</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: March 31, 2026</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: March 28, 2026</p>
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Introduction</h3>
@@ -47,7 +47,7 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <footer style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-        <p>Updated as of March 31, 2026 (v2.4.0). This document is updated whenever significant changes are made to the LEDGER data processing or identity engines.</p>
+        <p>Updated as of March 28, 2026 (v3.11.0). This document is updated whenever significant changes are made to the LEDGER data processing or identity engines.</p>
       </footer>
     </div>
   )

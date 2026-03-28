@@ -17,7 +17,7 @@ export const SupportPortal: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/support/issues`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/support/issues`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

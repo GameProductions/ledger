@@ -13,7 +13,7 @@ const BackupHub: React.FC = () => {
   const handleCloudBackup = async (provider: string) => {
     setLoading(provider);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/backup/cloud/${provider}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/cloud/${provider}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -29,7 +29,7 @@ const BackupHub: React.FC = () => {
   const downloadLocalBackup = async () => {
     setLoading('local');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/backup/export`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/export`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -54,7 +54,7 @@ const BackupHub: React.FC = () => {
       const text = await file.text();
       const backup = JSON.parse(text);
       
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/backup/restore`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/restore`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(backup)

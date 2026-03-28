@@ -123,8 +123,7 @@ ledger.route('/api/pcc', pccRoutes)
 ledger.route('/discord', discordRoutes)
 
 
-// Mount ledger app on root as well as /ledger for compatibility
-app.route('/ledger', ledger)
+// 6. Global Error Handler
 app.route('/', ledger) // Evolutionary Leap: Supports root domain directly
 
 // 6. Global Error Handler

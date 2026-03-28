@@ -113,11 +113,11 @@ const LoginPage: React.FC = () => {
     setLoading(true)
     try {
       const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-      const optRes = await fetch(`${apiUrl}/ledger/auth/passkeys/login-options`, { method: 'POST' })
+      const optRes = await fetch(`${apiUrl}/auth/passkeys/login-options`, { method: 'POST' })
       const options = await optRes.json()
       
       // Mock Passkey Assertion
-      const verifyRes = await fetch(`${apiUrl}/ledger/auth/passkeys/login-verify`, {
+      const verifyRes = await fetch(`${apiUrl}/auth/passkeys/login-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assertion: { id: 'mock-id' }, challenge: options.challenge })
@@ -137,7 +137,7 @@ const LoginPage: React.FC = () => {
   const handleRequestReset = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-      await fetch(`${apiUrl}/ledger/auth/password/reset-request`, {
+      await fetch(`${apiUrl}/auth/password/reset-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: recoveryEmail })
@@ -152,7 +152,7 @@ const LoginPage: React.FC = () => {
   const handleResetPassword = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-      const res = await fetch(`${apiUrl}/ledger/auth/password/reset`, {
+      const res = await fetch(`${apiUrl}/auth/password/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: resetToken, newPassword })
@@ -260,8 +260,8 @@ const LoginPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => {
-                const baseApi = import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '');
-                window.location.href = `${baseApi}/ledger/auth/login/google`;
+                const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+                window.location.href = `${baseApi}/auth/login/google`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs"
             >
@@ -270,8 +270,8 @@ const LoginPage: React.FC = () => {
             </button>
             <button 
               onClick={() => {
-                const baseApi = import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '');
-                window.location.href = `${baseApi}/ledger/auth/login/discord`;
+                const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+                window.location.href = `${baseApi}/auth/login/discord`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs"
             >

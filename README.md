@@ -1,5 +1,5 @@
-# LEDGER v3.0.0
-> **Sovereign Financial Infrastructure** | The Evolutionary Leap
+# LEDGER v3.11.0
+> **Sovereign Financial Infrastructure** | Total Modernization
 
 LEDGER is a production-grade personal and household finance platform built for speed, transparency, and elite security.
 
@@ -12,8 +12,8 @@ LEDGER is a production-grade personal and household finance platform built for s
 - **Forensic Audit Logging**: Detailed tracking of all sensitive actions.
 
 ### 🧠 Financial Intelligence
-- **Safety Number™**: Real-time spending headroom based on upcoming bills and income.
-- **Multi-Select Calculation**: Instant sum totals via a premium floating calculation bar.
+- **Tabbed Dashboard Strategy**: Consolidated workspace for Overview, Activity, Planning, and Insights.
+- **Modular API Architecture**: Cleanly separated domain-driven logic for enhanced scalability and security.
 - **Bill Forecasting**: Rolling 30-day and "Until Payday" projections.
 - **Universal Currency Engine**: Per-user currency preferences (USD, EUR, GBP) and platform-wide defaults.
 - **Provider Visibility**: Granular access control (Private, Household, Public) for service providers.

@@ -11,6 +11,12 @@ export const GuidesPage: React.FC = () => {
       topics: ['First Login', 'Households', 'Syncing your first bank']
     },
     {
+      title: 'Tabbed Dashboard Strategy',
+      duration: '3 min read',
+      icon: <ChevronRight size={20} className="text-primary" />,
+      topics: ['Overview vs Activity', 'Planning Workspace', 'Insights & Health']
+    },
+    {
       title: 'Biometric Identity & Passkeys',
       duration: '6 min read',
       icon: <Fingerprint size={20} className="text-primary" />,

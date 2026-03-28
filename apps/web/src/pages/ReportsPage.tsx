@@ -39,9 +39,9 @@ const ReportsPage: React.FC = () => {
         const apiUrl = import.meta.env.VITE_API_URL;
 
         const [spendRes, nwRes, reportsRes] = await Promise.all([
-          fetch(`${apiUrl}/ledger/api/analytics/category-spending?timeframe=30d`, { headers }),
-          fetch(`${apiUrl}/ledger/api/analytics/net-worth`, { headers }),
-          fetch(`${apiUrl}/ledger/api/reports`, { headers })
+          fetch(`${apiUrl}/api/analytics/category-spending?timeframe=30d`, { headers }),
+          fetch(`${apiUrl}/api/analytics/net-worth`, { headers }),
+          fetch(`${apiUrl}/api/reports`, { headers })
         ]);
 
         if (spendRes.ok) setCategorySpending(await spendRes.json());
@@ -59,7 +59,7 @@ const ReportsPage: React.FC = () => {
 
   const shareSnapshot = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/snapshots`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/snapshots`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -86,7 +86,7 @@ const ReportsPage: React.FC = () => {
 
   const generateSnapshot = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/reports/snapshot`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reports/snapshot`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -97,7 +97,7 @@ const ReportsPage: React.FC = () => {
       if (res.ok) {
         showToast('Financial snapshot generated successfully', 'success');
         // Reload reports
-        const reportsRes = await fetch(`${import.meta.env.VITE_API_URL}/ledger/api/reports`, {
+        const reportsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/reports`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (reportsRes.ok) setReports(await reportsRes.json());
@@ -108,7 +108,7 @@ const ReportsPage: React.FC = () => {
   };
 
   const exportCSV = () => {
-    window.open(`${import.meta.env.VITE_API_URL}/ledger/api/transactions/export/csv?auth_token=${token}`, '_blank');
+    window.open(`${import.meta.env.VITE_API_URL}/api/transactions/export/csv?auth_token=${token}`, '_blank');
   };
 
   return (

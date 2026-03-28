@@ -85,7 +85,7 @@ const SettingsPage: React.FC = () => {
   const handleRegisterPasskey = async () => {
     try {
       // 1. Get Options
-      const optRes = await fetch(`${import.meta.env.VITE_API_URL}/ledger/auth/passkeys/register-options`, {
+      const optRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-options`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -96,7 +96,7 @@ const SettingsPage: React.FC = () => {
       const name = prompt('Name this Passkey (e.g. Work Laptop, iPhone):')
       if (!name) return
 
-      const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/ledger/auth/passkeys/register-verify`, {
+      const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
@@ -119,7 +119,7 @@ const SettingsPage: React.FC = () => {
   const handleRenamePasskey = async () => {
     if (!editingPasskey) return
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/auth/passkeys/${editingPasskey.id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/${editingPasskey.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name: editingPasskey.newName })
@@ -136,7 +136,7 @@ const SettingsPage: React.FC = () => {
   const handleRemovePasskey = async () => {
     if (!confirmDeletePasskey) return
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/auth/passkeys/${confirmDeletePasskey.id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/${confirmDeletePasskey.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -152,7 +152,7 @@ const SettingsPage: React.FC = () => {
   const handleUpdatePassword = async () => {
     setChangingPass(true)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/ledger/auth/password/change`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/password/change`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ newPassword })
@@ -238,7 +238,7 @@ const SettingsPage: React.FC = () => {
                 Identity & Security
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.0.0 Evolutionary Leap</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.0 Total Modernization</span>
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary opacity-40">Command Center Alpha</span>
               </div>
             </div>
@@ -380,8 +380,8 @@ const SettingsPage: React.FC = () => {
                               ) : (
                                 <button 
                                   onClick={() => {
-                                    const baseApi = import.meta.env.VITE_API_URL.replace(/\/ledger\/?$/, '').replace(/\/$/, '');
-                                    window.location.href = `${baseApi}/ledger/auth/login/${provider.id}`;
+                                    const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+                                    window.location.href = `${baseApi}/auth/login/${provider.id}`;
                                   }}
                                   className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-[10px] transition-all"
                                 >

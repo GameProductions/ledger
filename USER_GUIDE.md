@@ -1,4 +1,4 @@
-# LEDGER v3.0.0: User Guide & Documentation
+# LEDGER v3.11.0: User Guide & Documentation
 
 Welcome to LEDGER (Live Evaluation of Daily Gains & Expense Records). This guide will help you navigate the platform and maximize your financial intelligence.
 
@@ -14,6 +14,7 @@ LEDGER is designed for "Zero-Touch" rapid deployment.
 Upon your first login, you will be greeted by a **Guided Tour**. This tour is version-aware; as we release new features, you'll see a "What's New" notification to keep you up to speed.
 
 ### 2. The Dashboard
+- **Tabbed Consolidation**: Effortlessly switch between Overview, Activity, Planning, and Insights.
 - **Safety Number**: This is your most important metric. It represents how much you can safely spend today without missing any upcoming bills or falling below your budget targets.
 - **Onboarding Checklist**: Track your setup progress directly from the dashboard widget.
 - **Health Score**: A real-time assessment of your financial habits.

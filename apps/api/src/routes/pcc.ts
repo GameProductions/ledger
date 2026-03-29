@@ -321,7 +321,6 @@ pcc.get('/admin/users/:userId/details', async (c) => {
     social_links: socialLinks,
     history: history
   })
-  })
 })
 
 // Administrative Overrides (v3.14.2)

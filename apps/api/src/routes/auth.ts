@@ -81,7 +81,9 @@ auth.post('/totp/verify', zValidator('json', z.object({ code: z.string() })), as
 auth.get('/login/discord', async (c) => {
   const clientId = c.env.DISCORD_CLIENT_ID
   if (!clientId || clientId.includes('REPLACE_WITH')) {
-    throw new HTTPException(500, { message: 'Discord Authentication System Not Configured (Missing Client ID)' })
+    const errorMsg = `[OAUTH_ERROR] Discord Client ID is not configured. Please ensure DISCORD_CLIENT_ID is set in your Cloudflare Worker secrets (use 'wrangler secret put DISCORD_CLIENT_ID').`
+    console.error(errorMsg)
+    throw new HTTPException(500, { message: errorMsg })
   }
   const state = crypto.randomUUID()
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -145,7 +147,9 @@ auth.get('/callback/discord', async (c) => {
 auth.get('/login/google', async (c) => {
   const clientId = c.env.GOOGLE_CLIENT_ID
   if (!clientId || clientId.includes('REPLACE_WITH')) {
-    throw new HTTPException(500, { message: 'Google Identity System Not Configured (Missing Client ID)' })
+    const errorMsg = `[OAUTH_ERROR] Google Client ID is not configured. Please ensure GOOGLE_CLIENT_ID is set in your Cloudflare Worker secrets (use 'wrangler secret put GOOGLE_CLIENT_ID').`
+    console.error(errorMsg)
+    throw new HTTPException(500, { message: errorMsg })
   }
   const state = crypto.randomUUID()
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {

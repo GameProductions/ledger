@@ -377,10 +377,10 @@ const SettingsPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {[
-                      { id: 'google', name: 'Google Workspace', icon: 'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png', color: 'bg-white' },
-                      { id: 'discord', name: 'Discord Platform', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png', color: 'bg-[#5865F2]' },
-                      { id: 'dropbox', name: 'Dropbox Cloud', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111381.png', color: 'bg-white' },
-                      { id: 'onedrive', name: 'Microsoft 365', icon: 'https://cdn-icons-png.flaticon.com/512/888/888874.png', color: 'bg-white' }
+                      { id: 'google', name: 'Google', icon: 'https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png', color: 'bg-white' },
+                      { id: 'discord', name: 'Discord', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png', color: 'bg-[#5865F2]' },
+                      { id: 'dropbox', name: 'Dropbox', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111381.png', color: 'bg-white' },
+                      { id: 'onedrive', name: 'Onedrive', icon: 'https://cdn-icons-png.flaticon.com/512/873/873136.png', color: 'bg-white' }
                     ].map(provider => {
                       const linked = (identities || []).find((i: any) => i.provider === provider.id);
                       return (

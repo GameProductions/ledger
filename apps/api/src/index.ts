@@ -40,7 +40,29 @@ app.use('*', cors({
 }))
 app.use('*', secureHeaders())
 
-// 3. Rate Limiting (Persistent via Durable Objects)
+// 4. Self-Healing Middleware (v3.15.1)
+app.use('*', async (c, next) => {
+  if (c.req.path.startsWith('/api/')) {
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS system_config (
+          id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+          config_key TEXT NOT NULL UNIQUE,
+          config_value TEXT,
+          value_type TEXT DEFAULT 'string',
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `).run();
+    } catch (e) {
+      console.error('[Self-Heal] Failed to verify system_config table:', e);
+    }
+  }
+  await next();
+});
+
+// 5. Rate Limiting (Persistent via Durable Objects)
 app.use('/api/*', async (c, next) => {
   const ip = c.req.header('cf-connecting-ip') || 'anon'
   const id = c.env.RATE_LIMITER.idFromName(ip)
@@ -77,15 +99,15 @@ ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)
 ledger.get('/api/config', async (c) => {
-  const { results: configs } = await c.env.DB.prepare('SELECT key, value_json FROM system_configs').all()
-  return c.json(configs.reduce((acc: any, curr) => ({ ...acc, [curr.key as string]: JSON.parse(curr.value_json as string) }), {}))
+  const { results: configs } = await c.env.DB.prepare('SELECT config_key, config_value FROM system_config').all()
+  return c.json(configs.reduce((acc: any, curr) => ({ ...acc, [curr.config_key as string]: JSON.parse(curr.config_value as string) }), {}))
 })
 
 ledger.get('/api/theme/broadcast', async (c) => {
   try {
-    const config = await c.env.DB.prepare('SELECT value_json FROM system_configs WHERE key = "broadcast_theme_id"').first()
+    const config = await c.env.DB.prepare('SELECT config_value FROM system_config WHERE config_key = "broadcast_theme_id"').first()
     if (!config) return c.json({ themeId: null })
-    return c.json({ themeId: JSON.parse((config as any).value_json) })
+    return c.json({ themeId: JSON.parse((config as any).config_value) })
   } catch (e) {
     return c.json({ themeId: null })
   }
@@ -93,7 +115,7 @@ ledger.get('/api/theme/broadcast', async (c) => {
 
 ledger.post('/api/theme/broadcast', async (c) => {
   const { themeId } = await c.req.json()
-  await c.env.DB.prepare('INSERT OR REPLACE INTO system_configs (id, key, value_json, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
+  await c.env.DB.prepare('INSERT OR REPLACE INTO system_config (id, config_key, config_value, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
     .bind(crypto.randomUUID(), 'broadcast_theme_id', JSON.stringify(themeId)).run()
   return c.json({ success: true })
 })

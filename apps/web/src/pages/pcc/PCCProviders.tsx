@@ -113,10 +113,10 @@ const PCCProviders: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Syncing Provider Grid...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/providers">
+    <PCCPortal activePath="#/admin/providers">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>

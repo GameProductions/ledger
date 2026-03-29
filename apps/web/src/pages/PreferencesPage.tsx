@@ -40,7 +40,7 @@ const PreferencesPage: React.FC = () => {
   }
 
   const widgets = [
-    { id: 'healthScore', name: 'Financial Intelligence', desc: 'Health score and spending trends' },
+    { id: 'healthScore', name: 'Financial Insights', desc: 'Health score and spending trends' },
     { id: 'recentTransactions', name: 'Recent Transactions', desc: 'Live feed of your latest activity' },
     { id: 'calendar', name: 'Financial Calendar', desc: 'Monthly view of upcoming bills and income' },
     { id: 'savingsBuckets', name: 'Savings Buckets', desc: 'Progress towards your financial goals' },

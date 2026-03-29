@@ -18,7 +18,7 @@ const PrivacyPolicy: React.FC = () => {
         <br/><br/>
         Specifically, we collect and store:
         <ul>
-          <li><strong>Biometric Registry Metadata</strong>: When you enroll a Passkey, we store public keys and metadata (e.g., provider name, device type). <strong>Actual biometric data (fingerprints, FaceID) never leaves your device and is not accessible to LEDGER.</strong></li>
+          <li><strong>Passkeys Metadata</strong>: When you enroll a Passkey, we store public keys and metadata (e.g., provider name, device type). <strong>Actual biometric data (fingerprints, FaceID) never leaves your device and is not accessible to LEDGER.</strong></li>
           <li><strong>Identity Synchronization Assets</strong>: We synchronize display names and avatar URLs from linked Discord or Google accounts. You may choose to retain or revert these assets when unlinking an account.</li>
           <li><strong>Financial Profiles</strong>: Your accounts and budgets are stored in a sovereign edge database (Cloudflare D1).</li>
           <li><strong>Redundancy Backups</strong>: Encrypted backups are optionally pushed to your personal cloud storage (GDrive/Dropbox/OneDrive).</li>
@@ -32,13 +32,13 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h3>4. Security & Forensic Integrity</h3>
-        <p>We implement industry-standard AES-256 encryption, HSTS protocols, and WebAuthn (Passkey) standards. Authentication events and administrative overrides are recorded in a Forensic Audit Trail for accountability and security monitoring.</p>
+        <h3>4. Security & Security Integrity</h3>
+        <p>We implement industry-standard AES-256 encryption, HSTS protocols, and WebAuthn (Passkey) standards. Authentication events and administrative overrides are recorded in a Audit Log for accountability and security monitoring.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
         <h3>5. Your Rights & Sovereignty</h3>
-        <p>You maintain full sovereignty over your data. You have the right to access, export, or delete your financial and identity data at any time. Forensically purging an identity node removes all historical associations from our active directory.</p>
+        <p>You maintain full sovereignty over your data. You have the right to access, export, or delete your financial and identity data at any time. Deleting an user account removes all historical associations from our active directory.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

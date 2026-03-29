@@ -17,11 +17,11 @@ const UserMenu: React.FC<{
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
-    { icon: LayoutDashboard, label: 'Command Hub', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
-    { icon: Cpu, label: 'System Switchboard', hash: '#/system-pcc/config', color: 'text-blue-400' },
-    { icon: Database, label: 'Universal Registry', hash: '#/system-pcc/registry', color: 'text-orange-400' },
-    { icon: Users, label: 'User Management', hash: '#/system-pcc/users', color: 'text-primary' },
-    { icon: Activity, label: 'Audit Vault', hash: '#/system-pcc/audit', color: 'text-secondary' },
+    { icon: LayoutDashboard, label: 'Admin Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
+    { icon: Cpu, label: 'System Settings', hash: '#/admin/config', color: 'text-blue-400' },
+    { icon: Database, label: 'Data Management', hash: '#/admin/registry', color: 'text-orange-400' },
+    { icon: Users, label: 'User Management', hash: '#/admin/users', color: 'text-primary' },
+    { icon: Activity, label: 'Activity History', hash: '#/admin/audit', color: 'text-secondary' },
   ] : [
     { icon: Settings, label: 'User Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
@@ -44,7 +44,7 @@ const UserMenu: React.FC<{
         />
         <div className="flex flex-col items-start ml-1 leading-none">
           <span className="text-xs font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
-          {isPcc && <span className="text-[8px] text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>}
+          {isPcc && <span className="text-[8px] text-emerald-500 font-black uppercase tracking-tighter">ADMIN MODE</span>}
         </div>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -76,7 +76,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <LayoutDashboard size={18} className="text-emerald-500" />
-                    <span>Exit God Mode</span>
+                    <span>Exit Admin Mode</span>
                   </button>
                 ) : (
                   !isHome && (
@@ -105,12 +105,12 @@ const UserMenu: React.FC<{
 
                 {!isPcc && globalRole === 'super_admin' && (
                   <button 
-                    onClick={() => { window.location.hash = '#/system-pcc/dashboard'; setIsOpen(false); }}
+                    onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"
                     style={{ background: 'none', border: 'none' }}
                   >
                     <Shield size={18} className="text-emerald-500 group-hover:animate-pulse" />
-                    <span className="group-hover:text-emerald-400 transition-colors">Platform Command Center</span>
+                    <span className="group-hover:text-emerald-400 transition-colors">Admin Panel</span>
                   </button>
                 )}
 

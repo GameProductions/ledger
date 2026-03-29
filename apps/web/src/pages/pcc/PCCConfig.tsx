@@ -46,10 +46,10 @@ const PCCConfig: React.FC = () => {
     setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabled_globally: enabled ? 1 : 0 } : f));
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/config"><div className="animate-pulse">Accessing Switchboard...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/config">
+    <PCCPortal activePath="#/admin/config">
       <div className="space-y-12">
         {/* System Overrides */}
         <section>

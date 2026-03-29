@@ -38,8 +38,8 @@ const DataInteropPage: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-12">
         <header className="flex justify-between items-end">
           <div>
-            <h1 className="text-4xl font-black italic tracking-tighter text-white mb-2">Universal Interop</h1>
-            <p className="text-secondary font-medium">Bulk ingestion and professional export infrastructure.</p>
+            <h1 className="text-4xl font-black italic tracking-tighter text-white mb-2">Import & Export</h1>
+            <p className="text-secondary font-medium">Easily import or export your financial data.</p>
           </div>
         </header>
 
@@ -53,16 +53,16 @@ const DataInteropPage: React.FC = () => {
             <div className="flex items-center gap-4 mb-8">
               <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center text-2xl">📤</div>
               <div>
-                <h2 className="text-xl font-black uppercase tracking-widest text-blue-500">Format Engine</h2>
-                <p className="text-sm text-secondary">Export your data to professional formats.</p>
+                <h2 className="text-xl font-black uppercase tracking-widest text-blue-500">Export Options</h2>
+                <p className="text-sm text-secondary">Save your data in a format that works for you.</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
                {[
-                 { id: 'csv', name: 'Legacy CSV', desc: 'Standard spreadsheet interop', color: 'bg-emerald-500' },
-                 { id: 'xlsx', name: 'Premium XLSX', desc: 'Professional financial workbook', color: 'bg-blue-500' },
-                 { id: 'pdf', name: 'Audit PDF', desc: 'Print-ready system snapshot', color: 'bg-red-500' }
+                 { id: 'csv', name: 'Standard CSV', desc: 'Common format for all apps', color: 'bg-emerald-500' },
+                 { id: 'xlsx', name: 'Excel Workbook', desc: 'Best for detailed analysis', color: 'bg-blue-500' },
+                 { id: 'pdf', name: 'PDF Document', desc: 'Best for printing and records', color: 'bg-red-500' }
                ].map(format => (
                  <button 
                    key={format.id}

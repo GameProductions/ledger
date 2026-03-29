@@ -38,8 +38,14 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       'SELECT id, global_role, status FROM users WHERE id = ?'
     ).bind(payload.sub).first() as any
 
-    if (!user || user.status === 'suspended') {
-      throw new HTTPException(403, { message: 'Account Suspended or Not Found' })
+    if (!user) {
+      console.warn(`[Auth] User not found: ${payload.sub}`)
+      throw new HTTPException(401, { message: 'User Not Found' })
+    }
+    
+    if (user.status === 'suspended') {
+      console.warn(`[Auth] Account suspended: ${userId}`)
+      throw new HTTPException(403, { message: 'Account Suspended' })
     }
     
     const userId = user.id
@@ -66,6 +72,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       ).bind(userId, activeHouseholdId).first()
       
       if (!dbRes) {
+        console.warn(`[Auth] Access Denied: User ${userId} is not a member of Household ${activeHouseholdId}`)
         throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
     }

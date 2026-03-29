@@ -24,7 +24,7 @@ const HouseholdSwitcher: React.FC = () => {
           cursor: 'pointer'
         }}
       >
-        {households?.map((h: any) => (
+        {Array.isArray(households) && households.map((h: any) => (
           <option key={h.id} value={h.id} style={{ background: 'var(--bg-dark)' }}>
             {h.name} ({h.role})
           </option>

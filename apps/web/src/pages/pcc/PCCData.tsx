@@ -4,7 +4,7 @@ import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { useToast } from '../../context/ToastContext';
 import { Plus, Trash2, Zap, Building2, Search, ShieldAlert, ExternalLink } from 'lucide-react';
 
-const PCCRegistry: React.FC = () => {
+const PCCData: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -28,7 +28,7 @@ const PCCRegistry: React.FC = () => {
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to fetch registry:', err);
+      console.error('Failed to fetch system data:', err);
     } finally {
       setLoading(false);
     }
@@ -56,18 +56,18 @@ const PCCRegistry: React.FC = () => {
     });
     
     if (res.ok) {
-      showToast('Registry Item Broadcast Successful', 'success');
+      showToast('System item added successfully', 'success');
       setShowAdd(false);
       setNewItem({ item_type: 'processor', name: '', website_url: '', logo_url: '', metadata_json: {} });
       fetchItems();
     } else {
       const err = await res.json();
-      showToast(err.message || 'Transmission Failed', 'error');
+      showToast(err.message || 'Submission Failed', 'error');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('REGISTRY PURGE: Are you sure you want to remove this item from the universal registry?')) return;
+    if (!confirm('Are you sure you want to remove this item from the system?')) return;
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -77,27 +77,27 @@ const PCCRegistry: React.FC = () => {
     });
 
     if (res.ok) {
-      showToast('Item Purged from Registry', 'success');
+      showToast('Item removed from system', 'success');
       fetchItems();
     } else {
-      showToast('Purge Failed', 'error');
+      showToast('Delete Failed', 'error');
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Syncing Universal Registry...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/admin/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/registry">
+    <PCCPortal activePath="#/admin/registry">
       <div className="flex items-center justify-between mb-12">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-primary/50 underline-offset-8">Universal Registry</h2>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Platform Source of Truth</p>
+          <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-primary/50 underline-offset-8">System Data</h2>
+          <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Central data management</p>
         </div>
         <button 
           onClick={() => setShowAdd(!showAdd)}
           className="px-6 py-3 bg-white text-black font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2"
         >
-          {showAdd ? 'Abort Action' : <><Plus size={16} /> Add Global Item</>}
+          {showAdd ? 'Cancel' : <><Plus size={16} /> Add New Entry</>}
         </button>
       </div>
 
@@ -107,7 +107,7 @@ const PCCRegistry: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                <ShieldAlert size={20} />
             </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tight">Initialize Registry Item</h3>
+            <h3 className="text-xl font-black italic uppercase tracking-tight">Add System Item</h3>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
@@ -138,7 +138,7 @@ const PCCRegistry: React.FC = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Canonical Website (Optional)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Website (Optional)</label>
                 <input 
                   type="url" 
                   value={newItem.website_url} 
@@ -157,7 +157,7 @@ const PCCRegistry: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-primary text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">Broadcast to Registry</button>
+              <button type="submit" className="w-full py-4 bg-primary text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">Add Item to System</button>
             </div>
           </form>
         </div>
@@ -190,8 +190,8 @@ const PCCRegistry: React.FC = () => {
         
         {items.length === 0 && (
           <div className="col-span-full py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
-            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">Registry Empty</h4>
-            <p className="text-xs text-slate-600 mt-2">Initialize global entities to enable cross-platform identity mapping.</p>
+            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No entries found</h4>
+            <p className="text-xs text-slate-600 mt-2">Add system-wide entities to enable cross-platform mapping.</p>
           </div>
         )}
       </div>
@@ -199,4 +199,4 @@ const PCCRegistry: React.FC = () => {
   );
 };
 
-export default PCCRegistry;
+export default PCCData;

@@ -25,12 +25,13 @@ const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./components/TermsOfService'))
 const PCCDashboard = lazy(() => import('./pages/pcc/PCCDashboard'))
 const PCCConfig = lazy(() => import('./pages/pcc/PCCConfig'))
-const PCCRegistry = lazy(() => import('./pages/pcc/PCCRegistry'))
+const PCCData = lazy(() => import('./pages/pcc/PCCData'))
 const PCCUsers = lazy(() => import('./pages/pcc/PCCUsers'))
 const PCCSearch = lazy(() => import('./pages/pcc/PCCSearch'))
 const PCCAudit = lazy(() => import('./pages/pcc/PCCAudit'))
 const PCCProviders = lazy(() => import('./pages/pcc/PCCProviders'))
 const PCCProcessors = lazy(() => import('./pages/pcc/PCCProcessors'))
+const PCCGuide = lazy(() => import('./pages/pcc/PCCGuide'))
 const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 
@@ -58,17 +59,18 @@ const AppContent: React.FC = () => {
     // 2. Auth Guard
     if (!user) return <LoginPage />
 
-    // 3. System-Wide Portal (PCC) Super-Admin Only
-    if (path.startsWith('#/system-pcc')) {
+    // 3. Admin Panel - Super-Admin Only
+    if (path.startsWith('#/admin')) {
       if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
-      if (path === '#/system-pcc/dashboard') return <PCCDashboard />
-      if (path === '#/system-pcc/config') return <PCCConfig />
-      if (path === '#/system-pcc/registry') return <PCCRegistry />
-      if (path === '#/system-pcc/users') return <PCCUsers />
-      if (path === '#/system-pcc/search') return <PCCSearch />
-      if (path === '#/system-pcc/audit') return <PCCAudit />
-      if (path === '#/system-pcc/providers') return <PCCProviders />
-      if (path === '#/system-pcc/processors') return <PCCProcessors />
+      if (path === '#/admin/dashboard') return <PCCDashboard />
+      if (path === '#/admin/config') return <PCCConfig />
+      if (path === '#/admin/registry') return <PCCData />
+      if (path === '#/admin/users') return <PCCUsers />
+      if (path === '#/admin/search') return <PCCSearch />
+      if (path === '#/admin/audit') return <PCCAudit />
+      if (path === '#/admin/providers') return <PCCProviders />
+      if (path === '#/admin/processors') return <PCCProcessors />
+      if (path === '#/admin/guide') return <PCCGuide />
       return <PCCDashboard />
     }
 

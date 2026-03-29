@@ -21,7 +21,7 @@ const WhatIfLedger: React.FC = () => {
 
   return (
     <section className="card">
-      <h3>"What If" Sandbox</h3>
+      <h3>Savings Simulator</h3>
       <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
         Simulate changes to your recurring expenses to see potential savings.
       </p>
@@ -54,7 +54,7 @@ const WhatIfLedger: React.FC = () => {
           <span style={{ color: 'var(--primary)', fontWeight: '700' }}>+${(savings / 100).toFixed(2)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '800' }}>
-          <span>Projected Safety Number:</span>
+          <span>Estimated Balance:</span>
           <span style={{ background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             +${((124550 + savings) / 100).toFixed(2)}
           </span>

@@ -40,7 +40,7 @@ const PCCGuide: React.FC = () => {
   }, [token]);
 
   return (
-    <PCCPortal activePath="#/system-pcc/guide">
+    <PCCPortal activePath="#/admin/guide">
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -49,7 +49,7 @@ const PCCGuide: React.FC = () => {
               Forensic <span className="text-emerald-500">Codex</span>
             </h2>
             <div className="flex items-center gap-3">
-              <p className="text-sm text-slate-500 uppercase tracking-[0.3em] font-bold">Universal Operational Directives</p>
+              <p className="text-sm text-slate-500 uppercase tracking-[0.3em] font-bold">System Documentation</p>
               <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400 font-mono">v2.5.1_DYNAMIC</span>
             </div>
           </div>
@@ -57,8 +57,8 @@ const PCCGuide: React.FC = () => {
           <div className="flex items-center gap-4 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
              <Activity size={20} className="text-emerald-500" />
              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase text-slate-500">History Depth</span>
-                <span className="text-xs font-black text-white">{walkthroughs.length} Eras Recovered</span>
+                <span className="text-[10px] font-black uppercase text-slate-500">Documentation Count</span>
+                <span className="text-xs font-black text-white">{walkthroughs.length} Guides</span>
              </div>
           </div>
         </div>
@@ -69,7 +69,7 @@ const PCCGuide: React.FC = () => {
            <div className="lg:col-span-4 space-y-4">
               <div className="flex items-center gap-2 px-1 mb-6">
                  <List size={16} className="text-slate-500" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Milestone Timeline</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Table of Contents</span>
               </div>
               
               {loading ? (
@@ -129,14 +129,14 @@ const PCCGuide: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-xl font-black text-white uppercase italic">Awaiting Selection</h3>
-                    <p className="text-sm text-slate-500 max-w-xs">Select a historical era from the timeline to view its forensic implementation walkthrough.</p>
+                    <p className="text-sm text-slate-500 max-w-xs">Select a historical era from the timeline to view its guide walkthrough.</p>
                   </div>
                 </div>
               )}
            </div>
         </div>
 
-        {/* Emergency Protocols Footer Layer */}
+        {/* System Protocols Footer Layer */}
         <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-blue-500/10 via-transparent to-emerald-500/10 border border-white/5 space-y-8 relative overflow-hidden">
             <div className="flex items-center gap-4 text-emerald-500">
                <Zap size={24} className="animate-pulse" />
@@ -146,8 +146,8 @@ const PCCGuide: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Auth_01</div>
-                  <h4 className="text-sm font-bold text-white uppercase">Passkey Purge</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Renaming or deleting biometric nodes within the Directory is forensically logged.</p>
+                  <h4 className="text-sm font-bold text-white uppercase">Passkey Removal</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">Renaming or deleting passkeys within the Directory is audited and logged.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cred_02</div>
@@ -161,8 +161,8 @@ const PCCGuide: React.FC = () => {
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Audit_04</div>
-                  <h4 className="text-sm font-bold text-white uppercase">Forensic Trace</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Every PCC interaction generates a high-fidelity audit node in the Audit Trail.</p>
+                  <h4 className="text-sm font-bold text-white uppercase">Audit Trail</h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">Every PCC interaction generates a audit entry in the Audit Trail.</p>
                </div>
             </div>
         </div>

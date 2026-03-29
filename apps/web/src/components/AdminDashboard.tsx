@@ -164,7 +164,7 @@ const AdminDashboard: React.FC = () => {
 
         {activeTab === 'audit' && (
           <section className="card reveal">
-            <h3>System Audit Chronicle</h3>
+            <h3>System Activity History</h3>
             {loadingAudit ? <p>Loading audit logs...</p> : (
               <div style={{ marginTop: '1rem' }}>
                 {Array.isArray(audit) && audit.map((log: any) => (

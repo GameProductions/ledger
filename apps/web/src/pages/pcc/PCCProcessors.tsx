@@ -99,10 +99,10 @@ const PCCProcessors: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Accessing Processor Registry...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/processors">
+    <PCCPortal activePath="#/admin/processors">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>

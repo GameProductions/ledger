@@ -116,7 +116,7 @@ const ReportsPage: React.FC = () => {
       <div className="space-y-8 reveal">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter">Financial Intelligence</h1>
+            <h1 className="text-4xl font-black tracking-tighter">Financial Insights</h1>
             <p className="text-secondary font-medium opacity-60">High-fidelity longitudinal insights and category analysis.</p>
           </div>
           <div className="flex gap-2">
@@ -220,7 +220,7 @@ const ReportsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {/* Intelligence Insights */}
+           {/* Analysis */}
            <Card className="p-8 space-y-6">
               <div className="text-[10px] uppercase tracking-widest text-secondary font-bold opacity-50">AI Insights & Audits</div>
               <div className="space-y-4">

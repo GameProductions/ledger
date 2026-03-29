@@ -3,7 +3,7 @@ import PCCPortal from './PCCPortal';
 import { MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- SUB-COMPONENT: Forensic Details Modal ---
+// --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ userId, onClose }) => {
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +77,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
 
   if (loading) return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="animate-pulse text-emerald-500 font-black tracking-widest text-sm uppercase">Accessing Secure Records...</div>
+      <div className="animate-pulse text-emerald-500 font-black tracking-widest text-sm uppercase">Loading User Details...</div>
     </div>
   );
 
@@ -93,7 +93,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
           <div className="flex items-center gap-6">
             <div className="relative">
                <img 
-                 src={details.profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${details.profile.id}`} 
+                 src={details?.profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${details?.profile?.id || userId}`} 
                  className="w-24 h-24 rounded-[1.5rem] border-4 border-white/5 shadow-2xl" 
                  alt="User"
                />
@@ -103,12 +103,12 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
             </div>
             <div>
               <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details.profile.display_name || 'Anonymous Intelligence'}</h2>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${details.profile.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
-                   {details.profile.status}
+                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details?.profile?.display_name || 'Anonymous User'}</h2>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
+                   {details?.profile?.status || 'Unknown'}
                 </span>
               </div>
-              <p className="text-slate-500 font-mono text-xs mt-1 opacity-60 tracking-tight">{details.profile.email} • ID: {userId}</p>
+              <p className="text-slate-500 font-mono text-xs mt-1 opacity-60 tracking-tight">{details?.profile?.email || 'No Email'} • ID: {userId}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-12 h-12 flex items-center justify-center hover:bg-white/5 rounded-2xl transition-all text-slate-500 hover:text-white">
@@ -122,39 +122,39 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
             <div>
               <div className="flex items-center gap-2 text-emerald-500 mb-6">
                 <Activity size={16} />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Telemetry</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Activity Overview</span>
               </div>
               
               <div className="space-y-6">
                 <div>
                   <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Registration</label>
                   <div className="text-sm text-slate-300 font-bold">
-                    {new Date(details.profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {details?.profile?.created_at ? new Date(details.profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                   </div>
                 </div>
                 <div>
                   <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Last Interaction</label>
                   <div className="text-sm text-slate-300 font-bold">
-                    {details.profile.last_active_at ? new Date(details.profile.last_active_at).toLocaleString() : 'No History'}
+                    {details?.profile?.last_active_at ? new Date(details.profile.last_active_at).toLocaleString() : 'No History'}
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Authority Clearance</label>
+                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-1">Access Role</label>
                   <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-black text-white uppercase tracking-widest inline-block mt-2">
-                    {details.profile.global_role}
+                    {details?.profile?.global_role || 'Unknown'}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="pt-8 border-t border-white/5">
-                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-4">Linked Identites</label>
+                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-4">Linked Accounts</label>
                 <div className="flex flex-wrap gap-2">
-                   {details.social_links.length > 0 ? details.social_links.map((link: any) => (
+                   {details?.social_links?.length > 0 ? details.social_links.map((link: any) => (
                       <div key={link.provider} title={link.provider} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400">
                          <Globe size={18} />
                       </div>
-                   )) : <span className="text-[10px] text-slate-700 italic font-bold">Isolated Node</span>}
+                   )) : <span className="text-[10px] text-slate-700 italic font-bold">No Linked Accounts</span>}
                 </div>
             </div>
           </div>
@@ -164,9 +164,9 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
               <div className="flex items-center justify-between mb-2">
                  <div className="flex items-center gap-2 text-primary">
                    <Fingerprint size={18} />
-                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">Biometric Registry</span>
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">Passkeys & Biometrics</span>
                  </div>
-                 <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black">{details.security.passkeys?.length || 0} Registered</span>
+                 <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-black">{details?.security?.passkeys?.length || 0} Registered</span>
               </div>
 
               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -215,7 +215,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
                     <div className="relative">
                        <input 
                         type={showPass ? "text" : "password"}
-                        placeholder="Manual Password Injection..."
+                        placeholder="Enter New Password..."
                         value={manualPass}
                         onChange={(e) => setManualPass(e.target.value)}
                         autoComplete="new-password"
@@ -257,14 +257,14 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
           <div className="p-8 space-y-6 bg-deep-slate-90/50">
             <div className="flex items-center gap-2 text-slate-500 mb-6">
               <Terminal size={18} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">System Chronicle</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Activity History</span>
             </div>
             
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {details.history.length > 0 ? details.history.map((log: any, idx: number) => (
+              {details?.history?.length > 0 ? details.history.map((log: any, idx: number) => (
                 <div key={idx} className="relative pl-5 border-l border-white/10 py-1 hover:border-emerald-500 transition-colors">
                   <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-white/10" />
-                  <div className="text-[10px] font-black uppercase text-slate-300 tracking-tight">{log.action.replace(/_/g, ' ')}</div>
+                  <div className="text-[10px] font-black uppercase text-slate-300 tracking-tight">{log.action?.replace(/_/g, ' ') || 'OPERATION'}</div>
                   <div className="text-[9px] text-slate-600 font-mono mt-1">{new Date(log.created_at).toLocaleString()}</div>
                 </div>
               )) : (
@@ -279,7 +279,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
           <div className="flex items-center gap-6">
              <div className="flex flex-col">
                 <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-600">Secure Protocol</span>
-                <span className="text-[10px] font-black text-slate-400 font-mono">PCC_DIRECTORY_V2.4</span>
+                <span className="text-[10px] font-black text-slate-400 font-mono">USER_DIRECTORY_V2.4</span>
              </div>
              <div className="h-8 w-px bg-white/5" />
              <div className="flex flex-col">
@@ -357,8 +357,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
         <div className="p-10 space-y-8">
            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white">Provision <span className="text-emerald-500">Node</span></h3>
-                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Manual Intelligence Record Creation</p>
+                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white">Create <span className="text-emerald-500">User</span></h3>
+                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Create a new manual user record</p>
               </div>
               <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
                 <X size={20} />
@@ -417,8 +417,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
 
               <div className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl">
                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-white tracking-widest">Authority Role</p>
-                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Set clearance level for this node</p>
+                    <p className="text-[10px] font-black uppercase text-white tracking-widest">Access Role</p>
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Set the default permissions for this user</p>
                  </div>
                  <select 
                    className="bg-black border border-white/10 p-2 rounded-lg text-[10px] font-black uppercase text-emerald-500 outline-none"
@@ -507,7 +507,7 @@ const PCCUsers: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('CRITICAL ACTION: Are you sure you want to permanently purge this user? This will remove all directory associations and credentials.')) return;
+    if (!confirm('CRITICAL ACTION: Are you sure you want to permanently delete this user? This will remove all associated data and credentials.')) return;
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
     await fetch(`${apiUrl}/api/pcc/admin/users/${id}`, {
@@ -525,27 +525,27 @@ const PCCUsers: React.FC = () => {
   );
 
   if (loading) return (
-    <PCCPortal activePath="#/system-pcc/users">
+    <PCCPortal activePath="#/admin/users">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-        <div className="text-[10px] font-black uppercase tracking-[0.3em]">Accessing Directory Layer...</div>
+        <div className="text-[10px] font-black uppercase tracking-[0.3em]">Loading users...</div>
       </div>
     </PCCPortal>
   );
 
   return (
-    <PCCPortal activePath="#/system-pcc/users">
+    <PCCPortal activePath="#/admin/users">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
           <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
-            Directory <span className="text-emerald-500">Node</span>
+            User <span className="text-emerald-500">Directory</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-2 uppercase tracking-widest font-bold">Universal User Intelligence & Lifecycle Control</p>
+          <p className="text-xs text-slate-500 mt-2 uppercase tracking-widest font-bold">Manage user accounts and permissions</p>
         </div>
         <div className="relative">
           <input 
             type="text" 
-            placeholder="Search Intelligence Files..." 
+            placeholder="Search users..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:border-emerald-500 transition-all text-sm w-full lg:w-96 shadow-2xl backdrop-blur-sm"
@@ -557,17 +557,17 @@ const PCCUsers: React.FC = () => {
           className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all"
         >
           <Shield size={16} />
-          Create Intelligence Node
+          Create New User
         </button>
       </div>
 
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
-              <th className="px-8 py-6">Intelligence Profile</th>
-              <th className="px-8 py-6">Authority Level</th>
-              <th className="px-8 py-6">Secure Status</th>
-              <th className="px-8 py-6 text-right">System Actions</th>
+              <th className="px-8 py-6">User Profile</th>
+              <th className="px-8 py-6">Access Role</th>
+              <th className="px-8 py-6">Account Status</th>
+              <th className="px-8 py-6 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -581,7 +581,7 @@ const PCCUsers: React.FC = () => {
                       alt="Avatar"
                     />
                     <div>
-                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.display_name || 'Anonymous Intelligence'}</div>
+                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.display_name || 'Anonymous User'}</div>
                       <div className="text-[10px] text-slate-500 font-mono tracking-tighter">{u.email}</div>
                     </div>
                   </div>
@@ -622,7 +622,7 @@ const PCCUsers: React.FC = () => {
                             className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-slate-300 hover:bg-emerald-500 hover:text-black rounded-xl transition-all"
                           >
                             <Info size={16} />
-                            <span>Detailed Intel</span>
+                            <span>View Profile</span>
                           </button>
                           
                           <div className="h-px bg-white/5 my-1" />

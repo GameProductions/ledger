@@ -28,7 +28,7 @@ const PCCDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/dashboard"><div className="animate-pulse">Loading Command Hub...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/admin/dashboard"><div className="animate-pulse">Loading Admin Dashboard...</div></PCCPortal>;
 
   const statCards = [
     { label: 'Total Users', value: stats?.totalUsers || 0, color: 'emerald' },
@@ -38,7 +38,7 @@ const PCCDashboard: React.FC = () => {
   ];
 
   return (
-    <PCCPortal activePath="#/system-pcc/dashboard">
+    <PCCPortal activePath="#/admin/dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {statCards.map((stat) => (
           <div key={stat.label} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative">
@@ -51,7 +51,7 @@ const PCCDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 p-8 rounded-3xl bg-white/5 border border-white/5">
-          <h3 className="text-lg font-bold mb-6">System Event Chronicle</h3>
+          <h3 className="text-lg font-bold mb-6">System Activity History</h3>
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
             {systemLogs.length > 0 ? (
               systemLogs.map((log) => (
@@ -86,16 +86,16 @@ const PCCDashboard: React.FC = () => {
 
         <div className="p-8 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full" />
-          <h3 className="text-lg font-bold mb-4 relative">God Mode Quick Actions</h3>
+          <h3 className="text-lg font-bold mb-4 relative">Administrative Actions</h3>
           <div className="space-y-3 relative">
             <button className="w-full text-left p-3 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-              Push v1.18.1 Emergency Patch
+              Apply System Update
             </button>
             <button className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all border border-white/10">
-              Broadcast System Message
+              Send System Message
             </button>
             <button className="w-full text-left p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold text-sm transition-all border border-red-500/20">
-              Trigger Global Maintenance Mode
+              Turn Off Site Access
             </button>
           </div>
         </div>

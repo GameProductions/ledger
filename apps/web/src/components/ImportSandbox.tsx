@@ -125,8 +125,8 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
       <div className="flex items-center gap-4 mb-8">
         <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-2xl">📥</div>
         <div>
-          <h2 className="text-xl font-black uppercase tracking-widest text-emerald-500">Universal Importer</h2>
-          <p className="text-sm text-secondary">Stage and verify bulk financial data.</p>
+          <h2 className="text-xl font-black uppercase tracking-widest text-emerald-500">File Import</h2>
+          <p className="text-sm text-secondary">Prepare and check your transaction files.</p>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
             disabled={staging}
             className="px-8 py-3 bg-emerald-500 text-black font-black uppercase rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-50"
           >
-            {staging ? 'Staging Logic...' : 'Stage for Review'}
+            {staging ? 'Preparing data...' : 'Upload for Review'}
           </button>
         </div>
       )}
@@ -155,13 +155,13 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
       {activeSandbox.length > 0 && (
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl">
-            <span className="font-black text-xs uppercase tracking-widest text-emerald-500">{activeSandbox.length} Items Staged</span>
+            <span className="font-black text-xs uppercase tracking-widest text-emerald-500">{activeSandbox.length} Items Ready</span>
             <button 
               onClick={handleCommit}
               disabled={loading}
               className="px-6 py-2 bg-emerald-500 text-black font-black text-xs uppercase rounded-lg hover:bg-emerald-400 transition-all"
             >
-              Commit to Ledger
+              Finish Import
             </button>
           </div>
           <div className="max-h-64 overflow-y-auto space-y-2 border border-white/5 p-4 rounded-2xl bg-black/20">

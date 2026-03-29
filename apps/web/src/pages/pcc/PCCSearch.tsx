@@ -27,7 +27,7 @@ const PCCSearch: React.FC = () => {
   };
 
   return (
-    <PCCPortal activePath="#/system-pcc/search">
+    <PCCPortal activePath="#/admin/search">
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSearch} className="relative mb-12">
           <input 
@@ -47,7 +47,7 @@ const PCCSearch: React.FC = () => {
             {/* Transaction Results - NEW */}
             <section>
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
-                Global Transaction Ledger <div className="h-[1px] flex-1 bg-blue-500/20" />
+                Global Transaction History <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="space-y-2">
                 {results.transactions?.map((tx: any) => (
@@ -72,7 +72,7 @@ const PCCSearch: React.FC = () => {
             {/* User Results */}
             <section>
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 mb-6 flex items-center gap-4">
-                System Identities <div className="h-[1px] flex-1 bg-emerald-500/20" />
+                System Users <div className="h-[1px] flex-1 bg-emerald-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.users?.map((u: any) => (
@@ -80,7 +80,7 @@ const PCCSearch: React.FC = () => {
                     <p className="font-bold text-lg mb-1 group-hover:text-emerald-400 transition-colors">{u.display_name || 'Anonymous'}</p>
                     <p className="text-sm text-gray-500 font-mono mb-4">{u.email}</p>
                     <div className="flex gap-2">
-                       <a href={`#/system-pcc/users?id=${u.id}`} className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold uppercase hover:bg-emerald-500 hover:text-black transition-all">Inspect Identity</a>
+                       <a href={`#/admin/users?id=${u.id}`} className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold uppercase hover:bg-emerald-500 hover:text-black transition-all">View User Profile</a>
                     </div>
                   </div>
                 ))}
@@ -91,7 +91,7 @@ const PCCSearch: React.FC = () => {
             {/* Registry Results */}
             <section>
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
-                Registry Entities <div className="h-[1px] flex-1 bg-blue-500/20" />
+                System Entities <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.registry.map((r: any) => (

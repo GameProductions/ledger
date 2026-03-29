@@ -24,10 +24,10 @@ const PCCAudit: React.FC = () => {
     fetchAudit();
   }, []);
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/audit"><div className="animate-pulse">Opening Audit Vault...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/admin/audit"><div className="animate-pulse">Loading activity history...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/audit">
+    <PCCPortal activePath="#/admin/audit">
        <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-cyan-500/50 underline-offset-8">Audit Vault</h2>

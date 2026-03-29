@@ -143,7 +143,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="dashboard-grid stagger">
             <section className="card">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Safety Number</h3>
+                <h3 className="text-lg font-bold">Safe-to-Spend Balance</h3>
                 <SearchableSelect 
                   options={[
                     { value: 'paycheck', label: 'Until Payday' },
@@ -155,7 +155,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   className="min-w-[140px]"
                 />
               </div>
-              <div className="safety-number-container">
+              <div className="safe-to-spend-container">
                 <Price amountCents={analytics?.safetyNumberCents || 0} />
               </div>
               <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
@@ -163,7 +163,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
             <section className="card">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Projected Outlook</h3>
+                <h3 className="text-lg font-bold">Future Balance</h3>
                 <div className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
               </div>
               <div className="text-3xl font-black text-white mb-2">
@@ -171,7 +171,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
               <div className="flex items-center gap-2 mb-4">
                  <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
-                 <span className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Liquid Capital</span>
+                 <span className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Available Money</span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
                 {Array.isArray(projections) && projections.slice(0, 6).map((p: any, i: number) => (
@@ -204,13 +204,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       />
                   </div>
                   <div className="flex gap-1">
-                    <a 
-                      href="#/data" 
-                      className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border bg-white/5 border-glass-border text-secondary hover:text-white transition-all flex items-center gap-2"
-                    >
-                      <span>📥</span> Interop
+                      <span>📥</span> Import & Export
                     </a>
-                    {['all', 'unreconciled', 'reconciled'].map(s => (
+                    {['all', 'unmatched', 'matched'].map(s => (
                       <button 
                         key={s}
                         onClick={() => setFilterStatus(s)}
@@ -225,7 +221,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div className="space-y-1">
                 {Array.isArray(transactions) && transactions.filter((tx: any) => {
                   const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
-                  const matchesStatus = filterStatus === 'all' || (filterStatus === 'unreconciled' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
+                  const matchesStatus = filterStatus === 'all' || (filterStatus === 'unmatched' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
                   return matchesSearch && matchesStatus
                 }).map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
@@ -243,7 +239,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <div className="font-bold flex items-center gap-3">
                           {tx.description}
                           {tx.reconciliation_status === 'reconciled' && (
-                            <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Satisfied</span>
+                            <span className="text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Cleared</span>
                           )}
                           {tx.reconciliation_status === 'partial' && (
                             <span className="text-[8px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (<Price amountCents={tx.reconciliation_progress_cents} options={{ minimumFractionDigits: 0 }} />)</span>
@@ -258,7 +254,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <button 
                           onClick={() => setLinkingTx(tx)}
                           className="p-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20"
-                          title="Relink Transaction"
+                          title="Change Match"
                         >
                           🔗
                         </button>
@@ -266,7 +262,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
                           className={`px-3 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
                         >
-                          {tx.status === 'reconciled' ? '✓' : 'Reconcile'}
+                          {tx.status === 'reconciled' ? '✓' : 'Match'}
                         </button>
                       </div>
                     </div>
@@ -287,8 +283,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             </div>
 
             <section className="card bg-primary/5 border-primary/20">
-              <h3 className="text-lg font-bold mb-1">Quick Ledger Entry</h3>
-              <p className="text-[10px] text-secondary uppercase font-bold opacity-60 mb-6">Instantly record manual entries</p>
+              <h3 className="text-lg font-bold mb-1">Add Transaction</h3>
+              <p className="text-[10px] text-secondary uppercase font-bold opacity-60 mb-6">Instantly record new entries</p>
               
               <div className="flex flex-wrap gap-2 mb-6">
                 {Array.isArray(templates) ? templates.map((tpl: any) => (
@@ -311,7 +307,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
                 <div className="flex gap-2 sm:contents">
                   <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
-                  <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px]">Publish</button>
+                  <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px]">Save</button>
                 </div>
               </form>
             </section>
@@ -330,7 +326,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <div className="dashboard-grid stagger">
               <section className="card">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold">Envelope Pool</h3>
+                  <h3 className="text-lg font-bold">Budget Categories</h3>
                   <div className="flex gap-2">
                     <button onClick={() => setShowDepositModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20">Deposit</button>
                     <button onClick={() => setShowFundModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20">Fund</button>
@@ -339,7 +335,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-3xl font-black text-primary mb-1">
                   <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
                 </div>
-                <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">To Be Allocated</div>
+                <div className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
                 
                 <div className="space-y-2">
                   {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
@@ -366,7 +362,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         {activeTab === 'insights' && (
           <div className="dashboard-grid stagger">
             <section className="card">
-              <h3 className="text-lg font-bold mb-6">Financial Vitality</h3>
+              <h3 className="text-lg font-bold mb-6">Financial Health</h3>
               <HealthScore score={analytics?.healthScore || 0} />
               <button 
                 onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/interop/report/summary`, '_blank')}
@@ -425,17 +421,17 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="card w-full max-w-2xl reveal max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h3 className="text-xl font-black m-0">Reconcile: {linkingTx.description}</h3>
+                <h3 className="text-xl font-black m-0">Match: {linkingTx.description}</h3>
                 <Price amountCents={linkingTx.amount_cents} className="text-2xl font-black tracking-tighter text-primary" />
               </div>
               <button onClick={() => setLinkingTx(null)} className="text-2xl opacity-50 hover:opacity-100 transition-opacity">×</button>
             </div>
             
-            <p className="text-sm text-secondary mb-8">Select one or more transactions to satisfy this ledger entry.</p>
+            <p className="text-sm text-secondary mb-8">Select one or more transactions to match this entry.</p>
 
             <div className="space-y-6">
               <div>
-                <div className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-3">Smart Suggestions</div>
+                <div className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-3">Matches</div>
                 <div className="space-y-2">
                   {smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates.map((t: any) => (
                     <div 
@@ -472,7 +468,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
 
               <div>
-                <div className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mb-3">All Candidates</div>
+                <div className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mb-3">All Transactions</div>
                 <div className="space-y-2">
                   {transactions?.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
                     <div 
@@ -538,12 +534,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4" onClick={() => setShowFundModal(false)}>
           <div className="card w-full max-w-md p-8 reveal space-y-6" onClick={e => e.stopPropagation()}>
             <div>
-              <h3 className="text-xl font-black m-0">Fund Envelope</h3>
+              <h3 className="text-xl font-black m-0">Add Money to Category</h3>
               <p className="text-[10px] text-secondary uppercase font-bold opacity-60">Allocate balance from unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Select Envelope</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Select Category</label>
                 <SearchableSelect 
                   options={Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => ({
                     value: b.id,
@@ -553,7 +549,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   })) : []}
                   value={fundCategoryId}
                   onChange={(val) => setFundCategoryId(val)}
-                  placeholder="Choose an envelope..."
+                  placeholder="Choose a category..."
                 />
               </div>
               <div className="space-y-2">
@@ -579,8 +575,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
           <div className="card w-full max-w-md p-8 reveal space-y-6" onClick={e => e.stopPropagation()}>
             <div>
-              <h3 className="text-xl font-black m-0">Deposit to Pool</h3>
-              <p className="text-[10px] text-secondary uppercase font-bold opacity-60">Add funds to "To Be Allocated" pool</p>
+              <h3 className="text-xl font-black m-0">Add to Unallocated</h3>
+              <p className="text-[10px] text-secondary uppercase font-bold opacity-60">Add funds to unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">

@@ -6,7 +6,7 @@ const AuditChronicle: React.FC = () => {
 
   return (
     <section className="card" style={{ gridColumn: 'span 1' }}>
-      <h3 style={{ marginBottom: '1.5rem' }}>📖 Household Chronicle</h3>
+      <h3 style={{ marginBottom: '1.5rem' }}>📖 Household Activity</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
         {Array.isArray(logs) && logs.map((log: any) => (
           <div key={log.id} style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--primary)', position: 'relative' }}>

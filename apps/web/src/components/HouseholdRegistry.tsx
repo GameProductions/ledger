@@ -38,12 +38,12 @@ const HouseholdRegistry: React.FC = () => {
         setIsRenaming(false);
       }
     } catch (err) {
-      showToast('Failed to rename territory', 'error');
+      showToast('Failed to rename household', 'error');
     }
   };
 
   const handleCreate = async () => {
-    const name = prompt('Enter new household territory name:');
+    const name = prompt('Enter new household name:');
     if (!name) return;
     const token = localStorage.getItem('ledger_token');
     try {
@@ -56,11 +56,11 @@ const HouseholdRegistry: React.FC = () => {
         body: JSON.stringify({ name })
       });
       if (res.ok) {
-        showToast('New territory established', 'success');
+        showToast('New household created', 'success');
         window.location.reload(); // Switch context
       }
     } catch (err) {
-      showToast('Failed to establish territory', 'error');
+      showToast('Failed to create household', 'error');
     }
   };
 
@@ -82,9 +82,9 @@ const HouseholdRegistry: React.FC = () => {
       if (res.ok) {
         setInviteUrl(`${window.location.origin}/${data.url}`);
         if (inviteEmail) {
-           showToast(`Invitation transmission sent to ${inviteEmail}`, 'success');
+           showToast(`Invitation sent to ${inviteEmail}`, 'success');
         } else {
-           showToast('Secure invite link generated', 'success');
+           showToast('Invite link created', 'success');
         }
       }
     } catch (err) {
@@ -96,7 +96,7 @@ const HouseholdRegistry: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Territory Header */}
+      {/* Household Settings */}
       <div className="card p-8 bg-gradient-to-br from-emerald-500/5 to-transparent border-l-4 border-emerald-500">
         <div className="flex items-center justify-between mb-8">
            <div className="flex items-center gap-4">
@@ -115,13 +115,13 @@ const HouseholdRegistry: React.FC = () => {
                         autoFocus
                       />
                     ) : (
-                      <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{profile?.household_name || 'Individual Node'}</h3>
+                      <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{profile?.household_name || 'Personal Account'}</h3>
                     )}
                     <button onClick={() => setIsRenaming(!isRenaming)} className="text-slate-500 hover:text-emerald-500">
                        <Edit3 size={16} />
                     </button>
                  </div>
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/60 mt-1">Active Territory Context</p>
+                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/60 mt-1">Current Household</p>
               </div>
            </div>
            <button 
@@ -129,7 +129,7 @@ const HouseholdRegistry: React.FC = () => {
              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest text-secondary transition-all"
            >
               <Plus size={14} />
-              New Territory
+              New Household
            </button>
         </div>
 
@@ -139,16 +139,16 @@ const HouseholdRegistry: React.FC = () => {
               <div>
                 <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
                    <Users size={14} className="text-emerald-500" />
-                   Deployment Invites
+                   Member Invites
                 </h4>
-                <p className="text-xs text-secondary opacity-40 font-bold tracking-tight">Expand territory access to trusted nodes</p>
+                <p className="text-xs text-secondary opacity-40 font-bold tracking-tight">Invite others to join your household</p>
               </div>
            </div>
 
            <div className="flex gap-3">
               <input 
                 type="email"
-                placeholder="Target node email (optional)..."
+                placeholder="Member's email address (optional)..."
                 className="flex-1 bg-black/40 border border-white/5 p-4 rounded-2xl text-sm font-bold focus:border-emerald-500/30 transition-all outline-none"
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
@@ -159,7 +159,7 @@ const HouseholdRegistry: React.FC = () => {
                 className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black font-black uppercase tracking-widest text-xs rounded-2xl transition-all flex items-center gap-3 shadow-lg shadow-emerald-500/20"
               >
                 {loading ? <Plus className="animate-spin" /> : <Send size={16} />}
-                {inviteEmail ? 'Deploy' : 'Generate'}
+                {inviteEmail ? 'Send Invite' : 'Generate Link'}
               </button>
            </div>
 
@@ -170,7 +170,7 @@ const HouseholdRegistry: React.FC = () => {
                className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4"
              >
                 <div className="flex-1 overflow-hidden">
-                   <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Secure Link Active (24h)</p>
+                   <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Invite Link Active (24h)</p>
                    <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
                 </div>
                 <button 

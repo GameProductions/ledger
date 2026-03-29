@@ -29,7 +29,7 @@ const SettingsPage: React.FC = () => {
   const [changingPass, setChangingPass] = useState(false)
 
   // Passkey State
-  const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/user/passkeys') // Consolidated user-facing passkey list
+  const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/user/passkeys')
   const [editingPasskey, setEditingPasskey] = useState<any | null>(null)
   const [confirmDeletePasskey, setConfirmDeletePasskey] = useState<any | null>(null)
   const [newPasskeyData, setNewPasskeyData] = useState<any | null>(null)
@@ -91,20 +91,14 @@ const SettingsPage: React.FC = () => {
 
   const handleRegisterPasskey = async () => {
     try {
-      // 1. Get Options
       const optRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-options`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       })
       const options = await optRes.json()
-      
-      // 2. Real WebAuthn Prompter
       const attestation = await startRegistration(options)
-      
-      setNewPasskeyData({
-        attestation
-      })
+      setNewPasskeyData({ attestation })
     } catch (e: any) {
       if (e.name === 'NotAllowedError') {
         showToast('Registration cancelled', 'info')
@@ -184,7 +178,6 @@ const SettingsPage: React.FC = () => {
       if (res.ok) {
         showToast('Password updated successfuly', 'success')
         
-        // Forensic Credential Update for Password Managers
         if ((window as any).PasswordCredential) {
           try {
             const cred = new (window as any).PasswordCredential({
@@ -238,7 +231,6 @@ const SettingsPage: React.FC = () => {
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const getProviderIcon = (aaguid: string) => {
-    // Simplified mapping
     if (aaguid.includes('icloud')) return <span title="iCloud Keychain">🍏</span>
     if (aaguid.includes('1password')) return <span title="1Password">🗝️</span>
     if (aaguid.includes('google')) return <span title="Google Password Manager">📁</span>
@@ -262,15 +254,15 @@ const SettingsPage: React.FC = () => {
                 Identity & Security
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.8 Total Modernization</span>
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">Command Center Alpha</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.8 System Modernization</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">User Account Controls</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Profile Control Deck */}
+          {/* Profile Controls */}
           <div className="lg:col-span-4 space-y-8">
             <div className="card p-8 flex flex-col items-center text-center space-y-6 overflow-hidden reveal">
               <div className="relative group">
@@ -306,7 +298,7 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setIsEditingAlias(true)}
                     className="text-2xl font-black tracking-tight cursor-pointer hover:text-primary transition-colors flex items-center justify-center gap-2"
                   >
-                    {name || 'Operative'}
+                    {name || 'User'}
                     <Edit3 size={14} className="opacity-0 group-hover:opacity-40" />
                   </h2>
                 )}
@@ -318,7 +310,7 @@ const SettingsPage: React.FC = () => {
               
               <div className="w-full pt-6 border-t border-white/5 space-y-4">
                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
-                   <span className="text-secondary opacity-40 italic">System Role</span>
+                   <span className="text-secondary opacity-40 italic">Account Role</span>
                    <span className="text-primary">{profile?.global_role || 'Standard User'}</span>
                  </div>
                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
@@ -328,19 +320,19 @@ const SettingsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Password Management */}
+            {/* Security Management */}
             <div className="card p-8 space-y-6 border-l-4 border-blue-500/50 reveal delay-100">
                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500">
                     <Lock size={16} />
                   </div>
-                  <h3 className="font-bold tracking-tight">Access Control</h3>
+                  <h3 className="font-bold tracking-tight">Security</h3>
                </div>
                
                <div className="space-y-4">
                   <div className="space-y-2">
                     <Input 
-                        label="New Secure Password"
+                        label="New Password"
                         type="password" 
                         value={newPassword}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
@@ -358,20 +350,19 @@ const SettingsPage: React.FC = () => {
                     disabled={changingPass || newPassword.length < 8}
                     className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black uppercase tracking-[0.2em] text-xs py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
                   >
-                    {changingPass ? 'Updating Hub...' : 'Update Password'}
+                    {changingPass ? 'Updating...' : 'Update Password'}
                   </button>
                </div>
             </div>
           </div>
 
-          {/* Configuration Grid */}
+          {/* Social Accounts */}
           <div className="lg:col-span-8 space-y-12">
-             {/* Identity Ecosystem */}
              <section className="space-y-6">
                 <div className="flex items-center justify-between px-2">
                    <div>
-                     <h3 className="text-xl font-black italic tracking-tight">Identity Ecosystem</h3>
-                     <p className="text-xs font-bold text-secondary uppercase tracking-widest opacity-60">Synchronize profile assets and social linking</p>
+                     <h3 className="text-xl font-black italic tracking-tight">Social Accounts</h3>
+                     <p className="text-xs font-bold text-secondary uppercase tracking-widest opacity-60">Connect and manage your social logins</p>
                    </div>
                 </div>
 
@@ -428,7 +419,7 @@ const SettingsPage: React.FC = () => {
                                   }}
                                   className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs transition-all"
                                 >
-                                  Integrate Account
+                                  Link Account
                                 </button>
                               )}
                            </div>
@@ -438,19 +429,19 @@ const SettingsPage: React.FC = () => {
                 </div>
              </section>
 
-             {/* Biometric Hub */}
+             {/* Passkeys & Biometrics */}
              <section className="card p-10 space-y-8 bg-gradient-to-br from-white/5 to-transparent border-t-4 border-primary">
                 <div className="flex items-center justify-between">
                    <div className="space-y-1">
-                      <h3 className="text-2xl font-black italic tracking-tight">Biometric Vault</h3>
-                      <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Register hardware keys and native auth</p>
+                      <h3 className="text-2xl font-black italic tracking-tight">Security Keys</h3>
+                      <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Add fingerprint, face, or hardware security keys</p>
                    </div>
                    <button 
                     onClick={handleRegisterPasskey}
                     className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-primary/20"
                    >
                      <Fingerprint size={18} />
-                     Enroll Passkey
+                     Add Passkey
                    </button>
                 </div>
 
@@ -464,7 +455,7 @@ const SettingsPage: React.FC = () => {
                               </div>
                               <div>
                                  <div className="flex items-center gap-3">
-                                   <p className="font-bold tracking-tight">{pk.name || 'Unnamed Sentinel'}</p>
+                                   <p className="font-bold tracking-tight">{pk.name || 'Unnamed Passkey'}</p>
                                    <div className="px-2 py-0.5 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-grayscale">
                                       {getProviderIcon(pk.aaguid)}
                                    </div>
@@ -502,15 +493,8 @@ const SettingsPage: React.FC = () => {
              {/* Profile Preferences */}
              <section className="card p-10 space-y-10 reveal">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                   <div className="space-y-4 opacity-50">
-                      <label className="text-xs font-black uppercase tracking-[0.3em] text-secondary">Operating Alias</label>
-                      <div className="flex items-center gap-3 text-secondary p-1 border-b border-white/5 cursor-not-allowed">
-                        <Edit3 size={14} />
-                        <span className="text-lg font-black italic tracking-tighter">Edit via profile card above</span>
-                      </div>
-                   </div>
                    <div className="space-y-4">
-                      <label className="text-xs font-black uppercase tracking-[0.3em] text-secondary">Timezone Protocol</label>
+                      <label className="text-xs font-black uppercase tracking-[0.3em] text-secondary">Timezone</label>
                       <select 
                         value={timezone}
                         onChange={(e) => setTimezone(e.target.value)}
@@ -530,19 +514,19 @@ const SettingsPage: React.FC = () => {
                     className="px-10 py-5 bg-white text-black font-black uppercase tracking-widest text-sm rounded-2xl hover:scale-105 transition-all flex items-center gap-3 shadow-2xl shadow-white/10"
                    >
                      {saving ? <RefreshCw className="animate-spin" /> : <Save size={18} />}
-                     {saving ? 'Transmitting...' : 'Commit Preferences'}
+                     {saving ? 'Saving...' : 'Save Settings'}
                    </button>
                 </div>
              </section>
           </div>
         </div>
 
-        {/* Global Configuration & Sovereignty */}
+        {/* Financial Accounts & Household */}
         <div className="mt-24 space-y-12 reveal delay-300">
            <section className="space-y-6">
               <div className="px-2">
-                 <h3 className="text-xl font-black italic tracking-tight">Financial Infrastructure</h3>
-                 <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Connected data sources and ledger entry points</p>
+                 <h3 className="text-xl font-black italic tracking-tight">Financial Links</h3>
+                 <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Connected data sources and accounts</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -552,7 +536,7 @@ const SettingsPage: React.FC = () => {
                           <div className="text-xl">💳</div>
                           <div>
                              <p className="font-bold text-sm tracking-tight">{acc.name}</p>
-                             <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Active Ledger</p>
+                             <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Active Account</p>
                           </div>
                        </div>
                        <Price amountCents={acc.balance_cents} className="text-lg font-black tracking-tighter" />
@@ -567,11 +551,11 @@ const SettingsPage: React.FC = () => {
 
            <PrivacySettings />
            
-           {/* Household Sovereignty */}
+           {/* Household Management */}
            <section className="space-y-6">
               <div className="px-2">
-                 <h3 className="text-xl font-black italic tracking-tight">Territory Sovereignty</h3>
-                 <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Manage household context and synchronization access</p>
+                 <h3 className="text-xl font-black italic tracking-tight">Household Management</h3>
+                 <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Manage household members and access</p>
               </div>
               <HouseholdRegistry />
            </section>
@@ -584,13 +568,13 @@ const SettingsPage: React.FC = () => {
           title={`Unlink ${confirmUnlink?.provider}?`}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirmUnlink(null)}>Abort</Button>
-              <Button variant="primary" onClick={handleUnlinkIdentity}>Confirm Severance</Button>
+              <Button variant="secondary" onClick={() => setConfirmUnlink(null)}>Cancel</Button>
+              <Button variant="primary" onClick={handleUnlinkIdentity}>Confirm Disconnect</Button>
             </>
           }
         >
           <div className="space-y-6">
-            <p className="text-secondary font-medium tracking-tight">Are you sure you want to decouple this identity provider? Asset synchronization for this account will be terminated.</p>
+            <p className="text-secondary font-medium tracking-tight">Are you sure you want to disconnect this account? Syncing for this account will be terminated.</p>
             
             <label className="flex items-start gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-all">
                <input 
@@ -620,7 +604,7 @@ const SettingsPage: React.FC = () => {
           }
         >
           <div className="space-y-4">
-            <label className="text-xs font-black uppercase tracking-widest text-secondary block">New Sentinel Name</label>
+            <label className="text-xs font-black uppercase tracking-widest text-secondary block">New Passkey Name</label>
             <input 
               type="text" 
               value={editingPasskey?.newName || ''}
@@ -650,14 +634,14 @@ const SettingsPage: React.FC = () => {
         <Modal
           isOpen={!!newPasskeyData}
           onClose={() => setNewPasskeyData(null)}
-          title="Name Your New Sentinel"
+          title="Name Your New Passkey"
           footer={
             <>
               <Button variant="secondary" onClick={() => setNewPasskeyData(null)}>Discard</Button>
               <Button variant="primary" onClick={() => {
                 const nameInput = document.getElementById('passkey-name-input') as HTMLInputElement;
                 if (nameInput.value) handleFinishPasskeyRegistration(nameInput.value);
-              }}>Secure Key</Button>
+              }}>Save Passkey</Button>
             </>
           }
         >

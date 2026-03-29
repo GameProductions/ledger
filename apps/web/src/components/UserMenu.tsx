@@ -1,3 +1,8 @@
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
+import { useApi } from '../hooks/useApi'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard } from 'lucide-react'
 import { Masked } from './ui/Masked'
 
 const UserMenu: React.FC<{ 

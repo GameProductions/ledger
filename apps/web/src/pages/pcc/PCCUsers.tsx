@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
-import { MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert } from 'lucide-react';
+import { 
+  MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, 
+  Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert, Monitor, EyeOff, Eye 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Masked } from '../../components/ui/Masked';
 import { useToast } from '../../context/ToastContext';
-import { EyeOff, Eye } from 'lucide-react';
 
 // --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge: (id: string) => void }> = ({ userId, onClose, onMerge }) => {

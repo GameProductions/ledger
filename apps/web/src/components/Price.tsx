@@ -1,3 +1,5 @@
+import React from 'react'
+import { useCurrency } from '../context/CurrencyContext'
 import { Masked } from './ui/Masked'
 
 interface PriceProps {

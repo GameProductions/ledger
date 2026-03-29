@@ -1,16 +1,15 @@
+import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
-import { Send, ShieldAlert, Monitor, CheckCircle, AlertCircle, Info } from 'lucide-react';
+
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../context/ToastContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 const PCCDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [systemLogs, setSystemLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
   const { showToast } = useToast();
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);

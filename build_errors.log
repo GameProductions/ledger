@@ -1,0 +1,41 @@
+
+> web@3.17.0 build
+> tsc -b && vite build && node scripts/update-version.js
+
+src/components/Price.tsx(11,27): error TS2304: Cannot find name 'useCurrency'.
+src/components/UserMenu.tsx(8,57): error TS2304: Cannot find name 'useAuth'.
+src/components/UserMenu.tsx(9,29): error TS2304: Cannot find name 'useApi'.
+src/components/UserMenu.tsx(10,31): error TS2304: Cannot find name 'useState'.
+src/components/UserMenu.tsx(16,13): error TS2304: Cannot find name 'LayoutDashboard'.
+src/components/UserMenu.tsx(17,13): error TS2304: Cannot find name 'Cpu'.
+src/components/UserMenu.tsx(18,13): error TS2304: Cannot find name 'Database'.
+src/components/UserMenu.tsx(19,13): error TS2552: Cannot find name 'Users'. Did you mean 'user'?
+src/components/UserMenu.tsx(20,13): error TS2304: Cannot find name 'Activity'.
+src/components/UserMenu.tsx(22,13): error TS2304: Cannot find name 'Settings'.
+src/components/UserMenu.tsx(23,13): error TS2304: Cannot find name 'CreditCard'.
+src/components/UserMenu.tsx(24,13): error TS2304: Cannot find name 'Database'.
+src/components/UserMenu.tsx(25,13): error TS2304: Cannot find name 'Palette'.
+src/components/UserMenu.tsx(26,13): error TS2304: Cannot find name 'HelpCircle'.
+src/components/UserMenu.tsx(45,16): error TS2304: Cannot find name 'Shield'.
+src/components/UserMenu.tsx(59,10): error TS2304: Cannot find name 'ChevronDown'.
+src/components/UserMenu.tsx(63,8): error TS2304: Cannot find name 'AnimatePresence'.
+src/components/UserMenu.tsx(67,14): error TS2304: Cannot find name 'motion'.
+src/components/UserMenu.tsx(90,22): error TS2304: Cannot find name 'LayoutDashboard'.
+src/components/UserMenu.tsx(100,24): error TS2304: Cannot find name 'LayoutDashboard'.
+src/components/UserMenu.tsx(124,22): error TS2304: Cannot find name 'Shield'.
+src/components/UserMenu.tsx(138,26): error TS2304: Cannot find name 'List'.
+src/components/UserMenu.tsx(146,26): error TS2304: Cannot find name 'CalendarIcon'.
+src/components/UserMenu.tsx(159,22): error TS2304: Cannot find name 'LogOut'.
+src/components/UserMenu.tsx(164,15): error TS2304: Cannot find name 'motion'.
+src/components/UserMenu.tsx(167,9): error TS2304: Cannot find name 'AnimatePresence'.
+src/pages/DashboardPage.tsx(241,56): error TS2554: Expected 0 arguments, but got 2.
+src/pages/pcc/PCCDashboard.tsx(3,1): error TS6192: All imports in import declaration are unused.
+src/pages/pcc/PCCDashboard.tsx(7,10): error TS6133: 'motion' is declared but its value is never read.
+src/pages/pcc/PCCUsers.tsx(375,18): error TS2304: Cannot find name 'Monitor'.
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path /Users/morenicano/Documents/coding/projects/bots/ledger/apps/web
+npm error workspace web@3.17.0
+npm error location /Users/morenicano/Documents/coding/projects/bots/ledger/apps/web
+npm error command failed
+npm error command sh -c tsc -b && vite build && node scripts/update-version.js

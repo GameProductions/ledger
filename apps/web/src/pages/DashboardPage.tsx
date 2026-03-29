@@ -238,7 +238,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
                 {user?.global_role === 'super_admin' && (
                   <button 
-                    onClick={() => mutateAnnouncements(announcements.filter((a: any) => a.id !== ann.id), false)}
+                    onClick={() => mutateAnnouncements()}
                     className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"
                   >
                     <XCircle size={18} className="opacity-30" />

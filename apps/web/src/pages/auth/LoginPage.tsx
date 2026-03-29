@@ -112,13 +112,17 @@ const LoginPage: React.FC = () => {
     setLoading(true)
     try {
       const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-      const optRes = await fetch(`${apiUrl}/auth/passkeys/login-options`, { method: 'POST' })
+      const optRes = await fetch(`${apiUrl}/auth/passkeys/login-options`, { 
+        method: 'POST',
+        credentials: 'include'
+      })
       const options = await optRes.json()
       
       // Mock Passkey Assertion
       const verifyRes = await fetch(`${apiUrl}/auth/passkeys/login-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ assertion: { id: 'mock-id' }, challenge: options.challenge })
       })
       

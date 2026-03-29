@@ -92,7 +92,8 @@ const SettingsPage: React.FC = () => {
       // 1. Get Options
       const optRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-options`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
       })
       const options = await optRes.json()
       
@@ -116,6 +117,7 @@ const SettingsPage: React.FC = () => {
       const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
         body: JSON.stringify({ 
           ...newPasskeyData,
           name 

@@ -304,12 +304,173 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
   );
 };
 
-const PCCUsers: React.FC = () => {
+// --- SUB-COMPONENT: Create User Modal ---
+const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSuccess: () => void }> = ({ isOpen, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    display_name: '',
+    global_role: 'user',
+    force_password_change: true
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/admin/users`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Provisioning failed');
+      
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 overflow-y-auto">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative w-full max-w-xl bg-[#0a0a0a] border border-white/10 rounded-[2.5rem] shadow-[0_0_150px_rgba(16,185,129,0.1)] overflow-hidden"
+      >
+        <div className="p-10 space-y-8">
+           <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white">Provision <span className="text-emerald-500">Node</span></h3>
+                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1">Manual Intelligence Record Creation</p>
+              </div>
+              <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
+                <X size={20} />
+              </button>
+           </div>
+
+           <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest ml-1">System Handle</label>
+                  <input 
+                    required
+                    type="text"
+                    placeholder="e.g. j.wick"
+                    className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-xs font-bold focus:border-emerald-500/50 outline-none transition-all"
+                    value={formData.username}
+                    onChange={e => setFormData({ ...formData, username: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest ml-1">Display Alias</label>
+                  <input 
+                    required
+                    type="text"
+                    placeholder="e.g. John Wick"
+                    className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-xs font-bold focus:border-emerald-500/50 outline-none transition-all"
+                    value={formData.display_name}
+                    onChange={e => setFormData({ ...formData, display_name: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest ml-1">Identity Email</label>
+                <input 
+                  required
+                  type="email"
+                  placeholder="contact@gpnet.dev"
+                  className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-xs font-bold focus:border-emerald-500/50 outline-none transition-all"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest ml-1">Initial Password</label>
+                <input 
+                  required
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-xs font-bold focus:border-emerald-500/50 outline-none transition-all font-mono"
+                  value={formData.password}
+                  onChange={e => setFormData({ ...formData, password: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl">
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase text-white tracking-widest">Authority Role</p>
+                    <p className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Set clearance level for this node</p>
+                 </div>
+                 <select 
+                   className="bg-black border border-white/10 p-2 rounded-lg text-[10px] font-black uppercase text-emerald-500 outline-none"
+                   value={formData.global_role}
+                   onChange={e => setFormData({ ...formData, global_role: e.target.value })}
+                 >
+                   <option value="user">USER</option>
+                   <option value="super_admin">SUPER_ADMIN</option>
+                 </select>
+              </div>
+
+              <div className="flex items-center gap-3 ml-1">
+                <input 
+                  type="checkbox" 
+                  checked={formData.force_password_change}
+                  onChange={e => setFormData({ ...formData, force_password_change: e.target.checked })}
+                  className="accent-emerald-500"
+                />
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest cursor-pointer">Enforce Forensic Reset on First Login</label>
+              </div>
+
+              {error && <p className="text-red-500 text-[10px] font-black text-center uppercase tracking-widest">{error}</p>}
+
+              <div className="pt-4 flex gap-4">
+                 <button 
+                  type="button" 
+                  onClick={onClose}
+                  className="flex-1 py-4 px-6 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-white/5 transition-all"
+                 >
+                   Abort
+                 </button>
+                 <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="flex-[2] py-4 px-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3"
+                 >
+                   {loading ? <RefreshCw className="animate-spin" size={16} /> : <Shield size={16} />}
+                   Commit Provisioning
+                 </button>
+              </div>
+           </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -389,6 +550,13 @@ const PCCUsers: React.FC = () => {
           />
           <Search className="absolute left-4 top-4.5 opacity-30 text-emerald-500" size={18} />
         </div>
+        <button 
+          onClick={() => setIsCreateModalOpen(true)}
+          className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all"
+        >
+          <Shield size={16} />
+          Create Intelligence Node
+        </button>
       </div>
 
         <table className="w-full text-left border-collapse">
@@ -500,11 +668,16 @@ const PCCUsers: React.FC = () => {
           </tbody>
         </table>
 
-      {/* Detail Modal Overlay */}
+      {/* Modals Overlay */}
       <AnimatePresence>
         {selectedUser && (
           <UserDetailsModal userId={selectedUser} onClose={() => setSelectedUser(null)} />
         )}
+        <CreateUserModal 
+          isOpen={isCreateModalOpen} 
+          onClose={() => setIsCreateModalOpen(false)} 
+          onSuccess={fetchUsers} 
+        />
       </AnimatePresence>
     </PCCPortal>
   );

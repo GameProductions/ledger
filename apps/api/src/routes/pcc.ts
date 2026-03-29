@@ -8,10 +8,12 @@ import {
   UpdateSystemConfigSchema, 
   UpdateSystemFeatureSchema, 
   SystemRegistrySchema, 
-  UpdateUserAdminSchema 
+  UpdateUserAdminSchema,
+  CreateUserAdminSchema
 } from '../schemas'
 import { logAudit } from '../utils'
 import { CURRENT_VERSION } from '../constants'
+import { hashPassword } from '../auth-utils'
 
 const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -89,12 +91,24 @@ pcc.get('/users', async (c) => {
   return c.json(results)
 })
 
-pcc.patch('/users/:id', zValidator('json', UpdateUserAdminSchema), async (c) => {
-  const id = c.req.param('id')
-  const { global_role, status } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE users SET global_role = ?, status = ? WHERE id = ?').bind(global_role, status, id).run()
-  await logAudit(c, 'users', id, 'ADMIN_UPDATE_USER', {}, { global_role, status })
-  return c.json({ success: true })
+pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema), async (c) => {
+  const data = c.req.valid('json')
+  const { username, email, password, display_name, global_role, force_password_change } = data
+  
+  // Check for existing user
+  const existing = await c.env.DB.prepare('SELECT id FROM users WHERE username = ? OR email = ?')
+    .bind(username, email).first()
+  if (existing) throw new HTTPException(400, { message: 'Username or email already exists' })
+
+  const userId = crypto.randomUUID()
+  const passwordHash = await hashPassword(password)
+  
+  await c.env.DB.prepare(
+    'INSERT INTO users (id, username, email, password_hash, display_name, global_role, status, force_password_change) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).bind(userId, username, email, passwordHash, display_name, global_role, 'active', force_password_change ? 1 : 0).run()
+  
+  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, global_role })
+  return c.json({ success: true, id: userId })
 })
 
 // Audit Vault

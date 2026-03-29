@@ -144,6 +144,15 @@ export const UpdateUserAdminSchema = z.object({
   email: z.string().email().optional()
 })
 
+export const CreateUserAdminSchema = z.object({
+  username: z.string().min(3).max(50),
+  email: z.string().email(),
+  password: z.string().min(8),
+  display_name: z.string().min(1).max(100),
+  global_role: z.enum(['user', 'super_admin']).default('user'),
+  force_password_change: z.boolean().optional().default(true)
+})
+
 export const SystemRegistrySchema = z.object({
   item_type: z.string(),
   name: z.string().min(1).max(100),

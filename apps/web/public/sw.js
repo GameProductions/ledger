@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ledger-v3.13.4';
+const CACHE_NAME = 'ledger-v3.14.0';
 const assetsToCache = [
   '/',
   '/index.html',
@@ -52,14 +52,14 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match('/index.html', { ignoreSearch: true }))
     );
     return;
   }
   
   // Cache-First for assets (hashed by Vite)
   event.respondWith(
-    caches.match(event.request)
+    caches.match(event.request, { ignoreSearch: true })
       .then(cachedResponse => {
         if (cachedResponse) {
           return cachedResponse;
@@ -76,10 +76,12 @@ self.addEventListener('fetch', event => {
           return fetchRes;
         }).catch(err => {
           console.warn('[SW] Fetch failed for:', event.request.url);
-          // Instead of returning null (which errors), we let the error bubble 
-          // or return the original cachedResponse (which we know is null here).
-          // But to avoid the TypeError, we MUST return a Response or just not handle the fetch.
-          // Since we already called respondWith, we throw to let the browser handle the "Network Error"
+          
+          // Fallback to index.html for navigation-like failures that weren't caught
+          if (event.request.destination === 'document') {
+             return caches.match('/index.html', { ignoreSearch: true });
+          }
+          
           throw err;
         });
       })

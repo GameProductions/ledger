@@ -52,6 +52,30 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     const globalRole = user.global_role
     let activeHouseholdId = householdHeader || payload.householdId
 
+    // Heartbeat (Non-blocking)
+    c.executionCtx.waitUntil(
+      c.env.DB.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .bind(userId).run()
+    )
+
+    // 3. Household Context Logic
+    // Skip strict household check for User-level routes (e.g., profile, passkeys, internal auth)
+    const isUserLevelRoute = path.startsWith('/api/user/') || 
+                            path.startsWith('/auth/passkeys/') || 
+                            path.startsWith('/auth/password/') ||
+                            path === '/api/user' ||
+                            path === '/auth/totp/setup' ||
+                            path === '/auth/totp/verify'
+
+    if (isUserLevelRoute) {
+      c.set('userId', userId)
+      c.set('globalRole', globalRole)
+      // Attempt to set householdId if present, but don't fail if not
+      if (activeHouseholdId) c.set('householdId', String(activeHouseholdId))
+      await next()
+      return
+    }
+
     // Verify Household exists to prevent Foreign Key errors in logAudit
     const householdExists = await c.env.DB.prepare(
       'SELECT id FROM households WHERE id = ?'
@@ -80,12 +104,6 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     c.set('userId', userId)
     c.set('globalRole', globalRole)
     c.set('householdId', String(activeHouseholdId))
-    
-    // Heartbeat (Non-blocking)
-    c.executionCtx.waitUntil(
-      c.env.DB.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .bind(userId).run()
-    )
     
     await next()
   } catch (e: any) {

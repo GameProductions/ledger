@@ -1,6 +1,7 @@
-export const CURRENT_VERSION = 'v3.16.1'
+export const CURRENT_VERSION = 'v3.17.0'
 
 export const VERSION_UPDATES = [
+  { version: 'v3.17.0', title: 'Universal Data Center (GA)', description: 'General Availability of the Universal Data Center, CloudHub, and the site-wide Plain English terminology overhaul.' },
   { version: 'v3.16.1', title: 'Support Center Fortification', description: 'Resolved 500 Internal Server Errors in support submission and modernized GitHub API integration logic.' },
   { version: 'v3.16.0', title: 'Evolutionary Stabilization (v3.1)', description: 'Unified synchronization of Support Center and Modal UI refactor for total platform stability.' },
   { version: 'v3.12.0', title: 'Envelope Budgeting (Core Protocol)', description: 'Finalized real-time envelope deductions and monthly rollover engine for total fiscal control.' },

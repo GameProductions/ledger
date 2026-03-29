@@ -13,7 +13,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const PreferencesPage = lazy(() => import('./pages/PreferencesPage'))
 const ReportsPage = lazy(() => import('./pages/ReportsPage'))
-const DataInteropPage = lazy(() => import('./pages/DataInteropPage'))
+const DataCenterPage = lazy(() => import('./pages/DataCenterPage'))
 const SnapshotViewer = lazy(() => import('./pages/SnapshotViewer'))
 const BackupHub = lazy(() => import('./pages/BackupHub'))
 const HelpCenter = lazy(() => import('./pages/help/HelpCenter').then(m => ({ default: m.HelpCenter })))
@@ -81,7 +81,7 @@ const AppContent: React.FC = () => {
     if (path === '#/preferences') return <PreferencesPage />
     if (path === '#/reports') return <ReportsPage />
     if (path === '#/payments') return <PaymentCentralPage />
-    if (path === '#/data') return <DataInteropPage />
+    if (path === '#/data') return <DataCenterPage />
     if (path.startsWith('#/snapshot/')) return <SnapshotViewer />
     if (path === '#/backup') return <BackupHub />
     if (path === '#/help') return <HelpCenter />

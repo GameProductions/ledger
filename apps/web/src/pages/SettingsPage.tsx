@@ -52,7 +52,10 @@ const SettingsPage: React.FC = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/identities/${confirmUnlink.id}?keep_settings=${keepSettingsOnUnlink}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        }
       });
       if (res.ok) {
         showToast(`${confirmUnlink.provider} unlinked successfully`, 'success');
@@ -76,7 +79,8 @@ const SettingsPage: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
         },
         body: JSON.stringify({ provider, identityId })
       })
@@ -93,7 +97,10 @@ const SettingsPage: React.FC = () => {
     try {
       const optRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-options`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        },
         credentials: 'include'
       })
       const options = await optRes.json()
@@ -113,7 +120,11 @@ const SettingsPage: React.FC = () => {
     try {
       const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        },
         credentials: 'include',
         body: JSON.stringify({ 
           attestation: newPasskeyData.attestation,
@@ -139,7 +150,11 @@ const SettingsPage: React.FC = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/${editingPasskey.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        },
         body: JSON.stringify({ name: editingPasskey.newName })
       })
       if (res.ok) {
@@ -156,7 +171,10 @@ const SettingsPage: React.FC = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/${confirmDeletePasskey.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        }
       })
       if (res.ok) {
         showToast('Passkey removed', 'success')
@@ -172,7 +190,11 @@ const SettingsPage: React.FC = () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/password/change`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        },
         body: JSON.stringify({ newPassword })
       })
       if (res.ok) {
@@ -206,7 +228,8 @@ const SettingsPage: React.FC = () => {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': localStorage.getItem('ledger_household_id') || ''
         },
         body: JSON.stringify({ 
           display_name: name, 

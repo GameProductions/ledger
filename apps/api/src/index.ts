@@ -15,7 +15,7 @@ import financialsRoutes from './routes/financials'
 import planningRoutes from './routes/planning'
 import userRoutes from './routes/user'
 import pccRoutes from './routes/pcc'
-import interopRoutes from './routes/interop'
+import dataRoutes from './routes/data-service'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
 import { handleScheduled } from './cron'
@@ -154,7 +154,7 @@ ledger.route('/auth', authRoutes)
 ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)
-ledger.route('/api/interop', interopRoutes)
+ledger.route('/api/data', dataRoutes)
 ledger.route('/api/pcc', pccRoutes)
 ledger.route('/api/support', supportRoutes)
 

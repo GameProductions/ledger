@@ -24,16 +24,16 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   }
 
   const navItems = [
-    { name: 'Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
-    { name: 'Users', path: '#/system-pcc/users', icon: Users },
+    { name: 'Mini-Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
+    { name: 'Manage Users', path: '#/system-pcc/users', icon: Users },
     { name: 'Households', path: '#/system-pcc/households', icon: Shield },
-    { name: 'Providers', path: '#/system-pcc/providers', icon: Globe },
-    { name: 'Processors', path: '#/system-pcc/processors', icon: Zap },
-    { name: 'Audit History', path: '#/system-pcc/audit', icon: Activity },
-    { name: 'Registry Entities', path: '#/system-pcc/registry', icon: Database },
-    { name: 'Global Search', path: '#/system-pcc/search', icon: Search },
-    { name: 'System Settings', path: '#/system-pcc/config', icon: Settings },
-    { name: 'PCC Guide', path: '#/system-pcc/guide', icon: FileText },
+    { name: 'Service Providers', path: '#/system-pcc/providers', icon: Globe },
+    { name: 'Payment Networks', path: '#/system-pcc/processors', icon: Zap },
+    { name: 'Security Logs', path: '#/system-pcc/audit', icon: Activity },
+    { name: 'Master Records', path: '#/system-pcc/registry', icon: Database },
+    { name: 'System Search', path: '#/system-pcc/search', icon: Search },
+    { name: 'Configuration', path: '#/system-pcc/config', icon: Settings },
+    { name: 'Admin Manual', path: '#/system-pcc/guide', icon: FileText },
   ];
 
   return (

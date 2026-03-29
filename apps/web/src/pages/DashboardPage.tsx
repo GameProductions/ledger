@@ -34,9 +34,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: subscriptions, mutate: mutateSubs } = useApi('/api/planning/subscriptions')
   const { data: templates } = useApi('/api/planning/templates')
   const [timeframe, setTimeframe] = useState('paycheck')
-  const { data: analytics } = useApi(`/api/interop/analytics/summary?timeframe=${timeframe}`)
-  const { data: insightsData } = useApi('/api/interop/analytics/insights')
-  const { data: projections } = useApi('/api/interop/analytics/projection')
+  const { data: analysis } = useApi(`/api/data/analysis/summary?timeframe=${timeframe}`)
+  const { data: insightsData } = useApi('/api/data/analysis/insights')
+  const { data: forecast } = useApi('/api/data/analysis/forecast')
   const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -240,7 +240,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
               </div>
               <div className="safe-to-spend-container">
-                <Price amountCents={analytics?.safetyNumberCents || 0} />
+                <Price amountCents={analysis?.safeToSpendCents || analysis?.safetyNumberCents || 0} />
               </div>
               <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
             </section>
@@ -251,14 +251,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
               </div>
               <div className="text-3xl font-black text-white mb-2">
-                <Price amountCents={Array.isArray(projections) ? (projections?.[(projections?.length ?? 0) - 1]?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
+                <Price amountCents={Array.isArray(forecast) ? (forecast?.[(forecast?.length ?? 0) - 1]?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
               <div className="flex items-center gap-2 mb-4">
                  <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
                  <span className="text-xs text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Available Money</span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
-                {Array.isArray(projections) && projections.slice(0, 6).map((p: any, i: number) => (
+                {Array.isArray(forecast) && forecast.slice(0, 6).map((p: any, i: number) => (
                   <div 
                     key={i} 
                     className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"
@@ -479,12 +479,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="dashboard-grid stagger">
             <section className="card">
               <h3 className="text-lg font-bold mb-6">Financial Health</h3>
-              <HealthScore score={analytics?.healthScore || 0} />
+              <HealthScore score={analysis?.healthScore || 0} />
               <button 
-                onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/interop/report/summary`, '_blank')}
+                onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/data/history/summary`, '_blank')}
                 className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-xs font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
               >
-                📥 Generate PDF Insights
+                📥 Download Statement Summary
               </button>
             </section>
 

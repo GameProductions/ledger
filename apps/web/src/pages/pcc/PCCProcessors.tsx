@@ -22,7 +22,7 @@ const PCCProcessors: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/processors`, {
+      const res = await fetch(`${apiUrl}/api/pcc/networks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -44,8 +44,8 @@ const PCCProcessors: React.FC = () => {
     const apiUrl = import.meta.env.VITE_API_URL;
     
     const url = editingId 
-      ? `${apiUrl}/api/pcc/processors/${editingId}`
-      : `${apiUrl}/api/pcc/processors`;
+      ? `${apiUrl}/api/pcc/networks/${editingId}`
+      : `${apiUrl}/api/pcc/networks`;
     
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -85,7 +85,7 @@ const PCCProcessors: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/processors/${id}`, {
+    const res = await fetch(`${apiUrl}/api/pcc/networks/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

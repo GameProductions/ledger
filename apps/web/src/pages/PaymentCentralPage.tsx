@@ -44,7 +44,7 @@ const PaymentCentralPage: React.FC = () => {
       const [methodsRes, accountsRes, providersRes, subsRes] = await Promise.all([
         fetch(`${apiUrl}/api/user/payment-methods`, { headers }),
         fetch(`${apiUrl}/api/user/linked-accounts`, { headers }),
-        fetch(`${apiUrl}/api/user/service-providers`, { headers }),
+        fetch(`${apiUrl}/api/data/providers`, { headers }),
         fetch(`${apiUrl}/api/planning/subscriptions`, { headers })
       ]);
       
@@ -133,7 +133,7 @@ const PaymentCentralPage: React.FC = () => {
                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
                     <Shield size={16} />
                  </div>
-                 <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Security Sector</p>
+                 <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Security Area</p>
               </div>
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase underline decoration-amber-500/50 underline-offset-8">Payment Central</h1>
             </div>
@@ -201,7 +201,7 @@ const PaymentCentralPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="w-full py-4 bg-white text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all">Secure Method</button>
+                    <button type="submit" className="w-full py-4 bg-white text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all">Save Method</button>
                  </form>
               </div>
             )}
@@ -282,7 +282,7 @@ const PaymentCentralPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="w-full py-4 bg-amber-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all">Establish Link</button>
+                    <button type="submit" className="w-full py-4 bg-amber-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all">Connect Account</button>
                  </form>
               </div>
             )}
@@ -378,8 +378,8 @@ const PaymentCentralPage: React.FC = () => {
                
                {linkedAccounts.length === 0 && (
                  <div className="col-span-full py-40 text-center rounded-[3.5rem] border border-dashed border-white/5 bg-white/2">
-                    <h4 className="text-xl font-black text-slate-700 uppercase tracking-widest">No Links Established</h4>
-                    <p className="text-sm text-slate-700 mt-2 font-medium">Link your providers to manage forensic payment tracking.</p>
+                    <h4 className="text-xl font-black text-slate-700 uppercase tracking-widest">No Accounts Connected</h4>
+                    <p className="text-sm text-slate-700 mt-2 font-medium">Connect your providers to manage detailed transaction history.</p>
                  </div>
                )}
              </div>

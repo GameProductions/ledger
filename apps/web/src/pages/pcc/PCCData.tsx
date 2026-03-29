@@ -22,7 +22,7 @@ const PCCData: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/registry`, {
+      const res = await fetch(`${apiUrl}/api/pcc/records`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -49,7 +49,7 @@ const PCCData: React.FC = () => {
       metadata_json: newItem.metadata_json || {}
     };
 
-    const res = await fetch(`${apiUrl}/api/pcc/registry`, {
+    const res = await fetch(`${apiUrl}/api/pcc/records`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(submissionData)
@@ -71,7 +71,7 @@ const PCCData: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/registry/${id}`, {
+    const res = await fetch(`${apiUrl}/api/pcc/records/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

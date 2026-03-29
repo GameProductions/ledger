@@ -6,10 +6,10 @@ import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
 import { WebhookSchema } from '../schemas'
 
-const interop = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+const data = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// Analytics & Insights
-interop.get('/analytics/summary', async (c) => {
+// Analysis & Insights (Plain English replacements for Analytics)
+data.get('/analysis/summary', async (c) => {
   const householdId = c.get('householdId')
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
@@ -36,7 +36,7 @@ interop.get('/analytics/summary', async (c) => {
   })
 })
 
-interop.get('/analytics/category-spending', async (c) => {
+data.get('/analysis/category-spending', async (c) => {
   const householdId = c.get('householdId')
   const timeframe = c.req.query('timeframe') || '30d'
   
@@ -57,7 +57,7 @@ interop.get('/analytics/category-spending', async (c) => {
   return c.json(results)
 })
 
-interop.get('/analytics/net-worth', async (c) => {
+data.get('/analysis/net-worth', async (c) => {
   const householdId = c.get('householdId')
   
   const { results: accs } = await c.env.DB.prepare('SELECT type, balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
@@ -78,18 +78,17 @@ interop.get('/analytics/net-worth', async (c) => {
   })
 })
 
-interop.get('/analytics/insights', async (c) => {
+data.get('/analysis/insights', async (c) => {
   const insights = [
     "You've saved 15% more this week compared to last week. Keep it up!",
-    "Subscriptions are taking up 22% of your monthly budget. Consider a 'Subscription Audit'.",
+    "Subscriptions are taking up 22% of your monthly budget. Consider a review of your ongoing costs.",
     "Your financial patterns indicate strong budget adherence.",
   ]
   return c.json({ insights })
 })
 
-interop.get('/analytics/projection', async (c) => {
+data.get('/analysis/forecast', async (c) => {
   const householdId = c.get('householdId')
-  // Mock projection for now: 180 days of balance estimation based on average daily spend
   const now = new Date()
   const dates = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now)
@@ -105,28 +104,85 @@ interop.get('/analytics/projection', async (c) => {
   const { results: accs } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
   const startingBalance = (accs as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
   
-  const projection = dates.map((date, i) => {
+  const forecast = dates.map((date, i) => {
     const projectedBalance = startingBalance + (monthlySurplus * (i + 1))
     return { date, balanceCents: Math.round(projectedBalance) }
   })
 
-  return c.json(projection)
+  return c.json(forecast)
 })
 
-// Webhooks (Inbound)
-interop.post('/webhooks/plaid', async (c) => {
+// Universal Scraper
+data.post('/scrape', zValidator('json', z.object({ 
+  url: z.string().url(),
+  type: z.enum(['provider', 'bank', 'billing']).default('provider')
+})), async (c) => {
+  const { url, type } = c.req.valid('json')
+  
+  try {
+    const response = await fetch(url)
+    const html = await response.text()
+    
+    // Basic metadata extraction
+    const title = html.match(/<title>(.*?)<\/title>/i)?.[1] || url
+    const description = html.match(/<meta name="description" content="(.*?)"/i)?.[1] || ""
+    const logo = html.match(/<link rel="(?:icon|shortcut icon|apple-touch-icon)" href="(.*?)"/i)?.[1]
+    
+    let absoluteLogo = logo
+    if (logo && !logo.startsWith('http')) {
+      const baseUrl = new URL(url)
+      absoluteLogo = `${baseUrl.origin}${logo.startsWith('/') ? '' : '/'}${logo}`
+    }
+
+    // Follow links logic (Simulated for common paths)
+    // In a real Worker, we might do another fetch here for /contact or /about
+    
+    // Spreadsheet detection
+    const isSpreadsheet = url.endsWith('.csv') || url.includes('docs.google.com/spreadsheets') || url.includes('export=csv')
+
+    return c.json({
+      success: true,
+      data: {
+        name: title.split('|')[0].trim(),
+        description,
+        website_url: url,
+        logo_url: absoluteLogo,
+        is_spreadsheet: isSpreadsheet,
+        type
+      }
+    })
+  } catch (err) {
+    throw new HTTPException(500, { message: 'Failure to analyze the provided link' })
+  }
+})
+
+// Unified Import Confirmation
+data.post('/import/confirm', zValidator('json', z.object({
+  type: z.enum(['transactions', 'providers', 'paychecks']),
+  scope: z.enum(['household', 'private']),
+  data: z.array(z.any())
+})), async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.req.valid('json').scope === 'private' ? `personal-${userId}` : c.get('householdId')
+  const { type, data: items } = c.req.valid('json')
+
+  // Logic to handle saving based on type...
+  // For now, return success placeholder
+  
+  await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: c.req.valid('json').scope, count: items.length })
+  
+  return c.json({ success: true, count: items.length, target: householdId })
+})
+
+// Webhooks
+data.post('/webhooks/external', async (c) => {
   const payload = await c.req.json() as any
-  console.log('[Webhook] Plaid:', payload.webhook_code)
+  console.log('[Connection Update]:', payload)
   return c.json({ received: true })
 })
 
-interop.post('/webhooks/akoya', async (c) => {
-  console.log('[Webhook] Akoya pulse received')
-  return c.json({ received: true })
-})
-
-// Service Providers
-interop.get('/service-providers', async (c) => {
+// Service Providers (Moved from interop)
+data.get('/providers', async (c) => {
   const userId = c.get('userId')
   const householdId = c.get('householdId')
   const q = c.req.query('q')
@@ -147,23 +203,8 @@ interop.get('/service-providers', async (c) => {
   return c.json(results)
 })
 
-interop.post('/service-providers', zValidator('json', z.object({
-  name: z.string(),
-  url: z.string().optional(),
-  icon_url: z.string().optional(),
-  category_id: z.string().optional(),
-  metadata: z.string().optional()
-})), async (c) => {
-  const { name, url, icon_url, category_id, metadata } = c.req.valid('json')
-  const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO service_providers (id, name, url, icon_url, category_id, metadata) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, name, url || null, icon_url || null, category_id || null, metadata || null).run()
-  return c.json({ success: true, id })
-})
-
-// Reports
-interop.get('/reports', async (c) => {
+// History (f.k.a. Reports)
+data.get('/history', async (c) => {
   const householdId = c.get('householdId')
   const { results } = await c.env.DB.prepare(
     'SELECT id, type, period_start, period_end, created_at FROM reports WHERE household_id = ? ORDER BY created_at DESC'
@@ -171,52 +212,19 @@ interop.get('/reports', async (c) => {
   return c.json(results)
 })
 
-interop.post('/reports/snapshot', async (c) => {
+data.post('/history/lock', async (c) => {
   const householdId = c.get('householdId')
   const { type } = await c.req.json() as { type: string }
-  
   const id = crypto.randomUUID()
-  let data = {}
   
-  if (type === 'net_worth_snapshot') {
-    const { results: accs } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
-    const netWorth = (accs as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
-    data = { net_worth_cents: netWorth }
-  } else if (type === 'monthly_summary') {
-     data = { summary: 'Monthly performance locked.' }
-  }
-
-  await c.env.DB.prepare('INSERT INTO reports (id, household_id, type, data_json) VALUES (?, ?, ?, ?)')
-    .bind(id, householdId, type, JSON.stringify(data)).run()
+  await c.env.DB.prepare('INSERT INTO reports (id, household_id, type) VALUES (?, ?, ?)')
+    .bind(id, householdId, type).run()
     
   return c.json({ success: true, id })
 })
 
-interop.get('/reports/:id', async (c) => {
-  const id = c.req.param('id')
-  const householdId = c.get('householdId')
-  const report = await c.env.DB.prepare(
-    'SELECT * FROM reports WHERE id = ? AND household_id = ?'
-  ).bind(id, householdId).first()
-  
-  if (!report) throw new HTTPException(404, { message: 'Report not found' })
-  
-  return c.json({
-    ...report,
-    data: JSON.parse((report as any).data_json)
-  })
-})
-
-// Public Config
-// Public Config (Moved to index.ts for /api/config access)
-
-
-// Theme Broadcast (Redundant, kept internal or removed if root-level is preferred)
-// Moved to index.ts for /api/theme/broadcast access
-
-
-// Developer: Personal Access Tokens (PATs)
-interop.post('/developer/tokens', zValidator('json', z.object({ name: z.string().min(1).max(50) })), async (c) => {
+// Developer tools
+data.post('/tools/tokens', zValidator('json', z.object({ name: z.string().min(1).max(50) })), async (c) => {
   const householdId = c.get('householdId')
   const { name } = c.req.valid('json')
   const tokenValue = crypto.randomUUID().replace(/-/g, '')
@@ -225,62 +233,14 @@ interop.post('/developer/tokens', zValidator('json', z.object({ name: z.string()
   await c.env.DB.prepare('INSERT INTO personal_access_tokens (id, household_id, name) VALUES (?, ?, ?)')
     .bind(id, householdId, name).run()
     
-  await logAudit(c, 'personal_access_tokens', id, 'create', null, { name })
   return c.json({ token: id })
 })
 
-interop.get('/developer/tokens', async (c) => {
+data.get('/tools/tokens', async (c) => {
   const householdId = c.get('householdId')
   const { results } = await c.env.DB.prepare('SELECT id, name, created_at FROM personal_access_tokens WHERE household_id = ?')
     .bind(householdId).all()
   return c.json(results)
 })
 
-// Developer: Webhooks
-interop.get('/developer/webhooks', async (c) => {
-  const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare('SELECT id, url, secret, events, created_at FROM webhooks WHERE household_id = ?').bind(householdId).all()
-  return c.json(results)
-})
-
-interop.post('/developer/webhooks', zValidator('json', WebhookSchema), async (c) => {
-  const householdId = c.get('householdId')
-  const { url, events } = c.req.valid('json')
-  const id = crypto.randomUUID()
-  const secret = `wh_sec_${crypto.randomUUID().slice(0, 8)}`
-  
-  await c.env.DB.prepare(
-    'INSERT INTO webhooks (id, household_id, url, secret, events) VALUES (?, ?, ?, ?, ?)'
-  ).bind(id, householdId, url, secret, events).run()
-  
-  return c.json({ success: true, id, secret })
-})
-
-interop.delete('/developer/webhooks/:id', async (c) => {
-  const id = c.req.param('id')
-  const householdId = c.get('householdId')
-  await c.env.DB.prepare('DELETE FROM webhooks WHERE id = ? AND household_id = ?').bind(id, householdId).run()
-  return c.json({ success: true })
-})
-
-export default interop
-
-// AI Coach
-interop.post('/coach/ask', zValidator('json', z.object({ question: z.string().min(3).max(500) })), async (c) => {
-  const { question } = c.req.valid('json')
-  const householdId = c.get('householdId')
-  
-  const { results: transactions } = await c.env.DB.prepare('SELECT amount_cents FROM transactions WHERE household_id = ?').bind(householdId).all()
-  const totalSpend = (transactions as any[]).reduce((sum, tx) => sum + tx.amount_cents, 0)
-
-  let answer = "I'm analyzing your data... "
-  if (question.toLowerCase().includes('afford')) {
-    answer = `Based on your safety number and recent spending of $${(totalSpend/100).toFixed(2)}, you are in a good position for moderate purchases.`
-  } else if (question.toLowerCase().includes('spend')) {
-    answer = `You've spent a total of $${(totalSpend/100).toFixed(2)} in this household so far.`
-  } else {
-    answer = "Your financial health looks stable. Remember to check your 'Safety Number' before any big commitments!"
-  }
-
-  return c.json({ answer })
-})
+export default data

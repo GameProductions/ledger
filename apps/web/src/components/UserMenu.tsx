@@ -17,16 +17,17 @@ const UserMenu: React.FC<{
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
-    { icon: LayoutDashboard, label: 'PCC Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
-    { icon: Cpu, label: 'System Settings', hash: '#/system-pcc/config', color: 'text-blue-400' },
-    { icon: Database, label: 'Registry Entities', hash: '#/system-pcc/registry', color: 'text-orange-400' },
-    { icon: Users, label: 'System Users', hash: '#/system-pcc/users', color: 'text-primary' },
-    { icon: Activity, label: 'Audit History', hash: '#/system-pcc/audit', color: 'text-secondary' },
+    { icon: LayoutDashboard, label: 'PCC Mini-Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
+    { icon: Cpu, label: 'System Configuration', hash: '#/system-pcc/config', color: 'text-blue-400' },
+    { icon: Database, label: 'Master Record List', hash: '#/system-pcc/registry', color: 'text-orange-400' },
+    { icon: Users, label: 'Manage All Users', hash: '#/system-pcc/users', color: 'text-primary' },
+    { icon: Activity, label: 'Safety & Action Logs', hash: '#/system-pcc/audit', color: 'text-secondary' },
   ] : [
-    { icon: Settings, label: 'User Settings', hash: '#/settings', color: 'text-primary' },
+    { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
-    { icon: Palette, label: 'Preferences', hash: '#/preferences', color: 'text-secondary' },
-    { icon: HelpCircle, label: 'Help & Support', hash: '#/help', color: 'text-blue-400' },
+    { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },
+    { icon: Palette, label: 'Visual Style', hash: '#/preferences', color: 'text-secondary' },
+    { icon: HelpCircle, label: 'Help & Guides', hash: '#/help', color: 'text-blue-400' },
   ]
 
   return (

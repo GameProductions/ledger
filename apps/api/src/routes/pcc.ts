@@ -63,27 +63,27 @@ pcc.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async 
   return c.json({ success: true })
 })
 
-// Universal Registry
-pcc.get('/registry', async (c) => {
+// Master Record List (Registry)
+pcc.get('/records', async (c) => {
   const { results } = await c.env.DB.prepare('SELECT * FROM system_registry ORDER BY item_type ASC, name ASC').all()
   return c.json(results)
 })
 
-pcc.post('/registry', zValidator('json', SystemRegistrySchema), async (c) => {
+pcc.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
   const metadata = data.metadata_json || {}
   await c.env.DB.prepare(
     'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
   ).bind(id, data.item_type, data.name, data.logo_url || null, data.website_url || null, JSON.stringify(metadata)).run()
-  await logAudit(c, 'system_registry', id, 'CREATE_REGISTRY_ITEM', {}, data)
+  await logAudit(c, 'system_registry', id, 'CREATE_RECORD', {}, data)
   return c.json({ success: true, id })
 })
 
-pcc.delete('/registry/:id', async (c) => {
+pcc.delete('/records/:id', async (c) => {
   const id = c.req.param('id')
   await c.env.DB.prepare('DELETE FROM system_registry WHERE id = ?').bind(id).run()
-  await logAudit(c, 'system_registry', id, 'DELETE_REGISTRY_ITEM')
+  await logAudit(c, 'system_registry', id, 'DELETE_RECORD')
   return c.json({ success: true })
 })
 
@@ -154,13 +154,13 @@ pcc.get('/search', async (c) => {
   return c.json({ users, registry })
 })
 
-// Billing Processors
-pcc.get('/processors', async (c) => {
+// Payment Networks (Processors)
+pcc.get('/networks', async (c) => {
   const { results } = await c.env.DB.prepare('SELECT * FROM billing_processors ORDER BY name ASC').all()
   return c.json(results)
 })
 
-pcc.post('/processors', zValidator('json', BillingProcessorSchema), async (c) => {
+pcc.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
   await c.env.DB.prepare(
@@ -170,7 +170,7 @@ pcc.post('/processors', zValidator('json', BillingProcessorSchema), async (c) =>
   return c.json({ success: true, id })
 })
 
-pcc.patch('/processors/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
+pcc.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const { name, website_url, branding_url, support_url, subscription_id_notes } = data
@@ -184,12 +184,12 @@ pcc.patch('/processors/:id', zValidator('json', BillingProcessorSchema.partial()
   return c.json({ success: true })
 })
 
-pcc.delete('/processors/:id', async (c) => {
+pcc.delete('/networks/:id', async (c) => {
   const id = c.req.param('id')
   // Check for linked providers
   const linked = await c.env.DB.prepare('SELECT count(*) as count FROM service_providers WHERE billing_processor_id = ?').bind(id).first()
   if ((linked as any).count > 0) {
-    throw new HTTPException(400, { message: 'Cannot delete processor with active service provider links' })
+    throw new HTTPException(400, { message: 'Cannot delete network with active service provider links' })
   }
   await c.env.DB.prepare('DELETE FROM billing_processors WHERE id = ?').bind(id).run()
   await logAudit(c, 'billing_processors', id, 'admin_delete')

@@ -580,6 +580,7 @@ const PCCUsers: React.FC = () => {
   const [deletingUser, setDeletingUser] = useState(false);
   const [mergeSource, setMergeSource] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState<string | null>(null);
+  const [mergeSearchTerm, setMergeSearchTerm] = useState('');
   const [merging, setMerging] = useState(false);
 
   const fetchUsers = async () => {
@@ -831,7 +832,7 @@ const PCCUsers: React.FC = () => {
         {/* Merge Selection Modal */}
         <Modal
           isOpen={!!mergeSource}
-          onClose={() => setMergeSource(null)}
+          onClose={() => { setMergeSource(null); setMergeSearchTerm(''); setMergeTarget(null); }}
           title="Select Destination Account"
           footer={
             <>
@@ -848,12 +849,27 @@ const PCCUsers: React.FC = () => {
           }
         >
           <div className="space-y-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <input 
+                type="text"
+                placeholder="Search destination accounts..."
+                value={mergeSearchTerm}
+                onChange={(e) => setMergeSearchTerm(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-4 pl-12 rounded-2xl text-sm font-bold focus:border-orange-500/50 outline-none transition-all"
+              />
+            </div>
+
             <p className="text-xs text-slate-500 uppercase font-black tracking-widest pr-4">
               Select the account that will <span className="text-white">REMAIN active</span>. Data from the source account will be migrated.
             </p>
             
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-              {users.filter(u => u.id !== mergeSource).map(u => (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {users.filter(u => 
+                u.id !== mergeSource && 
+                (u.display_name?.toLowerCase().includes(mergeSearchTerm.toLowerCase()) || 
+                 u.email?.toLowerCase().includes(mergeSearchTerm.toLowerCase()))
+              ).map(u => (
                 <div 
                   key={u.id}
                   onClick={() => setMergeTarget(u.id)}

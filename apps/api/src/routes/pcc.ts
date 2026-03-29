@@ -423,4 +423,54 @@ pcc.delete('/households/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// Administrative Protocol: Account Unification (v3.20)
+pcc.post('/admin/users/merge', zValidator('json', z.object({
+  sourceId: z.string().uuid(),
+  targetId: z.string().uuid()
+})), async (c) => {
+  const { sourceId, targetId } = c.req.valid('json')
+  
+  if (sourceId === targetId) {
+    throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
+  }
+
+  // Identity Verification
+  const source = await c.env.DB.prepare('SELECT id, display_name, email FROM users WHERE id = ?').bind(sourceId).first() as any
+  const target = await c.env.DB.prepare('SELECT id, display_name, email FROM users WHERE id = ?').bind(targetId).first() as any
+  
+  if (!source || !target) {
+    throw new HTTPException(404, { message: 'Identity Resolution Failed: Source or Target record missing.' })
+  }
+
+  // Atomic Migration Sequence
+  await c.env.DB.batch([
+    // 1. Migrate Household Access (Deduplicated)
+    c.env.DB.prepare(
+      'INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ? as user_id, household_id FROM user_households WHERE user_id = ?'
+    ).bind(targetId, sourceId),
+    c.env.DB.prepare('DELETE FROM user_households WHERE user_id = ?').bind(sourceId),
+    
+    // 2. Transfer Intellectual Property (Transactions & Subs)
+    c.env.DB.prepare('UPDATE transactions SET owner_id = ? WHERE owner_id = ?').bind(targetId, sourceId),
+    c.env.DB.prepare('UPDATE subscriptions SET owner_id = ? WHERE owner_id = ?').bind(targetId, sourceId),
+    
+    // 3. Migrate Authentication & Payment Channels
+    c.env.DB.prepare('UPDATE user_payment_methods SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+    c.env.DB.prepare('UPDATE user_linked_accounts SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+    c.env.DB.prepare('UPDATE passkeys SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+    c.env.DB.prepare('UPDATE user_identities SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+    
+    // 4. Secure Purge of Source Identity
+    c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(sourceId)
+  ])
+
+  // Forensic Audit Trail
+  await logAudit(c, 'users', targetId, 'ADMIN_USER_MERGE', 
+    { merged_source_id: sourceId, source_email: source.email }, 
+    { source_name: source.display_name, action: 'UNIFICATION_COMPLETE' }
+  )
+  
+  return c.json({ success: true })
+})
+
 export default pcc

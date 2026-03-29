@@ -11,6 +11,7 @@ import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
+import { verify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
 
@@ -85,7 +86,25 @@ auth.get('/login/discord', async (c) => {
     console.error(errorMsg)
     throw new HTTPException(500, { message: errorMsg })
   }
-  const state = crypto.randomUUID()
+
+  // 1. Capture session context if present
+  let userId: string | null = null
+  const authHeader = c.req.header('Authorization')
+  const authQuery = c.req.query('auth_token')
+  const token = authQuery || (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null)
+
+  if (token) {
+    try {
+      const payload = await verify(token, c.env.JWT_SECRET) as any
+      userId = payload.sub
+    } catch (e) {
+      console.warn('[OAuth] Failed to verify existing token for linking:', e)
+    }
+  }
+
+  const challenge = crypto.randomUUID()
+  const state = btoa(JSON.stringify({ challenge, userId }))
+  
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
     secure: true,
@@ -95,7 +114,7 @@ auth.get('/login/discord', async (c) => {
   })
   
   const redirectUri = `${new URL(c.req.url).origin}/auth/callback/discord`
-  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20email&state=${state}`
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&robot=false&response_type=code&scope=identify%20email&state=${state}`
   return c.redirect(url)
 })
 
@@ -106,6 +125,15 @@ auth.get('/callback/discord', async (c) => {
 
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
+  }
+
+  // Parse state for session context
+  let sessionUserId: string | null = null
+  try {
+    const decoded = JSON.parse(atob(state))
+    sessionUserId = decoded.userId
+  } catch (e) {
+    console.warn('[OAuth] State decode failure:', e)
   }
 
   const authService = new AuthService(c.env)
@@ -129,19 +157,30 @@ auth.get('/callback/discord', async (c) => {
   })
   const profile = await userRes.json() as any
   
-  const userId = await authService.findOrCreateSocialUser('discord', {
+  const socialProfile = {
     id: profile.id,
     email: profile.email,
     name: profile.username,
     avatar: `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
-  }, {
+  }
+
+  const socialTokens = {
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
     expires_in: tokenData.expires_in
-  })
-  
-  const token = await authService.generateToken(userId)
-  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+  }
+
+  if (sessionUserId) {
+    // LINK MODE
+    await authService.linkSocialAccount(sessionUserId, 'discord', socialProfile, socialTokens)
+    await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'discord', userId: sessionUserId })
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+  } else {
+    // LOGIN MODE
+    const userId = await authService.findOrCreateSocialUser('discord', socialProfile, socialTokens)
+    const token = await authService.generateToken(userId)
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
+  }
 })
 
 auth.get('/login/google', async (c) => {
@@ -151,7 +190,25 @@ auth.get('/login/google', async (c) => {
     console.error(errorMsg)
     throw new HTTPException(500, { message: errorMsg })
   }
-  const state = crypto.randomUUID()
+
+  // 1. Capture session context if present
+  let userId: string | null = null
+  const authHeader = c.req.header('Authorization')
+  const authQuery = c.req.query('auth_token')
+  const token = authQuery || (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null)
+
+  if (token) {
+    try {
+      const payload = await verify(token, c.env.JWT_SECRET) as any
+      userId = payload.sub
+    } catch (e) {
+      console.warn('[OAuth] Failed to verify existing token for linking:', e)
+    }
+  }
+
+  const challenge = crypto.randomUUID()
+  const state = btoa(JSON.stringify({ challenge, userId }))
+  
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
     secure: true,
@@ -173,6 +230,16 @@ auth.get('/callback/google', async (c) => {
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
   }
+
+  // Parse state for session context
+  let sessionUserId: string | null = null
+  try {
+    const decoded = JSON.parse(atob(state))
+    sessionUserId = decoded.userId
+  } catch (e) {
+    console.warn('[OAuth] State decode failure:', e)
+  }
+
   const authService = new AuthService(c.env)
   
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -192,19 +259,30 @@ auth.get('/callback/google', async (c) => {
   })
   const profile = await userRes.json() as any
   
-  const userId = await authService.findOrCreateSocialUser('google', {
+  const socialProfile = {
     id: profile.id,
     email: profile.email,
     name: profile.name,
     avatar: profile.picture
-  }, {
+  }
+
+  const socialTokens = {
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
     expires_in: tokenData.expires_in
-  })
-  
-  const token = await authService.generateToken(userId)
-  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+  }
+
+  if (sessionUserId) {
+    // LINK MODE
+    await authService.linkSocialAccount(sessionUserId, 'google', socialProfile, socialTokens)
+    await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'google', userId: sessionUserId })
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+  } else {
+    // LOGIN MODE
+    const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens)
+    const token = await authService.generateToken(userId)
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
+  }
 })
 
 // --- DROPBOX ---
@@ -213,7 +291,25 @@ auth.get('/login/dropbox', async (c) => {
   if (!clientId || clientId.includes('REPLACE_WITH')) {
     throw new HTTPException(500, { message: 'Dropbox Storage Integration Not Configured (Missing Client ID)' })
   }
-  const state = crypto.randomUUID()
+
+  // 1. Capture session context if present
+  let userId: string | null = null
+  const authHeader = c.req.header('Authorization')
+  const authQuery = c.req.query('auth_token')
+  const token = authQuery || (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null)
+
+  if (token) {
+    try {
+      const payload = await verify(token, c.env.JWT_SECRET) as any
+      userId = payload.sub
+    } catch (e) {
+      console.warn('[OAuth] Failed to verify existing token for linking:', e)
+    }
+  }
+
+  const challenge = crypto.randomUUID()
+  const state = btoa(JSON.stringify({ challenge, userId }))
+  
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
     secure: true,
@@ -235,6 +331,16 @@ auth.get('/callback/dropbox', async (c) => {
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
   }
+
+  // Parse state for session context
+  let sessionUserId: string | null = null
+  try {
+    const decoded = JSON.parse(atob(state))
+    sessionUserId = decoded.userId
+  } catch (e) {
+    console.warn('[OAuth] State decode failure:', e)
+  }
+
   const authService = new AuthService(c.env)
   const tokenRes = await fetch('https://api.dropbox.com/oauth2/token', {
     method: 'POST',
@@ -255,19 +361,30 @@ auth.get('/callback/dropbox', async (c) => {
   })
   const profile = await userRes.json() as any
   
-  const userId = await authService.findOrCreateSocialUser('dropbox', {
+  const socialProfile = {
     id: profile.account_id,
     email: profile.email,
     name: profile.name.display_name,
     avatar: profile.profile_photo_url
-  }, {
+  }
+
+  const socialTokens = {
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
     expires_in: tokenData.expires_in
-  })
-  
-  const token = await authService.generateToken(userId)
-  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+  }
+
+  if (sessionUserId) {
+    // LINK MODE
+    await authService.linkSocialAccount(sessionUserId, 'dropbox', socialProfile, socialTokens)
+    await logAudit(c, 'user_identities', profile.account_id, 'LINK', null, { provider: 'dropbox', userId: sessionUserId })
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+  } else {
+    // LOGIN MODE
+    const userId = await authService.findOrCreateSocialUser('dropbox', socialProfile, socialTokens)
+    const token = await authService.generateToken(userId)
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
+  }
 })
 
 // --- ONEDRIVE ---
@@ -276,7 +393,25 @@ auth.get('/login/onedrive', async (c) => {
   if (!clientId || clientId.includes('REPLACE_WITH')) {
     throw new HTTPException(500, { message: 'OneDrive Cloud Storage Not Configured (Missing Client ID)' })
   }
-  const state = crypto.randomUUID()
+
+  // 1. Capture session context if present
+  let userId: string | null = null
+  const authHeader = c.req.header('Authorization')
+  const authQuery = c.req.query('auth_token')
+  const token = authQuery || (authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null)
+
+  if (token) {
+    try {
+      const payload = await verify(token, c.env.JWT_SECRET) as any
+      userId = payload.sub
+    } catch (e) {
+      console.warn('[OAuth] Failed to verify existing token for linking:', e)
+    }
+  }
+
+  const challenge = crypto.randomUUID()
+  const state = btoa(JSON.stringify({ challenge, userId }))
+  
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
     secure: true,
@@ -298,6 +433,16 @@ auth.get('/callback/onedrive', async (c) => {
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
   }
+
+  // Parse state for session context
+  let sessionUserId: string | null = null
+  try {
+    const decoded = JSON.parse(atob(state))
+    sessionUserId = decoded.userId
+  } catch (e) {
+    console.warn('[OAuth] State decode failure:', e)
+  }
+
   const authService = new AuthService(c.env)
   const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
     method: 'POST',
@@ -316,18 +461,29 @@ auth.get('/callback/onedrive', async (c) => {
   })
   const profile = await userRes.json() as any
   
-  const userId = await authService.findOrCreateSocialUser('onedrive', {
+  const socialProfile = {
     id: profile.id,
     email: profile.mail || profile.userPrincipalName,
     name: profile.displayName
-  }, {
+  }
+
+  const socialTokens = {
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
     expires_in: tokenData.expires_in
-  })
-  
-  const token = await authService.generateToken(userId)
-  return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/#/login?token=${token}`)
+  }
+
+  if (sessionUserId) {
+    // LINK MODE
+    await authService.linkSocialAccount(sessionUserId, 'onedrive', socialProfile, socialTokens)
+    await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'onedrive', userId: sessionUserId })
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+  } else {
+    // LOGIN MODE
+    const userId = await authService.findOrCreateSocialUser('onedrive', socialProfile, socialTokens)
+    const token = await authService.generateToken(userId)
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
+  }
 })
 
 // --- WEBAUTHN / PASSKEYS ---

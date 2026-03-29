@@ -90,6 +90,33 @@ export class AuthService {
     return userId
   }
 
+  async linkSocialAccount(userId: string, provider: string, profile: { id: string, email: string, avatar?: string, name?: string }, tokens?: { access_token: string, refresh_token?: string, expires_in?: number }) {
+    // 1. Check if this identity is already linked to ANOTHER user
+    const existing: any = await this.env.DB.prepare(
+      'SELECT user_id FROM user_identities WHERE provider = ? AND provider_user_id = ?'
+    ).bind(provider, profile.id).first()
+
+    if (existing && existing.user_id !== userId) {
+      throw new HTTPException(409, { message: `This ${provider} account is already linked to another Ledger user.` })
+    }
+
+    if (!existing) {
+      // 2. Clear old identities of same provider for this user? No, allow multiples?
+      // For now, allow multiples.
+      const identityId = crypto.randomUUID()
+      const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id, email, name, avatar_url, access_token, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(identityId, userId, provider, profile.id, profile.email ?? null, profile.name ?? null, profile.avatar ?? null, tokens?.access_token ?? null, tokens?.refresh_token ?? null, expiresAt).run()
+    } else {
+      // 3. Update tokens/profile for existing identity
+      const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      await this.env.DB.prepare('UPDATE user_identities SET email = ?, name = ?, avatar_url = ?, access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ? AND user_id = ?')
+        .bind(profile.email ?? null, profile.name ?? null, profile.avatar ?? null, tokens?.access_token ?? null, tokens?.refresh_token ?? null, expiresAt, provider, profile.id, userId).run()
+    }
+
+    return userId
+  }
+
   async setupTOTP(userId: string) {
     const secret = await generateTOTPSecret()
     await this.env.DB.prepare('UPDATE users SET totp_secret = ? WHERE id = ?')

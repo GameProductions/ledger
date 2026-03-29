@@ -1,5 +1,5 @@
 # --- BASE STAGE ---
-FROM node:22-slim AS base
+FROM node:25-slim AS base
 WORKDIR /app
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
@@ -23,7 +23,7 @@ ENV VITE_API_URL=${VITE_API_URL}
 RUN cd apps/web && npm run build
 
 # --- PRODUCTION API ---
-FROM node:22-slim AS api
+FROM node:25-slim AS api
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 # Create data directory and set permissions

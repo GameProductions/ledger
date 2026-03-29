@@ -406,12 +406,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
             <div className="dashboard-grid stagger">
               <section className="card">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold">Budget Categories</h3>
-                  <div className="flex gap-2">
-                    <button onClick={handleRollover} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-glass-border rounded-lg hover:bg-white/10 transition-all mr-2">Roll Over Month</button>
-                    <button onClick={() => setShowDepositModal(true)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20">Deposit</button>
-                    <button onClick={() => setShowFundModal(true)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20">Fund</button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                  <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={handleRollover} className="text-[10px] font-black uppercase tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
+                    <button onClick={() => setShowDepositModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
+                    <button onClick={() => setShowFundModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
                   </div>
                 </div>
                 <div className="text-3xl font-black text-primary mb-1">

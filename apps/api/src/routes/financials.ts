@@ -109,6 +109,34 @@ financials.post('/transactions', zValidator('json', TransactionSchema), async (c
 })
 
 // Transaction Export
+financials.get('/transactions/export', async (c) => {
+  const householdId = c.get('householdId')
+  const format = c.req.query('format') || 'json'
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT t.*, c.name as category_name, a.name as account_name 
+     FROM transactions t
+     LEFT JOIN categories c ON t.category_id = c.id
+     LEFT JOIN accounts a ON t.account_id = a.id
+     WHERE t.household_id = ?`
+  ).bind(householdId).all()
+
+  if (format === 'csv') {
+    if (results.length === 0) return c.text('')
+    const headers = Object.keys(results[0])
+    const csv = [
+      headers.join(','),
+      ...results.map(row => headers.map(h => JSON.stringify(row[h as keyof typeof row])).join(','))
+    ].join('\n')
+    
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="ledger_export.csv"'
+      }
+    })
+  }
+
   return c.json(results)
 })
 
@@ -172,6 +200,15 @@ financials.post('/transactions/:id/link', async (c) => {
   return c.json({ success: true })
 })
 
+financials.post('/transactions/:id/unlink', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const tx = await c.env.DB.prepare('SELECT linked_transaction_id FROM transactions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  if (tx && (tx as any).linked_transaction_id) {
+    const targetId = (tx as any).linked_transaction_id
+    await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = NULL, reconciliation_status = "unreconciled" WHERE id = ?').bind(id).run()
+    await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = NULL, reconciliation_status = "unreconciled" WHERE id = ?').bind(targetId).run()
+  }
   return c.json({ success: true })
 })
 

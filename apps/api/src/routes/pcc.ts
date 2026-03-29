@@ -334,7 +334,7 @@ pcc.get('/admin/users/:userId/details', async (c) => {
   })
 })
 
-// Administrative Overrides (v3.14.2)
+// Administrative Overrides (v3.16.0)
 pcc.post('/admin/users/:userId/password/reset', zValidator('json', z.object({
   newPassword: z.string().min(8),
   isTemporary: z.boolean().optional().default(true)

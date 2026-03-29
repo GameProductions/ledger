@@ -6,7 +6,7 @@
     "apps/microsoft-identity-association",
     "packages/*"
   ],
-  "version": "3.12.0",
+  "version": "3.16.0",
   "scripts": {
     "dev": "npm run dev --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",

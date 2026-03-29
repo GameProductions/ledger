@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
-import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, RefreshCw, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const PCCHouseholds: React.FC = () => {
   const [households, setHouseholds] = useState<any[]>([]);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, Edit3, Plus, Send, Copy, Check, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 

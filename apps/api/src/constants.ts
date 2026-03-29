@@ -1,4 +1,4 @@
-export const CURRENT_VERSION = 'v3.11.10'
+export const CURRENT_VERSION = 'v3.11.11'
 
 export const VERSION_UPDATES = [
   { version: 'v3.11.10', title: 'Platform Hardening (Stability)', description: 'Finalized the PBKDF2 iteration restoration and removed all diagnostic tools.' },

@@ -16,7 +16,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/users/${userId}/details`, {
+      const res = await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/details`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -38,7 +38,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      await fetch(`${apiUrl}/api/pcc/users/${userId}/password/reset`, {
+      await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/password/reset`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: manualPass, isTemporary: isTemp })
@@ -56,7 +56,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
     if (!name) return;
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/users/${userId}/passkeys/${id}`, {
+    await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name })
@@ -68,7 +68,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
     if (!confirm('Remove this Passkey?')) return;
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/users/${userId}/passkeys/${id}`, {
+    await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -478,7 +478,7 @@ const PCCUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/users`, {
+      const res = await fetch(`${apiUrl}/api/pcc/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -497,7 +497,7 @@ const PCCUsers: React.FC = () => {
   const handleUpdate = async (id: string, updates: any) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/users/${id}`, {
+    await fetch(`${apiUrl}/api/pcc/admin/users/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
@@ -510,7 +510,7 @@ const PCCUsers: React.FC = () => {
     if (!confirm('CRITICAL ACTION: Are you sure you want to permanently purge this user? This will remove all directory associations and credentials.')) return;
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/users/${id}`, {
+    await fetch(`${apiUrl}/api/pcc/admin/users/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

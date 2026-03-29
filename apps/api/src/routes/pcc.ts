@@ -91,7 +91,12 @@ pcc.get('/users', async (c) => {
   return c.json(results)
 })
 
-pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema), async (c) => {
+pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) => {
+  if (!result.success) {
+    console.error('[Provisioning Validation Failed]', result.error)
+    return c.json({ success: false, error: result.error.format() }, 400)
+  }
+}), async (c) => {
   const data = c.req.valid('json')
   const { username, email, password, display_name, global_role, force_password_change } = data
   
@@ -316,6 +321,45 @@ pcc.get('/admin/users/:userId/details', async (c) => {
     social_links: socialLinks,
     history: history
   })
+  })
+})
+
+// Administrative Overrides (v3.14.2)
+pcc.post('/admin/users/:userId/password/reset', zValidator('json', z.object({
+  newPassword: z.string().min(8),
+  isTemporary: z.boolean().optional().default(true)
+})), async (c) => {
+  const { userId } = c.req.param()
+  const { newPassword, isTemporary } = c.req.valid('json')
+  
+  const passwordHash = await hashPassword(newPassword)
+  await c.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = ? WHERE id = ?')
+    .bind(passwordHash, isTemporary ? 1 : 0, userId).run()
+    
+  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { is_temporary: isTemporary })
+  return c.json({ success: true })
+})
+
+pcc.patch('/admin/users/:userId/passkeys/:id', zValidator('json', z.object({
+  name: z.string().min(1).max(100)
+})), async (c) => {
+  const { userId, id } = c.req.param()
+  const { name } = c.req.valid('json')
+  
+  await c.env.DB.prepare('UPDATE passkeys SET name = ? WHERE id = ? AND user_id = ?')
+    .bind(name, id, userId).run()
+    
+  await logAudit(c, 'passkeys', id, 'ADMIN_RENAME_PASSKEY', { userId }, { new_name: name })
+  return c.json({ success: true })
+})
+
+pcc.delete('/admin/users/:userId/passkeys/:id', async (c) => {
+  const { userId, id } = c.req.param()
+  
+  await c.env.DB.prepare('DELETE FROM passkeys WHERE id = ? AND user_id = ?').bind(id, userId).run()
+    
+  await logAudit(c, 'passkeys', id, 'ADMIN_REMOVE_PASSKEY', { userId })
+  return c.json({ success: true })
 })
 
 // External Connections Management

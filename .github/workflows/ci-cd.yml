@@ -35,14 +35,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
-          workingDirectory: "apps/api"
-          wranglerVersion: "4.78.0"
-          command: deploy --minify
+      - name: 🔐 Sync Secrets to Cloudflare
+        run: |
+          for secret in JWT_SECRET ENCRYPTION_KEY DISCORD_TOKEN DISCORD_CLIENT_ID DISCORD_CLIENT_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET DROPBOX_CLIENT_ID DROPBOX_CLIENT_SECRET ONEDRIVE_CLIENT_ID ONEDRIVE_CLIENT_SECRET; do
+            value=$(eval echo "\$$secret")
+            if [ ! -z "$value" ]; then
+              echo "$value" | npx wrangler secret put "$secret"
+            fi
+          done
+        working-directory: apps/api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -56,6 +57,15 @@ jobs:
           DROPBOX_CLIENT_SECRET: ${{ secrets.DROPBOX_CLIENT_SECRET }}
           ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
           ONEDRIVE_CLIENT_SECRET: ${{ secrets.ONEDRIVE_CLIENT_SECRET }}
+
+      - name: 🚀 Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
+          workingDirectory: "apps/api"
+          wranglerVersion: "4.78.0"
+          command: deploy --minify
 
   deploy-web:
     name: 🌌 Deploy Web (Cloudflare Pages)

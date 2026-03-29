@@ -20,8 +20,9 @@ import FutureFlow from '../components/FutureFlow'
 import GoalSeek from '../components/GoalSeek'
 import SavingsBuckets from '../components/SavingsBuckets'
 import { MainLayout } from '../components/layout/MainLayout'
-import { GuidedTour } from '../components/GuidedTour'
-import { OnboardingChecklist } from '../components/OnboardingChecklist'
+import { Modal } from '../components/ui/Modal';
+import { GuidedTour } from '../components/GuidedTour';
+import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { CalendarEntryModal } from '../components/CalendarEntryModal'
 
@@ -52,6 +53,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [showFundModal, setShowFundModal] = useState(false)
   const [fundAmount, setFundAmount] = useState('')
   const [fundCategoryId, setFundCategoryId] = useState('')
+  const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deletePending, setDeletePending] = useState<{ id: string, type: string } | null>(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [depositAmount, setDepositAmount] = useState('')
 
@@ -113,12 +117,16 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const handleRollover = async () => {
-    if (!confirm('This will move your budget ahead by one month. Continue?')) return
+    setIsRolloverModalOpen(true)
+  }
+
+  const confirmRollover = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/rollover`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
     })
     mutateBudgets()
+    setIsRolloverModalOpen(false)
     showToast('Month Rolled Over Successfully')
   }
 
@@ -172,7 +180,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const handleCalendarDelete = async (id: string, type: string) => {
-    if (!confirm('Are you sure you want to delete this entry?')) return
+    setDeletePending({ id, type })
+    setIsDeleteModalOpen(true)
+  }
+
+  const confirmCalendarDelete = async () => {
+    if (!deletePending) return
+    const { id, type } = deletePending
     const endpoint = type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
     
     await fetch(`${import.meta.env.VITE_API_URL}${endpoint}/${id}`, {
@@ -183,7 +197,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (type === 'subscription') mutateSubs()
     else mutateTx()
     
+    setIsDeleteModalOpen(false)
     setIsCalendarModalOpen(false)
+    setDeletePending(null)
     showToast('Entry Deleted')
   }
 
@@ -707,6 +723,35 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         initialData={selectedCalendarItem}
         date={selectedCalendarDate}
       />
+
+      {/* Confirmation Modals */}
+      <Modal
+        isOpen={isRolloverModalOpen}
+        onClose={() => setIsRolloverModalOpen(false)}
+        title="Confirm Budget Rollover"
+        footer={
+          <>
+            <button onClick={() => setIsRolloverModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Cancel</button>
+            <button onClick={confirmRollover} className="px-6 py-2 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">Continue</button>
+          </>
+        }
+      >
+        <p className="text-secondary text-sm font-medium">This will move your budget ahead by one month. Any remaining funds will be rolled over. Continue?</p>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Entry?"
+        footer={
+          <>
+            <button onClick={() => setIsDeleteModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Cancel</button>
+            <button onClick={confirmCalendarDelete} className="px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all font-bold">Delete Forever</button>
+          </>
+        }
+      >
+        <p className="text-secondary text-sm font-medium">Are you sure you want to delete this entry? This action cannot be undone.</p>
+      </Modal>
     </MainLayout>
   )
 }

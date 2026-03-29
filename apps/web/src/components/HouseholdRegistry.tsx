@@ -3,6 +3,9 @@ import { Shield, Edit3, Plus, Send, Copy, Check, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
 
 const HouseholdRegistry: React.FC = () => {
   const { data: profile, mutate: mutateProfile } = useApi('/api/user/profile');
@@ -13,6 +16,9 @@ const HouseholdRegistry: React.FC = () => {
   const [inviteUrl, setInviteUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newHouseholdName, setNewHouseholdName] = useState('');
+  const [creating, setCreating] = useState(false);
 
   React.useEffect(() => {
     if (profile?.household_name) {
@@ -42,10 +48,10 @@ const HouseholdRegistry: React.FC = () => {
     }
   };
 
-  const handleCreate = async () => {
-    const name = prompt('Enter new household name:');
-    if (!name) return;
+  const confirmCreate = async () => {
+    if (!newHouseholdName) return;
     const token = localStorage.getItem('ledger_token');
+    setCreating(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/households`, {
         method: 'POST',
@@ -53,7 +59,7 @@ const HouseholdRegistry: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name: newHouseholdName })
       });
       if (res.ok) {
         showToast('New household created', 'success');
@@ -61,6 +67,10 @@ const HouseholdRegistry: React.FC = () => {
       }
     } catch (err) {
       showToast('Failed to create household', 'error');
+    } finally {
+      setCreating(false);
+      setIsCreateModalOpen(false);
+      setNewHouseholdName('');
     }
   };
 
@@ -125,7 +135,7 @@ const HouseholdRegistry: React.FC = () => {
               </div>
            </div>
            <button 
-             onClick={handleCreate}
+             onClick={() => setIsCreateModalOpen(true)}
              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest text-secondary transition-all"
            >
               <Plus size={14} />
@@ -187,6 +197,31 @@ const HouseholdRegistry: React.FC = () => {
            )}
         </div>
       </div>
+
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Create New Household"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={confirmCreate} disabled={creating || !newHouseholdName}>
+              {creating ? 'Creating...' : 'Create Household'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-secondary text-sm font-medium">Enter a name for your new household. You can invite members after creation.</p>
+          <Input 
+            label="Household Name"
+            placeholder="e.g. Smith Residence, Vacation Fund"
+            value={newHouseholdName}
+            onChange={(e) => setNewHouseholdName(e.target.value)}
+            autoFocus
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

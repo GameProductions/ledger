@@ -10,7 +10,7 @@ const HouseholdSwitcher: React.FC = () => {
 
   return (
     <div className="household-switcher" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Perspective:</span>
+      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Switch Household:</span>
       <select 
         value={householdId || ''} 
         onChange={(e) => setHouseholdId(e.target.value)}

@@ -166,7 +166,7 @@ user.post('/households/invite', zValidator('json', z.object({ email: z.string().
     'INSERT INTO household_invites (id, household_id, created_by, expires_at) VALUES (?, ?, ?, ?)'
   ).bind(id, householdId, userId, expiresAt.toISOString()).run()
   
-  const inviteUrl = `${this.env.WEB_URL || 'https://ledger.gpnet.dev'}/#/households/join?token=${id}`
+  const inviteUrl = `${c.env.WEB_URL || 'https://ledger.gpnet.dev'}/#/households/join?token=${id}`
 
   // 3. Trigger Email if provided
   if (body?.email) {

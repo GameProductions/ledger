@@ -2,15 +2,22 @@ import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
 import { MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { useToast } from '../../context/ToastContext';
 
 // --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ userId, onClose }) => {
+  const { showToast } = useToast();
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
   const [manualPass, setManualPass] = useState('');
   const [isTemp, setIsTemp] = useState(true);
   const [showPass, setShowPass] = useState(false);
+  const [editingPk, setEditingPk] = useState<any | null>(null);
+  const [removingPk, setRemovingPk] = useState<any | null>(null);
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
@@ -53,7 +60,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: manualPass, isTemporary: isTemp })
       });
-      alert('Password reset successfully');
+      showToast('Password reset successfully', 'success');
       setManualPass('');
       fetchDetails();
     } finally {
@@ -61,28 +68,38 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
     }
   };
 
-  const handleAdminRenamePasskey = async (id: string, oldName: string) => {
-    const name = prompt('New Passkey Name:', oldName);
-    if (!name) return;
+  const handleAdminRenamePasskey = async () => {
+    if (!editingPk) return;
+    const { id, newName } = editingPk;
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${id}`, {
-      method: 'PATCH',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name })
-    });
-    fetchDetails();
+    try {
+      await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+      showToast('Passkey renamed', 'success');
+      fetchDetails();
+    } finally {
+      setEditingPk(null);
+    }
   };
 
-  const handleAdminRemovePasskey = async (id: string) => {
-    if (!confirm('Remove this Passkey?')) return;
+  const handleAdminRemovePasskey = async () => {
+    if (!removingPk) return;
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    fetchDetails();
+    try {
+      await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${removingPk.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      showToast('Passkey removed', 'success');
+      fetchDetails();
+    } finally {
+      setRemovingPk(null);
+    }
   };
 
   if (loading) return (
@@ -193,13 +210,13 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
                        </div>
                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
-                            onClick={() => handleAdminRenamePasskey(pk.id, pk.name)}
+                            onClick={() => setEditingPk({ id: pk.id, newName: pk.name })}
                             className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"
                           >
                              <Edit3 size={14} />
                           </button>
                           <button 
-                            onClick={() => handleAdminRemovePasskey(pk.id)}
+                            onClick={() => setRemovingPk({ id: pk.id, name: pk.name })}
                             className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-all"
                           >
                              <Trash2 size={14} />
@@ -219,7 +236,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
                   <div className="flex items-center justify-between">
                      <div className="flex items-center gap-2 text-orange-500">
                         <ShieldAlert size={18} />
-                        <span className="text-xs font-black uppercase tracking-[0.2em]">Forensic Overrides</span>
+                        <span className="text-xs font-black uppercase tracking-[0.2em]">Security Overrides</span>
                      </div>
                      <button 
                        onClick={generatePassword}
@@ -319,6 +336,43 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
           </div>
         </div>
       </motion.div>
+
+      {/* Passkey Admin Modals */}
+      <Modal
+        isOpen={!!editingPk}
+        onClose={() => setEditingPk(null)}
+        title="Rename Passkey (Admin)"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditingPk(null)}>Cancel</Button>
+            <Button variant="primary" onClick={handleAdminRenamePasskey}>Save Name</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-secondary text-sm">Update the friendly name for this passkey.</p>
+          <Input 
+            label="New Passkey Name"
+            value={editingPk?.newName || ''}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingPk({ ...editingPk, newName: e.target.value })}
+            autoFocus
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!removingPk}
+        onClose={() => setRemovingPk(null)}
+        title="Remove Passkey?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setRemovingPk(null)}>Cancel</Button>
+            <Button variant="primary" className="bg-red-500 hover:bg-red-600 text-white" onClick={handleAdminRemovePasskey}>Remove</Button>
+          </>
+        }
+      >
+        <p className="text-secondary font-medium tracking-tight">Are you sure you want to remove the passkey <strong>{removingPk?.name}</strong>? The user will need an alternative sign-in method.</p>
+      </Modal>
     </div>
   );
 };
@@ -505,12 +559,15 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
 };
 
 const PCCUsers: React.FC = () => {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -544,17 +601,27 @@ const PCCUsers: React.FC = () => {
     setActiveMenu(null);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('CRITICAL ACTION: Are you sure you want to permanently delete this user? This will remove all associated data and credentials.')) return;
-    const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/admin/users/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    setUsers(prev => prev.filter(u => u.id !== id));
-    setActiveMenu(null);
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setDeletingUser(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/admin/users/${userToDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        showToast('User account successfully deleted', 'success');
+        setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+        setActiveMenu(null);
+      }
+    } finally {
+      setDeletingUser(false);
+      setUserToDelete(null);
+    }
   };
+
 
   const filteredUsers = users.filter(u => 
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -692,11 +759,11 @@ const PCCUsers: React.FC = () => {
                           <div className="h-px bg-white/5 my-1" />
 
                           <button 
-                            onClick={() => handleDelete(u.id)}
+                            onClick={() => { setUserToDelete(u); setActiveMenu(null); }}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
                           >
                             <Trash2 size={16} />
-                            <span>Purge Node</span>
+                            <span>Delete User</span>
                           </button>
                         </motion.div>
                       </>
@@ -718,6 +785,25 @@ const PCCUsers: React.FC = () => {
           onClose={() => setIsCreateModalOpen(false)} 
           onSuccess={fetchUsers} 
         />
+
+        <Modal
+          isOpen={!!userToDelete}
+          onClose={() => setUserToDelete(null)}
+          title="Confirm User Deletion"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setUserToDelete(null)}>Cancel</Button>
+              <Button variant="primary" className="bg-red-500 hover:bg-red-600 text-white" onClick={confirmDeleteUser} disabled={deletingUser}>
+                {deletingUser ? 'Deleting...' : 'Delete User'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.display_name || userToDelete?.username}</strong>?</p>
+            <p className="text-red-500 text-xs font-black uppercase tracking-widest">CRITICAL ACTION: This will remove all associated data and credentials. This cannot be undone.</p>
+          </div>
+        </Modal>
       </AnimatePresence>
     </PCCPortal>
   );

@@ -23,6 +23,8 @@ export type Bindings = {
   DROPBOX_CLIENT_SECRET: string
   ONEDRIVE_CLIENT_ID: string
   ONEDRIVE_CLIENT_SECRET: string
+  GITHUB_TOKEN: string
+  GITHUB_REPO: string
 }
 
 export type Variables = {

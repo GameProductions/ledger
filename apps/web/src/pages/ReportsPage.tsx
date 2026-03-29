@@ -240,7 +240,7 @@ const ReportsPage: React.FC = () => {
               </div>
            </Card>
 
-           {/* Perspective: Reports Archive */}
+           {/* Household: Reports Archive */}
            <Card className="p-8 space-y-6">
               <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50">Report Archive</div>
               <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">

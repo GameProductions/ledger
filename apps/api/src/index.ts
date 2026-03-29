@@ -16,6 +16,7 @@ import userRoutes from './routes/user'
 import pccRoutes from './routes/pcc'
 import interopRoutes from './routes/interop'
 import discordRoutes from './discord'
+import supportRoutes from './routes/support'
 import { handleScheduled } from './cron'
 
 // Durable Objects Exports (Required for Cloudflare)
@@ -141,6 +142,7 @@ ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)
 ledger.route('/api/interop', interopRoutes)
 ledger.route('/api/pcc', pccRoutes)
+ledger.route('/api/support', supportRoutes)
 
 ledger.route('/discord', discordRoutes)
 

@@ -24,7 +24,9 @@ export const SupportPortal: React.FC = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...form,
+          title: form.subject,
+          description: form.message,
+          category: form.category,
           metadata: {
             userAgent: navigator.userAgent,
             timestamp: new Date().toISOString()
@@ -46,8 +48,8 @@ export const SupportPortal: React.FC = () => {
           <div className="w-20 h-20 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
             <CheckCircle size={40} />
           </div>
-          <h1 className="text-4xl font-black italic tracking-tighter">Issue Received</h1>
-          <p className="text-secondary font-medium">Your report has been logged in the system vault. Our team will review the diagnostic data and respond to your linked email.</p>
+          <h1 className="text-4xl font-black italic tracking-tighter">Support Request Sent</h1>
+          <p className="text-secondary font-medium">Your request has been received. Our team will review the details and get back to you at your registered email address as soon as possible.</p>
           <button 
             onClick={() => window.location.hash = '#/help'}
             className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-black uppercase tracking-widest transition-all"
@@ -63,7 +65,7 @@ export const SupportPortal: React.FC = () => {
     <MainLayout>
       <div className="max-w-4xl mx-auto py-12 space-y-12">
         <header className="space-y-4">
-          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Internal Comms</div>
+          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Support Center</div>
           <h1 className="text-4xl font-black italic tracking-tighter">Support Portal</h1>
           <p className="text-secondary font-medium">Submit bug reports or feature requests directly to the ledger maintenance team.</p>
         </header>

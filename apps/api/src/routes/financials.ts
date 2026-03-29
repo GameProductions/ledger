@@ -7,7 +7,8 @@ import {
   TransactionSchema, 
   PaginationSchema, 
   TransferSchema, 
-  CreditCardSchema 
+  CreditCardSchema,
+  TimelineEntrySchema 
 } from '../schemas'
 import { dispatchWebhook } from '../services/webhook-service'
 

@@ -160,14 +160,40 @@ data.post('/scrape', zValidator('json', z.object({
 data.post('/import/confirm', zValidator('json', z.object({
   type: z.enum(['transactions', 'providers', 'paychecks']),
   scope: z.enum(['household', 'private']),
-  data: z.array(z.any())
+  data: z.array(z.object({
+    description: z.string(),
+    amount: z.number(),
+    date: z.string(),
+    category: z.string().optional(),
+    notes: z.string().optional(),
+    owner_id: z.string().optional()
+  }))
 })), async (c) => {
   const userId = c.get('userId')
   const householdId = c.req.valid('json').scope === 'private' ? `personal-${userId}` : c.get('householdId')
   const { type, data: items } = c.req.valid('json')
 
-  // Logic to handle saving based on type...
-  // For now, return success placeholder
+  if (type === 'transactions') {
+    const queries = items.map(item => {
+      const id = crypto.randomUUID()
+      return c.env.DB.prepare(
+        'INSERT INTO transactions (id, household_id, account_id, description, amount_cents, transaction_date, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        id, 
+        householdId, 
+        'default-import-account', // Typically set by user in complex flow
+        item.description,
+        Math.round(item.amount * 100),
+        item.date,
+        item.notes || null,
+        item.owner_id || null
+      )
+    })
+    
+    if (queries.length > 0) {
+      await c.env.DB.batch(queries)
+    }
+  }
   
   await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: c.req.valid('json').scope, count: items.length })
   

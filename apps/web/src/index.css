@@ -99,7 +99,9 @@ body {
   flex-direction: column;
 }
 
-.card {
+.card, .interactive-card {
+  container-type: inline-size;
+  container-name: card;
   background: var(--card-bg);
   background-image: var(--glass-shine);
   backdrop-filter: blur(20px);
@@ -351,9 +353,23 @@ button.primary:hover {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
   width: 100%;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
 }
 
 .dashboard-header-wrapper {
@@ -365,15 +381,16 @@ button.primary:hover {
   grid-column: 1 / -1 !important;
 }
 
-@media (max-width: 1024px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-  
-  .dashboard-span-full {
-    grid-column: auto !important;
-  }
+/* Container-based card adjustments */
+@container card (max-width: 320px) {
+  .card, .interactive-card { padding: 1rem; }
+  .card h3 { font-size: 1rem; }
+  .interactive-card .flex-row-responsive { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .interactive-card .hide-on-narrow { display: none; }
+}
+
+@container card (min-width: 600px) {
+  .card, .interactive-card { padding: 2rem; }
 }
 
 @media (max-width: 768px) {
@@ -400,11 +417,14 @@ button.primary:hover {
   padding: 0.5rem;
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--glass-border);
   border-radius: 1.25rem;
   margin-bottom: 2rem;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab-container::-webkit-scrollbar {
@@ -426,6 +446,7 @@ button.primary:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  scroll-snap-align: start;
 }
 
 .tab-button:hover {
@@ -453,4 +474,12 @@ button.primary:hover {
     padding: 0.6rem 1rem;
     font-size: 0.7rem;
   }
+}
+
+/* Ultra-Narrow 'Foldable' (Unfolded) & Smartwatch-adjacent viewports */
+@media (max-width: 320px) {
+  html { font-size: 14px; }
+  .tab-container { border-radius: 0.75rem; gap: 0.5rem; padding: 0.25rem; }
+  .tab-button { padding: 0.5rem 0.75rem; font-size: 0.65rem; border-radius: 0.75rem; }
+  .card, .interactive-card { padding: 0.75rem; border-radius: 1rem; }
 }

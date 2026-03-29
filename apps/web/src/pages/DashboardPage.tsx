@@ -421,12 +421,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 
                 <div className="space-y-2">
                   {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
-                    <div key={b.id} className="p-4 bg-white/5 border border-glass-border rounded-2xl hover:border-primary/30 transition-all group">
-                       <div className="flex justify-between items-start mb-4">
+                    <div key={b.id} className="interactive-card hover:border-primary/30 transition-all group p-4 border-l-4 border-l-transparent hover:border-l-primary">
+                       <div className="flex flex-row-responsive justify-between items-start mb-4">
                           <div className="flex items-center gap-3">
                              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">{b.icon}</div>
                              <div>
                                 <h4 className="font-bold text-sm leading-none">{b.name}</h4>
+                                <p className="text-[10px] text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
                              </div>
                           </div>
                           <div className={`text-xl font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
@@ -437,7 +438,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                        <div className="space-y-2">
                           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                              <span className="text-secondary opacity-60">Activity</span>
-                             <span className="text-white opacity-80"><Price amountCents={b.spend_cents || 0} /> / <Price amountCents={b.monthly_budget_cents || 0} /></span>
+                             <span className="text-white opacity-80"><Price amountCents={b.spend_cents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthly_budget_cents || 0} /></span></span>
                           </div>
                           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                              <div 

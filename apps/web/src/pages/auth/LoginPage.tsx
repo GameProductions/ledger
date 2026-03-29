@@ -38,9 +38,13 @@ const LoginPage: React.FC = () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
       const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
       });
+      
       if (!profileRes.ok) {
+        const errorBody = await profileRes.text();
+        console.error(`[handleTokenLogin] Profile fetch failed (${profileRes.status}):`, errorBody);
         showToast('Session initialization failed: Invalid profile response', 'error');
         return;
       }
@@ -80,10 +84,13 @@ const LoginPage: React.FC = () => {
       const authData = await res.json()
       if (authData.token) {
         const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
-          headers: { 'Authorization': `Bearer ${authData.token}` }
+          headers: { 'Authorization': `Bearer ${authData.token}` },
+          credentials: 'include'
         })
 
         if (!profileRes.ok) {
+          const errorBody = await profileRes.text();
+          console.error(`[handleLogin] Profile fetch failed (${profileRes.status}):`, errorBody);
           showToast('Login sequence failed: Profile retrieval error', 'error');
           return;
         }

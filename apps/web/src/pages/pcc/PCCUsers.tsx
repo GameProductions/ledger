@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Masked } from '../../components/ui/Masked';
 import { useToast } from '../../context/ToastContext';
+import { EyeOff, Eye } from 'lucide-react';
 
 // --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge: (id: string) => void }> = ({ userId, onClose, onMerge }) => {
@@ -18,6 +20,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
   const [showPass, setShowPass] = useState(false);
   const [editingPk, setEditingPk] = useState<any | null>(null);
   const [removingPk, setRemovingPk] = useState<any | null>(null);
+  const [privacyMirror, setPrivacyMirror] = useState(true);
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
@@ -135,7 +138,9 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
                    {details?.profile?.status || 'Unknown'}
                 </span>
               </div>
-              <p className="text-slate-500 font-mono text-sm mt-1 opacity-60 tracking-tight">{details?.profile?.email || 'No Email'} • ID: {userId}</p>
+              <p className="text-slate-500 font-mono text-sm mt-1 opacity-60 tracking-tight">
+                <Masked>{details?.profile?.email || 'No Email'}</Masked> • ID: {userId}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-2xl transition-all text-white shadow-xl border border-white/20">
@@ -204,7 +209,9 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
                              <Fingerprint size={20} />
                           </div>
                           <div>
-                             <p className="text-sm font-bold tracking-tight text-white">{pk.name}</p>
+                             <p className="text-sm font-bold tracking-tight text-white">
+                               <Masked>{pk.name}</Masked>
+                             </p>
                              <p className="text-xs text-slate-600 font-black uppercase tracking-widest">{pk.aaguid || 'Unknown Provider'}</p>
                           </div>
                        </div>
@@ -322,6 +329,18 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Access Key</span>
                 <span className="text-xs font-black text-emerald-500/60 font-mono">AUTHORIZED_ADMIN</span>
              </div>
+             <div className="h-8 w-px bg-white/5" />
+             <button 
+               onClick={() => setPrivacyMirror(!privacyMirror)}
+               className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${
+                 privacyMirror 
+                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' 
+                 : 'bg-white/5 border-white/10 text-slate-500'
+               }`}
+             >
+               {privacyMirror ? <EyeOff size={14} /> : <Eye size={14} />}
+               <span className="text-[10px] font-black uppercase tracking-widest">Privacy Mirroring {privacyMirror ? 'Active' : 'Disabled'}</span>
+             </button>
           </div>
           
           <div className="flex gap-4">
@@ -329,6 +348,33 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
                 <RefreshCw size={14} />
                 Full Resync
              </button>
+             <button 
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('ledger_token');
+                    const apiUrl = import.meta.env.VITE_API_URL;
+                    const res = await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/impersonate`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    if (data.token) {
+                      showToast(`Identity mirrored: Accessing as ${details.profile.display_name}`, 'success');
+                      localStorage.setItem('ledger_token', data.token);
+                      localStorage.setItem('ledger_impersonation_active', 'true');
+                      localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
+                      window.location.href = '/#/dashboard';
+                      window.location.reload();
+                    }
+                  } catch (err) {
+                    showToast('Impersonation protocol failed', 'error');
+                  }
+                }}
+                className="flex items-center gap-3 px-6 py-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                <Monitor size={14} />
+                Impersonate User
+              </button>
              <button 
                 onClick={() => {
                   onMerge(userId);

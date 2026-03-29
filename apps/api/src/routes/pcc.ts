@@ -14,7 +14,7 @@ import {
 import { logAudit } from '../utils'
 import { CURRENT_VERSION } from '../constants'
 import { hashPassword } from '../auth-utils'
-import { EmailService } from '../services/email.service'
+import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
 
 const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -460,7 +460,14 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
     c.env.DB.prepare('UPDATE passkeys SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
     c.env.DB.prepare('UPDATE user_identities SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
     
-    // 4. Secure Purge of Source Identity
+    // 4. Migrate Social Liability (Shared Balances)
+    c.env.DB.prepare('UPDATE shared_balances SET from_user_id = ? WHERE from_user_id = ?').bind(targetId, sourceId),
+    c.env.DB.prepare('UPDATE shared_balances SET to_user_id = ? WHERE to_user_id = ?').bind(targetId, sourceId),
+    
+    // 5. Migrate Forensic Dossier (Audit History)
+    c.env.DB.prepare('UPDATE pcc_audit_logs SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+
+    // 6. Secure Purge of Source Identity
     c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(sourceId)
   ])
 
@@ -471,6 +478,64 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
   )
   
   return c.json({ success: true })
+})
+
+// System Announcements (v3.21)
+pcc.get('/announcements', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM system_announcements WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP) ORDER BY created_at DESC'
+  ).all()
+  return c.json(results)
+})
+
+pcc.post('/announcements', zValidator('json', z.object({
+  title: z.string().min(1),
+  content_md: z.string().min(1),
+  priority: z.enum(['info', 'warning', 'critical']).default('info'),
+  expires_in_hours: z.number().optional()
+})), async (c) => {
+  const { title, content_md, priority, expires_in_hours } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const actorId = c.get('userId')
+  
+  let expiresAt = null
+  if (expires_in_hours) {
+    expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
+  }
+
+  await c.env.DB.prepare(
+    'INSERT INTO system_announcements (id, title, content_md, priority, actor_id, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(id, title, content_md, priority, actorId, expiresAt).run()
+
+  await logAudit(c, 'system_announcements', id, 'BROADCAST_CREATED', {}, { title, priority })
+  return c.json({ success: true, id })
+})
+
+// Maintenance Operations
+pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean() })), async (c) => {
+  const { enabled } = c.req.valid('json')
+  await c.env.DB.prepare('UPDATE system_config SET config_value = ? WHERE config_key = ?')
+    .bind(enabled ? 'true' : 'false', 'MAINTENANCE_MODE').run()
+    
+  await logAudit(c, 'system_config', 'MAINTENANCE_MODE', 'TOGGLE_MAINTENANCE', {}, { enabled })
+  return c.json({ success: true })
+})
+
+// Identity Mirroring (Impersonation)
+pcc.post('/admin/users/:userId/impersonate', async (c) => {
+  const { userId } = c.req.param()
+  
+  // Verify target user exists
+  const target = await c.env.DB.prepare('SELECT id, display_name FROM users WHERE id = ?').bind(userId).first()
+  if (!target) throw new HTTPException(404, { message: 'Target user not found' })
+
+  const authService = new AuthService(c.env)
+  // Default to main household for impersonation start
+  const token = await authService.generateToken(userId, 'ledger-main-001')
+  
+  await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', {}, { target_name: (target as any).display_name })
+  
+  return c.json({ success: true, token })
 })
 
 export default pcc

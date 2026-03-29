@@ -1,15 +1,11 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../context/AuthContext'
-import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard } from 'lucide-react'
+import { Masked } from './ui/Masked'
 
 const UserMenu: React.FC<{ 
   view?: string, 
   setView?: (v: 'list'|'calendar') => void,
   isPcc?: boolean 
 }> = ({ view, setView, isPcc = false }) => {
-  const { user, logout, globalRole } = useAuth()
+  const { user, logout, globalRole, isImpersonating } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
 
@@ -38,14 +34,27 @@ const UserMenu: React.FC<{
         className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-white/10 transition-all border border-glass-border shadow-2xl"
         style={{ background: isOpen ? 'rgba(255,255,255,0.12)' : 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(10px)' }}
       >
-        <img 
-          src={avatarUrl} 
-          alt="User Avatar" 
-          className="w-8 h-8 rounded-full border border-primary shadow-lg"
-        />
-        <div className="flex flex-col items-start ml-1 leading-none">
-          <span className="text-sm font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
-          {isPcc && <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>}
+        <div className="relative">
+          <img 
+            src={avatarUrl} 
+            alt="User Avatar" 
+            className="w-8 h-8 rounded-full border border-primary shadow-lg"
+          />
+          {isImpersonating && (
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-purple-500 border border-black flex items-center justify-center">
+              <Shield size={8} className="text-white" />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col items-start ml-1 leading-none text-left">
+          <Masked>
+            <span className="text-sm font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
+          </Masked>
+          {isPcc ? (
+            <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>
+          ) : isImpersonating ? (
+            <span className="text-[10px] text-purple-400 font-black uppercase tracking-tighter">Impersonating</span>
+          ) : null}
         </div>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -64,9 +73,11 @@ const UserMenu: React.FC<{
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                  {isPcc ? 'Administrative Access' : 'Authenticated Account'}
+                  {isPcc ? 'Administrative Access' : isImpersonating ? 'Mirrored Identity' : 'Authenticated Account'}
                 </div>
-                <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
+                <Masked>
+                  <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
+                </Masked>
               </div>
 
               <div className="space-y-1">

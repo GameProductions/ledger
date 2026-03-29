@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import Subscriptions from '../components/Subscriptions'
 import Calendar from '../components/Calendar'
@@ -25,6 +26,7 @@ import { GuidedTour } from '../components/GuidedTour';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { CalendarEntryModal } from '../components/CalendarEntryModal'
+import { AlertTriangle, Info, Bell, XCircle } from 'lucide-react';
 
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
@@ -38,6 +40,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: insightsData } = useApi('/api/data/analysis/insights')
   const { data: forecast } = useApi('/api/data/analysis/forecast')
   const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
+  const { data: announcements, mutate: mutateAnnouncements } = useApi('/api/pcc/announcements')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -205,6 +208,47 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   return (
     <MainLayout view={view} setView={setView}>
+      <AnimatePresence>
+        {announcements && announcements.length > 0 && (
+          <div className="mb-8 space-y-4">
+            {announcements.map((ann: any) => (
+              <motion.div 
+                key={ann.id}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className={`p-5 rounded-[2rem] border flex items-start gap-4 shadow-2xl backdrop-blur-2xl ${
+                  ann.priority === 'critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                  ann.priority === 'warning' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
+                  'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                  ann.priority === 'critical' ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]' :
+                  ann.priority === 'warning' ? 'bg-orange-500 text-black' :
+                  'bg-emerald-500 text-black'
+                }`}>
+                  {ann.priority === 'critical' ? <AlertTriangle size={24} /> :
+                   ann.priority === 'warning' ? <Bell size={24} /> :
+                   <Info size={24} />}
+                </div>
+                <div className="flex-1 pt-1">
+                  <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                  <p className="text-xs font-bold opacity-70 leading-relaxed">{ann.content_md}</p>
+                </div>
+                {user?.global_role === 'super_admin' && (
+                  <button 
+                    onClick={() => mutateAnnouncements(announcements.filter((a: any) => a.id !== ann.id), false)}
+                    className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"
+                  >
+                    <XCircle size={18} className="opacity-30" />
+                  </button>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
       <GuidedTour />
       <div className="reveal">
         <OnboardingChecklist />

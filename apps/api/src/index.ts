@@ -105,6 +105,29 @@ app.use('*', async (c, next) => {
   return authMiddleware(c, next)
 })
 
+// 6. Maintenance Mode Protocol (v3.21) - Forensic Override for Admins
+app.use('/api/*', async (c, next) => {
+  const path = c.req.path
+  if (path.includes('/api/pcc/') || path.includes('/api/config') || path.includes('/api/auth/')) {
+    return await next()
+  }
+
+  try {
+    const config = await c.env.DB.prepare('SELECT config_value FROM system_config WHERE config_key = ?')
+      .bind('MAINTENANCE_MODE').first() as any
+    if (config?.config_value === 'true') {
+      const user = c.get('user') as any
+      if (user?.global_role !== 'super_admin') {
+        return c.json({ 
+          error: 'System Maintenance in Progress', 
+          message: 'Ledger is currently under scheduled maintenance. God Mode users retain full access.' 
+        }, 503)
+      }
+    }
+  } catch (e) {}
+  await next()
+})
+
 // 5. Route Mounting
 const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 

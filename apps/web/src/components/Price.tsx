@@ -1,5 +1,4 @@
-import React from 'react'
-import { useCurrency } from '../context/CurrencyContext'
+import { Masked } from './ui/Masked'
 
 interface PriceProps {
   amountCents: number
@@ -17,5 +16,9 @@ export const Price: React.FC<PriceProps> = ({ amountCents, className, hideCents,
     ...options
   } : options)
 
-  return <span className={className}>{formatted}</span>
+  return (
+    <Masked>
+      <span className={className}>{formatted}</span>
+    </Masked>
+  )
 }

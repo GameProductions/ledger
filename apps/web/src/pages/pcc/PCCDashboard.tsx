@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
+import { Send, ShieldAlert, Monitor, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { Modal } from '../../components/ui/Modal';
+import { Button } from '../../components/ui/Button';
+import { useToast } from '../../context/ToastContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PCCDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
@@ -7,18 +11,32 @@ const PCCDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+  const { showToast } = useToast();
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [loadingMaintenance, setLoadingMaintenance] = useState(false);
+  const [announcement, setAnnouncement] = useState({ title: '', content: '', priority: 'info' });
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = import.meta.env.VITE_API_URL;
-        const [statsRes, logsRes] = await Promise.all([
+        const [statsRes, logsRes, configRes] = await Promise.all([
           fetch(`${apiUrl}/api/pcc/stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/pcc/audit/system`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${apiUrl}/api/pcc/audit/system`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/pcc/config`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         const statsData = await statsRes.json();
         const logsData = await logsRes.json();
+        const configData = await configRes.json();
+        
         setStats(statsData);
         setSystemLogs(logsData);
+
+        const maintenance = configData.find((c: any) => c.config_key === 'MAINTENANCE_MODE');
+        setMaintenanceEnabled(maintenance?.config_value === 'true');
       } catch (err) {
         console.error('Failed to fetch PCC data:', err);
       } finally {
@@ -27,6 +45,54 @@ const PCCDashboard: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  const handleToggleMaintenance = async () => {
+    setLoadingMaintenance(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/admin/maintenance`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !maintenanceEnabled })
+      });
+      if (res.ok) {
+        setMaintenanceEnabled(!maintenanceEnabled);
+        showToast(`Maintenance mode ${!maintenanceEnabled ? 'enabled' : 'disabled'}`, 'info');
+      }
+    } catch (err) {
+      showToast('Action failed', 'error');
+    } finally {
+      setLoadingMaintenance(false);
+    }
+  };
+
+  const handleSendAnnouncement = async () => {
+    if (!announcement.title || !announcement.content) return;
+    setSending(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/announcements`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          title: announcement.title, 
+          content_md: announcement.content, 
+          priority: announcement.priority 
+        })
+      });
+      if (res.ok) {
+        showToast('Announcement broadcasted', 'success');
+        setIsAnnouncementModalOpen(false);
+        setAnnouncement({ title: '', content: '', priority: 'info' });
+      }
+    } catch (err) {
+      showToast('Broadcast failed', 'error');
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (loading) return <PCCPortal activePath="#/system-pcc/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></PCCPortal>;
 
@@ -88,18 +154,92 @@ const PCCDashboard: React.FC = () => {
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full" />
           <h3 className="text-lg font-bold mb-4 relative">God Mode</h3>
           <div className="space-y-3 relative">
-            <button className="w-full text-left p-3 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+            <button 
+              onClick={() => showToast('Protocol execution initiated...', 'info')}
+              className="w-full text-left p-3 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+            >
               Apply System Update
             </button>
-            <button className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all border border-white/10">
+            <button 
+              onClick={() => setIsAnnouncementModalOpen(true)}
+              className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm transition-all border border-white/10"
+            >
               Send System Message
             </button>
-            <button className="w-full text-left p-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold text-sm transition-all border border-red-500/20">
-              Turn Off Site Access
+            <button 
+              onClick={handleToggleMaintenance}
+              disabled={loadingMaintenance}
+              className={`w-full text-left p-3 rounded-xl font-bold text-sm transition-all border ${
+                maintenanceEnabled 
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' 
+                : 'bg-red-500/20 hover:bg-red-500/30 text-red-500 border-red-500/20'
+              }`}
+            >
+              {loadingMaintenance ? 'Processing...' : maintenanceEnabled ? 'Resume Site Access' : 'Turn Off Site Access'}
             </button>
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isAnnouncementModalOpen && (
+          <Modal
+            isOpen={isAnnouncementModalOpen}
+            onClose={() => setIsAnnouncementModalOpen(false)}
+            title="Broadcast System Announcement"
+            footer={
+              <>
+                <Button variant="secondary" onClick={() => setIsAnnouncementModalOpen(false)}>Cancel</Button>
+                <Button variant="primary" onClick={handleSendAnnouncement} disabled={sending}>
+                  {sending ? 'Broadcasting...' : 'Execute Broadcast'}
+                </Button>
+              </>
+            }
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Announcement Title</label>
+                <input 
+                  type="text" 
+                  value={announcement.title}
+                  onChange={(e) => setAnnouncement({...announcement, title: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm font-bold outline-none focus:border-emerald-500/50 transition-all"
+                  placeholder="e.g., Scheduled Maintenance"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Broadcast Content (Markdown)</label>
+                <textarea 
+                  value={announcement.content}
+                  onChange={(e) => setAnnouncement({...announcement, content: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm font-medium h-32 outline-none focus:border-emerald-500/50 transition-all"
+                  placeholder="Describe the update or alert..."
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Priority Level</label>
+                <div className="flex gap-2">
+                  {['info', 'warning', 'critical'].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setAnnouncement({...announcement, priority: p})}
+                      className={`flex-1 p-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
+                        announcement.priority === p 
+                        ? 'bg-emerald-500 text-black border-emerald-500' 
+                        : 'bg-white/5 text-slate-400 border-white/10'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
     </PCCPortal>
   );
 };

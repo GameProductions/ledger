@@ -11,13 +11,19 @@ interface PCCPortalProps {
 const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   const { user } = useAuth();
 
+  React.useEffect(() => {
+    const originalTitle = document.title;
+    document.title = "God Mode | COMMAND CENTER";
+    return () => { document.title = originalTitle; };
+  }, []);
+
   if (!user || user.global_role !== 'super_admin') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white p-6 text-center">
-        <div>
-          <h1 className="text-4xl font-bold text-red-500 mb-4 tracking-tighter shadow-glow-red">403: ACCESS DENIED</h1>
-          <p className="text-slate-400 font-medium">This section is restricted to administrators. Your unauthorized attempt has been logged.</p>
-          <a href="#/" className="mt-8 inline-block px-8 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-full transition-all font-bold">Return to Dashboard</a>
+      <div className="flex items-center justify-center min-h-screen bg-black text-white p-6 text-center shadow-[inset_0_0_100px_rgba(239,68,68,0.1)]">
+        <div className="animate-in zoom-in duration-500">
+          <h1 className="text-6xl font-black text-red-500 mb-6 tracking-tighter shadow-glow-red italic">403: ACCESS DENIED</h1>
+          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to God Level administrators. Your unauthorized attempt has been archived for forensic review.</p>
+          <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Return to Surface</a>
         </div>
       </div>
     );
@@ -32,8 +38,8 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
     { name: 'Safety Vault', path: '#/system-pcc/audit', icon: Activity },
     { name: 'Master Records', path: '#/system-pcc/registry', icon: Database },
     { name: 'Global Search', path: '#/system-pcc/search', icon: Search },
-    { name: 'System Config', path: '#/system-pcc/config', icon: Settings },
-    { name: 'Admin Manual', path: '#/system-pcc/guide', icon: FileText },
+    { name: 'Platform Settings', path: '#/system-pcc/config', icon: Settings },
+    { name: 'God Guide', path: '#/system-pcc/guide', icon: FileText },
   ];
 
   return (
@@ -42,16 +48,16 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
       <header className="fixed top-0 left-0 right-0 z-[1000] border-b border-white/5 bg-black/80 backdrop-blur-2xl px-8 py-5 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-white/10">
-               P
-             </div>
-             <div>
-               <div className="flex items-center gap-2">
-                 <h1 className="text-xl font-black tracking-tight uppercase italic">GOD <span className="text-emerald-500">MODE</span></h1>
-                 <span className="px-2 py-0.5 rounded text-xs bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Omnipotent</span>
-               </div>
-               <p className="text-sm text-slate-500 uppercase tracking-[0.4em] font-black">Universal Override</p>
-             </div>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-white/10">
+               G
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black tracking-tight uppercase italic">GOD <span className="text-emerald-500">MODE</span></h1>
+                <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Omnipotent</span>
+              </div>
+              <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black">Universal Override</p>
+            </div>
           </div>
         </div>
 

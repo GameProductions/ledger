@@ -34,7 +34,18 @@ const JoinHouseholdPage: React.FC = () => {
         body: JSON.stringify({ token: inviteToken })
       })
 
-      const data = await res.json()
+      let data: any = {}
+      try {
+        const contentType = res.headers.get('content-type')
+        if (contentType && contentType.includes('application/json')) {
+          data = await res.json()
+        } else {
+          data = { error: await res.text() }
+        }
+      } catch (e) {
+        data = { error: 'Failed to parse server response' }
+      }
+
       if (!res.ok) {
         setStatus('error')
         setErrorMsg(data.error || 'Failed to join household')

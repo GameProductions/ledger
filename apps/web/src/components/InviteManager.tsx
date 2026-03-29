@@ -12,6 +12,12 @@ const InviteManager: React.FC = () => {
         'x-household-id': localStorage.getItem('ledger_household_id') || ''
       }
     })
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error('[InviteManager] Generation failed:', errorText)
+      return
+    }
+
     const data = await res.json()
     const fullUrl = `${window.location.origin}/${data.url}`
     setLink(fullUrl)

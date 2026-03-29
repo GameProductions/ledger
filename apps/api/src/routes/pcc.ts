@@ -14,6 +14,8 @@ import {
 import { logAudit } from '../utils'
 import { CURRENT_VERSION } from '../constants'
 import { hashPassword } from '../auth-utils'
+import { EmailService } from '../services/email.service'
+import { HTTPException } from 'hono/http-exception'
 
 const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -113,6 +115,15 @@ pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) =
   ).bind(userId, username, email, passwordHash, display_name, global_role, 'active', force_password_change ? 1 : 0).run()
   
   await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, global_role })
+  
+  // Trigger Provisioning Protocol
+  const emailService = new EmailService(c.env)
+  try {
+    await emailService.sendProvisioningEmail(email, username, password)
+  } catch (err) {
+    console.error('[Provisioning] Failed to send onboarding email:', err)
+  }
+
   return c.json({ success: true, id: userId })
 })
 
@@ -367,18 +378,40 @@ pcc.get('/connections', async (c) => {
   return c.json(results)
 })
 
-pcc.post('/connections', zValidator('json', z.object({
-  household_id: z.string(),
-  provider: z.string(),
-  access_token: z.string(),
-  status: z.string().default('active')
-})), async (c) => {
-  const data = c.req.valid('json')
-  const id = crypto.randomUUID()
   await c.env.DB.prepare(
     'INSERT INTO external_connections (id, household_id, provider, access_token, status) VALUES (?, ?, ?, ?, ?)'
   ).bind(id, data.household_id, data.provider, data.access_token, data.status).run()
   return c.json({ success: true, id })
+})
+
+// Household Management (God Mode)
+pcc.get('/households', async (c) => {
+  const { results } = await c.env.DB.prepare(`
+    SELECT h.*, count(uh.user_id) as member_count 
+    FROM households h 
+    LEFT JOIN user_households uh ON h.id = uh.household_id 
+    GROUP BY h.id 
+    ORDER BY h.name ASC
+  `).all()
+  return c.json(results)
+})
+
+pcc.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
+  const { id } = c.req.param()
+  const { name } = c.req.valid('json')
+  await c.env.DB.prepare('UPDATE households SET name = ? WHERE id = ?').bind(name, id).run()
+  await logAudit(c, 'households', id, 'ADMIN_RENAME', {}, { name })
+  return c.json({ success: true })
+})
+
+pcc.delete('/households/:id', async (c) => {
+  const { id } = c.req.param()
+  await c.env.DB.batch([
+    c.env.DB.prepare('DELETE FROM households WHERE id = ?').bind(id),
+    c.env.DB.prepare('DELETE FROM user_households WHERE household_id = ?').bind(id)
+  ])
+  await logAudit(c, 'households', id, 'ADMIN_PURGE')
+  return c.json({ success: true })
 })
 
 export default pcc

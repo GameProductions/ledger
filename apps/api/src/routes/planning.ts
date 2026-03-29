@@ -277,6 +277,37 @@ planning.post('/budget/transfer', zValidator('json', z.object({
   return c.json({ success: true })
 })
 
+// Rollover Engine
+planning.post('/budget/rollover', async (c) => {
+  const householdId = c.get('householdId')
+  
+  // 1. Fetch all categories
+  const { results: categories } = await c.env.DB.prepare(
+    'SELECT id, rollover_enabled, monthly_budget_cents FROM categories WHERE household_id = ?'
+  ).bind(householdId).all()
+
+  if (!categories || categories.length === 0) return c.json({ success: true, count: 0 })
+
+  const queries = categories.map((cat: any) => {
+    if (cat.rollover_enabled) {
+      // Add budget to existing balance
+      return c.env.DB.prepare(
+        'UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ?'
+      ).bind(cat.monthly_budget_cents, cat.id)
+    } else {
+      // Reset to budget amount (clear remainder)
+      return c.env.DB.prepare(
+        'UPDATE categories SET envelope_balance_cents = ? WHERE id = ?'
+      ).bind(cat.monthly_budget_cents, cat.id)
+    }
+  })
+
+  await c.env.DB.batch(queries)
+  await logAudit(c, 'categories', 'bulk', 'ROLLOVER_MONTH', null, { category_count: categories.length })
+
+  return c.json({ success: true, count: categories.length })
+})
+
 // Transaction Templates
 planning.get('/templates', async (c) => {
   const householdId = c.get('householdId')

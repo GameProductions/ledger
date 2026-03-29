@@ -90,9 +90,20 @@ financials.post('/transactions', zValidator('json', TransactionSchema), async (c
   const id = crypto.randomUUID()
   const date = data.transaction_date || new Date().toISOString().split('T')[0]
   
-  await c.env.DB.prepare(
+  const query = c.env.DB.prepare(
     'INSERT INTO transactions (id, household_id, account_id, category_id, description, amount_cents, transaction_date) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, householdId, data.account_id, data.category_id, data.description, data.amount_cents, date).run()
+  ).bind(id, householdId, data.account_id, data.category_id, data.description, data.amount_cents, date)
+
+  if (data.category_id) {
+    // Atomic deduction from envelope
+    await c.env.DB.batch([
+      query,
+      c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents - ? WHERE id = ? AND household_id = ?')
+        .bind(data.amount_cents, data.category_id, householdId)
+    ])
+  } else {
+    await query.run()
+  }
   
   return c.json({ success: true, id })
 })

@@ -12,6 +12,7 @@ import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
+import { EmailService } from '../services/email.service'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -336,11 +337,11 @@ auth.post('/passkeys/register-options', async (c) => {
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
     rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
-    userID: userId,
+    userID: new TextEncoder().encode(userId),
     userName: user.username || user.email,
     attestationType: 'none',
     excludeCredentials: (passkeys.results || []).map((pk: any) => ({
-      id: pk.credential_id,
+      id: Buffer.from(pk.credential_id, 'base64'),
       type: 'public-key',
       transports: pk.transports ? JSON.parse(pk.transports) : [],
     })),
@@ -400,6 +401,17 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
     ).run()
     
   await logAudit(c, 'passkeys', id, 'REGISTER', null, { name })
+  
+  // Trigger Security Alert
+  const user: any = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first()
+  if (user?.email) {
+    try {
+      await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Biometric Passkey Enrolled')
+    } catch (e) {
+      console.error('[Sentinel] Failed to send security alert:', e)
+    }
+  }
+
   return c.json({ success: true, id })
 })
 
@@ -507,6 +519,17 @@ auth.post('/password/change', zValidator('json', z.object({ newPassword: z.strin
   const authService = new AuthService(c.env)
   await authService.changePassword(userId, newPassword)
   await logAudit(c, 'users', userId, 'PASSWORD_CHANGE')
+  
+  // Trigger Security Alert
+  const user: any = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first()
+  if (user?.email) {
+    try {
+      await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'Account Password Modified')
+    } catch (e) {
+      console.error('[Sentinel] Failed to send security alert:', e)
+    }
+  }
+
   return c.json({ success: true })
 })
 

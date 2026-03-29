@@ -13,6 +13,7 @@ import {
 } from '../schemas'
 import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
+import { EmailService } from '../services/email.service'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -138,20 +139,21 @@ user.post('/households', zValidator('json', CreateHouseholdSchema), async (c) =>
   return c.json({ success: true, id, name }, 201)
 })
 
-user.post('/households/invite', async (c) => {
+user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional()), async (c) => {
   const userId = c.get('userId')
   const householdId = c.req.header('x-household-id')
+  const body = c.req.valid('json')
   
   if (!householdId) {
     throw new HTTPException(400, { message: 'Missing x-household-id header' })
   }
 
-  // 1. Verify user is admin of this household
-  const membership = await c.env.DB.prepare(
-    'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
+  // 1. Verify user is admin of this household and get household name
+  const household: any = await c.env.DB.prepare(
+    'SELECT h.name, uh.role FROM households h JOIN user_households uh ON h.id = uh.household_id WHERE uh.user_id = ? AND h.id = ?'
   ).bind(userId, householdId).first()
   
-  if (!membership || (membership as any).role !== 'admin') {
+  if (!household || household.role !== 'admin') {
     throw new HTTPException(403, { message: 'Forbidden: Only household admins can generate invites' })
   }
 
@@ -164,7 +166,19 @@ user.post('/households/invite', async (c) => {
     'INSERT INTO household_invites (id, household_id, created_by, expires_at) VALUES (?, ?, ?, ?)'
   ).bind(id, householdId, userId, expiresAt.toISOString()).run()
   
-  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, { token: id })
+  const inviteUrl = `${this.env.WEB_URL || 'https://ledger.gpnet.dev'}/#/households/join?token=${id}`
+
+  // 3. Trigger Email if provided
+  if (body?.email) {
+    const emailService = new EmailService(c.env)
+    try {
+      await emailService.sendInvitationEmail(body.email, household.name, inviteUrl)
+    } catch (err) {
+      console.error('[Invitation] Failed to send email:', err)
+    }
+  }
+
+  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, { token: id, target_email: body?.email })
   
   return c.json({ 
     success: true, 

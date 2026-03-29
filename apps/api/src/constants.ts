@@ -1,7 +1,8 @@
-export const CURRENT_VERSION = 'v3.11.11'
+export const CURRENT_VERSION = 'v3.12.0'
 
 export const VERSION_UPDATES = [
-  { version: 'v3.11.10', title: 'Platform Hardening (Stability)', description: 'Finalized the PBKDF2 iteration restoration and removed all diagnostic tools.' },
+  { version: 'v3.12.0', title: 'Envelope Budgeting (Core Protocol)', description: 'Finalized real-time envelope deductions and monthly rollover engine for total fiscal control.' },
+  { version: 'v3.11.11', title: 'Platform Hardening (Stability)', description: 'Finalized the PBKDF2 iteration restoration and removed all diagnostic tools.' },
   { version: 'v3.11.9', title: 'Security Alignment (PBKDF2 Revert)', description: 'Reverted to 100k iteration PBKDF2 for legacy account restoration and stability.' },
   { version: 'v3.11.8', title: 'Total Modernization', description: 'Complete elimination of legacy routing and transition to a standardized modular architecture.' },
   { version: 'v3.10.0', title: 'Tabbed Dashboard (Evolutionary Leap)', description: 'Consolidated financial management into a sleek, tabbed interface for enhanced navigation.' },

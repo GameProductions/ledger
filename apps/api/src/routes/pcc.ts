@@ -378,12 +378,6 @@ pcc.get('/connections', async (c) => {
   return c.json(results)
 })
 
-  await c.env.DB.prepare(
-    'INSERT INTO external_connections (id, household_id, provider, access_token, status) VALUES (?, ?, ?, ?, ?)'
-  ).bind(id, data.household_id, data.provider, data.access_token, data.status).run()
-  return c.json({ success: true, id })
-})
-
 // Household Management (God Mode)
 pcc.get('/households', async (c) => {
   const { results } = await c.env.DB.prepare(`

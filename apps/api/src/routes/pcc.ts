@@ -129,7 +129,18 @@ pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) =
 
 // Audit Vault
 pcc.get('/audit', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM pcc_audit_logs ORDER BY created_at DESC LIMIT 200').all()
+  const { results } = await c.env.DB.prepare(`
+    SELECT 
+      id, 
+      action, 
+      table_name as target_type, 
+      record_id as target_id, 
+      new_values_json as details_json, 
+      created_at 
+    FROM audit_logs 
+    ORDER BY created_at DESC 
+    LIMIT 200
+  `).all()
   return c.json(results)
 })
 

@@ -9,9 +9,15 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], onDayClick, onItemClick }) => {
-  // Dynamic Month Logic (March 2026 for now)
-  const month = 2; // March
-  const year = 2026;
+  const [currentDate, setCurrentDate] = React.useState(new Date(2026, 2, 1)); // Default to March 2026 for now
+  
+  const month = currentDate.getMonth();
+  const year = currentDate.getFullYear();
+  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   
@@ -35,7 +41,13 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], o
   return (
     <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500">
       <div className="calendar-header flex items-center justify-between mb-8 px-4">
-        <h2 className="text-3xl font-black italic tracking-tighter uppercase">March <span className="text-primary">{year}</span></h2>
+        <div className="flex items-center gap-6">
+          <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap">{monthName} <span className="text-primary">{year}</span></h2>
+          <div className="flex gap-2">
+            <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs">◀</button>
+            <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs">▶</button>
+          </div>
+        </div>
         <div className="flex gap-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-500/50">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Charges

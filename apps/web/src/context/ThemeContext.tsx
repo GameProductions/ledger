@@ -80,6 +80,15 @@ export const ThemeRegistry: Theme[] = [
     colors: { primary: '#f97316', secondary: '#fbbf24', gradient: 'radial-gradient(circle at 50% 120%, #451a03, #0c0a09)' },
     logoUrl: '/assets/icon-512.png',
     iconUrl: '/assets/icon-512.png'
+  },
+  {
+    id: 'blood',
+    name: 'Blood',
+    category: 'Experimental',
+    layoutVariant: 'luxury',
+    colors: { primary: '#ff0000', secondary: '#991b1b', gradient: 'radial-gradient(circle at 50% 50%, #1a0505, #000000)' },
+    logoUrl: '/assets/icon-512.png',
+    iconUrl: '/assets/icon-512.png'
   }
 ];
 

@@ -68,7 +68,7 @@ const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
 
             <section>
               <h4 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Visual Overrides</h4>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 {['default', 'glass', 'minimal'].map(style => (
                   <button 
                     key={style}
@@ -81,6 +81,36 @@ const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
                   >
                     {style.toUpperCase()}
                   </button>
+                ))}
+              </div>
+
+              <h4 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Color Palette</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
+                {['emerald', 'sapphire', 'ruby', 'luxury', 'blood', 'carbon', 'ember', 'professional'].map(tId => (
+                  <button 
+                    key={tId}
+                    onClick={() => {
+                        // We use index.css [data-theme] for this
+                        document.documentElement.setAttribute('data-theme', tId);
+                        localStorage.setItem('ledger_theme', tId);
+                        onUpdate({ ...settings, theme: tId });
+                    }}
+                    style={{ 
+                      aspectRatio: '1', borderRadius: '50%',
+                      background: tId === 'blood' ? '#ff0000' : 
+                                 tId === 'luxury' ? '#d4af37' : 
+                                 tId === 'ruby' ? '#ef4444' : 
+                                 tId === 'sapphire' ? '#3b82f6' : 
+                                 tId === 'emerald' ? '#10b981' : 
+                                 tId === 'carbon' ? '#ffffff' : 
+                                 tId === 'ember' ? '#f97316' : 
+                                 '#64748b',
+                      border: settings.theme === tId ? '2px solid white' : '2px solid transparent',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                    }}
+                    title={tId}
+                  />
                 ))}
               </div>
             </section>

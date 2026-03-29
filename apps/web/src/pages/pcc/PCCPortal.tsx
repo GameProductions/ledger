@@ -47,10 +47,10 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
              </div>
              <div>
                <div className="flex items-center gap-2">
-                 <h1 className="text-xl font-black tracking-tight uppercase italic">PLATFORM <span className="text-emerald-500">COMMAND</span> CENTER</h1>
-                 <span className="px-2 py-0.5 rounded text-xs bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Online</span>
+                 <h1 className="text-xl font-black tracking-tight uppercase italic">GOD <span className="text-emerald-500">MODE</span></h1>
+                 <span className="px-2 py-0.5 rounded text-xs bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Omnipotent</span>
                </div>
-               <p className="text-sm text-slate-500 uppercase tracking-[0.4em] font-black">System Administration</p>
+               <p className="text-sm text-slate-500 uppercase tracking-[0.4em] font-black">Universal Override</p>
              </div>
           </div>
         </div>
@@ -91,8 +91,8 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
                    <Lock size={16} className="text-blue-500" />
                    <div className="flex flex-col">
-                      <span className="text-sm font-black uppercase text-slate-600">Access Mode</span>
-                      <span className="text-sm font-black text-blue-500 uppercase italic">PCC_ACCESS</span>
+                      <span className="text-sm font-black uppercase text-slate-600">Level</span>
+                      <span className="text-sm font-black text-blue-500 uppercase italic">GOD_LEVEL_OVERRIDE</span>
                    </div>
                  </div>
              </div>

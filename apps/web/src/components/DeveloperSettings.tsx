@@ -6,14 +6,14 @@ import { useApi } from '../hooks/useApi'
 const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast, showPrompt } = useToast()
-  const { data: tokens } = useApi('/api/interop/developer/tokens')
+  const { data: tokens } = useApi('/api/data/tools/tokens')
   const [newToken, setNewToken] = useState<string | null>(null)
   const [webhookUrl, setWebhookUrl] = useState('')
 
   const createToken = async () => {
     const name = await showPrompt('Name for this token?')
     if (!name) return
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/interop/developer/tokens`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/data/tools/tokens`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

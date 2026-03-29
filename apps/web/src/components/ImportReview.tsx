@@ -27,7 +27,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   const { showToast } = useToast();
   
   // Available Household Members for Mapping
-  const { data: members } = useApi<any[]>('/api/pcc/records/users');
+  const { data: members } = useApi<any[]>('/api/pcc/users');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

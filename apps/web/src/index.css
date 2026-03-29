@@ -76,6 +76,15 @@ html {
   --bg-gradient: radial-gradient(circle at 50% 120%, #451a03 0%, #0c0a09 100%);
 }
 
+[data-theme='blood'] {
+  --primary: #ff0000;
+  --secondary: #991b1b;
+  --bg-dark: #000000;
+  --card-bg: rgba(20, 0, 0, 0.6);
+  --glass-border: rgba(255, 0, 0, 0.15);
+  --bg-gradient: radial-gradient(circle at 50% 50%, #1a0505 0%, #000000 100%);
+}
+
 body {
   background-color: var(--bg-dark);
   color: var(--text-main);

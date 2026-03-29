@@ -5,6 +5,7 @@ import { Bindings, Variables } from '../types'
 
 export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) => {
   try {
+    const path = c.req.path
     let token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) {
       token = c.req.query('auth_token')
@@ -44,7 +45,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     }
     
     if (user.status === 'suspended') {
-      console.warn(`[Auth] Account suspended: ${userId}`)
+      console.warn(`[Auth] Account suspended: ${user.id}`)
       throw new HTTPException(403, { message: 'Account Suspended' })
     }
     

@@ -13,7 +13,14 @@ export const TransactionSchema = z.object({
   account_id: z.string().uuid().or(z.string().regex(/^(acc-|plaid-|privacy-|retirement-|method-)/)),
   category_id: z.string().uuid().or(z.string().regex(/^(cat-|plaid-|privacy-)/)),
   transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  owner_id: z.string().optional()
+  owner_id: z.string().optional(),
+  status: z.string().optional().default('unpaid'),
+  confirmation_number: z.string().optional().nullable()
+})
+
+export const TimelineEntrySchema = z.object({
+  type: z.enum(['note', 'confirmation', 'status_change']),
+  content: z.string().min(1)
 })
 
 export const TransferSchema = z.object({

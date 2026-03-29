@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 import { 
   FileCheck, 
-  AlertTriangle, 
-  Trash2, 
-  ChevronRight, 
   ShieldCheck, 
-  Clock, 
-  DollarSign, 
   Building,
   Layers,
-  StickyNote,
-  UserCheck
+  StickyNote
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
@@ -49,6 +43,9 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         const sheetNames = wb.worksheets.map(ws => ws.name);
         setAvailableSheets(sheetNames);
         setSelectedSheet(sheetNames[0]);
+      } else if (uploadedFile.name.endsWith('.json')) {
+        setWorkbook(null);
+        setAvailableSheets([]);
       } else {
         setWorkbook(null);
         setAvailableSheets([]);
@@ -109,6 +106,24 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         });
       });
       finalizeData(rows);
+    } else if (file.name.endsWith('.json')) {
+      const text = await file.text();
+      try {
+        const data = JSON.parse(text);
+        const rows = Array.isArray(data) ? data : [data];
+        finalizeData(rows.map((r: any) => ({
+          description: r.description || r.Description || r.merchant || r.name || 'JSON Record',
+          amount: parseFloat(r.amount || r.Amount || '0'),
+          date: r.date || r.Date || new Date().toISOString().split('T')[0],
+          category: r.category || r.Category,
+          notes: r.notes || r.Notes || '',
+          owner_id: r.owner_id || null,
+          owner_name: r.owner_name || ''
+        })));
+      } catch (e) {
+        showToast('Invalid JSON file', 'error');
+        setAnalyzing(false);
+      }
     } else if (file.name.endsWith('.pdf')) {
        showToast('Analyzing PDF statement structure...', 'info');
        setTimeout(() => {
@@ -166,7 +181,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     <div className="space-y-8 animate-in fade-in duration-700">
       {!file && (
         <label className="block border-2 border-dashed border-white/10 rounded-[2.5rem] p-20 text-center hover:border-emerald-500/50 transition-all cursor-pointer group bg-black/20">
-          <input type="file" accept=".csv,.qif,.ofx,.pdf,.xlsx" onChange={handleFileUpload} className="hidden" />
+          <input type="file" accept=".csv,.json,.qif,.ofx,.pdf,.xlsx" onChange={handleFileUpload} className="hidden" />
           <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform text-4xl">📄</div>
           <p className="font-extrabold text-2xl mb-2 text-white italic tracking-tighter uppercase">Drop Records Here</p>
           <p className="text-xs text-slate-500 font-black uppercase tracking-[0.3em]">XLSX • CSV • QIF • PDF</p>

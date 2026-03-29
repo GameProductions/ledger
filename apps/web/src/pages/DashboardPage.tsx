@@ -305,8 +305,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
               <div className="space-y-1">
                 {Array.isArray(transactions) && transactions.filter((tx: any) => {
-                  const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase())
-                  const matchesStatus = filterStatus === 'all' || (filterStatus === 'unmatched' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
+                  const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                     (tx.confirmation_number && tx.confirmation_number.toLowerCase().includes(searchQuery.toLowerCase()))
+                  const matchesStatus = filterStatus === 'all' || 
+                                     (filterStatus === 'unmatched' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
                   return matchesSearch && matchesStatus
                 }).map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
@@ -323,14 +325,26 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       <div>
                         <div className="font-bold flex items-center gap-3">
                           {tx.description}
+                          {tx.status === 'paid' && (
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase font-black border border-emerald-500/20">Paid</span>
+                          )}
+                          {tx.status === 'pending' && (
+                            <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase font-black border border-amber-500/20">Pending</span>
+                          )}
+                          {tx.status === 'scheduled' && (
+                            <span className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase font-black border border-blue-500/20">Scheduled</span>
+                          )}
+                          {(tx.status === 'unpaid' || !tx.status) && (
+                            <span className="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase font-black border border-red-500/20">Unpaid</span>
+                          )}
                           {tx.reconciliation_status === 'reconciled' && (
                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Cleared</span>
                           )}
-                          {tx.reconciliation_status === 'partial' && (
-                            <span className="text-[10px] bg-orange-500/10 text-orange-500 px-2 py-0.5 rounded-full uppercase font-black">Partial (<Price amountCents={tx.reconciliation_progress_cents} options={{ minimumFractionDigits: 0 }} />)</span>
-                          )}
                         </div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{tx.transaction_date}</div>
+                        <div className="text-xs text-secondary uppercase font-bold opacity-60 flex items-center gap-2">
+                           {tx.transaction_date}
+                           {tx.confirmation_number && <span className="text-slate-500 pr-2 border-r border-white/10">#{tx.confirmation_number}</span>}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">

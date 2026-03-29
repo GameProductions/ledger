@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import ImportReview from '../components/ImportReview';
-import { useExport } from '../hooks/useExport';
-import { useApi } from '../hooks/useApi';
 import { 
   Cloud, 
   Upload, 
@@ -12,26 +10,19 @@ import {
   Shield, 
   Users, 
   Lock, 
-  ArrowRight, 
-  Download,
-  AlertCircle
+  Download
 } from 'lucide-react';
 
 const DataCenterPage: React.FC = () => {
-  const { exportData } = useExport();
-  const { data: transactions } = useApi('/api/data/analysis/summary'); // Jargon fixed path
-  const [exporting, setExporting] = useState(false);
   const [importScope, setImportScope] = useState<'household' | 'private'>('household');
   const [activeTab, setActiveTab] = useState<'upload' | 'cloud' | 'url'>('upload');
   const [url, setUrl] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
 
-  const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
-    // Export logic...
-    setExporting(true);
-    // ... same as before but jargon-free
-    setExporting(false);
+  const handleExport = async (format: 'csv' | 'xlsx' | 'pdf' | 'json') => {
+    const token = localStorage.getItem('ledger_token');
+    window.open(`${import.meta.env.VITE_API_URL}/api/financials/transactions/export?format=${format}&token=${token}`, '_blank');
   };
 
   const handleUrlScan = async () => {
@@ -202,6 +193,7 @@ const DataCenterPage: React.FC = () => {
 
                <div className="grid grid-cols-1 gap-3">
                   {[
+                    { id: 'json', name: 'Raw History Hub', format: 'JSON', color: 'bg-amber-500' },
                     { id: 'csv', name: 'Standard Sheets', format: 'CSV', color: 'bg-emerald-500' },
                     { id: 'xlsx', name: 'Advanced Excel', format: 'XLSX', color: 'bg-blue-500' },
                     { id: 'pdf', name: 'Secure Document', format: 'PDF', color: 'bg-red-500' }

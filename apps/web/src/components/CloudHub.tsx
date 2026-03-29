@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { 
-  Cloud, 
-  CheckCircle2, 
   ExternalLink,
   ChevronRight,
   Loader2,
-  Lock,
-  ArrowRight
+  Lock
 } from 'lucide-react';
 
 interface CloudHubProps {

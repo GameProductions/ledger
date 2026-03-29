@@ -109,35 +109,31 @@ financials.post('/transactions', zValidator('json', TransactionSchema), async (c
 })
 
 // Transaction Export
-financials.get('/transactions/export', async (c) => {
-  const householdId = c.get('householdId')
-  const format = c.req.query('format') || 'json'
-
-  const { results } = await c.env.DB.prepare(
-    `SELECT t.*, c.name as category_name, a.name as account_name 
-     FROM transactions t
-     LEFT JOIN categories c ON t.category_id = c.id
-     LEFT JOIN accounts a ON t.account_id = a.id
-     WHERE t.household_id = ?`
-  ).bind(householdId).all()
-
-  if (format === 'csv') {
-    if (results.length === 0) return c.text('')
-    const headers = Object.keys(results[0])
-    const csv = [
-      headers.join(','),
-      ...results.map(row => headers.map(h => JSON.stringify(row[h as keyof typeof row])).join(','))
-    ].join('\n')
-    
-    return new Response(csv, {
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="ledger_export.csv"'
-      }
-    })
-  }
-
   return c.json(results)
+})
+
+financials.get('/transactions/:id/timeline', async (c) => {
+  const id = c.req.param('id')
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM transaction_timeline WHERE transaction_id = ? ORDER BY created_at DESC'
+  ).bind(id).all()
+  return c.json(results)
+})
+
+financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema), async (c) => {
+  const id = c.req.param('id')
+  const { type, content } = c.req.valid('json')
+  const entryId = crypto.randomUUID()
+  
+  await c.env.DB.prepare(
+    'INSERT INTO transaction_timeline (id, transaction_id, type, content) VALUES (?, ?, ?, ?)'
+  ).bind(entryId, id, type, content).run()
+  
+  if (type === 'confirmation') {
+    await c.env.DB.prepare('UPDATE transactions SET confirmation_number = ? WHERE id = ?').bind(content, id).run()
+  }
+  
+  return c.json({ success: true, id: entryId })
 })
 
 financials.get('/transactions/suggest-links', async (c) => {
@@ -176,15 +172,39 @@ financials.post('/transactions/:id/link', async (c) => {
   return c.json({ success: true })
 })
 
-financials.post('/transactions/:id/unlink', async (c) => {
+  return c.json({ success: true })
+})
+
+financials.patch('/transactions/:id', zValidator('json', TransactionSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const householdId = c.get('householdId')
-  const tx = await c.env.DB.prepare('SELECT linked_transaction_id FROM transactions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
-  if (tx && (tx as any).linked_transaction_id) {
-    const targetId = (tx as any).linked_transaction_id
-    await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = NULL, reconciliation_status = "unreconciled" WHERE id = ?').bind(id).run()
-    await c.env.DB.prepare('UPDATE transactions SET linked_transaction_id = NULL, reconciliation_status = "unreconciled" WHERE id = ?').bind(targetId).run()
+  const data = c.req.valid('json')
+  
+  const updates: string[] = []
+  const params: any[] = []
+  
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) {
+      if (key === 'account_id' || key === 'category_id' || key === 'owner_id' || key === 'status' || key === 'confirmation_number' || key === 'description' || key === 'amount_cents' || key === 'transaction_date') {
+        updates.push(`${key} = ?`)
+        params.push(value)
+      }
+    }
+  })
+  
+  if (updates.length > 0) {
+    params.push(id, householdId)
+    await c.env.DB.prepare(
+      `UPDATE transactions SET ${updates.join(', ')} WHERE id = ? AND household_id = ?`
+    ).bind(...params).run()
+    
+    if (data.status) {
+       await c.env.DB.prepare(
+         'INSERT INTO transaction_timeline (id, transaction_id, type, content) VALUES (?, ?, ?, ?)'
+       ).bind(crypto.randomUUID(), id, 'status_change', `Status changed to ${data.status}`).run()
+    }
   }
+  
   return c.json({ success: true })
 })
 

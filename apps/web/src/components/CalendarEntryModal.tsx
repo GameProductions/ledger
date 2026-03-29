@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, Trash2, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { X, Trash2, CheckCircle2, Hash, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TypeableSelect } from './ui/TypeableSelect';
+import { TransactionTimeline } from './TransactionTimeline';
 
 interface CalendarEntryModalProps {
   isOpen: boolean;
@@ -18,6 +20,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [description, setDescription] = useState(initialData?.description || '');
   const [amount, setAmount] = useState(initialData?.amount_cents ? (initialData.amount_cents / 100).toString() : '');
   const [currentDate, setCurrentDate] = useState(initialData?.transaction_date || initialData?.next_billing_date || date?.toISOString().split('T')[0] || '');
+  const [status, setStatus] = useState(initialData?.status || 'unpaid');
+  const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmation_number || '');
+  const [showTimeline, setShowTimeline] = useState(false);
 
   if (!isOpen) return null;
 
@@ -28,7 +33,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
       type,
       description,
       amount_cents: Math.round(parseFloat(amount) * 100),
-      date: currentDate
+      date: currentDate,
+      status,
+      confirmation_number: confirmationNumber
     });
   };
 
@@ -37,7 +44,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="card w-full max-w-lg p-8 reveal space-y-8"
+        className="card w-full max-w-2xl p-8 reveal space-y-8 overflow-y-auto max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-between items-center">
@@ -81,30 +88,90 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 />
              </div>
 
-             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>
-                   <input 
-                     required
-                     type="number" 
-                     step="0.01"
-                     value={amount}
-                     onChange={(e) => setAmount(e.target.value)}
-                     placeholder="0.00"
-                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
-                   />
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
+                    <TypeableSelect 
+                      options={[
+                        { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
+                        { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
+                        { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
+                        { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
+                      ]}
+                      value={status}
+                      onChange={(val) => setStatus(val)}
+                    />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Confirmation #</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={confirmationNumber}
+                        onChange={(e) => setConfirmationNumber(e.target.value)}
+                        placeholder="Optional..."
+                        className="w-full p-4 pl-12 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                      />
+                      <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                    </div>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>
+                    <input 
+                      required
+                      type="number" 
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                    />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Entry Date</label>
+                    <input 
+                      required
+                      type="date" 
+                      value={currentDate}
+                      onChange={(e) => setCurrentDate(e.target.value)}
+                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg appearance-none"
+                    />
+                 </div>
+              </div>
+
+              {initialData?.id && (
+                <div className="pt-4 border-t border-white/5">
+                   <button 
+                     type="button"
+                     onClick={() => setShowTimeline(!showTimeline)}
+                     className="w-full py-3 px-4 rounded-xl flex items-center justify-between bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
+                   >
+                     <div className="flex items-center gap-3">
+                        <Activity size={16} className="text-amber-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Sovereignty Audit History</span>
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-amber-500 transition-colors">
+                       {showTimeline ? 'Close Logs' : 'View Logs'}
+                     </span>
+                   </button>
+                   
+                   <AnimatePresence>
+                     {showTimeline && (
+                       <motion.div 
+                         initial={{ height: 0, opacity: 0 }}
+                         animate={{ height: 'auto', opacity: 1 }}
+                         exit={{ height: 0, opacity: 0 }}
+                         className="overflow-hidden mt-6"
+                       >
+                         <TransactionTimeline transactionId={initialData.id} />
+                       </motion.div>
+                     )}
+                   </AnimatePresence>
                 </div>
-                <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Entry Date</label>
-                   <input 
-                     required
-                     type="date" 
-                     value={currentDate}
-                     onChange={(e) => setCurrentDate(e.target.value)}
-                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg appearance-none"
-                   />
-                </div>
-             </div>
+              )}
           </div>
 
           <div className="pt-4 flex gap-4">

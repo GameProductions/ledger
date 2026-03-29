@@ -426,8 +426,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           <div className="flex items-center gap-3">
                              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">{b.icon}</div>
                              <div>
-                                <h4 className="font-bold text-sm leading-none mb-1">{b.name}</h4>
-                                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest opacity-40">Envelope Balance</p>
+                                <h4 className="font-bold text-sm leading-none">{b.name}</h4>
                              </div>
                           </div>
                           <div className={`text-xl font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>

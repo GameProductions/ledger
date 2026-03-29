@@ -39,7 +39,7 @@ export const HelpCenter: React.FC = () => {
     <MainLayout>
       <div className="max-w-6xl mx-auto space-y-16 py-12">
         <header className="text-center space-y-4">
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 opacity-70">Support Ecosystem</div>
+          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-4 opacity-70">Support Ecosystem</div>
           <h1 className="text-5xl font-black italic tracking-tighter text-white">How can we help you?</h1>
           <p className="text-secondary text-lg max-w-2xl mx-auto font-medium">
             Master the LEDGER platform with our comprehensive documentation and direct support channels.
@@ -58,7 +58,7 @@ export const HelpCenter: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-white mb-3 tracking-tight">{cat.title}</h3>
               <p className="text-secondary text-sm leading-relaxed mb-6">{cat.description}</p>
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary group-hover:gap-4 transition-all">
+              <div className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-primary group-hover:gap-4 transition-all">
                 Explore Module <ArrowRight size={14} />
               </div>
             </a>
@@ -75,7 +75,7 @@ export const HelpCenter: React.FC = () => {
           </div>
           <a 
             href="#/help/support?emergency=true"
-            className="px-10 py-5 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:scale-105 relative z-10 flex items-center gap-3"
+            className="px-10 py-5 bg-white text-black font-black uppercase tracking-widest text-sm rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:scale-105 relative z-10 flex items-center gap-3"
           >
             <AlertTriangle size={16} />
             Report Issue

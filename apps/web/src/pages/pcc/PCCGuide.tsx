@@ -40,7 +40,7 @@ const PCCGuide: React.FC = () => {
   }, [token]);
 
   return (
-    <PCCPortal activePath="#/admin/guide">
+    <PCCPortal activePath="#/system-pcc/guide">
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -50,15 +50,15 @@ const PCCGuide: React.FC = () => {
             </h2>
             <div className="flex items-center gap-3">
               <p className="text-sm text-slate-500 uppercase tracking-[0.3em] font-bold">System Documentation</p>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400 font-mono">v2.5.1_DYNAMIC</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-mono">v2.5.1_DYNAMIC</span>
             </div>
           </div>
           
           <div className="flex items-center gap-4 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
              <Activity size={20} className="text-emerald-500" />
              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase text-slate-500">Documentation Count</span>
-                <span className="text-xs font-black text-white">{walkthroughs.length} Guides</span>
+                <span className="text-xs font-black uppercase text-slate-500">Documentation Count</span>
+                <span className="text-sm font-black text-white">{walkthroughs.length} Guides</span>
              </div>
           </div>
         </div>
@@ -69,7 +69,7 @@ const PCCGuide: React.FC = () => {
            <div className="lg:col-span-4 space-y-4">
               <div className="flex items-center gap-2 px-1 mb-6">
                  <List size={16} className="text-slate-500" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Table of Contents</span>
+                 <span className="text-xs font-black uppercase tracking-widest text-slate-500">Table of Contents</span>
               </div>
               
               {loading ? (
@@ -94,8 +94,8 @@ const PCCGuide: React.FC = () => {
                       
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono text-emerald-500 tracking-tighter">{w.version}</span>
-                          <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                          <span className="text-xs font-mono text-emerald-500 tracking-tighter">{w.version}</span>
+                          <span className="text-xs text-slate-500 flex items-center gap-1">
                             <Calendar size={10} />
                             {new Date(w.created_at).toLocaleDateString()}
                           </span>
@@ -145,24 +145,24 @@ const PCCGuide: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Auth_01</div>
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Auth_01</div>
                   <h4 className="text-sm font-bold text-white uppercase">Passkey Removal</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Renaming or deleting passkeys within the Directory is audited and logged.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Renaming or deleting passkeys within the Directory is audited and logged.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cred_02</div>
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Cred_02</div>
                   <h4 className="text-sm font-bold text-white uppercase">Temp Baseline</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Temporary credentials force a mandatory rotation upon session initialization.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Temporary credentials force a mandatory rotation upon session initialization.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Asset_03</div>
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Asset_03</div>
                   <h4 className="text-sm font-bold text-white uppercase">Asset Persistence</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Determinest if synced avatars are retained after identity decoupling.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Determinest if synced avatars are retained after identity decoupling.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Audit_04</div>
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Audit_04</div>
                   <h4 className="text-sm font-bold text-white uppercase">Audit Trail</h4>
-                  <p className="text-xs text-slate-500 leading-relaxed">Every PCC interaction generates a audit entry in the Audit Trail.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Every PCC interaction generates a audit entry in the Audit Trail.</p>
                </div>
             </div>
         </div>

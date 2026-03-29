@@ -9,6 +9,10 @@
   --z-index-modal: 10000;
 }
 
+html {
+  font-size: 18px; /* Global scaling root */
+}
+
 :root {
   /* Default: Emerald */
   --primary: #10b981;

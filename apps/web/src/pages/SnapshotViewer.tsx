@@ -31,9 +31,9 @@ const SnapshotViewer: React.FC = () => {
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="flex justify-between items-end border-b border-white/10 pb-8">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-2">Read-Only Snapshot</div>
+            <div className="text-xs font-black uppercase tracking-widest text-emerald-500 mb-2">Read-Only Snapshot</div>
             <h1 className="text-4xl font-black italic tracking-tighter text-white">{snapshot.name}</h1>
-            <p className="text-secondary text-xs uppercase tracking-widest font-bold mt-2">Captured on {new Date(snapshot.created_at).toLocaleString()}</p>
+            <p className="text-secondary text-sm uppercase tracking-widest font-bold mt-2">Captured on {new Date(snapshot.created_at).toLocaleString()}</p>
           </div>
         </header>
 
@@ -41,7 +41,7 @@ const SnapshotViewer: React.FC = () => {
           <div className="card p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl">
              <table className="w-full text-left">
                <thead>
-                 <tr className="text-[10px] font-black uppercase tracking-widest text-secondary border-b border-white/10">
+                 <tr className="text-xs font-black uppercase tracking-widest text-secondary border-b border-white/10">
                    <th className="pb-4">Date</th>
                    <th className="pb-4">Description</th>
                    <th className="pb-4 text-right">Amount</th>
@@ -61,7 +61,7 @@ const SnapshotViewer: React.FC = () => {
         </div>
 
         <footer className="text-center pt-12">
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary opacity-20">Securely served by LEDGER Platform</p>
+           <p className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-20">Securely served by LEDGER Platform</p>
         </footer>
       </div>
     </MainLayout>

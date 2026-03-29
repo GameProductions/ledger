@@ -25,7 +25,7 @@ const BudgetProgress: React.FC = () => {
             <div key={budget.id}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.9rem' }}>
                 <span>{budget.icon} {budget.name}</span>
-                <div className="text-xs font-black tracking-tighter flex items-center gap-2">
+                <div className="text-sm font-black tracking-tighter flex items-center gap-2">
                   <Price amountCents={budget.spend_cents} hideCents /> / <Price amountCents={totalAvailable} hideCents />
                 </div>
               </div>

@@ -17,11 +17,11 @@ const UserMenu: React.FC<{
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
-    { icon: LayoutDashboard, label: 'Admin Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
-    { icon: Cpu, label: 'System Settings', hash: '#/admin/config', color: 'text-blue-400' },
-    { icon: Database, label: 'Data Management', hash: '#/admin/registry', color: 'text-orange-400' },
-    { icon: Users, label: 'User Management', hash: '#/admin/users', color: 'text-primary' },
-    { icon: Activity, label: 'Activity History', hash: '#/admin/audit', color: 'text-secondary' },
+    { icon: LayoutDashboard, label: 'PCC Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
+    { icon: Cpu, label: 'System Settings', hash: '#/system-pcc/config', color: 'text-blue-400' },
+    { icon: Database, label: 'Registry Entities', hash: '#/system-pcc/registry', color: 'text-orange-400' },
+    { icon: Users, label: 'System Users', hash: '#/system-pcc/users', color: 'text-primary' },
+    { icon: Activity, label: 'Audit History', hash: '#/system-pcc/audit', color: 'text-secondary' },
   ] : [
     { icon: Settings, label: 'User Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
@@ -43,8 +43,8 @@ const UserMenu: React.FC<{
           className="w-8 h-8 rounded-full border border-primary shadow-lg"
         />
         <div className="flex flex-col items-start ml-1 leading-none">
-          <span className="text-xs font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
-          {isPcc && <span className="text-[8px] text-emerald-500 font-black uppercase tracking-tighter">ADMIN MODE</span>}
+          <span className="text-sm font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
+          {isPcc && <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">PCC MODE</span>}
         </div>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -62,7 +62,7 @@ const UserMenu: React.FC<{
               style={{ background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--primary)' }}
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
-                <div className="text-[10px] text-primary uppercase tracking-widest font-black mb-1">
+                <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
                   {isPcc ? 'Administrative Access' : 'Authenticated Account'}
                 </div>
                 <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
@@ -76,7 +76,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <LayoutDashboard size={18} className="text-emerald-500" />
-                    <span>Exit Admin Mode</span>
+                    <span>Exit PCC Mode</span>
                   </button>
                 ) : (
                   !isHome && (
@@ -105,22 +105,22 @@ const UserMenu: React.FC<{
 
                 {!isPcc && globalRole === 'super_admin' && (
                   <button 
-                    onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
+                    onClick={() => { window.location.hash = '#/system-pcc/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"
                     style={{ background: 'none', border: 'none' }}
                   >
                     <Shield size={18} className="text-emerald-500 group-hover:animate-pulse" />
-                    <span className="group-hover:text-emerald-400 transition-colors">Admin Panel</span>
+                    <span className="group-hover:text-emerald-400 transition-colors">Platform Command Center</span>
                   </button>
                 )}
 
                 {!isPcc && setView && isHome && (
                   <div className="px-3 py-2 border-t border-glass-border mt-2">
-                    <div className="text-[10px] text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
+                    <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
                     <div className="grid grid-cols-2 gap-2">
                       <button 
                         onClick={() => { setView('list'); setIsOpen(false); }}
-                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs transition-all ${view === 'list' ? 'bg-primary text-white' : 'bg-white/5 text-secondary hover:text-white'}`}
+                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm transition-all ${view === 'list' ? 'bg-primary text-white' : 'bg-white/5 text-secondary hover:text-white'}`}
                         style={{ border: 'none' }}
                       >
                         <List size={14} />
@@ -128,7 +128,7 @@ const UserMenu: React.FC<{
                       </button>
                       <button 
                         onClick={() => { setView('calendar'); setIsOpen(false); }}
-                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs transition-all ${view === 'calendar' ? 'bg-primary text-white' : 'bg-white/5 text-secondary hover:text-white'}`}
+                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm transition-all ${view === 'calendar' ? 'bg-primary text-white' : 'bg-white/5 text-secondary hover:text-white'}`}
                         style={{ border: 'none' }}
                       >
                         <CalendarIcon size={14} />

@@ -122,19 +122,19 @@ const ReportsPage: React.FC = () => {
           <div className="flex gap-2">
             <button 
               onClick={exportCSV}
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all"
             >
               Export CSV
             </button>
             <button 
               onClick={shareSnapshot}
-              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-xl text-xs font-bold text-blue-400 transition-all"
+              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-xl text-sm font-bold text-blue-400 transition-all"
             >
               Share Snapshot
             </button>
             <button 
               onClick={generateSnapshot}
-              className="px-4 py-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-xl text-xs font-bold text-primary transition-all"
+              className="px-4 py-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-xl text-sm font-bold text-primary transition-all"
             >
               Generate Snapshot
             </button>
@@ -145,13 +145,13 @@ const ReportsPage: React.FC = () => {
           {/* Net Worth Overview */}
           <Card className="lg:col-span-2 p-8 h-full flex flex-col justify-between overflow-hidden relative">
              <div className="relative z-10">
-                <div className="text-[10px] uppercase tracking-widest text-secondary font-bold opacity-50 mb-1">Aggregate Net Worth</div>
+                <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50 mb-1">Aggregate Net Worth</div>
                 <div className="text-3xl font-black text-white">
                   <Price amountCents={netWorth.current_net_worth_cents} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+4.2%</span>
-                  <span className="text-[10px] text-secondary font-medium opacity-40 italic">vs last month</span>
+                  <span className="text-sm font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+4.2%</span>
+                  <span className="text-xs text-secondary font-medium opacity-40 italic">vs last month</span>
                 </div>
              </div>
 
@@ -163,14 +163,14 @@ const ReportsPage: React.FC = () => {
                       className="flex-1 bg-gradient-to-t from-primary/40 to-primary/10 rounded-t-lg transition-all hover:scale-x-110 cursor-pointer group relative"
                       style={{ height: `${(h.value / netWorth.current_net_worth_cents) * 100}%` }}
                     >
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-deep border border-glass-border px-2 py-1 rounded-lg text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-deep border border-glass-border px-2 py-1 rounded-lg text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         ${(h.value / 100).toLocaleString()}
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl">
-                    <span className="text-[10px] text-secondary font-bold opacity-30 uppercase tracking-widest">No Historical Data Yet</span>
+                    <span className="text-xs text-secondary font-bold opacity-30 uppercase tracking-widest">No Historical Data Yet</span>
                   </div>
                 )}
              </div>
@@ -178,7 +178,7 @@ const ReportsPage: React.FC = () => {
 
           {/* Category Spending */}
           <Card className="p-8 space-y-6">
-            <div className="text-[10px] uppercase tracking-widest text-secondary font-bold opacity-50">Spending Distribution</div>
+            <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50">Spending Distribution</div>
             
             <div className="relative aspect-square flex items-center justify-center">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -201,7 +201,7 @@ const ReportsPage: React.FC = () => {
               </svg>
               <div className="absolute flex flex-col items-center">
                 <span className="text-2xl font-black">${(totalSpend/100).toLocaleString()}</span>
-                <span className="text-[9px] text-secondary font-bold uppercase tracking-widest opacity-40">30d Total</span>
+                <span className="text-[12px] text-secondary font-bold uppercase tracking-widest opacity-40">30d Total</span>
               </div>
             </div>
 
@@ -212,7 +212,7 @@ const ReportsPage: React.FC = () => {
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                     <span className="text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity">{cat.name}</span>
                   </div>
-                  <span className="text-xs font-black tracking-tight">${(cat.total_cents/100).toLocaleString()}</span>
+                  <span className="text-sm font-black tracking-tight">${(cat.total_cents/100).toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -222,7 +222,7 @@ const ReportsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
            {/* Analysis */}
            <Card className="p-8 space-y-6">
-              <div className="text-[10px] uppercase tracking-widest text-secondary font-bold opacity-50">AI Insights & Audits</div>
+              <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50">AI Insights & Audits</div>
               <div className="space-y-4">
                  {[
                    { title: 'Savings Rate', val: '24.5%', sub: 'Optimizing for long-term growth', color: 'text-emerald-400' },
@@ -232,8 +232,8 @@ const ReportsPage: React.FC = () => {
                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer">
                       <div className={`text-2xl font-black ${insight.color}`}>{insight.val}</div>
                       <div>
-                        <div className="text-xs font-bold">{insight.title}</div>
-                        <div className="text-[10px] text-secondary opacity-50 font-medium">{insight.sub}</div>
+                        <div className="text-sm font-bold">{insight.title}</div>
+                        <div className="text-xs text-secondary opacity-50 font-medium">{insight.sub}</div>
                       </div>
                    </div>
                  ))}
@@ -242,7 +242,7 @@ const ReportsPage: React.FC = () => {
 
            {/* Perspective: Reports Archive */}
            <Card className="p-8 space-y-6">
-              <div className="text-[10px] uppercase tracking-widest text-secondary font-bold opacity-50">Report Archive</div>
+              <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50">Report Archive</div>
               <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                 {reports.length > 0 ? (
                   reports.map((r, i) => (
@@ -255,7 +255,7 @@ const ReportsPage: React.FC = () => {
                          </div>
                          <div>
                             <div className="text-sm font-bold capitalize">{r.type.replace(/_/g, ' ')}</div>
-                            <div className="text-[10px] text-secondary opacity-50 uppercase tracking-tighter">{r.period_start} → {r.period_end}</div>
+                            <div className="text-xs text-secondary opacity-50 uppercase tracking-tighter">{r.period_start} → {r.period_end}</div>
                          </div>
                        </div>
                        <button className="p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary">
@@ -266,7 +266,7 @@ const ReportsPage: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="py-12 text-center text-secondary opacity-30 italic text-xs">
+                  <div className="py-12 text-center text-secondary opacity-30 italic text-sm">
                     No persistent reports found.
                   </div>
                 )}

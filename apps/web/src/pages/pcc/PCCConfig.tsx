@@ -46,23 +46,23 @@ const PCCConfig: React.FC = () => {
     setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabled_globally: enabled ? 1 : 0 } : f));
   };
 
-  if (loading) return <PCCPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/system-pcc/config"><div className="animate-pulse">Loading settings...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/admin/config">
+    <PCCPortal activePath="#/system-pcc/config">
       <div className="space-y-12">
         {/* System Overrides */}
         <section>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Universal Switchboard</h2>
-            <span className="text-[10px] bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Key/Value Overrides</span>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Key/Value Overrides</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {configs.map(cfg => (
               <div key={cfg.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
                 <div className="mb-4">
                   <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.config_key}</p>
-                  <p className="text-xs text-gray-500">{cfg.description || 'No description provided.'}</p>
+                  <p className="text-sm text-gray-500">{cfg.description || 'No description provided.'}</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <input 
@@ -71,7 +71,7 @@ const PCCConfig: React.FC = () => {
                     onChange={(e) => handleUpdateConfig(cfg.id, e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
                   />
-                  <span className="text-[10px] text-gray-600 uppercase font-black">{cfg.value_type}</span>
+                  <span className="text-xs text-gray-600 uppercase font-black">{cfg.value_type}</span>
                 </div>
               </div>
             ))}
@@ -82,7 +82,7 @@ const PCCConfig: React.FC = () => {
         <section>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Feature Flags</h2>
-            <span className="text-[10px] bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Tiered Component Access</span>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Tiered Component Access</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {features.map(feat => (
@@ -102,7 +102,7 @@ const PCCConfig: React.FC = () => {
                   </label>
                 </div>
                 <h4 className="font-bold text-sm mb-1">{feat.feature_key}</h4>
-                <p className="text-xs text-gray-500 line-clamp-2">{feat.description}</p>
+                <p className="text-sm text-gray-500 line-clamp-2">{feat.description}</p>
               </div>
             ))}
           </div>

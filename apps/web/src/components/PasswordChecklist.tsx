@@ -21,7 +21,7 @@ export const PasswordChecklist: React.FC<PasswordChecklistProps> = ({ password }
 
   return (
     <div className="space-y-2 p-6 bg-white/5 border border-white/5 rounded-2xl reveal">
-      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary mb-4">Security Standards</div>
+      <div className="text-xs font-black uppercase tracking-[0.2em] text-secondary mb-4">Security Standards</div>
       <div className="grid grid-cols-1 gap-3">
         {requirements.map((req, i) => {
           const met = req.test(password);
@@ -30,7 +30,7 @@ export const PasswordChecklist: React.FC<PasswordChecklistProps> = ({ password }
               <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${met ? 'bg-primary/20 border-primary/40' : 'bg-white/5 border-white/10'}`}>
                 {met ? <Check size={12} strokeWidth={4} /> : <X size={10} className="opacity-40" />}
               </div>
-              <span className="text-xs font-bold tracking-tight">{req.label}</span>
+              <span className="text-sm font-bold tracking-tight">{req.label}</span>
             </div>
           );
         })}

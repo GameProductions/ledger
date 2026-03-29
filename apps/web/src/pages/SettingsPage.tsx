@@ -11,6 +11,7 @@ import { startRegistration } from '@simplewebauthn/browser'
 import { PasswordChecklist } from '../components/PasswordChecklist'
 import { PrivacySettings } from '../components/PrivacySettings'
 import { Price } from '../components/Price'
+import HouseholdRegistry from '../components/HouseholdRegistry'
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
@@ -261,8 +262,8 @@ const SettingsPage: React.FC = () => {
                 Identity & Security
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.8 Total Modernization</span>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary opacity-40">Command Center Alpha</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.8 Total Modernization</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">Command Center Alpha</span>
               </div>
             </div>
           </div>
@@ -309,18 +310,18 @@ const SettingsPage: React.FC = () => {
                     <Edit3 size={14} className="opacity-0 group-hover:opacity-40" />
                   </h2>
                 )}
-                <div className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center gap-2">
+                <div className="text-xs font-black uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center gap-2">
                    <ShieldCheck size={12} className="text-primary" />
                    {profile?.email || user?.email}
                 </div>
               </div>
               
               <div className="w-full pt-6 border-t border-white/5 space-y-4">
-                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                 <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
                    <span className="text-secondary opacity-40 italic">System Role</span>
                    <span className="text-primary">{profile?.global_role || 'Standard User'}</span>
                  </div>
-                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                 <div className="flex items-center justify-between text-xs font-black uppercase tracking-widest">
                     <span className="text-secondary opacity-40 italic">Account Status</span>
                     <span className="text-emerald-400">Verified</span>
                  </div>
@@ -355,7 +356,7 @@ const SettingsPage: React.FC = () => {
                   <button 
                     onClick={handleUpdatePassword}
                     disabled={changingPass || newPassword.length < 8}
-                    className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black uppercase tracking-[0.2em] text-[10px] py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                    className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black uppercase tracking-[0.2em] text-xs py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
                   >
                     {changingPass ? 'Updating Hub...' : 'Update Password'}
                   </button>
@@ -370,7 +371,7 @@ const SettingsPage: React.FC = () => {
                 <div className="flex items-center justify-between px-2">
                    <div>
                      <h3 className="text-xl font-black italic tracking-tight">Identity Ecosystem</h3>
-                     <p className="text-[10px] font-bold text-secondary uppercase tracking-widest opacity-60">Synchronize profile assets and social linking</p>
+                     <p className="text-xs font-bold text-secondary uppercase tracking-widest opacity-60">Synchronize profile assets and social linking</p>
                    </div>
                 </div>
 
@@ -393,7 +394,7 @@ const SettingsPage: React.FC = () => {
                                    <p className="font-bold text-sm tracking-tight">{provider.name}</p>
                                    <div className="flex items-center gap-2">
                                       <span className={`w-1.5 h-1.5 rounded-full ${linked ? 'bg-primary' : 'bg-slate-500'}`}></span>
-                                      <span className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60">
+                                      <span className="text-xs font-black uppercase tracking-widest text-secondary opacity-60">
                                         {linked ? `Connected` : 'Offline'}
                                       </span>
                                    </div>
@@ -407,7 +408,7 @@ const SettingsPage: React.FC = () => {
                                   <button 
                                     onClick={() => handleSyncProfile(provider.id, linked.id)}
                                     disabled={syncing === provider.id}
-                                    className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all"
+                                    className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-black uppercase tracking-widest transition-all"
                                   >
                                     <RefreshCw size={12} className={syncing === provider.id ? 'animate-spin' : ''} />
                                     {syncing === provider.id ? 'Syncing...' : 'Sync Profile'}
@@ -425,7 +426,7 @@ const SettingsPage: React.FC = () => {
                                     const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
                                     window.location.href = `${baseApi}/auth/login/${provider.id}`;
                                   }}
-                                  className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-[10px] transition-all"
+                                  className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs transition-all"
                                 >
                                   Integrate Account
                                 </button>
@@ -442,11 +443,11 @@ const SettingsPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                    <div className="space-y-1">
                       <h3 className="text-2xl font-black italic tracking-tight">Biometric Vault</h3>
-                      <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Register hardware keys and native auth</p>
+                      <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Register hardware keys and native auth</p>
                    </div>
                    <button 
                     onClick={handleRegisterPasskey}
-                    className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-primary/20"
+                    className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-primary/20"
                    >
                      <Fingerprint size={18} />
                      Enroll Passkey
@@ -468,7 +469,7 @@ const SettingsPage: React.FC = () => {
                                       {getProviderIcon(pk.aaguid)}
                                    </div>
                                  </div>
-                                 <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">Registered {new Date(pk.created_at).toLocaleDateString()}</p>
+                                 <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Registered {new Date(pk.created_at).toLocaleDateString()}</p>
                               </div>
                            </div>
                            <div className="flex gap-2">
@@ -502,14 +503,14 @@ const SettingsPage: React.FC = () => {
              <section className="card p-10 space-y-10 reveal">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                    <div className="space-y-4 opacity-50">
-                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary">Operating Alias</label>
+                      <label className="text-xs font-black uppercase tracking-[0.3em] text-secondary">Operating Alias</label>
                       <div className="flex items-center gap-3 text-secondary p-1 border-b border-white/5 cursor-not-allowed">
                         <Edit3 size={14} />
                         <span className="text-lg font-black italic tracking-tighter">Edit via profile card above</span>
                       </div>
                    </div>
                    <div className="space-y-4">
-                      <label className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary">Timezone Protocol</label>
+                      <label className="text-xs font-black uppercase tracking-[0.3em] text-secondary">Timezone Protocol</label>
                       <select 
                         value={timezone}
                         onChange={(e) => setTimezone(e.target.value)}
@@ -526,7 +527,7 @@ const SettingsPage: React.FC = () => {
                    <button 
                     onClick={updateProfile}
                     disabled={saving}
-                    className="px-10 py-5 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:scale-105 transition-all flex items-center gap-3 shadow-2xl shadow-white/10"
+                    className="px-10 py-5 bg-white text-black font-black uppercase tracking-widest text-sm rounded-2xl hover:scale-105 transition-all flex items-center gap-3 shadow-2xl shadow-white/10"
                    >
                      {saving ? <RefreshCw className="animate-spin" /> : <Save size={18} />}
                      {saving ? 'Transmitting...' : 'Commit Preferences'}
@@ -541,7 +542,7 @@ const SettingsPage: React.FC = () => {
            <section className="space-y-6">
               <div className="px-2">
                  <h3 className="text-xl font-black italic tracking-tight">Financial Infrastructure</h3>
-                 <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Connected data sources and ledger entry points</p>
+                 <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Connected data sources and ledger entry points</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -551,20 +552,29 @@ const SettingsPage: React.FC = () => {
                           <div className="text-xl">💳</div>
                           <div>
                              <p className="font-bold text-sm tracking-tight">{acc.name}</p>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">Active Ledger</p>
+                             <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Active Ledger</p>
                           </div>
                        </div>
                        <Price amountCents={acc.balance_cents} className="text-lg font-black tracking-tighter" />
                     </div>
                  )) : (
                     <div className="col-span-full p-10 border-2 border-dashed border-white/5 rounded-3xl text-center opacity-30 grayscale italic">
-                       <p className="text-xs font-bold uppercase tracking-widest">No active financial links detected</p>
+                       <p className="text-sm font-bold uppercase tracking-widest">No active financial links detected</p>
                     </div>
                  )}
               </div>
            </section>
 
            <PrivacySettings />
+           
+           {/* Household Sovereignty */}
+           <section className="space-y-6">
+              <div className="px-2">
+                 <h3 className="text-xl font-black italic tracking-tight">Territory Sovereignty</h3>
+                 <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Manage household context and synchronization access</p>
+              </div>
+              <HouseholdRegistry />
+           </section>
         </div>
 
         {/* MODALS */}
@@ -591,7 +601,7 @@ const SettingsPage: React.FC = () => {
                />
                <div className="space-y-1">
                   <p className="text-sm font-bold tracking-tight text-white">Retain Profile Assets</p>
-                  <p className="text-[10px] text-secondary uppercase font-black tracking-widest opacity-60 leading-relaxed">Keep current display name and avatar even after this identity is removed.</p>
+                  <p className="text-xs text-secondary uppercase font-black tracking-widest opacity-60 leading-relaxed">Keep current display name and avatar even after this identity is removed.</p>
                </div>
             </label>
           </div>
@@ -610,7 +620,7 @@ const SettingsPage: React.FC = () => {
           }
         >
           <div className="space-y-4">
-            <label className="text-[10px] font-black uppercase tracking-widest text-secondary block">New Sentinel Name</label>
+            <label className="text-xs font-black uppercase tracking-widest text-secondary block">New Sentinel Name</label>
             <input 
               type="text" 
               value={editingPasskey?.newName || ''}

@@ -12,7 +12,7 @@ const ThemeSwitcher: React.FC = () => {
         <div key={category} className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="h-px flex-1 bg-glass-border" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-60">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-secondary opacity-60">
               {category} Range
             </span>
             <div className="h-px flex-1 bg-glass-border" />
@@ -26,11 +26,11 @@ const ThemeSwitcher: React.FC = () => {
                 className={`flex flex-col gap-3 p-4 rounded-2xl border-2 transition-all text-left relative overflow-hidden group ${activeTheme.id === t.id ? 'border-primary bg-primary/5' : 'border-glass-border bg-white/5 hover:border-white/20'}`}
               >
                 <div className="flex justify-between items-start z-10">
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${activeTheme.id === t.id ? 'text-primary' : 'text-secondary'}`}>
+                  <span className={`text-xs font-black uppercase tracking-widest ${activeTheme.id === t.id ? 'text-primary' : 'text-secondary'}`}>
                     {t.name}
                   </span>
                   {activeTheme.id === t.id && (
-                    <span className="text-primary text-xs">✓</span>
+                    <span className="text-primary text-sm">✓</span>
                   )}
                 </div>
                 

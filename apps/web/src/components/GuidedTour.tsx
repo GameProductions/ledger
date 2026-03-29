@@ -137,8 +137,8 @@ export const GuidedTour: React.FC = () => {
               <div className="mb-6 flex flex-column gap-3 bg-white/5 p-4 rounded-lg border border-white/10">
                 {updates.map(u => (
                   <div key={u.version}>
-                    <div className="text-xs font-bold text-primary mb-1">{u.title} ({u.version})</div>
-                    <div className="text-xs text-secondary">{u.description}</div>
+                    <div className="text-sm font-bold text-primary mb-1">{u.title} ({u.version})</div>
+                    <div className="text-sm text-secondary">{u.description}</div>
                   </div>
                 ))}
               </div>
@@ -161,7 +161,7 @@ export const GuidedTour: React.FC = () => {
                 </button>
               </div>
 
-              <span className="text-xs text-secondary font-mono">
+              <span className="text-sm text-secondary font-mono">
                 STEP {currentIdx + 1} / {steps.length}
               </span>
             </div>

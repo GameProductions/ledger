@@ -20,7 +20,7 @@ const Subscriptions: React.FC = () => {
     <section className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscription Manager</h3>
-        <button onClick={() => setShowAdd(!showAdd)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
+        <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
           {showAdd ? 'Cancel' : '+ New Strategy'}
         </button>
       </div>
@@ -88,7 +88,7 @@ const Subscriptions: React.FC = () => {
               <input name="trial_date" type="date" style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
             </div>
           </div>
-          <button type="submit" className="primary py-3 font-black uppercase text-[10px] tracking-widest mt-2">Activate Subscription Tracking</button>
+          <button type="submit" className="primary py-3 font-black uppercase text-xs tracking-widest mt-2">Activate Subscription Tracking</button>
         </form>
       )}
 
@@ -106,14 +106,14 @@ const Subscriptions: React.FC = () => {
                 {sub.is_trial ? `Trial Ends: ${sub.trial_end_date}` : `Due: ${sub.next_billing_date}`}
               </div>
               {sub.provider_account_id && (
-                <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest text-amber-500 w-fit">
+                <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
                    <Link size={10} /> Account Linked
                 </div>
               )}
             </div>
             <div className="flex flex-col items-end">
               <Price amountCents={sub.amount_cents} className="font-black tracking-tighter text-lg" />
-              <div className="text-[9px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billing_cycle}</div>
+              <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billing_cycle}</div>
             </div>
           </div>
         ))}

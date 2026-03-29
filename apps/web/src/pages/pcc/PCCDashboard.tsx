@@ -28,7 +28,7 @@ const PCCDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  if (loading) return <PCCPortal activePath="#/admin/dashboard"><div className="animate-pulse">Loading Admin Dashboard...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/system-pcc/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></PCCPortal>;
 
   const statCards = [
     { label: 'Total Users', value: stats?.totalUsers || 0, color: 'emerald' },
@@ -38,7 +38,7 @@ const PCCDashboard: React.FC = () => {
   ];
 
   return (
-    <PCCPortal activePath="#/admin/dashboard">
+    <PCCPortal activePath="#/system-pcc/dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {statCards.map((stat) => (
           <div key={stat.label} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative">
@@ -66,10 +66,10 @@ const PCCDashboard: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-bold">{log.action.replace(/_/g, ' ')}</p>
-                      <p className="text-[10px] text-gray-500 uppercase tracking-tight">{log.target} • {new Date(log.created_at).toLocaleString()}</p>
+                      <p className="text-sm text-gray-500 uppercase tracking-tight">{log.target} • {new Date(log.created_at).toLocaleString()}</p>
                     </div>
                   </div>
-                  <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded-full border ${
+                  <span className={`px-2 py-0.5 text-sm font-black uppercase rounded-full border ${
                     log.action.includes('SUCCESS') ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
                     log.action.includes('FAILURE') ? 'bg-red-500/10 text-red-500 border-red-500/20' : 
                     'bg-blue-500/10 text-blue-500 border-blue-500/20'
@@ -86,7 +86,7 @@ const PCCDashboard: React.FC = () => {
 
         <div className="p-8 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full" />
-          <h3 className="text-lg font-bold mb-4 relative">Administrative Actions</h3>
+          <h3 className="text-lg font-bold mb-4 relative">God Mode</h3>
           <div className="space-y-3 relative">
             <button className="w-full text-left p-3 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]">
               Apply System Update

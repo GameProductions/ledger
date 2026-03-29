@@ -27,7 +27,7 @@ export const OnboardingChecklist: React.FC = () => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Trophy size={18} className="text-primary" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-secondary">Setup Progress</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-secondary">Setup Progress</h3>
         </div>
         <div className="flex items-center gap-3">
           <div style={{ width: '100px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -37,7 +37,7 @@ export const OnboardingChecklist: React.FC = () => {
               style={{ height: '100%', background: 'var(--primary)' }}
             />
           </div>
-          <span className="text-xs font-mono text-primary">{progress}%</span>
+          <span className="text-sm font-mono text-primary">{progress}%</span>
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export const OnboardingChecklist: React.FC = () => {
         )}
         <button 
           onClick={skipTour} 
-          className="text-xs text-secondary hover:text-white transition-colors"
+          className="text-sm text-secondary hover:text-white transition-colors"
           style={{ background: 'none', border: 'none' }}
         >
           Dismiss Checklist

@@ -24,15 +24,16 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   }
 
   const navItems = [
-    { name: 'Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Users', path: '#/admin/users', icon: Users },
-    { name: 'Providers', path: '#/admin/providers', icon: Globe },
-    { name: 'Processors', path: '#/admin/processors', icon: Zap },
-    { name: 'Activity History', path: '#/admin/audit', icon: Activity },
-    { name: 'Data Management', path: '#/admin/registry', icon: Database },
-    { name: 'Global Search', path: '#/admin/search', icon: Search },
-    { name: 'System Settings', path: '#/admin/config', icon: Settings },
-    { name: 'Help Guide', path: '#/admin/guide', icon: FileText },
+    { name: 'Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
+    { name: 'Users', path: '#/system-pcc/users', icon: Users },
+    { name: 'Households', path: '#/system-pcc/households', icon: Shield },
+    { name: 'Providers', path: '#/system-pcc/providers', icon: Globe },
+    { name: 'Processors', path: '#/system-pcc/processors', icon: Zap },
+    { name: 'Audit History', path: '#/system-pcc/audit', icon: Activity },
+    { name: 'Registry Entities', path: '#/system-pcc/registry', icon: Database },
+    { name: 'Global Search', path: '#/system-pcc/search', icon: Search },
+    { name: 'System Settings', path: '#/system-pcc/config', icon: Settings },
+    { name: 'PCC Guide', path: '#/system-pcc/guide', icon: FileText },
   ];
 
   return (
@@ -42,14 +43,14 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-white/10">
-               L
+               P
              </div>
              <div>
                <div className="flex items-center gap-2">
-                 <h1 className="text-xl font-black tracking-tight uppercase italic">LEDGER <span className="text-emerald-500">ADMIN</span></h1>
-                 <span className="px-2 py-0.5 rounded text-[8px] bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Online</span>
+                 <h1 className="text-xl font-black tracking-tight uppercase italic">PLATFORM <span className="text-emerald-500">COMMAND</span> CENTER</h1>
+                 <span className="px-2 py-0.5 rounded text-xs bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Online</span>
                </div>
-               <p className="text-[9px] text-slate-500 uppercase tracking-[0.4em] font-black">System Administration</p>
+               <p className="text-sm text-slate-500 uppercase tracking-[0.4em] font-black">System Administration</p>
              </div>
           </div>
         </div>
@@ -57,7 +58,7 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
         <div className="flex items-center gap-8">
           <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
             <Shield size={16} className="text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Secure Connection Active</span>
+            <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Secure Connection Active</span>
           </div>
           <UserMenu isPcc={true} />
         </div>
@@ -80,7 +81,7 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
                     }`}
                    >
                      <item.icon size={18} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
-                     <span className="text-xs uppercase tracking-widest">{item.name}</span>
+                     <span className="text-sm uppercase tracking-widest">{item.name}</span>
                    </a>
                  );
                })}
@@ -90,8 +91,8 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
                    <Lock size={16} className="text-blue-500" />
                    <div className="flex flex-col">
-                      <span className="text-[8px] font-black uppercase text-slate-600">Access Mode</span>
-                      <span className="text-[10px] font-black text-blue-500 uppercase italic">ADMIN_ACCESS</span>
+                      <span className="text-sm font-black uppercase text-slate-600">Access Mode</span>
+                      <span className="text-sm font-black text-blue-500 uppercase italic">PCC_ACCESS</span>
                    </div>
                  </div>
              </div>
@@ -99,7 +100,7 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
        </aside>
 
        {/* Main Content Area */}
-       <main className="pt-32 pb-20 px-8 xl:pl-[320px] xl:pr-12 max-w-[1700px] mx-auto min-h-screen">
+       <main className="pt-32 pb-20 px-8 xl:pl-[320px] xl:pr-12 max-w-[1700px] mx-auto min-h-screen text-[18px]">
          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
            {children}
          </div>
@@ -108,10 +109,10 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
        {/* Status Footer */}
        <footer className="fixed bottom-0 left-0 right-0 py-2 px-12 z-[500] pointer-events-none">
          <div className="flex items-center justify-between opacity-30">
-           <div className="text-[8px] text-slate-600 font-mono uppercase tracking-[0.3em]">
+           <div className="text-sm text-slate-600 font-mono uppercase tracking-[0.3em]">
              Session ID: {user.id.slice(0, 24)}... | Security Verified
            </div>
-           <div className="text-[8px] text-emerald-500 font-mono uppercase tracking-[0.3em]">
+           <div className="text-sm text-emerald-500 font-mono uppercase tracking-[0.3em]">
              System: {window.location.hostname}
            </div>
          </div>

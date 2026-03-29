@@ -72,9 +72,9 @@ const DataInteropPage: React.FC = () => {
                  >
                    <div>
                      <p className="font-bold text-lg">{format.name}</p>
-                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{format.desc}</p>
+                     <p className="text-xs font-black uppercase tracking-widest opacity-40">{format.desc}</p>
                    </div>
-                   <div className={`w-10 h-10 rounded-xl ${format.color} flex items-center justify-center text-black font-black text-[10px]`}>
+                   <div className={`w-10 h-10 rounded-xl ${format.color} flex items-center justify-center text-black font-black text-xs`}>
                      {format.id.toUpperCase()}
                    </div>
                  </button>

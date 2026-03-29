@@ -27,6 +27,7 @@ const PCCDashboard = lazy(() => import('./pages/pcc/PCCDashboard'))
 const PCCConfig = lazy(() => import('./pages/pcc/PCCConfig'))
 const PCCData = lazy(() => import('./pages/pcc/PCCData'))
 const PCCUsers = lazy(() => import('./pages/pcc/PCCUsers'))
+const PCCHouseholds = lazy(() => import('./pages/pcc/PCCHouseholds'))
 const PCCSearch = lazy(() => import('./pages/pcc/PCCSearch'))
 const PCCAudit = lazy(() => import('./pages/pcc/PCCAudit'))
 const PCCProviders = lazy(() => import('./pages/pcc/PCCProviders'))
@@ -59,18 +60,19 @@ const AppContent: React.FC = () => {
     // 2. Auth Guard
     if (!user) return <LoginPage />
 
-    // 3. Admin Panel - Super-Admin Only
-    if (path.startsWith('#/admin')) {
+    // 3. Platform Command Center (PCC) - Super-Admin Only
+    if (path.startsWith('#/system-pcc')) {
       if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
-      if (path === '#/admin/dashboard') return <PCCDashboard />
-      if (path === '#/admin/config') return <PCCConfig />
-      if (path === '#/admin/registry') return <PCCData />
-      if (path === '#/admin/users') return <PCCUsers />
-      if (path === '#/admin/search') return <PCCSearch />
-      if (path === '#/admin/audit') return <PCCAudit />
-      if (path === '#/admin/providers') return <PCCProviders />
-      if (path === '#/admin/processors') return <PCCProcessors />
-      if (path === '#/admin/guide') return <PCCGuide />
+      if (path === '#/system-pcc/dashboard') return <PCCDashboard />
+      if (path === '#/system-pcc/config') return <PCCConfig />
+      if (path === '#/system-pcc/registry') return <PCCData />
+      if (path === '#/system-pcc/users') return <PCCUsers />
+      if (path === '#/system-pcc/households') return <PCCHouseholds />
+      if (path === '#/system-pcc/search') return <PCCSearch />
+      if (path === '#/system-pcc/audit') return <PCCAudit />
+      if (path === '#/system-pcc/providers') return <PCCProviders />
+      if (path === '#/system-pcc/processors') return <PCCProcessors />
+      if (path === '#/system-pcc/guide') return <PCCGuide />
       return <PCCDashboard />
     }
 

@@ -50,7 +50,7 @@ export const SupportPortal: React.FC = () => {
           <p className="text-secondary font-medium">Your report has been logged in the system vault. Our team will review the diagnostic data and respond to your linked email.</p>
           <button 
             onClick={() => window.location.hash = '#/help'}
-            className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+            className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-sm font-black uppercase tracking-widest transition-all"
           >
             Back to Help Center
           </button>
@@ -63,7 +63,7 @@ export const SupportPortal: React.FC = () => {
     <MainLayout>
       <div className="max-w-4xl mx-auto py-12 space-y-12">
         <header className="space-y-4">
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-2">Internal Comms</div>
+          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Internal Comms</div>
           <h1 className="text-4xl font-black italic tracking-tighter">Support Portal</h1>
           <p className="text-secondary font-medium">Submit bug reports or feature requests directly to the ledger maintenance team.</p>
         </header>
@@ -71,7 +71,7 @@ export const SupportPortal: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary px-1">Subject</label>
+              <label className="text-xs font-black uppercase tracking-widest text-secondary px-1">Subject</label>
               <input 
                 required
                 value={form.subject}
@@ -82,7 +82,7 @@ export const SupportPortal: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary px-1">Category</label>
+              <label className="text-xs font-black uppercase tracking-widest text-secondary px-1">Category</label>
               <select 
                 value={form.category}
                 onChange={e => setForm({...form, category: e.target.value})}
@@ -96,7 +96,7 @@ export const SupportPortal: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary px-1">Detailed Message</label>
+              <label className="text-xs font-black uppercase tracking-widest text-secondary px-1">Detailed Message</label>
               <textarea 
                 required
                 rows={6}
@@ -110,7 +110,7 @@ export const SupportPortal: React.FC = () => {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-white text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-3 group"
+              className="w-full py-5 bg-white text-black font-black uppercase tracking-widest text-sm rounded-2xl hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-3 group"
             >
               {loading ? 'Submitting...' : 'Send Report'}
               <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -123,7 +123,7 @@ export const SupportPortal: React.FC = () => {
                 <Info size={16} className="text-primary" />
                 Guidelines
               </h3>
-              <ul className="text-xs text-secondary space-y-4 font-medium leading-relaxed">
+              <ul className="text-sm text-secondary space-y-4 font-medium leading-relaxed">
                 <li className="flex gap-3">
                   <span className="text-primary mt-0.5">&bull;</span>
                   Be as descriptive as possible when reporting bugs.
@@ -141,7 +141,7 @@ export const SupportPortal: React.FC = () => {
 
             <div className="p-8 bg-gradient-to-br from-primary/20 to-transparent border border-primary/20 rounded-[2rem]">
               <h4 className="font-bold text-white mb-2">Priority Response</h4>
-              <p className="text-xs text-secondary font-medium leading-relaxed">
+              <p className="text-sm text-secondary font-medium leading-relaxed">
                 Super Admin accounts receive expedited review for critical service interruptions.
               </p>
             </div>

@@ -27,7 +27,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ activeView, onViewChange }) => {
             }`}
           >
             <span className="text-xl">{item.icon}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+            <span className="text-xs font-bold uppercase tracking-widest">{item.label}</span>
           </button>
         ))}
       </nav>

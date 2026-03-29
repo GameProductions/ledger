@@ -74,7 +74,7 @@ const BackupHub: React.FC = () => {
     <MainLayout>
       <div className="max-w-5xl mx-auto space-y-12">
         <header>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">Security & Recovery</div>
+          <div className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-2">Security & Recovery</div>
           <h1 className="text-4xl font-black italic tracking-tighter">Backup Hub</h1>
           <p className="text-secondary font-medium">Strategic data preservation and multi-cloud redundancy.</p>
         </header>
@@ -86,7 +86,7 @@ const BackupHub: React.FC = () => {
                 <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary"><Download /></div>
                 <div>
                   <h2 className="text-xl font-bold">Local Sovereignty</h2>
-                  <p className="text-xs text-secondary">Export your entire ledger as a portable JSON file.</p>
+                  <p className="text-sm text-secondary">Export your entire ledger as a portable JSON file.</p>
                 </div>
               </div>
               <button 
@@ -110,7 +110,7 @@ const BackupHub: React.FC = () => {
                     <img src={provider.icon} className="w-8 h-8" alt={provider.name} />
                     <div>
                       <p className="font-bold text-sm">{provider.name}</p>
-                      <p className="text-[10px] text-secondary font-black uppercase tracking-widest opacity-50 italic">Cloud Recovery Point</p>
+                      <p className="text-xs text-secondary font-black uppercase tracking-widest opacity-50 italic">Cloud Recovery Point</p>
                     </div>
                   </div>
                   <button 
@@ -141,7 +141,7 @@ const BackupHub: React.FC = () => {
            <button 
              disabled={!!loading}
              onClick={() => document.getElementById('restore-upload')?.click()}
-             className="flex items-center gap-3 px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest mx-auto transition-all"
+             className="flex items-center gap-3 px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-black uppercase tracking-widest mx-auto transition-all"
            >
              <Upload size={16} />
              {loading === 'restore' ? 'Restoring Core...' : 'Restore from Backup'}

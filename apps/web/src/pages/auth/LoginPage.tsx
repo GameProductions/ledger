@@ -189,7 +189,7 @@ const LoginPage: React.FC = () => {
             <img src={theme.logoUrl} alt="LEDGER" className="h-20 mx-auto opacity-100 hover:scale-110 transition-transform duration-700 pointer-events-none" />
             <div className="space-y-1">
               <h2 className="text-3xl font-black tracking-tighter text-center uppercase italic underline decoration-primary/40 underline-offset-8">LEDGER</h2>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary opacity-40">Live Evaluation of Daily Gains & Expense Records</p>
+              <p className="text-xs font-black uppercase tracking-[0.4em] text-secondary opacity-40">Live Evaluation of Daily Gains & Expense Records</p>
             </div>
           </div>
 
@@ -226,7 +226,7 @@ const LoginPage: React.FC = () => {
                    <button 
                     type="button"
                     onClick={() => setIsForgotModalOpen(true)}
-                    className="text-[10px] font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors"
+                    className="text-xs font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors"
                    >
                      Forgot Protocol?
                    </button>
@@ -247,7 +247,7 @@ const LoginPage: React.FC = () => {
               <button 
                 type="button"
                 onClick={handlePasskeyLogin}
-                className="w-full flex items-center justify-center gap-4 py-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-primary/40 transition-all font-black uppercase tracking-widest text-[10px]"
+                className="w-full flex items-center justify-center gap-4 py-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-primary/40 transition-all font-black uppercase tracking-widest text-xs"
               >
                 <Fingerprint size={18} className="text-primary" />
                 Sign in with Biometrics
@@ -255,7 +255,7 @@ const LoginPage: React.FC = () => {
             </div>
           </form>
 
-          <div className="flex items-center gap-6 text-[10px] uppercase font-black tracking-widest text-secondary opacity-20">
+          <div className="flex items-center gap-6 text-xs uppercase font-black tracking-widest text-secondary opacity-20">
             <div className="flex-1 border-t border-white/10"></div>
             <span>Cross-Platform Sync</span>
             <div className="flex-1 border-t border-white/10"></div>
@@ -267,7 +267,7 @@ const LoginPage: React.FC = () => {
                 const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
                 window.location.href = `${baseApi}/auth/login/google`;
               }}
-              className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs"
+              className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"
             >
               <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="G" className="w-4 h-4" />
               Google
@@ -277,7 +277,7 @@ const LoginPage: React.FC = () => {
                 const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
                 window.location.href = `${baseApi}/auth/login/discord`;
               }}
-              className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs"
+              className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"
             >
               <img 
                 src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/discord.svg" 
@@ -358,7 +358,7 @@ const LoginPage: React.FC = () => {
         <div className="space-y-6">
            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
               <RefreshCw className="text-blue-500 mt-1 animate-spin-slow" size={20} />
-              <p className="text-xs text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">An administrator has requested a mandatory security refresh for your account. Please establish a new password to proceed.</p>
+              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">An administrator has requested a mandatory security refresh for your account. Please establish a new password to proceed.</p>
            </div>
            <div className="relative">
              <Input 

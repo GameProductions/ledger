@@ -97,7 +97,7 @@ const JoinHouseholdPage: React.FC = () => {
           <div>
             <div className="flex items-center justify-center gap-2 mb-2">
                <Shield size={12} className="text-secondary" />
-               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary">Secured Invitation</p>
+               <p className="text-xs font-black uppercase tracking-[0.4em] text-secondary">Secured Invitation</p>
             </div>
             <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-tight underline decoration-primary/30 underline-offset-8">Join Household</h2>
           </div>
@@ -111,7 +111,7 @@ const JoinHouseholdPage: React.FC = () => {
           <div className="p-8 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 space-y-4 animate-in fade-in zoom-in duration-500">
              <CheckCircle2 size={40} className="text-emerald-500 mx-auto" />
              <p className="font-bold text-white uppercase tracking-widest text-sm">Authorization Granted</p>
-             <p className="text-xs text-secondary italic">Redirecting to Dashboard...</p>
+             <p className="text-sm text-secondary italic">Redirecting to Dashboard...</p>
           </div>
         ) : (
           <div className="space-y-4 relative">
@@ -119,18 +119,18 @@ const JoinHouseholdPage: React.FC = () => {
                onClick={handleJoin} 
                variant="primary" 
                size="lg" 
-               className="w-full py-8 text-xs font-black uppercase tracking-[0.3em] rounded-3xl shadow-2xl shadow-primary/20 hover:scale-[1.02]"
+               className="w-full py-8 text-sm font-black uppercase tracking-[0.3em] rounded-3xl shadow-2xl shadow-primary/20 hover:scale-[1.02]"
                loading={loading}
              >
                Accept Invitation <ArrowRight size={18} className="ml-2" />
              </Button>
              {status === 'error' && (
-               <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest">{errorMsg}</p>
+               <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{errorMsg}</p>
              )}
           </div>
         )}
 
-        <div className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+        <div className="text-xs text-slate-600 font-bold uppercase tracking-widest">
            v3.14.1 Security Protocol Active
         </div>
       </div>

@@ -113,14 +113,14 @@ const PCCProviders: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/system-pcc/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/admin/providers">
+    <PCCPortal activePath="#/system-pcc/providers">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - Universal Biller Registry</p>
+          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - Universal Biller Registry</p>
         </div>
         <button 
           onClick={() => {
@@ -130,7 +130,7 @@ const PCCProviders: React.FC = () => {
             }
             setShowAdd(!showAdd);
           }}
-          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-emerald-500 text-black'} font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
+          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-emerald-500 text-black'} font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
           {showAdd ? 'Abort Action' : <><Plus size={16} /> Register Provider</>}
         </button>
@@ -147,7 +147,7 @@ const PCCProviders: React.FC = () => {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Provider Name</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Provider Name</label>
                 <input 
                   type="text" 
                   value={newItem.name} 
@@ -158,7 +158,7 @@ const PCCProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Billing Nexus (Processor)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Billing Nexus (Processor)</label>
                 <SearchableSelect 
                    options={processors.map(proc => ({ 
                      value: proc.id, 
@@ -172,7 +172,7 @@ const PCCProviders: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo URL</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo URL</label>
                     <input 
                       type="url" 
                       value={newItem.logo_url} 
@@ -189,13 +189,13 @@ const PCCProviders: React.FC = () => {
                       onChange={(e) => setNewItem({ ...newItem, is_3rd_party_capable: e.target.checked })}
                       className="w-5 h-5 rounded bg-black/40 border border-white/10 text-emerald-500 accent-emerald-500"
                     />
-                    <label htmlFor="3rd_party_capable" className="text-[10px] font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
+                    <label htmlFor="3rd_party_capable" className="text-xs font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
                  </div>
               </div>
             </div>
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate HQ (Website)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate HQ (Website)</label>
                 <input 
                   type="url" 
                   value={newItem.website_url} 
@@ -205,7 +205,7 @@ const PCCProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Intel (Email)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Intel (Email)</label>
                 <input 
                   type="email" 
                   value={newItem.support_email} 
@@ -215,7 +215,7 @@ const PCCProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Sovereignty Docs (Privacy Policy)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Sovereignty Docs (Privacy Policy)</label>
                 <input 
                   type="url" 
                   value={newItem.privacy_policy_url} 
@@ -224,7 +224,7 @@ const PCCProviders: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20">
+              <button type="submit" className="w-full py-4 bg-emerald-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20">
                 {editingId ? 'Push Updates to Registry' : 'Authorize Infrastructure'}
               </button>
             </div>
@@ -247,17 +247,17 @@ const PCCProviders: React.FC = () => {
               <div className="flex items-center gap-4">
                 <h3 className="font-black text-2xl tracking-tighter italic uppercase underline underline-offset-4 decoration-white/10">{provider.name}</h3>
                 {provider.is_3rd_party_capable && (
-                  <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-black text-[9px] uppercase tracking-[0.2em] border border-blue-500/20">3rd Party SDK Ready</span>
+                  <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-black text-[12px] uppercase tracking-[0.2em] border border-blue-500/20">3rd Party SDK Ready</span>
                 )}
               </div>
-              <div className="flex items-center gap-6 mt-3 text-slate-500 text-xs">
+              <div className="flex items-center gap-6 mt-3 text-slate-500 text-sm">
                 {provider.website_url && (
                     <a href={provider.website_url} target="_blank" rel="noreferrer" className="hover:text-blue-400 flex items-center gap-2 transition-all font-bold tracking-tight italic">
                         <Globe size={14} className="text-secondary" /> {new URL(provider.website_url).hostname}
                     </a>
                 )}
                 {provider.processor_name && (
-                    <span className="flex items-center gap-2 opacity-60 font-black uppercase text-[10px] tracking-widest text-emerald-500">
+                    <span className="flex items-center gap-2 opacity-60 font-black uppercase text-xs tracking-widest text-emerald-500">
                         <Zap size={14} /> Powered by {provider.processor_name}
                     </span>
                 )}
@@ -266,8 +266,8 @@ const PCCProviders: React.FC = () => {
 
             <div className="hidden md:flex items-center gap-12">
                <div className="text-right space-y-1">
-                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Operational Protocol</p>
-                  <p className="text-[10px] font-black text-slate-300 uppercase flex items-center gap-2 justify-end">
+                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Operational Protocol</p>
+                  <p className="text-xs font-black text-slate-300 uppercase flex items-center gap-2 justify-end">
                     <Server size={12} className="text-emerald-500" /> Identity Verified
                   </p>
                </div>
@@ -292,7 +292,7 @@ const PCCProviders: React.FC = () => {
         {providers.length === 0 && (
           <div className="py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Providers Registered</h4>
-            <p className="text-xs text-slate-600 mt-2">Initialize the universal registry to empower users with forensic bill tracking.</p>
+            <p className="text-sm text-slate-600 mt-2">Initialize the universal registry to empower users with forensic bill tracking.</p>
           </div>
         )}
       </div>

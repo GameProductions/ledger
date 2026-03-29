@@ -105,7 +105,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 {selectedOption ? selectedOption.label : placeholder}
               </span>
               {selectedOption?.metadata?.subtext && (
-                 <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest truncate">{selectedOption.metadata.subtext}</span>
+                 <span className="text-[12px] text-slate-500 font-black uppercase tracking-widest truncate">{selectedOption.metadata.subtext}</span>
               )}
            </div>
         </div>
@@ -132,7 +132,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Typing to suggest..."
-                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
@@ -164,7 +164,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                       <div className="flex-1 flex flex-col">
                         <span className="text-sm font-bold tracking-tight">{option.label}</span>
                         {option.metadata?.email && (
-                          <span className="text-[10px] text-slate-500 font-medium">{option.metadata.email}</span>
+                          <span className="text-xs text-slate-500 font-medium">{option.metadata.email}</span>
                         )}
                       </div>
                       {isSelected && <Check size={16} className="text-amber-500" />}
@@ -173,7 +173,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 })
               ) : (
                 <div className="p-12 text-center">
-                   <p className="text-xs text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
+                   <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
                 </div>
               )}
             </div>

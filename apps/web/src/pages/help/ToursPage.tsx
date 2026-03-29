@@ -30,7 +30,7 @@ export const ToursPage: React.FC = () => {
     <MainLayout>
       <div className="max-w-5xl mx-auto py-12 space-y-12">
         <header className="space-y-4">
-          <div className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-2">Show Me How</div>
+          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Show Me How</div>
           <h1 className="text-4xl font-black italic tracking-tighter">Guided Tours</h1>
           <p className="text-secondary font-medium">Interactive overlay experiences that show you exactly where to click.</p>
         </header>
@@ -48,7 +48,7 @@ export const ToursPage: React.FC = () => {
               
               <button 
                 onClick={() => showToast(`Starting "${tour.title}"... Coming Soon!`, 'info')}
-                className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white text-secondary hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white text-secondary hover:text-black rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
               >
                 <Play size={14} fill="currentColor" />
                 {tour.action}

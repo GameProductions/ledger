@@ -67,9 +67,9 @@ export const PrivacySettings: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Export */}
           <div className="space-y-4">
-            <div className="text-[10px] uppercase tracking-widest text-emerald-500 font-bold">Portability</div>
+            <div className="text-xs uppercase tracking-widest text-emerald-500 font-bold">Portability</div>
             <h4 className="font-bold">Full Data Export</h4>
-            <p className="text-xs text-secondary opacity-50">Generate a comprehensive JSON package containing your accounts, transactions, and audit history.</p>
+            <p className="text-sm text-secondary opacity-50">Generate a comprehensive JSON package containing your accounts, transactions, and audit history.</p>
             <Button 
               onClick={handleExport} 
               loading={isExporting}
@@ -81,16 +81,16 @@ export const PrivacySettings: React.FC = () => {
 
           {/* Shred */}
           <div className="space-y-4">
-            <div className="text-[10px] uppercase tracking-widest text-red-500 font-bold">Erasure</div>
+            <div className="text-xs uppercase tracking-widest text-red-500 font-bold">Erasure</div>
             <h4 className="font-bold">Privacy Shredder</h4>
-            <p className="text-xs text-secondary opacity-50">Permanently delete historical transactions and scrub associated logs. This action is irreversible.</p>
+            <p className="text-sm text-secondary opacity-50">Permanently delete historical transactions and scrub associated logs. This action is irreversible.</p>
             
             <div className="flex gap-2">
                {[3, 6, 12, 24].map(m => (
                  <button 
                    key={m}
                    onClick={() => setShredMonths(m)}
-                   className={`flex-1 py-1 rounded-lg text-[10px] font-bold border transition-all ${shredMonths === m ? 'bg-red-500 border-red-500 text-white' : 'bg-white/5 border-white/10 text-secondary'}`}
+                   className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-all ${shredMonths === m ? 'bg-red-500 border-red-500 text-white' : 'bg-white/5 border-white/10 text-secondary'}`}
                  >
                    {m}M+
                  </button>
@@ -114,7 +114,7 @@ export const PrivacySettings: React.FC = () => {
             
             <div className="space-y-4">
                <div>
-                  <label className="text-[10px] uppercase font-bold text-secondary opacity-50 ml-1">Reason for audit log</label>
+                  <label className="text-xs uppercase font-bold text-secondary opacity-50 ml-1">Reason for audit log</label>
                   <input 
                     type="text"
                     value={shredReason}

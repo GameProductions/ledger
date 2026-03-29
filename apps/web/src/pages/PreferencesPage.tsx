@@ -62,7 +62,7 @@ const PreferencesPage: React.FC = () => {
               <Palette className="text-primary" size={32} />
               Preferences
             </h1>
-            <p className="text-secondary uppercase tracking-widest text-[10px] font-bold opacity-60">Customize your visual and functional experience</p>
+            <p className="text-secondary uppercase tracking-widest text-xs font-bold opacity-60">Customize your visual and functional experience</p>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ const PreferencesPage: React.FC = () => {
                 <Palette size={20} className="text-primary" />
                 <h3 className="text-lg font-bold">Theme & Branding</h3>
               </div>
-              <p className="text-xs text-secondary mb-6">Select a color palette that suits your style. This synchronizes across all your devices.</p>
+              <p className="text-sm text-secondary mb-6">Select a color palette that suits your style. This synchronizes across all your devices.</p>
               <ThemeSwitcher />
             </section>
 
@@ -82,13 +82,13 @@ const PreferencesPage: React.FC = () => {
                 <Layout size={20} className="text-primary" />
                 <h3 className="text-lg font-bold">Interface Style</h3>
               </div>
-              <p className="text-xs text-secondary mb-6">Choose the visual aesthetic of the platform's components.</p>
+              <p className="text-sm text-secondary mb-6">Choose the visual aesthetic of the platform's components.</p>
               <div className="grid grid-cols-3 gap-3">
                 {['default', 'glass', 'minimal'].map(style => (
                   <button 
                     key={style}
                     onClick={() => setUiStyle(style)}
-                    className={`p-3 rounded-xl border-2 transition-all text-[10px] font-black uppercase tracking-widest ${settings.ui_style === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settings.ui_style === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                   >
                     {style}
                   </button>
@@ -100,7 +100,7 @@ const PreferencesPage: React.FC = () => {
                 <Palette size={20} className="text-primary" />
                 <h3 className="text-lg font-bold">Currency Configuration</h3>
               </div>
-              <p className="text-xs text-secondary mb-6">Choose your primary display currency. This affects all price formatting across the platform.</p>
+              <p className="text-sm text-secondary mb-6">Choose your primary display currency. This affects all price formatting across the platform.</p>
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { id: 'USD', name: 'US Dollar ($)' },
@@ -110,7 +110,7 @@ const PreferencesPage: React.FC = () => {
                   <button 
                     key={c.id}
                     onClick={() => updateSettings({ ...settings, currency: c.id })}
-                    className={`p-3 rounded-xl border-2 transition-all text-[10px] font-black uppercase tracking-widest ${settings.currency === c.id || (!settings.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settings.currency === c.id || (!settings.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                   >
                     {c.name}
                   </button>
@@ -125,7 +125,7 @@ const PreferencesPage: React.FC = () => {
                 <Layout size={20} className="text-secondary" />
                 <h3 className="text-lg font-bold">Dashboard Layout</h3>
               </div>
-              <p className="text-xs text-secondary mb-6">Toggle which features are visible on your command center.</p>
+              <p className="text-sm text-secondary mb-6">Toggle which features are visible on your command center.</p>
               <div className="space-y-3">
                 {widgets.map(w => (
                   <div 
@@ -135,7 +135,7 @@ const PreferencesPage: React.FC = () => {
                   >
                     <div>
                       <div className="text-sm font-bold">{w.name}</div>
-                      <div className="text-[10px] text-secondary">{w.desc}</div>
+                      <div className="text-xs text-secondary">{w.desc}</div>
                     </div>
                     <div className={`w-10 h-6 rounded-full transition-all relative ${settings.dashboard_layout?.[w.id] !== false ? 'bg-primary' : 'bg-white/10'}`}>
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.dashboard_layout?.[w.id] !== false ? 'right-1' : 'left-1'}`} />

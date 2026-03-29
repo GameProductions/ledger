@@ -35,15 +35,15 @@ pcc.get('/stats', async (c) => {
 
 // System Configuration
 pcc.get('/config', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_configs ORDER BY key ASC').all()
+  const { results } = await c.env.DB.prepare('SELECT * FROM system_config ORDER BY config_key ASC').all()
   return c.json(results || [])
 })
 
 pcc.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
   const { config_value } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE system_configs SET value_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
-  await logAudit(c, 'system_configs', id, 'UPDATE_CONFIG', {}, { config_value })
+  await c.env.DB.prepare('UPDATE system_config SET config_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
+  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
   return c.json({ success: true })
 })
 

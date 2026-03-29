@@ -2,45 +2,106 @@ import React from 'react'
 import { Price } from './Price'
 
 interface CalendarProps {
-  transactions: any[]
+  transactions: any[];
+  subscriptions?: any[];
+  onDayClick: (date: Date) => void;
+  onItemClick: (item: any) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ transactions }) => {
-  // Simple 1-month calendar for March 2026
-  const daysInMonth = 31
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], onDayClick, onItemClick }) => {
+  // Dynamic Month Logic (March 2026 for now)
+  const month = 2; // March
+  const year = 2026;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
   
-  const getTransactionsForDay = (day: number) => {
-    return transactions.filter(tx => {
-      const date = new Date(tx.transaction_date)
-      return date.getDate() === day && date.getMonth() === 2 // March
-    })
-  }
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const paddingDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+  
+  const getItemsForDay = (day: number) => {
+    const dayTxs = transactions.filter(tx => {
+      const d = new Date(tx.transaction_date);
+      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    }).map(tx => ({ ...tx, type: 'transaction' }));
+
+    const dayBills = subscriptions.filter(sub => {
+      const d = new Date(sub.next_billing_date);
+      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    }).map(sub => ({ ...sub, type: 'subscription', description: sub.name }));
+
+    return [...dayTxs, ...dayBills];
+  };
 
   return (
-    <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-        <div key={d} style={{ textAlign: 'center', fontWeight: '700', color: 'var(--text-secondary)', padding: '0.5rem' }}>{d}</div>
-      ))}
-      
-      {/* Empty cells for padding March 1st (starts on Sunday in 2026) */}
-      {days.map(day => {
-        const dayTxs = getTransactionsForDay(day)
-        return (
-          <div key={day} className="card" style={{ minHeight: '80px', padding: '0.4rem', fontSize: '0.8rem', background: dayTxs.length > 0 ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-card)' }}>
-            <div style={{ marginBottom: '0.3rem', opacity: 0.6 }}>{day}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-              {dayTxs.map((tx: any) => (
-                <div key={tx.id} className="text-[10px] p-1 bg-primary/10 text-primary rounded truncate">
-                  <Price amountCents={tx.amount_cents} options={{ minimumFractionDigits: 0 }} /> {tx.description}
-                </div>
-              ))}
-            </div>
+    <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500">
+      <div className="calendar-header flex items-center justify-between mb-8 px-4">
+        <h2 className="text-3xl font-black italic tracking-tighter uppercase">March <span className="text-primary">{year}</span></h2>
+        <div className="flex gap-4">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-500/50">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Charges
           </div>
-        )
-      })}
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-500/50">
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span> Bills
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-3">
+        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
+          <div key={d} className="text-center text-xs font-black text-slate-600 tracking-[0.3em] py-2">{d}</div>
+        ))}
+        
+        {paddingDays.map(p => (
+          <div key={`pad-${p}`} className="aspect-square opacity-0"></div>
+        ))}
+
+        {days.map(day => {
+          const dayItems = getItemsForDay(day);
+          const isToday = day === new Date().getDate() && month === new Date().getMonth();
+          
+          return (
+            <div 
+              key={day} 
+              onClick={() => onDayClick(new Date(year, month, day))}
+              className={`min-h-[120px] p-3 rounded-3xl border transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${
+                dayItems.length > 0 
+                  ? 'bg-white/[0.03] border-white/10' 
+                  : 'bg-transparent border-white/5 hover:border-white/20'
+              } ${isToday ? 'border-primary/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className={`text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>{day}</span>
+                {dayItems.length > 0 && (
+                   <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                {dayItems.slice(0, 3).map((item: any) => (
+                  <div 
+                    key={`${item.type}-${item.id}`} 
+                    onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
+                    className={`text-xs p-2 rounded-xl truncate font-bold border transition-all hover:brightness-125 ${
+                      item.type === 'subscription' 
+                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    }`}
+                  >
+                    <Price amountCents={item.amount_cents} options={{ minimumFractionDigits: 0 }} /> {item.description}
+                  </div>
+                ))}
+                {dayItems.length > 3 && (
+                  <div className="text-[10px] text-center font-black text-slate-600 uppercase tracking-widest">
+                    + {dayItems.length - 3} MORE
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
-  )
-}
+  );
+};
 
 export default Calendar

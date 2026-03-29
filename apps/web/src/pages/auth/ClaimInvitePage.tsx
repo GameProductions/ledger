@@ -51,7 +51,7 @@ const ClaimInvitePage: React.FC = () => {
           <img src="/assets/icon.png" alt="LEDGER Logo" className="h-16 mx-auto" />
           <div>
             <h2 className="text-2xl font-black tracking-tighter">Join as Admin</h2>
-            <p className="text-[10px] text-secondary uppercase tracking-widest font-bold opacity-60">Create your super admin account</p>
+            <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Create your super admin account</p>
           </div>
         </div>
         <form 

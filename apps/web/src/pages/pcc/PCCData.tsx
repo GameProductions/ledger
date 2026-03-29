@@ -84,18 +84,18 @@ const PCCData: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/admin/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/system-pcc/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/admin/registry">
+    <PCCPortal activePath="#/system-pcc/registry">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-primary/50 underline-offset-8">System Data</h2>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Central data management</p>
+          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Central data management</p>
         </div>
         <button 
           onClick={() => setShowAdd(!showAdd)}
-          className="px-6 py-3 bg-white text-black font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2"
+          className="px-6 py-3 bg-white text-black font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2"
         >
           {showAdd ? 'Cancel' : <><Plus size={16} /> Add New Entry</>}
         </button>
@@ -112,7 +112,7 @@ const PCCData: React.FC = () => {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Item Category</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Item Category</label>
                 <SearchableSelect 
                    options={[
                      { value: 'processor', label: 'Billing Processor' },
@@ -125,7 +125,7 @@ const PCCData: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Display Name</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Display Name</label>
                 <input 
                   type="text" 
                   value={newItem.name} 
@@ -138,7 +138,7 @@ const PCCData: React.FC = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Website (Optional)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Website (Optional)</label>
                 <input 
                   type="url" 
                   value={newItem.website_url} 
@@ -148,7 +148,7 @@ const PCCData: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo Asset URL</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo Asset URL</label>
                 <input 
                   type="url" 
                   value={newItem.logo_url} 
@@ -157,7 +157,7 @@ const PCCData: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-primary text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">Add Item to System</button>
+              <button type="submit" className="w-full py-4 bg-primary text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">Add Item to System</button>
             </div>
           </form>
         </div>
@@ -173,9 +173,9 @@ const PCCData: React.FC = () => {
                <div>
                   <h3 className="font-black text-xl tracking-tighter italic uppercase">{item.name}</h3>
                   <div className="flex items-center gap-2 mt-2">
-                     <span className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em]">{item.item_type}</span>
+                     <span className="text-[12px] font-black uppercase text-slate-500 tracking-[0.2em]">{item.item_type}</span>
                      <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                     <span className="text-[9px] font-black uppercase text-emerald-500/60 tracking-widest italic flex items-center gap-1.5 opacity-60">Verified <ExternalLink size={8} /></span>
+                     <span className="text-[12px] font-black uppercase text-emerald-500/60 tracking-widest italic flex items-center gap-1.5 opacity-60">Verified <ExternalLink size={8} /></span>
                   </div>
                </div>
             </div>
@@ -191,7 +191,7 @@ const PCCData: React.FC = () => {
         {items.length === 0 && (
           <div className="col-span-full py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No entries found</h4>
-            <p className="text-xs text-slate-600 mt-2">Add system-wide entities to enable cross-platform mapping.</p>
+            <p className="text-sm text-slate-600 mt-2">Add system-wide entities to enable cross-platform mapping.</p>
           </div>
         )}
       </div>

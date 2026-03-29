@@ -26,7 +26,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
         {isBusiness && (
           <aside className="hidden lg:block w-64 flex-shrink-0 card p-4 h-[calc(100vh-8rem)] sticky top-28 bg-deep/40 backdrop-blur-xl border-glass-border">
             <nav className="space-y-2">
-              <div className="text-[10px] uppercase tracking-widest text-secondary font-bold mb-4 opacity-50 px-2">Focus Navigation</div>
+              <div className="text-xs uppercase tracking-widest text-secondary font-bold mb-4 opacity-50 px-2">Focus Navigation</div>
               <div className="p-3 bg-primary/10 rounded-xl text-primary font-bold text-sm border border-primary/20">Executive Overview</div>
               <div className="p-3 hover:bg-white/5 rounded-xl text-sm transition-colors cursor-pointer">Cash Flow Analysis</div>
               <div className="p-3 hover:bg-white/5 rounded-xl text-sm transition-colors cursor-pointer">Asset Ledger</div>

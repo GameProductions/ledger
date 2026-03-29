@@ -99,14 +99,14 @@ const PCCProcessors: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></PCCPortal>;
+  if (loading) return <PCCPortal activePath="#/system-pcc/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></PCCPortal>;
 
   return (
-    <PCCPortal activePath="#/admin/processors">
+    <PCCPortal activePath="#/system-pcc/processors">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - 3rd Party Infrastructure</p>
+          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - 3rd Party Infrastructure</p>
         </div>
         <button 
           onClick={() => {
@@ -116,7 +116,7 @@ const PCCProcessors: React.FC = () => {
             }
             setShowAdd(!showAdd);
           }}
-          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-blue-500 text-black'} font-black uppercase text-xs rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
+          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-blue-500 text-black'} font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
           {showAdd ? 'Abort Action' : <><Plus size={16} /> Register Processor</>}
         </button>
@@ -133,7 +133,7 @@ const PCCProcessors: React.FC = () => {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Processor Name</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Processor Name</label>
                 <input 
                   type="text" 
                   value={newItem.name} 
@@ -144,7 +144,7 @@ const PCCProcessors: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
                 <input 
                   type="url" 
                   value={newItem.website_url} 
@@ -154,7 +154,7 @@ const PCCProcessors: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
                 <input 
                   type="url" 
                   value={newItem.branding_url} 
@@ -166,7 +166,7 @@ const PCCProcessors: React.FC = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Site URL</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Site URL</label>
                 <input 
                   type="url" 
                   value={newItem.support_url} 
@@ -176,7 +176,7 @@ const PCCProcessors: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
                 <textarea 
                   value={newItem.subscription_id_notes} 
                   onChange={(e) => setNewItem({ ...newItem, subscription_id_notes: e.target.value })}
@@ -185,7 +185,7 @@ const PCCProcessors: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-xs rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
+              <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
                 {editingId ? 'Push Updates to Grid' : 'Initialize Processor'}
               </button>
             </div>
@@ -234,19 +234,19 @@ const PCCProcessors: React.FC = () => {
 
             {processor.subscription_id_notes && (
               <div className="mt-4 p-5 rounded-2xl bg-black/20 border border-white/5 shadow-inner">
-                <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest mb-2 opacity-60 italic">Identification Logic</p>
-                <p className="text-[10px] text-slate-400 leading-relaxed italic">{processor.subscription_id_notes}</p>
+                <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-2 opacity-60 italic">Identification Logic</p>
+                <p className="text-xs text-slate-400 leading-relaxed italic">{processor.subscription_id_notes}</p>
               </div>
             )}
             
             <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6">
                <div>
-                  <p className="text-[8px] font-black text-slate-600 uppercase mb-1">Grid Status</p>
-                  <p className="text-[10px] font-black text-emerald-500 uppercase flex items-center gap-2">
+                  <p className="text-[10px] font-black text-slate-600 uppercase mb-1">Grid Status</p>
+                  <p className="text-xs font-black text-emerald-500 uppercase flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Active Infrastructure
                   </p>
                </div>
-               <button className="text-[10px] font-black text-slate-500 uppercase hover:text-white flex items-center gap-1.5 transition-all hover:translate-x-1">Coverage <ExternalLink size={10} /></button>
+               <button className="text-xs font-black text-slate-500 uppercase hover:text-white flex items-center gap-1.5 transition-all hover:translate-x-1">Coverage <ExternalLink size={10} /></button>
             </div>
           </div>
         ))}
@@ -254,7 +254,7 @@ const PCCProcessors: React.FC = () => {
         {processors.length === 0 && (
           <div className="col-span-full py-32 text-center rounded-[3rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Infrastructure Logged</h4>
-            <p className="text-xs text-slate-600 mt-2">Initialize your first 3rd party billing processor to begin coverage mapping.</p>
+            <p className="text-sm text-slate-600 mt-2">Initialize your first 3rd party billing processor to begin coverage mapping.</p>
           </div>
         )}
       </div>

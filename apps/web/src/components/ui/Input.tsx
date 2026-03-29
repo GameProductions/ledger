@@ -14,7 +14,7 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', type
   return (
     <div className="space-y-2 w-full">
       {label && (
-        <label className="block text-[10px] font-black text-secondary uppercase tracking-widest text-center">
+        <label className="block text-xs font-black text-secondary uppercase tracking-widest text-center">
           {label}
         </label>
       )}
@@ -34,7 +34,7 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', type
           </button>
         )}
       </div>
-      {error && <p className="text-[10px] text-red-500 font-bold ml-1 uppercase tracking-wider">{error}</p>}
+      {error && <p className="text-xs text-red-500 font-bold ml-1 uppercase tracking-wider">{error}</p>}
     </div>
   );
 };

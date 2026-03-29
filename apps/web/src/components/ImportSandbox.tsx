@@ -135,7 +135,7 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
           <input type="file" accept=".csv,.qif,.ofx" onChange={handleFileUpload} className="hidden" />
           <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📄</div>
           <p className="font-bold text-lg mb-2">Drop your file here</p>
-          <p className="text-xs text-gray-500 font-black uppercase tracking-widest">Supports CSV, QIF, and OFX formats</p>
+          <p className="text-sm text-gray-500 font-black uppercase tracking-widest">Supports CSV, QIF, and OFX formats</p>
         </label>
       )}
 
@@ -155,18 +155,18 @@ const ImportSandbox: React.FC<ImportSandboxProps> = ({ onImportComplete }) => {
       {activeSandbox.length > 0 && (
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl">
-            <span className="font-black text-xs uppercase tracking-widest text-emerald-500">{activeSandbox.length} Items Ready</span>
+            <span className="font-black text-sm uppercase tracking-widest text-emerald-500">{activeSandbox.length} Items Ready</span>
             <button 
               onClick={handleCommit}
               disabled={loading}
-              className="px-6 py-2 bg-emerald-500 text-black font-black text-xs uppercase rounded-lg hover:bg-emerald-400 transition-all"
+              className="px-6 py-2 bg-emerald-500 text-black font-black text-sm uppercase rounded-lg hover:bg-emerald-400 transition-all"
             >
               Finish Import
             </button>
           </div>
           <div className="max-h-64 overflow-y-auto space-y-2 border border-white/5 p-4 rounded-2xl bg-black/20">
              {activeSandbox.map((record: any) => (
-               <div key={record.id} className="text-[10px] grid grid-cols-3 gap-4 p-2 border-b border-white/5 text-gray-400">
+               <div key={record.id} className="text-xs grid grid-cols-3 gap-4 p-2 border-b border-white/5 text-gray-400">
                   <span className="truncate font-bold text-white">{record.raw_data.Description || record.raw_data.merchant}</span>
                   <span className="text-right">${record.raw_data.Amount || record.raw_data.amount}</span>
                   <span className="text-right opacity-50">{record.raw_data.Date || record.raw_data.date}</span>

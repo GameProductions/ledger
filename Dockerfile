@@ -26,10 +26,13 @@ RUN cd apps/web && npm run build
 FROM node:22-slim AS api
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=build-api /app/apps/api ./apps/api
-COPY --from=build-api /app/packages/db ./packages/db
+# Create data directory and set permissions
+RUN mkdir -p /data && chown -R node:node /data /app
+COPY --from=base --chown=node:node /app/node_modules ./node_modules
+COPY --from=build-api --chown=node:node /app/apps/api ./apps/api
+COPY --from=build-api --chown=node:node /app/packages/db ./packages/db
 WORKDIR /app/apps/api
+USER node
 EXPOSE 8787
 ENV DATABASE_PATH=/data/ledger.db
 

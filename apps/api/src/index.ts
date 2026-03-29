@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { cors } from 'hono/cors'
+import { csrf } from 'hono/csrf'
 import { secureHeaders } from 'hono/secure-headers'
 import { openApiSpec } from './openapi'
 import { Bindings, Variables } from './types'
@@ -39,7 +40,20 @@ app.use('*', cors({
   maxAge: 600,
   credentials: true,
 }))
-app.use('*', secureHeaders())
+app.use('*', secureHeaders({
+  contentSecurityPolicy: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev"],
+    connectSrc: ["'self'", "https://api.gpnet.dev", "https://ledger.gpnet.dev", "http://localhost:8787"],
+    upgradeInsecureRequests: [],
+  },
+  referrerPolicy: 'strict-origin-when-cross-origin',
+  xPermittedCrossDomainPolicies: 'none',
+}))
+app.use('*', csrf())
 
 // 4. Self-Healing Middleware (v3.15.1)
 app.use('*', async (c, next) => {

@@ -6,9 +6,14 @@ updates:
       interval: "daily"
     open-pull-requests-limit: 10
     groups:
-      dependencies:
+      dependency-management:
         patterns:
           - "*"
+        exclude-patterns:
+          - "@types/*"
+      type-definitions:
+        patterns:
+          - "@types/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

@@ -44,7 +44,13 @@ const PCCAudit: React.FC = () => {
                 <span className="text-sm font-black uppercase tracking-widest text-cyan-400">{log.action || log.action_key}</span>
                 <span className="text-xs text-gray-500 font-mono tracking-tighter">{new Date(log.created_at).toLocaleString()}</span>
               </div>
-              <p className="text-sm text-gray-300 font-medium">Target: <span className="text-white">{log.target_type || 'Unknown'}</span> - ID: <span className="opacity-40 font-mono text-xs">{log.target_id || log.id}</span></p>
+              <p className="text-sm text-gray-300 font-medium">
+                Admin: <span className="text-emerald-400">{log.actor_name || 'System'}</span> 
+                {' ● '} 
+                Target: <span className="text-white">{log.target_name || log.target_type || 'Unknown'}</span> 
+                {' - '} 
+                ID: <span className="opacity-40 font-mono text-xs">{log.target_id || log.id}</span>
+              </p>
               {log.details_json && (
                 <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5 font-mono text-xs text-gray-500 overflow-x-auto">
                   {JSON.stringify(typeof log.details_json === 'string' ? JSON.parse(log.details_json) : log.details_json, null, 2)}

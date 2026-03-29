@@ -12,7 +12,7 @@ const FutureFlow: React.FC = () => {
           return (
             <div key={p.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ width: '100%', background: 'linear-gradient(to top, var(--primary), transparent)', height: `${height}%`, borderRadius: '4px 4px 0 0', opacity: 0.6 }}></div>
-              <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{p.date.slice(5)}</div>
+              <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{p.date?.slice(5)}</div>
             </div>
           )
         })}

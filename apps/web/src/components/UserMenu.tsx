@@ -17,7 +17,7 @@ const UserMenu: React.FC<{
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
-    { icon: LayoutDashboard, label: 'PCC Mini-Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
+    { icon: LayoutDashboard, label: 'God Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
     { icon: Cpu, label: 'System Configuration', hash: '#/system-pcc/config', color: 'text-blue-400' },
     { icon: Database, label: 'Master Record List', hash: '#/system-pcc/registry', color: 'text-orange-400' },
     { icon: Users, label: 'Manage All Users', hash: '#/system-pcc/users', color: 'text-primary' },
@@ -45,7 +45,7 @@ const UserMenu: React.FC<{
         />
         <div className="flex flex-col items-start ml-1 leading-none">
           <span className="text-sm font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
-          {isPcc && <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">PCC MODE</span>}
+          {isPcc && <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>}
         </div>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -77,7 +77,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <LayoutDashboard size={18} className="text-emerald-500" />
-                    <span>Exit PCC Mode</span>
+                    <span>Exit God Mode</span>
                   </button>
                 ) : (
                   !isHome && (
@@ -111,7 +111,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <Shield size={18} className="text-emerald-500 group-hover:animate-pulse" />
-                    <span className="group-hover:text-emerald-400 transition-colors">Platform Command Center</span>
+                    <span className="group-hover:text-emerald-400 transition-colors">God Mode</span>
                   </button>
                 )}
 

@@ -8,7 +8,7 @@ import { Input } from '../../components/ui/Input';
 import { useToast } from '../../context/ToastContext';
 
 // --- SUB-COMPONENT: User Details Modal ---
-const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ userId, onClose }) => {
+const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge: (id: string) => void }> = ({ userId, onClose, onMerge }) => {
   const { showToast } = useToast();
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -329,6 +329,16 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void }> = ({ u
                 <RefreshCw size={14} />
                 Full Resync
              </button>
+             <button 
+                onClick={() => {
+                  onMerge(userId);
+                  onClose();
+                }}
+                className="flex items-center gap-3 px-6 py-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                <GitMerge size={14} />
+                Merge Account
+              </button>
              <button className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all">
                 <ExternalLink size={16} />
                 Download Record Summary
@@ -568,6 +578,9 @@ const PCCUsers: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [mergeSource, setMergeSource] = useState<string | null>(null);
+  const [mergeTarget, setMergeTarget] = useState<string | null>(null);
+  const [merging, setMerging] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -619,6 +632,32 @@ const PCCUsers: React.FC = () => {
     } finally {
       setDeletingUser(false);
       setUserToDelete(null);
+    }
+  };
+
+
+  const handleMerge = async () => {
+    if (!mergeSource || !mergeTarget) return;
+    setMerging(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/admin/users/merge`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceId: mergeSource, targetId: mergeTarget })
+      });
+      if (res.ok) {
+        showToast('Accounts successfully merged', 'success');
+        fetchUsers();
+        setMergeSource(null);
+        setMergeTarget(null);
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Merge failed', 'error');
+      }
+    } finally {
+      setMerging(false);
     }
   };
 
@@ -748,17 +787,16 @@ const PCCUsers: React.FC = () => {
                             <span>{u.status === 'active' ? 'Suspend Access' : 'Restore Access'}</span>
                           </button>
 
-                          <button 
-                             onClick={() => { 
-                                setActiveMenu(null);
-                                showToast('AI Merge Intelligence is analyzing user metadata...', 'info');
-                                setTimeout(() => showToast('Data synthesis complete. Identities are unified.', 'success'), 2000);
-                             }}
-                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/5 rounded-xl transition-all"
-                          >
-                            <GitMerge size={16} className="text-orange-400" />
-                            <span>Merge Intelligence</span>
-                          </button>
+                           <button 
+                              onClick={() => { 
+                                 setMergeSource(u.id);
+                                 setActiveMenu(null);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/5 rounded-xl transition-all"
+                           >
+                             <GitMerge size={16} className="text-orange-400" />
+                             <span>Merge Account</span>
+                           </button>
 
                           <div className="h-px bg-white/5 my-1" />
 
@@ -782,13 +820,58 @@ const PCCUsers: React.FC = () => {
       {/* Modals Overlay */}
       <AnimatePresence>
         {selectedUser && (
-          <UserDetailsModal userId={selectedUser} onClose={() => setSelectedUser(null)} />
+          <UserDetailsModal userId={selectedUser} onClose={() => setSelectedUser(null)} onMerge={(id) => setMergeSource(id)} />
         )}
         <CreateUserModal 
           isOpen={isCreateModalOpen} 
           onClose={() => setIsCreateModalOpen(false)} 
           onSuccess={fetchUsers} 
         />
+
+        {/* Merge Selection Modal */}
+        <Modal
+          isOpen={!!mergeSource}
+          onClose={() => setMergeSource(null)}
+          title="Select Destination Account"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setMergeSource(null)}>Cancel</Button>
+              <Button 
+                variant="primary" 
+                className="bg-orange-500 hover:bg-orange-600 text-black" 
+                disabled={!mergeTarget || merging}
+                onClick={handleMerge}
+              >
+                {merging ? 'Merging...' : 'Execute Merge'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-6">
+            <p className="text-xs text-slate-500 uppercase font-black tracking-widest pr-4">
+              Select the account that will <span className="text-white">REMAIN active</span>. Data from the source account will be migrated.
+            </p>
+            
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+              {users.filter(u => u.id !== mergeSource).map(u => (
+                <div 
+                  key={u.id}
+                  onClick={() => setMergeTarget(u.id)}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${mergeTarget === u.id ? 'bg-orange-500/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <img src={u.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} className="w-8 h-8 rounded-lg" />
+                    <div>
+                      <p className="text-sm font-black uppercase text-white tracking-tight">{u.display_name || u.username}</p>
+                      <p className="text-[10px] font-mono text-slate-500">{u.email}</p>
+                    </div>
+                  </div>
+                  {mergeTarget === u.id && <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_10px_#f97316]" />}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Modal>
 
         <Modal
           isOpen={!!userToDelete}

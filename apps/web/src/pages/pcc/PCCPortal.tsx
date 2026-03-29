@@ -24,15 +24,15 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   }
 
   const navItems = [
-    { name: 'Mini-Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
-    { name: 'Manage Users', path: '#/system-pcc/users', icon: Users },
-    { name: 'Households', path: '#/system-pcc/households', icon: Shield },
+    { name: 'God Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
+    { name: 'User Directory', path: '#/system-pcc/users', icon: Users },
+    { name: 'Household Registry', path: '#/system-pcc/households', icon: Shield },
     { name: 'Service Providers', path: '#/system-pcc/providers', icon: Globe },
     { name: 'Payment Networks', path: '#/system-pcc/processors', icon: Zap },
-    { name: 'Security Logs', path: '#/system-pcc/audit', icon: Activity },
+    { name: 'Safety Vault', path: '#/system-pcc/audit', icon: Activity },
     { name: 'Master Records', path: '#/system-pcc/registry', icon: Database },
-    { name: 'System Search', path: '#/system-pcc/search', icon: Search },
-    { name: 'Configuration', path: '#/system-pcc/config', icon: Settings },
+    { name: 'Global Search', path: '#/system-pcc/search', icon: Search },
+    { name: 'System Config', path: '#/system-pcc/config', icon: Settings },
     { name: 'Admin Manual', path: '#/system-pcc/guide', icon: FileText },
   ];
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 const API_URL = import.meta.env.VITE_API_URL
 
 export const useApi = <T = any>(path: string, options: { refreshInterval?: number } = {}) => {
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
@@ -26,6 +26,15 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
           'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
         }
       })
+      
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          console.error(`Auth Error (${res.status}) on ${path}. Logging out.`);
+          logout();
+        }
+        throw new Error(`API Error: ${res.status}`);
+      }
+
       const json = await res.json()
       
       // Only update state if data actually changed (shallow comparison for now)
@@ -35,6 +44,8 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
       lastFetchTime.current = Date.now()
     } catch (err) {
       setError(err)
+      // Ensure data stays as null or empty array if it was intended to be an array
+      // But since we don't know the type here, null is safest to trigger loading/error states in components
     } finally {
       setLoading(false)
     }

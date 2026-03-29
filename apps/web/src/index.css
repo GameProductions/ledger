@@ -76,6 +76,8 @@ body {
   background-color: var(--bg-dark);
   color: var(--text-main);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 18px; /* Increased from default 16px */
+  line-height: 1.6;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   transition: background 0.5s ease;
@@ -131,12 +133,13 @@ button.primary:hover {
 }
 
 .safety-number-container {
-  font-size: 3.5rem;
-  font-weight: 800;
+  font-size: 4rem; /* Increased from 3.5rem */
+  font-weight: 900;
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 1rem 0;
+  letter-spacing: -0.05em;
 }
 
 .flex-center {
@@ -251,16 +254,16 @@ button.primary:hover {
 }
 
 .toast-title {
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 800;
+  font-size: 1.1rem; /* Increased from 0.9rem */
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.8;
+  letter-spacing: 0.1em;
+  opacity: 0.9;
 }
 
 .toast-body {
-  font-size: 0.95rem;
-  line-height: 1.4;
+  font-size: 1.1rem; /* Increased from 0.95rem */
+  line-height: 1.5;
 }
 
 .toast-actions {
@@ -405,12 +408,12 @@ button.primary:hover {
 }
 
 .tab-button {
-  padding: 0.75rem 1.25rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 1.25rem;
+  font-size: 0.9rem; /* Increased from 0.75rem */
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   color: var(--text-secondary);
   background: transparent;
   border: 1px solid transparent;

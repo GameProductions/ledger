@@ -203,7 +203,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         className="bg-transparent border-none text-xs text-white px-3 py-1 outline-none w-32 focus:w-48 transition-all"
                       />
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-4 items-center mr-4">
+                    <a href="#/data" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary hover:text-white transition-all no-underline">
                       <span>📥</span> Import & Export
                     </a>
                     {['all', 'unmatched', 'matched'].map(s => (
@@ -433,34 +434,35 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div>
                 <div className="text-[10px] text-primary font-black uppercase tracking-[0.2em] mb-3">Matches</div>
                 <div className="space-y-2">
-                  {smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates.map((t: any) => (
-                    <div 
-                      key={`suggest-${t.id}`}
-                      onClick={async () => {
-                        await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/link`, {
-                          method: 'POST',
-                          headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-                          },
-                          body: JSON.stringify({ linkedToIds: [t.id] })
-                        })
-                        mutateTx()
-                        setLinkingTx(null)
-                        showToast('Smart Match Applied')
-                      }}
-                      className="cursor-pointer flex justify-between p-4 bg-primary/10 border border-primary/50 rounded-xl hover:bg-primary/20 transition-all border-dashed"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm">✨</span>
-                        <div>
-                          <p className="font-bold text-sm">{t.description}</p>
-                          <p className="text-[10px] uppercase font-black text-primary opacity-60">{t.type} • {t.confidence} confidence</p>
+                  {Array.isArray(smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates) && 
+                    smartSuggestions.find((s: any) => s.source.id === linkingTx.id).candidates.map((t: any) => (
+                      <div 
+                        key={`suggest-${t.id}`}
+                        onClick={async () => {
+                          await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/link`, {
+                            method: 'POST',
+                            headers: { 
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+                            },
+                            body: JSON.stringify({ linkedToIds: [t.id] })
+                          })
+                          mutateTx()
+                          setLinkingTx(null)
+                          showToast('Smart Match Applied')
+                        }}
+                        className="cursor-pointer flex justify-between p-4 bg-primary/10 border border-primary/50 rounded-xl hover:bg-primary/20 transition-all border-dashed"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm">✨</span>
+                          <div>
+                            <p className="font-bold text-sm">{t.description}</p>
+                            <p className="text-[10px] uppercase font-black text-primary opacity-60">{t.type} • {t.confidence} confidence</p>
+                          </div>
                         </div>
+                        <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amount_cents) / 100).toFixed(2)}</span>
                       </div>
-                      <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amount_cents) / 100).toFixed(2)}</span>
-                    </div>
-                  ))}
+                    ))}
                   {(!smartSuggestions || smartSuggestions.find((s: any) => s.source.id === linkingTx.id)?.candidates.length === 0) && (
                     <p className="text-[10px] text-secondary italic opacity-50 px-2 py-4">Scanning records for patterns...</p>
                   )}
@@ -470,7 +472,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div>
                 <div className="text-[10px] text-secondary font-black uppercase tracking-[0.2em] mb-3">All Transactions</div>
                 <div className="space-y-2">
-                  {transactions?.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
+                  {Array.isArray(transactions) && transactions.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
                     <div 
                       key={t.id} 
                       onClick={async () => {

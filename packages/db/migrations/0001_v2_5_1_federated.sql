@@ -3,8 +3,8 @@
 
 PRAGMA defer_foreign_keys=TRUE;
 
--- CORE: Households & Users
-CREATE TABLE households (
+-- -- CORE: Households & Users
+CREATE TABLE IF NOT EXISTS households (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -13,7 +13,7 @@ CREATE TABLE households (
     unallocated_balance_cents INTEGER DEFAULT 0
 );
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     display_name TEXT,
@@ -29,17 +29,44 @@ CREATE TABLE users (
     settings_json TEXT
 );
 
-CREATE TABLE user_households (
+CREATE TABLE IF NOT EXISTS user_households (
     user_id TEXT NOT NULL,
     household_id TEXT NOT NULL,
     role TEXT DEFAULT 'member',
-    PRIMARY KEY (user_id, household_id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
+CREATE TABLE IF NOT EXISTS user_identities (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    provider_user_id TEXT NOT NULL,
+    email TEXT,
+    name TEXT,
+    avatar_url TEXT,
+    access_token TEXT,
+    refresh_token TEXT,
+    expires_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider, provider_user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    last_active_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME,
+    is_revoked INTEGER DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- ACCOUNTS & CATEGORIES
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -50,7 +77,7 @@ CREATE TABLE accounts (
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -65,7 +92,7 @@ CREATE TABLE categories (
 );
 
 -- TRANSACTIONS & SCHEDULING
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     account_id TEXT NOT NULL,
@@ -86,7 +113,7 @@ CREATE TABLE transactions (
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
-CREATE TABLE subscriptions (
+CREATE TABLE IF NOT EXISTS subscriptions (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -103,7 +130,7 @@ CREATE TABLE subscriptions (
 );
 
 -- BILLING & PROVIDERS (v2.5.0)
-CREATE TABLE billing_processors (
+CREATE TABLE IF NOT EXISTS billing_processors (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     website_url TEXT,
@@ -113,7 +140,7 @@ CREATE TABLE billing_processors (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE service_providers (
+CREATE TABLE IF NOT EXISTS service_providers (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     url TEXT,
@@ -130,7 +157,7 @@ CREATE TABLE service_providers (
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
-CREATE TABLE user_payment_methods (
+CREATE TABLE IF NOT EXISTS user_payment_methods (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     type TEXT NOT NULL, -- card, bank, paypal, crypto, cash
@@ -143,7 +170,7 @@ CREATE TABLE user_payment_methods (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE user_linked_accounts (
+CREATE TABLE IF NOT EXISTS user_linked_accounts (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     provider_id TEXT NOT NULL,
@@ -158,7 +185,7 @@ CREATE TABLE user_linked_accounts (
 );
 
 -- SYSTEM WALKTHROUGHS (v2.5.1)
-CREATE TABLE system_walkthroughs (
+CREATE TABLE IF NOT EXISTS system_walkthroughs (
     id TEXT PRIMARY KEY,
     version TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -167,7 +194,7 @@ CREATE TABLE system_walkthroughs (
 );
 
 -- AUDIT & INFRASTRUCTURE
-CREATE TABLE audit_logs (
+CREATE TABLE IF NOT EXISTS audit_logs (
     id TEXT PRIMARY KEY,
     household_id TEXT NOT NULL,
     actor_id TEXT NOT NULL,
@@ -180,7 +207,7 @@ CREATE TABLE audit_logs (
     FOREIGN KEY (household_id) REFERENCES households(id)
 );
 
-CREATE TABLE system_configs (
+CREATE TABLE IF NOT EXISTS system_configs (
     id TEXT PRIMARY KEY,
     key TEXT UNIQUE NOT NULL,
     value_json TEXT NOT NULL,
@@ -188,21 +215,19 @@ CREATE TABLE system_configs (
 );
 
 -- SEED DATA (CORE)
-INSERT INTO "households" ("id","name","created_at","currency","country_code","unallocated_balance_cents") VALUES('household-xyz','Business Expense','2026-03-22 22:19:09','USD','US',0);
-INSERT INTO "households" ("id","name","created_at","currency","country_code","unallocated_balance_cents") VALUES('ledger-main-001','LEDGER Primary','2026-03-24 19:54:52','USD','US',0);
-INSERT INTO "users" ("id","email","display_name","password_hash","created_at","global_role","status","username","settings_json") VALUES('c388400c-26a9-4b0e-b7d7-cdeb7aea18f4','ledger@gameproductions.net','Devon','100000.LeB4A1VHDbeyHXEGJ8BFpw==.RVvp89y3W3trOEISj5LxGJlStXisVP7uQmQO0DUwqeI=','2026-03-24 19:32:31','super_admin','active','morenicano','{"theme":"emerald","ui_style":"default","dashboard_layout":{"smartInsights":true,"savingsBuckets":true,"calendar":true,"recentTransactions":true,"healthScore":true}}');
-INSERT INTO "user_households" ("user_id","household_id","role") VALUES('c388400c-26a9-4b0e-b7d7-cdeb7aea18f4','ledger-main-001','admin');
+INSERT OR IGNORE INTO "households" ("id","name","created_at","currency","country_code","unallocated_balance_cents") VALUES('household-xyz','Business Expense','2026-03-22 22:19:09','USD','US',0);
+INSERT OR IGNORE INTO "households" ("id","name","created_at","currency","country_code","unallocated_balance_cents") VALUES('ledger-main-001','LEDGER Primary','2026-03-24 19:54:52','USD','US',0);
+INSERT OR IGNORE INTO "users" ("id","email","display_name","password_hash","created_at","global_role","status","username","settings_json") VALUES('c388400c-26a9-4b0e-b7d7-cdeb7aea18f4','ledger@gameproductions.net','Devon','100000.LeB4A1VHDbeyHXEGJ8BFpw==.RVvp89y3W3trOEISj5LxGJlStXisVP7uQmQO0DUwqeI=','2026-03-24 19:32:31','super_admin','active','morenicano','{"theme":"emerald","ui_style":"default","dashboard_layout":{"smartInsights":true,"savingsBuckets":true,"calendar":true,"recentTransactions":true,"healthScore":true}}');
+INSERT OR IGNORE INTO "user_households" ("user_id","household_id","role") VALUES('c388400c-26a9-4b0e-b7d7-cdeb7aea18f4','ledger-main-001','admin');
 
 -- SEED DATA (WALKTHROUGHS)
-INSERT INTO system_walkthroughs (id, version, title, content_md, created_at) VALUES 
+INSERT OR IGNORE INTO system_walkthroughs (id, version, title, content_md, created_at) VALUES 
 ('9f23e1-gen-001', 'v1.0.0', 'The CASH Genesis', '# Era 1: CASH Genesis (March 4-15, 2026)\n\nThe platform was initialized as **CASH** (Live Evaluation of Daily Gains & Expense Records), focusing on privacy-first financial tracking.\n\n### Key Accomplishments\n- **R2 Storage Optimization**: Implemented WebP compression for 10GB free tier sustainability.\n- **Automated Maintenance**: Implemented self-cleaning logic for audit logs and sessions.\n- **Security Hardening**: Initial rate limiting and IP-based anti-spam measures.', '2026-03-11 14:00:00'),
-
 ('9f23e1-reb-002', 'v1.10.x', 'The Rebranding Era', '# Era 2: The Rebranding (March 24, 2026)\n\nThe project underwent a strategic shift to **LEDGER**, a multi-era financial forensic platform.\n\n### Key Accomplishments\n- **Identity Shift**: Comprehensive rebranding of the entire monorepo.\n- **Dockerization**: Full support for self-hosting via Docker Compose.\n- **Authentication Hardening**: Resolved early JWT and session persistence issues.', '2026-03-24 10:00:00'),
-
 ('9f23e1-sov-003', 'v1.30.0', 'The Sovereignty Era', '# Era 3: Sovereignty (March 24-26, 2026)\n\nA core push towards feature parity with historical financial systems.\n\n### Key Accomplishments\n- **Universal Scheduling**: TZ-aware recurring transaction engine.\n- **Feature Parity**: Budget rollovers, subscription trial tracking, and Discord visualizations.\n- **Mobile/Biometric**: v2.4.1 established the initial passkey baseline.', '2026-03-26 12:00:00');
 
 -- INDICES
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_audit_logs_household ON audit_logs(household_id);
-CREATE INDEX idx_transactions_date ON transactions(transaction_date);
-CREATE INDEX idx_service_providers_name ON service_providers(name);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_household ON audit_logs(household_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_service_providers_name ON service_providers(name);

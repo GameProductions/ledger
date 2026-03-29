@@ -1,7 +1,7 @@
 import { sign } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings } from '../types'
-import { verifyPassword, verifyTOTP, hashPassword } from '../auth-utils'
+import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
 import { EmailService } from './email.service'
 
 export class AuthService {
@@ -78,13 +78,13 @@ export class AuthService {
       
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
-      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id, access_token, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .bind(identityId, userId, provider, profile.id, tokens?.access_token, tokens?.refresh_token, expiresAt).run()
+      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id, email, name, avatar_url, access_token, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(identityId, userId, provider, profile.id, profile.email, profile.name, profile.avatar, tokens?.access_token, tokens?.refresh_token, expiresAt).run()
     } else if (tokens) {
       // Update tokens for existing identity
       const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
-      await this.env.DB.prepare('UPDATE user_identities SET access_token = ?, refresh_token = ?, token_expires_at = ? WHERE provider = ? AND provider_user_id = ?')
-        .bind(tokens.access_token, tokens.refresh_token, expiresAt, provider, profile.id).run()
+      await this.env.DB.prepare('UPDATE user_identities SET email = ?, name = ?, avatar_url = ?, access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ?')
+        .bind(profile.email, profile.name, profile.avatar, tokens.access_token, tokens.refresh_token, expiresAt, provider, profile.id).run()
     }
 
     return userId

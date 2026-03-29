@@ -20,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || (isDev ? 'super_admin' : 'user'))
 
   const login = (newToken: string, newUser: any) => {
+    (window as any)._ledger_is_logging_out = false
     setToken(newToken)
     setUser(newUser)
     setGlobalRole(newUser.globalRole || 'user')
@@ -32,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const logout = () => {
+    (window as any)._ledger_is_logging_out = true
     setToken(null)
     setUser(null)
     setHouseholdId(null)

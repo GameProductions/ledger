@@ -40,6 +40,11 @@ const LoginPage: React.FC = () => {
       const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!profileRes.ok) {
+        showToast('Session initialization failed: Invalid profile response', 'error');
+        return;
+      }
+      
       const profile = await profileRes.json();
       
       if (profile.force_password_change) {
@@ -77,6 +82,12 @@ const LoginPage: React.FC = () => {
         const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
           headers: { 'Authorization': `Bearer ${authData.token}` }
         })
+
+        if (!profileRes.ok) {
+          showToast('Login sequence failed: Profile retrieval error', 'error');
+          return;
+        }
+
         const profile = await profileRes.json()
         
         if (profile.force_password_change) {

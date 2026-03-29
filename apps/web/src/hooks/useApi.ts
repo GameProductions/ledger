@@ -10,9 +10,17 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
   const [error, setError] = useState<any>(null)
   const [trigger, setTrigger] = useState(0)
   const lastFetchTime = useRef<number>(0)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const fetcher = useCallback(async () => {
     if (!token) return
+    
+    // Cancel any existing request for this hook instance
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    abortControllerRef.current = new AbortController()
+
     // Pacing: Don't fetch more than once every 2 seconds unless triggered manually
     if (Date.now() - lastFetchTime.current < 2000 && options.refreshInterval) return
     
@@ -21,6 +29,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
 
     try {
       const res = await fetch(`${API_URL}${path}`, {
+        signal: abortControllerRef.current.signal,
         headers: {
           Authorization: `Bearer ${token}`,
           'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
@@ -29,40 +38,51 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
       
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          console.error(`Auth Error (${res.status}) on ${path}. Logging out.`);
-          logout();
+          // Check if we are already logging out to prevent spam
+          const isLoggingOut = (window as any)._ledger_is_logging_out;
+          if (!isLoggingOut) {
+            (window as any)._ledger_is_logging_out = true;
+            console.error(`Auth Error (${res.status}) on ${path}. Initiating global logout.`);
+            logout();
+          }
+          return; // Stop processing this failed request
         }
         throw new Error(`API Error: ${res.status}`);
       }
 
       const json = await res.json()
       
-      // Only update state if data actually changed (shallow comparison for now)
+      // Only update state if data actually changed
       if (JSON.stringify(json) !== JSON.stringify(data)) {
         setData(json)
       }
       lastFetchTime.current = Date.now()
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return; // Ignore cancellations
       setError(err)
-      // Ensure data stays as null or empty array if it was intended to be an array
-      // But since we don't know the type here, null is safest to trigger loading/error states in components
     } finally {
       setLoading(false)
     }
-  }, [path, token, data, options.refreshInterval])
+  }, [path, token, data, options.refreshInterval, logout])
 
   useEffect(() => {
     fetcher()
+    
+    let interval: any;
     if (options.refreshInterval) {
-      const interval = setInterval(fetcher, options.refreshInterval)
-      // Listen for visibility change to refetch when coming back
-      const handleVisible = () => {
-         if (document.visibilityState === 'visible') fetcher()
-      }
-      document.addEventListener('visibilitychange', handleVisible)
-      return () => {
-        clearInterval(interval)
-        document.removeEventListener('visibilitychange', handleVisible)
+      interval = setInterval(fetcher, options.refreshInterval)
+    }
+
+    const handleVisible = () => {
+       if (document.visibilityState === 'visible') fetcher()
+    }
+    document.addEventListener('visibilitychange', handleVisible)
+
+    return () => {
+      if (interval) clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisible)
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
       }
     }
   }, [fetcher, trigger, options.refreshInterval])

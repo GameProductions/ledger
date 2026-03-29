@@ -1,6 +1,12 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
+import { 
+  generateRegistrationOptions, 
+  verifyRegistrationResponse, 
+  generateAuthenticationOptions, 
+  verifyAuthenticationResponse 
+} from '@simplewebauthn/server'
 import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
@@ -321,37 +327,79 @@ auth.get('/callback/onedrive', async (c) => {
 
 // --- WEBAUTHN / PASSKEYS ---
 auth.post('/passkeys/register-options', async (c) => {
-  const challenge = crypto.randomUUID()
-  await setSignedCookie(c, 'webauthn_challenge', challenge, c.env.JWT_SECRET, {
+  const userId = c.get('userId')
+  const authService = new AuthService(c.env)
+  const user: any = await c.env.DB.prepare('SELECT email, username FROM users WHERE id = ?').bind(userId).first()
+  
+  const passkeys: any = await c.env.DB.prepare('SELECT credential_id, transports FROM passkeys WHERE user_id = ?').bind(userId).all()
+  
+  const options = await generateRegistrationOptions({
+    rpName: 'LEDGER',
+    rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    userID: userId,
+    userName: user.username || user.email,
+    attestationType: 'none',
+    excludeCredentials: (passkeys.results || []).map((pk: any) => ({
+      id: pk.credential_id,
+      type: 'public-key',
+      transports: pk.transports ? JSON.parse(pk.transports) : [],
+    })),
+    authenticatorSelection: {
+      residentKey: 'preferred',
+      userVerification: 'preferred',
+    },
+  })
+
+  await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
     path: '/',
     secure: true,
     httpOnly: true,
     sameSite: 'None',
     maxAge: 300,
   })
-  return c.json({ challenge, user: { id: c.get('userId') || 'new-user', name: 'User' } })
+
+  return c.json(options)
 })
 
 auth.post('/passkeys/register-verify', zValidator('json', z.object({
   attestation: z.any(),
-  challenge: z.string(),
-  userId: z.string(),
   name: z.string().optional()
 })), async (c) => {
-  const { attestation, userId, name, challenge: clientChallenge } = c.req.valid('json')
-  const savedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+  const userId = c.get('userId')
+  const { attestation, name } = c.req.valid('json')
+  const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
 
-  if (!savedChallenge || clientChallenge !== savedChallenge) {
+  if (!expectedChallenge) {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
   }
 
+  const verification = await verifyRegistrationResponse({
+    response: attestation,
+    expectedChallenge,
+    expectedOrigin: c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173',
+    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+  })
+
+  if (!verification.verified || !verification.registrationInfo) {
+    throw new HTTPException(400, { message: 'WebAuthn verification failed' })
+  }
+
+  const { credentialPublicKey, credentialID, counter } = verification.registrationInfo
   const id = crypto.randomUUID()
-  const aaguid = attestation.aaguid || 'unknown' // In real WebAuthn, this is in the authenticatorData
   
-  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id, name, aaguid) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(id, userId, attestation.publicKey, attestation.id, name || 'New Passkey', aaguid).run()
+  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id, name, aaguid, counter, transports) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(
+      id, 
+      userId, 
+      Buffer.from(credentialPublicKey).toString('base64'), 
+      Buffer.from(credentialID).toString('base64'), 
+      name || 'New Passkey', 
+      verification.registrationInfo.aaguid || 'unknown',
+      counter,
+      JSON.stringify(attestation.response.transports || [])
+    ).run()
     
-  await logAudit(c, 'passkeys', id, 'REGISTER', null, { name, aaguid })
+  await logAudit(c, 'passkeys', id, 'REGISTER', null, { name })
   return c.json({ success: true, id })
 })
 
@@ -377,33 +425,60 @@ auth.delete('/passkeys/:id', async (c) => {
 })
 
 auth.post('/passkeys/login-options', async (c) => {
-  const challenge = crypto.randomUUID()
-  await setSignedCookie(c, 'webauthn_challenge', challenge, c.env.JWT_SECRET, {
+  const options = await generateAuthenticationOptions({
+    rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    allowCredentials: [], // Allow any credential for this RP
+    userVerification: 'preferred',
+  })
+
+  await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
     path: '/',
     secure: true,
     httpOnly: true,
     sameSite: 'None',
     maxAge: 300,
   })
-  return c.json({ challenge })
+
+  return c.json(options)
 })
 
 auth.post('/passkeys/login-verify', async (c) => {
-  const { assertion, challenge: clientChallenge } = await c.req.json()
-  const savedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+  const { assertion } = await c.req.json()
+  const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
 
-  if (!savedChallenge || clientChallenge !== savedChallenge) {
+  if (!expectedChallenge) {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
   }
 
-  const credId = assertion.id
+  const passkey: any = await c.env.DB.prepare('SELECT * FROM passkeys WHERE credential_id = ? OR credential_id = ?')
+    .bind(assertion.id, Buffer.from(assertion.id, 'base64').toString('base64')).first()
   
-  const passkey: any = await c.env.DB.prepare('SELECT * FROM passkeys WHERE credential_id = ?').bind(credId).first()
-  if (!passkey) throw new HTTPException(401, { message: 'Passkey not found' })
+  if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized' })
+
+  const verification = await verifyAuthenticationResponse({
+    response: assertion,
+    expectedChallenge,
+    expectedOrigin: c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173',
+    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    authenticator: {
+      credentialID: Buffer.from(passkey.credential_id, 'base64'),
+      credentialPublicKey: Buffer.from(passkey.public_key, 'base64'),
+      counter: passkey.counter || 0,
+    },
+  })
+
+  if (!verification.verified) {
+    throw new HTTPException(401, { message: 'Authentication failed' })
+  }
+
+  // Update counter
+  await c.env.DB.prepare('UPDATE passkeys SET counter = ? WHERE id = ?')
+    .bind(verification.authenticationInfo.newCounter, passkey.id).run()
 
   const authService = new AuthService(c.env)
   const token = await authService.generateToken(passkey.user_id)
   await logAudit(c, 'users', passkey.user_id, 'login', null, { strategy: 'passkey' })
+  
   return c.json({ token })
 })
 

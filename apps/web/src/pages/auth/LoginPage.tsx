@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Fingerprint, RefreshCw } from 'lucide-react'
+import { startAuthentication } from '@simplewebauthn/browser'
 import { Modal } from '../../components/ui/Modal'
 import { PasswordChecklist } from '../../components/PasswordChecklist'
 
@@ -118,20 +119,28 @@ const LoginPage: React.FC = () => {
       })
       const options = await optRes.json()
       
-      // Mock Passkey Assertion
+      // Real WebAuthn Authentication Prompt
+      const assertion = await startAuthentication(options)
+      
       const verifyRes = await fetch(`${apiUrl}/auth/passkeys/login-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ assertion: { id: 'mock-id' }, challenge: options.challenge })
+        body: JSON.stringify({ assertion })
       })
       
       const authData = await verifyRes.json()
       if (authData.token) {
         handleTokenLogin(authData.token)
+      } else {
+        showToast(authData.error || 'Authentication failed', 'error')
       }
-    } catch (e) {
-      showToast('Passkey login failed', 'error')
+    } catch (e: any) {
+      if (e.name === 'NotAllowedError') {
+        showToast('Authentication cancelled', 'info')
+      } else {
+        showToast(`Passkey login failed: ${e.message}`, 'error')
+      }
     } finally {
       setLoading(false)
     }

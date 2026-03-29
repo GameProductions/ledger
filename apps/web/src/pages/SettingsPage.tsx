@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { startRegistration } from '@simplewebauthn/browser'
 import { PasswordChecklist } from '../components/PasswordChecklist'
 import { PrivacySettings } from '../components/PrivacySettings'
 import { Price } from '../components/Price'
@@ -97,17 +98,18 @@ const SettingsPage: React.FC = () => {
       })
       const options = await optRes.json()
       
-      // 2. Mock WebAuthn Verification
-      // In a real app, this would use the browser's credential manager
-      const attestation = { id: `cred-${crypto.randomUUID().slice(0,8)}`, publicKey: 'mock-key', aaguid: '00000000-0000-0000-0000-000000000000' }
+      // 2. Real WebAuthn Prompter
+      const attestation = await startRegistration(options)
       
       setNewPasskeyData({
-        attestation,
-        challenge: options.challenge,
-        userId: user?.id
+        attestation
       })
-    } catch (e) {
-      showToast('Passkey registration failed', 'error')
+    } catch (e: any) {
+      if (e.name === 'NotAllowedError') {
+        showToast('Registration cancelled', 'info')
+      } else {
+        showToast(`Passkey registration failed: ${e.message}`, 'error')
+      }
     }
   }
 
@@ -119,7 +121,7 @@ const SettingsPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
         body: JSON.stringify({ 
-          ...newPasskeyData,
+          attestation: newPasskeyData.attestation,
           name 
         })
       })

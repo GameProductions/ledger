@@ -465,6 +465,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     </div>
   );
 };
+
+const PCCUsers: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

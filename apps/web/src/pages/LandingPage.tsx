@@ -66,10 +66,10 @@ const LandingPage: React.FC = () => {
   ]
 
   const integrations = [
-    { name: 'Google Drive', logo: 'https://www.gstatic.com/images/branding/product/2x/drive_48dp.png' },
-    { name: 'Dropbox', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@v14/icons/dropbox.svg' },
-    { name: 'OneDrive', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@v14/icons/microsoftonedrive.svg' },
-    { name: 'Docker', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@v14/icons/docker.svg' }
+    { name: 'Google Drive', logo: 'https://cdn.simpleicons.org/googledrive/white' },
+    { name: 'Dropbox', logo: 'https://cdn.simpleicons.org/dropbox/white' },
+    { name: 'OneDrive', logo: 'https://cdn.simpleicons.org/microsoftonedrive/white' },
+    { name: 'Docker', logo: 'https://cdn.simpleicons.org/docker/white' }
   ]
 
   return (
@@ -167,7 +167,7 @@ const LandingPage: React.FC = () => {
                   <img 
                     src={int.logo} 
                     alt={int.name} 
-                    className={`h-16 w-16 object-contain ${int.name === 'Discord' || int.name === 'Docker' || int.name === 'Dropbox' || int.name === 'OneDrive' ? 'invert' : ''}`}
+                    className="h-16 w-16 object-contain"
                   />
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 group-hover:text-primary transition-colors">{int.name}</span>

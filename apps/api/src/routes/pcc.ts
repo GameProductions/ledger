@@ -522,20 +522,31 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
 })
 
 // Identity Mirroring (Impersonation)
-pcc.post('/admin/users/:userId/impersonate', async (c) => {
-  const { userId } = c.req.param()
+  // Forensic Discovery: Resolve target user's primary household context
+  const { results: households } = await c.env.DB.prepare(
+    'SELECT household_id FROM user_households WHERE user_id = ? LIMIT 1'
+  ).bind(userId).all()
   
-  // Verify target user exists
-  const target = await c.env.DB.prepare('SELECT id, display_name FROM users WHERE id = ?').bind(userId).first()
-  if (!target) throw new HTTPException(404, { message: 'Target user not found' })
+  const targetHouseholdId = (households?.[0] as any)?.household_id || 'ledger-main-001'
+  const adminId = c.get('userId')
 
   const authService = new AuthService(c.env)
-  // Default to main household for impersonation start
-  const token = await authService.generateToken(userId, 'ledger-main-001')
+  const token = await authService.generateToken(userId, targetHouseholdId, adminId)
   
-  await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', {}, { target_name: (target as any).display_name })
+  await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', {}, { 
+    target_name: (target as any).display_name,
+    target_household_id: targetHouseholdId
+  })
   
-  return c.json({ success: true, token })
+  return c.json({ 
+    success: true, 
+    token,
+    impersonationContext: {
+      householdId: targetHouseholdId,
+      profile: target,
+      globalRole: (target as any).global_role
+    }
+  })
 })
 
 export default pcc

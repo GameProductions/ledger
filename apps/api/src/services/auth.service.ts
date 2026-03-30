@@ -48,13 +48,15 @@ export class AuthService {
     return { requires2FA: false }
   }
 
-  async generateToken(userId: string, householdId: string = 'ledger-main-001') {
-    const payload = {
+  async generateToken(userId: string, householdId: string = 'ledger-main-001', impersonatorId?: string) {
+    const payload: any = {
       sub: userId,
       householdId,
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
     }
     
+    if (impersonatorId) payload.impersonatorId = impersonatorId
+
     if (!this.env.JWT_SECRET) throw new HTTPException(500, { message: 'Internal error' })
     return await sign(payload, this.env.JWT_SECRET)
   }

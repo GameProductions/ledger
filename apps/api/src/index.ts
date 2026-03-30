@@ -53,7 +53,13 @@ app.use('*', secureHeaders({
   referrerPolicy: 'strict-origin-when-cross-origin',
   xPermittedCrossDomainPolicies: 'none',
 }))
-app.use('*', csrf())
+app.use('*', (c, next) => {
+  const path = c.req.path
+  if (path.startsWith('/api/') || path.startsWith('/auth/') || path.includes('.well-known')) {
+    return next()
+  }
+  return csrf()(c, next)
+})
 
 // 4. Self-Healing Middleware (v3.15.1)
 app.use('*', async (c, next) => {
@@ -178,6 +184,7 @@ ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)
 ledger.route('/api/data', dataRoutes)
+ledger.use('/api/pcc*', pccMiddleware)
 ledger.route('/api/pcc', pccRoutes)
 ledger.route('/api/support', supportRoutes)
 

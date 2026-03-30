@@ -32,8 +32,8 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h3>4. Security & Security Integrity</h3>
-        <p>We implement industry-standard AES-256 encryption, HSTS protocols, and WebAuthn (Passkey) standards. Authentication events and administrative overrides are recorded in a Audit Log for accountability and security monitoring.</p>
+        <h3>4. Security & Forensic Accountability</h3>
+        <p>We implement industry-standard AES-256 encryption, HSTS protocols, and WebAuthn (Passkey) standards. Authentication events, administrative overrides, and forensic identity mirroring are recorded in a Secure Audit Log for accountability and security monitoring.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -47,7 +47,7 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <footer style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-        <p>Updated as of March 28, 2026 (v3.11.8). This document is updated whenever significant changes are made to the LEDGER data processing or identity engines.</p>
+        <p>Updated as of March 29, 2026 (v3.17.1). This document is updated whenever significant changes are made to the LEDGER data processing, identity engines, or administrative protocols.</p>
       </footer>
     </div>
   )

@@ -105,6 +105,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     c.set('userId', userId)
     c.set('globalRole', globalRole)
     c.set('householdId', String(activeHouseholdId))
+    if (payload.impersonatorId) c.set('impersonatorId', payload.impersonatorId)
     
     await next()
   } catch (e: any) {

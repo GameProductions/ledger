@@ -31,4 +31,5 @@ export type Variables = {
   householdId: string
   userId: string
   globalRole: string
+  impersonatorId?: string
 }

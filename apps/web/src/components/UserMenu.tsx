@@ -18,7 +18,7 @@ const UserMenu: React.FC<{
   const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
-    { icon: LayoutDashboard, label: 'God Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
+    { icon: LayoutDashboard, label: 'Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
     { icon: Cpu, label: 'System Configuration', hash: '#/system-pcc/config', color: 'text-blue-400' },
     { icon: Database, label: 'Master Record List', hash: '#/system-pcc/registry', color: 'text-orange-400' },
     { icon: Users, label: 'Manage All Users', hash: '#/system-pcc/users', color: 'text-primary' },

@@ -9,10 +9,12 @@ export const logAudit = async (
   oldData: any, 
   newData: any
 ) => {
-  const actorId = c.get('userId') || 'system'
-  const householdId = c.get('householdId') || 'ledger-main-001'
-  const id = crypto.randomUUID()
-  
+  const impersonatorId = c.get('impersonatorId')
+  const newValues = newData ? { ...newData } : {}
+  if (impersonatorId) {
+    (newValues as any)._impersonator_id = impersonatorId
+  }
+
   await c.env.DB.prepare(
     'INSERT INTO audit_logs (id, household_id, actor_id, table_name, record_id, action, old_values_json, new_values_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
@@ -23,7 +25,7 @@ export const logAudit = async (
     recordId, 
     action, 
     oldData ? JSON.stringify(oldData) : null, 
-    newData ? JSON.stringify(newData) : null
+    Object.keys(newValues).length > 0 ? JSON.stringify(newValues) : null
   ).run()
 }
 

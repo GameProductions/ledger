@@ -164,6 +164,11 @@ const PCCGuide: React.FC = () => {
                   <h4 className="text-sm font-bold text-white uppercase">Audit Trail</h4>
                   <p className="text-sm text-slate-500 leading-relaxed">Every PCC interaction generates a audit entry in the Audit Trail.</p>
                </div>
+               <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3 shadow-xl hover:border-purple-500/30 transition-all group/card">
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover/card:text-purple-400">Mirror_05</div>
+                  <h4 className="text-sm font-bold text-white uppercase">Forensic Mirroring</h4>
+                  <p className="text-sm text-slate-500 leading-relaxed">Identity mirroring is recorded with both administrative actor and target user context for absolute accountability.</p>
+               </div>
             </div>
         </div>
 

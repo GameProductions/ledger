@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PCCPortal from './PCCPortal';
 import { 
   MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, 
-  Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert, Monitor, EyeOff, Eye 
+  Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert, Monitor 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '../../components/ui/Modal';
@@ -12,7 +12,12 @@ import { Masked } from '../../components/ui/Masked';
 import { useToast } from '../../context/ToastContext';
 
 // --- SUB-COMPONENT: User Details Modal ---
-const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge: (id: string) => void }> = ({ userId, onClose, onMerge }) => {
+const UserDetailsModal: React.FC<{ 
+  userId: string; 
+  onClose: () => void; 
+  onMerge: (id: string) => void; 
+  onImpersonate: (user: any) => void;
+}> = ({ userId, onClose, onMerge, onImpersonate }) => {
   const { showToast } = useToast();
   const [details, setDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +27,6 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
   const [showPass, setShowPass] = useState(false);
   const [editingPk, setEditingPk] = useState<any | null>(null);
   const [removingPk, setRemovingPk] = useState<any | null>(null);
-  const [privacyMirror, setPrivacyMirror] = useState(true);
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
@@ -331,18 +335,6 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Access Key</span>
                 <span className="text-xs font-black text-emerald-500/60 font-mono">AUTHORIZED_ADMIN</span>
              </div>
-             <div className="h-8 w-px bg-white/5" />
-             <button 
-               onClick={() => setPrivacyMirror(!privacyMirror)}
-               className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${
-                 privacyMirror 
-                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' 
-                 : 'bg-white/5 border-white/10 text-slate-500'
-               }`}
-             >
-               {privacyMirror ? <EyeOff size={14} /> : <Eye size={14} />}
-               <span className="text-[10px] font-black uppercase tracking-widest">Privacy Mirroring {privacyMirror ? 'Active' : 'Disabled'}</span>
-             </button>
           </div>
           
           <div className="flex gap-4">
@@ -351,27 +343,7 @@ const UserDetailsModal: React.FC<{ userId: string; onClose: () => void; onMerge:
                 Full Resync
              </button>
              <button 
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('ledger_token');
-                    const apiUrl = import.meta.env.VITE_API_URL;
-                    const res = await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/impersonate`, {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const data = await res.json();
-                    if (data.token) {
-                      showToast(`Identity mirrored: Accessing as ${details.profile.display_name}`, 'success');
-                      localStorage.setItem('ledger_token', data.token);
-                      localStorage.setItem('ledger_impersonation_active', 'true');
-                      localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
-                      window.location.href = '/#/dashboard';
-                      window.location.reload();
-                    }
-                  } catch (err) {
-                    showToast('Impersonation protocol failed', 'error');
-                  }
-                }}
+                onClick={() => onImpersonate(details.profile)}
                 className="flex items-center gap-3 px-6 py-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
               >
                 <Monitor size={14} />
@@ -630,6 +602,9 @@ const PCCUsers: React.FC = () => {
   const [mergeTarget, setMergeTarget] = useState<string | null>(null);
   const [mergeSearchTerm, setMergeSearchTerm] = useState('');
   const [merging, setMerging] = useState(false);
+  const [impersonationTarget, setImpersonationTarget] = useState<any | null>(null);
+  const [privacyMirror, setPrivacyMirror] = useState(true);
+  const [impersonating, setImpersonating] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -869,7 +844,15 @@ const PCCUsers: React.FC = () => {
       {/* Modals Overlay */}
       <AnimatePresence>
         {selectedUser && (
-          <UserDetailsModal userId={selectedUser} onClose={() => setSelectedUser(null)} onMerge={(id) => setMergeSource(id)} />
+          <UserDetailsModal 
+            userId={selectedUser} 
+            onClose={() => setSelectedUser(null)} 
+            onMerge={(id) => setMergeSource(id)} 
+            onImpersonate={(user) => {
+              setImpersonationTarget(user);
+              setSelectedUser(null);
+            }}
+          />
         )}
         <CreateUserModal 
           isOpen={isCreateModalOpen} 
@@ -953,6 +936,89 @@ const PCCUsers: React.FC = () => {
           <div className="space-y-4">
             <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.display_name || userToDelete?.username}</strong>?</p>
             <p className="text-red-500 text-xs font-black uppercase tracking-widest">CRITICAL ACTION: This will remove all associated data and credentials. This cannot be undone.</p>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={!!impersonationTarget}
+          onClose={() => setImpersonationTarget(null)}
+          title="Confirm Identity Mirroring"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setImpersonationTarget(null)}>Cancel</Button>
+              <Button 
+                variant="primary" 
+                className="bg-purple-600 hover:bg-purple-700 text-white" 
+                disabled={impersonating}
+                onClick={async () => {
+                  setImpersonating(true);
+                  try {
+                    const token = localStorage.getItem('ledger_token');
+                    const apiUrl = import.meta.env.VITE_API_URL;
+                    const res = await fetch(`${apiUrl}/api/pcc/admin/users/${impersonationTarget.id}/impersonate`, {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    if (data.token && data.impersonationContext) {
+                      const { householdId, profile, globalRole } = data.impersonationContext;
+                      showToast(`Identity mirrored: Accessing as ${profile.display_name}`, 'success');
+                      
+                      // Phase 2: Persona Synchronization
+                      localStorage.setItem('ledger_token', data.token);
+                      localStorage.setItem('ledger_user', JSON.stringify(profile));
+                      localStorage.setItem('ledger_global_role', globalRole || 'user');
+                      localStorage.setItem('ledger_household_id', householdId);
+                      localStorage.setItem('ledger_impersonation_active', 'true');
+                      localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
+                      
+                      window.location.href = '/#/dashboard';
+                      window.location.reload();
+                    }
+                  } catch (err) {
+                    showToast('Impersonation protocol failed', 'error');
+                  } finally {
+                    setImpersonating(false);
+                  }
+                }}
+              >
+                {impersonating ? 'Mirroring...' : 'Commence Identity Mirroring'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-500">
+                <Monitor size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-black uppercase text-white tracking-widest">{impersonationTarget?.display_name || impersonationTarget?.username}</p>
+                <p className="text-[10px] font-mono text-purple-400">{impersonationTarget?.email}</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs font-black uppercase text-white tracking-widest">Privacy Mirroring</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Mask sensitive PII and financial data during this session</p>
+                </div>
+                <button 
+                  onClick={() => setPrivacyMirror(!privacyMirror)}
+                  className={`w-12 h-6 rounded-full transition-all relative ${privacyMirror ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${privacyMirror ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
+              <ShieldAlert size={16} className="text-orange-500 mt-0.5 shrink-0" />
+              <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-widest leading-relaxed">
+                Administrative Warning: You are about to mirror a live user session. All actions taken will be recorded in the forensic audit trails under your administrative ID.
+              </p>
+            </div>
           </div>
         </Modal>
       </AnimatePresence>

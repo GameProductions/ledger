@@ -50,6 +50,7 @@ const AppContent: React.FC = () => {
 
   // Helper to render the actual component
   const renderView = () => {
+    const path = currentHash.split('?')[0]
     // 1. Root / Landing Page
     if (path === '' || path === '#/') {
       if (user) return <DashboardPage view={view} setView={setView} />

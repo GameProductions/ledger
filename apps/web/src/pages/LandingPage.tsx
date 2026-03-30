@@ -4,14 +4,10 @@ import {
   Shield, 
   Cpu, 
   Cloud, 
-  Lock, 
   ArrowRight, 
-  Database, 
-  Globe, 
   Activity,
   Zap,
   Layers,
-  ChevronRight,
   Terminal,
   Server,
   Fingerprint,
@@ -19,10 +15,16 @@ import {
   Users,
   Layout,
   FileCode,
-  HardDrive,
-  Github
+  HardDrive
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+
+const GithubIcon = ({ size = 20, className = "" }: { size?: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
 
 const LandingPage: React.FC = () => {
   const { theme } = useTheme()
@@ -71,7 +73,7 @@ const LandingPage: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white selection:bg-primary/30 font-inter">
+    <div className="min-h-screen bg-[#020617] text-white selection:bg-primary/30 font-inter pb-20">
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-md border-b border-white/5 bg-black/20">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -81,7 +83,7 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-8">
             <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
-              <Github size={16} /> GitHub
+              <GithubIcon size={16} /> GitHub
             </a>
             <a href="#/login" className="px-6 py-2.5 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 hover:scale-105 transition-all">
               Sign In
@@ -119,7 +121,7 @@ const LandingPage: React.FC = () => {
                 Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </a>
               <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
-                <Github size={18} /> Source Code
+                <GithubIcon size={18} /> Source Code
               </a>
             </div>
           </motion.div>
@@ -250,27 +252,11 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-24 px-6 border-t border-white/5 bg-black/40 relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-          <div className="flex flex-col items-center md:items-start gap-6">
-             <div className="flex items-center gap-3">
-              <img src={theme.logoUrl} alt="Logo" className="h-10 w-10" />
-              <span className="text-xl font-black tracking-tighter italic uppercase">LEDGER</span>
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-600">© 2026 Game Productions Net. Distributed under sovereignty license.</p>
-          </div>
-          <div className="flex flex-wrap justify-center md:justify-end gap-10">
-            <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2">
-               <Github size={12} /> Source
-            </a>
-            <a href="https://hub.docker.com/r/gameproductions/ledger" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors flex items-center gap-2">
-               Docker Hub
-            </a>
-            <a href="#/privacy" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Privacy</a>
-            <a href="#/terms" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Terms</a>
-          </div>
-        </div>
+      {/* Footer is provided by GlobalLayout */}
+      <footer className="py-10 border-t border-white/5 opacity-40 text-center">
+        <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">
+          <GithubIcon size={12} /> Forensic Repository
+        </a>
       </footer>
     </div>
   )

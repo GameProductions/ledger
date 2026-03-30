@@ -1,0 +1,47 @@
+
+> web@3.18.0 build
+> tsc -b && vite build && node scripts/update-version.js
+
+src/App.tsx(42,10): error TS6133: 'currentHash' is declared but its value is never read.
+src/App.tsx(54,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(54,24): error TS2304: Cannot find name 'path'.
+src/App.tsx(60,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(61,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(62,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(66,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(67,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(73,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(75,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(76,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(77,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(78,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(79,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(80,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(81,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(82,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(83,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(84,11): error TS2304: Cannot find name 'path'.
+src/App.tsx(89,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(90,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(91,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(92,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(93,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(94,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(95,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(96,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(97,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(98,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(99,9): error TS2304: Cannot find name 'path'.
+src/App.tsx(100,9): error TS2304: Cannot find name 'path'.
+src/pages/LandingPage.tsx(7,3): error TS6133: 'Lock' is declared but its value is never read.
+src/pages/LandingPage.tsx(9,3): error TS6133: 'Database' is declared but its value is never read.
+src/pages/LandingPage.tsx(10,3): error TS6133: 'Globe' is declared but its value is never read.
+src/pages/LandingPage.tsx(14,3): error TS6133: 'ChevronRight' is declared but its value is never read.
+src/pages/LandingPage.tsx(23,3): error TS2305: Module '"lucide-react"' has no exported member 'Github'.
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path /Users/morenicano/Documents/coding/projects/bots/ledger/apps/web
+npm error workspace web@3.18.0
+npm error location /Users/morenicano/Documents/coding/projects/bots/ledger/apps/web
+npm error command failed
+npm error command sh -c tsc -b && vite build && node scripts/update-version.js

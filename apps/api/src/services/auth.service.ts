@@ -18,6 +18,11 @@ export class AuthService {
       console.warn('[Auth] User not found:', identifier)
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
+
+    if (!user.password_hash) {
+      console.warn('[Auth] Attempted password login on social-only account:', identifier)
+      throw new HTTPException(401, { message: 'Account linked via social provider. Please use Discord or Google login.' })
+    }
     
     const isMatch = await verifyPassword(password, user.password_hash)
     if (!isMatch) { 

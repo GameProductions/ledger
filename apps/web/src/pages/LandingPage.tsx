@@ -201,7 +201,7 @@ const LandingPage: React.FC = () => {
       {/* Features */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-24">
-          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Exhaustive Protocol List</h2>
+          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Protocols</h2>
           <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Complete feature audit of the ledger engine</p>
         </div>
 

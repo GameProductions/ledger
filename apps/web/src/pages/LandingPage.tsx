@@ -67,9 +67,9 @@ const LandingPage: React.FC = () => {
 
   const integrations = [
     { name: 'Google Drive', logo: 'https://www.gstatic.com/images/branding/product/2x/drive_48dp.png' },
-    { name: 'Dropbox', logo: 'https://aem.dropbox.com/cms/content/dam/dropbox/www/en-us/branding/dropbox-logo-glyph-blue.png' },
-    { name: 'OneDrive', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Microsoft_Office_OneDrive_%282019%E2%80%93present%29.svg/512px-Microsoft_Office_OneDrive_%282019%E2%80%93present%29.svg.png' },
-    { name: 'Docker', logo: 'https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/docker.svg' }
+    { name: 'Dropbox', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@v14/icons/dropbox.svg' },
+    { name: 'OneDrive', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@v14/icons/microsoftonedrive.svg' },
+    { name: 'Docker', logo: 'https://cdn.jsdelivr.net/npm/simple-icons@v14/icons/docker.svg' }
   ]
 
   return (
@@ -167,7 +167,7 @@ const LandingPage: React.FC = () => {
                   <img 
                     src={int.logo} 
                     alt={int.name} 
-                    className={`h-16 w-16 object-contain ${int.name === 'Discord' || int.name === 'Docker' ? 'invert' : ''}`}
+                    className={`h-16 w-16 object-contain ${int.name === 'Discord' || int.name === 'Docker' || int.name === 'Dropbox' || int.name === 'OneDrive' ? 'invert' : ''}`}
                   />
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 group-hover:text-primary transition-colors">{int.name}</span>
@@ -188,7 +188,7 @@ const LandingPage: React.FC = () => {
                  <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80 mb-6">
                    Run the entire LEDGER ecosystem on your own hardware. Available as containerized distributions on Docker Hub for total control over your financial stack.
                  </p>
-                 <a href="https://hub.docker.com/r/gameproductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors">
+                 <a href="https://hub.docker.com/r/morenicano/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors">
                    View Docker Hub <ArrowRight size={12} />
                  </a>
                </div>

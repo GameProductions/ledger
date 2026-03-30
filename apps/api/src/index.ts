@@ -62,23 +62,89 @@ app.use('*', (c, next) => {
   return csrf()(c, next)
 })
 
-// 4. Self-Healing Middleware (v3.15.1)
+// 4. Self-Healing Middleware (v3.15.1 - Expanded v3.21)
 app.use('*', async (c, next) => {
   if (c.req.path.startsWith('/api/')) {
     try {
-      await c.env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS system_config (
-          id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
-          config_key TEXT NOT NULL UNIQUE,
-          config_value TEXT,
-          value_type TEXT DEFAULT 'string',
-          description TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-      `).run();
+      await c.env.DB.batch([
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_config (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+            config_key TEXT NOT NULL UNIQUE,
+            config_value TEXT,
+            value_type TEXT DEFAULT 'string',
+            description TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_feature_flags (
+            id TEXT PRIMARY KEY,
+            feature_key TEXT NOT NULL UNIQUE,
+            enabled_globally INTEGER DEFAULT 0,
+            target_user_ids TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_registry (
+            id TEXT PRIMARY KEY,
+            item_type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            logo_url TEXT,
+            website_url TEXT,
+            metadata_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS billing_processors (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            website_url TEXT,
+            branding_url TEXT,
+            support_url TEXT,
+            subscription_id_notes TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_announcements (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            content_md TEXT NOT NULL,
+            priority TEXT DEFAULT 'info',
+            actor_id TEXT REFERENCES users(id),
+            is_active INTEGER DEFAULT 1,
+            expires_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS system_walkthroughs (
+            id TEXT PRIMARY KEY,
+            version TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content_md TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS pcc_audit_logs (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            target TEXT NOT NULL,
+            target_id TEXT,
+            details_json TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+          );
+        `)
+      ]);
     } catch (e) {
-      console.error('[Self-Heal] Failed to verify system_config table:', e);
+      console.error('[Self-Heal] Failed to verify system tables:', e);
     }
   }
   await next();

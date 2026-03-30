@@ -27,10 +27,7 @@
   "vars": {
     "ENVIRONMENT": "production",
     "FROM_EMAIL": "LEDGER <onboarding@resend.dev>",
-    "WEB_URL": "https://ledger.gpnet.dev",
-    "GOOGLE_CLIENT_ID": "REPLACE_WITH_CLIENT_ID",
-    "DROPBOX_CLIENT_ID": "REPLACE_WITH_CLIENT_ID",
-    "ONEDRIVE_CLIENT_ID": "REPLACE_WITH_CLIENT_ID"
+    "WEB_URL": "https://ledger.gpnet.dev"
   },
   "durable_objects": {
     "bindings": [

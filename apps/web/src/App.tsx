@@ -8,6 +8,7 @@ import { GlobalLayout } from './components/layout/GlobalLayout'
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 const ClaimInvitePage = lazy(() => import('./pages/auth/ClaimInvitePage'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
@@ -49,15 +50,23 @@ const AppContent: React.FC = () => {
 
   // Helper to render the actual component
   const renderView = () => {
-    const path = currentHash.split('?')[0]
-    
-    // 1. Public Routes (No session required)
+    // 1. Root / Landing Page
+    if (path === '' || path === '#/') {
+      if (user) return <DashboardPage view={view} setView={setView} />
+      return <LandingPage />
+    }
+
+    // 2. Public Routes (No session required)
     if (path === '#/privacy') return <PrivacyPolicy />
     if (path === '#/terms') return <TermsOfService />
+    if (path === '#/login') {
+      if (user) return <DashboardPage view={view} setView={setView} />
+      return <LoginPage />
+    }
     if (path.startsWith('#/claim')) return <ClaimInvitePage />
     if (path.startsWith('#/households/join')) return <JoinHouseholdPage />
 
-    // 2. Auth Guard
+    // 3. Auth Guard
     if (!user) return <LoginPage />
 
     // 3. Platform Command Center (PCC) - Super-Admin Only

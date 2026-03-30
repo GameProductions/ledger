@@ -523,37 +523,46 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
 
 // Identity Mirroring (Impersonation)
 pcc.post('/admin/users/:userId/impersonate', async (c) => {
-  const { userId } = c.req.param()
-  
-  // Verify target user exists
-  const target = await c.env.DB.prepare('SELECT id, display_name, global_role FROM users WHERE id = ?').bind(userId).first()
-  if (!target) throw new HTTPException(404, { message: 'Target user not found' })
+  try {
+    const { userId } = c.req.param()
+    
+    // Verify target user exists
+    const target = await c.env.DB.prepare('SELECT id, display_name, global_role FROM users WHERE id = ?').bind(userId).first()
+    if (!target) throw new HTTPException(404, { message: 'Target user not found' })
 
-  // Forensic Discovery: Resolve target user's primary household context
-  const { results: households } = await c.env.DB.prepare(
-    'SELECT household_id FROM user_households WHERE user_id = ? LIMIT 1'
-  ).bind(userId).all()
-  
-  const targetHouseholdId = (households?.[0] as any)?.household_id || 'ledger-main-001'
-  const adminId = c.get('userId')
+    // Forensic Discovery: Resolve target user's primary household context
+    const { results: households } = await (c.env.DB.prepare(
+      'SELECT household_id FROM user_households WHERE user_id = ? LIMIT 1'
+    ).bind(userId).all() as any)
+    
+    const targetHouseholdId = (households?.[0] as any)?.household_id || 'ledger-main-001'
+    const adminId = c.get('userId')
 
-  const authService = new AuthService(c.env)
-  const token = await authService.generateToken(userId, targetHouseholdId, adminId)
-  
-  await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', {}, { 
-    target_name: (target as any).display_name,
-    target_household_id: targetHouseholdId
-  })
-  
-  return c.json({ 
-    success: true, 
-    token,
-    impersonationContext: {
-      householdId: targetHouseholdId,
-      profile: target,
-      globalRole: (target as any).global_role
-    }
-  })
+    const authService = new AuthService(c.env)
+    const token = await authService.generateToken(userId, targetHouseholdId, adminId)
+    
+    await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', {}, { 
+      target_name: (target as any).display_name,
+      target_household_id: targetHouseholdId
+    })
+    
+    return c.json({ 
+      success: true, 
+      token,
+      impersonationContext: {
+        householdId: targetHouseholdId,
+        profile: target,
+        globalRole: (target as any).global_role
+      }
+    })
+  } catch (err: any) {
+    console.error('[PCC Impersonate Error]', err)
+    return c.json({ 
+      success: false, 
+      error: err.message || 'Forensic system failure',
+      stack: err.stack 
+    }, 500)
+  }
 })
 
 export default pcc

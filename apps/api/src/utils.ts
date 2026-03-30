@@ -9,6 +9,9 @@ export const logAudit = async (
   oldData: any, 
   newData: any
 ) => {
+  const id = crypto.randomUUID()
+  const householdId = c.get('householdId') || 'system'
+  const actorId = c.get('userId') || 'system'
   const impersonatorId = c.get('impersonatorId')
   const newValues = newData ? { ...newData } : {}
   if (impersonatorId) {

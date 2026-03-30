@@ -295,7 +295,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
               </div>
               <div className="text-3xl font-black text-white mb-2">
-                <Price amountCents={Array.isArray(forecast) ? (forecast?.[(forecast?.length ?? 0) - 1]?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
+                <Price amountCents={Array.isArray(forecast) ? (forecast.at(-1)?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
               <div className="flex items-center gap-2 mb-4">
                  <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
@@ -348,8 +348,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
               </div>
               <div className="space-y-1">
-                {Array.isArray(transactions) && transactions.filter((tx: any) => {
-                  const matchesSearch = tx.description.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                {Array.isArray(transactions) ? transactions.filter((tx: any) => {
+                  const matchesSearch = tx.description?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                      (tx.confirmation_number && tx.confirmation_number.toLowerCase().includes(searchQuery.toLowerCase()))
                   const matchesStatus = filterStatus === 'all' || 
                                      (filterStatus === 'unmatched' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
@@ -410,7 +410,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : <p className="text-xs text-secondary italic opacity-40 py-4 px-2">No activity records found.</p>}
               </div>
             </section>
 

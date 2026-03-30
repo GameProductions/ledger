@@ -522,6 +522,13 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
 })
 
 // Identity Mirroring (Impersonation)
+pcc.post('/admin/users/:userId/impersonate', async (c) => {
+  const { userId } = c.req.param()
+  
+  // Verify target user exists
+  const target = await c.env.DB.prepare('SELECT id, display_name, global_role FROM users WHERE id = ?').bind(userId).first()
+  if (!target) throw new HTTPException(404, { message: 'Target user not found' })
+
   // Forensic Discovery: Resolve target user's primary household context
   const { results: households } = await c.env.DB.prepare(
     'SELECT household_id FROM user_households WHERE user_id = ? LIMIT 1'

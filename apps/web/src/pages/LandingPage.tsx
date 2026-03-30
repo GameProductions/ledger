@@ -61,14 +61,14 @@ const LandingPage: React.FC = () => {
     { name: 'Multi-Currency', icon: <Wallet className="text-pink-500" />, desc: 'Global financial tracking' },
     { name: 'Docker Ready', icon: <Server className="text-blue-400" />, desc: 'Official containerized builds' },
     { name: 'Audit Timelines', icon: <Layers className="text-slate-400" />, desc: 'Historical integrity tracking' },
-    { name: 'Cloud Sync', icon: <HardDrive className="text-cyan-400" />, desc: 'GDrive, Dropbox, OneDrive' },
+    { name: 'Cloud Sync', icon: <HardDrive className="text-cyan-400" />, desc: 'Google Drive, Dropbox, OneDrive' },
     { name: 'Discord OAuth', icon: <FileCode className="text-indigo-400" />, desc: 'Integrated identity provider' }
   ]
 
   const integrations = [
     { name: 'Google Drive', logo: 'https://cdn.simpleicons.org/googledrive/white' },
     { name: 'Dropbox', logo: 'https://cdn.simpleicons.org/dropbox/white' },
-    { name: 'OneDrive', logo: 'https://cdn.simpleicons.org/microsoftonedrive/white' },
+    { name: 'OneDrive', logo: 'https://flaticons.net/icon.php?slug_category=brand-identity&slug_icon=onedrive&color=ffffff' },
     { name: 'Docker', logo: 'https://cdn.simpleicons.org/docker/white' }
   ]
 
@@ -198,7 +198,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Exhaustive Feature Grid */}
+      {/* Features */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-24">
           <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Exhaustive Protocol List</h2>

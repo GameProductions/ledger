@@ -173,14 +173,14 @@ export async function hashPassword(password: string): Promise<string> {
   
   // Format: iterations.salt_base64.hash_base64
   const saltBase64 = Buffer.from(salt).toString('base64')
-  const hashBase64 = Buffer.from(new Uint8Array(derivedBits)).toString('base64')
+  const hashBase64 = Buffer.from(derivedBits).toString('base64')
   return `${DEFAULT_ITERATIONS}.${saltBase64}.${hashBase64}`
 }
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
     const [iterations, saltBase64, expectedHashBase64] = storedHash.split('.')
-    const salt = Buffer.from(saltBase64, 'base64')
+    const salt = new Uint8Array(Buffer.from(saltBase64, 'base64'))
     
     const encoder = new TextEncoder()
     const keyMaterial = await crypto.subtle.importKey(
@@ -193,7 +193,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
       hash: 'SHA-256'
     }
     const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
-    const actualHashBase64 = Buffer.from(new Uint8Array(derivedBits)).toString('base64')
+    const actualHashBase64 = Buffer.from(derivedBits).toString('base64')
     
     const isMatched = actualHashBase64 === expectedHashBase64
     if (!isMatched) console.warn('[Auth] Password hash mismatch')

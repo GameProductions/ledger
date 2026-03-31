@@ -63,7 +63,7 @@ export class AuthService {
     if (impersonatorId) payload.impersonatorId = impersonatorId
 
     if (!this.env.JWT_SECRET) throw new HTTPException(500, { message: 'Internal error' })
-    return await sign(payload, this.env.JWT_SECRET)
+    return await sign(payload, this.env.JWT_SECRET, 'HS256')
   }
 
   async findOrCreateSocialUser(provider: string, profile: { id: string, email: string, avatar?: string, name?: string }, tokens?: { access_token: string, refresh_token?: string, expires_in?: number }) {

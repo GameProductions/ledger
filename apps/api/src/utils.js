@@ -1,6 +1,6 @@
 export const logAudit = async (c, tableName, recordId, action, oldData = null, newData = null) => {
     const id = crypto.randomUUID();
-    const householdId = c.get('householdId') || 'system';
+    const householdId = c.get('householdId') || 'ledger-main-001';
     const actorId = c.get('userId') || 'system';
     const impersonatorId = c.get('impersonatorId');
     const newValues = newData ? { ...newData } : {};

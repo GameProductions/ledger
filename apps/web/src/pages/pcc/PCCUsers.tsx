@@ -603,8 +603,6 @@ const PCCUsers: React.FC = () => {
   const [mergeSearchTerm, setMergeSearchTerm] = useState('');
   const [merging, setMerging] = useState(false);
   const [impersonationTarget, setImpersonationTarget] = useState<any | null>(null);
-  const [privacyMirror, setPrivacyMirror] = useState(true);
-  const [impersonating, setImpersonating] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -939,90 +937,120 @@ const PCCUsers: React.FC = () => {
           </div>
         </Modal>
 
-        <Modal
-          isOpen={!!impersonationTarget}
+        <ImpersonationConfirmModal
+          target={impersonationTarget}
           onClose={() => setImpersonationTarget(null)}
-          title="Confirm Identity Mirroring"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setImpersonationTarget(null)}>Cancel</Button>
-              <Button 
-                variant="primary" 
-                className="bg-purple-600 hover:bg-purple-700 text-white" 
-                disabled={impersonating}
-                onClick={async () => {
-                  setImpersonating(true);
-                  try {
-                    const token = localStorage.getItem('ledger_token');
-                    const apiUrl = import.meta.env.VITE_API_URL;
-                    const res = await fetch(`${apiUrl}/api/pcc/admin/users/${impersonationTarget.id}/impersonate`, {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const data = await res.json();
-                    if (data.token && data.impersonationContext) {
-                      const { householdId, profile, globalRole } = data.impersonationContext;
-                      showToast(`Identity mirrored: Accessing as ${profile.display_name}`, 'success');
-                      
-                      // Phase 2: Persona Synchronization
-                      localStorage.setItem('ledger_token', data.token);
-                      localStorage.setItem('ledger_user', JSON.stringify(profile));
-                      localStorage.setItem('ledger_global_role', globalRole || 'user');
-                      localStorage.setItem('ledger_household_id', householdId);
-                      localStorage.setItem('ledger_impersonation_active', 'true');
-                      localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
-                      
-                      window.location.href = '/#/dashboard';
-                      window.location.reload();
-                    }
-                  } catch (err) {
-                    showToast('Impersonation protocol failed', 'error');
-                  } finally {
-                    setImpersonating(false);
-                  }
-                }}
-              >
-                {impersonating ? 'Mirroring...' : 'Commence Identity Mirroring'}
-              </Button>
-            </>
-          }
-        >
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-500">
-                <Monitor size={24} />
-              </div>
-              <div>
-                <p className="text-sm font-black uppercase text-white tracking-widest">{impersonationTarget?.display_name || impersonationTarget?.username}</p>
-                <p className="text-[10px] font-mono text-purple-400">{impersonationTarget?.email}</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs font-black uppercase text-white tracking-widest">Privacy Mirroring</p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Mask sensitive PII and financial data during this session</p>
-                </div>
-                <button 
-                  onClick={() => setPrivacyMirror(!privacyMirror)}
-                  className={`w-12 h-6 rounded-full transition-all relative ${privacyMirror ? 'bg-emerald-500' : 'bg-slate-700'}`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${privacyMirror ? 'left-7' : 'left-1'}`} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
-              <ShieldAlert size={16} className="text-orange-500 mt-0.5 shrink-0" />
-              <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-widest leading-relaxed">
-                Administrative Warning: You are about to mirror a live user session. All actions taken will be recorded in the forensic audit trails under your administrative ID.
-              </p>
-            </div>
-          </div>
-        </Modal>
+          onShowToast={showToast}
+        />
       </AnimatePresence>
     </PCCPortal>
+  );
+};
+
+interface ImpersonationConfirmModalProps {
+  target: any;
+  onClose: () => void;
+  onShowToast: (msg: string, type: 'success' | 'error' | 'info') => void;
+}
+
+const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({ 
+  target, 
+  onClose, 
+  onShowToast 
+}) => {
+  const [impersonating, setImpersonating] = useState(false);
+  const [privacyMirror, setPrivacyMirror] = useState(true);
+
+  if (!target) return null;
+
+  const handleCommenceMirroring = async () => {
+    setImpersonating(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const res = await fetch(`${apiUrl}/api/pcc/admin/users/${target.id}/impersonate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (data.token && data.impersonationContext) {
+        const { householdId, profile, globalRole } = data.impersonationContext;
+        onShowToast(`Identity mirrored: Accessing as ${profile.display_name}`, 'success');
+        
+        // Persona Synchronization
+        localStorage.setItem('ledger_token', data.token);
+        localStorage.setItem('ledger_user', JSON.stringify(profile));
+        localStorage.setItem('ledger_global_role', globalRole || 'user');
+        localStorage.setItem('ledger_household_id', householdId);
+        localStorage.setItem('ledger_impersonation_active', 'true');
+        localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
+        
+        window.location.href = '/#/dashboard';
+        window.location.reload();
+      } else {
+        throw new Error(data.error || 'Mirroring failed');
+      }
+    } catch (err: any) {
+      onShowToast(err.message || 'Impersonation protocol failed', 'error');
+    } finally {
+      setImpersonating(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={!!target}
+      onClose={onClose}
+      title="Confirm Identity Mirroring"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button 
+            variant="primary" 
+            className="bg-purple-600 hover:bg-purple-700 text-white" 
+            disabled={impersonating}
+            onClick={handleCommenceMirroring}
+          >
+            {impersonating ? 'Mirroring...' : 'Commence Identity Mirroring'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-6">
+        <div className="flex items-center gap-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-500">
+            <Monitor size={24} />
+          </div>
+          <div>
+            <p className="text-sm font-black uppercase text-white tracking-widest">{target.display_name || target.username}</p>
+            <p className="text-[10px] font-mono text-purple-400">{target.email}</p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-black uppercase text-white tracking-widest">Privacy Mirroring</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Mask sensitive PII and financial data during this session</p>
+            </div>
+            <button 
+              onClick={() => setPrivacyMirror(!privacyMirror)}
+              className={`w-12 h-6 rounded-full transition-all relative ${privacyMirror ? 'bg-emerald-500' : 'bg-slate-700'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${privacyMirror ? 'left-7' : 'left-1'}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
+          <ShieldAlert size={16} className="text-orange-500 mt-0.5 shrink-0" />
+          <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-widest leading-relaxed">
+            Administrative Warning: You are about to mirror a live user session. All actions taken will be recorded in the forensic audit trails under your administrative ID.
+          </p>
+        </div>
+      </div>
+    </Modal>
   );
 };
 

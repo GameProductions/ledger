@@ -1,0 +1,31 @@
+# Project Rules & Standards
+
+## Technology Stack & Infrastructure
+- **Core**: HTML, Javascript (logic), Vanilla CSS (animations/micro-interactions).
+- **Architecture**: Modular and scalable.
+- **Backend/Hosting**: ALWAYS use the Cloudflare ecosystem (**D1, KV, Workers, Pages, Durable Objects, R2**).
+- **Configuration**: Strictly use **wrangler.jsonc**. Never use `wrangler.toml`.
+- **Domain**: All bots and PWAs use the **gpnet.dev** custom domain unless specified otherwise.
+- **Distribution**: All apps must be set up as Progressive Web Apps (PWA).
+- **Authentication**: Native support for Discord Integration and OAuth 2.0 Sign-in.
+
+## DevOps & Version Control
+- **Source Control**: GitHub (**GameProductions/** organization).
+- **Container Registry**: Docker Hub (**morenicano/** user).
+- **Hosting**: Cloudflare Pages/Workers.
+- **Secrets Management**: Place app secrets in GitHub Secrets; they must be automatically pushed/accessible to Cloudflare.
+- **Commit Messages**: 
+    - Prefix the description with the version number (e.g., `v1.2.3: Description`).
+    - Provide full details of all changes since the last commit.
+
+## Workflow & Documentation
+- **Project Planning**: Always keep the implementation plans synced with the linked GitHub Project board.
+- **Approval Process**: If a question is asked, ALWAYS confirm with the user before making changes to ensure the request is understood perfectly.
+- **Naming**: Use descriptive, premium-feeling names for components and variables.
+
+## Design Aesthetics (Premium UX)
+- **Communications**: ALWAYS create **dismissable toasts** for any type of site-to-user communication. **NEVER** use browser-native notifications.
+- **Visuals**: Use vibrant colors, dark modes, glassmorphism, and smooth gradients.
+- **Animations**: Implement subtle micro-animations for interactions.
+- **Typography**: Modern fonts (Inter, Outfit, etc.) over browser defaults.
+- **No Placeholders**: Use generated assets or real data, never "lorem ipsum" or dummy boxes.

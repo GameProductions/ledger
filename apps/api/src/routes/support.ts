@@ -11,7 +11,7 @@ const SupportIssueSchema = z.object({
   description: z.string().min(10),
   category: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 })
 
 support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {

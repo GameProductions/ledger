@@ -334,7 +334,7 @@ financials.get('/transactions/:id/receipt', async (c) => {
   object.writeHttpMetadata(headers)
   headers.set('etag', object.httpEtag)
 
-  return new Response(object.body, { headers })
+  return new Response(object.body as any, { headers })
 })
 
 // Transfers

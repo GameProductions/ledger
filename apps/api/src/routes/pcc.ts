@@ -11,9 +11,10 @@ import {
   UpdateUserAdminSchema,
   CreateUserAdminSchema
 } from '../schemas'
+import { EmailService } from '../services/email.service'
+import { hashPassword } from '../auth-utils'
 import { logAudit } from '../utils'
 import { CURRENT_VERSION } from '../constants'
-import { hashPassword } from '../auth-utils'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
 
@@ -96,7 +97,7 @@ pcc.get('/users', async (c) => {
 pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) => {
   if (!result.success) {
     console.error('[Provisioning Validation Failed]', result.error)
-    return c.json({ success: false, error: result.error.format() }, 400)
+    return c.json({ success: false, error: result.error }, 400)
   }
 }), async (c) => {
   const data = c.req.valid('json')
@@ -541,10 +542,14 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
     const authService = new AuthService(c.env)
     const token = await authService.generateToken(userId, targetHouseholdId, adminId)
     
-    await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', {}, { 
-      target_name: (target as any).display_name,
-      target_household_id: targetHouseholdId
-    })
+    await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', 
+      { actor_id: adminId, target_email: (target as any).email }, 
+      { 
+        target_name: (target as any).display_name,
+        target_household_id: targetHouseholdId,
+        action: 'IDENTITY_MIRROR_COMMENCED'
+      }
+    )
     
     return c.json({ 
       success: true, 

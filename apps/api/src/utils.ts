@@ -6,8 +6,8 @@ export const logAudit = async (
   tableName: string, 
   recordId: string, 
   action: string, 
-  oldData: any, 
-  newData: any
+  oldData: any = null, 
+  newData: any = null
 ) => {
   const id = crypto.randomUUID()
   const householdId = c.get('householdId') || 'system'
@@ -41,7 +41,7 @@ export const encrypt = async (text: string, key: string) => {
   const encrypted = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv }, encodedKey, encoder.encode(text)
   )
-  return `${btoa(String.fromCharCode(...iv))}.${btoa(String.fromCharCode(...new Uint8Array(encrypted)))}`
+  return `${Buffer.from(iv).toString('base64')}.${Buffer.from(new Uint8Array(encrypted)).toString('base64')}`
 }
 
 export const decrypt = async (encryptedData: string, key: string) => {
@@ -51,8 +51,8 @@ export const decrypt = async (encryptedData: string, key: string) => {
     const encodedKey = await crypto.subtle.importKey(
       'raw', encoder.encode(key), { name: 'AES-GCM' }, false, ['decrypt']
     )
-    const iv = new Uint8Array(atob(ivBase64).split('').map(c => c.charCodeAt(0)))
-    const content = new Uint8Array(atob(contentBase64).split('').map(c => c.charCodeAt(0)))
+    const iv = Buffer.from(ivBase64, 'base64')
+    const content = Buffer.from(contentBase64, 'base64')
     const decrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv }, encodedKey, content
     )

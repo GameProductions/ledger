@@ -189,7 +189,7 @@ app.use('/api/*', async (c, next) => {
     const config = await c.env.DB.prepare('SELECT config_value FROM system_config WHERE config_key = ?')
       .bind('MAINTENANCE_MODE').first() as any
     if (config?.config_value === 'true') {
-      const user = c.get('user') as any
+      const user = c.get('userId') as any
       if (user?.global_role !== 'super_admin') {
         return c.json({ 
           error: 'System Maintenance in Progress', 

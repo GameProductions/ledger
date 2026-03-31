@@ -52,7 +52,7 @@ backup.get('/export', async (c) => {
 
 // 🛑 RESTORE: Atomic Ingestion Protocol
 backup.post('/restore', zValidator('json', z.object({
-  data: z.record(z.array(z.any()))
+  data: z.record(z.string(), z.array(z.any()))
 })), async (c) => {
   const householdId = c.get('householdId')
   const { data } = c.req.valid('json')

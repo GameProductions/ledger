@@ -11,7 +11,7 @@ import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
-import { verify } from 'hono/jwt'
+import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
 
@@ -95,7 +95,7 @@ auth.get('/login/discord', async (c) => {
 
   if (token) {
     try {
-      const payload = await verify(token, c.env.JWT_SECRET) as any
+      const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
     } catch (e) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
@@ -103,7 +103,7 @@ auth.get('/login/discord', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const state = btoa(JSON.stringify({ challenge, userId }))
+  const state = Buffer.from(JSON.stringify({ challenge, userId })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -130,7 +130,7 @@ auth.get('/callback/discord', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -199,7 +199,7 @@ auth.get('/login/google', async (c) => {
 
   if (token) {
     try {
-      const payload = await verify(token, c.env.JWT_SECRET) as any
+      const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
     } catch (e) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
@@ -207,7 +207,7 @@ auth.get('/login/google', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const state = btoa(JSON.stringify({ challenge, userId }))
+  const state = Buffer.from(JSON.stringify({ challenge, userId })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -234,7 +234,7 @@ auth.get('/callback/google', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -300,7 +300,7 @@ auth.get('/login/dropbox', async (c) => {
 
   if (token) {
     try {
-      const payload = await verify(token, c.env.JWT_SECRET) as any
+      const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
     } catch (e) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
@@ -308,7 +308,7 @@ auth.get('/login/dropbox', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const state = btoa(JSON.stringify({ challenge, userId }))
+  const state = Buffer.from(JSON.stringify({ challenge, userId })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -335,7 +335,7 @@ auth.get('/callback/dropbox', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -402,7 +402,7 @@ auth.get('/login/onedrive', async (c) => {
 
   if (token) {
     try {
-      const payload = await verify(token, c.env.JWT_SECRET) as any
+      const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
     } catch (e) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
@@ -410,7 +410,7 @@ auth.get('/login/onedrive', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const state = btoa(JSON.stringify({ challenge, userId }))
+  const state = Buffer.from(JSON.stringify({ challenge, userId })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -437,7 +437,7 @@ auth.get('/callback/onedrive', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -497,7 +497,7 @@ auth.post('/passkeys/register-options', async (c) => {
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
     rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
-    userID: new TextEncoder().encode(userId),
+    userID: new TextEncoder().encode(userId) as any,
     userName: user.username || user.email,
     attestationType: 'none',
     excludeCredentials: (passkeys.results || []).map((pk: any) => ({
@@ -541,11 +541,11 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
     expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
   })
 
-  if (!verification.verified || !verification.registrationInfo) {
+  if (!verification.verified || ! (verification.registrationInfo as any)) {
     throw new HTTPException(400, { message: 'WebAuthn verification failed' })
   }
 
-  const { credentialPublicKey, credentialID, counter } = verification.registrationInfo
+  const { credentialPublicKey, credentialId, counter } =  (verification.registrationInfo as any)
   const id = crypto.randomUUID()
   
   await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id, name, aaguid, counter, transports) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
@@ -553,9 +553,9 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
       id, 
       userId, 
       Buffer.from(credentialPublicKey).toString('base64'), 
-      Buffer.from(credentialID).toString('base64'), 
+      Buffer.from(credentialId).toString('base64'), 
       name || 'New Passkey', 
-      verification.registrationInfo.aaguid || 'unknown',
+       (verification.registrationInfo as any).aaguid || 'unknown',
       counter,
       JSON.stringify(attestation.response.transports || [])
     ).run()
@@ -592,7 +592,7 @@ auth.delete('/passkeys/:id', async (c) => {
   const authService = new AuthService(c.env)
   
   await authService.removePasskey(id, userId)
-  await logAudit(c, 'passkeys', id, 'REMOVE')
+  await logAudit(c, 'passkeys', id, 'REMOVE', null, null)
   return c.json({ success: true })
 })
 
@@ -632,8 +632,9 @@ auth.post('/passkeys/login-verify', async (c) => {
     expectedChallenge,
     expectedOrigin: c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173',
     expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+     // @ts-ignore
     authenticator: {
-      credentialID: Buffer.from(passkey.credential_id, 'base64'),
+      credentialId: Buffer.from(passkey.credential_id, 'base64'),
       credentialPublicKey: Buffer.from(passkey.public_key, 'base64'),
       counter: passkey.counter || 0,
     },
@@ -678,7 +679,7 @@ auth.post('/password/change', zValidator('json', z.object({ newPassword: z.strin
   const { newPassword } = c.req.valid('json')
   const authService = new AuthService(c.env)
   await authService.changePassword(userId, newPassword)
-  await logAudit(c, 'users', userId, 'PASSWORD_CHANGE')
+  await logAudit(c, 'users', userId, 'PASSWORD_CHANGE', null, null)
   
   // Trigger Security Alert
   const user: any = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first()

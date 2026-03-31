@@ -210,7 +210,7 @@ user.post('/households/join', zValidator('json', JoinHouseholdSchema), async (c)
   // 3. Join
   await c.env.DB.batch([
     c.env.DB.prepare('INSERT INTO user_households (user_id, household_id, role) VALUES (?, ?, ?)').bind(userId, invite.household_id, 'member'),
-    c.env.DB.prepare('UPDATE household_invites SET status = "accepted" WHERE id = ?').bind(token).run()
+    c.env.DB.prepare('UPDATE household_invites SET status = "accepted" WHERE id = ?').bind(token)
   ])
   
   await logAudit(c, 'households', invite.household_id, 'JOIN_VIA_INVITE', null, { userId })

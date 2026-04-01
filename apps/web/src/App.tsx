@@ -5,6 +5,12 @@ import { CurrencyProvider } from './context/CurrencyContext'
 import { OnboardingProvider } from './context/OnboardingContext'
 import { ToastProvider } from './context/ToastContext'
 import { GlobalLayout } from './components/layout/GlobalLayout'
+import { Toaster } from './components/foundation/common/Toaster'
+import { IdentityHead } from './components/foundation/common/IdentityHead'
+import { OnboardingTour } from './components/foundation/help/OnboardingTour'
+import { HelpCenter as FoundationHelp } from './components/foundation/help/HelpCenter'
+import { UserManager } from './components/foundation/admin/UserManager'
+import logo from './assets/logo.svg'
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
@@ -76,7 +82,7 @@ const AppContent: React.FC = () => {
       if (path === '#/system-pcc/dashboard') return <PCCDashboard />
       if (path === '#/system-pcc/config') return <PCCConfig />
       if (path === '#/system-pcc/registry') return <PCCData />
-      if (path === '#/system-pcc/users') return <PCCUsers />
+      if (path === '#/system-pcc/users') return <UserManager appId="ledger" />
       if (path === '#/system-pcc/households') return <PCCHouseholds />
       if (path === '#/system-pcc/search') return <PCCSearch />
       if (path === '#/system-pcc/audit') return <PCCAudit />
@@ -106,9 +112,17 @@ const AppContent: React.FC = () => {
 
   return (
     <GlobalLayout>
+      <IdentityHead 
+        appName="Ledger" 
+        appDescription="Forensic financial sovereignty and multi-household budget management." 
+        appLogo={logo} 
+      />
       <Suspense fallback={null}>
         {renderView()}
       </Suspense>
+      <Toaster position="bottom-right" />
+      <OnboardingTour appId="ledger" />
+      <FoundationHelp appId="ledger" />
     </GlobalLayout>
   )
 }

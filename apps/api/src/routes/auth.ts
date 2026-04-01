@@ -14,6 +14,7 @@ import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
+import { Buffer } from 'node:buffer'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 

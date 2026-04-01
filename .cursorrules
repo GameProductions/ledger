@@ -1,31 +1,125 @@
-# Project Rules & Standards
+# GameProductions Global Laws & Standards
 
-## Technology Stack & Infrastructure
-- **Core**: HTML, Javascript (logic), Vanilla CSS (animations/micro-interactions).
-- **Architecture**: Modular and scalable.
-- **Backend/Hosting**: ALWAYS use the Cloudflare ecosystem (**D1, KV, Workers, Pages, Durable Objects, R2**).
-- **Configuration**: Strictly use **wrangler.jsonc**. Never use `wrangler.toml`.
-- **Domain**: All bots and PWAs use the **gpnet.dev** custom domain unless specified otherwise.
-- **Distribution**: All apps must be set up as Progressive Web Apps (PWA).
-- **Authentication**: Native support for Discord Integration and OAuth 2.0 Sign-in.
+This document serves as the absolute source of truth for all projects within the GameProductions organization. All AI interactions and development must adhere to these standards.
 
-## DevOps & Version Control
-- **Source Control**: GitHub (**GameProductions/** organization).
-- **Container Registry**: Docker Hub (**morenicano/** user).
-- **Hosting**: Cloudflare Pages/Workers.
-- **Secrets Management**: Place app secrets in GitHub Secrets; they must be automatically pushed/accessible to Cloudflare.
-- **Commit Messages**: 
-    - Prefix the description with the version number (e.g., `v1.2.3: Description`).
-    - Provide full details of all changes since the last commit.
+## 1. Cloudflare-First Infrastructure
+- **Stack**: Projects must use Cloudflare's native serverless stack: Workers, Pages, D1 (SQL), KV (Key-Value), R2 (Storage), Durable Objects (State), and Queues (Background tasks).
+- **Product Alignment**: All features must use the specific Cloudflare product that supports it (e.g., D1 for SQL, KV for caching).
+- **Apps as PWA**: All applications are set up as Progressive Web Apps (PWA) by default.
+- **Configuration**: Use `wrangler.jsonc` exclusively. Never use `wrangler.toml`.
+- **Infrastructure as Code**: All bindings and environment variables must be defined in `wrangler.jsonc`.
 
-## Workflow & Documentation
-- **Project Planning**: Always keep the implementation plans synced with the linked GitHub Project board.
-- **Approval Process**: If a question is asked, ALWAYS confirm with the user before making changes to ensure the request is understood perfectly.
-- **Naming**: Use descriptive, premium-feeling names for components and variables.
+## 2. Path-Based Routing Architecture
+- **Domain Pattern**: Every project is assigned a sub-domain on `gpnet.dev` (e.g., `project-name.gpnet.dev`).
+- **Unified Hono Router**: Use a single Hono entry point to handle all traffic.
+- **Path Branching**: 
+  - `/api/*`: Reserved for bot logic, webhooks, and backend API.
+  - `/*`: Reserved for the PWA (frontend) and static assets.
+- **CORS**: Strict CORS policies allowing only the project's own domain and authorized local development origins.
 
-## Design Aesthetics (Premium UX)
-- **Communications**: ALWAYS create **dismissable toasts** for any type of site-to-user communication. **NEVER** use browser-native notifications.
-- **Visuals**: Use vibrant colors, dark modes, glassmorphism, and smooth gradients.
-- **Animations**: Implement subtle micro-animations for interactions.
-- **Typography**: Modern fonts (Inter, Outfit, etc.) over browser defaults.
-- **No Placeholders**: Use generated assets or real data, never "lorem ipsum" or dummy boxes.
+## 3. Database & Persistence (SQL)
+- **Standard**: Use the native Cloudflare D1 client (`c.env.DB`).
+- **ORM Policy**: Drizzle ORM is allowed for complex schemas but is **not a requirement**. Prefer lightweight SQL wrappers or direct D1 calls for simple bots.
+- **Migrations**: Maintain a `migrations/` directory managed via Wrangler. 
+- **Schema Management**: Always import the database schema whenever changes are made to ensure the local environment and implementation plans stay up to date.
+
+## 4. User & Identity Management
+- **Account Creation**: Always generate a random hash as the primary user ID first. Then, link 3rd-party SSO (Discord, Google, etc.) to that hash.
+- **Security Standard (v1.2.0)**:
+  - **Hashing**: Use PBKDF2 with **100,000 iterations** for all password hashing (native Cloudflare Worker limit).
+  - **Biometrics**: Native **WebAuthn (Passkeys)** must be supported as the primary login method for modern devices.
+- **Role Hierarchy**: 
+  - **Super Admin**: Full global control via the **God Mode** portal (`GodMode`).
+  - **Admin**: Project-specific administrative access.
+  - **Mod**: Content moderation and user management.
+  - **User**: Standard access.
+- **User Management**: Always include full CRUD for user management, accessible to Mods and above.
+- **God Mode (`GodMode`)**:
+  - **Component**: Create a separate, secure portal named `GodMode` for Super Admins.
+  - **Impersonation**: Must support "View As" mode with a persistent warning header.
+  - **Maintenance**: Must include a master toggle for **Maintenance Mode**.
+  - **Audit Logging**: Every action in `GodMode` must be logged to a central audit trail.
+
+
+## 5. UI/UX Standards (v1.2.0)
+- **PWA Status**: All applications must be fully progressive and configured as a Progressive Web App (PWA).
+- **High-Fidelity Utilities**:
+    - **Scrollable Lists**: Use a standardized `.scrollable-list` class with `max-height: 65vh; overflow-y: auto; overflow-x: hidden;`.
+    - **Custom Scrollbars**: Implement a sleek, custom-designed scrollbar for all scrollable containers.
+- **Onboarding**: Every new project MUST include a high-fidelity **Guided Tour** component for first-time users.
+- **Landing Page**: Must comply with Google’s safety rules to avoid "dangerous site" classification and ensure permission approval for account linking.
+- **Microsoft Verification**: Always include support for the `./well-known` verification process.
+- **Floating Header**: 
+  - Left-aligned: App Logo + App Name.
+  - Right-aligned: User drop-down menu with the signed-in user's avatar.
+  - Interaction: This is the mandatory header style unless otherwise requested.
+- **Universal Footer**: 
+  - Content: - Top Row: App Name + Version (Left), Legal Links (Right).
+  - Bottom Row: `[Current Year] GameProductions™. All rights reserved.` (Centered).
+  - Interaction: This is the mandatory footer style for every application.
+- **Notifications**: Dismissable toasts only. Do NOT use browser alerts or non-dismissable popups for system feedback.
+
+## 6. Local Development & Deployment
+- **Local-First Testing**: Mandatory local testing before any deployment. Never publish blindly to the remote site.
+- **Remote DB Binding**: Use `wrangler dev --remote` (or equivalent) to connect the local development environment to the live Cloudflare D1 database. Functional testing must reflect real-world data states.
+- **Publishing Workflow**: Standard cycle is: Local Test -> User Confirmation -> Commit (with version) -> Publish to Cloudflare.
+- **Mandatory Confirmation**: If a question is asked, always confirm with the user before making any non-trivial changes to ensure the request is understood correctly and carried out as intended.
+- **Refactoring Policy**: Keep PWAs and databases modular. Avoid large, monolithic files. If a component grows too large, proactively suggest refactoring options. **Never refactor without user confirmation.**
+
+## 7. Development & DevOps
+- **Version Control**: GitHub (`GameProductions/`) for all code management.
+- **CI/CD**: Use GitHub Actions to automatically deploy code and app secrets to Cloudflare.
+- **Commits**: 
+  - Prefix description with the version number (e.g., `v1.2.3: Add feature X`).
+  - **Versioning Logic**: 
+    - **Major (X.0.0)**: Requires explicit approval before increasing.
+    - **Minor (0.X.0)**: Increased for new features.
+    - **Patch (0.0.X)**: Increased for fixes and minor adjustments.
+  - Provide full details of all changes since the last commit.
+- **Secrets Management**: Place app secrets in GitHub Secrets; they are pushed to Cloudflare from there.
+- **Discord Integration**: Support Discord integration and OAuth2 sign-in by default.
+- **Architecture**: Keep apps modular and scalable.
+- **CLI Maintenance**: Always keep organizational tools like GitHub CLI (`gh`), `wrangler`, and other CLI utilities updated to their latest stable versions.
+- **Security & Hardening**:
+  - Maintain absolute health for Dependabot, vulnerability monitoring, and security hardening.
+  - Proactively address and resolve any security concerns or vulnerability alerts as soon as they are detected.
+- **Project Synchronization**:
+  - Always maintain an `implementation_plan.md` and sync it with the linked GitHub Project.
+  - **No Linked Project?**: Proactively offer two options:
+    1. **Create New Project**: Use the `feature release` template and name it exactly after the project (no additional text).
+    2. **Link Existing Project**: Ask for the project number, then construct the URL: `https://github.com/orgs/GameProductions/projects/<NUMBER>`.
+  - **Syncing Process**: Always synchronize the entire history of the project from its inception.
+
+## 8. Project Initialization
+- All new projects must be initialized using the standardized `create-project.md` workflow.
+- **Legacy Migration**: Before migrating any existing projects to the new organization-wide formats (Cloudflare-First, PWA, etc.), you must receive **manual approval**.
+- **Proactive Alert**: If you access a project that has not yet been updated to the foundation standards, you must immediately notify the user.
+
+## 9. Tone, Branding, & Premium UX (v1.2.0)
+- **Word Choice**: 
+  - **God Mode** is the only allowed jargon/themed term for administrative portals.
+  - Avoid all other themed wording, catchphrases, or technical jargon unless specifically requested.
+  - Use a clean, professional, and minimalist tone for all UI copy.
+- **Branding**:
+  - **GameProductions** copyright tag MUST be a permanent, visible fixture in the footer of every app.
+  - **Logo & Title**: The header and browser tab must feature the specific **App Logo** and **App Name** only (e.g., "GloBot") with NO organizational prefix.
+  - **Identity Assets**: Always use the **App's Logo** for the favicon, OG (Open Graph) metadata, and home screen shortcut icons (PWA).
+- **Versioning Policy**:
+  - Do NOT include versions in headers, browser tabs, or main UI surfaces.
+  - **Visible Locations**: Versions are ONLY permitted in:
+    - The App Footer.
+    - "What's New" areas or update prompts.
+  - **Internal Locations**: Versions MUST be included in all history/audit logs, including the `synced projects lists`.
+- **Dynamic Navigation (Logo Shortcut)**:
+  - While **Signed Out**: The header logo MUST link to the site's **Landing Page**.
+  - While **Signed In**: The header logo MUST link to the authenticated **Member Home**.
+- **Motion & Onboarding**:
+  - Every app must include a high-fidelity **Loading Screen** during initialization.
+  - A **Welcome Animation** must play immediately following a successful sign-in.
+  - All charts and analytics must support dynamic updates with smooth animations.
+- **Fluid Responsiveness**:
+  - Layouts must natively adjust based on the **amount of visible space** currently available, rather than just relying on fixed device breakpoints.
+- **Accessibility**:
+  - Every project's User Settings must include a dedicated **Accessibility** module (Contrast, Font Scaling, Reduced Motion).
+
+

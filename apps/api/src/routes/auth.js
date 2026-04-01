@@ -8,6 +8,7 @@ import { setSignedCookie, getSignedCookie } from 'hono/cookie';
 import { verify as jwtVerify } from 'hono/jwt';
 import { HTTPException } from 'hono/http-exception';
 import { EmailService } from '../services/email.service';
+import { Buffer } from 'node:buffer';
 const auth = new Hono();
 // Pass loginAudit as a parameter to handlers if needed, or handle it here
 // Since logAudit is in index.ts, we might need to pass it or move it to a utility

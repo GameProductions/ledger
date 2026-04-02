@@ -37,3 +37,14 @@ yarn-error.log*
 .idea
 *.swp
 *.swo
+
+# Ignore deep incremental background logs in history archives
+**/docs/history/**/.system_generated/
+
+# Ignore deep incremental background logs in history archives
+**/docs/history/**/.system_generated/
+
+# System Noise
+.DS_Store
+Thumbs.db
+.vscode/

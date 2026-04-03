@@ -3,7 +3,6 @@ name: LEDGER CI/CD Pipeline 🛡️🧬🏺
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -20,17 +19,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: 'npm'
       - name: Install Dependencies
         run: npm install
-      - name: 🛡️ Audit & Lint
-        run: npm run lint --if-present
-      - name: 🧬 Type Check
+      - name: 🧬 Build Check
         run: npm run build --if-present
 
-  deploy-api:
-    name: 🚀 Deploy API (Cloudflare Workers)
+  deploy-unified:
+    name: 🚀 Deploy Unified Worker (Cloudflare)
     needs: ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -48,9 +45,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
-          workingDirectory: "apps/api"
-          wranglerVersion: "4.78.0"
-          command: deploy --minify
+          command: deploy --config wrangler.jsonc --minify
 
       - name: 🔐 Sync Secrets to Cloudflare
         run: |
@@ -60,7 +55,6 @@ jobs:
               echo "$value" | npx wrangler secret put "$secret"
             fi
           done
-        working-directory: apps/api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -74,92 +68,3 @@ jobs:
           DROPBOX_CLIENT_SECRET: ${{ secrets.DROPBOX_CLIENT_SECRET }}
           ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
           ONEDRIVE_CLIENT_SECRET: ${{ secrets.ONEDRIVE_CLIENT_SECRET }}
-
-  deploy-web:
-    name: 🌌 Deploy Web (Cloudflare Pages)
-    needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install & Build
-        run: |
-          npm install
-          npm run build -w apps/web
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: "a5b3081992c9b5b608c5a39fea5a18d0"
-          workingDirectory: "apps/web"
-          command: pages deploy dist --project-name=ledger-web
-
-  release:
-    name: 🏺 Forensic Release (Docker Hub)
-    needs: ci
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            morenicano/ledger
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-             VITE_API_URL=/api
-
-  release-gh:
-    name: 🏺 GitHub Forensic Release
-    needs: ci
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-          body: |
-            ### LEDGER v3.0.0: The Evolutionary Leap 🛡️🧬🏺
-            This major release transitions the LEDGER platform into a state-of-the-art domain-driven modular architecture.
-            
-            #### 🚀 Major Architectural Enhancements
-            - **Domain-Driven Modularization**: Completely decoupled core system logic into specialized route, service, and middleware modules.
-            - **Root-Domain Routing**: Support for root-domain verification (e.g., Microsoft Identity Association) and a flexible API gateway.
-            - **Centralized Validation**: Unified Zod schema management across the entire platform.
-            - **Durable State Sovereignty**: Refined Durable Object architecture for persistent rate limiting and secure session management.
-            - **Forensic Interoperability**: Advanced analytics, reporting, and developer-centric integration hubs.
-            
-            Establishing the next generation of sovereign financial infrastructure.

@@ -272,10 +272,3 @@ app.onError((err, c) => {
     stack: isProduction ? undefined : err.stack
   }, (err as any).status || 500)
 })
-
-export default {
-  fetch: app.fetch,
-  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
-    await handleScheduled(event, env, ctx)
-  }
-}

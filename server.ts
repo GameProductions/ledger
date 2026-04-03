@@ -2,7 +2,9 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 // @ts-expect-error - __STATIC_CONTENT_MANIFEST is provided at build time
 import manifest from '__STATIC_CONTENT_MANIFEST';
-import apiApp from './src/api/index';
+import { app as apiApp } from './src/api/index';
+import { handleScheduled } from './src/api/cron';
+import { Bindings } from './src/api/types';
 
 /**
  * Foundation v2.0.0: Unified Entry Point (Ledger)
@@ -45,7 +47,7 @@ export { HouseholdSession, Vault, RateLimiter } from './src/api/durable-objects'
 
 export default {
   fetch: app.fetch,
-  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
-    await apiApp.scheduled(event, env, ctx)
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    await handleScheduled(event, env, ctx)
   }
 };

@@ -82,7 +82,7 @@ const AppContent: React.FC = () => {
       if (path === '#/system-pcc/dashboard') return <PCCDashboard />
       if (path === '#/system-pcc/config') return <PCCConfig />
       if (path === '#/system-pcc/registry') return <PCCData />
-      if (path === '#/system-pcc/users') return <UserManager appId="ledger" />
+      if (path === '#/system-pcc/users') return <PCCUsers />
       if (path === '#/system-pcc/households') return <PCCHouseholds />
       if (path === '#/system-pcc/search') return <PCCSearch />
       if (path === '#/system-pcc/audit') return <PCCAudit />

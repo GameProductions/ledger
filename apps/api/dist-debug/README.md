@@ -1,1 +1,0 @@
-This folder contains the built output assets for the worker "ledger-api" generated at 2026-03-28T16:16:01.172Z.

@@ -1,11 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ledger",
+  "name": "ledger-api",
   "main": "server.ts",
   "compatibility_date": "2025-01-01",
   "compatibility_flags": ["nodejs_compat"],
   "site": {
-    "bucket": "./apps/web/dist"
+    "bucket": "./dist"
   },
   "routes": [
 		{

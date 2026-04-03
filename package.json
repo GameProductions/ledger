@@ -16,6 +16,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "discord-interactions": "^4.3.0",
+    "driver.js": "^1.4.0",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
     "hono": "^4.12.9",

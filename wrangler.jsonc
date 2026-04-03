@@ -8,10 +8,10 @@
     "bucket": "./apps/web/dist"
   },
   "routes": [
-    {
-      "pattern": "ledger.gpnet.dev/*",
-      "custom_domain": true
-    }
+		{
+			"pattern": "ledger.gpnet.dev",
+			"custom_domain": true
+		}
   ],
   "d1_databases": [
     {

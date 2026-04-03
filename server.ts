@@ -40,6 +40,12 @@ app.get('*', async (c) => {
   return serveStatic({ path: 'index.html', manifest })(c, async () => {});
 });
 
+// 5. Durable Object Exports (Required for Cloudflare Orchestration)
+export { HouseholdSession, Vault, RateLimiter } from './src/api/durable-objects'
+
 export default {
-  fetch: app.fetch
+  fetch: app.fetch,
+  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
+    await apiApp.scheduled(event, env, ctx)
+  }
 };

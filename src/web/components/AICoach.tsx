@@ -39,7 +39,7 @@ const AICoach: React.FC = () => {
     <section className="card" style={{ gridColumn: 'span 1', display: 'flex', flexDirection: 'column', height: '400px' }}>
       <h3 style={{ marginBottom: '1rem' }}>💬 AI Financial Coach</h3>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.8rem', paddingRight: '0.5rem' }}>
-        {messages.map((m, i) => (
+        {messages?.map((m, i) => (
           <div key={i} style={{ 
             alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
             background: m.role === 'user' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',

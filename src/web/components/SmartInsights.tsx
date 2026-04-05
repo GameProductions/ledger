@@ -8,7 +8,7 @@ const SmartInsights: React.FC<{ insights: string[] }> = ({ insights }) => {
         <h3 style={{ margin: 0 }}>Smart Insights</h3>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-        {insights.map((insight, i) => (
+        {insights?.map((insight, i) => (
           <div key={i} style={{ fontSize: '0.9rem', padding: '0.6rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem', borderLeft: '3px solid var(--primary)' }}>
             {insight}
           </div>

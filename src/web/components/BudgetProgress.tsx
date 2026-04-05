@@ -17,7 +17,7 @@ const BudgetProgress: React.FC = () => {
         </span>
       </div>
       <div style={{ display: 'grid', gap: '1.5rem' }}>
-        {budgets.map((budget: any) => {
+        {budgets?.map((budget: any) => {
           const totalAvailable = (budget.monthly_budget_cents || 0) + (budget.envelope_balance_cents || 0)
           const progress = Math.min((budget.spend_cents / totalAvailable) * 100, 100)
           

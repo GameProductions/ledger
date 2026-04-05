@@ -1,6 +1,7 @@
-export const CURRENT_VERSION = 'v3.19.6'
+export const CURRENT_VERSION = 'v3.19.8'
 
 export const VERSION_UPDATES = [
+  { version: 'v3.19.8', title: 'Resilience Hardening', description: 'Resolved frontend crashes by implementing null-safe iteration guards and robust fallback patterns for API data mapping.' },
   { version: 'v3.19.6', title: 'Integrity Certification (Stable)', description: 'Certified total platform stability following the 401 Unauthorized regression resolution. Implemented terminal routing and integrity headers.' },
   { version: 'v3.19.5', title: 'Asset Restoration & Routing Finality', description: 'Restored missing favicon.ico and hardened entry point routing to prevent asset-fallthrough into protected API paths.' },
   { version: 'v3.19.4', title: 'Ghost Protocol Neutralization', description: 'Purged stale JavaScript artifacts and synchronized release baseline to resolve the persistent 401 Unauthorized regression for public assets.' },

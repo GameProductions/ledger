@@ -211,7 +211,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       <AnimatePresence>
         {announcements && announcements.length > 0 && (
           <div className="mb-8 space-y-4">
-            {announcements.map((ann: any) => (
+            {Array.isArray(announcements) && announcements.map((ann: any) => (
               <motion.div 
                 key={ann.id}
                 initial={{ opacity: 0, y: -20 }}
@@ -608,7 +608,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-xs text-primary font-black uppercase tracking-[0.2em] mb-3">Matches</div>
                 <div className="space-y-2">
                   {Array.isArray(smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates) && 
-                    smartSuggestions.find((s: any) => s.source.id === linkingTx.id).candidates.map((t: any) => (
+                  {smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates?.map((t: any) => (
                       <div 
                         key={`suggest-${t.id}`}
                         onClick={async () => {

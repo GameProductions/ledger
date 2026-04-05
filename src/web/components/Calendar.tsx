@@ -25,12 +25,12 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], o
   const paddingDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
   
   const getItemsForDay = (day: number) => {
-    const dayTxs = transactions.filter(tx => {
+    const dayTxs = (Array.isArray(transactions) ? transactions : []).filter(tx => {
       const d = new Date(tx.transaction_date);
       return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
     }).map(tx => ({ ...tx, type: 'transaction' }));
 
-    const dayBills = subscriptions.filter(sub => {
+    const dayBills = (Array.isArray(subscriptions) ? subscriptions : []).filter(sub => {
       const d = new Date(sub.next_billing_date);
       return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
     }).map(sub => ({ ...sub, type: 'subscription', description: sub.name }));

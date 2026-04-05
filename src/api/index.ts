@@ -160,23 +160,7 @@ app.use('/api/*', async (c, next) => {
   await next()
 })
 
-// 4. Authentication Logic
-app.use('*', async (c, next) => {
-  const path = c.req.path
-  const method = c.req.method
-  
-  // Standard Exclusions + Auth Exclusions from constants
-  const isExcluded = AUTH_EXCLUSIONS.some(e => path === e || path === e + '/') || 
-                    path.endsWith('/api/theme/broadcast') ||
-                    path.endsWith('/api/config') ||
-                    path.includes('/debug/') || 
-                    path.includes('/discord/interactions') ||
-                    path.includes('/.well-known/') ||
-                    (method === 'OPTIONS')
-
-  if (isExcluded) return await next()
-  return authMiddleware(c, next)
-})
+// 4. Authentication Protocol (v3.17.3 - Migrated to Targeted Handlers)
 
 // 6. Maintenance Mode Protocol (v3.21) - Forensic Override for Admins
 app.use('/api/*', async (c, next) => {
@@ -246,12 +230,27 @@ ledger.get('/.well-known/microsoft-identity-association.json', msVerification)
 app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
 // 6. Global Route Mounting
+// Targeted Authentication Protocol (v3.17.3)
+ledger.use('/api/*', async (c, next) => {
+  const path = c.req.path
+  const method = c.req.method
+
+  const isPublicApi = path === '/api/config' || path === '/api/theme/broadcast' || (method === 'OPTIONS')
+  if (isPublicApi) return await next()
+  
+  return authMiddleware(c, next)
+})
+
+ledger.use('/auth/profile/*', authMiddleware)
+ledger.use('/auth/totp/*', authMiddleware)
+ledger.use('/auth/vault/*', authMiddleware)
+ledger.use('/api/pcc/*', pccMiddleware)
+
 ledger.route('/auth', authRoutes)
 ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)
 ledger.route('/api/data', dataRoutes)
-ledger.use('/api/pcc*', pccMiddleware)
 ledger.route('/api/pcc', pccRoutes)
 ledger.route('/api/backup', backupRoutes)
 ledger.route('/api/support', supportRoutes)

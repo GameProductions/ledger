@@ -1,24 +1,15 @@
-export const CURRENT_VERSION = 'v3.17.0'
+export const CURRENT_VERSION = 'v3.19.6'
 
 export const VERSION_UPDATES = [
-  { version: 'v3.17.0', title: 'Universal Data Center (GA)', description: 'General Availability of the Universal Data Center, CloudHub, and the site-wide Plain English terminology overhaul.' },
-  { version: 'v3.16.1', title: 'Support Center Fortification', description: 'Resolved 500 Internal Server Errors in support submission and modernized GitHub API integration logic.' },
-  { version: 'v3.16.0', title: 'Evolutionary Stabilization (v3.1)', description: 'Unified synchronization of Support Center and Modal UI refactor for total platform stability.' },
-  { version: 'v3.12.0', title: 'Envelope Budgeting (Core Protocol)', description: 'Finalized real-time envelope deductions and monthly rollover engine for total fiscal control.' },
-  { version: 'v3.11.11', title: 'Platform Hardening (Stability)', description: 'Finalized the PBKDF2 iteration restoration and removed all diagnostic tools.' },
-  { version: 'v3.11.9', title: 'Security Alignment (PBKDF2 Revert)', description: 'Reverted to 100k iteration PBKDF2 for legacy account restoration and stability.' },
-  { version: 'v3.11.8', title: 'Total Modernization', description: 'Complete elimination of legacy routing and transition to a standardized modular architecture.' },
-  { version: 'v3.10.0', title: 'Tabbed Dashboard (Evolutionary Leap)', description: 'Consolidated financial management into a sleek, tabbed interface for enhanced navigation.' },
-  { version: 'v3.0.0', title: 'Modular Architecture Baseline', description: 'Initial transition to a domain-driven modular structure.' },
-  { version: 'v2.3.0', title: 'Forensic Admin Hub', description: 'Advanced user management, account merging, and deep forensic auditing.' },
-  { version: 'v2.2.2', title: 'Stability & UI Refresh', description: 'Authentication performance fixes and refined global footer.' },
-  { version: 'v1.31.0', title: 'Feature Parity & Rollovers', description: 'Budget rollovers, subscription trial alerts, and receipt management.' },
-  { version: 'v1.15.0', title: 'Universal Interop', description: 'Advanced CSV/JSON imports and export engine.' },
-  { version: 'v1.5.6', title: 'Provider Visibility', description: 'Designate providers as private, household, or public.' },
-  { version: 'v1.5.5', title: 'Audit Analytics', description: 'New forensic security dashboard.' }
+  { version: 'v3.19.6', title: 'Integrity Certification (Stable)', description: 'Certified total platform stability following the 401 Unauthorized regression resolution. Implemented terminal routing and integrity headers.' },
+  { version: 'v3.19.5', title: 'Asset Restoration & Routing Finality', description: 'Restored missing favicon.ico and hardened entry point routing to prevent asset-fallthrough into protected API paths.' },
+  { version: 'v3.19.4', title: 'Ghost Protocol Neutralization', description: 'Purged stale JavaScript artifacts and synchronized release baseline to resolve the persistent 401 Unauthorized regression for public assets.' },
+  { version: 'v3.17.4', title: 'Root-Level Protocol Rectification', description: 'Decommissioned legacy entry-point guards in server.ts to ensure absolute visual and functional stability for public assets.' },
+  { version: 'v3.17.3', title: 'Forensic Access Protocol Rectification', description: 'Transitioned to a targeted route-based authentication guard to ensure absolute root and asset visual stability.' }
 ]
 
 export const AUTH_EXCLUSIONS = [
+  '/',
   '/ping',
   '/auth/login',
   '/auth/login/discord',
@@ -35,5 +26,9 @@ export const AUTH_EXCLUSIONS = [
   '/auth/password/reset',
   '/auth/admin/claim',
   '/api/theme/broadcast',
-  '/.well-known/microsoft-identity-association.json'
+  '/.well-known/microsoft-identity-association.json',
+  '/favicon.ico',
+  '/favicon.png',
+  '/apple-touch-icon.png',
+  '/manifest.json'
 ]

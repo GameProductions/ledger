@@ -188,7 +188,7 @@ const UserDetailsModal: React.FC<{
             <div className="pt-8 border-t border-white/5">
                 <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-4">Linked Accounts</label>
                 <div className="flex flex-wrap gap-2">
-                   {details?.social_links?.length > 0 ? details.social_links.map((link: any) => (
+                   {(details?.social_links || []).length > 0 ? (details?.social_links || []).map((link: any) => (
                       <div key={link.provider} title={link.provider} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400">
                          <Globe size={18} />
                       </div>
@@ -208,7 +208,7 @@ const UserDetailsModal: React.FC<{
               </div>
 
               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                 {details.security.passkeys?.length > 0 ? details.security.passkeys.map((pk: any) => (
+                 {(details?.security?.passkeys || []).length > 0 ? (details?.security?.passkeys || []).map((pk: any) => (
                     <div key={pk.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all">
                        <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary">
@@ -310,7 +310,7 @@ const UserDetailsModal: React.FC<{
             </div>
             
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {details?.history?.length > 0 ? details.history.map((log: any, idx: number) => (
+              {(details?.history || []).length > 0 ? (details?.history || []).map((log: any, idx: number) => (
                 <div key={idx} className="relative pl-5 border-l border-white/10 py-1 hover:border-emerald-500 transition-colors">
                   <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-white/10" />
                   <div className="text-xs font-black uppercase text-slate-300 tracking-tight">{log.action?.replace(/_/g, ' ')?.replace('ADMIN ', '') || 'OPERATION'}</div>
@@ -737,7 +737,7 @@ const PCCUsers: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {filteredUsers.map(u => (
+            {(filteredUsers || []).map(u => (
               <tr key={u.id} className="hover:bg-white/[0.03] transition-colors group relative">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">

@@ -118,8 +118,8 @@ const PCCDashboard: React.FC = () => {
         <div className="lg:col-span-2 p-8 rounded-3xl bg-white/5 border border-white/5">
           <h3 className="text-lg font-bold mb-6">System Activity History</h3>
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-            {systemLogs.length > 0 ? (
-              systemLogs.map((log) => (
+            {(systemLogs || []).length > 0 ? (
+              (systemLogs || []).map((log) => (
                 <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${

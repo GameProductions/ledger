@@ -160,7 +160,7 @@ const PCCProviders: React.FC = () => {
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Billing Nexus (Processor)</label>
                 <SearchableSelect 
-                   options={processors.map(proc => ({ 
+                   options={(processors || []).map(proc => ({ 
                      value: proc.id, 
                      label: proc.name,
                      icon: proc.branding_url ? <img src={proc.branding_url} className="w-5 h-5" alt="" /> : null
@@ -233,7 +233,7 @@ const PCCProviders: React.FC = () => {
       )}
 
       <div className="space-y-4">
-        {providers.map(provider => (
+        {(providers || []).map(provider => (
           <div key={provider.id} className="p-8 rounded-[3rem] bg-white/5 border border-white/5 flex items-center gap-8 group hover:border-emerald-500/20 transition-all relative overflow-visible shadow-lg bg-gradient-to-br from-white/2 to-transparent">
             <div className="w-20 h-20 rounded-3xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden p-3 shadow-inner group-hover:border-emerald-500/30 transition-all">
                 {provider.logo_url || provider.branding_url ? (

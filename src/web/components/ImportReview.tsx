@@ -40,7 +40,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         const arrayBuffer = await uploadedFile.arrayBuffer();
         await wb.xlsx.load(arrayBuffer);
         setWorkbook(wb);
-        const sheetNames = wb.worksheets.map(ws => ws.name);
+        const sheetNames = (wb.worksheets || []).map(ws => ws.name);
         setAvailableSheets(sheetNames);
         setSelectedSheet(sheetNames[0]);
       } else if (uploadedFile.name.endsWith('.json')) {
@@ -58,7 +58,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     setAnalyzing(true);
     
     const finalizeData = (rows: any[]) => {
-      setReviewItems(rows.map((r, i) => ({
+      setReviewItems((rows || []).map((r, i) => ({
         id: `rev-${i}`,
         description: r.description || 'Unknown Transaction',
         amount: r.amount || 0,
@@ -133,7 +133,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       Papa.parse(file, {
         header: true,
         complete: (results) => {
-          finalizeData(results.data.map((r: any) => ({
+          finalizeData((results?.data || []).map((r: any) => ({
             description: r.Description || r.merchant || r.Name,
             amount: parseFloat(r.Amount || r.amount || '0'),
             date: r.Date || r.date,
@@ -204,7 +204,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                  <Layers size={12} /> Select Worksheet/Tab
                </label>
                <div className="flex flex-wrap gap-2">
-                 {availableSheets.map(sheet => (
+                 {(availableSheets || []).map(sheet => (
                    <button 
                      key={sheet}
                      onClick={() => setSelectedSheet(sheet)}
@@ -263,7 +263,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {reviewItems.map((item, idx) => (
+                    {(reviewItems || []).map((item, idx) => (
                       <tr key={item.id} className="group hover:bg-white/5 transition-all">
                         <td className="px-8 py-6">
                            <div className="flex items-start gap-3">

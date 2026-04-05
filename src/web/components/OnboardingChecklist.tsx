@@ -13,9 +13,9 @@ const checklistItems = [
 export const OnboardingChecklist: React.FC = () => {
   const { completedSteps, isCompleted, startTour, skipTour } = useOnboarding()
 
-  if (isCompleted && completedSteps.length >= checklistItems.length) return null
+  if (isCompleted && (completedSteps || []).length >= checklistItems.length) return null
 
-  const progress = Math.round((completedSteps.length / checklistItems.length) * 100)
+  const progress = Math.round(((completedSteps || []).length / checklistItems.length) * 100)
 
   return (
     <motion.div 
@@ -43,7 +43,7 @@ export const OnboardingChecklist: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         {checklistItems.map((item) => {
-          const isDone = completedSteps.includes(item.id)
+          const isDone = (completedSteps || []).includes(item.id)
           return (
             <div 
               key={item.id} 

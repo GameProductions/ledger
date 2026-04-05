@@ -27,7 +27,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
     try {
       const res = await fetch(`/api/financials/transactions/${transactionId}/timeline`);
       const data = await res.json();
-      setEntries(data);
+      setEntries(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Timeline fetch failed', e);
     } finally {
@@ -106,7 +106,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
         </div>
       ) : (
         <div className="relative space-y-8 before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-[2px] before:bg-white/5">
-          {entries.map((entry) => (
+          {entries?.map((entry) => (
             <div key={entry.id} className="relative pl-12 group animate-in fade-in slide-in-from-left-4 duration-500">
               {/* Connector icon */}
               <div className={`absolute left-0 top-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-all duration-500 ${

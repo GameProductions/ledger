@@ -214,7 +214,7 @@ const PaymentCentralPage: React.FC = () => {
                     <div>
                       <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Select Provider</label>
                       <SearchableSelect 
-                        options={providers.map(p => ({ 
+                        options={(providers || []).map(p => ({ 
                           value: p.id, 
                           label: p.name, 
                           icon: p.icon_url ? <img src={p.icon_url} className="w-5 h-5" alt="" /> : null
@@ -238,10 +238,10 @@ const PaymentCentralPage: React.FC = () => {
                       <div>
                         <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Account Settings</label>
                         <SearchableSelect 
-                          options={paymentMethods.map(m => ({ 
+                          options={(paymentMethods || []).map(m => ({ 
                             value: m.id, 
                             label: m.name, 
-                            metadata: { subtext: m.type.replace('_', ' ') }
+                            metadata: { subtext: (m.type || '').replace('_', ' ') }
                           }))}
                           value={newAccount.payment_method_id}
                           onChange={(val) => setNewAccount({ ...newAccount, payment_method_id: val })}
@@ -251,7 +251,7 @@ const PaymentCentralPage: React.FC = () => {
                       <div>
                         <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Link to Plan</label>
                         <SearchableSelect 
-                          options={subscriptions.map(s => ({ 
+                          options={(subscriptions || []).map(s => ({ 
                             value: s.id, 
                             label: s.name, 
                             metadata: { subtext: `$${((s.amount_cents || 0)/100).toFixed(2)}` }
@@ -291,16 +291,16 @@ const PaymentCentralPage: React.FC = () => {
             <div className="space-y-4">
                <div className="flex items-center justify-between px-4">
                   <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Secure Methods</h3>
-                  <span className="text-xs font-black text-amber-500 uppercase italic px-2 py-0.5 bg-amber-500/10 rounded">{paymentMethods.length}</span>
+                  <span className="text-xs font-black text-amber-500 uppercase italic px-2 py-0.5 bg-amber-500/10 rounded">{(paymentMethods || []).length}</span>
                </div>
-               {paymentMethods.map(method => (
+               {(paymentMethods || [])?.map(method => (
                  <div key={method.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 group">
                     <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center text-amber-500 border border-white/5">
                       <CreditCard size={20} />
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm tracking-tight">{method.name}</p>
-                      <p className="text-xs uppercase font-black text-slate-500 tracking-widest">{method.type.replace('_', ' ')} {method.last_four && `**** ${method.last_four}`}</p>
+                      <p className="text-xs uppercase font-black text-slate-500 tracking-widest">{(method.type || '').replace('_', ' ')} {method.last_four && `**** ${method.last_four}`}</p>
                     </div>
                     <button className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
                  </div>
@@ -318,7 +318,7 @@ const PaymentCentralPage: React.FC = () => {
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               {linkedAccounts.map(account => (
+               {(linkedAccounts || [])?.map(account => (
                  <div key={account.id} className="p-6 rounded-[2.5rem] bg-black/40 border border-white/5 hover:border-amber-500/30 transition-all group overflow-hidden relative">
                     <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl group-hover:bg-amber-500/10 transition-all"></div>
                     

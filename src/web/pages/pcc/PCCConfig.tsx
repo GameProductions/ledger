@@ -58,7 +58,7 @@ const PCCConfig: React.FC = () => {
             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Key/Value Overrides</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {configs.map(cfg => (
+            {(configs || []).map(cfg => (
               <div key={cfg.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
                 <div className="mb-4">
                   <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.config_key}</p>
@@ -85,7 +85,7 @@ const PCCConfig: React.FC = () => {
             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Tiered Component Access</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {features.map(feat => (
+            {(features || []).map(feat => (
               <div key={feat.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabled_globally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>

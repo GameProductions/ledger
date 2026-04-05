@@ -50,7 +50,7 @@ const PCCSearch: React.FC = () => {
                 Global Transaction History <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="space-y-2">
-                {results.transactions?.map((tx: any) => (
+                {(results.transactions || []).map((tx: any) => (
                   <div key={tx.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all flex justify-between items-center group">
                     <div>
                        <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ const PCCSearch: React.FC = () => {
                 System Users <div className="h-[1px] flex-1 bg-emerald-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {results.users?.map((u: any) => (
+                {(results.users || []).map((u: any) => (
                   <div key={u.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all group">
                     <p className="font-bold text-lg mb-1 group-hover:text-emerald-400 transition-colors">{u.display_name || 'Anonymous'}</p>
                     <p className="text-sm text-gray-500 font-mono mb-4">{u.email}</p>
@@ -94,7 +94,7 @@ const PCCSearch: React.FC = () => {
                 System Entities <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {results.registry.map((r: any) => (
+                {(results.registry || []).map((r: any) => (
                   <div key={r.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center">📦</div>
                     <div>

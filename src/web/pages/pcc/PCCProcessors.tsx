@@ -194,7 +194,7 @@ const PCCProcessors: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {processors.map(processor => (
+        {(processors || []).map(processor => (
           <div key={processor.id} className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all group relative overflow-visible shadow-lg">
             <div className="absolute top-0 right-0 p-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-300">
                 <button 

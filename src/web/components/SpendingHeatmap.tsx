@@ -6,7 +6,7 @@ const SpendingHeatmap: React.FC<{ transactions: any[] }> = ({ transactions }) =>
     const date = new Date()
     date.setDate(date.getDate() - (27 - i))
     const dateStr = date.toISOString().split('T')[0]
-    const amount = transactions
+    const amount = (transactions || [])
       .filter(t => t.transaction_date.startsWith(dateStr))
       .reduce((sum, t) => sum + t.amount_cents, 0)
     return { date: dateStr, amount }

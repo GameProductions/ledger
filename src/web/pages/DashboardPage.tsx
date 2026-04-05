@@ -255,7 +255,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       </div>
 
       <div className="tab-container mt-8 reveal">
-        {tabs.map(tab => (
+        {(tabs || []).map(tab => (
           <button 
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -354,7 +354,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   const matchesStatus = filterStatus === 'all' || 
                                      (filterStatus === 'unmatched' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
                   return matchesSearch && matchesStatus
-                }).map((tx: any) => (
+                })?.map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
                     <div className="flex items-center gap-4 flex-1">
                       <input 
@@ -608,7 +608,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-xs text-primary font-black uppercase tracking-[0.2em] mb-3">Matches</div>
                 <div className="space-y-2">
                   {Array.isArray(smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates) && 
-                  {smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates?.map((t: any) => (
+                  smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates?.map((t: any) => (
                       <div 
                         key={`suggest-${t.id}`}
                         onClick={async () => {

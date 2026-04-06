@@ -118,7 +118,7 @@ auth.get('/login/discord', async (c) => {
     maxAge: 300,
   })
   
-  const proxyRedirectUri = `https://foundation.gpnet.dev/api/proxy/callback/discord`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/discord`
   const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&robot=false&response_type=code&scope=identify%20email&state=${state}`
   return c.redirect(url)
 })
@@ -153,7 +153,7 @@ auth.get('/callback/discord', async (c) => {
       client_secret: c.env.DISCORD_CLIENT_SECRET || '',
       grant_type: 'authorization_code',
       code,
-      redirect_uri: `https://foundation.gpnet.dev/api/proxy/callback/discord`
+      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/discord`
     })
   })
   const tokenData = await tokenRes.json() as any
@@ -255,7 +255,7 @@ auth.get('/discord/linked-roles/verify', async (c) => {
   })
 
   // Bounce through the Unified SSO Foundation router
-  const proxyRedirectUri = `https://foundation.gpnet.dev/api/proxy/callback/discord`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/discord`
   const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&robot=false&response_type=code&scope=identify%20role_connections.write&state=${state}&prompt=consent`
   
   return c.redirect(url)
@@ -296,7 +296,7 @@ auth.get('/login/google', async (c) => {
     maxAge: 300,
   })
 
-  const proxyRedirectUri = `https://foundation.gpnet.dev/api/proxy/callback/google`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/google`
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&response_type=code&scope=email%20profile%20https://www.googleapis.com/auth/spreadsheets&access_type=offline&prompt=consent&state=${state}`
   return c.redirect(url)
 })
@@ -328,7 +328,7 @@ auth.get('/callback/google', async (c) => {
       client_secret: c.env.GOOGLE_CLIENT_SECRET || '',
       code: code || '',
       grant_type: 'authorization_code',
-      redirect_uri: `https://foundation.gpnet.dev/api/proxy/callback/google`
+      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/google`
     })
   })
   const tokenData = await tokenRes.json() as any
@@ -398,7 +398,7 @@ auth.get('/login/dropbox', async (c) => {
     maxAge: 300,
   })
 
-  const proxyRedirectUri = `https://foundation.gpnet.dev/api/proxy/callback/dropbox`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/dropbox`
   const url = `https://www.dropbox.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&response_type=code&state=${state}`
   return c.redirect(url)
 })
@@ -429,7 +429,7 @@ auth.get('/callback/dropbox', async (c) => {
       client_secret: c.env.DROPBOX_CLIENT_SECRET || '',
       code: code || '',
       grant_type: 'authorization_code',
-      redirect_uri: `https://foundation.gpnet.dev/api/proxy/callback/dropbox`
+      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/dropbox`
     })
   })
   const tokenData = await tokenRes.json() as any
@@ -501,7 +501,7 @@ auth.get('/login/onedrive', async (c) => {
     maxAge: 300,
   })
 
-  const proxyRedirectUri = `https://foundation.gpnet.dev/api/proxy/callback/onedrive`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/onedrive`
   const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&response_type=code&scope=files.readwrite%20offline_access%20User.Read&state=${state}`
   return c.redirect(url)
 })
@@ -532,7 +532,7 @@ auth.get('/callback/onedrive', async (c) => {
       client_secret: c.env.ONEDRIVE_CLIENT_SECRET || '',
       code: code || '',
       grant_type: 'authorization_code',
-      redirect_uri: `https://foundation.gpnet.dev/api/proxy/callback/onedrive`
+      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/onedrive`
     })
   })
   const tokenData = await tokenRes.json() as any

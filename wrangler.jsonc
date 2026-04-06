@@ -3,6 +3,7 @@
   "name": "ledger",
   "main": "server.ts",
   "compatibility_date": "2025-01-01",
+  "migrations_dir": "archive/migrations",
   "compatibility_flags": ["nodejs_compat"],
   "site": {
     "bucket": "./dist"

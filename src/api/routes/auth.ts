@@ -134,9 +134,11 @@ auth.get('/callback/discord', async (c) => {
 
   // Parse state for session context
   let sessionUserId: string | null = null
+  let isLinkedRoleMetadataUpdate = false
   try {
     const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
+    if (decoded.linkedRoles) isLinkedRoleMetadataUpdate = true
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
   }
@@ -175,17 +177,88 @@ auth.get('/callback/discord', async (c) => {
     expires_in: tokenData.expires_in
   }
 
+  let finalUserId = sessionUserId
+
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'discord', socialProfile, socialTokens)
     await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'discord', userId: sessionUserId })
-    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE
-    const userId = await authService.findOrCreateSocialUser('discord', socialProfile, socialTokens)
-    const token = await authService.generateToken(userId)
+    finalUserId = await authService.findOrCreateSocialUser('discord', socialProfile, socialTokens)
+  }
+
+  // PUSH LINKED ROLES METADATA IF SOLICITED
+  if (isLinkedRoleMetadataUpdate || tokenData.scope?.includes('role_connections.write')) {
+    const db = getDb(c.env)
+    const dbUser = await db.select({ role: users.role }).from(users).where(eq(users.id, finalUserId!)).limit(1)
+
+    // Standard GameProductions Unified Tier Schema for Ledger
+    let metadata: Record<string, any> = {}
+    if (dbUser[0]?.role === 'super_admin') {
+      metadata.ledger_tier = 3
+    } else if (dbUser[0]?.role === 'admin') {
+      metadata.ledger_tier = 2
+    } else {
+      metadata.ledger_tier = 1 // Default Verified User
+    }
+
+    try {
+      await fetch(`https://discord.com/api/v10/users/@me/applications/${c.env.DISCORD_CLIENT_ID}/role-connection`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          platform_name: 'Ledger Platform',
+          platform_username: profile.username,
+          metadata
+        }),
+      });
+      console.log(`[LINKED ROLES] Successfully pushed metadata to Discord for ${profile.username}`);
+    } catch(e) {
+      console.error('[LINKED ROLES] Failed to push metadata to Discord', e);
+    }
+
+    // Since Linked Roles verifies natively in the Discord Electron shell, return a nice UI to close it automatically.
+    if (isLinkedRoleMetadataUpdate) {
+      return c.html(`<html><body style="font-family:sans-serif;text-align:center;padding:50px;background:#0f172a;color:white;"><h3>Account Linked Successfully!</h3><p>Your roles have been updated in Discord. You may safely close this window.</p><script>setTimeout(()=>window.close(),3000)</script></body></html>`)
+    }
+  }
+
+  if (sessionUserId) {
+    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+  } else {
+    const token = await authService.generateToken(finalUserId!)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
+})
+
+// --- DISCORD LINKED ROLES NATIVE ENDPOINT ---
+auth.get('/discord/linked-roles/verify', async (c) => {
+  const clientId = c.env.DISCORD_CLIENT_ID
+  if (!clientId || clientId.includes('REPLACE_WITH')) {
+    throw new HTTPException(500, { message: 'Discord Client ID not configured.' })
+  }
+
+  const challenge = crypto.randomUUID()
+  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
+  const state = Buffer.from(JSON.stringify({ challenge, userId: null, targetOrigin, linkedRoles: true })).toString('base64')
+  
+  await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
+    path: '/',
+    secure: true,
+    httpOnly: true,
+    sameSite: 'None',
+    maxAge: 300,
+  })
+
+  // Bounce through the Unified SSO Foundation router
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/discord`
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&robot=false&response_type=code&scope=identify%20role_connections.write&state=${state}&prompt=consent`
+  
+  return c.redirect(url)
 })
 
 auth.get('/login/google', async (c) => {

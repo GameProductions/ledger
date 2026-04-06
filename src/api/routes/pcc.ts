@@ -17,56 +17,72 @@ import { logAudit } from '../utils'
 import { CURRENT_VERSION } from '../constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
+import { getDb } from '../db'
+import { users, households, systemConfig, systemFeatureFlags, systemRegistry, auditLogs as pccAuditLogs, pccAuditLogs as systemPccAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements } from '../db/schema'
+import { eq, or, and, sql, desc, count, like } from 'drizzle-orm'
 
 const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Dashboard Stats
 pcc.get('/stats', async (c) => {
-  const { results: userCount } = await c.env.DB.prepare('SELECT count(*) as count FROM users').all()
-  const { results: activeToday } = await c.env.DB.prepare('SELECT count(*) as count FROM users WHERE last_active_at > date("now", "-1 day")').all()
-  const { results: householdCount } = await c.env.DB.prepare('SELECT count(*) as count FROM households').all()
+  const db = getDb(c.env)
+  const userCount = await db.select({ count: count() }).from(users).then(res => res[0].count)
+  const activeToday = await db.select({ count: count() }).from(users).where(sql`last_active_at > date("now", "-1 day")`).then(res => res[0].count)
+  const householdCount = await db.select({ count: count() }).from(households).then(res => res[0].count)
   
   return c.json({
-    totalUsers: (userCount?.[0] as any)?.count || 0,
-    activeToday: (activeToday?.[0] as any)?.count || 0,
-    totalHouseholds: (householdCount?.[0] as any)?.count || 0,
+    totalUsers: userCount || 0,
+    activeToday: activeToday || 0,
+    totalHouseholds: householdCount || 0,
     version: CURRENT_VERSION
   })
 })
 
 // System Configuration
 pcc.get('/config', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_config ORDER BY config_key ASC').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
   return c.json(results || [])
 })
 
 pcc.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
   const { config_value } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE system_config SET config_value = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(config_value, id).run()
+  const db = getDb(c.env)
+  
+  await db.update(systemConfig).set({ configValue: config_value, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
   await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
   return c.json({ success: true })
 })
 
 // Feature Flags
 pcc.get('/features', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_feature_flags ORDER BY feature_key ASC').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
   return c.json(results)
 })
 
 pcc.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
   const id = c.req.param('id')
   const { enabled_globally, target_user_ids } = c.req.valid('json')
-  await c.env.DB.prepare(
-    'UPDATE system_feature_flags SET enabled_globally = ?, target_user_ids = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-  ).bind(enabled_globally ? 1 : 0, target_user_ids, id).run()
+  const db = getDb(c.env)
+  
+  await db.update(systemFeatureFlags).set({ 
+    enabledGlobally: enabled_globally ? 1 : 0, 
+    updatedAt: sql`CURRENT_TIMESTAMP` 
+  }).where(eq(systemFeatureFlags.id, id))
+  
+  // Note: we're omitting target_user_ids since it's missing in some schema versions, raw SQL could patch it:
+  await db.run(sql`UPDATE system_feature_flags SET target_user_ids = ${target_user_ids} WHERE id = ${id}`);
+  
   await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabled_globally })
   return c.json({ success: true })
 })
 
 // Master Record List (Registry)
 pcc.get('/records', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_registry ORDER BY item_type ASC, name ASC').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(systemRegistry).orderBy(systemRegistry.itemType, systemRegistry.name)
   return c.json(results)
 })
 
@@ -74,23 +90,41 @@ pcc.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
   const metadata = data.metadata_json || {}
-  await c.env.DB.prepare(
-    'INSERT INTO system_registry (id, item_type, name, logo_url, website_url, metadata_json) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.item_type, data.name, data.logo_url || null, data.website_url || null, JSON.stringify(metadata)).run()
+  const db = getDb(c.env)
+  
+  await db.insert(systemRegistry).values({
+    id,
+    itemType: data.item_type,
+    name: data.name,
+    logoUrl: data.logo_url || null,
+    websiteUrl: data.website_url || null,
+    metadataJson: JSON.stringify(metadata)
+  })
+  
   await logAudit(c, 'system_registry', id, 'CREATE_RECORD', {}, data)
   return c.json({ success: true, id })
 })
 
 pcc.delete('/records/:id', async (c) => {
   const id = c.req.param('id')
-  await c.env.DB.prepare('DELETE FROM system_registry WHERE id = ?').bind(id).run()
+  const db = getDb(c.env)
+  await db.delete(systemRegistry).where(eq(systemRegistry.id, id))
   await logAudit(c, 'system_registry', id, 'DELETE_RECORD')
   return c.json({ success: true })
 })
 
 // User Management
 pcc.get('/users', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT id, email, display_name, global_role, status, created_at, last_active_at FROM users ORDER BY created_at DESC').all()
+  const db = getDb(c.env)
+  const results = await db.select({
+    id: users.id,
+    email: users.email,
+    displayName: users.displayName,
+    globalRole: users.globalRole,
+    status: users.status,
+    createdAt: users.createdAt,
+    lastActiveAt: users.lastActiveAt
+  }).from(users).orderBy(desc(users.createdAt))
   return c.json(results)
 })
 
@@ -102,22 +136,27 @@ pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) =
 }), async (c) => {
   const data = c.req.valid('json')
   const { username, email, password, display_name, global_role, force_password_change } = data
+  const db = getDb(c.env)
   
-  // Check for existing user
-  const existing = await c.env.DB.prepare('SELECT id FROM users WHERE username = ? OR email = ?')
-    .bind(username, email).first()
+  const existing = await db.select({ id: users.id }).from(users).where(or(eq(users.username, username), eq(users.email, email))).limit(1).then(res => res[0])
   if (existing) throw new HTTPException(400, { message: 'Username or email already exists' })
 
   const userId = crypto.randomUUID()
   const passwordHash = await hashPassword(password)
   
-  await c.env.DB.prepare(
-    'INSERT INTO users (id, username, email, password_hash, display_name, global_role, status, force_password_change) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).bind(userId, username, email, passwordHash, display_name, global_role, 'active', force_password_change ? 1 : 0).run()
+  await db.insert(users).values({
+    id: userId,
+    username,
+    email,
+    passwordHash,
+    displayName: display_name,
+    globalRole: global_role,
+    status: 'active',
+    forcePasswordChange: force_password_change ? 1 : 0
+  })
   
   await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, global_role })
   
-  // Trigger Provisioning Protocol
   const emailService = new EmailService(c.env)
   try {
     await emailService.sendProvisioningEmail(email, username, password)
@@ -130,6 +169,8 @@ pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) =
 
 // Audit Vault
 pcc.get('/audit', async (c) => {
+  const db = getDb(c.env)
+  // Simple raw query fallback for complex multi-table self-joins for audit logs
   const { results } = await c.env.DB.prepare(`
     SELECT 
       a.id, 
@@ -150,7 +191,8 @@ pcc.get('/audit', async (c) => {
 })
 
 pcc.get('/audit/system', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_audit_logs ORDER BY created_at DESC LIMIT 100').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(systemAuditLogs).orderBy(desc(systemAuditLogs.createdAt)).limit(100)
   return c.json(results)
 })
 
@@ -158,30 +200,43 @@ pcc.get('/audit/system', async (c) => {
 pcc.get('/search', async (c) => {
   const q = c.req.query('q') || ''
   if (q.length < 2) return c.json({ users: [], registry: [] })
+  const db = getDb(c.env)
 
-  const { results: users } = await c.env.DB.prepare(
-    'SELECT id, email, display_name FROM users WHERE email LIKE ? OR display_name LIKE ? LIMIT 10'
-  ).bind(`%${q}%`, `%${q}%`).all()
+  const usersRes = await db.select({
+    id: users.id,
+    email: users.email,
+    displayName: users.displayName
+  }).from(users).where(or(like(users.email, `%${q}%`), like(users.displayName, `%${q}%`))).limit(10)
 
-  const { results: registry } = await c.env.DB.prepare(
-    'SELECT id, name, item_type FROM system_registry WHERE name LIKE ? LIMIT 10'
-  ).bind(`%${q}%`).all()
+  const registryRes = await db.select({
+    id: systemRegistry.id,
+    name: systemRegistry.name,
+    itemType: systemRegistry.itemType
+  }).from(systemRegistry).where(like(systemRegistry.name, `%${q}%`)).limit(10)
 
-  return c.json({ users, registry })
+  return c.json({ users: usersRes, registry: registryRes })
 })
 
 // Payment Networks (Processors)
 pcc.get('/networks', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM billing_processors ORDER BY name ASC').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(billingProcessors).orderBy(billingProcessors.name)
   return c.json(results)
 })
 
 pcc.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO billing_processors (id, name, website_url, branding_url, support_url, subscription_id_notes) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.name, data.website_url, data.branding_url, data.support_url, data.subscription_id_notes).run()
+  const db = getDb(c.env)
+  
+  await db.insert(billingProcessors).values({
+    id,
+    name: data.name,
+    websiteUrl: data.website_url,
+    brandingUrl: data.branding_url,
+    supportUrl: data.support_url,
+    subscriptionIdNotes: data.subscription_id_notes
+  })
   await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
   return c.json({ success: true, id })
 })
@@ -189,31 +244,38 @@ pcc.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
 pcc.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const data = c.req.valid('json')
-  const { name, website_url, branding_url, support_url, subscription_id_notes } = data
-  await c.env.DB.prepare(
-    `UPDATE billing_processors SET 
-     name = COALESCE(?, name), website_url = COALESCE(?, website_url), branding_url = COALESCE(?, branding_url), 
-     support_url = COALESCE(?, support_url), subscription_id_notes = COALESCE(?, subscription_id_notes), updated_at = CURRENT_TIMESTAMP
-     WHERE id = ?`
-  ).bind(name, website_url, branding_url, support_url, subscription_id_notes, id).run()
+  const db = getDb(c.env)
+  
+  const updates: any = { updatedAt: sql`CURRENT_TIMESTAMP` }
+  if (data.name) updates.name = data.name
+  if (data.website_url) updates.websiteUrl = data.website_url
+  if (data.branding_url) updates.brandingUrl = data.branding_url
+  if (data.support_url) updates.supportUrl = data.support_url
+  if (data.subscription_id_notes) updates.subscriptionIdNotes = data.subscription_id_notes
+
+  if (Object.keys(updates).length > 1) {
+    await db.update(billingProcessors).set(updates).where(eq(billingProcessors.id, id))
+  }
   await logAudit(c, 'billing_processors', id, 'admin_update', null, data)
   return c.json({ success: true })
 })
 
 pcc.delete('/networks/:id', async (c) => {
   const id = c.req.param('id')
+  const db = getDb(c.env)
   // Check for linked providers
-  const linked = await c.env.DB.prepare('SELECT count(*) as count FROM service_providers WHERE billing_processor_id = ?').bind(id).first()
-  if ((linked as any).count > 0) {
+  const linked = await db.select({ count: count() }).from(serviceProviders).where(sql`billing_processor_id = ${id}`)
+  if (linked[0].count > 0) {
     throw new HTTPException(400, { message: 'Cannot delete network with active service provider links' })
   }
-  await c.env.DB.prepare('DELETE FROM billing_processors WHERE id = ?').bind(id).run()
+  await db.delete(billingProcessors).where(eq(billingProcessors.id, id))
   await logAudit(c, 'billing_processors', id, 'admin_delete')
   return c.json({ success: true })
 })
 
 // Providers
 pcc.get('/providers', async (c) => {
+  // Using direct prepared statement logic here for complex join not modeled perfectly yet
   const { results } = await c.env.DB.prepare(`
     SELECT sp.*, bp.name as billing_processor_name 
     FROM service_providers sp 
@@ -226,9 +288,9 @@ pcc.get('/providers', async (c) => {
 pcc.post('/providers', zValidator('json', ProviderSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, data.name, data.website_url || null, data.branding_url || null, data.billing_processor_id, data.is_3rd_party_capable ? 1 : 0).run()
+  const db = getDb(c.env)
+  // We use db.run to satisfy fields missed in static export or simply generic structure
+  await db.run(sql`INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (${id}, ${data.name}, ${data.website_url || null}, ${data.branding_url || null}, ${data.billing_processor_id}, ${data.is_3rd_party_capable ? 1 : 0})`)
   await logAudit(c, 'service_providers', id, 'admin_create', null, data)
   return c.json({ success: true, id })
 })
@@ -236,14 +298,15 @@ pcc.post('/providers', zValidator('json', ProviderSchema), async (c) => {
 pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const data = c.req.valid('json')
+  const db = getDb(c.env)
   const { name, website_url, branding_url, billing_processor_id, is_3rd_party_capable } = data
   try {
-    await c.env.DB.prepare(
-      `UPDATE service_providers SET 
-       name = COALESCE(?, name), url = COALESCE(?, url), icon_url = COALESCE(?, icon_url), 
-       billing_processor_id = COALESCE(?, billing_processor_id), is_3rd_party_capable = COALESCE(?, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`
-    ).bind(name, website_url, branding_url, billing_processor_id, is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null, id).run()
+    await db.run(sql`
+       UPDATE service_providers SET 
+       name = COALESCE(${name}, name), url = COALESCE(${website_url}, url), icon_url = COALESCE(${branding_url}, icon_url), 
+       billing_processor_id = COALESCE(${billing_processor_id}, billing_processor_id), is_3rd_party_capable = COALESCE(${is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null}, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
+       WHERE id = ${id}
+    `)
     await logAudit(c, 'service_providers', id, 'admin_update', null, data)
     return c.json({ success: true })
   } catch (e) {
@@ -253,17 +316,16 @@ pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async 
 
 pcc.delete('/providers/:id', async (c) => {
   const id = c.req.param('id')
-  await c.env.DB.prepare('DELETE FROM service_providers WHERE id = ?').bind(id).run()
+  const db = getDb(c.env)
+  await db.delete(serviceProviders).where(eq(serviceProviders.id, id))
   await logAudit(c, 'service_providers', id, 'admin_delete')
   return c.json({ success: true })
 })
 
-// Theme Broadcast (Moved to index.ts for /api/theme/broadcast access)
-
-
 // Walkthroughs
 pcc.get('/walkthroughs', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM system_walkthroughs ORDER BY created_at DESC').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(systemWalkthroughs).orderBy(desc(systemWalkthroughs.createdAt))
   return c.json(results)
 })
 
@@ -274,34 +336,40 @@ pcc.post('/walkthroughs', zValidator('json', z.object({
 })), async (c) => {
   const { version, title, content_md } = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO system_walkthroughs (id, version, title, content_md, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
-  ).bind(id, version, title, content_md).run()
+  const db = getDb(c.env)
+  await db.insert(systemWalkthroughs).values({
+    id, version, title, contentMd: content_md
+  })
   await logAudit(c, 'system_walkthroughs', id, 'SYNC_WALKTHROUGH', {}, { version, title })
   return c.json({ success: true, id })
 })
 
 // System-wide User Management (Admin)
 pcc.get('/admin/users', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT id, email, username, global_role, status, created_at, last_active_at FROM users ORDER BY created_at DESC').all()
+  const db = getDb(c.env)
+  const results = await db.select({
+    id: users.id, email: users.email, username: users.username, globalRole: users.globalRole, status: users.status, createdAt: users.createdAt, lastActiveAt: users.lastActiveAt
+  }).from(users).orderBy(desc(users.createdAt))
   return c.json(results)
 })
 
 pcc.patch('/admin/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
   const { userId } = c.req.param()
   const { global_role, status, display_name, email } = c.req.valid('json')
+  const db = getDb(c.env)
   
-  const old = await c.env.DB.prepare('SELECT global_role, status, display_name, email FROM users WHERE id = ?').bind(userId).first()
+  const old = await db.select({ globalRole: users.globalRole, status: users.status, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
   if (!old) throw new HTTPException(404, { message: 'User not found' })
 
-  await c.env.DB.prepare(`
-    UPDATE users SET 
-      global_role = COALESCE(?, global_role), 
-      status = COALESCE(?, status),
-      display_name = COALESCE(?, display_name),
-      email = COALESCE(?, email) 
-    WHERE id = ?
-  `).bind(global_role, status, display_name, email, userId).run()
+  const updates: any = {}
+  if (global_role) updates.globalRole = global_role
+  if (status) updates.status = status
+  if (display_name) updates.displayName = display_name
+  if (email) updates.email = email
+
+  if (Object.keys(updates).length > 0) {
+    await db.update(users).set(updates).where(eq(users.id, userId))
+  }
     
   await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status, display_name, email })
   return c.json({ success: true })
@@ -309,40 +377,36 @@ pcc.patch('/admin/users/:userId', zValidator('json', UpdateUserAdminSchema), asy
 
 pcc.get('/admin/users/:userId/details', async (c) => {
   const { userId } = c.req.param()
+  const db = getDb(c.env)
   
-  const user = await c.env.DB.prepare(`
-    SELECT id, email, username, display_name, avatar_url, global_role, status, created_at, last_active_at,
-    (CASE WHEN totp_secret IS NOT NULL THEN 1 ELSE 0 END) as has_2fa
-    FROM users WHERE id = ?
-  `).bind(userId).first() as any
+  const userFields = await db.select({
+    id: users.id, email: users.email, username: users.username, displayName: users.displayName, avatarUrl: users.avatarUrl,
+    globalRole: users.globalRole, status: users.status, createdAt: users.createdAt, lastActiveAt: users.lastActiveAt,
+    totpSecret: users.totpSecret, forcePasswordChange: users.forcePasswordChange
+  }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
   
-  if (!user) throw new HTTPException(404, { message: 'User not found' })
+  if (!userFields) throw new HTTPException(404, { message: 'User not found' })
 
-  const { results: connections } = await c.env.DB.prepare(
-    'SELECT id, provider, status, created_at FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ?)'
-  ).bind(userId).all()
-
-  const { results: socialLinks } = await c.env.DB.prepare(
-    'SELECT id, provider, provider_user_id as provider_id, created_at FROM user_identities WHERE user_id = ?'
-  ).bind(userId).all()
-
-  const { results: passkeys } = await c.env.DB.prepare(
-    'SELECT id, name, aaguid, created_at FROM passkeys WHERE user_id = ?'
-  ).bind(userId).all()
-
-  const { results: history } = await c.env.DB.prepare(`
+  const connections = await db.run(sql`SELECT id, provider, status, created_at FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ${userId})`).then(res => res.results)
+  const socialLinks = await db.select({ id: userIdentities.id, provider: userIdentities.provider, providerId: userIdentities.providerUserId, createdAt: userIdentities.createdAt }).from(userIdentities).where(eq(userIdentities.userId, userId))
+  const userPasskeys = await db.select({ id: passkeys.id, name: passkeys.name, aaguid: passkeys.aaguid, createdAt: passkeys.createdAt }).from(passkeys).where(eq(passkeys.userId, userId))
+  
+  const history = await db.run(sql`
     SELECT action, target, created_at, details_json 
     FROM pcc_audit_logs 
-    WHERE user_id = ? OR (target = 'users' AND target_id = ?)
+    WHERE user_id = ${userId} OR (target = 'users' AND target_id = ${userId})
     ORDER BY created_at DESC LIMIT 15
-  `).bind(userId, userId).all()
+  `).then(res => res.results)
 
   return c.json({
-    profile: user,
+    profile: {
+      ...userFields,
+      has_2fa: userFields.totpSecret ? 1 : 0
+    },
     security: {
-      mfa_enabled: !!user.has_2fa,
-      passkeys: passkeys,
-      force_password_change: !!user.force_password_change
+      mfa_enabled: !!userFields.totpSecret,
+      passkeys: userPasskeys,
+      force_password_change: !!userFields.forcePasswordChange
     },
     linked_accounts: connections,
     social_links: socialLinks,
@@ -357,10 +421,9 @@ pcc.post('/admin/users/:userId/password/reset', zValidator('json', z.object({
 })), async (c) => {
   const { userId } = c.req.param()
   const { newPassword, isTemporary } = c.req.valid('json')
-  
+  const db = getDb(c.env)
   const passwordHash = await hashPassword(newPassword)
-  await c.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = ? WHERE id = ?')
-    .bind(passwordHash, isTemporary ? 1 : 0, userId).run()
+  await db.update(users).set({ passwordHash, forcePasswordChange: isTemporary ? 1 : 0 }).where(eq(users.id, userId))
     
   await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { is_temporary: isTemporary })
   return c.json({ success: true })
@@ -371,31 +434,30 @@ pcc.patch('/admin/users/:userId/passkeys/:id', zValidator('json', z.object({
 })), async (c) => {
   const { userId, id } = c.req.param()
   const { name } = c.req.valid('json')
-  
-  await c.env.DB.prepare('UPDATE passkeys SET name = ? WHERE id = ? AND user_id = ?')
-    .bind(name, id, userId).run()
-    
+  const db = getDb(c.env)
+  await db.update(passkeys).set({ name }).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
   await logAudit(c, 'passkeys', id, 'ADMIN_RENAME_PASSKEY', { userId }, { new_name: name })
   return c.json({ success: true })
 })
 
 pcc.delete('/admin/users/:userId/passkeys/:id', async (c) => {
   const { userId, id } = c.req.param()
-  
-  await c.env.DB.prepare('DELETE FROM passkeys WHERE id = ? AND user_id = ?').bind(id, userId).run()
-    
+  const db = getDb(c.env)
+  await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
   await logAudit(c, 'passkeys', id, 'ADMIN_REMOVE_PASSKEY', { userId })
   return c.json({ success: true })
 })
 
 // External Connections Management
 pcc.get('/connections', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM external_connections ORDER BY created_at DESC').all()
+  const db = getDb(c.env)
+  const results = await db.select().from(externalConnections).orderBy(desc(externalConnections.createdAt))
   return c.json(results)
 })
 
 // Household Management (God Mode)
 pcc.get('/households', async (c) => {
+  // Complex aggregation better ran natively
   const { results } = await c.env.DB.prepare(`
     SELECT h.*, count(uh.user_id) as member_count 
     FROM households h 
@@ -409,16 +471,18 @@ pcc.get('/households', async (c) => {
 pcc.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
   const { id } = c.req.param()
   const { name } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE households SET name = ? WHERE id = ?').bind(name, id).run()
+  const db = getDb(c.env)
+  await db.update(households).set({ name }).where(eq(households.id, id))
   await logAudit(c, 'households', id, 'ADMIN_RENAME', {}, { name })
   return c.json({ success: true })
 })
 
 pcc.delete('/households/:id', async (c) => {
   const { id } = c.req.param()
-  await c.env.DB.batch([
-    c.env.DB.prepare('DELETE FROM households WHERE id = ?').bind(id),
-    c.env.DB.prepare('DELETE FROM user_households WHERE household_id = ?').bind(id)
+  const db = getDb(c.env)
+  await db.batch([
+    db.delete(households).where(eq(households.id, id)),
+    db.delete(userHouseholds).where(eq(userHouseholds.householdId, id))
   ])
   await logAudit(c, 'households', id, 'ADMIN_PURGE')
   return c.json({ success: true })
@@ -430,52 +494,44 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
   targetId: z.string().uuid()
 })), async (c) => {
   const { sourceId, targetId } = c.req.valid('json')
-  
-  if (sourceId === targetId) {
-    throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
-  }
+  if (sourceId === targetId) throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
 
+  const db = getDb(c.env)
   // Identity Verification
-  const source = await c.env.DB.prepare('SELECT id, display_name, email FROM users WHERE id = ?').bind(sourceId).first() as any
-  const target = await c.env.DB.prepare('SELECT id, display_name, email FROM users WHERE id = ?').bind(targetId).first() as any
+  const source = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, sourceId)).limit(1).then(res => res[0])
+  const target = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, targetId)).limit(1).then(res => res[0])
   
-  if (!source || !target) {
-    throw new HTTPException(404, { message: 'Identity Resolution Failed: Source or Target record missing.' })
-  }
+  if (!source || !target) throw new HTTPException(404, { message: 'Identity Resolution Failed: Source or Target record missing.' })
 
   // Atomic Migration Sequence
-  await c.env.DB.batch([
-    // 1. Migrate Household Access (Deduplicated)
-    c.env.DB.prepare(
-      'INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ? as user_id, household_id FROM user_households WHERE user_id = ?'
-    ).bind(targetId, sourceId),
-    c.env.DB.prepare('DELETE FROM user_households WHERE user_id = ?').bind(sourceId),
+  await db.batch([
+    db.run(sql`INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ${targetId} as user_id, household_id FROM user_households WHERE user_id = ${sourceId}`),
+    db.delete(userHouseholds).where(eq(userHouseholds.userId, sourceId)),
     
-    // 2. Transfer Intellectual Property (Transactions & Subs)
-    c.env.DB.prepare('UPDATE transactions SET owner_id = ? WHERE owner_id = ?').bind(targetId, sourceId),
-    c.env.DB.prepare('UPDATE subscriptions SET owner_id = ? WHERE owner_id = ?').bind(targetId, sourceId),
+    // Transfer IP
+    db.update(transactions).set({ ownerId: targetId }).where(eq(transactions.ownerId, sourceId)),
+    db.update(subscriptions).set({ ownerId: targetId }).where(eq(subscriptions.ownerId, sourceId)),
     
-    // 3. Migrate Authentication & Payment Channels
-    c.env.DB.prepare('UPDATE user_payment_methods SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
-    c.env.DB.prepare('UPDATE user_linked_accounts SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
-    c.env.DB.prepare('UPDATE passkeys SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
-    c.env.DB.prepare('UPDATE user_identities SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+    // Migrate Channels
+    db.update(userPaymentMethods).set({ userId: targetId }).where(eq(userPaymentMethods.userId, sourceId)),
+    db.update(userLinkedAccounts).set({ userId: targetId }).where(eq(userLinkedAccounts.userId, sourceId)),
+    db.update(passkeys).set({ userId: targetId }).where(eq(passkeys.userId, sourceId)),
+    db.update(userIdentities).set({ userId: targetId }).where(eq(userIdentities.userId, sourceId)),
     
-    // 4. Migrate Social Liability (Shared Balances)
-    c.env.DB.prepare('UPDATE shared_balances SET from_user_id = ? WHERE from_user_id = ?').bind(targetId, sourceId),
-    c.env.DB.prepare('UPDATE shared_balances SET to_user_id = ? WHERE to_user_id = ?').bind(targetId, sourceId),
+    // Social Liability
+    db.update(sharedBalances).set({ fromUserId: targetId }).where(eq(sharedBalances.fromUserId, sourceId)),
+    db.update(sharedBalances).set({ toUserId: targetId }).where(eq(sharedBalances.toUserId, sourceId)),
     
-    // 5. Migrate Forensic Dossier (Audit History)
-    c.env.DB.prepare('UPDATE pcc_audit_logs SET user_id = ? WHERE user_id = ?').bind(targetId, sourceId),
+    // Forensic Dossier
+    db.run(sql`UPDATE pcc_audit_logs SET user_id = ${targetId} WHERE user_id = ${sourceId}`),
 
-    // 6. Secure Purge of Source Identity
-    c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(sourceId)
+    // Purge
+    db.delete(users).where(eq(users.id, sourceId))
   ])
 
-  // Forensic Audit Trail
   await logAudit(c, 'users', targetId, 'ADMIN_USER_MERGE', 
     { merged_source_id: sourceId, source_email: source.email }, 
-    { source_name: source.display_name, action: 'UNIFICATION_COMPLETE' }
+    { source_name: source.displayName, action: 'UNIFICATION_COMPLETE' }
   )
   
   return c.json({ success: true })
@@ -483,9 +539,8 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
 
 // System Announcements (v3.21)
 pcc.get('/announcements', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM system_announcements WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP) ORDER BY created_at DESC'
-  ).all()
+  const db = getDb(c.env)
+  const results = await db.run(sql`SELECT * FROM system_announcements WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP) ORDER BY created_at DESC`).then(res => res.results)
   return c.json(results)
 })
 
@@ -497,16 +552,17 @@ pcc.post('/announcements', zValidator('json', z.object({
 })), async (c) => {
   const { title, content_md, priority, expires_in_hours } = c.req.valid('json')
   const id = crypto.randomUUID()
-  const actorId = c.get('userId')
+  const actorId = c.get('userId') as string
+  const db = getDb(c.env)
   
   let expiresAt = null
   if (expires_in_hours) {
     expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
   }
 
-  await c.env.DB.prepare(
-    'INSERT INTO system_announcements (id, title, content_md, priority, actor_id, expires_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, title, content_md, priority, actorId, expiresAt).run()
+  await db.insert(systemAnnouncements).values({
+    id, title, contentMd: content_md, priority, actorId, expiresAt
+  })
 
   await logAudit(c, 'system_announcements', id, 'BROADCAST_CREATED', {}, { title, priority })
   return c.json({ success: true, id })
@@ -515,9 +571,8 @@ pcc.post('/announcements', zValidator('json', z.object({
 // Maintenance Operations
 pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean() })), async (c) => {
   const { enabled } = c.req.valid('json')
-  await c.env.DB.prepare('UPDATE system_config SET config_value = ? WHERE config_key = ?')
-    .bind(enabled ? 'true' : 'false', 'MAINTENANCE_MODE').run()
-    
+  const db = getDb(c.env)
+  await db.update(systemConfig).set({ configValue: enabled ? 'true' : 'false' }).where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
   await logAudit(c, 'system_config', 'MAINTENANCE_MODE', 'TOGGLE_MAINTENANCE', {}, { enabled })
   return c.json({ success: true })
 })
@@ -526,26 +581,22 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
 pcc.post('/admin/users/:userId/impersonate', async (c) => {
   try {
     const { userId } = c.req.param()
+    const db = getDb(c.env)
     
-    // Verify target user exists
-    const target = await c.env.DB.prepare('SELECT id, display_name, global_role FROM users WHERE id = ?').bind(userId).first()
+    const target = await db.select({ id: users.id, displayName: users.displayName, globalRole: users.globalRole }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
     if (!target) throw new HTTPException(404, { message: 'Target user not found' })
 
-    // Forensic Discovery: Resolve target user's primary household context
-    const { results: households } = await (c.env.DB.prepare(
-      'SELECT household_id FROM user_households WHERE user_id = ? LIMIT 1'
-    ).bind(userId).all() as any)
-    
-    const targetHouseholdId = (households?.[0] as any)?.household_id || 'ledger-main-001'
-    const adminId = c.get('userId')
+    const householdsRes = await db.select({ householdId: userHouseholds.householdId }).from(userHouseholds).where(eq(userHouseholds.userId, userId)).limit(1).then(res => res[0])
+    const targetHouseholdId = householdsRes?.householdId || 'ledger-main-001'
+    const adminId = c.get('userId') as string
 
     const authService = new AuthService(c.env)
     const token = await authService.generateToken(userId, targetHouseholdId, adminId)
     
     await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', 
-      { actor_id: adminId, target_email: (target as any).email }, 
+      { actor_id: adminId }, 
       { 
-        target_name: (target as any).display_name,
+        target_name: target.displayName,
         target_household_id: targetHouseholdId,
         action: 'IDENTITY_MIRROR_COMMENCED'
       }
@@ -557,7 +608,7 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
       impersonationContext: {
         householdId: targetHouseholdId,
         profile: target,
-        globalRole: (target as any).global_role
+        globalRole: target.globalRole
       }
     })
   } catch (err: any) {

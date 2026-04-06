@@ -283,3 +283,216 @@ export const loanPayments = sqliteTable('loan_payments', {
   method: text('method'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const systemConfig = sqliteTable('system_config', {
+  id: text('id').primaryKey(),
+  configKey: text('config_key').notNull().unique(),
+  configValue: text('config_value'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const systemRegistry = sqliteTable('system_registry', {
+  id: text('id').primaryKey(),
+  itemType: text('item_type').notNull(),
+  name: text('name').notNull(),
+  logoUrl: text('logo_url'),
+  websiteUrl: text('website_url'),
+  metadataJson: text('metadata_json'),
+});
+
+export const systemAuditLogs = sqliteTable('system_audit_logs', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  action: text('action').notNull(),
+  target: text('target').notNull(),
+  detailsJson: text('details_json'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const billingProcessors = sqliteTable('billing_processors', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  websiteUrl: text('website_url'),
+  brandingUrl: text('branding_url'),
+  supportUrl: text('support_url'),
+  subscriptionIdNotes: text('subscription_id_notes'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const systemWalkthroughs = sqliteTable('system_walkthroughs', {
+  id: text('id').primaryKey(),
+  version: text('version').notNull(),
+  title: text('title').notNull(),
+  contentMd: text('content_md').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const systemAnnouncements = sqliteTable('system_announcements', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  contentMd: text('content_md').notNull(),
+  priority: text('priority').default('info'),
+  actorId: text('actor_id'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  expiresAt: text('expires_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const externalConnections = sqliteTable('external_connections', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  provider: text('provider').notNull(),
+  accessToken: text('access_token').notNull(),
+  status: text('status').default('active'),
+  lastSyncAt: text('last_sync_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const privacyCards = sqliteTable('privacy_cards', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  connectionId: text('connection_id').notNull(),
+  last4: text('last4').notNull(),
+  hostname: text('hostname'),
+  spendLimitCents: integer('spend_limit_cents'),
+  state: text('state'),
+});
+
+export const investmentHoldings = sqliteTable('investment_holdings', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  accountId: text('account_id').notNull(),
+  name: text('name').notNull(),
+  quantity: integer('quantity').notNull(),
+  valueCents: integer('value_cents').notNull(),
+});
+
+export const schedules = sqliteTable('schedules', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  targetId: text('target_id').notNull(),
+  targetType: text('target_type').notNull(),
+  frequency: text('frequency').notNull(),
+  nextRunAt: text('next_run_at').notNull(),
+  lastRunAt: text('last_run_at'),
+  executedCount: integer('executed_count').default(0),
+  status: text('status').default('active'),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const scheduleHistory = sqliteTable('schedule_history', {
+  id: text('id').primaryKey(),
+  scheduleId: text('schedule_id').notNull().references(() => schedules.id),
+  householdId: text('household_id').notNull().references(() => households.id),
+  occurrenceAt: text('occurrence_at').notNull(),
+  actionStatus: text('action_status').notNull(),
+  detailsJson: text('details_json'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const webhooks = sqliteTable('webhooks', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  url: text('url').notNull(),
+  secret: text('secret').notNull(),
+  eventList: text('event_list').notNull(),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+});
+
+export const webhookDeliveryLogs = sqliteTable('webhook_delivery_logs', {
+  id: text('id').primaryKey(),
+  webhookId: text('webhook_id').notNull().references(() => webhooks.id),
+  event: text('event').notNull(),
+  statusCode: integer('status_code').default(0),
+  error: text('error'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const pccAuditLogs = sqliteTable('pcc_audit_logs', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  action: text('action').notNull(),
+  target: text('target').notNull(),
+  targetId: text('target_id'),
+  detailsJson: text('details_json'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const userPaymentMethods = sqliteTable('user_payment_methods', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  provider: text('provider').notNull(),
+  token: text('token').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const userLinkedAccounts = sqliteTable('user_linked_accounts', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  provider: text('provider').notNull(),
+  accountId: text('account_id').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const supportIssues = sqliteTable('support_issues', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  category: text('category'),
+  priority: text('priority').default('medium'),
+  status: text('status').default('open'),
+  githubIssueUrl: text('github_issue_url'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const userOnboarding = sqliteTable('user_onboarding', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  stepId: text('step_id').notNull(),
+  status: text('status').default('pending'),
+  completedAt: text('completed_at'),
+});
+
+export const userPreferences = sqliteTable('user_preferences', {
+  userId: text('user_id').notNull().references(() => users.id),
+  key: text('key').notNull(),
+  value: text('value'),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.key] }),
+}));
+
+export const notificationSettings = sqliteTable('notification_settings', {
+  userId: text('user_id').notNull().references(() => users.id),
+  type: text('type').notNull(),
+  event: text('event').notNull(),
+  enabled: integer('enabled', { mode: 'boolean' }).default(false),
+  offsetDays: integer('offset_days').default(3),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.type, table.event] }),
+}));
+
+export const householdInvites = sqliteTable('household_invites', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  createdBy: text('created_by').notNull().references(() => users.id),
+  status: text('status').default('pending'),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const linkedProviders = sqliteTable('linked_providers', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  serviceProviderId: text('service_provider_id').notNull().references(() => serviceProviders.id),
+  accountReference: text('account_reference'),
+  customLabel: text('custom_label'),
+  metadata: text('metadata'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+

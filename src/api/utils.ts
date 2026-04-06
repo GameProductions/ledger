@@ -1,5 +1,7 @@
 import { Context } from 'hono'
 import { Bindings, Variables } from './types'
+import { getDb } from './db'
+import { auditLogs } from './db/schema'
 
 export const logAudit = async (
   c: Context<{ Bindings: Bindings; Variables: Variables }>, 
@@ -18,18 +20,17 @@ export const logAudit = async (
     (newValues as any)._impersonator_id = impersonatorId
   }
 
-  await c.env.DB.prepare(
-    'INSERT INTO audit_logs (id, household_id, actor_id, table_name, record_id, action, old_values_json, new_values_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).bind(
-    id, 
-    householdId, 
-    actorId, 
-    tableName, 
-    recordId, 
-    action, 
-    oldData ? JSON.stringify(oldData) : null, 
-    Object.keys(newValues).length > 0 ? JSON.stringify(newValues) : null
-  ).run()
+  const db = getDb(c.env)
+  await db.insert(auditLogs).values({
+    id,
+    householdId,
+    actorId,
+    tableName,
+    recordId,
+    action,
+    oldValuesJson: oldData ? JSON.stringify(oldData) : null,
+    newValuesJson: Object.keys(newValues).length > 0 ? JSON.stringify(newValues) : null
+  });
 }
 
 export const encrypt = async (text: string, key: string) => {

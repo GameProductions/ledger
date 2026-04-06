@@ -170,9 +170,8 @@ app.use('/api/*', async (c, next) => {
   }
 
   try {
-    const config = await c.env.DB.prepare('SELECT config_value FROM system_config WHERE config_key = ?')
-      .bind('MAINTENANCE_MODE').first() as any
-    if (config?.config_value === 'true') {
+    const config = await getDb(c.env).select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, 'MAINTENANCE_MODE')).limit(1).then(res => res[0]);
+    if (config?.configValue === 'true') {
       const user = c.get('userId') as any
       if (user?.global_role !== 'super_admin') {
         return c.json({ 
@@ -185,6 +184,10 @@ app.use('/api/*', async (c, next) => {
   await next()
 })
 
+import { getDb } from './db'
+import { systemConfig } from './db/schema'
+import { eq } from 'drizzle-orm'
+
 // 5. Route Mounting
 const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -194,15 +197,17 @@ ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)
 ledger.get('/api/config', async (c) => {
-  const { results: configs } = await c.env.DB.prepare('SELECT config_key, config_value FROM system_config').all()
-  return c.json(configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.config_key as string]: JSON.parse(curr.config_value as string) }), {}))
+  const db = getDb(c.env)
+  const configs = await db.select({ configKey: systemConfig.configKey, configValue: systemConfig.configValue }).from(systemConfig);
+  return c.json(configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {}))
 })
 
 ledger.get('/api/theme/broadcast', async (c) => {
   try {
-    const config = await c.env.DB.prepare('SELECT config_value FROM system_config WHERE config_key = "broadcast_theme_id"').first()
-    if (!config) return c.json({ themeId: null })
-    return c.json({ themeId: JSON.parse((config as any).config_value) })
+    const db = getDb(c.env)
+    const config = await db.select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, "broadcast_theme_id")).limit(1).then(res => res[0]);
+    if (!config || !config.configValue) return c.json({ themeId: null })
+    return c.json({ themeId: JSON.parse(config.configValue as string) })
   } catch (e) {
     return c.json({ themeId: null })
   }
@@ -210,8 +215,15 @@ ledger.get('/api/theme/broadcast', async (c) => {
 
 ledger.post('/api/theme/broadcast', async (c) => {
   const { themeId } = await c.req.json()
-  await c.env.DB.prepare('INSERT OR REPLACE INTO system_config (id, config_key, config_value, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
-    .bind(crypto.randomUUID(), 'broadcast_theme_id', JSON.stringify(themeId)).run()
+  const db = getDb(c.env)
+  await db.insert(systemConfig).values({
+    id: crypto.randomUUID(),
+    configKey: 'broadcast_theme_id',
+    configValue: JSON.stringify(themeId)
+  }).onConflictDoUpdate({
+    target: [systemConfig.configKey],
+    set: { configValue: JSON.stringify(themeId) }
+  });
   return c.json({ success: true })
 })
 

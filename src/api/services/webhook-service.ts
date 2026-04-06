@@ -1,5 +1,8 @@
 import { Context } from 'hono'
 import { Bindings, Variables } from '../types'
+import { getDb } from '../db'
+import { webhooks, webhookDeliveryLogs } from '../db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export const isValidWebhookUrl = (url: string) => {
   try {
@@ -17,9 +20,13 @@ export const isValidWebhookUrl = (url: string) => {
 export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, event: string, data: any, householdId: string) => {
   if (!householdId) return
 
-  const { results: hooks } = await c.env.DB.prepare(
-    'SELECT id, url, secret, event_list FROM webhooks WHERE household_id = ? AND is_active = 1'
-  ).bind(householdId).all()
+  const db = getDb(c.env)
+  const hooks = await db.select({
+    id: webhooks.id,
+    url: webhooks.url,
+    secret: webhooks.secret,
+    eventList: webhooks.eventList
+  }).from(webhooks).where(and(eq(webhooks.householdId, householdId), eq(webhooks.isActive, true)))
 
   for (const hook of hooks) {
     if (!isValidWebhookUrl(hook.url as string)) {
@@ -27,14 +34,17 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
       continue
     }
 
-    const events = (hook.event_list as string).split(',')
+    const events = (hook.eventList as string).split(',')
     if (events.includes('*') || events.includes(event)) {
       const deliveryId = crypto.randomUUID()
       
       // Log Attempt
-      await c.env.DB.prepare(
-        'INSERT INTO webhook_delivery_logs (id, webhook_id, event, status_code) VALUES (?, ?, ?, ?)'
-      ).bind(deliveryId, hook.id, event, 0).run() // 0 = Attempting
+      await db.insert(webhookDeliveryLogs).values({
+        id: deliveryId,
+        webhookId: hook.id,
+        event,
+        statusCode: 0
+      });
       
       c.executionCtx.waitUntil(
         fetch(hook.url as string, {
@@ -51,13 +61,9 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
             data
           })
         }).then(async (res) => {
-          await c.env.DB.prepare(
-            'UPDATE webhook_delivery_logs SET status_code = ? WHERE id = ?'
-          ).bind(res.status, deliveryId).run()
+          await db.update(webhookDeliveryLogs).set({ statusCode: res.status }).where(eq(webhookDeliveryLogs.id, deliveryId))
         }).catch(async (err) => {
-          await c.env.DB.prepare(
-            'UPDATE webhook_delivery_logs SET error = ? WHERE id = ?'
-          ).bind(err.message, deliveryId).run()
+          await db.update(webhookDeliveryLogs).set({ error: err.message }).where(eq(webhookDeliveryLogs.id, deliveryId))
         })
       )
     }

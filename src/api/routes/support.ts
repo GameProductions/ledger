@@ -3,6 +3,10 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { Bindings, Variables } from '../types'
 import { HTTPException } from 'hono/http-exception'
+import { getDb } from '../db'
+import { supportIssues } from '../db/schema'
+import { eq } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 
 const support = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -24,10 +28,11 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
   }
 
   const { title, description, category, priority, metadata } = c.req.valid('json')
+  const db = getDb(c.env)
   
   try {
     // 2. Self-Healing Table Structure
-    await c.env.DB.prepare(`
+    await db.run(sql`
       CREATE TABLE IF NOT EXISTS support_issues (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
@@ -40,14 +45,19 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
-    `).run()
+    `)
 
     const id = crypto.randomUUID()
     
     // 3. Persistent Storage
-    await c.env.DB.prepare(
-      'INSERT INTO support_issues (id, user_id, title, description, category, priority) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(id, userId, title, description, category || 'General', priority).run()
+    await db.insert(supportIssues).values({
+      id,
+      userId,
+      title,
+      description,
+      category: category || 'General',
+      priority
+    })
 
     // 4. GitHub Integration (Sanitized)
     let githubUrl = null
@@ -87,7 +97,7 @@ ${JSON.stringify(metadata || {}, null, 2)}
         if (res.ok) {
           const ghData: any = await res.json()
           githubUrl = ghData.html_url
-          await c.env.DB.prepare('UPDATE support_issues SET github_issue_url = ? WHERE id = ?').bind(githubUrl, id).run()
+          await db.update(supportIssues).set({ githubIssueUrl: githubUrl }).where(eq(supportIssues.id, id))
         } else {
           const errText = await res.text()
           console.error(`[Support] GitHub API error for repo ${repo}:`, errText)

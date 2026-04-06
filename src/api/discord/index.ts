@@ -2,6 +2,9 @@ import { Hono } from 'hono'
 import { InteractionType, InteractionResponseType, verifyKey } from 'discord-interactions'
 import { Bindings, Variables } from '../types'
 import { getQuickChartUrl } from '../services/chart-service'
+import { getDb } from '../db'
+import { accounts, subscriptions, categories, auditLogs } from '../db/schema'
+import { eq, lte, and, desc } from 'drizzle-orm'
 
 const discord = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -26,10 +29,11 @@ discord.post('/interactions', async (c) => {
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     const { name } = interaction.data
     const householdId = 'ledger-main-001' 
+    const db = getDb(c.env)
     
     if (name === 'ledger-safety') {
-      const { results: accounts } = await c.env.DB.prepare('SELECT balance_cents FROM accounts WHERE household_id = ?').bind(householdId).all()
-      const totalBalance = (accounts as any[]).reduce((sum, a) => sum + a.balance_cents, 0)
+      const dbAccounts = await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId));
+      const totalBalance = dbAccounts.reduce((sum, a) => sum + (a.balanceCents || 0), 0)
       return c.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: { content: `🛡️ **LEDGER Safety Number**: Your current total balance is **$${(totalBalance / 100).toFixed(2)}**. Drive safe!` }
@@ -38,22 +42,27 @@ discord.post('/interactions', async (c) => {
 
     if (name === 'ledger-upcoming') {
       const endDateStr = new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0]
-      const { results: subs } = await c.env.DB.prepare('SELECT name, amount_cents, next_billing_date FROM subscriptions WHERE household_id = ? AND next_billing_date <= ?').bind(householdId, endDateStr).all()
+      const subs = await db.select({
+        name: subscriptions.name,
+        amountCents: subscriptions.amountCents,
+        nextBillingDate: subscriptions.nextBillingDate
+      }).from(subscriptions).where(and(eq(subscriptions.householdId, householdId), lte(subscriptions.nextBillingDate, endDateStr)));
       
       let content = "📅 **Upcoming Bills (7 Days)**:\n"
       if (subs.length === 0) content += "No bills due soon. You're all clear!"
-      else (subs as any[]).forEach(s => { content += `- ${s.name}: **$${(s.amount_cents/100).toFixed(2)}** on ${s.next_billing_date}\n` })
+      else subs.forEach(s => { content += `- ${s.name}: **$${((s.amountCents || 0)/100).toFixed(2)}** on ${s.nextBillingDate}\n` })
 
       return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
 
     if (name === 'ledger-forecast' || name === 'ledger-report') {
-      const { results: categories } = await c.env.DB.prepare(
-        'SELECT name, envelope_balance_cents FROM categories WHERE household_id = ? LIMIT 5'
-      ).bind(householdId).all()
+      const cats = await db.select({
+        name: categories.name,
+        envelopeBalanceCents: categories.envelopeBalanceCents
+      }).from(categories).where(eq(categories.householdId, householdId)).limit(5);
       
-      const labels = (categories as any[]).map(cat => cat.name)
-      const data = (categories as any[]).map(cat => cat.envelope_balance_cents / 100)
+      const labels = cats.map(cat => cat.name)
+      const data = cats.map(cat => (cat.envelopeBalanceCents || 0) / 100)
       const chartUrl = getQuickChartUrl('pie', labels, data, 'Budget Distribution')
 
       return c.json({
@@ -70,9 +79,14 @@ discord.post('/interactions', async (c) => {
     }
 
     if (name === 'ledger-audit') {
-      const { results } = await c.env.DB.prepare('SELECT action, table_name, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 5').all()
+      const results = await db.select({
+        action: auditLogs.action,
+        tableName: auditLogs.tableName,
+        createdAt: auditLogs.createdAt
+      }).from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(5);
+      
       let content = "🔍 **Latest Audit Logs**:\n"
-      ;(results as any[]).forEach(r => { content += `- ${r.created_at}: **${r.action}** on \`${r.table_name}\`\n` })
+      results.forEach(r => { content += `- ${r.createdAt}: **${r.action}** on \`${r.tableName}\`\n` })
       return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
   }

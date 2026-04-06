@@ -4,7 +4,12 @@ import { Context, Next } from 'hono'
 import { Bindings, Variables } from '../types'
 import { getDb } from '../db'
 import { personalAccessTokens, users, households, userHouseholds } from '../db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
+
+let patAuthQuery: any;
+let verifyUserQuery: any;
+let verifyHouseholdQuery: any;
+let verifyMembershipQuery: any;
 
 export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) => {
   try {
@@ -22,10 +27,14 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
     // 1. Check for Personal Access Tokens (PATs) first
     if (token.startsWith('ledger_')) {
-      const patResult = await db.select({ householdId: personalAccessTokens.householdId })
-        .from(personalAccessTokens)
-        .where(eq(personalAccessTokens.id, token))
-        .limit(1)
+      if (!patAuthQuery) {
+        patAuthQuery = db.select({ householdId: personalAccessTokens.householdId })
+          .from(personalAccessTokens)
+          .where(eq(personalAccessTokens.id, sql.placeholder('tokenId')))
+          .limit(1)
+          .prepare()
+      }
+      const patResult = await patAuthQuery.execute({ tokenId: token })
       
       if (patResult.length > 0) {
         c.set('householdId', String(patResult[0].householdId))
@@ -41,10 +50,14 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     const householdHeader = c.req.header('x-household-id')
 
     // Verify user exists and is active
-    const userResult = await db.select({ id: users.id, globalRole: users.globalRole, status: users.status })
-      .from(users)
-      .where(eq(users.id, payload.sub))
-      .limit(1)
+    if (!verifyUserQuery) {
+      verifyUserQuery = db.select({ id: users.id, globalRole: users.globalRole, status: users.status })
+        .from(users)
+        .where(eq(users.id, sql.placeholder('userId')))
+        .limit(1)
+        .prepare()
+    }
+    const userResult = await verifyUserQuery.execute({ userId: String(payload.sub) })
       
     const user = userResult[0]
 
@@ -86,7 +99,14 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     }
 
     // Verify Household exists to prevent Foreign Key errors in logAudit
-    const hhResult = await db.select({ id: households.id }).from(households).where(eq(households.id, activeHouseholdId)).limit(1)
+    if (!verifyHouseholdQuery) {
+      verifyHouseholdQuery = db.select({ id: households.id })
+        .from(households)
+        .where(eq(households.id, sql.placeholder('householdId')))
+        .limit(1)
+        .prepare()
+    }
+    const hhResult = await verifyHouseholdQuery.execute({ householdId: String(activeHouseholdId) })
 
     if (!hhResult[0]) {
       if (globalRole === 'super_admin') {
@@ -98,10 +118,14 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
     // If NOT super_admin, verify User belongs to this household
     if (globalRole !== 'super_admin') {
-      const uhResult = await db.select({ role: userHouseholds.role })
-        .from(userHouseholds)
-        .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, activeHouseholdId)))
-        .limit(1)
+      if (!verifyMembershipQuery) {
+        verifyMembershipQuery = db.select({ role: userHouseholds.role })
+          .from(userHouseholds)
+          .where(and(eq(userHouseholds.userId, sql.placeholder('userId')), eq(userHouseholds.householdId, sql.placeholder('householdId'))))
+          .limit(1)
+          .prepare()
+      }
+      const uhResult = await verifyMembershipQuery.execute({ userId: String(userId), householdId: String(activeHouseholdId) })
       
       if (!uhResult[0]) {
         console.warn(`[Auth] Access Denied: User ${userId} is not a member of Household ${activeHouseholdId}`)
@@ -117,6 +141,6 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     await next()
   } catch (e: any) {
     console.error('[Auth Error]', e.message)
-    return c.json({ error: e.message || 'Unauthorized' }, e.status || 401)
+    throw new HTTPException(e.status || 401, { message: e.message || 'Unauthorized' })
   }
 }

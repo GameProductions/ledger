@@ -66,9 +66,16 @@ export class RateLimiter {
     const key = `${ip}:${windowMinute}`
     
     const current: number = (await this.state.storage.get(key)) || 0
-    if (current >= limit) return new Response('Rate limit exceeded', { status: 429 })
+    if (current >= limit) {
+      return new Response('Rate limit exceeded', { 
+        status: 429, 
+        headers: { 'X-RateLimit-Limit': limit.toString(), 'X-RateLimit-Remaining': '0', 'Retry-After': '60' } 
+      })
+    }
     
     await this.state.storage.put(key, current + 1)
-    return new Response(JSON.stringify({ remaining: limit - current - 1 }))
+    return new Response(JSON.stringify({ remaining: limit - current - 1 }), { 
+      headers: { 'X-RateLimit-Limit': limit.toString(), 'X-RateLimit-Remaining': (limit - current - 1).toString() } 
+    })
   }
 }

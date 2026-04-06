@@ -52,6 +52,7 @@ pcc.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c)
   
   await db.update(systemConfig).set({ configValue: config_value, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
   await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
+  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
   return c.json({ success: true })
 })
 
@@ -574,6 +575,7 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
   const db = getDb(c.env)
   await db.update(systemConfig).set({ configValue: enabled ? 'true' : 'false' }).where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
   await logAudit(c, 'system_config', 'MAINTENANCE_MODE', 'TOGGLE_MAINTENANCE', {}, { enabled })
+  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
   return c.json({ success: true })
 })
 

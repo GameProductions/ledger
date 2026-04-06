@@ -250,9 +250,30 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
     }
   }
 
-  // 2. Daily Maintenance
-  if (event.cron === "0 0 * * *") {
+  // 2. Weekly Maintenance (Sundays) & Backups
+  if (event.cron === "0 0 * * SUN" || event.cron === "0 0 * * *") {
     ctx.waitUntil(syncAllConnections(env));
+    
+    // Disaster Recovery Backup to R2
+    if (env.BACKUPS) {
+      ctx.waitUntil((async () => {
+        try {
+          const tables = ['users', 'households', 'user_households', 'accounts', 'transactions', 'subscriptions', 'passkeys'];
+          const dump: Record<string, any[]> = {};
+          for (const table of tables) {
+            const { results } = await env.DB.prepare(`SELECT * FROM ${table}`).all();
+            dump[table] = results;
+          }
+          const payload = JSON.stringify({ version: 'v3.22.0', timestamp: nowIso, data: dump });
+          const filename = `ledger_automated_backup_${nowIso.split('T')[0]}.json`;
+          
+          await env.BACKUPS.put(filename, payload);
+          console.log(`[Backup] Successfully exported disaster-recovery telemetry to R2: ${filename}`);
+        } catch (e: any) {
+          console.error('[Backup] R2 Exporter failed:', e.message);
+        }
+      })());
+    }
     
     // Discord Alerts (Trial Expiry, Weekly Pulse)
     const webhookUrl = env.DISCORD_WEBHOOK_URL;

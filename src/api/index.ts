@@ -156,7 +156,14 @@ app.use('/api/*', async (c, next) => {
   const id = c.env.RATE_LIMITER.idFromName(ip)
   const obj = c.env.RATE_LIMITER.get(id)
   const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=100`, c.req.url))
-  if (res.status === 429) return c.json({ error: 'Too many requests' }, 429)
+  
+  c.header('X-RateLimit-Limit', res.headers.get('X-RateLimit-Limit') || '100')
+  c.header('X-RateLimit-Remaining', res.headers.get('X-RateLimit-Remaining') || '99')
+  
+  if (res.status === 429) {
+    c.header('Retry-After', res.headers.get('Retry-After') || '60')
+    return c.json({ error: 'Too many requests' }, 429)
+  }
   await next()
 })
 
@@ -197,17 +204,29 @@ ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)
 ledger.get('/api/config', async (c) => {
+  const cached = await c.env.LEDGER_CACHE?.get('API_CONFIG', 'json')
+  if (cached) return c.json(cached)
+
   const db = getDb(c.env)
   const configs = await db.select({ configKey: systemConfig.configKey, configValue: systemConfig.configValue }).from(systemConfig);
-  return c.json(configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {}))
+  const result = configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {})
+  
+  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
+  return c.json(result)
 })
 
 ledger.get('/api/theme/broadcast', async (c) => {
   try {
+    const cached = await c.env.LEDGER_CACHE?.get('THEME_BROADCAST', 'json')
+    if (cached) return c.json(cached)
+
     const db = getDb(c.env)
     const config = await db.select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, "broadcast_theme_id")).limit(1).then(res => res[0]);
     if (!config || !config.configValue) return c.json({ themeId: null })
-    return c.json({ themeId: JSON.parse(config.configValue as string) })
+    
+    const result = { themeId: JSON.parse(config.configValue as string) }
+    if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.put('THEME_BROADCAST', JSON.stringify(result), { expirationTtl: 60 }))
+    return c.json(result)
   } catch (e) {
     return c.json({ themeId: null })
   }
@@ -224,6 +243,7 @@ ledger.post('/api/theme/broadcast', async (c) => {
     target: [systemConfig.configKey],
     set: { configValue: JSON.stringify(themeId) }
   });
+  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('THEME_BROADCAST'))
   return c.json({ success: true })
 })
 

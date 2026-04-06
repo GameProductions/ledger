@@ -21,10 +21,20 @@
       "database_id": "37cdc982-24b7-4c10-999b-62732e922476"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "LEDGER_CACHE",
+      "id": "e2baeb8c6c4c47f781a74d1a58ea13b4"
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "ASSETS",
       "bucket_name": "ledger-assets"
+    },
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "ledger-backups"
     }
   ],
   "durable_objects": {

@@ -1,10 +1,13 @@
 export type D1Database = any;
 export type R2Bucket = any;
 export type DurableObjectNamespace = any;
+export type KVNamespace = any;
 
 export type Bindings = {
   DB: D1Database
   ASSETS: R2Bucket
+  BACKUPS: R2Bucket
+  LEDGER_CACHE: KVNamespace
   SESSION: DurableObjectNamespace
   JWT_SECRET: string
   DISCORD_TOKEN: string

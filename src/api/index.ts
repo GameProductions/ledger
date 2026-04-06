@@ -262,12 +262,13 @@ ledger.get('/.well-known/microsoft-identity-association.json', msVerification)
 app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
 // 6. Global Route Mounting
+// 6. Global Route Mounting
 // Targeted Authentication Protocol (v3.17.3)
 ledger.use('/api/*', async (c, next) => {
   const path = c.req.path
   const method = c.req.method
 
-  const isPublicApi = path === '/api/config' || path === '/api/theme/broadcast' || (method === 'OPTIONS')
+  const isPublicApi = path === '/api/config' || path === '/api/theme/broadcast' || path.startsWith('/api/discord') || (method === 'OPTIONS')
   if (isPublicApi) return await next()
   
   return authMiddleware(c, next)
@@ -287,7 +288,7 @@ ledger.route('/api/pcc', pccRoutes)
 ledger.route('/api/backup', backupRoutes)
 ledger.route('/api/support', supportRoutes)
 
-ledger.route('/discord', discordRoutes)
+ledger.route('/api/discord', discordRoutes)
 
 
 // 6. Global Error Handler

@@ -25,6 +25,7 @@ app.use('*', async (c, next) => {
 app.use('/assets/*', serveStatic({ root: './', manifest }));
 app.use('/brand/*', serveStatic({ root: './', manifest }));
 app.get('/manifest.json', serveStatic({ path: 'manifest.json', manifest }));
+app.get('/sw.js', serveStatic({ path: 'sw.js', manifest }));
 app.get('/favicon.ico', async (c, next) => {
   const res = await serveStatic({ path: 'favicon.ico', manifest })(c, next);
   if (!res) return c.notFound();

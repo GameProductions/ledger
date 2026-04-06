@@ -3,7 +3,6 @@
   "name": "ledger",
   "main": "server.ts",
   "compatibility_date": "2025-01-01",
-  "migrations_dir": "archive/migrations",
   "compatibility_flags": ["nodejs_compat"],
   "site": {
     "bucket": "./dist"
@@ -18,13 +17,14 @@
     {
       "binding": "DB",
       "database_name": "ledger-db",
-      "database_id": "37cdc982-24b7-4c10-999b-62732e922476"
+      "database_id": "37cdc982-24b7-4c10-999b-62732e922476",
+      "migrations_dir": "archive/migrations"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "LEDGER_CACHE",
-      "id": "e2baeb8c6c4c47f781a74d1a58ea13b4"
+      "id": "82e77de9e9e4478bbf2859af4f143820"
     }
   ],
   "r2_buckets": [

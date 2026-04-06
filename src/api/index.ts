@@ -47,7 +47,7 @@ app.use('*', secureHeaders({
     scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com"],
-    imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com"],
+    imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com", "https://cdn.simpleicons.org", "https://flaticons.net"],
     connectSrc: ["'self'", "https://api.gpnet.dev", "https://ledger.gpnet.dev", "http://localhost:8787"],
     upgradeInsecureRequests: [],
   },

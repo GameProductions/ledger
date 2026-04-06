@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
   const handleTokenLogin = async (token: string) => {
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
       const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
@@ -68,7 +68,7 @@ const LoginPage: React.FC = () => {
   const handleLogin = async () => {
     setLoading(true)
     try {
-      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
       const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,7 +130,7 @@ const LoginPage: React.FC = () => {
   const handlePasskeyLogin = async () => {
     setLoading(true)
     try {
-      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
       const optRes = await fetch(`${apiUrl}/auth/passkeys/login-options`, { 
         method: 'POST',
         credentials: 'include'
@@ -166,7 +166,7 @@ const LoginPage: React.FC = () => {
 
   const handleRequestReset = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
       await fetch(`${apiUrl}/auth/password/reset-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,7 +181,7 @@ const LoginPage: React.FC = () => {
 
   const handleResetPassword = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
       const res = await fetch(`${apiUrl}/auth/password/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -282,7 +282,7 @@ const LoginPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => {
-                const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+                const baseApi = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
                 window.location.href = `${baseApi}/auth/login/google`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"
@@ -292,7 +292,7 @@ const LoginPage: React.FC = () => {
             </button>
             <button 
               onClick={() => {
-                const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+                const baseApi = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
                 window.location.href = `${baseApi}/auth/login/discord`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"

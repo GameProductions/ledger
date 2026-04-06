@@ -19,7 +19,10 @@
     "paths": {
       "@/*": ["./src/web/*"],
       "~/*": ["./src/api/*"]
-    }
+    },
+    "types": [
+      "vite/client"
+    ]
   },
   "include": ["src", "server.ts"],
   "exclude": ["node_modules", "dist"]

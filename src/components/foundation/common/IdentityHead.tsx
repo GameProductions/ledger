@@ -12,6 +12,7 @@ type AppIdentity = {
  * Centralized component for dynamic branding assets.
  * Enforces use of the specific app logo for Favicons, OG Tags, and Shortcuts.
  */
+type OGMetadata = any;
 export const IdentityHead = ({ name, description, logoUrl, url, overrides }: AppIdentity & { overrides?: Partial<OGMetadata> }) => {
   const displayTitle = overrides?.title || name;
   const displayDescription = overrides?.description || description;

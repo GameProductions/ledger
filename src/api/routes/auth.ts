@@ -15,6 +15,9 @@ import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
 import { Buffer } from 'node:buffer'
+import { getDb } from '../db'
+import { users, passkeys } from '../db/schema'
+import { eq, or } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -54,8 +57,8 @@ auth.post('/login', zValidator('json', z.object({
       user: { 
         id: user.id, 
         email: user.email, 
-        displayName: user.display_name,
-        force_password_change: !!user.force_password_change
+        displayName: user.displayName,
+        force_password_change: !!user.forcePasswordChange
       } 
     })
   } catch (e: any) {
@@ -491,18 +494,20 @@ auth.get('/callback/onedrive', async (c) => {
 auth.post('/passkeys/register-options', async (c) => {
   const userId = c.get('userId')
   const authService = new AuthService(c.env)
-  const user: any = await c.env.DB.prepare('SELECT email, username FROM users WHERE id = ?').bind(userId).first()
+  const db = getDb(c.env)
+  const userResult = await db.select({ email: users.email, username: users.username }).from(users).where(eq(users.id, userId)).limit(1)
+  const user = userResult[0]
   
-  const passkeys: any = await c.env.DB.prepare('SELECT credential_id, transports FROM passkeys WHERE user_id = ?').bind(userId).all()
+  const passkeysResult = await db.select({ credentialId: passkeys.credentialId, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId))
   
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
     rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
     userID: new TextEncoder().encode(userId) as any,
-    userName: user.username || user.email,
+    userName: user.username || user.email || 'unknown',
     attestationType: 'none',
-    excludeCredentials: (passkeys.results || []).map((pk: any) => ({
-      id: Buffer.from(pk.credential_id, 'base64'),
+    excludeCredentials: (passkeysResult || []).map((pk: any) => ({
+      id: pk.credentialId,
       type: 'public-key',
       transports: pk.transports ? JSON.parse(pk.transports) : [],
     })),
@@ -548,23 +553,24 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
 
   const { credentialPublicKey, credentialId, counter } =  (verification.registrationInfo as any)
   const id = crypto.randomUUID()
+  const db = getDb(c.env)
   
-  await c.env.DB.prepare('INSERT INTO passkeys (id, user_id, public_key, credential_id, name, aaguid, counter, transports) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(
-      id, 
-      userId, 
-      Buffer.from(credentialPublicKey).toString('base64'), 
-      Buffer.from(credentialId).toString('base64'), 
-      name || 'New Passkey', 
-       (verification.registrationInfo as any).aaguid || 'unknown',
-      counter,
-      JSON.stringify(attestation.response.transports || [])
-    ).run()
+  await db.insert(passkeys).values({
+    id: id,
+    userId: userId,
+    publicKey: Buffer.from(credentialPublicKey).toString('base64'),
+    credentialId: Buffer.from(credentialId).toString('base64'),
+    name: name || 'New Passkey',
+    aaguid: (verification.registrationInfo as any).aaguid || 'unknown',
+    counter: counter,
+    transports: JSON.stringify(attestation.response.transports || [])
+  })
     
   await logAudit(c, 'passkeys', id, 'REGISTER', null, { name })
   
   // Trigger Security Alert
-  const user: any = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first()
+  const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
+  const user = userResult[0]
   if (user?.email) {
     try {
       await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Biometric Passkey Enrolled')
@@ -623,8 +629,16 @@ auth.post('/passkeys/login-verify', async (c) => {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
   }
 
-  const passkey: any = await c.env.DB.prepare('SELECT * FROM passkeys WHERE credential_id = ? OR credential_id = ?')
-    .bind(assertion.id, Buffer.from(assertion.id, 'base64').toString('base64')).first()
+  const db = getDb(c.env)
+  const passkeyResult = await db.select()
+    .from(passkeys)
+    .where(or(
+      eq(passkeys.credentialId, assertion.id),
+      eq(passkeys.credentialId, Buffer.from(assertion.id, 'base64').toString('base64'))
+    ))
+    .limit(1)
+  
+  const passkey = passkeyResult[0]
   
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized' })
 
@@ -635,8 +649,8 @@ auth.post('/passkeys/login-verify', async (c) => {
     expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
      // @ts-ignore
     authenticator: {
-      credentialId: Buffer.from(passkey.credential_id, 'base64'),
-      credentialPublicKey: Buffer.from(passkey.public_key, 'base64'),
+      credentialId: Buffer.from(passkey.credentialId, 'base64'),
+      credentialPublicKey: Buffer.from(passkey.publicKey, 'base64'),
       counter: passkey.counter || 0,
     },
   })
@@ -646,12 +660,11 @@ auth.post('/passkeys/login-verify', async (c) => {
   }
 
   // Update counter
-  await c.env.DB.prepare('UPDATE passkeys SET counter = ? WHERE id = ?')
-    .bind(verification.authenticationInfo.newCounter, passkey.id).run()
+  await db.update(passkeys).set({ counter: verification.authenticationInfo.newCounter }).where(eq(passkeys.id, passkey.id))
 
   const authService = new AuthService(c.env)
-  const token = await authService.generateToken(passkey.user_id)
-  await logAudit(c, 'users', passkey.user_id, 'login', null, { strategy: 'passkey' })
+  const token = await authService.generateToken(passkey.userId)
+  await logAudit(c, 'users', passkey.userId, 'login', null, { strategy: 'passkey' })
   
   return c.json({ token })
 })
@@ -683,7 +696,9 @@ auth.post('/password/change', zValidator('json', z.object({ newPassword: z.strin
   await logAudit(c, 'users', userId, 'PASSWORD_CHANGE', null, null)
   
   // Trigger Security Alert
-  const user: any = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first()
+  const db = getDb(c.env)
+  const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
+  const user = userResult[0]
   if (user?.email) {
     try {
       await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'Account Password Modified')

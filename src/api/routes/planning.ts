@@ -10,26 +10,56 @@ import {
   OwnershipTransferSchema 
 } from '../schemas'
 import { logAudit } from '../utils'
+import { getDb } from '../db'
+import {
+  subscriptions,
+  transactions,
+  installmentPlans,
+  personalLoans,
+  loanPayments,
+  categories,
+  households,
+  templates
+} from '../db/schema'
+import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
 
 const planning = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+
+const toSnake = (obj: any) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  const res: any = {};
+  for (const key in obj) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    res[snakeKey] = obj[key];
+  }
+  return res;
+}
 
 // Subscriptions
 planning.get('/subscriptions', async (c) => {
   const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM subscriptions WHERE household_id = ?'
-  ).bind(householdId).all()
-  return c.json(results)
+  const db = getDb(c.env)
+  const results = await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId))
+  return c.json(results.map(toSnake))
 })
 
 planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c) => {
   const householdId = c.get('householdId')
   const { name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode, owner_id } = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    `INSERT INTO subscriptions (id, household_id, name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode, owner_id) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, householdId, name, amount_cents, billing_cycle, next_billing_date, account_id || null, payment_mode || 'manual', owner_id || c.get('userId')).run()
+  const db = getDb(c.env)
+  
+  await db.insert(subscriptions).values({
+    id,
+    householdId,
+    name,
+    amountCents: amount_cents,
+    billingCycle: billing_cycle,
+    nextBillingDate: next_billing_date,
+    accountId: account_id || null,
+    paymentMode: payment_mode || 'manual',
+    ownerId: owner_id || c.get('userId')
+  })
   
   await logAudit(c, 'subscriptions', id, 'create', null, { name, amount_cents, billing_cycle, payment_mode, owner_id })
   return c.json({ success: true, id })
@@ -39,26 +69,33 @@ planning.patch('/subscriptions/:id', zValidator('json', SubscriptionSchema.parti
   const householdId = c.get('householdId')
   const id = c.req.param('id')
   const data = c.req.valid('json')
+  const db = getDb(c.env)
   
-  const old = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  const oldResult = await db.select().from(subscriptions).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId))).limit(1)
+  const old = oldResult[0]
   if (!old) return c.json({ error: 'Not found' }, 404)
 
-  const { name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode } = data
-  await c.env.DB.prepare(
-    `UPDATE subscriptions SET name = COALESCE(?, name), amount_cents = COALESCE(?, amount_cents), billing_cycle = COALESCE(?, billing_cycle), 
-     next_billing_date = COALESCE(?, next_billing_date), account_id = COALESCE(?, account_id), payment_mode = COALESCE(?, payment_mode)
-     WHERE id = ? AND household_id = ?`
-  ).bind(name, amount_cents, billing_cycle, next_billing_date, account_id, payment_mode, id, householdId).run()
+  const updates: any = {}
+  if (data.name !== undefined) updates.name = data.name
+  if (data.amount_cents !== undefined) updates.amountCents = data.amount_cents
+  if (data.billing_cycle !== undefined) updates.billingCycle = data.billing_cycle
+  if (data.next_billing_date !== undefined) updates.nextBillingDate = data.next_billing_date
+  if (data.account_id !== undefined) updates.accountId = data.account_id
+  if (data.payment_mode !== undefined) updates.paymentMode = data.payment_mode
+  
+  if (Object.keys(updates).length > 0) {
+    await db.update(subscriptions).set(updates).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId)))
+    await logAudit(c, 'subscriptions', id, 'update', toSnake(old), data)
+  }
 
-  await logAudit(c, 'subscriptions', id, 'update', old, data)
   return c.json({ success: true })
 })
 
 planning.delete('/subscriptions/:id', async (c) => {
   const householdId = c.get('householdId')
   const id = c.req.param('id')
-  await c.env.DB.prepare('DELETE FROM subscriptions WHERE id = ? AND household_id = ?')
-    .bind(id, householdId).run()
+  const db = getDb(c.env)
+  await db.delete(subscriptions).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId)))
   return c.json({ success: true })
 })
 
@@ -66,23 +103,25 @@ planning.post('/subscriptions/:id/transfer', zValidator('json', OwnershipTransfe
   const householdId = c.get('householdId')
   const id = c.req.param('id')
   const { new_owner_id, transfer_history } = c.req.valid('json')
+  const db = getDb(c.env)
 
-  const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  const subResult = await db.select().from(subscriptions).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId))).limit(1)
+  const sub = subResult[0]
   if (!sub) return c.json({ error: 'Subscription not found' }, 404)
 
-  const queries = [
-    c.env.DB.prepare('UPDATE subscriptions SET owner_id = ? WHERE id = ?').bind(new_owner_id, id)
+  const patches: any[] = [
+    db.update(subscriptions).set({ ownerId: new_owner_id }).where(eq(subscriptions.id, id))
   ]
 
   if (transfer_history) {
-    queries.push(
-      c.env.DB.prepare('UPDATE transactions SET owner_id = ? WHERE household_id = ? AND description LIKE ?')
-        .bind(new_owner_id, householdId, `%${(sub as any).name}%`)
+    patches.push(
+      db.update(transactions).set({ ownerId: new_owner_id })
+        .where(and(eq(transactions.householdId, householdId), like(transactions.description, `%${sub.name}%`)))
     )
   }
 
-  await c.env.DB.batch(queries)
-  await logAudit(c, 'subscriptions', id, 'TRANSFER_OWNERSHIP', { old_owner: (sub as any).owner_id }, { new_owner_id, transfer_history })
+  await db.batch(patches as any)
+  await logAudit(c, 'subscriptions', id, 'TRANSFER_OWNERSHIP', { old_owner: sub.ownerId }, { new_owner_id, transfer_history })
 
   return c.json({ success: true })
 })
@@ -90,18 +129,30 @@ planning.post('/subscriptions/:id/transfer', zValidator('json', OwnershipTransfe
 // Installment Plans
 planning.get('/installment-plans', async (c) => {
   const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE household_id = ?').bind(householdId).all()
-  return c.json(results)
+  const db = getDb(c.env)
+  const results = await db.select().from(installmentPlans).where(eq(installmentPlans.householdId, householdId))
+  return c.json(results.map(toSnake))
 })
 
 planning.post('/installment-plans', zValidator('json', InstallmentPlanSchema), async (c) => {
   const householdId = c.get('householdId')
   const { name, total_amount_cents, installment_amount_cents, total_installments, frequency, next_payment_date, account_id, payment_mode } = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    `INSERT INTO installment_plans (id, household_id, name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, frequency, next_payment_date, account_id, payment_mode) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, householdId, name, total_amount_cents, installment_amount_cents, total_installments, total_installments, frequency, next_payment_date, account_id || null, payment_mode || 'manual').run()
+  const db = getDb(c.env)
+  
+  await db.insert(installmentPlans).values({
+    id,
+    householdId,
+    name,
+    totalAmountCents: total_amount_cents,
+    installmentAmountCents: installment_amount_cents,
+    totalInstallments: total_installments,
+    remainingInstallments: total_installments,
+    frequency,
+    nextPaymentDate: next_payment_date,
+    accountId: account_id || null,
+    paymentMode: payment_mode || 'manual'
+  })
   
   await logAudit(c, 'installment_plans', id, 'create', null, { name, total_amount_cents })
   return c.json({ success: true, id })
@@ -111,29 +162,37 @@ planning.patch('/installment-plans/:id', zValidator('json', InstallmentPlanSchem
   const householdId = c.get('householdId')
   const id = c.req.param('id')
   const data = c.req.valid('json')
+  const db = getDb(c.env)
   
-  const old = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE id = ? AND household_id = ?').bind(id, householdId).first()
+  const oldResult = await db.select().from(installmentPlans).where(and(eq(installmentPlans.id, id), eq(installmentPlans.householdId, householdId))).limit(1)
+  const old = oldResult[0]
   if (!old) return c.json({ error: 'Not found' }, 404)
 
-  const { name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, next_payment_date, account_id, payment_mode, status } = data as any
+  const updates: any = {}
+  if (data.name !== undefined) updates.name = data.name
+  if (data.total_amount_cents !== undefined) updates.totalAmountCents = data.total_amount_cents
+  if (data.installment_amount_cents !== undefined) updates.installmentAmountCents = data.installment_amount_cents
+  if (data.total_installments !== undefined) updates.totalInstallments = data.total_installments
+  if (data.remaining_installments !== undefined) updates.remainingInstallments = data.remaining_installments
+  if (data.next_payment_date !== undefined) updates.nextPaymentDate = data.next_payment_date
+  if (data.account_id !== undefined) updates.accountId = data.account_id
+  if (data.payment_mode !== undefined) updates.paymentMode = data.payment_mode
+  if (data.status !== undefined) updates.status = data.status
   
-  await c.env.DB.prepare(
-    `UPDATE installment_plans SET 
-       name = COALESCE(?, name), total_amount_cents = COALESCE(?, total_amount_cents), installment_amount_cents = COALESCE(?, installment_amount_cents), 
-       total_installments = COALESCE(?, total_installments), remaining_installments = COALESCE(?, remaining_installments), 
-       next_payment_date = COALESCE(?, next_payment_date), account_id = COALESCE(?, account_id), payment_mode = COALESCE(?, payment_mode), status = COALESCE(?, status)
-     WHERE id = ? AND household_id = ?`
-  ).bind(name, total_amount_cents, installment_amount_cents, total_installments, remaining_installments, next_payment_date, account_id, payment_mode, status, id, householdId).run()
+  if (Object.keys(updates).length > 0) {
+    await db.update(installmentPlans).set(updates).where(and(eq(installmentPlans.id, id), eq(installmentPlans.householdId, householdId)))
+    await logAudit(c, 'installment_plans', id, 'update', toSnake(old), data)
+  }
 
-  await logAudit(c, 'installment_plans', id, 'update', old, data)
   return c.json({ success: true })
 })
 
 // P2P Lending (Personal Loans)
 planning.get('/p2p/loans', async (c) => {
   const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare('SELECT * FROM personal_loans WHERE household_id = ?').bind(householdId).all()
-  return c.json(results)
+  const db = getDb(c.env)
+  const results = await db.select().from(personalLoans).where(eq(personalLoans.householdId, householdId))
+  return c.json(results.map(toSnake))
 })
 
 planning.post('/p2p/loans', zValidator('json', LoanSchema), async (c) => {
@@ -141,9 +200,21 @@ planning.post('/p2p/loans', zValidator('json', LoanSchema), async (c) => {
   const userId = c.get('userId')
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  await c.env.DB.prepare(
-    'INSERT INTO personal_loans (id, household_id, lender_user_id, borrower_name, borrower_contact, total_amount_cents, remaining_balance_cents, interest_rate_apy, term_months, origination_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).bind(id, householdId, userId, data.borrower_name, data.borrower_contact, data.total_amount_cents, data.total_amount_cents, data.interest_rate_apy || 0, data.term_months, data.origination_date).run()
+  const db = getDb(c.env)
+  
+  await db.insert(personalLoans).values({
+    id,
+    householdId,
+    lenderUserId: userId,
+    borrowerName: data.borrower_name,
+    borrowerContact: data.borrower_contact,
+    totalAmountCents: data.total_amount_cents,
+    remainingBalanceCents: data.total_amount_cents,
+    interestRateApy: data.interest_rate_apy || 0,
+    termMonths: data.term_months,
+    originationDate: data.origination_date
+  })
+  
   return c.json({ success: true, id })
 })
 
@@ -159,18 +230,27 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
   const id = crypto.randomUUID()
   
   const householdId = c.get('householdId')
-  const loan = await c.env.DB.prepare('SELECT id FROM personal_loans WHERE id = ? AND household_id = ?').bind(loanId, householdId).first()
-  if (!loan) throw new HTTPException(404, { message: 'Loan not found' })
+  const db = getDb(c.env)
+  
+  const loanResult = await db.select({ id: personalLoans.id }).from(personalLoans).where(and(eq(personalLoans.id, loanId), eq(personalLoans.householdId, householdId))).limit(1)
+  if (!loanResult[0]) throw new HTTPException(404, { message: 'Loan not found' })
 
   // 1. Log Payment
-  await c.env.DB.prepare(
-    'INSERT INTO loan_payments (id, loan_id, amount_cents, platform, external_id, method) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(id, loanId, data.amount_cents, data.platform, data.external_id, data.method).run()
+  const addPayment = db.insert(loanPayments).values({
+    id,
+    loanId,
+    amountCents: data.amount_cents,
+    platform: data.platform,
+    externalId: data.external_id,
+    method: data.method
+  })
   
   // 2. Update Balance
-  await c.env.DB.prepare(
-    'UPDATE personal_loans SET remaining_balance_cents = remaining_balance_cents - ? WHERE id = ?'
-  ).bind(data.amount_cents, loanId).run()
+  const updateBalance = db.update(personalLoans)
+    .set({ remainingBalanceCents: sql`remaining_balance_cents - \${data.amount_cents}` })
+    .where(eq(personalLoans.id, loanId))
+    
+  await db.batch([addPayment, updateBalance])
   
   // 3. Send Receipt (Wait Until)
   if (c.env.RESEND_API_KEY && data.email) {
@@ -178,14 +258,14 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
       fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
+          'Authorization': `Bearer \${c.env.RESEND_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           from: 'LEDGER <receipts@gpnet.dev>',
           to: data.email,
-          subject: `Payment Receipt: ${data.amount_cents / 100}`,
-          html: `<p>Thank you for your payment of $${(data.amount_cents / 100).toFixed(2)}!</p>`
+          subject: `Payment Receipt: \${data.amount_cents / 100}`,
+          html: `<p>Thank you for your payment of $\${(data.amount_cents / 100).toFixed(2)}!</p>`
         })
       })
     )
@@ -202,34 +282,42 @@ planning.get('/bills/upcoming', async (c) => {
   end.setDate(end.getDate() + days)
   const endDateStr = end.toISOString().split('T')[0]
 
-  const { results: subs } = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE household_id = ? AND next_billing_date <= ?').bind(householdId, endDateStr).all()
-  const { results: installments } = await c.env.DB.prepare('SELECT * FROM installment_plans WHERE household_id = ? AND next_payment_date <= ?').bind(householdId, endDateStr).all()
+  const db = getDb(c.env)
+  const subs = await db.select().from(subscriptions).where(and(eq(subscriptions.householdId, householdId), lte(subscriptions.nextBillingDate, endDateStr)))
+  const installments = await db.select().from(installmentPlans).where(and(eq(installmentPlans.householdId, householdId), lte(installmentPlans.nextPaymentDate, endDateStr)))
   
   return c.json({
-    subscriptions: subs,
-    installments: installments,
-    total_upcoming_cents: [...subs, ...installments].reduce((acc, curr: any) => acc + (curr.amount_cents || curr.installment_amount_cents || 0), 0)
+    subscriptions: subs.map(toSnake),
+    installments: installments.map(toSnake),
+    total_upcoming_cents: [...subs, ...installments].reduce((acc, curr: any) => acc + (curr.amountCents || curr.installmentAmountCents || 0), 0)
   })
 })
 
 // Budgets & Envelopes
 planning.get('/budgets', async (c) => {
   const householdId = c.get('householdId')
+  const db = getDb(c.env)
   
-  const household: any = await c.env.DB.prepare('SELECT unallocated_balance_cents FROM households WHERE id = ?').bind(householdId).first()
-  const { results: categories } = await c.env.DB.prepare('SELECT * FROM categories WHERE household_id = ?').bind(householdId).all()
-  const { results: spends } = await c.env.DB.prepare('SELECT category_id, SUM(amount_cents) as total_spend FROM transactions WHERE household_id = ? GROUP BY category_id').bind(householdId).all()
+  const hResult = await db.select({ unallocatedBalanceCents: households.unallocatedBalanceCents }).from(households).where(eq(households.id, householdId)).limit(1)
+  const household = hResult[0]
   
-  const budgets = categories.map((cat: any) => {
-    const spend = spends.find((s: any) => s.category_id === cat.id)?.total_spend || 0
+  const cats = await db.select().from(categories).where(eq(categories.householdId, householdId))
+  
+  const spends = await db.select({
+    categoryId: transactions.categoryId,
+    totalSpend: sql<number>`SUM(amount_cents)`.as('total_spend')
+  }).from(transactions).where(eq(transactions.householdId, householdId)).groupBy(transactions.categoryId)
+  
+  const budgets = cats.map(cat => {
+    const spend = spends.find(s => s.categoryId === cat.id)?.totalSpend || 0
     return {
-      ...cat,
+      ...toSnake(cat),
       spend_cents: spend
     }
   })
   
   return c.json({
-    unallocated_balance_cents: household?.unallocated_balance_cents || 0,
+    unallocated_balance_cents: household?.unallocatedBalanceCents || 0,
     budgets
   })
 })
@@ -240,10 +328,11 @@ planning.post('/budget/fund', zValidator('json', z.object({
 })), async (c) => {
   const householdId = c.get('householdId')
   const { category_id, amount_cents } = c.req.valid('json')
+  const db = getDb(c.env)
 
-  await c.env.DB.batch([
-    c.env.DB.prepare('UPDATE households SET unallocated_balance_cents = unallocated_balance_cents - ? WHERE id = ?').bind(amount_cents, householdId),
-    c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ? AND household_id = ?').bind(amount_cents, category_id, householdId)
+  await db.batch([
+    db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents - \${amount_cents}` }).where(eq(households.id, householdId)),
+    db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + \${amount_cents}` }).where(and(eq(categories.id, category_id), eq(categories.householdId, householdId)))
   ])
 
   return c.json({ success: true })
@@ -255,8 +344,9 @@ planning.post('/budget/deposit', zValidator('json', z.object({
 })), async (c) => {
   const householdId = c.get('householdId')
   const { amount_cents } = c.req.valid('json')
+  const db = getDb(c.env)
 
-  await c.env.DB.prepare('UPDATE households SET unallocated_balance_cents = unallocated_balance_cents + ? WHERE id = ?').bind(amount_cents, householdId).run()
+  await db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents + \${amount_cents}` }).where(eq(households.id, householdId))
 
   return c.json({ success: true })
 })
@@ -268,10 +358,11 @@ planning.post('/budget/transfer', zValidator('json', z.object({
 })), async (c) => {
   const householdId = c.get('householdId')
   const { from_category_id, to_category_id, amount_cents } = c.req.valid('json')
+  const db = getDb(c.env)
 
-  await c.env.DB.batch([
-    c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents - ? WHERE id = ? AND household_id = ?').bind(amount_cents, from_category_id, householdId),
-    c.env.DB.prepare('UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ? AND household_id = ?').bind(amount_cents, to_category_id, householdId)
+  await db.batch([
+    db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents - \${amount_cents}` }).where(and(eq(categories.id, from_category_id), eq(categories.householdId, householdId))),
+    db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + \${amount_cents}` }).where(and(eq(categories.id, to_category_id), eq(categories.householdId, householdId)))
   ])
 
   return c.json({ success: true })
@@ -280,42 +371,40 @@ planning.post('/budget/transfer', zValidator('json', z.object({
 // Rollover Engine
 planning.post('/budget/rollover', async (c) => {
   const householdId = c.get('householdId')
+  const db = getDb(c.env)
   
-  // 1. Fetch all categories
-  const { results: categories } = await c.env.DB.prepare(
-    'SELECT id, rollover_enabled, monthly_budget_cents FROM categories WHERE household_id = ?'
-  ).bind(householdId).all()
+  const cats = await db.select({
+    id: categories.id,
+    rolloverEnabled: categories.rolloverEnabled,
+    monthlyBudgetCents: categories.monthlyBudgetCents
+  }).from(categories).where(eq(categories.householdId, householdId))
 
-  if (!categories || categories.length === 0) return c.json({ success: true, count: 0 })
+  if (!cats || cats.length === 0) return c.json({ success: true, count: 0 })
 
-  const queries = categories.map((cat: any) => {
-    if (cat.rollover_enabled) {
-      // Add budget to existing balance
-      return c.env.DB.prepare(
-        'UPDATE categories SET envelope_balance_cents = envelope_balance_cents + ? WHERE id = ?'
-      ).bind(cat.monthly_budget_cents, cat.id)
+  const patches = cats.map(cat => {
+    if (cat.rolloverEnabled) {
+      return db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + \${cat.monthlyBudgetCents || 0}` }).where(eq(categories.id, cat.id))
     } else {
-      // Reset to budget amount (clear remainder)
-      return c.env.DB.prepare(
-        'UPDATE categories SET envelope_balance_cents = ? WHERE id = ?'
-      ).bind(cat.monthly_budget_cents, cat.id)
+      return db.update(categories).set({ envelopeBalanceCents: cat.monthlyBudgetCents || 0 }).where(eq(categories.id, cat.id))
     }
   })
 
-  await c.env.DB.batch(queries)
-  await logAudit(c, 'categories', 'bulk', 'ROLLOVER_MONTH', null, { category_count: categories.length })
+  // Group chunks to prevent limits
+  for (let i = 0; i < patches.length; i += 50) {
+    await db.batch(patches.slice(i, i + 50) as any)
+  }
+  
+  await logAudit(c, 'categories', 'bulk', 'ROLLOVER_MONTH', null, { category_count: cats.length })
 
-  return c.json({ success: true, count: categories.length })
+  return c.json({ success: true, count: cats.length })
 })
 
 // Transaction Templates
 planning.get('/templates', async (c) => {
   const householdId = c.get('householdId')
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM templates WHERE household_id = ?'
-  ).bind(householdId).all()
-  return c.json(results)
+  const db = getDb(c.env)
+  const results = await db.select().from(templates).where(eq(templates.householdId, householdId))
+  return c.json(results.map(toSnake))
 })
 
 export default planning
-

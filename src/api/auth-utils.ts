@@ -54,7 +54,7 @@ export async function generateTOTPSecret(): Promise<string> {
 export async function generateTOTPToken(secret: string, counter: number): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw',
-    base32Decode(secret),
+    base32Decode(secret) as any,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']

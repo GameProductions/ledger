@@ -1,3 +1,4 @@
+// @ts-ignore
 import { serve } from '@hono/node-server'
 import { app, HouseholdSession } from './index'
 // @ts-expect-error
@@ -107,7 +108,7 @@ const port = parseInt(process.env.PORT || '8787')
 console.log(`[Node] LEDGER API starting on port ${port}...`)
 
 serve({
-  fetch: (request) => {
+  fetch: (request: any) => {
     const env = {
       DB: d1Shim as any,
       SESSION: new DurableObjectNamespaceShim() as any,

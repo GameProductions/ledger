@@ -195,7 +195,7 @@ ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 // System Config & Theme (Universal Context)
 ledger.get('/api/config', async (c) => {
   const { results: configs } = await c.env.DB.prepare('SELECT config_key, config_value FROM system_config').all()
-  return c.json(configs.reduce((acc: any, curr) => ({ ...acc, [curr.config_key as string]: JSON.parse(curr.config_value as string) }), {}))
+  return c.json(configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.config_key as string]: JSON.parse(curr.config_value as string) }), {}))
 })
 
 ledger.get('/api/theme/broadcast', async (c) => {

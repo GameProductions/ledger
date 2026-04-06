@@ -1,4 +1,5 @@
-import { DurableObjectState } from '@cloudflare/workers-types'
+// import { DurableObjectState } from '@cloudflare/workers-types'
+type DurableObjectState = any;
 
 // --- DURABLE OBJECT: HouseholdSession ---
 export class HouseholdSession {

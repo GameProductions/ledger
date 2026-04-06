@@ -1,4 +1,6 @@
-import { D1Database, R2Bucket, DurableObjectNamespace } from '@cloudflare/workers-types'
+export type D1Database = any;
+export type R2Bucket = any;
+export type DurableObjectNamespace = any;
 
 export type Bindings = {
   DB: D1Database

@@ -3,6 +3,9 @@ import { HTTPException } from 'hono/http-exception'
 import { Bindings } from '../types'
 import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
 import { EmailService } from './email.service'
+import { getDb } from '../db'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations } from '../db/schema'
+import { eq, or, and, gt, sql } from 'drizzle-orm'
 
 export class AuthService {
   constructor(private env: Bindings) {}
@@ -10,34 +13,35 @@ export class AuthService {
   async validateCredentials(identifier: string, password: string) {
     console.log('[Auth] Attempting login for:', identifier)
     
-    const user: any = await this.env.DB.prepare(
-      'SELECT * FROM users WHERE username = ? OR email = ?'
-    ).bind(identifier, identifier).first()
+    const db = getDb(this.env)
+    const result = await db.select().from(users).where(
+      or(eq(users.username, identifier), eq(users.email, identifier))
+    ).limit(1)
+    
+    const user = result[0]
 
     if (!user) {
       console.warn('[Auth] User not found:', identifier)
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
-    if (!user.password_hash) {
+    if (!user.passwordHash) {
       console.warn('[Auth] Attempted password login on social-only account:', identifier)
       throw new HTTPException(401, { message: 'Account linked via social provider. Please use Discord or Google login.' })
     }
     
-    const isMatch = await verifyPassword(password, user.password_hash)
+    const isMatch = await verifyPassword(password, user.passwordHash)
     if (!isMatch) { 
       console.warn('[Auth] Password mismatch for:', identifier)
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
     // --- RE-HASH ON LOGIN (v3.11.3 Security Hardening) ---
-    // If successful, check if iterations are legacy (100k) and upgrade to 600k
-    const [iterations] = user.password_hash.split('.')
+    const [iterations] = user.passwordHash.split('.')
     if (parseInt(iterations) < 100000) {
       console.log('[Auth] Upgrading password hash iterations for:', user.username)
       const newHash = await hashPassword(password)
-      await this.env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
-        .bind(newHash, user.id).run()
+      await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, user.id))
     }
 
     console.log('[Auth] Login successful for:', user.username)
@@ -45,9 +49,9 @@ export class AuthService {
   }
 
   async verify2FA(user: any, totpCode?: string) {
-    if (user.totp_enabled) {
+    if (user.totpEnabled) {
       if (!totpCode) return { requires2FA: true }
-      const isValid = await verifyTOTP(user.totp_secret, totpCode)
+      const isValid = await verifyTOTP(user.totpSecret, totpCode)
       if (!isValid) throw new HTTPException(401, { message: 'Invalid 2FA code' })
     }
     return { requires2FA: false }
@@ -59,7 +63,6 @@ export class AuthService {
       householdId,
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
     }
-    
     if (impersonatorId) payload.impersonatorId = impersonatorId
 
     if (!this.env.JWT_SECRET) throw new HTTPException(500, { message: 'Internal error' })
@@ -67,192 +70,255 @@ export class AuthService {
   }
 
   async findOrCreateSocialUser(provider: string, profile: { id: string, email: string, avatar?: string, name?: string }, tokens?: { access_token: string, refresh_token?: string, expires_in?: number }) {
-    let identity: any = await this.env.DB.prepare(
-      'SELECT user_id FROM user_identities WHERE provider = ? AND provider_user_id = ?'
-    ).bind(provider, profile.id).first()
+    const db = getDb(this.env)
+    const identityResult = await db.select({ userId: userIdentities.userId })
+      .from(userIdentities)
+      .where(and(eq(userIdentities.provider, provider), eq(userIdentities.providerUserId, profile.id)))
+      .limit(1)
 
-    let userId = identity?.user_id
+    let userId = identityResult[0]?.userId
 
     if (!userId) {
-      const user: any = await this.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(profile.email).first()
-      if (user) {
-        userId = user.id
+      const userResult = await db.select({ id: users.id }).from(users).where(eq(users.email, profile.email)).limit(1)
+      if (userResult[0]) {
+        userId = userResult[0].id
       } else {
         userId = crypto.randomUUID()
-        await this.env.DB.prepare('INSERT INTO users (id, email, display_name, avatar_url) VALUES (?, ?, ?, ?)')
-          .bind(userId, profile.email, profile.name || `${provider} User`, profile.avatar).run()
+        await db.insert(users).values({
+          id: userId,
+          email: profile.email,
+          displayName: profile.name || `${provider} User`,
+          avatarUrl: profile.avatar || null,
+        })
       }
       
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
-      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id, email, name, avatar_url, access_token, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .bind(identityId, userId, provider, profile.id, profile.email ?? null, profile.name ?? null, profile.avatar ?? null, tokens?.access_token ?? null, tokens?.refresh_token ?? null, expiresAt).run()
+      await db.insert(userIdentities).values({
+        id: identityId,
+        userId: userId,
+        provider: provider,
+        providerUserId: profile.id,
+        email: profile.email ?? null,
+        name: profile.name ?? null,
+        avatarUrl: profile.avatar ?? null,
+        accessToken: tokens?.access_token ?? null,
+        refreshToken: tokens?.refresh_token ?? null,
+        tokenExpiresAt: expiresAt,
+      })
     } else if (tokens) {
-      // Update tokens for existing identity
       const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
-      await this.env.DB.prepare('UPDATE user_identities SET email = ?, name = ?, avatar_url = ?, access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ?')
-        .bind(profile.email ?? null, profile.name ?? null, profile.avatar ?? null, tokens.access_token ?? null, tokens.refresh_token ?? null, expiresAt, provider, profile.id).run()
+      await db.update(userIdentities).set({
+        email: profile.email ?? null,
+        name: profile.name ?? null,
+        avatarUrl: profile.avatar ?? null,
+        accessToken: tokens.access_token ?? null,
+        refreshToken: tokens.refresh_token ?? null,
+        tokenExpiresAt: expiresAt,
+        updatedAt: new Date().toISOString()
+      }).where(and(eq(userIdentities.provider, provider), eq(userIdentities.providerUserId, profile.id)))
     }
 
     return userId
   }
 
   async linkSocialAccount(userId: string, provider: string, profile: { id: string, email: string, avatar?: string, name?: string }, tokens?: { access_token: string, refresh_token?: string, expires_in?: number }) {
-    // 1. Check if this identity is already linked to ANOTHER user
-    const existing: any = await this.env.DB.prepare(
-      'SELECT user_id FROM user_identities WHERE provider = ? AND provider_user_id = ?'
-    ).bind(provider, profile.id).first()
+    const db = getDb(this.env)
+    const existingResult = await db.select({ userId: userIdentities.userId })
+      .from(userIdentities)
+      .where(and(eq(userIdentities.provider, provider), eq(userIdentities.providerUserId, profile.id)))
+      .limit(1)
+    
+    const existing = existingResult[0]
 
-    if (existing && existing.user_id !== userId) {
+    if (existing && existing.userId !== userId) {
       throw new HTTPException(409, { message: `This ${provider} account is already linked to another Ledger user.` })
     }
 
     if (!existing) {
-      // 2. Clear old identities of same provider for this user? No, allow multiples?
-      // For now, allow multiples.
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
-      await this.env.DB.prepare('INSERT INTO user_identities (id, user_id, provider, provider_user_id, email, name, avatar_url, access_token, refresh_token, token_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-        .bind(identityId, userId, provider, profile.id, profile.email ?? null, profile.name ?? null, profile.avatar ?? null, tokens?.access_token ?? null, tokens?.refresh_token ?? null, expiresAt).run()
+      await db.insert(userIdentities).values({
+        id: identityId,
+        userId: userId,
+        provider: provider,
+        providerUserId: profile.id,
+        email: profile.email ?? null,
+        name: profile.name ?? null,
+        avatarUrl: profile.avatar ?? null,
+        accessToken: tokens?.access_token ?? null,
+        refreshToken: tokens?.refresh_token ?? null,
+        tokenExpiresAt: expiresAt,
+      })
     } else {
-      // 3. Update tokens/profile for existing identity
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
-      await this.env.DB.prepare('UPDATE user_identities SET email = ?, name = ?, avatar_url = ?, access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE provider = ? AND provider_user_id = ? AND user_id = ?')
-        .bind(profile.email ?? null, profile.name ?? null, profile.avatar ?? null, tokens?.access_token ?? null, tokens?.refresh_token ?? null, expiresAt, provider, profile.id, userId).run()
+      await db.update(userIdentities).set({
+        email: profile.email ?? null,
+        name: profile.name ?? null,
+        avatarUrl: profile.avatar ?? null,
+        accessToken: tokens?.access_token ?? null,
+        refreshToken: tokens?.refresh_token ?? null,
+        tokenExpiresAt: expiresAt,
+        updatedAt: new Date().toISOString()
+      }).where(and(
+        eq(userIdentities.provider, provider), 
+        eq(userIdentities.providerUserId, profile.id), 
+        eq(userIdentities.userId, userId)
+      ))
     }
 
     return userId
   }
 
   async setupTOTP(userId: string) {
+    const db = getDb(this.env)
     const secret = await generateTOTPSecret()
-    await this.env.DB.prepare('UPDATE users SET totp_secret = ? WHERE id = ?')
-      .bind(secret, userId).run()
+    await db.update(users).set({ totpSecret: secret }).where(eq(users.id, userId))
     return secret
   }
 
   async verifyAndEnableTOTP(userId: string, code: string) {
-    const user: any = await this.env.DB.prepare('SELECT totp_secret FROM users WHERE id = ?').bind(userId).first()
-    const isValid = await verifyTOTP(user.totp_secret, code)
+    const db = getDb(this.env)
+    const userResult = await db.select({ totpSecret: users.totpSecret }).from(users).where(eq(users.id, userId)).limit(1)
+    const user = userResult[0]
+    if (!user || !user.totpSecret) return false;
+    
+    const isValid = await verifyTOTP(user.totpSecret, code)
     if (isValid) {
-      await this.env.DB.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').bind(userId).run()
+      await db.update(users).set({ totpEnabled: 1 }).where(eq(users.id, userId))
       return true
     }
     return false
   }
 
   async createAdminInvite(role: string = 'super_admin') {
+    const db = getDb(this.env)
     const token = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
       .replace(/[^a-zA-Z0-9]/g, '')
       .substring(0, 32)
     
     const expiresAt = new Date()
-    expiresAt.setHours(expiresAt.getHours() + 24) // 24h expiry
+    expiresAt.setHours(expiresAt.getHours() + 24)
 
-    await this.env.DB.prepare(
-      'INSERT INTO admin_invitations (token, role, expires_at) VALUES (?, ?, ?)'
-    ).bind(token, role, expiresAt.toISOString()).run()
+    await db.insert(adminInvitations).values({
+      token: token,
+      role: role,
+      expiresAt: expiresAt.toISOString(),
+    })
 
     return token
   }
 
   async consumeAdminInvite(token: string, username: string, password: string, email: string) {
-    // 1. Verify invitation
-    const invite: any = await this.env.DB.prepare(
-      'SELECT * FROM admin_invitations WHERE token = ? AND is_claimed = 0 AND expires_at > CURRENT_TIMESTAMP'
-    ).bind(token).first()
+    const db = getDb(this.env)
+    const inviteResult = await db.select().from(adminInvitations).where(
+      and(
+        eq(adminInvitations.token, token),
+        eq(adminInvitations.isClaimed, 0),
+        gt(adminInvitations.expiresAt, sql`CURRENT_TIMESTAMP`)
+      )
+    ).limit(1)
 
+    const invite = inviteResult[0]
     if (!invite) throw new HTTPException(400, { message: 'Invalid or expired invitation' })
 
-    // 2. Create User
     const userId = crypto.randomUUID()
     const passwordHash = await hashPassword(password)
     
-    await this.env.DB.batch([
-      this.env.DB.prepare(
-        'INSERT INTO users (id, username, email, password_hash, global_role, status) VALUES (?, ?, ?, ?, ?, ?)'
-      ).bind(userId, username, email, passwordHash, invite.role, 'active'),
-      this.env.DB.prepare(
-        'UPDATE admin_invitations SET is_claimed = 1 WHERE token = ?'
-      ).bind(token)
+    await db.batch([
+      db.insert(users).values({
+        id: userId,
+        username: username,
+        email: email,
+        passwordHash: passwordHash,
+        globalRole: invite.role,
+        status: 'active'
+      }),
+      db.update(adminInvitations).set({ isClaimed: 1 }).where(eq(adminInvitations.token, token))
     ])
 
     return userId
   }
 
-  // --- PASSWORD LIFECYCLE (v2.4.0) ---
-
   async requestPasswordReset(identifier: string) {
-    const user: any = await this.env.DB.prepare('SELECT id, email FROM users WHERE email = ? OR username = ?').bind(identifier, identifier).first()
-    if (!user) return null // Silent fail for security
+    const db = getDb(this.env)
+    const userResult = await db.select({ id: users.id, email: users.email }).from(users).where(
+      or(eq(users.email, identifier), eq(users.username, identifier))
+    ).limit(1)
+    const user = userResult[0]
+    if (!user || !user.email) return null 
 
     const token = crypto.randomUUID()
-    const expiresAt = new Date(Date.now() + 3600000).toISOString() // 1h
+    const expiresAt = new Date(Date.now() + 3600000).toISOString() 
     
-    await this.env.DB.prepare(
-      'INSERT INTO password_resets (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)'
-    ).bind(crypto.randomUUID(), user.id, token, expiresAt).run()
+    await db.insert(passwordResets).values({
+      id: crypto.randomUUID(),
+      userId: user.id,
+      token: token,
+      expiresAt: expiresAt,
+    })
 
-    // Trigger Email Integration
     const emailService = new EmailService(this.env)
     try {
       await emailService.sendPasswordResetEmail(user.email, token)
     } catch (e) {
       console.error('[AuthService] Failed to send recovery email:', e)
-      // We still return the token so dev recovery works via console/DB
     }
 
     return token
   }
 
   async resetPassword(token: string, newPassword: string) {
-    // Standardize comparison by using unix timestamps or reliable string formats
-    const reset: any = await this.env.DB.prepare(
-      'SELECT * FROM password_resets WHERE token = ? AND is_used = 0 AND expires_at > DATETIME("now")'
-    ).bind(token).first()
-
+    const db = getDb(this.env)
+    const resetResult = await db.select().from(passwordResets).where(
+      and(
+        eq(passwordResets.token, token),
+        eq(passwordResets.isUsed, 0),
+        gt(passwordResets.expiresAt, sql`DATETIME("now")`)
+      )
+    ).limit(1)
+    const reset = resetResult[0]
     if (!reset) throw new HTTPException(400, { message: 'Invalid or expired reset token' })
 
     const passwordHash = await hashPassword(newPassword)
-    await this.env.DB.batch([
-      this.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?').bind(passwordHash, reset.user_id),
-      this.env.DB.prepare('UPDATE password_resets SET is_used = 1 WHERE token = ?').bind(token)
+    await db.batch([
+      db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: 0 }).where(eq(users.id, reset.userId)),
+      db.update(passwordResets).set({ isUsed: 1 }).where(eq(passwordResets.token, token))
     ])
     return true
   }
 
   async changePassword(userId: string, newPassword: string) {
+    const db = getDb(this.env)
     const passwordHash = await hashPassword(newPassword)
-    await this.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = 0 WHERE id = ?').bind(passwordHash, userId).run()
+    await db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: 0 }).where(eq(users.id, userId))
     return true
   }
 
   async adminResetPassword(userId: string, newPassword: string, isTemporary: boolean = false) {
+    const db = getDb(this.env)
     const passwordHash = await hashPassword(newPassword)
-    await this.env.DB.prepare('UPDATE users SET password_hash = ?, force_password_change = ? WHERE id = ?')
-      .bind(passwordHash, isTemporary ? 1 : 0, userId).run()
+    await db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: isTemporary ? 1 : 0 }).where(eq(users.id, userId))
     return true
   }
 
-  // --- PASSKEY MANAGEMENT (v2.4.0) ---
-
   async updatePasskeyName(passkeyId: string, userId: string, name: string, isAdmin: boolean = false) {
-    const query = isAdmin 
-      ? 'UPDATE passkeys SET name = ? WHERE id = ?' 
-      : 'UPDATE passkeys SET name = ? WHERE id = ? AND user_id = ?'
-    const params = isAdmin ? [name, passkeyId] : [name, passkeyId, userId]
-    
-    await this.env.DB.prepare(query).bind(...params).run()
+    const db = getDb(this.env)
+    if (isAdmin) {
+      await db.update(passkeys).set({ name }).where(eq(passkeys.id, passkeyId))
+    } else {
+      await db.update(passkeys).set({ name }).where(and(eq(passkeys.id, passkeyId), eq(passkeys.userId, userId)))
+    }
     return true
   }
 
   async removePasskey(passkeyId: string, userId: string, isAdmin: boolean = false) {
-    const query = isAdmin 
-      ? 'DELETE FROM passkeys WHERE id = ?' 
-      : 'DELETE FROM passkeys WHERE id = ? AND user_id = ?'
-    const params = isAdmin ? [passkeyId] : [passkeyId, userId]
-    
-    await this.env.DB.prepare(query).bind(...params).run()
+    const db = getDb(this.env)
+    if (isAdmin) {
+      await db.delete(passkeys).where(eq(passkeys.id, passkeyId))
+    } else {
+      await db.delete(passkeys).where(and(eq(passkeys.id, passkeyId), eq(passkeys.userId, userId)))
+    }
     return true
   }
 }

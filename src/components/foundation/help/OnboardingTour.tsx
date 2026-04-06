@@ -7,7 +7,7 @@ import 'driver.js/dist/driver.css';
  * Standardized tour engine using 'driver.js'.
  * Supports custom steps and state-tracked play (localStorage check).
  */
-export const OnboardingTour = ({ steps, tourKey = 'default_tour' }) => {
+export const OnboardingTour = ({ steps, tourKey = 'default_tour' }: any) => {
   useEffect(() => {
     const hasCompletedTour = localStorage.getItem(`gp_tour_complete_${tourKey}`);
 

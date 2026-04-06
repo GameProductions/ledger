@@ -2,6 +2,9 @@ import { HTTPException } from 'hono/http-exception'
 import { verify } from 'hono/jwt'
 import { Context, Next } from 'hono'
 import { Bindings, Variables } from '../types'
+import { getDb } from '../db'
+import { personalAccessTokens, users, households, userHouseholds } from '../db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) => {
   try {
@@ -15,14 +18,17 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     const jwtSecret = c.env.JWT_SECRET
     if (!jwtSecret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
     
+    const db = getDb(c.env)
+
     // 1. Check for Personal Access Tokens (PATs) first
     if (token.startsWith('ledger_')) {
-      const { results } = await c.env.DB.prepare(
-        'SELECT household_id FROM personal_access_tokens WHERE id = ?'
-      ).bind(token).all()
+      const patResult = await db.select({ householdId: personalAccessTokens.householdId })
+        .from(personalAccessTokens)
+        .where(eq(personalAccessTokens.id, token))
+        .limit(1)
       
-      if (results.length > 0) {
-        c.set('householdId', String(results[0].household_id))
+      if (patResult.length > 0) {
+        c.set('householdId', String(patResult[0].householdId))
         c.set('userId', 'pat-user') 
         c.set('globalRole', 'user')
         await next()
@@ -35,9 +41,12 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     const householdHeader = c.req.header('x-household-id')
 
     // Verify user exists and is active
-    const user = await c.env.DB.prepare(
-      'SELECT id, global_role, status FROM users WHERE id = ?'
-    ).bind(payload.sub).first() as any
+    const userResult = await db.select({ id: users.id, globalRole: users.globalRole, status: users.status })
+      .from(users)
+      .where(eq(users.id, payload.sub))
+      .limit(1)
+      
+    const user = userResult[0]
 
     if (!user) {
       console.warn(`[Auth] User not found: ${payload.sub}`)
@@ -50,13 +59,12 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     }
     
     const userId = user.id
-    const globalRole = user.global_role
+    const globalRole = user.globalRole
     let activeHouseholdId = householdHeader || payload.householdId
 
     // Heartbeat (Non-blocking)
     c.executionCtx.waitUntil(
-      c.env.DB.prepare('UPDATE users SET last_active_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .bind(userId).run()
+      db.update(users).set({ lastActiveAt: new Date().toISOString() }).where(eq(users.id, userId)).execute()
     )
 
     // 3. Household Context Logic
@@ -70,7 +78,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
     if (isUserLevelRoute) {
       c.set('userId', userId)
-      c.set('globalRole', globalRole)
+      c.set('globalRole', globalRole as string)
       // Attempt to set householdId if present, but don't fail if not
       if (activeHouseholdId) c.set('householdId', String(activeHouseholdId))
       await next()
@@ -78,11 +86,9 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     }
 
     // Verify Household exists to prevent Foreign Key errors in logAudit
-    const householdExists = await c.env.DB.prepare(
-      'SELECT id FROM households WHERE id = ?'
-    ).bind(activeHouseholdId).first()
+    const hhResult = await db.select({ id: households.id }).from(households).where(eq(households.id, activeHouseholdId)).limit(1)
 
-    if (!householdExists) {
+    if (!hhResult[0]) {
       if (globalRole === 'super_admin') {
         activeHouseholdId = 'ledger-main-001'
       } else {
@@ -92,18 +98,19 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
     // If NOT super_admin, verify User belongs to this household
     if (globalRole !== 'super_admin') {
-      const dbRes = await c.env.DB.prepare(
-        'SELECT role FROM user_households WHERE user_id = ? AND household_id = ?'
-      ).bind(userId, activeHouseholdId).first()
+      const uhResult = await db.select({ role: userHouseholds.role })
+        .from(userHouseholds)
+        .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, activeHouseholdId)))
+        .limit(1)
       
-      if (!dbRes) {
+      if (!uhResult[0]) {
         console.warn(`[Auth] Access Denied: User ${userId} is not a member of Household ${activeHouseholdId}`)
         throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
     }
     
     c.set('userId', userId)
-    c.set('globalRole', globalRole)
+    c.set('globalRole', globalRole as string)
     c.set('householdId', String(activeHouseholdId))
     if (payload.impersonatorId) c.set('impersonatorId', payload.impersonatorId)
     

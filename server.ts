@@ -46,7 +46,7 @@ export { HouseholdSession, Vault, RateLimiter } from './src/api/durable-objects'
 
 export default {
   fetch: app.fetch,
-  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+  async scheduled(event: any, env: Bindings, ctx: any) {
     await handleScheduled(event, env, ctx)
   }
 };

@@ -71,7 +71,7 @@ user.get('/onboarding', async (c) => {
   const { results: stepResults } = await c.env.DB.prepare(
     'SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"'
   ).bind(userId).all()
-  const completedSteps = stepResults?.map(r => r.step_id as string) || []
+  const completedSteps = stepResults?.map((r: any) => r.step_id as string) || []
   
   // 2. Get last viewed version
   const user = await c.env.DB.prepare('SELECT last_viewed_version FROM users WHERE id = ?').bind(userId).first()
@@ -107,7 +107,7 @@ user.post('/onboarding/step', zValidator('json', z.object({
   }
   
   const { results } = await c.env.DB.prepare('SELECT step_id FROM user_onboarding WHERE user_id = ? AND status = "completed"').bind(userId).all()
-  const completedSteps = results?.map(r => r.step_id as string) || []
+  const completedSteps = results?.map((r: any) => r.step_id as string) || []
 
   return c.json({
     success: true,
@@ -248,7 +248,7 @@ user.get('/preferences', async (c) => {
   const { results } = await c.env.DB.prepare(
     'SELECT key, value FROM user_preferences WHERE user_id = ?'
   ).bind(userId).all()
-  return c.json(results.reduce((acc: any, curr) => ({ ...acc, [curr.key as string]: curr.value }), {}))
+  return c.json(results.reduce((acc: any, curr: any) => ({ ...acc, [curr.key as string]: curr.value }), {}))
 })
 
 user.patch('/preferences', zValidator('json', z.record(z.string(), z.string())), async (c) => {

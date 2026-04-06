@@ -5,7 +5,7 @@ import React, { useState } from 'react';
  * Standardization of bulk data operations (Import/Export).
  * Implements D1 batching logic to prevent worker timeouts.
  */
-export const DataCenter = ({ tables, onImport, onExport }) => {
+export const DataCenter = ({ tables, onImport, onExport }: any) => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('idle');
 
@@ -30,7 +30,7 @@ export const DataCenter = ({ tables, onImport, onExport }) => {
       <p className="description">Manage high-performance imports and encrypted backups.</p>
 
       <div className="table-registry scrollable-list">
-        {tables.map((table) => (
+        {tables.map((table: any) => (
           <div key={table.name} className="data-control-card">
             <div className="table-info">
               <h3>{table.name}</h3>

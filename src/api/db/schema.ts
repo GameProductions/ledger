@@ -68,7 +68,9 @@ export const accounts = sqliteTable('accounts', {
   type: text('type').notNull(),
   balanceCents: integer('balance_cents').default(0),
   currency: text('currency').default('USD'),
-});
+}, (table) => ({
+  householdIdx: index('idx_accounts_household').on(table.householdId),
+}));
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
@@ -81,7 +83,9 @@ export const categories = sqliteTable('categories', {
   rolloverEnabled: integer('rollover_enabled', { mode: 'boolean' }).default(false),
   rolloverCents: integer('rollover_cents').default(0),
   emergencyFund: integer('emergency_fund', { mode: 'boolean' }).default(false),
-});
+}, (table) => ({
+  householdIdx: index('idx_categories_household').on(table.householdId),
+}));
 
 export const paySchedules = sqliteTable('pay_schedules', {
   id: text('id').primaryKey(),
@@ -107,7 +111,11 @@ export const transactions = sqliteTable('transactions', {
   confirmationNumber: text('confirmation_number'),
   linkedTransactionId: text('linked_transaction_id'),
   reconciliationStatus: text('reconciliation_status').default('unreconciled'),
-});
+}, (table) => ({
+  householdIdx: index('idx_transactions_household').on(table.householdId),
+  accountIdx: index('idx_transactions_account').on(table.accountId),
+  categoryIdx: index('idx_transactions_category').on(table.categoryId),
+}));
 
 export const sharedBalances = sqliteTable('shared_balances', {
   id: text('id').primaryKey(),
@@ -131,7 +139,9 @@ export const subscriptions = sqliteTable('subscriptions', {
   accountId: text('account_id').references(() => accounts.id),
   paymentMode: text('payment_mode').default('manual'),
   ownerId: text('owner_id').references(() => users.id),
-});
+}, (table) => ({
+  householdIdx: index('idx_subscriptions_household').on(table.householdId),
+}));
 
 export const holidays = sqliteTable('holidays', {
   id: text('id').primaryKey(),
@@ -219,7 +229,9 @@ export const savingsBuckets = sqliteTable('savings_buckets', {
   targetDate: text('target_date'),
   categoryId: text('category_id').references(() => categories.id),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_savings_household').on(table.householdId),
+}));
 
 export const transactionTimeline = sqliteTable('transaction_timeline', {
   id: text('id').primaryKey(),
@@ -242,7 +254,9 @@ export const installmentPlans = sqliteTable('installment_plans', {
   accountId: text('account_id').references(() => accounts.id),
   paymentMode: text('payment_mode').default('manual'), // manual or autopay
   status: text('status').default('active'),
-});
+}, (table) => ({
+  householdIdx: index('idx_installments_household').on(table.householdId),
+}));
 
 export const personalLoans = sqliteTable('personal_loans', {
   id: text('id').primaryKey(),

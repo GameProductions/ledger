@@ -62,7 +62,7 @@ auth.post('/login', zValidator('json', z.object({
       } 
     })
   } catch (e: any) {
-    return c.json({ error: e.message || 'Unauthorized' }, e.status || 401)
+    throw new HTTPException(e.status || 401, { message: e.message || 'Unauthorized' })
   }
 })
 

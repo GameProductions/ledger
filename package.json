@@ -57,5 +57,8 @@
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "*",
     "@rolldown/binding-linux-x64-musl": "*"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0"
   }
 }

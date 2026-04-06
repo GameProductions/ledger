@@ -613,11 +613,7 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
     })
   } catch (err: any) {
     console.error('[PCC Impersonate Error]', err)
-    return c.json({ 
-      success: false, 
-      error: err.message || 'Forensic system failure',
-      stack: err.stack 
-    }, 500)
+    throw new HTTPException(500, { message: 'Forensic system failure' })
   }
 })
 

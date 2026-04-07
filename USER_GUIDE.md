@@ -13,7 +13,7 @@ Collaborate with your family or housemates under a unified ledger.
 ### 2. User Onboarding
 Upon your first login, or after a major update (like v3.19.0), you will see a **Guided Tour**. Look for the "What's New" notification to stay informed about the latest stability and security enhancements.
 
-## 💳 Transaction Sovereignty
+## 💳 Transaction Privacy & Data Ownership
 
 ### Payment Orchestrator
 The Payment Orchestrator gives you absolute control over your transaction lifecycle:

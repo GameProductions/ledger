@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import ImportReview from '../components/ImportReview';
+import { PrivacySettings } from '../components/PrivacySettings';
 import { 
   Cloud, 
   Upload, 
@@ -13,6 +14,9 @@ import {
   Download
 } from 'lucide-react';
 
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+
 const DataCenterPage: React.FC = () => {
   const [importScope, setImportScope] = useState<'household' | 'private'>('household');
   const [activeTab, setActiveTab] = useState<'upload' | 'cloud' | 'url'>('upload');
@@ -22,14 +26,14 @@ const DataCenterPage: React.FC = () => {
 
   const handleExport = async (format: 'csv' | 'xlsx' | 'pdf' | 'json') => {
     const token = localStorage.getItem('ledger_token');
-    window.open(`${import.meta.env.VITE_API_URL}/api/financials/transactions/export?format=${format}&token=${token}`, '_blank');
+    window.open(`${API_URL}/api/financials/transactions/export?format=${format}&token=${token}`, '_blank');
   };
 
   const handleUrlScan = async () => {
     if (!url) return;
     setScanning(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/data/scrape`, {
+      const res = await fetch(`${API_URL}/api/data/scrape`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -223,6 +227,11 @@ const DataCenterPage: React.FC = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Privacy & Setup Configurations */}
+        <div className="mt-12">
+          <PrivacySettings />
         </div>
       </div>
     </MainLayout>

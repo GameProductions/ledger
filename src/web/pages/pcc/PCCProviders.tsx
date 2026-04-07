@@ -142,7 +142,7 @@ const PCCProviders: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                <ShieldAlert size={20} />
             </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Modify Strategy' : 'Initialize Provider'}</h3>
+            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Modify Strategy' : 'Setup Provider'}</h3>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
@@ -215,7 +215,7 @@ const PCCProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Sovereignty Docs (Privacy Policy)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Privacy & Data Ownership Docs (Privacy Policy)</label>
                 <input 
                   type="url" 
                   value={newItem.privacy_policy_url} 
@@ -292,7 +292,7 @@ const PCCProviders: React.FC = () => {
         {providers.length === 0 && (
           <div className="py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Providers Registered</h4>
-            <p className="text-sm text-slate-600 mt-2">Initialize the universal registry to empower users with forensic bill tracking.</p>
+            <p className="text-sm text-slate-600 mt-2">Setup the universal registry to empower users with forensic bill tracking.</p>
           </div>
         )}
       </div>

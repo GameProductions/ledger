@@ -102,7 +102,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
       {entries.length === 0 ? (
         <div className="py-12 text-center bg-white/[0.02] border border-dashed border-white/5 rounded-[2rem]">
           <Activity size={32} className="mx-auto text-slate-700 mb-4 opacity-50" />
-          <p className="text-sm text-slate-500 font-black uppercase tracking-[0.2em] italic">No Sovereignty Logs</p>
+          <p className="text-sm text-slate-500 font-black uppercase tracking-[0.2em] italic">No Privacy & Data Ownership Logs</p>
         </div>
       ) : (
         <div className="relative space-y-8 before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-[2px] before:bg-white/5">

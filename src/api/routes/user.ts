@@ -35,6 +35,7 @@ user.get('/profile', async (c) => {
   const results = await db.select({
     id: users.id,
     email: users.email,
+    username: users.username,
     displayName: users.displayName,
     avatarUrl: users.avatarUrl,
     globalRole: users.globalRole,
@@ -58,15 +59,52 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
   const updates: any = {}
   if (data.display_name) updates.displayName = data.display_name
   if (data.settings_json) updates.settingsJson = data.settings_json
-  if (data.email) updates.email = data.email
+  
+  if (data.email !== undefined) {
+    if (data.email) {
+      const emailCollision = await db.select({ id: users.id }).from(users).where(eq(users.email, data.email)).limit(1).then(res => res[0]);
+      if (emailCollision && emailCollision.id !== userId) {
+         return c.json({ error: 'This email address is already bound to an existing account. Please choose a different one.' }, 409);
+      }
+    }
+    updates.email = data.email || null;
+  }
+  
+  if (data.username !== undefined) {
+    if (data.username) {
+      const usernameCollision = await db.select({ id: users.id }).from(users).where(eq(users.username, data.username)).limit(1).then(res => res[0]);
+      if (usernameCollision && usernameCollision.id !== userId) {
+         return c.json({ error: 'This username is already taken. Please choose another.' }, 409);
+      }
+    }
+    updates.username = data.username || null;
+  }
+  
   if (data.avatar_url !== undefined) updates.avatarUrl = data.avatar_url || null
-  // Note: timezone is generally in settingsJson or handled separately now, omitting strictly typed timezone if not in schema.
   
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
   }
   
-  return c.json({ success: true })
+  return c.json({ success: true, message: 'Profile updated' })
+})
+
+user.post('/profile/sync', zValidator('json', z.object({ provider: z.string(), identityId: z.string() })), async (c) => {
+  const userId = c.get('userId') as string
+  const { provider, identityId } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const identity = await db.select().from(userIdentities).where(and(eq(userIdentities.id, identityId), eq(userIdentities.userId, userId))).limit(1).then(res => res[0]);
+  
+  if (!identity) {
+    return c.json({ error: 'Identity association not found' }, 404);
+  }
+  
+  if (identity.avatarUrl) {
+    await db.update(users).set({ avatarUrl: identity.avatarUrl }).where(eq(users.id, userId));
+  }
+  
+  return c.json({ success: true, message: 'Profile sync successful' })
 })
 
 // Onboarding Status

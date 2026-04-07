@@ -186,7 +186,7 @@ const PCCProcessors: React.FC = () => {
                 />
               </div>
               <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
-                {editingId ? 'Push Updates to Grid' : 'Initialize Processor'}
+                {editingId ? 'Push Updates to Grid' : 'Setup Processor'}
               </button>
             </div>
           </form>
@@ -254,7 +254,7 @@ const PCCProcessors: React.FC = () => {
         {processors.length === 0 && (
           <div className="col-span-full py-32 text-center rounded-[3rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Infrastructure Logged</h4>
-            <p className="text-sm text-slate-600 mt-2">Initialize your first 3rd party billing processor to begin coverage mapping.</p>
+            <p className="text-sm text-slate-600 mt-2">Setup your first 3rd party billing processor to begin coverage mapping.</p>
           </div>
         )}
       </div>

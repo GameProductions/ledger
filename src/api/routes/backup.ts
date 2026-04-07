@@ -7,7 +7,7 @@ import { HTTPException } from 'hono/http-exception'
 
 const backup = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// 🛑 EXPORT: Sovereignty Protocol (Full JSON Ledger Dump)
+// 🛑 EXPORT: Privacy & Data Ownership Protocol (Full JSON Ledger Dump)
 backup.get('/export', async (c) => {
   const householdId = c.get('householdId')
   

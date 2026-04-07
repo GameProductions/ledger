@@ -61,14 +61,17 @@ export const PrivacySettings: React.FC = () => {
   return (
     <div className="space-y-6 reveal">
       <Card className="p-8">
-        <h3 className="text-xl font-black mb-2">Data Sovereignty</h3>
+        <div className="flex items-center gap-4 mb-2">
+          <BookLock className="text-secondary" />
+          <h2 className="text-xl font-bold tracking-tight">Privacy & Data Ownership</h2>
+        </div>
         <p className="text-sm text-secondary opacity-60 mb-8 font-medium">Download or permanently erase your financial history from the LEDGER platform.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Export */}
           <div className="space-y-4">
             <div className="text-xs uppercase tracking-widest text-emerald-500 font-bold">Portability</div>
-            <h4 className="font-bold">Full Data Export</h4>
+            <h4 className="font-bold">Export My Data</h4>
             <p className="text-sm text-secondary opacity-50">Generate a comprehensive JSON package containing your accounts, transactions, and audit history.</p>
             <Button 
               onClick={handleExport} 

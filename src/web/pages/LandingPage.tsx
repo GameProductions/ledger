@@ -37,7 +37,7 @@ const LandingPage: React.FC = () => {
     },
     {
       title: 'Multi-Cloud Redundancy',
-      description: 'Encrypted state synchronization across Google Drive, Dropbox, and Microsoft OneDrive for total sovereignty.',
+      description: 'Encrypted state synchronization across Google Drive, Dropbox, and Microsoft OneDrive for total Data Ownership.',
       icon: <Cloud className="text-secondary" size={32} />,
     },
     {
@@ -110,7 +110,7 @@ const LandingPage: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">v3.18.0 Open Sovereign Platform</span>
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
-              Financial Sovereignty. <br/>
+              Financial Data Ownership. <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
@@ -177,7 +177,7 @@ const LandingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <div className="p-10 bg-[#020617] rounded-[3rem] border border-white/5">
-               <h4 className="text-xl font-black italic uppercase mb-4">Cloud Data Sovereignty</h4>
+               <h4 className="text-xl font-black italic uppercase mb-4">Privacy & Data Ownership</h4>
                <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80">
                  We connect to your Google Drive, Dropbox, and OneDrive to ensure your data never lives on our servers. Your financial snapshots are encrypted and synced directly to your personal cloud, giving you 100% ownership and portability.
                </p>

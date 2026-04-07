@@ -1,7 +1,7 @@
 # LEDGER v3.19.2 (Sovereign Edition)
 > **Sovereign Financial Infrastructure** | Total Modernization
 
-LEDGER is a production-grade personal and household finance platform built for speed, transparency, and elite security. This release (v3.19.2) introduces **Transaction Sovereignty** and hardened **Forensic Support** tools.
+LEDGER is a production-grade personal and household finance platform built for speed, transparency, and elite security. This release (v3.19.2) introduces **Transaction Data Ownership** and hardened **Forensic Support** tools.
 
 ## 🚀 Key Features
 
@@ -19,7 +19,7 @@ LEDGER is a production-grade personal and household finance platform built for s
 - **Universal Currency Engine**: Per-user currency preferences (USD, EUR, GBP) and platform-wide defaults.
 
 ### 👥 Collaboration & Households
-- **Household Management**: Collaborative finance with administrative role management (formerly Territory Sovereignty).
+- **Household Management**: Collaborative finance with administrative role management (formerly Territory Data Ownership).
 - **Social Accounts**: Hardened OAuth 2.0 integration for Discord and Google (Sovereign Identity).
 - **Premium Onboarding**: Version-aware guided tours with "What's New" tracking.
 

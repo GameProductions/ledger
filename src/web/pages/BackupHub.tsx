@@ -80,12 +80,12 @@ const BackupHub: React.FC = () => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           {/* Local Sovereignty */}
+           {/* Local Privacy & Data Ownership */}
            <Card className="p-8 space-y-8 border-primary/20 bg-primary/5">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary"><Download /></div>
                 <div>
-                  <h2 className="text-xl font-bold">Local Sovereignty</h2>
+                  <h2 className="text-xl font-bold">Local Privacy & Data Ownership</h2>
                   <p className="text-sm text-secondary">Export your entire ledger as a portable JSON file.</p>
                 </div>
               </div>

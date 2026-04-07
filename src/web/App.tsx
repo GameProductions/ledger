@@ -114,7 +114,7 @@ const AppContent: React.FC = () => {
     <GlobalLayout>
       <IdentityHead 
         appName="Ledger" 
-        appDescription="Forensic financial sovereignty and multi-household budget management." 
+        appDescription="Forensic financial privacy & data ownership and multi-household budget management." 
         appLogo={logo} 
       />
       <Suspense fallback={null}>

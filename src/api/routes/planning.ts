@@ -7,7 +7,8 @@ import {
   SubscriptionSchema, 
   InstallmentPlanSchema, 
   LoanSchema, 
-  OwnershipTransferSchema 
+  OwnershipTransferSchema,
+  PayScheduleSchema
 } from '../schemas'
 import { logAudit } from '../utils'
 import { getDb } from '../db'
@@ -19,7 +20,8 @@ import {
   loanPayments,
   categories,
   households,
-  templates
+  templates,
+  paySchedules
 } from '../db/schema'
 import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
 
@@ -274,6 +276,67 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
   return c.json({ success: true, id })
 })
 
+// Pay Schedules
+planning.get('/pay-schedules', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId))
+  return c.json(results.map(toSnake))
+})
+
+planning.post('/pay-schedules', zValidator('json', PayScheduleSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const { name, frequency, next_pay_date, estimated_amount_cents, notes } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const db = getDb(c.env)
+  
+  await db.insert(paySchedules).values({
+    id,
+    householdId,
+    name,
+    frequency,
+    nextPayDate: next_pay_date || null,
+    estimatedAmountCents: estimated_amount_cents || null,
+    notes: notes || null
+  })
+  
+  await logAudit(c, 'pay_schedules', id, 'create', null, { name, frequency, estimated_amount_cents })
+  return c.json({ success: true, id })
+})
+
+planning.patch('/pay-schedules/:id', zValidator('json', PayScheduleSchema.partial()), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const oldResult = await db.select().from(paySchedules).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId))).limit(1)
+  const old = oldResult[0]
+  if (!old) return c.json({ error: 'Not found' }, 404)
+
+  const updates: any = {}
+  if (data.name !== undefined) updates.name = data.name
+  if (data.frequency !== undefined) updates.frequency = data.frequency
+  if (data.next_pay_date !== undefined) updates.nextPayDate = data.next_pay_date
+  if (data.estimated_amount_cents !== undefined) updates.estimatedAmountCents = data.estimated_amount_cents
+  if (data.notes !== undefined) updates.notes = data.notes
+  
+  if (Object.keys(updates).length > 0) {
+    await db.update(paySchedules).set(updates).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))
+    await logAudit(c, 'pay_schedules', id, 'update', toSnake(old), data)
+  }
+
+  return c.json({ success: true })
+})
+
+planning.delete('/pay-schedules/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(paySchedules).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))
+  return c.json({ success: true })
+})
+
 // Financial Forecasting
 planning.get('/bills/upcoming', async (c) => {
   const householdId = c.get('householdId')
@@ -285,10 +348,12 @@ planning.get('/bills/upcoming', async (c) => {
   const db = getDb(c.env)
   const subs = await db.select().from(subscriptions).where(and(eq(subscriptions.householdId, householdId), lte(subscriptions.nextBillingDate, endDateStr)))
   const installments = await db.select().from(installmentPlans).where(and(eq(installmentPlans.householdId, householdId), lte(installmentPlans.nextPaymentDate, endDateStr)))
+  const schedules = await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId))
   
   return c.json({
     subscriptions: subs.map(toSnake),
     installments: installments.map(toSnake),
+    pay_schedules: schedules.map(toSnake),
     total_upcoming_cents: [...subs, ...installments].reduce((acc, curr: any) => acc + (curr.amountCents || curr.installmentAmountCents || 0), 0)
   })
 })

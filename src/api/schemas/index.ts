@@ -59,6 +59,14 @@ export const SubscriptionSchema = z.object({
   owner_id: z.string().optional()
 })
 
+export const PayScheduleSchema = z.object({
+  name: z.string().min(1).max(100),
+  frequency: z.enum(['weekly', 'biweekly', 'semi-monthly', 'monthly']),
+  next_pay_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  estimated_amount_cents: z.number().int().positive().optional().nullable(),
+  notes: z.string().max(1000).optional().nullable()
+})
+
 export const CreditCardSchema = z.object({
   account_id: z.string(),
   credit_limit_cents: z.number().int().positive(),
@@ -79,6 +87,7 @@ export const LoanSchema = z.object({
 // --- USER & HOUSEHOLD SCHEMAS ---
 export const ProfileSchema = z.object({
   display_name: z.string().min(1).max(100).optional(),
+  username: z.string().min(3).max(50).optional(),
   email: z.string().email().optional(),
   settings_json: z.string().optional(),
   avatar_url: z.string().url().or(z.string().length(0)).nullable().optional(),

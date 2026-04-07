@@ -16,27 +16,41 @@ interface CalendarEntryModalProps {
 export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({ 
   isOpen, onClose, onSave, onDelete, initialData, date 
 }) => {
-  const [type, setType] = useState<'charge' | 'bill'>(initialData?.type === 'subscription' ? 'bill' : 'charge');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [amount, setAmount] = useState(initialData?.amount_cents ? (initialData.amount_cents / 100).toString() : '');
-  const [currentDate, setCurrentDate] = useState(initialData?.transaction_date || initialData?.next_billing_date || date?.toISOString().split('T')[0] || '');
+  const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
+  const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
+  const [amount, setAmount] = useState(initialData?.amount_cents ? (initialData.amount_cents / 100).toString() : initialData?.estimated_amount_cents ? (initialData.estimated_amount_cents / 100).toString() : '');
+  const [currentDate, setCurrentDate] = useState(initialData?.transaction_date || initialData?.next_billing_date || initialData?.next_pay_date || date?.toISOString().split('T')[0] || '');
   const [status, setStatus] = useState(initialData?.status || 'unpaid');
   const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmation_number || '');
+  const [frequency, setFrequency] = useState(initialData?.frequency || 'biweekly');
+  const [notes, setNotes] = useState(initialData?.notes || '');
   const [showTimeline, setShowTimeline] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      id: initialData?.id,
-      type,
-      description,
-      amount_cents: Math.round(parseFloat(amount) * 100),
-      date: currentDate,
-      status,
-      confirmation_number: confirmationNumber
-    });
+    if (type === 'pay_schedule') {
+      onSave({
+        id: initialData?.id,
+        type,
+        name: description,
+        estimated_amount_cents: Math.round(parseFloat(amount) * 100),
+        next_pay_date: currentDate,
+        frequency,
+        notes
+      });
+    } else {
+      onSave({
+        id: initialData?.id,
+        type,
+        description,
+        amount_cents: Math.round(parseFloat(amount) * 100),
+        date: currentDate,
+        status,
+        confirmation_number: confirmationNumber
+      });
+    }
   };
 
   return (
@@ -60,17 +74,24 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         <div className="flex bg-white/5 p-1 rounded-2xl border border-glass-border">
           <button 
             type="button"
-            onClick={() => setType('charge')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'charge' ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-slate-500 hover:text-white'}`}
+            onClick={() => setType('pay_schedule')}
+            className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
           >
-            Immediate Charge
+            Payday
           </button>
           <button 
             type="button"
             onClick={() => setType('bill')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${type === 'bill' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
+            className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'bill' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
           >
             Future Bill
+          </button>
+          <button 
+            type="button"
+            onClick={() => setType('charge')}
+            className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'charge' ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-white'}`}
+          >
+            Charge
           </button>
         </div>
 
@@ -88,34 +109,62 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 />
              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
-                    <TypeableSelect 
-                      options={[
-                        { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
-                        { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
-                        { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
-                        { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
-                      ]}
-                      value={status}
-                      onChange={(val) => setStatus(val)}
-                    />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Confirmation #</label>
-                    <div className="relative">
+              {type !== 'pay_schedule' ? (
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
+                      <TypeableSelect 
+                        options={[
+                          { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
+                          { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
+                          { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
+                          { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
+                        ]}
+                        value={status}
+                        onChange={(val) => setStatus(val)}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Confirmation #</label>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          value={confirmationNumber}
+                          onChange={(e) => setConfirmationNumber(e.target.value)}
+                          placeholder="Optional..."
+                          className="w-full p-4 pl-12 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                        />
+                        <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                      </div>
+                   </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                      <TypeableSelect 
+                        options={[
+                          { value: 'weekly', label: 'WEEKLY' },
+                          { value: 'biweekly', label: 'BIWEEKLY' },
+                          { value: 'semi-monthly', label: 'SEMI-MONTHLY' },
+                          { value: 'monthly', label: 'MONTHLY' }
+                        ]}
+                        value={frequency}
+                        onChange={(val) => setFrequency(val)}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Internal Notes</label>
                       <input 
                         type="text" 
-                        value={confirmationNumber}
-                        onChange={(e) => setConfirmationNumber(e.target.value)}
-                        placeholder="Optional..."
-                        className="w-full p-4 pl-12 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="e.g. Include bonus"
+                        className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
                       />
-                      <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                    </div>
-                 </div>
-              </div>
+                   </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
@@ -151,7 +200,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    >
                      <div className="flex items-center gap-3">
                         <Activity size={16} className="text-amber-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Sovereignty Audit History</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Privacy & Data Ownership Audit History</span>
                      </div>
                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-amber-500 transition-colors">
                        {showTimeline ? 'Close Logs' : 'View Logs'}
@@ -186,7 +235,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
              )}
              <button 
               type="submit"
-              className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${type === 'charge' ? 'bg-primary text-black shadow-primary/20 hover:scale-[1.02]' : 'bg-amber-500 text-black shadow-amber-500/20 hover:scale-[1.02]'}`}
+              className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20 hover:scale-[1.02]' : type === 'charge' ? 'bg-emerald-500 text-black shadow-emerald-500/20 hover:scale-[1.02]' : 'bg-amber-500 text-black shadow-amber-500/20 hover:scale-[1.02]'}`}
              >
                <CheckCircle2 size={18} />
                {initialData ? 'Commit Update' : 'Initialize Ledger'}

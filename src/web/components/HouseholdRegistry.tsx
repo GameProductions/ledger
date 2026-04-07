@@ -6,6 +6,10 @@ import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { formatHumanError } from '../utils/error-handler';
+
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
 const HouseholdRegistry: React.FC = () => {
   const { data: profile, mutate: mutateProfile } = useApi('/api/user/profile');
@@ -30,7 +34,7 @@ const HouseholdRegistry: React.FC = () => {
     const token = localStorage.getItem('ledger_token');
     const householdId = localStorage.getItem('ledger_household_id');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/households/${householdId}`, {
+      const res = await fetch(`${API_URL}/api/user/households/${householdId}`, {
         method: 'PATCH',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -42,9 +46,13 @@ const HouseholdRegistry: React.FC = () => {
         showToast('Household renamed successfully', 'success');
         mutateProfile();
         setIsRenaming(false);
+      } else {
+        const err = await res.json();
+        showToast(formatHumanError(err, 'Failed to rename household'), 'error');
       }
     } catch (err) {
-      showToast('Failed to rename household', 'error');
+      console.error(err);
+      showToast(formatHumanError(err, 'Failed to connect to servers'), 'error');
     }
   };
 
@@ -53,7 +61,7 @@ const HouseholdRegistry: React.FC = () => {
     const token = localStorage.getItem('ledger_token');
     setCreating(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/households`, {
+      const res = await fetch(`${API_URL}/api/user/households`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -64,9 +72,12 @@ const HouseholdRegistry: React.FC = () => {
       if (res.ok) {
         showToast('New household created', 'success');
         window.location.reload(); // Switch context
+      } else {
+        const err = await res.json();
+        showToast(formatHumanError(err, 'Failed to create household'), 'error');
       }
     } catch (err) {
-      showToast('Failed to create household', 'error');
+      showToast(formatHumanError(err, 'Network error while creating household'), 'error');
     } finally {
       setCreating(false);
       setIsCreateModalOpen(false);
@@ -79,7 +90,7 @@ const HouseholdRegistry: React.FC = () => {
     const token = localStorage.getItem('ledger_token');
     const householdId = localStorage.getItem('ledger_household_id');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/households/invite`, {
+      const res = await fetch(`${API_URL}/api/user/households/invite`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -96,9 +107,11 @@ const HouseholdRegistry: React.FC = () => {
         } else {
            showToast('Invite link created', 'success');
         }
+      } else {
+        showToast(formatHumanError(data, 'Invite generation failed'), 'error');
       }
     } catch (err) {
-      showToast('Invite generation failed', 'error');
+      showToast(formatHumanError(err, 'Network error while generating invite'), 'error');
     } finally {
       setLoading(false);
     }
@@ -116,20 +129,28 @@ const HouseholdRegistry: React.FC = () => {
               <div>
                  <div className="flex items-center gap-3">
                     {isRenaming ? (
-                      <input 
-                        className="bg-black border border-emerald-500/30 rounded px-2 py-1 text-lg font-black italic tracking-tight outline-none"
-                        value={householdName}
-                        onChange={e => setHouseholdName(e.target.value)}
-                        onBlur={handleRename}
-                        onKeyDown={e => e.key === 'Enter' && handleRename()}
-                        autoFocus
-                      />
+                      <div className="flex items-center gap-2">
+                        <input 
+                          className="bg-black border border-emerald-500/30 rounded px-2 py-1 text-lg font-black italic tracking-tight outline-none"
+                          value={householdName}
+                          onChange={e => setHouseholdName(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleRename()}
+                          autoFocus
+                        />
+                        <button onClick={handleRename} className="px-3 py-1 bg-emerald-500 text-black text-xs font-black uppercase rounded hover:scale-105 transition-all">Save</button>
+                        <button onClick={() => {
+                          setHouseholdName(profile?.household_name || '');
+                          setIsRenaming(false);
+                        }} className="px-3 py-1 bg-white/10 text-white text-xs font-black uppercase rounded hover:bg-white/20 transition-all">Cancel</button>
+                      </div>
                     ) : (
-                      <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{profile?.household_name || 'Personal Account'}</h3>
+                      <>
+                        <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{profile?.household_name || 'Personal Account'}</h3>
+                        <button onClick={() => setIsRenaming(true)} className="text-slate-500 hover:text-emerald-500">
+                           <Edit3 size={16} />
+                        </button>
+                      </>
                     )}
-                    <button onClick={() => setIsRenaming(!isRenaming)} className="text-slate-500 hover:text-emerald-500">
-                       <Edit3 size={16} />
-                    </button>
                  </div>
                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/60 mt-1">Current Household</p>
               </div>

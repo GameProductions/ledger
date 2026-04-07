@@ -34,6 +34,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: _accounts } = useApi('/api/financials/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/financials/transactions')
   const { data: subscriptions, mutate: mutateSubs } = useApi('/api/planning/subscriptions')
+  const { data: paySchedules, mutate: mutateSchedules } = useApi('/api/planning/pay-schedules')
   const { data: templates } = useApi('/api/planning/templates')
   const [timeframe, setTimeframe] = useState('paycheck')
   const { data: analysis } = useApi(`/api/data/analysis/summary?timeframe=${timeframe}`)
@@ -149,21 +150,34 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const handleCalendarSave = async (data: any) => {
     const isNew = !data.id
-    const endpoint = data.type === 'bill' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/subscriptions' : '/api/financials/transactions'
     const method = isNew ? 'POST' : 'PATCH'
     const url = isNew ? endpoint : `${endpoint}/${data.id}`
     
     // Map fields for backend
-    const payload = data.type === 'bill' ? {
-      name: data.description,
-      amount_cents: data.amount_cents,
-      next_billing_date: data.date,
-      status: 'active'
-    } : {
-      description: data.description,
-      amount_cents: data.amount_cents,
-      transaction_date: data.date,
-      status: 'none'
+    let payload = {}
+    if (data.type === 'pay_schedule') {
+        payload = {
+            name: data.name,
+            estimated_amount_cents: data.estimated_amount_cents,
+            next_pay_date: data.next_pay_date,
+            frequency: data.frequency,
+            notes: data.notes
+        }
+    } else if (data.type === 'bill') {
+        payload = {
+            name: data.description,
+            amount_cents: data.amount_cents,
+            next_billing_date: data.date,
+            status: 'active'
+        }
+    } else {
+        payload = {
+            description: data.description,
+            amount_cents: data.amount_cents,
+            transaction_date: data.date,
+            status: 'none'
+        }
     }
 
     await fetch(`${import.meta.env.VITE_API_URL}${url}`, {
@@ -175,7 +189,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       body: JSON.stringify(payload)
     })
     
-    if (data.type === 'bill') mutateSubs()
+    if (data.type === 'pay_schedule') mutateSchedules()
+    else if (data.type === 'bill') mutateSubs()
     else mutateTx()
     
     setIsCalendarModalOpen(false)
@@ -190,14 +205,15 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const confirmCalendarDelete = async () => {
     if (!deletePending) return
     const { id, type } = deletePending
-    const endpoint = type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
     
     await fetch(`${import.meta.env.VITE_API_URL}${endpoint}/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
     })
     
-    if (type === 'subscription') mutateSubs()
+    if (type === 'pay_schedule') mutateSchedules()
+    else if (type === 'subscription') mutateSubs()
     else mutateTx()
     
     setIsDeleteModalOpen(false)
@@ -466,6 +482,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <Calendar 
                 transactions={transactions || []} 
                 subscriptions={subscriptions || []}
+                paySchedules={paySchedules || []}
                 onDayClick={(date) => {
                   setSelectedCalendarDate(date)
                   setSelectedCalendarItem(null)

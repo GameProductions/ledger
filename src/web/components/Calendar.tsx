@@ -4,11 +4,12 @@ import { Price } from './Price'
 interface CalendarProps {
   transactions: any[];
   subscriptions?: any[];
+  paySchedules?: any[];
   onDayClick: (date: Date) => void;
   onItemClick: (item: any) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], onDayClick, onItemClick }) => {
+const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], paySchedules = [], onDayClick, onItemClick }) => {
   const [currentDate, setCurrentDate] = React.useState(new Date(2026, 2, 1)); // Default to March 2026 for now
   
   const month = currentDate.getMonth();
@@ -35,7 +36,12 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], o
       return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
     }).map(sub => ({ ...sub, type: 'subscription', description: sub.name }));
 
-    return [...dayTxs, ...dayBills];
+    const dayPays = (Array.isArray(paySchedules) ? paySchedules : []).filter(pay => {
+      const d = pay.next_pay_date ? new Date(pay.next_pay_date) : null;
+      return d && d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    }).map(pay => ({ ...pay, type: 'pay_schedule', description: `${pay.name}`, amount_cents: pay.estimated_amount_cents || 0 }));
+
+    return [...dayPays, ...dayBills, ...dayTxs];
   };
 
   return (
@@ -49,11 +55,14 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], o
           </div>
         </div>
         <div className="flex gap-4">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-500/50">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Charges
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-500/50">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span> Paydays
           </div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-amber-500/50">
             <span className="w-2 h-2 rounded-full bg-amber-500"></span> Bills
+          </div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-500/50">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Charges
           </div>
         </div>
       </div>
@@ -83,8 +92,19 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], o
             >
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>{day}</span>
-                {dayItems.length > 0 && (
-                   <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                {dayItems.length > 0 ? (
+                   <div className="flex gap-1">
+                     {dayItems.some(i => i.type === 'pay_schedule') && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>}
+                     {dayItems.some(i => i.type === 'subscription') && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>}
+                     {dayItems.some(i => i.type === 'transaction') && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>}
+                   </div>
+                ) : (
+                   <div 
+                     className="opacity-0 group-hover:opacity-100 transition-opacity"
+                     onClick={(e) => { e.stopPropagation(); onDayClick(new Date(year, month, day)); }}
+                   >
+                     <span className="text-[10px] uppercase font-black tracking-widest text-slate-500 hover:text-white block px-2 py-1 rounded border border-white/5 bg-white/5">+ ADD</span>
+                   </div>
                 )}
               </div>
 
@@ -94,9 +114,11 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], o
                     key={`${item.type}-${item.id}`} 
                     onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
                     className={`text-xs p-2 rounded-xl truncate font-bold border transition-all hover:brightness-125 ${
-                      item.type === 'subscription' 
-                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
-                        : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                      item.type === 'pay_schedule'
+                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                        : item.type === 'subscription' 
+                          ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
+                          : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     }`}
                   >
                     <Price amountCents={item.amount_cents} options={{ minimumFractionDigits: 0 }} /> {item.description}

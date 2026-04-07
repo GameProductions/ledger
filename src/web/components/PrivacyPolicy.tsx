@@ -9,7 +9,7 @@ const PrivacyPolicy: React.FC = () => {
       
       <section style={{ marginBottom: '2rem' }}>
         <h3>1. Introduction</h3>
-        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency, biometric privacy, and data sovereignty.</p>
+        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency, biometric privacy, and privacy & data ownership.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -37,8 +37,8 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h3>5. Your Rights & Sovereignty</h3>
-        <p>You maintain full sovereignty over your data. You have the right to access, export, or delete your financial and identity data at any time. Deleting an user account removes all historical associations from our active directory.</p>
+        <h3>5. Your Rights & Privacy & Data Ownership</h3>
+        <p>You maintain full privacy & data ownership over your data. You have the right to access, export, or delete your financial and identity data at any time. Deleting an user account removes all historical associations from our active directory.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

@@ -4,7 +4,7 @@ This document provides a technical overview of the platform's recent modernizati
 
 ## 🏛️ Phase 1: Plain English Transition (v3.15.4)
 The foundation of the user experience was modernized by moving from technical "Forensic" jargon to user-friendly "Plain English" terminology.
-- **Household Management**: Rebranded from "Territory Sovereignty" to emphasize collaboration.
+- **Household Management**: Rebranded from "Territory Privacy & Data Ownership" to emphasize collaboration.
 - **Identity & Security**: Transitioned from "Biometric Hub" to **"Security Keys & Passkeys"**, improving onboarding clarity.
 - **Linked Accounts**: Standardized "Financial Infrastructure" and "Active Ledgers" into more intuitive financial concepts.
 
@@ -24,7 +24,7 @@ God Mode (administrative tools) was hardened to provide a secure, auditable supp
 - **Privacy Masking**: Integrated a persistent `Privacy Mode` toggle into the mirror confirmation, ensuring data protection during support sessions.
 - **OAuth Hardening**: Resolved 401 login fatigue specifically for social-only accounts (Discord/Google), guiding users to the correct login protocol.
 
-## 📊 Phase 5: Transaction Sovereignty & Payment Orchestrator (v3.19.2)
+## 📊 Phase 5: Transaction Privacy & Data Ownership & Payment Orchestrator (v3.19.2)
 The latest release transforms the platform into a high-fidelity financial auditing engine.
 - **Payment Orchestrator Intelligence**: Introduced color-coded lifecycle statuses (Paid, Pending, Scheduled, Unpaid).
 - **Transaction Timeline**: Implemented a millisecond-precision chronological audit trail for every transaction.

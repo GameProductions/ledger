@@ -9,15 +9,20 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { startRegistration } from '@simplewebauthn/browser'
 import { PasswordChecklist } from '../components/PasswordChecklist'
-import { PrivacySettings } from '../components/PrivacySettings'
 import { Price } from '../components/Price'
 import HouseholdRegistry from '../components/HouseholdRegistry'
+import { formatHumanError } from '../utils/error-handler'
+
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
   const { data: profile, mutate } = useApi('/api/user/profile')
   const { data: accounts } = useApi('/api/financials/accounts')
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [avatar, setAvatar] = useState('')
   const [timezone, setTimezone] = useState('UTC')
   const [saving, setSaving] = useState(false)
@@ -34,11 +39,15 @@ const SettingsPage: React.FC = () => {
   const [confirmDeletePasskey, setConfirmDeletePasskey] = useState<any | null>(null)
   const [newPasskeyData, setNewPasskeyData] = useState<any | null>(null)
   const [isEditingAlias, setIsEditingAlias] = useState(false)
+  const [isEditingUsername, setIsEditingUsername] = useState(false)
+  const [isEditingEmail, setIsEditingEmail] = useState(false)
 
   useEffect(() => {
     if (profile) {
-      setName(profile.display_name || '')
-      setAvatar(profile.avatar_url || '')
+      setName(profile.display_name || profile.displayName || '')
+      setUsername(profile.username || '')
+      setEmail(profile.email || '')
+      setAvatar(profile.avatar_url || profile.avatarUrl || '')
       setTimezone(profile.timezone || 'UTC')
     }
   }, [profile])
@@ -50,7 +59,7 @@ const SettingsPage: React.FC = () => {
   const handleUnlinkIdentity = async () => {
     if (!confirmUnlink) return
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/identities/${confirmUnlink.id}?keep_settings=${keepSettingsOnUnlink}`, {
+      const res = await fetch(`${API_URL}/api/user/identities/${confirmUnlink.id}?keep_settings=${keepSettingsOnUnlink}`, {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -63,10 +72,11 @@ const SettingsPage: React.FC = () => {
         mutate();
       } else {
         const err = await res.json();
-        showToast(err.message || 'Failed to unlink account', 'error');
+        showToast(formatHumanError(err, 'Failed to unlink account'), 'error');
       }
     } catch (e) {
-      showToast('Network error during unlink', 'error');
+      console.error(e)
+      showToast(formatHumanError(e, 'Network error during unlink'), 'error');
     } finally {
       setConfirmUnlink(null);
     }
@@ -75,7 +85,7 @@ const SettingsPage: React.FC = () => {
   const handleSyncProfile = async (provider: string, identityId: string) => {
     setSyncing(provider)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile/sync`, {
+      const res = await fetch(`${API_URL}/api/user/profile/sync`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -95,7 +105,7 @@ const SettingsPage: React.FC = () => {
 
   const handleRegisterPasskey = async () => {
     try {
-      const optRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-options`, {
+      const optRes = await fetch(`${API_URL}/auth/passkeys/register-options`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -110,7 +120,8 @@ const SettingsPage: React.FC = () => {
       if (e.name === 'NotAllowedError') {
         showToast('Registration cancelled', 'info')
       } else {
-        showToast(`Passkey registration failed: ${e.message}`, 'error')
+        console.error(e)
+        showToast(formatHumanError(e, 'Passkey registration failed'), 'error')
       }
     }
   }
@@ -118,7 +129,7 @@ const SettingsPage: React.FC = () => {
   const handleFinishPasskeyRegistration = async (name: string) => {
     if (!newPasskeyData) return
     try {
-      const verifyRes = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/register-verify`, {
+      const verifyRes = await fetch(`${API_URL}/auth/passkeys/register-verify`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -138,17 +149,18 @@ const SettingsPage: React.FC = () => {
         setNewPasskeyData(null)
       } else {
         const err = await verifyRes.json()
-        showToast(err.message || 'Verification failed', 'error')
+        showToast(formatHumanError(err, 'Verification failed'), 'error')
       }
     } catch (e) {
-      showToast('Network error during registration', 'error')
+      console.error(e)
+      showToast(formatHumanError(e, 'Network error during registration'), 'error')
     }
   }
 
   const handleRenamePasskey = async () => {
     if (!editingPasskey) return
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/${editingPasskey.id}`, {
+      const res = await fetch(`${API_URL}/auth/passkeys/${editingPasskey.id}`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json', 
@@ -169,7 +181,7 @@ const SettingsPage: React.FC = () => {
   const handleRemovePasskey = async () => {
     if (!confirmDeletePasskey) return
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/passkeys/${confirmDeletePasskey.id}`, {
+      const res = await fetch(`${API_URL}/auth/passkeys/${confirmDeletePasskey.id}`, {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -188,7 +200,7 @@ const SettingsPage: React.FC = () => {
   const handleUpdatePassword = async () => {
     setChangingPass(true)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/password/change`, {
+      const res = await fetch(`${API_URL}/auth/password/change`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -224,7 +236,7 @@ const SettingsPage: React.FC = () => {
     if (!token) return
     setSaving(true)
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+      const res = await fetch(`${API_URL}/api/user/profile`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -232,20 +244,23 @@ const SettingsPage: React.FC = () => {
           'x-household-id': localStorage.getItem('ledger_household_id') || ''
         },
         body: JSON.stringify({ 
-          display_name: name, 
+          display_name: name,
+          username: username,
+          email: email,
           avatar_url: avatar || null,
           timezone: timezone
         })
       })
       if (!res.ok) {
         const err = await res.json()
-        showToast(`Update Failed: ${err.error || 'Unknown error'}`, 'error')
+        showToast(formatHumanError(err, 'Update Failed'), 'error')
         return
       }
       if (mutate) mutate()
       showToast('Profile Updated Successfully', 'success')
     } catch (e) {
       console.error('[SettingsPage] Update Error:', e)
+      showToast(formatHumanError(e, 'Network error preventing profile save'), 'error')
     } finally {
       setSaving(false)
     }
@@ -325,10 +340,37 @@ const SettingsPage: React.FC = () => {
                     <Edit3 size={14} className="opacity-0 group-hover:opacity-40" />
                   </h2>
                 )}
-                <div className="text-xs font-black uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center gap-2">
-                   <ShieldCheck size={12} className="text-primary" />
-                   {profile?.email || user?.email}
-                </div>
+                {isEditingUsername ? (
+                  <input 
+                    autoFocus
+                    className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs font-bold outline-none focus:border-primary w-full max-w-[200px] text-center"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onBlur={() => { updateProfile(); setIsEditingUsername(false); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { updateProfile(); setIsEditingUsername(false); } }}
+                    placeholder="Username"
+                  />
+                ) : (
+                  <div className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setIsEditingUsername(true)}>
+                     <ShieldCheck size={12} className="text-primary" />
+                     {username || profile?.username || '@username'}
+                  </div>
+                )}
+                {isEditingEmail ? (
+                  <input 
+                    className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs font-bold outline-none focus:border-primary w-full max-w-[250px] text-center mt-1"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => { updateProfile(); setIsEditingEmail(false); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { updateProfile(); setIsEditingEmail(false); } }}
+                    placeholder="Primary Email"
+                  />
+                ) : (
+                  <div className="text-xs font-black uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center gap-2 cursor-pointer hover:text-primary transition-colors mt-1" onClick={() => setIsEditingEmail(true)}>
+                     <Key size={12} className="text-primary" />
+                     {email || profile?.email || user?.email}
+                  </div>
+                )}
               </div>
               
               <div className="w-full pt-6 border-t border-white/5 space-y-4">
@@ -571,8 +613,6 @@ const SettingsPage: React.FC = () => {
                  )}
               </div>
            </section>
-
-           <PrivacySettings />
            
            {/* Household Management */}
            <section className="space-y-6">

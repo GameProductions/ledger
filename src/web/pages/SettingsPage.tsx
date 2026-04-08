@@ -7,10 +7,10 @@ import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { startRegistration } from '@simplewebauthn/browser'
 import { PasswordChecklist } from '../components/PasswordChecklist'
 import { Price } from '../components/Price'
 import HouseholdRegistry from '../components/HouseholdRegistry'
+import { PasskeyModule } from '../components/PasskeyModule'
 import { formatHumanError } from '../utils/error-handler'
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
@@ -33,11 +33,6 @@ const SettingsPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('')
   const [changingPass, setChangingPass] = useState(false)
 
-  // Passkey State
-  const { data: passkeys, mutate: mutatePasskeys } = useApi<any[]>('/api/user/passkeys')
-  const [editingPasskey, setEditingPasskey] = useState<any | null>(null)
-  const [confirmDeletePasskey, setConfirmDeletePasskey] = useState<any | null>(null)
-  const [newPasskeyData, setNewPasskeyData] = useState<any | null>(null)
   const [isEditingAlias, setIsEditingAlias] = useState(false)
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [isEditingEmail, setIsEditingEmail] = useState(false)
@@ -100,100 +95,6 @@ const SettingsPage: React.FC = () => {
       }
     } finally {
       setSyncing(null)
-    }
-  }
-
-  const handleRegisterPasskey = async () => {
-    try {
-      const optRes = await fetch(`${API_URL}/auth/passkeys/register-options`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
-        },
-        credentials: 'include'
-      })
-      const options = await optRes.json()
-      const attestation = await startRegistration(options)
-      setNewPasskeyData({ attestation })
-    } catch (e: any) {
-      if (e.name === 'NotAllowedError') {
-        showToast('Registration cancelled', 'info')
-      } else {
-        console.error(e)
-        showToast(formatHumanError(e, 'Passkey registration failed'), 'error')
-      }
-    }
-  }
-
-  const handleFinishPasskeyRegistration = async (name: string) => {
-    if (!newPasskeyData) return
-    try {
-      const verifyRes = await fetch(`${API_URL}/auth/passkeys/register-verify`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          attestation: newPasskeyData.attestation,
-          name 
-        })
-      })
-      
-      if (verifyRes.ok) {
-        showToast('Passkey registered successfully', 'success')
-        mutatePasskeys()
-        setNewPasskeyData(null)
-      } else {
-        const err = await verifyRes.json()
-        showToast(formatHumanError(err, 'Verification failed'), 'error')
-      }
-    } catch (e) {
-      console.error(e)
-      showToast(formatHumanError(e, 'Network error during registration'), 'error')
-    }
-  }
-
-  const handleRenamePasskey = async () => {
-    if (!editingPasskey) return
-    try {
-      const res = await fetch(`${API_URL}/auth/passkeys/${editingPasskey.id}`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
-        },
-        body: JSON.stringify({ name: editingPasskey.newName })
-      })
-      if (res.ok) {
-        showToast('Passkey renamed', 'success')
-        mutatePasskeys()
-      }
-    } finally {
-      setEditingPasskey(null)
-    }
-  }
-
-  const handleRemovePasskey = async () => {
-    if (!confirmDeletePasskey) return
-    try {
-      const res = await fetch(`${API_URL}/auth/passkeys/${confirmDeletePasskey.id}`, {
-        method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
-        }
-      })
-      if (res.ok) {
-        showToast('Passkey removed', 'success')
-        mutatePasskeys()
-      }
-    } finally {
-      setConfirmDeletePasskey(null)
     }
   }
 
@@ -493,67 +394,7 @@ const SettingsPage: React.FC = () => {
                    })}
                 </div>
              </section>
-
-             {/* Passkeys & Biometrics */}
-             <section className="card p-10 space-y-8 bg-gradient-to-br from-white/5 to-transparent border-t-4 border-primary">
-                <div className="flex items-center justify-between">
-                   <div className="space-y-1">
-                      <h3 className="text-2xl font-black italic tracking-tight">Security Keys</h3>
-                      <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Add fingerprint, face, or hardware security keys</p>
-                   </div>
-                   <button 
-                    onClick={handleRegisterPasskey}
-                    className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-primary/20"
-                   >
-                     <Fingerprint size={18} />
-                     Add Passkey
-                   </button>
-                </div>
-
-                <div className="space-y-3">
-                   {passkeys && passkeys.length > 0 ? (
-                      passkeys.map((pk: any) => (
-                        <div key={pk.id} className="flex items-center justify-between p-6 bg-white/5 border border-white/5 rounded-2xl group hover:border-primary/20 transition-all">
-                           <div className="flex items-center gap-5">
-                              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary border border-white/5">
-                                 <Fingerprint size={24} />
-                              </div>
-                              <div>
-                                 <div className="flex items-center gap-3">
-                                   <p className="font-bold tracking-tight">{pk.name || 'Unnamed Passkey'}</p>
-                                   <div className="px-2 py-0.5 rounded bg-white/5 border border-white/5 flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-grayscale">
-                                      {getProviderIcon(pk.aaguid)}
-                                   </div>
-                                 </div>
-                                 <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Registered {new Date(pk.created_at).toLocaleDateString()}</p>
-                              </div>
-                           </div>
-                           <div className="flex gap-2">
-                              <button 
-                                onClick={() => setEditingPasskey({ ...pk, newName: pk.name })}
-                                className="p-3 rounded-xl hover:bg-white/10 text-secondary hover:text-white transition-all"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button 
-                                onClick={() => setConfirmDeletePasskey(pk)}
-                                className="p-3 rounded-xl hover:bg-red-500/10 text-secondary hover:text-red-500 transition-all"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                           </div>
-                        </div>
-                      ))
-                   ) : (
-                      <div className="p-10 border-2 border-dashed border-white/5 rounded-[3rem] text-center space-y-4 opacity-30 grayscale italic">
-                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
-                            <Fingerprint size={32} />
-                         </div>
-                         <p className="text-sm font-bold opacity-60 uppercase tracking-[0.2em]">No hardware keys detected in vault</p>
-                      </div>
-                   )}
-                </div>
-             </section>
+             <PasskeyModule />
 
              {/* Profile Preferences */}
              <section className="card p-10 space-y-10 reveal">
@@ -651,72 +492,6 @@ const SettingsPage: React.FC = () => {
                   <p className="text-xs text-secondary uppercase font-black tracking-widest opacity-60 leading-relaxed">Keep current display name and avatar even after this identity is removed.</p>
                </div>
             </label>
-          </div>
-        </Modal>
-
-        {/* Rename Passkey Modal */}
-        <Modal
-          isOpen={!!editingPasskey}
-          onClose={() => setEditingPasskey(null)}
-          title="Rename Passkey"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setEditingPasskey(null)}>Cancel</Button>
-              <Button variant="primary" onClick={handleRenamePasskey}>Save Name</Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <label className="text-xs font-black uppercase tracking-widest text-secondary block">New Passkey Name</label>
-            <input 
-              type="text" 
-              value={editingPasskey?.newName || ''}
-              onChange={(e) => setEditingPasskey({ ...editingPasskey, newName: e.target.value })}
-              className="w-full bg-white/5 border border-white/5 p-4 rounded-xl outline-none focus:border-primary transition-all font-bold"
-              autoFocus
-            />
-          </div>
-        </Modal>
-
-        {/* Delete Passkey Modal */}
-        <Modal
-          isOpen={!!confirmDeletePasskey}
-          onClose={() => setConfirmDeletePasskey(null)}
-          title="Remove Passkey?"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setConfirmDeletePasskey(null)}>Cancel</Button>
-              <Button variant="primary" onClick={handleRemovePasskey}>Confirm Removal</Button>
-            </>
-          }
-        >
-          <p className="text-secondary font-medium">This will permanently revoke biometric access for <strong>{confirmDeletePasskey?.name}</strong>. You must have another sign-in method active.</p>
-        </Modal>
-
-        {/* New Passkey Naming Modal */}
-        <Modal
-          isOpen={!!newPasskeyData}
-          onClose={() => setNewPasskeyData(null)}
-          title="Name Your New Passkey"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setNewPasskeyData(null)}>Discard</Button>
-              <Button variant="primary" onClick={() => {
-                const nameInput = document.getElementById('passkey-name-input') as HTMLInputElement;
-                if (nameInput.value) handleFinishPasskeyRegistration(nameInput.value);
-              }}>Save Passkey</Button>
-            </>
-          }
-        >
-          <div className="space-y-4">
-            <p className="text-secondary text-sm">Hardware verification successful. Please provide a friendly name for this key to identify it later.</p>
-            <input 
-              id="passkey-name-input"
-              type="text" 
-              placeholder="e.g. Work MacBook Air, Pixel 8 Pro"
-              className="w-full bg-white/5 border border-white/5 p-4 rounded-xl outline-none focus:border-primary transition-all font-bold"
-              autoFocus
-            />
           </div>
         </Modal>
 

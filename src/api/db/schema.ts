@@ -173,6 +173,14 @@ export const auditLogs = sqliteTable('audit_logs', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  currentChallenge: text('current_challenge'),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const passkeys = sqliteTable('passkeys', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),

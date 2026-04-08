@@ -42,6 +42,7 @@ const PCCProcessors = lazy(() => import('./pages/pcc/PCCProcessors'))
 const PCCGuide = lazy(() => import('./pages/pcc/PCCGuide'))
 const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
+import { PasskeyChallenge } from './components/PasskeyChallenge'
 
 const AppContent: React.FC = () => {
   const { user, globalRole } = useAuth()
@@ -79,17 +80,26 @@ const AppContent: React.FC = () => {
     // 3. Platform Command Center (PCC) - Super-Admin Only
     if (path.startsWith('#/system-pcc')) {
       if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
-      if (path === '#/system-pcc/dashboard') return <PCCDashboard />
-      if (path === '#/system-pcc/config') return <PCCConfig />
-      if (path === '#/system-pcc/registry') return <PCCData />
-      if (path === '#/system-pcc/users') return <PCCUsers />
-      if (path === '#/system-pcc/households') return <PCCHouseholds />
-      if (path === '#/system-pcc/search') return <PCCSearch />
-      if (path === '#/system-pcc/audit') return <PCCAudit />
-      if (path === '#/system-pcc/providers') return <PCCProviders />
-      if (path === '#/system-pcc/processors') return <PCCProcessors />
-      if (path === '#/system-pcc/guide') return <PCCGuide />
-      return <PCCDashboard />
+      
+      const renderPCC = () => {
+        if (path === '#/system-pcc/dashboard') return <PCCDashboard />
+        if (path === '#/system-pcc/config') return <PCCConfig />
+        if (path === '#/system-pcc/registry') return <PCCData />
+        if (path === '#/system-pcc/users') return <PCCUsers />
+        if (path === '#/system-pcc/households') return <PCCHouseholds />
+        if (path === '#/system-pcc/search') return <PCCSearch />
+        if (path === '#/system-pcc/audit') return <PCCAudit />
+        if (path === '#/system-pcc/providers') return <PCCProviders />
+        if (path === '#/system-pcc/processors') return <PCCProcessors />
+        if (path === '#/system-pcc/guide') return <PCCGuide />
+        return <PCCDashboard />
+      }
+
+      return (
+        <PasskeyChallenge onSuccess={() => {}} appName="LEDGER Systems">
+          {renderPCC()}
+        </PasskeyChallenge>
+      )
     }
 
     // 4. Authenticated Component Routes

@@ -11,6 +11,7 @@ import { AUTH_EXCLUSIONS } from './constants'
 
 // Route Imports
 import authRoutes from './routes/auth'
+import webauthnRoutes from './routes/webauthn'
 import financialsRoutes from './routes/financials'
 import planningRoutes from './routes/planning'
 import userRoutes from './routes/user'
@@ -280,6 +281,7 @@ ledger.use('/auth/vault/*', authMiddleware)
 ledger.use('/api/pcc/*', pccMiddleware)
 
 ledger.route('/auth', authRoutes)
+ledger.route('/api/auth', webauthnRoutes)
 ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)

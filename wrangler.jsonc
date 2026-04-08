@@ -25,6 +25,10 @@
     {
       "binding": "LEDGER_CACHE",
       "id": "82e77de9e9e4478bbf2859af4f143820"
+    },
+    {
+      "binding": "ledger_assets",
+      "id": "9378c24ffe754f81ac7a76db419c790c"
     }
   ],
   "r2_buckets": [

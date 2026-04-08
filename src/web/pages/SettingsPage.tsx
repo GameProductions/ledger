@@ -193,8 +193,7 @@ const SettingsPage: React.FC = () => {
                 Identity & Security
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-primary bg-primary/10 px-3 py-1 rounded-full">v3.11.8 System Modernization</span>
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">User Account Controls</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">User Account Settings</span>
               </div>
             </div>
           </div>

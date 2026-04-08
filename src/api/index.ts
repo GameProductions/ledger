@@ -200,7 +200,29 @@ import { eq } from 'drizzle-orm'
 const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Health & Docs
-ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.16.1' : 'DEV'} IS LIVE`))
+ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.20.1' : 'DEV'} IS LIVE`))
+import pkg from '../../package.json';
+
+ledger.get('/api/health', async (c) => {
+  let dbStatus = "connected";
+  try {
+     await getDb(c.env).select({ configKey: systemConfig.configKey }).from(systemConfig).limit(1);
+  } catch (e) {
+     dbStatus = "error";
+  }
+
+  return c.json({
+    status: dbStatus === "connected" ? "online" : "degraded",
+    database: dbStatus,
+    service: "ledger",
+    environment: c.env.ENVIRONMENT || "development",
+    versions: {
+      production: pkg.version, 
+      development: `${pkg.version}-dev`
+    },
+    timestamp: Date.now() 
+  });
+})
 ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // System Config & Theme (Universal Context)

@@ -6,19 +6,21 @@ export const authRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
 const rpName = 'GameProductions Identity';
 
+function getRpID(c: any): string {
+  const hostStr = c.req.header('host');
+  const originStr = c.req.header('origin');
+  if (hostStr?.includes('localhost') || originStr?.includes('localhost')) {
+    return 'localhost';
+  }
+  return new URL(c.req.url).hostname;
+}
+
 authRouter.post('/webauthn/generate-registration', async (c) => { 
   try {
     const userId = (c.get as any)('user_id') as string;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
     
-    const originStr = c.req.header('origin');
-    const hostStr = c.req.header('host');
-    let rpID = c.req.url.split('/')[2].split(':')[0]; // default to production
-    if (hostStr && hostStr.includes('localhost')) {
-      rpID = 'localhost';
-    } else if (originStr && originStr.includes('localhost')) {
-      rpID = 'localhost';
-    }
+    const rpID = getRpID(c);
     
     const options = await generateRegistrationOptions({
       rpName,
@@ -41,56 +43,50 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
 });
 
 authRouter.post('/webauthn/verify-registration', async (c) => {
-  const body = await c.req.json();
-  const userId = (c.get as any)('user_id') as string;
-  const sessionId = (c.get as any)('session_id') as string;
-  const originStr = c.req.header('origin');
-  const hostStr = c.req.header('host');
-  let rpID = c.req.url.split('/')[2].split(':')[0];
-  if (hostStr && hostStr.includes('localhost')) {
-    rpID = 'localhost';
-  } else if (originStr && originStr.includes('localhost')) {
-    rpID = 'localhost';
-  }
-  
-  const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM sessions WHERE id = ?').bind(sessionId).first();
-  if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
-
-  let verification;
   try {
-    verification = await verifyRegistrationResponse({
+    const body = await c.req.json();
+    const userId = (c.get as any)('user_id') as string;
+    const sessionId = (c.get as any)('session_id') as string;
+    
+    const rpID = getRpID(c);
+    
+    const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM sessions WHERE id = ?').bind(sessionId).first();
+    if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
+
+    const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge: session.passkey_verified_at as string,
       expectedOrigin: c.req.header('origin') || `https://${rpID}`,
       expectedRPID: rpID,
     });
+
+    if (verification.verified && verification.registrationInfo) {
+      const regInfo = verification.registrationInfo as any;
+      const credentialID = regInfo.credential?.id || (regInfo as any).credentialID;
+      const credentialPublicKey = regInfo.credential?.publicKey || (regInfo as any).credentialPublicKey;
+      const counter = regInfo.credential?.counter || regInfo.counter || 0;
+      const aaguid = regInfo.aaguid || null;
+
+      await c.env.DB.prepare(`
+        INSERT INTO passkeys (id, user_id, public_key, credential_id, counter, aaguid)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        crypto.randomUUID(), userId, 
+        btoa(String.fromCharCode(...new Uint8Array(credentialPublicKey))),
+        credentialID,
+        counter,
+        aaguid
+      ).run();
+
+      await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
+      return c.json({ verified: true });
+    }
+
+    return c.json({ verified: false }, 400);
   } catch (error: any) {
+    console.error('[WebAuthn] verify-registration error:', error);
     return c.json({ error: error.message }, 400);
   }
-
-  if (verification.verified && verification.registrationInfo) {
-    const regInfo = verification.registrationInfo as any;
-    const credentialID = regInfo.credential?.id || (regInfo as any).credentialID;
-    const credentialPublicKey = regInfo.credential?.publicKey || (regInfo as any).credentialPublicKey;
-    const counter = regInfo.credential?.counter || regInfo.counter || 0;
-    const aaguid = regInfo.aaguid || null;
-
-    await c.env.DB.prepare(`
-      INSERT INTO passkeys (id, user_id, public_key, credential_id, counter, aaguid)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).bind(
-      crypto.randomUUID(), userId, 
-      btoa(String.fromCharCode(...new Uint8Array(credentialPublicKey))),
-      credentialID,
-      counter,
-      aaguid
-    ).run();
-
-    await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
-    return c.json({ verified: true });
-  }
-
-  return c.json({ verified: false }, 400);
 });
 
 authRouter.get('/webauthn/passkeys', async (c) => {
@@ -133,57 +129,49 @@ authRouter.delete('/webauthn/passkeys/:id', async (c) => {
 });
 
 authRouter.post('/webauthn/generate-auth', async (c) => {
-  const userId = (c.get as any)('user_id') as string;
-  const sessionId = (c.get as any)('session_id') as string;
-  const originStr = c.req.header('origin');
-  const hostStr = c.req.header('host');
-  let rpID = c.req.url.split('/')[2].split(':')[0];
-  if (hostStr && hostStr.includes('localhost')) {
-    rpID = 'localhost';
-  } else if (originStr && originStr.includes('localhost')) {
-    rpID = 'localhost';
+  try {
+    const userId = (c.get as any)('user_id') as string;
+    const sessionId = (c.get as any)('session_id') as string;
+    
+    const rpID = getRpID(c);
+
+    const passkeys = await c.env.DB.prepare('SELECT credential_id FROM passkeys WHERE user_id = ?').bind(userId).all();
+    if (!passkeys.results.length) return c.json({ error: 'No passkeys registered' }, 404);
+
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: passkeys.results.map((pk: any) => ({
+        id: pk.credential_id, // Pass the base64 string directly
+        type: 'public-key',
+      })) as any,
+      userVerification: 'preferred',
+    });
+
+    await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, sessionId).run();
+    return c.json(options);
+  } catch (error: any) {
+    console.error('[WebAuthn] generate-auth error:', error);
+    return c.json({ error: error.message }, 500);
   }
-
-  const passkeys = await c.env.DB.prepare('SELECT credential_id FROM passkeys WHERE user_id = ?').bind(userId).all();
-  if (!passkeys.results.length) return c.json({ error: 'No passkeys registered' }, 404);
-
-  const options = await generateAuthenticationOptions({
-    rpID,
-    allowCredentials: passkeys.results.map((pk: any) => ({
-      id: pk.credential_id, // Pass the base64 string directly
-      type: 'public-key',
-    })) as any,
-    userVerification: 'preferred',
-  });
-
-  await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, sessionId).run();
-  return c.json(options);
 });
 
 authRouter.post('/webauthn/verify-auth', async (c) => {
-  const body = await c.req.json();
-  const userId = (c.get as any)('user_id') as string;
-  const sessionId = (c.get as any)('session_id') as string;
-  const originStr = c.req.header('origin');
-  const hostStr = c.req.header('host');
-  let rpID = c.req.url.split('/')[2].split(':')[0];
-  if (hostStr && hostStr.includes('localhost')) {
-    rpID = 'localhost';
-  } else if (originStr && originStr.includes('localhost')) {
-    rpID = 'localhost';
-  }
-
-  const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM sessions WHERE id = ?').bind(sessionId).first();
-  if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
-
-  const passkey = await c.env.DB.prepare('SELECT * FROM passkeys WHERE user_id = ? AND credential_id = ?')
-    .bind(userId, body.id).first() as any;
-
-  if (!passkey) return c.json({ error: 'Passkey not found' }, 404);
-
-  let verification;
   try {
-    verification = await verifyAuthenticationResponse({
+    const body = await c.req.json();
+    const userId = (c.get as any)('user_id') as string;
+    const sessionId = (c.get as any)('session_id') as string;
+    
+    const rpID = getRpID(c);
+
+    const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM sessions WHERE id = ?').bind(sessionId).first();
+    if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
+
+    const passkey = await c.env.DB.prepare('SELECT * FROM passkeys WHERE user_id = ? AND credential_id = ?')
+      .bind(userId, body.id).first() as any;
+
+    if (!passkey) return c.json({ error: 'Passkey not found' }, 404);
+
+    const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge: session.passkey_verified_at as string,
       expectedOrigin: c.req.header('origin') || `https://${rpID}`,
@@ -196,17 +184,18 @@ authRouter.post('/webauthn/verify-auth', async (c) => {
         transports: passkey.transports ? JSON.parse(passkey.transports) : undefined,
       } as any,
     });
+
+    if (verification.verified) {
+      await c.env.DB.prepare('UPDATE passkeys SET counter = ? WHERE id = ?').bind(verification.authenticationInfo.newCounter, passkey.id).run();
+      await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
+      return c.json({ verified: true });
+    }
+
+    return c.json({ verified: false }, 400);
   } catch (error: any) {
+    console.error('[WebAuthn] verify-auth error:', error);
     return c.json({ error: error.message }, 400);
   }
-
-  if (verification.verified) {
-    await c.env.DB.prepare('UPDATE passkeys SET counter = ? WHERE id = ?').bind(verification.authenticationInfo.newCounter, passkey.id).run();
-    await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
-    return c.json({ verified: true });
-  }
-
-  return c.json({ verified: false }, 400);
 });
 
 export default authRouter;

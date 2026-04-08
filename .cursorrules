@@ -3,11 +3,13 @@
 This document serves as the absolute source of truth for all projects within the GameProductions organization. All AI interactions and development must adhere to these standards.
 
 ## 1. Cloudflare-First Infrastructure
-- **Stack**: Projects must use Cloudflare's native serverless stack: Workers, Pages, D1 (SQL), KV (Key-Value), R2 (Storage), Durable Objects (State), and Queues (Background tasks).
+- **Stack**: Projects must use Cloudflare's native serverless stack: Workers, D1 (SQL), KV (Key-Value), R2 (Storage), Durable Objects (State), and Queues (Background tasks).
 - **Product Alignment**: All features must use the specific Cloudflare product that supports it (e.g., D1 for SQL, KV for caching).
 - **Apps as PWA**: All applications are set up as Progressive Web Apps (PWA) by default.
 - **Configuration**: Use `wrangler.jsonc` exclusively. Never use `wrangler.toml`.
 - **Infrastructure as Code**: All bindings and environment variables must be defined in `wrangler.jsonc`.
+- **Resource Naming (v1.3.0)**:
+  - Cloudflare Workers MUST be named exactly `[project]`, with no tags or suffixes added.
 - **Observability (v1.3.0)**: Every `wrangler.jsonc` MUST include the following block to enable full diagnostic logging and worker traces:
   ```jsonc
   "observability": {
@@ -36,19 +38,25 @@ This document serves as the absolute source of truth for all projects within the
   - `/admin/*`: Dedicated directory for project-level administrative tools.
   - `/godmode/*`: High-security portal for Super Admins.
   - `/*`: Reserved for the PWA (frontend) and static assets.
+- **Webhook Exemption**: Any Bearer/Token auth guards or strict middlewares acting globally on the `/api/*` blanket must explicitly whitelist routes containing `/discord` or `/interactions`. Failure to do this will block native webhook validation tools from remote platforms (e.g., Discord) causing 401s that break server-to-server operations.
 - **CORS**: Strict CORS policies allowing only the project's own domain and authorized local development origins.
 
 ## 3. Database & Persistence (SQL)
-- **Standard**: Use the native Cloudflare D1 client (`c.env.DB`).
-- **ORM Policy**: Drizzle ORM is allowed for complex schemas but is **not a requirement**. Prefer lightweight SQL wrappers or direct D1 calls for simple bots.
-- **Migrations**: Maintain a `migrations/` directory managed via Wrangler. 
-- **Schema Management**: Always import the database schema whenever changes are made to ensure the local environment and implementation plans stay up to date.
+- **Standard**: Use the native Cloudflare D1 client (`c.env.DB`) orchestrated purely through Drizzle ORM.
+- **ORM Policy (v1.5.0)**: **Drizzle ORM is STRICTLY REQUIRED** across all GameProductions projects. Legacy raw SQL/wrappers must be aggressively phased out.
+- **Schema Management**: All definitions must exist inside `src/api/db/schema.ts` and managed via `drizzle-kit`.
+- **Legacy Archival Protocol**: NEVER delete legacy `.db`, `.sqlite`, or `schema.sql` files during modernized migrations. All obsolete database structures MUST be moved directly into a root `archive/` directory to preserve fail-safes.
 
 ## 4. User & Identity Management
-- **Account Creation**: Always generate a random hash as the primary user ID first. Then, link 3rd-party SSO (Discord, Google, etc.) to that hash.
-- **Security Standard (v1.2.0)**:
+- **Account Creation**:
+  - **Cryptographic Hash Pattern (Ledger, GloBot, Lets Draw Down, Groupcord)**: Always generate a random cryptographic hash as the generic primary user ID first. Link 3rd-party integrations (Discord, Google) as secondary identities. These databases must remain completely independent of each other.
+  - **Raw Snowflake Pattern (I-AM, Food)**: For lightweight apps strictly coupled to a remote ecosystem, use the raw remote provider identifier (e.g., the Discord Snowflake ID) directly as the primary database ID to eliminate query overhead.
+- **Security Standard & Zero-Trust Authentication (v1.4.0)**:
   - **Hashing**: Use PBKDF2 with **100,000 iterations** for all password hashing (native Cloudflare Worker limit).
-  - **Biometrics**: Native **WebAuthn (Passkeys)** must be supported as the primary login method for modern devices.
+  - **Zero-Trust Step-Up Auth**: Administrative dashboards (`/godmode`, `/admin`, and high-risk fleet actions) MUST NEVER rely solely on standardized SSO bearer tokens. Such routes MUST implement a **Biometric WebAuthn Challenge (Passkeys)** step-up verification. The backend middleware must confirm a cryptographic hardware signature from the user's physical device before yielding access to critical infrastructure.
+  - **Passkey Implementation Workflow (v1.5.0)**: 
+    - If a project already features a dedicated "User Account" or "Profile Settings" UI where users modify their core info, the Passkey CRUD module (list, generate, rename, revoke) MUST be natively embedded directly into that existing page.
+    - If a project is inherently lightweight (e.g., uses Discord SSO + step-up Zero Trust) and lacks a dedicated account page, it MUST construct a standalone `/settings` (Portal Settings) route dedicated exclusively to managing biometric hardware binders, maintaining the premium layout architecture established in the Foundation portal.
 - **Role Hierarchy**: 
   - **Super Admin**: Full global control via the **God Mode** portal (`GodMode`).
   - **Admin**: Project-specific administrative access.
@@ -58,8 +66,14 @@ This document serves as the absolute source of truth for all projects within the
 - **God Mode (`GodMode`)**:
   - **Component**: Create a separate, secure portal named `GodMode` for Super Admins.
   - **Pathing (v1.3.0)**: All God Mode tools MUST be located in `app/routes/godmode/` and use a dedicated `GodModeLayout`.
+  - **Isolation (v1.3.0)**: Never mention or list God Mode features/capabilities outside of designated God Mode routes or protected administrative documentation. Public documentation and landing pages MUST remain clean of any "God Mode" references.
   - **Impersonation**: Must support "View As" mode with a persistent warning header.
   - **Audit Logging**: Every action in `GodMode` must be logged to a central audit trail.
+  - **Walkthrough History (v1.3.0)**: A full history of all project `walkthrough.md` files MUST be preserved and synchronized within the God Mode "Help" or "Audit" section for comprehensive architectural traceability.
+  - **Setup Guides (v1.3.0)**: The God Mode "Help" section MUST contain exhaustive, step-by-step setup instructions for all platform integrations. This includes:
+    - **Exact Enpoints**: Providing the project's specific callback and interactions URLs (e.g., `https://[project].gpnet.dev/api/...`).
+    - **App Listing Metadata**: Standardized descriptions and feature lists intended for third-party app stores/listings.
+    - **Constraint**: NEVER use the word "exhaustive" when presenting feature lists, even if the list is comprehensive.
 
 
 ## 5. UI/UX Standards (v1.2.0)
@@ -68,10 +82,17 @@ This document serves as the absolute source of truth for all projects within the
     - **Scrollable Lists**: Use a standardized `.scrollable-list` class with `max-height: 65vh; overflow-y: auto; overflow-x: hidden;`.
     - **Custom Scrollbars**: Implement a sleek, custom-designed scrollbar for all scrollable containers.
 - **Onboarding**: Every new project MUST include a high-fidelity **Guided Tour** component for first-time users.
-- **Landing Page**: Must comply with Google’s safety rules to avoid "dangerous site" classification.
 - **Floating Header**: 
   - Left-aligned: App Logo + App Name.
-  - Right-aligned: User drop-down menu with avatar.
+  - Right-aligned: 
+    - **Signed In**: User drop-down menu with avatar.
+    - **Signed Out**: A prominent **"Sign In"** button that initiates the primary authentication flow.
+  - **Law**: Never alter branding, logos, or typography unless specifically requested by the user.
+- **Landing Page (v1.3.0)**:
+  - Must comply with Google’s safety rules to avoid "dangerous site" classification.
+  - MUST include a compelling **Application Description** immediately following the hero section.
+  - MUST include a section labeled **"Features"** containing an exhaustive list of application capabilities.
+  - MUST include an **"Integrations"** section listing supported 3rd-party services and options.
 - **Universal Footer**: 
   - Mandatory on every application.
   - Content: - Top Row: App Name + Version (Left), Legal Links (Right); - Bottom Row: `[Current Year] GameProductions™. All rights reserved.`
@@ -89,7 +110,9 @@ This document serves as the absolute source of truth for all projects within the
 - **Versioning**: Major (X.0.0), Minor (0.X.0), Patch (0.0.X). Prefix commits (e.g., `v1.2.3: Add feature X`).
 - **CLI Maintenance**: Always keep `gh`, `wrangler`, and other CLI tools updated.
 - **Security & Hardening**: Maintain absolute health for Dependabot and vulnerability monitoring. Resolve security concerns immediately.
-- **Project Synchronization**: Maintain `implementation_plan.md` and sync with GitHub Project.
+- **Project Synchronization (v1.6.0)**: You MUST continuously track all tasks (historical and future) mapped inside `task.md` or any development checklist directly to the overarching GitHub Project 17. You will maintain strict 1:1 synchronization by orchestrating Draft Items natively via the GitHub CLI.
+  - **Tooling Execution**: Use `gh project item-create 17 --owner GameProductions --title "TASK_TITLE"` purely for granular micro-tasks to avert general repository spam.
+  - **History Retroaction**: All newly tracked workspaces must have any existing backlog of tasks aggressively caught up using `foundation/scripts/sync-github-tasks.sh`.
 
 ## 8. Project Initialization
 - All new projects must be initialized via `create-project.md`.
@@ -102,8 +125,13 @@ All projects MUST adhere to this directory layout:
 ### Core Orchestration (Root)
 - `server.ts`: The unified Hono entry point (Router/Orchestrator).
 - `wrangler.jsonc`: The Cloudflare configuration source of truth.
-- `database/`: Centralized SQL schemas, migrations, and seeds.
+- `drizzle.config.ts`: Mandatory Cloudflare D1 mapping for Drizzle ORM.
+- `archive/`: Fail-safe storage for deprecated databases, raw SQL migrations, and structural legacy files.
 - `types/`: Global TypeScript definitions and bindings.
+
+### Database Logic (`src/api/db/`)
+- `src/api/db/schema.ts`: Centralized Drizzle schema definitions.
+- `src/api/db/index.ts`: The primary D1 database client initializer.
 
 ### Application Logic (`app/`)
 - `app/routes/`: Route entry points for UI pages.
@@ -142,3 +170,37 @@ All projects MUST adhere to this directory layout:
 - **Accessibility**: User Settings must include Contrast, Font Scaling, and Reduced Motion.
 
 
+
+## 11. Build & Styling Standards (v2.0.2)
+- **Law 130 (Tailwind v4 Standard)**: 
+  - All projects MUST use **Tailwind CSS v4** as the primary styling engine.
+  - **Integration**: Must use the native @tailwindcss/vite plugin in vite.config.ts.
+  - **Prohibition**: The use of legacy postcss.config.js or tailwind.config.js is strictly prohibited for standard CSS processing to ensure maximum build-time performance and absolute structural purity.
+  - **Entry Point**: The primary CSS file (e.g., src/index.css) MUST use the modern @import "tailwindcss"; directive.
+
+## 12. Naming Conventions & Code Style (v2.1.0)
+- **Database (Drizzle/SQL)**:
+  - **Table Names**: Must be `snake_case` in the database definition and `camelCase` for the TypeScript export (e.g., `export const userSettings = sqliteTable('user_settings', ...)`).
+  - **Column Names**: Must be `snake_case` in the database and `camelCase` in the Drizzle property mapping.
+  - **Indexes**: Must follow the pattern `idx_[table]_[column]`.
+- **File Naming**:
+  - **Components**: Use `PascalCase.tsx` (e.g., `UserCard.tsx`).
+  - **Utilities/Hooks/Services**: Use `kebab-case.ts` (e.g., `use-auth.ts`, `date-utils.ts`).
+  - **Routes**: Use `kebab-case.tsx` for route files.
+- **Variable & Code Naming**:
+  - **Variables/Functions**: Use `camelCase`.
+  - **Classes/Interfaces/Types**: Use `PascalCase`.
+  - **Environment Variables**: Use `UPPER_SNAKE_CASE`.
+- **React Components**:
+  - Always use functional components with explicitly typed props.
+  - Deconstruct props in the function signature for clarity.
+
+## 13. High-Performance Infrastructure (v2.2.0)
+- **Rule 13.1 (KV Caching)**: High-computation or frequently accessed configuration state must be offloaded to Cloudflare KV integrations to reduce D1 database query bottlenecking.
+- **Rule 13.2 (Drizzle Preparing)**: Serverless functions routing high-frequency pathways must precompile Drizzle SQL AST parameters via `.prepare()`.
+- **Rule 13.3 (Rate-Limit Headers)**: Durable Object Rate Limiters must provide transparent countdowns and generic retry-after statuses on throttled responses (`X-RateLimit-Limit`, `X-RateLimit-Remaining`).
+- **Rule 13.4 (Automated Testing)**: Projects must deploy Vitest for core pathway integrity checking.
+- **Rule 13.5 (Disaster Recovery)**: Leverage Cloudflare Cron triggers and endpoints to export disaster-recovery binary or JSON structural dumps to securely attached R2 buckets.
+- **Rule 13.6 (D1 Foreign Indexing)**: Explicitly map native database indexing via `index()` usage inside `drizzle-orm` mappings for heavily queried foreign keys (`householdId`, `userId`) to prevent full table scans.
+- **Rule 13.7 (PWA Offline First)**: Implement `sw.js` offline caching logic for primary static assets to ensure absolute network independence and instant WebUI visual resolution upon disconnected state.
+- **Rule 13.8 (E2E Validation)**: Advanced projects must configure robust end-to-end user-flow validations simulating human navigation via the `Playwright` engine.

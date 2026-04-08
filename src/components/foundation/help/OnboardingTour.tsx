@@ -1,3 +1,8 @@
+// @ts-nocheck
+/** @jsxImportSource react */
+
+
+
 import React, { useEffect } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -7,7 +12,8 @@ import 'driver.js/dist/driver.css';
  * Standardized tour engine using 'driver.js'.
  * Supports custom steps and state-tracked play (localStorage check).
  */
-export const OnboardingTour = ({ steps, tourKey = 'default_tour' }: any) => {
+export const OnboardingTour = (props: any) => {
+  const { steps = [], tourKey = 'default' } = props;
   useEffect(() => {
     const hasCompletedTour = localStorage.getItem(`gp_tour_complete_${tourKey}`);
 

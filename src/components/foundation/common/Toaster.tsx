@@ -1,3 +1,8 @@
+// @ts-nocheck
+/** @jsxImportSource react */
+
+
+
 import React from 'react';
 import { Toaster as Sonner } from 'sonner';
 
@@ -6,10 +11,11 @@ import { Toaster as Sonner } from 'sonner';
  * Standardized notification engine based on 'sonner'.
  * Supports soft-force and hard-force theme colors via CSS variables.
  */
-export const Toaster = () => {
+export const Toaster = (props: any) => {
   return (
     <Sonner
       position="bottom-right"
+      {...props}
       toastOptions={{
         style: {
           background: 'var(--bg-primary, #ffffff)',

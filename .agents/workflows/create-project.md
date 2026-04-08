@@ -30,7 +30,12 @@ Follow these steps to initialize a new GameProductions bot/PWA project. All step
 - Avoid Drizzle for simple projects; use raw SQL with `?` placeholders.
 - If Drizzle is necessary, initialize it as a lightweight middleware.
 
-## 5. UI/UX & Components
+## 5. Federated SSO Identity
+- **Proxy Requirement**: Never register a unique project URL in an external Developer Portal (Discord, Google, etc.).
+- **Auth Endpoint**: Hardcode `oauth2/authorize` handoffs and token exchange POST requests to use `https://sso.gpnet.dev/api/proxy/callback/:provider`.
+- **State Payload**: Ensure the OAuth `state` query string is a base64-encoded JSON payload containing `targetOrigin` so Foundation knows where to redirect back to.
+
+## 6. UI/UX & Components
 - Implement a **Toast Provider** for all user communication.
 - Create the **Floating Header** with:
   - Left: Logo + App Name.
@@ -41,15 +46,15 @@ Follow these steps to initialize a new GameProductions bot/PWA project. All step
 - Ensure the **Landing Page** is Google-compliant for account-linking approval.
 - Add **Microsoft Verification**: Create `.well-known/microsoft-identity-association.json`.
 
-## 6. Admin & "God Mode"
+## 7. Admin & "God Mode"
 - Implement the **Role Hierarchy**: Super Admin, Admin, Mod, User.
 - Create a separate **God Mode Portal** for Super Admins.
 - Implement **User Management (CRUD)** for Mods+.
 
-## 7. Local Development & Deployment
+## 8. Local Development & Deployment
 - **Local Testing**: Always run `npm run dev` or `wrangler dev` before deploying.
 - **Remote DB**: To test against production data, run `wrangler dev --remote`.
 - **Publishing**: Only run `wrangler deploy` after successful local verification and user confirmation.
 
-## 8. Globalization (Sync Foundation)
+## 9. Globalization (Sync Foundation)
 - Run the `sync-foundation.sh` script to pull the latest `.cursorrules` and global workflows from the `foundation` repository.

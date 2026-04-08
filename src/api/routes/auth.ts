@@ -191,7 +191,7 @@ auth.get('/callback/discord', async (c) => {
   // PUSH LINKED ROLES METADATA IF SOLICITED
   if (isLinkedRoleMetadataUpdate || tokenData.scope?.includes('role_connections.write')) {
     const db = getDb(c.env)
-    const dbUser = await db.select({ role: users.role }).from(users).where(eq(users.id, finalUserId!)).limit(1)
+    const dbUser = await db.select({ role: users.globalRole }).from(users).where(eq(users.id, finalUserId!)).limit(1)
 
     // Standard GameProductions Unified Tier Schema for Ledger
     let metadata: Record<string, any> = {}

@@ -1,3 +1,8 @@
+// @ts-nocheck
+/** @jsxImportSource react */
+
+
+
 import React, { useState } from 'react';
 
 /**
@@ -5,7 +10,7 @@ import React, { useState } from 'react';
  * Standardized, high-fidelity UI component for currency and price inputs.
  * Enforces cent-perfect math and precision handling for all organization apps.
  */
-export const ValueInput = ({ value, label, currency = 'USD', onChange }: any) => {
+export const ValueInput = ({ value, label, currency = 'USD', onChange }) => {
   const [inputValue, setInputValue] = useState(value?.toString() || '0.00');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

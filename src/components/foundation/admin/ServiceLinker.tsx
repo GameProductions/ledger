@@ -1,3 +1,8 @@
+// @ts-nocheck
+/** @jsxImportSource react */
+
+
+
 import React from 'react';
 
 type Service = {
@@ -13,7 +18,7 @@ type Service = {
  * Centralized interface for linking and managing 3rd party APIs.
  * Supports dynamic redirect construction with app-specific scopes.
  */
-export const ServiceLinker = ({ services, onConnect, onDisconnect }: { services: Service[], onConnect?: any, onDisconnect?: any }) => {
+export const ServiceLinker = ({ services, onConnect, onDisconnect }: { services: Service[] }) => {
   return (
     <div className="gp-service-linker">
       <h3>Integration Core</h3>

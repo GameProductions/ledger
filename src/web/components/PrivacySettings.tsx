@@ -3,6 +3,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { BookLock } from 'lucide-react';
 
 export const PrivacySettings: React.FC = () => {
   const { token, user } = useAuth();

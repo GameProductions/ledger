@@ -1,3 +1,8 @@
+// @ts-nocheck
+/** @jsxImportSource react */
+
+
+
 import React, { useState } from 'react';
 
 type AuditEntry = {

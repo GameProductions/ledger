@@ -18,15 +18,45 @@ export const DataCenter = ({ tables, onImport, onExport }) => {
     setStatus('importing');
     setProgress(0);
 
-    // Mock: Batch processing logic (chunked upload)
-    const chunkSize = 100;
-    const totalLines = 1000; // Simulated
-    for (let i = 0; i < totalLines; i += chunkSize) {
-      await onImport(tableName, i, chunkSize); // Execution in D1 Batch
-      setProgress(Math.round(((i + chunkSize) / totalLines) * 100));
+    try {
+      const text = await file.text();
+      let records: any[] = [];
+      
+      if (file.name.endsWith('.json')) {
+        const parsed = JSON.parse(text);
+        records = Array.isArray(parsed) ? parsed : [parsed];
+      } else if (file.name.endsWith('.csv')) {
+        records = text.split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(line => ({ raw: line }));
+      } else {
+        throw new Error("Unsupported file format. Must be .json or .csv");
+      }
+      
+      const totalItems = records.length;
+      if (totalItems === 0) {
+        setStatus('complete');
+        return;
+      }
+      
+      // Real: Batch processing logic (chunked upload)
+      const chunkSize = 100;
+      for (let i = 0; i < totalItems; i += chunkSize) {
+        const chunk = records.slice(i, i + chunkSize);
+        if (onImport) {
+           await onImport(tableName, chunk, i, totalItems); // Execution in D1 Batch
+        } else {
+           await new Promise(r => setTimeout(r, 50)); // Fallback if no handler provided testing
+        }
+        setProgress(Math.min(100, Math.round(((i + chunkSize) / totalItems) * 100)));
+      }
+      
+      setStatus('complete');
+    } catch (err) {
+      console.error("Import failed:", err);
+      setStatus('error');
     }
-
-    setStatus('complete');
   };
 
   return (

@@ -26,6 +26,7 @@ export const users = sqliteTable('users', {
   lastViewedVersion: text('last_viewed_version'),
   forcePasswordChange: integer('force_password_change').default(0),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  passkeyVerifiedAt: text('passkey_verified_at'),
 });
 
 export const userIdentities = sqliteTable('user_identities', {
@@ -176,7 +177,7 @@ export const auditLogs = sqliteTable('audit_logs', {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
-  currentChallenge: text('current_challenge'),
+  passkeyVerifiedAt: text('passkey_verified_at'),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });

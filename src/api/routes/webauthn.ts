@@ -4,7 +4,7 @@ import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthen
 
 export const authRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
-const rpName = 'GameProductions Identity';
+const rpName = 'LEDGER';
 
 function getRpID(c: any): string {
   const hostStr = c.req.header('host') || '';

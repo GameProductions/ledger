@@ -126,13 +126,21 @@ export const TotpModule = () => {
               >
                 <div className="flex flex-col xl:flex-row gap-8 items-center xl:items-start">
                   {/* QR Core */}
-                  <div className="p-4 bg-white rounded-2xl shrink-0 mx-auto xl:mx-0 shadow-lg border-4 border-slate-800">
-                    <QRCodeSVG 
-                      value={setupData.qrUrl} 
-                      size={160} 
-                      level="M"
-                      includeMargin={false}
-                    />
+                  <div className="flex flex-col items-center gap-4 shrink-0 mx-auto xl:mx-0">
+                    <div className="p-4 bg-white rounded-2xl shadow-lg border-4 border-slate-800">
+                      <QRCodeSVG 
+                        value={setupData.qrUrl} 
+                        size={160} 
+                        level="M"
+                        includeMargin={false}
+                      />
+                    </div>
+                    <a 
+                      href={setupData.qrUrl}
+                      className="text-xs font-bold text-amber-500 hover:text-amber-400 border border-amber-500/30 hover:border-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2 rounded-lg transition-all"
+                    >
+                      Open Authenticator App
+                    </a>
                   </div>
                   
                   {/* Instructions */}

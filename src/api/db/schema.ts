@@ -182,6 +182,15 @@ export const sessions = sqliteTable('sessions', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const totps = sqliteTable('totps', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id),
+  secret: text('secret').notNull(),
+  name: text('name').default('Authenticator App'),
+  lastUsedAt: text('last_used_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const passkeys = sqliteTable('passkeys', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),

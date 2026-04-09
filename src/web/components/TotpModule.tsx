@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, KeyRound, Copy, Check, QrCode as QrIcon, Smartphone } from 'lucide-react';
+import { Shield, KeyRound, Copy, Check, QrCode as QrIcon, Smartphone, Trash2, Edit2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
@@ -12,24 +12,22 @@ const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
 export const TotpModule = () => {
   const { token } = useAuth();
-  const { data: profile } = useApi('/api/user/profile');
+  const { data: profile, mutate: refreshProfile } = useApi('/api/user/profile');
+  const { data: totps, mutate: refreshTotps } = useApi('/api/user/totps');
   
   const [setupData, setSetupData] = useState<{ secret: string; qrUrl: string } | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
+  const [authenticatorName, setAuthenticatorName] = useState('Authenticator App');
   const [isSettingUp, setIsSettingUp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [totpEnabled, setTotpEnabled] = useState(profile?.totpEnabled === 1);
-
-  // Sync state if profile loads dynamically
-  React.useEffect(() => {
-    if (profile?.totpEnabled !== undefined) {
-      setTotpEnabled(profile.totpEnabled === 1);
-    }
-  }, [profile?.totpEnabled]);
+  
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
 
   const beginSetup = async () => {
     setIsSettingUp(true);
+    setAuthenticatorName(`Authenticator App ${totps ? totps.length + 1 : 1}`);
     try {
       const res = await fetch(`${API_URL}/auth/totp/setup`, {
         method: 'POST',
@@ -67,20 +65,68 @@ export const TotpModule = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ code: verificationCode })
+        body: JSON.stringify({ code: verificationCode, secret: setupData!.secret, name: authenticatorName })
       });
       
       if (!res.ok) throw new Error('Verification blocked: Code mismatch.');
       
       toast.success('Integrity Verified: Authenticator App successfully bound.');
-      setTotpEnabled(true);
+      await refreshTotps();
+      await refreshProfile();
       setSetupData(null);
+      setVerificationCode('');
     } catch (err: any) {
       toast.error(err.message || 'Verification Failed');
     } finally {
       setIsVerifying(false);
     }
   };
+
+  const removeTotp = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this authenticator? It will no longer be able to generate valid 2FA codes for your account.')) return;
+    try {
+      const res = await fetch(`${API_URL}/api/user/totps/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to delete authenticator');
+      toast.success('Authenticator removed successfully.');
+      await refreshTotps();
+      await refreshProfile();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const renameTotp = async (id: string) => {
+    if (!editName.trim()) {
+      setEditingId(null);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/api/user/totps/${id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: editName })
+      });
+      if (!res.ok) throw new Error('Failed to rename authenticator');
+      toast.success('Authenticator renamed');
+      setEditingId(null);
+      await refreshTotps();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const startRename = (id: string, currentName: string) => {
+    setEditingId(id);
+    setEditName(currentName);
+  };
+
+  const hasAuthenticators = totps && totps.length > 0;
 
   return (
     <section className="bg-slate-900/40 backdrop-blur-lg border border-slate-900 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden mt-6">
@@ -97,27 +143,66 @@ export const TotpModule = () => {
                 <p className="text-xs text-slate-500 font-medium">Link Google Authenticator, Authy, Apple Passwords, or Bitwarden using 6-digit rolling codes.</p>
              </div>
              
-             {!totpEnabled && !setupData && (
+             {!setupData && (
                <button 
                  onClick={beginSetup}
                  disabled={isSettingUp}
                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(245,158,11,0.5)] disabled:opacity-50"
                >
                   <KeyRound className="w-4 h-4" />
-                  <span>Bind Device</span>
+                  <span>Bind New Device</span>
                </button>
-             )}
-             
-             {totpEnabled && (
-                <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  Active
-                </div>
              )}
           </div>
 
+          {hasAuthenticators && !setupData && (
+             <div className="mb-8 space-y-3">
+               {totps.map((t: any) => (
+                 <div key={t.id} className="bg-slate-950/50 flex items-center justify-between p-4 rounded-xl border border-slate-800 transition-colors hover:border-slate-700">
+                   <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center border border-amber-500/20">
+                       <Shield className="w-5 h-5 text-amber-500" />
+                     </div>
+                     <div>
+                       {editingId === t.id ? (
+                         <input 
+                           type="text" 
+                           value={editName}
+                           autoFocus
+                           className="bg-slate-900 border border-slate-700 focus:border-amber-500 rounded px-2 py-1 text-sm text-white font-bold outline-none w-48 transition-colors"
+                           onChange={(e) => setEditName(e.target.value)}
+                           onBlur={() => renameTotp(t.id)}
+                           onKeyDown={(e) => e.key === 'Enter' && renameTotp(t.id)}
+                         />
+                       ) : (
+                         <h4 className="text-sm font-bold text-slate-200">{t.name}</h4>
+                       )}
+                       <p className="text-xs text-slate-500 font-medium">Added on {new Date(t.createdAt).toLocaleDateString()}</p>
+                     </div>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <button 
+                       onClick={() => startRename(t.id, t.name)}
+                       className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                       title="Rename"
+                     >
+                       <Edit2 className="w-4 h-4" />
+                     </button>
+                     <button 
+                       onClick={() => removeTotp(t.id)}
+                       className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
+                       title="Remove"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>
+                   </div>
+                 </div>
+               ))}
+             </div>
+          )}
+
           <AnimatePresence>
-            {setupData && !totpEnabled && (
+            {setupData && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -147,12 +232,18 @@ export const TotpModule = () => {
                   <div className="flex-1 space-y-5 w-full">
                     <div>
                       <h4 className="text-sm font-bold text-white mb-2 flex items-center justify-center xl:justify-start gap-2">
-                        <QrIcon className="w-4 h-4 text-amber-400" />
-                        Step 1: Scan QR or Enter Secret
+                        <Smartphone className="w-4 h-4 text-amber-400" />
+                        Step 1: Save it to your Device
                       </h4>
-                      <p className="text-xs text-slate-400 leading-relaxed mb-3">
-                        Use your native device camera, Apple Passwords, Bitwarden, or any generic Authenticator app to scan the QR code. If your app does not support scanning, copy the manual raw secret below.
+                      <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                        We suggest a default name below. You can change it to something more personal like "Personal Phone", "1Password", or "Work iPad".
                       </p>
+                      <input 
+                          type="text"
+                          value={authenticatorName}
+                          onChange={(e) => setAuthenticatorName(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 focus:border-amber-500 rounded-xl px-4 py-2 mb-4 text-white font-bold text-sm outline-none transition-colors"
+                      />
                       
                       <div className="flex items-center gap-2">
                         <code className="flex-1 bg-slate-900 border border-slate-800 text-amber-300 px-3 py-2 rounded-lg text-sm font-mono tracking-wider overflow-x-auto text-center">
@@ -181,10 +272,17 @@ export const TotpModule = () => {
                         />
                         <button 
                           onClick={verifySetup}
-                          disabled={verificationCode.length !== 6 || isVerifying}
+                          disabled={verificationCode.length !== 6 || isVerifying || !authenticatorName.trim()}
                           className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 font-black uppercase text-xs tracking-widest rounded-xl transition-colors"
                         >
                           Verify
+                        </button>
+                        <button 
+                          onClick={() => { setSetupData(null); setVerificationCode(''); }}
+                          disabled={isVerifying}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 font-black uppercase text-xs tracking-widest rounded-xl transition-colors"
+                        >
+                          Cancel
                         </button>
                       </div>
                     </div>
@@ -193,17 +291,6 @@ export const TotpModule = () => {
               </motion.div>
             )}
             
-            {totpEnabled && (
-                <div className="bg-slate-950/50 p-5 rounded-2xl border border-slate-800 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-                        <Shield className="w-5 h-5 text-emerald-500" />
-                    </div>
-                    <div>
-                        <h4 className="text-sm font-black text-white">Cryptographic Synchronized</h4>
-                        <p className="text-xs text-slate-400 font-medium">Your identity is rigorously bound to an isolated rolling code generator.</p>
-                    </div>
-                </div>
-            )}
           </AnimatePresence>
        </div>
     </section>

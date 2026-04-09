@@ -15,7 +15,7 @@ import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '../db'
-import { users, userOnboarding, households, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions } from '../db/schema'
+import { users, userOnboarding, households, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '../db/schema'
 import { eq, and, sql, desc, or, gt } from 'drizzle-orm'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -466,6 +466,45 @@ user.get('/passkeys', async (c) => {
     createdAt: passkeys.createdAt
   }).from(passkeys).where(eq(passkeys.userId, userId))
   return c.json(results)
+})
+
+user.get('/totps', async (c) => {
+  const userId = c.get('userId') as string
+  const db = getDb(c.env)
+  const results = await db.select({
+    id: totps.id,
+    name: totps.name,
+    createdAt: totps.createdAt
+  }).from(totps).where(eq(totps.userId, userId))
+  return c.json(results)
+})
+
+user.patch('/totps/:id', zValidator('json', z.object({ name: z.string() })), async (c) => {
+  const userId = c.get('userId') as string
+  const { id } = c.req.param()
+  const { name } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  await db.update(totps).set({ name }).where(and(eq(totps.id, id), eq(totps.userId, userId)))
+  await logAudit(c, 'totps', id, 'UPDATE', null, { name })
+  return c.json({ success: true })
+})
+
+user.delete('/totps/:id', async (c) => {
+  const userId = c.get('userId') as string
+  const { id } = c.req.param()
+  const db = getDb(c.env)
+  
+  await db.delete(totps).where(and(eq(totps.id, id), eq(totps.userId, userId)))
+  await logAudit(c, 'totps', id, 'DELETE')
+  
+  // Re-check count to turn off totpEnabled if 0 remaining
+  const remaining = await db.select({ count: sql`count(*)` }).from(totps).where(eq(totps.userId, userId)).then(res => res[0].count as number)
+  if (remaining === 0) {
+    await db.update(users).set({ totpEnabled: 0 }).where(eq(users.id, userId))
+  }
+  
+  return c.json({ success: true })
 })
 
 export default user

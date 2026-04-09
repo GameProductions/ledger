@@ -4,7 +4,7 @@ import { Bindings } from '../types'
 import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
 import { EmailService } from './email.service'
 import { getDb } from '../db'
-import { users, userIdentities, passwordResets, passkeys, adminInvitations } from '../db/schema'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations, totps } from '../db/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
 
 export class AuthService {
@@ -51,7 +51,17 @@ export class AuthService {
   async verify2FA(user: any, totpCode?: string) {
     if (user.totpEnabled) {
       if (!totpCode) return { requires2FA: true }
-      const isValid = await verifyTOTP(user.totpSecret, totpCode)
+      const db = getDb(this.env)
+      const userTotps = await db.select({ secret: totps.secret }).from(totps).where(eq(totps.userId, user.id))
+      
+      let isValid = false
+      for (const t of userTotps) {
+        if (await verifyTOTP(t.secret, totpCode)) {
+          isValid = true
+          break
+        }
+      }
+      
       if (!isValid) throw new HTTPException(401, { message: 'Invalid 2FA code' })
     }
     return { requires2FA: false }
@@ -171,20 +181,20 @@ export class AuthService {
   }
 
   async setupTOTP(userId: string) {
-    const db = getDb(this.env)
     const secret = await generateTOTPSecret()
-    await db.update(users).set({ totpSecret: secret }).where(eq(users.id, userId))
     return secret
   }
 
-  async verifyAndEnableTOTP(userId: string, code: string) {
+  async verifyAndEnableTOTP(userId: string, code: string, secret: string, name: string = 'Authenticator App') {
     const db = getDb(this.env)
-    const userResult = await db.select({ totpSecret: users.totpSecret }).from(users).where(eq(users.id, userId)).limit(1)
-    const user = userResult[0]
-    if (!user || !user.totpSecret) return false;
-    
-    const isValid = await verifyTOTP(user.totpSecret, code)
+    const isValid = await verifyTOTP(secret, code)
     if (isValid) {
+      await db.insert(totps).values({
+        id: crypto.randomUUID(),
+        userId,
+        secret,
+        name
+      })
       await db.update(users).set({ totpEnabled: 1 }).where(eq(users.id, userId))
       return true
     }

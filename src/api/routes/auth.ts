@@ -75,11 +75,11 @@ auth.post('/totp/setup', async (c) => {
   return c.json({ secret, qrUrl: otpauth })
 })
 
-auth.post('/totp/verify', zValidator('json', z.object({ code: z.string() })), async (c) => {
+auth.post('/totp/verify', zValidator('json', z.object({ code: z.string(), secret: z.string(), name: z.string().optional() })), async (c) => {
   const userId = c.get('userId')
-  const { code } = c.req.valid('json')
+  const { code, secret, name } = c.req.valid('json')
   const authService = new AuthService(c.env)
-  const success = await authService.verifyAndEnableTOTP(userId, code)
+  const success = await authService.verifyAndEnableTOTP(userId, code, secret, name || 'Authenticator App')
   return c.json({ success }, success ? 200 : 400)
 })
 

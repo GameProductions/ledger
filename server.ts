@@ -15,6 +15,34 @@ import { Bindings } from './src/api/types';
 
 const app = new Hono();
 
+import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+
+// [SECURITY-V2] Fleet-wide Hardening
+app.use("*", secureHeaders({
+  contentSecurityPolicy: {
+    directive: {
+      defaultSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://cdn.simpleicons.org", "https://flaticons.net", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://cache.agilebits.com", "https://*.glosonproductions.com", "https://*.gpnet.dev"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com", "http://localhost:*", "http://127.0.0.1:*"]
+    }
+  }
+}));
+
+app.use("*", cors({
+  origin: (origin) => {
+    if (!origin) return "*";
+    if (origin.endsWith(".gpnet.dev") || origin.endsWith(".glosonproductions.com") || origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      return origin;
+    }
+    return "https://gpnet.dev";
+  },
+  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+
+
 // 1. Foundation Integrity Protocol (v3.19.11)
 app.use('*', async (c, next) => {
   c.header('X-Ledger-Integrity', `certified-${CURRENT_VERSION.replace('v', '')}`);

@@ -45,6 +45,17 @@ export function base32Decode(str: string): Uint8Array {
   return output
 }
 
+
+// --- TIMING SAFE EQUAL POLYFILL (Fleet Hardening) ---
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 // --- TOTP UTILS ---
 export async function generateTOTPSecret(): Promise<string> {
   const bytes = crypto.getRandomValues(new Uint8Array(20))
@@ -80,7 +91,7 @@ export async function generateTOTPToken(secret: string, counter: number): Promis
 export async function verifyTOTP(secret: string, token: string, window = 1): Promise<boolean> {
   const counter = Math.floor(Date.now() / 30000)
   for (let i = -window; i <= window; i++) {
-    if (await generateTOTPToken(secret, counter + i) === token) {
+    if (timingSafeEqual(await generateTOTPToken(secret, counter + i), token)) {
       return true
     }
   }
@@ -195,7 +206,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
     const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
     const actualHashBase64 = Buffer.from(derivedBits).toString('base64')
     
-    const isMatched = actualHashBase64 === expectedHashBase64
+    const isMatched = timingSafeEqual(actualHashBase64, expectedHashBase64)
     if (!isMatched) console.warn('[Auth] Password hash mismatch')
     return isMatched
   } catch (e: any) {

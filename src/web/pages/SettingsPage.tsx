@@ -293,7 +293,7 @@ const SettingsPage: React.FC = () => {
                 placeholder="Username"
               />
             ) : (
-              <div className="text-sm font-bold uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center md:justify-start gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setIsEditingUsername(true)}>
+              <div className="text-sm font-bold text-secondary opacity-60 flex items-center justify-center md:justify-start gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setIsEditingUsername(true)}>
                  <ShieldCheck size={14} className="text-primary" />
                  {username || profile?.username || '@username'}
               </div>
@@ -309,7 +309,7 @@ const SettingsPage: React.FC = () => {
                 placeholder="Primary Email"
               />
             ) : (
-              <div className="text-sm font-black uppercase tracking-widest text-secondary opacity-60 flex items-center justify-center md:justify-start gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setIsEditingEmail(true)}>
+              <div className="text-sm font-black text-secondary opacity-60 flex items-center justify-center md:justify-start gap-2 cursor-pointer hover:text-primary transition-colors" onClick={() => setIsEditingEmail(true)}>
                  <Key size={14} className="text-primary" />
                  {email || profile?.email || user?.email}
               </div>

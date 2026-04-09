@@ -31,10 +31,7 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
       authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' }
     });
     
-    const sessionId = (c.get as any)('session_id');
-    if (sessionId) {
-      await c.env.DB.prepare('UPDATE users SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, userId).run();
-    }
+    await c.env.DB.prepare("UPDATE users SET passkey_verified_at = ? WHERE id = ?").bind(options.challenge, userId).run();
 
     return c.json(options);
   } catch (error: any) {

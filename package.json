@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.20.9",
+  "version": "3.20.10",
   "scripts": {
     "dev": "wrangler dev",
     "build:web": "vite build",

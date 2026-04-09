@@ -139,10 +139,6 @@ authRouter.post('/webauthn/generate-auth', async (c) => {
 
     const options = await generateAuthenticationOptions({
       rpID,
-      allowCredentials: passkeys.results.map((pk: any) => ({
-        id: pk.credential_id, // Pass the base64 string directly
-        type: 'public-key',
-      })) as any,
       userVerification: 'preferred',
     });
 

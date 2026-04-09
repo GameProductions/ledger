@@ -1,0 +1,114 @@
+{
+    "wallTime": 97,
+    "cpuTime": 2,
+    "truncated": false,
+    "executionModel": "stateless",
+    "outcome": "ok",
+    "scriptVersion": {
+        "id": "dc122a23-18f4-4dce-92a2-6e23958d3001"
+    },
+    "scriptName": "ledger",
+    "diagnosticsChannelEvents": [],
+    "exceptions": [],
+    "logs": [
+        {
+            "message": [
+                "<-- GET /"
+            ],
+            "level": "log",
+            "timestamp": 1775750187780
+        },
+        {
+            "message": [
+                "--> GET / \u001b[32m200\u001b[0m 91ms"
+            ],
+            "level": "log",
+            "timestamp": 1775750187871
+        }
+    ],
+    "eventTimestamp": 1775750187780,
+    "event": {
+        "request": {
+            "url": "https://ledger.gpnet.dev/",
+            "method": "GET",
+            "headers": {
+                "accept": "*/*",
+                "accept-encoding": "gzip, br",
+                "cf-connecting-ip": "2601:14d:5080:e660:65b9:9cf9:fb24:6219",
+                "cf-ipcountry": "US",
+                "cf-ray": "9e9ab3b19a25e5f5",
+                "cf-visitor": "{\"scheme\":\"https\"}",
+                "connection": "Keep-Alive",
+                "host": "ledger.gpnet.dev",
+                "user-agent": "curl/8.7.1",
+                "x-forwarded-proto": "https",
+                "x-real-ip": "2601:14d:5080:e660:65b9:9cf9:fb24:6219"
+            },
+            "cf": {
+                "httpProtocol": "HTTP/2",
+                "requestPriority": "weight=16;exclusive=0;group=0;group-weight=0",
+                "edgeRequestKeepAliveStatus": 1,
+                "requestHeaderNames": {},
+                "clientTcpRtt": 14,
+                "clientQuicRtt": 0,
+                "colo": "IAD",
+                "asn": 7922,
+                "asOrganization": "Comcast Cable Communications, LLC",
+                "country": "US",
+                "isEUCountry": false,
+                "city": "Owings Mills",
+                "continent": "NA",
+                "region": "Maryland",
+                "regionCode": "MD",
+                "timezone": "America/New_York",
+                "longitude": "-76.78025",
+                "latitude": "39.41955",
+                "postalCode": "21117",
+                "metroCode": "512",
+                "tlsVersion": "TLSv1.3",
+                "tlsCipher": "AEAD-CHACHA20-POLY1305-SHA256",
+                "tlsClientRandom": "JM8NrZO7T96FPfSWiJ+UKR3bs96SeqAesbKiKJSq2e8=",
+                "tlsClientCiphersSha1": "eDGmD1H99AwNYzOR+7eoGLo6eLU=",
+                "tlsClientExtensionsSha1": "Ub+nUmIm1U57hdNSUph0R+kx9Gc=",
+                "tlsClientExtensionsSha1Le": "NMNf2YIpLBhtroOEBooGFi+jtJ8=",
+                "tlsExportedAuthenticator": {
+                    "clientHandshake": "038bfffad9e3bbbabfbe9efa2d08bffa6f824f5dbbece999d045f5d270a3280b",
+                    "serverHandshake": "709ab471ac611a16cc6035f1196a853094e9a3a8ad26ba8238e3733b111c796a",
+                    "clientFinished": "77dba5bdf05485dc8d005c65d4d79a7d87f4d200a93d45c88028694bc1ed5400",
+                    "serverFinished": "c318521c14c5e037a846847512be47e990bd2db0ccdac3915ccd9aa7c9f52895"
+                },
+                "tlsClientHelloLength": "317",
+                "tlsClientAuth": {
+                    "certPresented": "0",
+                    "certVerified": "NONE",
+                    "certRevoked": "0",
+                    "certIssuerDN": "",
+                    "certSubjectDN": "",
+                    "certIssuerDNRFC2253": "",
+                    "certSubjectDNRFC2253": "",
+                    "certIssuerDNLegacy": "",
+                    "certSubjectDNLegacy": "",
+                    "certSerial": "",
+                    "certIssuerSerial": "",
+                    "certSKI": "",
+                    "certIssuerSKI": "",
+                    "certFingerprintSHA1": "",
+                    "certFingerprintSHA256": "",
+                    "certNotBefore": "",
+                    "certNotAfter": "",
+                    "certRFC9440": "",
+                    "certRFC9440TooLarge": false,
+                    "certChainRFC9440": "",
+                    "certChainRFC9440TooLarge": false
+                },
+                "verifiedBotCategory": "",
+                "edgeL4": {
+                    "deliveryRate": 253193
+                }
+            }
+        },
+        "response": {
+            "status": 200
+        }
+    }
+}

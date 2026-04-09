@@ -138,7 +138,7 @@ const LoginPage: React.FC = () => {
       const options = await optRes.json()
       
       // Real WebAuthn Authentication Prompt
-      const assertion = await startAuthentication(options)
+      const assertion = await startAuthentication({ optionsJSON: options })
       
       const verifyRes = await fetch(`${apiUrl}/auth/passkeys/login-verify`, {
         method: 'POST',

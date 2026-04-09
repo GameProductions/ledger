@@ -7,12 +7,12 @@ export const authRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 const rpName = 'GameProductions Identity';
 
 function getRpID(c: any): string {
-  const hostStr = c.req.header('host');
-  const originStr = c.req.header('origin');
-  if (hostStr?.includes('localhost') || originStr?.includes('localhost')) {
+  const hostStr = c.req.header('host') || '';
+  const originStr = c.req.header('origin') || '';
+  if (hostStr.includes('localhost') || originStr.includes('localhost')) {
     return 'localhost';
   }
-  return new URL(c.req.url).hostname;
+  return 'gpnet.dev';
 }
 
 authRouter.post('/webauthn/generate-registration', async (c) => { 

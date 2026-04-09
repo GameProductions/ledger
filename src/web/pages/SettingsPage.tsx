@@ -60,7 +60,7 @@ const SettingsPage: React.FC = () => {
     }
   }, [profile])
 
-  const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = profile?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   // -------------- HANDLERS --------------
 

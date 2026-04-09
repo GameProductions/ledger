@@ -15,7 +15,7 @@ const UserMenu: React.FC<{
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'
-  const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = profile?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
     { icon: LayoutDashboard, label: 'Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
@@ -53,7 +53,7 @@ const UserMenu: React.FC<{
         </div>
         <div className="flex flex-col items-start ml-1 leading-none text-left">
           <Masked>
-            <span className="text-sm font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
+            <span className="text-sm font-bold text-white">{(profile?.displayName || user?.displayName || 'User')}</span>
           </Masked>
           {isPcc ? (
             <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>

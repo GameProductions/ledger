@@ -17,7 +17,7 @@ function getRpID(c: any): string {
 
 authRouter.post('/webauthn/generate-registration', async (c) => { 
   try {
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
     
     const rpID = getRpID(c);
@@ -45,7 +45,7 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
 authRouter.post('/webauthn/verify-registration', async (c) => {
   try {
     const body = await c.req.json();
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     const sessionId = (c.get as any)('session_id') as string;
     
     const rpID = getRpID(c);
@@ -91,7 +91,7 @@ authRouter.post('/webauthn/verify-registration', async (c) => {
 
 authRouter.get('/webauthn/passkeys', async (c) => {
   try {
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
     
     const results = await c.env.DB.prepare('SELECT id, name, aaguid, created_at, counter FROM passkeys WHERE user_id = ? ORDER BY created_at DESC').bind(userId).all();
@@ -103,7 +103,7 @@ authRouter.get('/webauthn/passkeys', async (c) => {
 
 authRouter.put('/webauthn/passkeys/:id', async (c) => {
   try {
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     const keyId = c.req.param('id');
     const body = await c.req.json();
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
@@ -117,7 +117,7 @@ authRouter.put('/webauthn/passkeys/:id', async (c) => {
 
 authRouter.delete('/webauthn/passkeys/:id', async (c) => {
   try {
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     const keyId = c.req.param('id');
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
@@ -130,7 +130,7 @@ authRouter.delete('/webauthn/passkeys/:id', async (c) => {
 
 authRouter.post('/webauthn/generate-auth', async (c) => {
   try {
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     const sessionId = (c.get as any)('session_id') as string;
     
     const rpID = getRpID(c);
@@ -158,7 +158,7 @@ authRouter.post('/webauthn/generate-auth', async (c) => {
 authRouter.post('/webauthn/verify-auth', async (c) => {
   try {
     const body = await c.req.json();
-    const userId = (c.get as any)('user_id') as string;
+    const userId = (c.get as any)('userId') as string;
     const sessionId = (c.get as any)('session_id') as string;
     
     const rpID = getRpID(c);

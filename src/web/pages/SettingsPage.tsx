@@ -115,7 +115,7 @@ const SettingsPage: React.FC = () => {
     setChangingPass(true)
     try {
       // Fix: Prepend /api to the endpoint path
-      const res = await fetch(`${API_URL}/api/auth/password/change`, {
+      const res = await fetch(`${API_URL}/auth/password/change`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 

@@ -48,7 +48,7 @@ app.use('*', secureHeaders({
     scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com"],
-    imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com", "https://cdn.simpleicons.org", "https://flaticons.net", "https://cdn.discordapp.com", "https://media.giphy.com", "https://i.giphy.com", "https://media0.giphy.com", "https://media1.giphy.com", "https://media2.giphy.com", "https://media3.giphy.com", "https://media4.giphy.com", "https://tenor.com", "https://media.tenor.com", "https://images.unsplash.com"],
+    imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com", "https://cdn.simpleicons.org", "https://flaticons.net", "https://cdn-icons-png.flaticon.com", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://media.giphy.com", "https://i.giphy.com", "https://media0.giphy.com", "https://media1.giphy.com", "https://media2.giphy.com", "https://media3.giphy.com", "https://media4.giphy.com", "https://tenor.com", "https://media.tenor.com", "https://images.unsplash.com"],
     connectSrc: ["'self'", "https://api.gpnet.dev", "https://ledger.gpnet.dev", "http://localhost:8787"],
     upgradeInsecureRequests: [],
   },
@@ -300,6 +300,7 @@ ledger.use('/api/*', async (c, next) => {
 ledger.use('/auth/profile/*', authMiddleware)
 ledger.use('/auth/totp/*', authMiddleware)
 ledger.use('/auth/vault/*', authMiddleware)
+ledger.use('/auth/password/*', authMiddleware)
 ledger.use('/api/pcc/*', pccMiddleware)
 
 ledger.route('/auth', authRoutes)

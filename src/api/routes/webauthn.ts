@@ -23,8 +23,8 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
     const rpID = getRpID(c);
     
     const userRow = await c.env.DB.prepare('SELECT username, display_name, email FROM users WHERE id = ?').bind(userId).first();
-    const realUsername = userRow?.username || userRow?.email || `root-${userId.substring(0, 5)}`;
-    const displayName = userRow?.display_name || realUsername;
+    const realUsername = userRow?.email || userRow?.username || `root-${userId.substring(0, 5)}`;
+    const displayName = userRow?.display_name || userRow?.username || realUsername;
 
     const options = await generateRegistrationOptions({
       rpName,

@@ -33,7 +33,7 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
     
     const sessionId = (c.get as any)('session_id');
     if (sessionId) {
-      await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, sessionId).run();
+      await c.env.DB.prepare('UPDATE users SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, userId).run();
     }
 
     return c.json(options);
@@ -50,7 +50,7 @@ authRouter.post('/webauthn/verify-registration', async (c) => {
     
     const rpID = getRpID(c);
     
-    const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM sessions WHERE id = ?').bind(sessionId).first();
+    const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM users WHERE id = ?').bind(userId).first();
     if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
 
     const verification = await verifyRegistrationResponse({
@@ -80,7 +80,7 @@ authRouter.post('/webauthn/verify-registration', async (c) => {
         backedUp
       ).run();
 
-      await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
+      await c.env.DB.prepare('UPDATE users SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(userId).run();
       return c.json({ verified: true });
     }
 
@@ -190,7 +190,7 @@ authRouter.post('/webauthn/verify-auth', async (c) => {
     if (verification.verified) {
       await c.env.DB.batch([
         c.env.DB.prepare('UPDATE passkeys SET counter = ?, last_used_at = CURRENT_TIMESTAMP WHERE id = ?').bind(verification.authenticationInfo.newCounter, passkey.id),
-        c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId)
+        c.env.DB.prepare('UPDATE users SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(userId)
       ]);
       return c.json({ verified: true });
     }

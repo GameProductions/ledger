@@ -138,7 +138,14 @@ export const PasskeyModule = () => {
         body: JSON.stringify(attResp),
       });
 
-      if (!verifyRes.ok) throw new Error('Hardware verification rejected by the edge router.');
+      if (!verifyRes.ok) {
+        let errMsg = 'Hardware verification rejected by the edge router.';
+        try {
+          const bodyJson = await verifyRes.json() as any;
+          if (bodyJson.error) errMsg = bodyJson.error;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
 
       toast.success('Enclave Updated: Successfully attached new hardware signature to your God Mode identity.');
       fetchPasskeys(); // Refresh the list

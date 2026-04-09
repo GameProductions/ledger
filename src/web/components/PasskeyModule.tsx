@@ -47,6 +47,16 @@ const getServiceName = (aaguid: string | null) => {
   return `Vault / Hardware Key (${normalized})`;
 };
 
+const getServiceIconUrl = (service: string) => {
+  if (service === '1Password') return 'https://cdn.simpleicons.org/1password/0094F5';
+  if (service === 'Bitwarden') return 'https://cdn.simpleicons.org/bitwarden/175DDC';
+  if (service === 'Google Password Manager') return 'https://cdn.simpleicons.org/google/4285F4';
+  if (service === 'Chrome Desktop') return 'https://cdn.simpleicons.org/googlechrome/4285F4';
+  if (service === 'Native iCloud') return 'https://cdn.simpleicons.org/apple/A2AAAD';
+  if (service.startsWith('YubiKey')) return 'https://cdn.simpleicons.org/yubico/5EBA41';
+  return null;
+};
+
 export const PasskeyModule = () => {
   const { token } = useAuth();
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
@@ -212,8 +222,12 @@ export const PasskeyModule = () => {
                     {passkeys.map(pk => (
                        <div key={pk.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-950/80 border border-slate-800 rounded-2xl group hover:border-blue-500/30 transition-colors">
                           <div className="flex items-center gap-4 mb-4 md:mb-0">
-                             <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner group-hover:bg-blue-500/10 transition-colors">
-                                <Key className="w-4 h-4 text-slate-500 group-hover:text-blue-400" />
+                             <div className="w-10 h-10 shrink-0 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center shadow-inner group-hover:bg-blue-500/10 transition-colors p-2">
+                                {getServiceIconUrl(getServiceName(pk.aaguid)) ? (
+                                  <img src={getServiceIconUrl(getServiceName(pk.aaguid))!} alt="Provider" className="w-full h-full object-contain drop-shadow transition-transform group-hover:scale-110" />
+                                ) : (
+                                  <Key className="w-4 h-4 text-slate-500 group-hover:text-blue-400" />
+                                )}
                              </div>
                              <div>
                                 {editingId === pk.id ? (

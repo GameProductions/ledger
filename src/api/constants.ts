@@ -1,6 +1,7 @@
-export const CURRENT_VERSION = 'v3.19.11'
+export const CURRENT_VERSION = 'v3.20.2'
 
 export const VERSION_UPDATES = [
+  { version: 'v3.20.2', title: 'Identity & Polish', description: 'Restructured the Settings Portal, refined the master user dropdown, and resolved critical backend authentication bugs.' },
   { version: 'v3.19.11', title: 'Immortal Resilience (Total PCC Hardening)', description: 'Definitive Forensic Audit and deep-hardening of the entire PCC (Data Center) administrative suite, achieving a Zero-Crash state across all system management modules.' },
   { version: 'v3.19.10', title: 'Resilient-X (Total Eradication)', description: 'Global null-safe iteration sweep across all functional components, including a definitive fix for the SpendingHeatmap dashboard crash.' },
   { version: 'v3.19.9', title: 'Ironclad Resilience', description: 'Deep-level iteration hardening across Dashboard, Onboarding, and Timeline components to ensure zero-crash performance during 401 Unauthorized or loading states.' },

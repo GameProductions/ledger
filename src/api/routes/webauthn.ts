@@ -48,7 +48,7 @@ authRouter.post('/webauthn/verify-registration', async (c) => {
     const rpID = getRpID(c);
     
     const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM users WHERE id = ?').bind(userId).first();
-    if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
+    if (!session || !session.passkey_verified_at) return c.json({ error: `No active challenge. Debug - User: ${userId}, Session: ${JSON.stringify(session)}` }, 400);
 
     const verification = await verifyRegistrationResponse({
       response: body,
@@ -146,7 +146,7 @@ authRouter.post('/webauthn/generate-auth', async (c) => {
       userVerification: 'preferred',
     });
 
-    await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, sessionId).run();
+    await c.env.DB.prepare('UPDATE users SET passkey_verified_at = ? WHERE id = ?').bind(options.challenge, userId).run();
     return c.json(options);
   } catch (error: any) {
     console.error('[WebAuthn] generate-auth error:', error);
@@ -162,8 +162,8 @@ authRouter.post('/webauthn/verify-auth', async (c) => {
     
     const rpID = getRpID(c);
 
-    const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM sessions WHERE id = ?').bind(sessionId).first();
-    if (!session || !session.passkey_verified_at) return c.json({ error: 'No active challenge' }, 400);
+    const session = await c.env.DB.prepare('SELECT passkey_verified_at FROM users WHERE id = ?').bind(userId).first();
+    if (!session || !session.passkey_verified_at) return c.json({ error: `No active challenge. Debug - User: ${userId}, Session: ${JSON.stringify(session)}` }, 400);
 
     const passkey = await c.env.DB.prepare('SELECT * FROM passkeys WHERE user_id = ? AND credential_id = ?')
       .bind(userId, body.id).first() as any;

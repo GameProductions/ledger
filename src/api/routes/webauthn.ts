@@ -19,11 +19,10 @@ function getRpName(c: any): string {
 
 function getRpID(c: any): string {
   const hostStr = c.req.header('host') || '';
-  const originStr = c.req.header('origin') || '';
-  if (hostStr.includes('localhost') || originStr.includes('localhost')) {
+  if (hostStr.includes('localhost')) {
     return 'localhost';
   }
-  return 'gpnet.dev';
+  return hostStr.split(':')[0] || 'gpnet.dev';
 }
 
 authRouter.post('/webauthn/generate-registration', async (c) => { 

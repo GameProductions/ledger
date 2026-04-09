@@ -28,7 +28,7 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
       userID: new TextEncoder().encode(userId) as any,
       userName: `root-${userId.substring(0, 5)}`,
       attestationType: 'none',
-      authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' }
+      authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' }
     });
     
     const sessionId = (c.get as any)('session_id');
@@ -66,16 +66,18 @@ authRouter.post('/webauthn/verify-registration', async (c) => {
       const credentialPublicKey = regInfo.credential?.publicKey || (regInfo as any).credentialPublicKey;
       const counter = regInfo.credential?.counter || regInfo.counter || 0;
       const aaguid = regInfo.aaguid || null;
+      const backedUp = regInfo.credentialBackedUp ? 1 : 0;
 
       await c.env.DB.prepare(`
-        INSERT INTO passkeys (id, user_id, public_key, credential_id, counter, aaguid)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO passkeys (id, user_id, public_key, credential_id, counter, aaguid, backed_up, last_used_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).bind(
         crypto.randomUUID(), userId, 
         btoa(String.fromCharCode(...new Uint8Array(credentialPublicKey))),
         credentialID,
         counter,
-        aaguid
+        aaguid,
+        backedUp
       ).run();
 
       await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
@@ -94,7 +96,7 @@ authRouter.get('/webauthn/passkeys', async (c) => {
     const userId = (c.get as any)('userId') as string;
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
     
-    const results = await c.env.DB.prepare('SELECT id, name, aaguid, created_at, counter FROM passkeys WHERE user_id = ? ORDER BY created_at DESC').bind(userId).all();
+    const results = await c.env.DB.prepare('SELECT id, name, aaguid, backed_up as backedUp, last_used_at as lastUsedAt, created_at, counter FROM passkeys WHERE user_id = ? ORDER BY created_at DESC').bind(userId).all();
     return c.json({ passkeys: results.results || [] });
   } catch (error: any) {
     return c.json({ error: 'Failed to retrieve signatures' }, 500);
@@ -186,8 +188,10 @@ authRouter.post('/webauthn/verify-auth', async (c) => {
     });
 
     if (verification.verified) {
-      await c.env.DB.prepare('UPDATE passkeys SET counter = ? WHERE id = ?').bind(verification.authenticationInfo.newCounter, passkey.id).run();
-      await c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId).run();
+      await c.env.DB.batch([
+        c.env.DB.prepare('UPDATE passkeys SET counter = ?, last_used_at = CURRENT_TIMESTAMP WHERE id = ?').bind(verification.authenticationInfo.newCounter, passkey.id),
+        c.env.DB.prepare('UPDATE sessions SET passkey_verified_at = CURRENT_TIMESTAMP WHERE id = ?').bind(sessionId)
+      ]);
       return c.json({ verified: true });
     }
 

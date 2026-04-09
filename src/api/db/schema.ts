@@ -191,6 +191,8 @@ export const passkeys = sqliteTable('passkeys', {
   aaguid: text('aaguid'),
   counter: integer('counter').default(0),
   transports: text('transports'),
+  backedUp: integer('backed_up', { mode: 'boolean' }).default(false),
+  lastUsedAt: text('last_used_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

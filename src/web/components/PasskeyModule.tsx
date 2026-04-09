@@ -16,6 +16,8 @@ interface Passkey {
   aaguid: string | null;
   created_at: string;
   counter: number;
+  backedUp?: boolean | number;
+  lastUsedAt?: string | null;
 }
 
 const AAGUID_MAP: Record<string, string> = {
@@ -234,11 +236,22 @@ export const PasskeyModule = () => {
                                   </h4>
                                 )}
                                 <div className="flex items-center flex-wrap gap-2 mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                   <span className="px-1.5 py-0.5 rounded bg-slate-800/50 text-blue-400">{getServiceName(pk.aaguid)}</span>
+                                   <div className={`px-1.5 py-0.5 rounded flex items-center gap-1 ${pk.backedUp ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800/50 text-blue-400'}`}>
+                                      {pk.backedUp && <RefreshCw className="w-3 h-3" />}
+                                      {pk.backedUp ? 'Synced Provider' : 'Hardware-Bound'}
+                                   </div>
                                    <span>•</span>
-                                   <span>Counter: {pk.counter}</span>
+                                   <span className="px-1.5 py-0.5 rounded bg-slate-800/50 text-slate-300">{getServiceName(pk.aaguid)}</span>
                                    <span>•</span>
-                                   <span>{new Date(pk.created_at).toLocaleDateString()}</span>
+                                   <span>Uses: {pk.counter}</span>
+                                   <span>•</span>
+                                   <span>Added: {new Date(pk.created_at).toLocaleDateString()}</span>
+                                   {pk.lastUsedAt && (
+                                     <>
+                                       <span>•</span>
+                                       <span className="text-blue-400">Used: {new Date(pk.lastUsedAt).toLocaleDateString()}</span>
+                                     </>
+                                   )}
                                 </div>
                              </div>
                           </div>

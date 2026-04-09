@@ -11,6 +11,7 @@ import { PasswordChecklist } from '../components/PasswordChecklist'
 import { Price } from '../components/Price'
 import HouseholdRegistry from '../components/HouseholdRegistry'
 import { PasskeyModule } from '../components/PasskeyModule'
+import { TotpModule } from '../components/TotpModule'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { formatHumanError } from '../utils/error-handler'
 
@@ -396,6 +397,7 @@ const SettingsPage: React.FC = () => {
 
               <div>
                 <PasskeyModule />
+                <TotpModule />
               </div>
             </div>
           )}

@@ -21,14 +21,12 @@ import { secureHeaders } from "hono/secure-headers";
 // [SECURITY-V2] Fleet-wide Hardening
 app.use("*", secureHeaders({
   contentSecurityPolicy: {
-    directive: {
       defaultSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https://cdn.simpleicons.org", "https://flaticons.net", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://cache.agilebits.com", "https://*.glosonproductions.com", "https://*.gpnet.dev"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       connectSrc: ["'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com", "http://localhost:*", "http://127.0.0.1:*"]
     }
-  }
 }));
 
 app.use("*", cors({

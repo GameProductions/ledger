@@ -41,6 +41,7 @@ user.get('/profile', async (c) => {
     globalRole: users.globalRole,
     status: users.status,
     settingsJson: users.settingsJson,
+    totpEnabled: users.totpEnabled,
     createdAt: users.createdAt
   }).from(users).where(eq(users.id, userId as string))
   

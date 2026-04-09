@@ -27,7 +27,6 @@ const UserMenu: React.FC<{
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
     { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },
-    { icon: Palette, label: 'Visual Style', hash: '#/preferences', color: 'text-secondary' },
     { icon: HelpCircle, label: 'Help & Guides', hash: '#/help', color: 'text-blue-400' },
   ]
 

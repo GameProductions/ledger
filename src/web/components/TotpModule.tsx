@@ -124,9 +124,9 @@ export const TotpModule = () => {
                 exit={{ opacity: 0, height: 0 }}
                 className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-6"
               >
-                <div className="flex flex-col md:flex-row gap-8 items-start">
+                <div className="flex flex-col xl:flex-row gap-8 items-center xl:items-start">
                   {/* QR Core */}
-                  <div className="p-4 bg-white rounded-2xl shrink-0 mx-auto md:mx-0 shadow-lg border-4 border-slate-800">
+                  <div className="p-4 bg-white rounded-2xl shrink-0 mx-auto xl:mx-0 shadow-lg border-4 border-slate-800">
                     <QRCodeSVG 
                       value={setupData.qrUrl} 
                       size={160} 
@@ -136,9 +136,9 @@ export const TotpModule = () => {
                   </div>
                   
                   {/* Instructions */}
-                  <div className="flex-1 space-y-5">
+                  <div className="flex-1 space-y-5 w-full">
                     <div>
-                      <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white mb-2 flex items-center justify-center xl:justify-start gap-2">
                         <QrIcon className="w-4 h-4 text-amber-400" />
                         Step 1: Scan QR or Enter Secret
                       </h4>

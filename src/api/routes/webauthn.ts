@@ -4,7 +4,18 @@ import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthen
 
 export const authRouter = new Hono<{ Bindings: { DB: D1Database } }>();
 
-const rpName = 'LEDGER';
+function getRpName(c: any): string {
+  if (c.env.APP_NAME) return c.env.APP_NAME;
+  
+  const hostStr = c.req.header('host') || '';
+  if (hostStr) {
+     const sub = hostStr.split('.')[0];
+     if (sub !== 'localhost') {
+        return sub.charAt(0).toUpperCase() + sub.slice(1);
+     }
+  }
+  return 'GameProductions App';
+}
 
 function getRpID(c: any): string {
   const hostStr = c.req.header('host') || '';
@@ -21,6 +32,7 @@ authRouter.post('/webauthn/generate-registration', async (c) => {
     if (!userId) return c.json({ error: 'Unauthorized' }, 401);
     
     const rpID = getRpID(c);
+    const rpName = getRpName(c);
     
     const userRow = await c.env.DB.prepare('SELECT username, display_name, email FROM users WHERE id = ?').bind(userId).first();
     const realUsername = userRow?.email || userRow?.username || `root-${userId.substring(0, 5)}`;

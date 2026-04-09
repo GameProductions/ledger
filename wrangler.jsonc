@@ -82,6 +82,7 @@
     }
   },
   "vars": {
+    "APP_NAME": "LEDGER",
     "ENVIRONMENT": "production",
     "FROM_EMAIL": "LEDGER <onboarding@resend.dev>",
     "WEB_URL": "https://ledger.gpnet.dev",

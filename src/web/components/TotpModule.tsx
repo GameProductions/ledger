@@ -261,29 +261,31 @@ export const TotpModule = () => {
                     
                     <div className="border-t border-slate-800 pt-4">
                       <h4 className="text-sm font-bold text-white mb-2">Step 2: Verify Rolling Code</h4>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-3">
                         <input 
                           type="text" 
                           maxLength={6}
                           placeholder="000000"
                           value={verificationCode}
                           onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
-                          className="flex-1 bg-slate-900 border border-slate-800 focus:border-amber-500 rounded-xl px-4 py-2 text-white font-mono text-center tracking-[0.5em] font-black text-lg outline-none placeholder:text-slate-700 transition-colors"
+                          className="w-full bg-slate-900 border border-slate-800 focus:border-amber-500 rounded-xl px-4 py-3 text-white font-mono text-center tracking-[0.5em] font-black text-2xl outline-none placeholder:text-slate-700 transition-colors"
                         />
-                        <button 
-                          onClick={verifySetup}
-                          disabled={verificationCode.length !== 6 || isVerifying || !authenticatorName.trim()}
-                          className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 font-black uppercase text-xs tracking-widest rounded-xl transition-colors"
-                        >
-                          Verify
-                        </button>
-                        <button 
-                          onClick={() => { setSetupData(null); setVerificationCode(''); }}
-                          disabled={isVerifying}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 font-black uppercase text-xs tracking-widest rounded-xl transition-colors"
-                        >
-                          Cancel
-                        </button>
+                        <div className="flex gap-2 w-full">
+                          <button 
+                            onClick={verifySetup}
+                            disabled={verificationCode.length !== 6 || isVerifying || !authenticatorName.trim()}
+                            className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white px-6 py-3 font-black uppercase text-xs tracking-widest rounded-xl transition-colors"
+                          >
+                            Verify
+                          </button>
+                          <button 
+                            onClick={() => { setSetupData(null); setVerificationCode(''); }}
+                            disabled={isVerifying}
+                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-3 font-black uppercase text-xs tracking-widest rounded-xl transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

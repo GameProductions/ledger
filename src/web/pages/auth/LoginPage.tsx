@@ -259,7 +259,7 @@ const LoginPage: React.FC = () => {
                 className="w-full py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl shadow-primary/20"
                 loading={loading}
               >
-                Launch Session
+                Sign in with Password
               </Button>
               
               <button 

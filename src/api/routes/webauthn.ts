@@ -150,11 +150,18 @@ authRouter.post('/webauthn/generate-auth', async (c) => {
     
     const rpID = getRpID(c);
 
-    const passkeys = await c.env.DB.prepare('SELECT credential_id FROM passkeys WHERE user_id = ?').bind(userId).all();
+    const passkeys = await c.env.DB.prepare('SELECT credential_id, transports FROM passkeys WHERE user_id = ?').bind(userId).all();
     if (!passkeys.results.length) return c.json({ error: 'No passkeys registered' }, 404);
+
+    const allowCredentials = passkeys.results.map((pk: any) => ({
+      id: pk.credential_id,
+      type: 'public-key',
+      transports: pk.transports ? JSON.parse(pk.transports) : undefined,
+    })) as any;
 
     const options = await generateAuthenticationOptions({
       rpID,
+      allowCredentials,
       userVerification: 'preferred',
     });
 

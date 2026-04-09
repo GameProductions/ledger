@@ -579,7 +579,7 @@ auth.post('/passkeys/register-options', async (c) => {
   
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
-    rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    rpID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
     userID: new TextEncoder().encode(userId) as any,
     userName: user.username || user.email || 'unknown',
     attestationType: 'none',
@@ -620,8 +620,8 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
   const verification = await verifyRegistrationResponse({
     response: attestation,
     expectedChallenge,
-    expectedOrigin: c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173',
-    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+    expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
   })
 
   if (!verification.verified || ! (verification.registrationInfo as any)) {
@@ -682,7 +682,7 @@ auth.delete('/passkeys/:id', async (c) => {
 
 auth.post('/passkeys/login-options', async (c) => {
   const options = await generateAuthenticationOptions({
-    rpID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    rpID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
     allowCredentials: [], // Allow any credential for this RP
     userVerification: 'preferred',
   })
@@ -722,8 +722,8 @@ auth.post('/passkeys/login-verify', async (c) => {
   const verification = await verifyAuthenticationResponse({
     response: assertion,
     expectedChallenge,
-    expectedOrigin: c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173',
-    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'gpnet.dev' : 'localhost',
+    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+    expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
      // @ts-ignore
     authenticator: {
       credentialId: Buffer.from(passkey.credentialId, 'base64'),

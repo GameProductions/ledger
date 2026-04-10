@@ -14,7 +14,7 @@ type Service = {
 };
 
 /**
- * GameProductions Foundation Service Linker (v1.3.0)
+ * Foundation Service Linker (v1.3.0)
  * Centralized interface for linking and managing 3rd party APIs.
  * Supports dynamic redirect construction with app-specific scopes.
  */

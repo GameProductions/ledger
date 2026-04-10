@@ -4,13 +4,14 @@ import React from 'react';
 interface FooterProps {
   appName: string;
   version: string;
+  isGloson?: boolean;
 }
 
 /**
- * Universal Footer (v1.3.0)
+ * Universal Footer (v1.6.0)
  * Standardized branding and legal disclosure for all GameProductions apps.
  */
-export const Footer: React.FC<FooterProps> = ({ appName, version }) => {
+export const Footer: React.FC<FooterProps> = ({ appName, version, isGloson = false }) => {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -38,7 +39,7 @@ export const Footer: React.FC<FooterProps> = ({ appName, version }) => {
         {/* Bottom Row: Ownership */}
         <div className="pt-8 border-t border-slate-900/50 flex justify-center">
           <p className="text-slate-600 text-[10px] font-bold tracking-[0.2em] uppercase">
-            {currentYear} GameProductions™. All rights reserved.
+            {currentYear} GameProductions™{isGloson ? ' | Gloson Production™' : ''}. All rights reserved.
           </p>
         </div>
 

@@ -7,7 +7,7 @@ import React from 'react';
 import { Toaster as Sonner } from 'sonner';
 
 /**
- * GameProductions Foundation Toaster (v1.3.0)
+ * Foundation Toaster (v1.3.0)
  * Standardized notification engine based on 'sonner'.
  * Supports soft-force and hard-force theme colors via CSS variables.
  */

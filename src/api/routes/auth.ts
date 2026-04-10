@@ -220,7 +220,7 @@ auth.get('/callback/discord', async (c) => {
     const db = getDb(c.env)
     const dbUser = await db.select({ role: users.globalRole }).from(users).where(eq(users.id, finalUserId!)).limit(1)
 
-    // Standard GameProductions Unified Tier Schema for Ledger
+    // Standard Unified Tier Schema for Ledger
     let metadata: Record<string, any> = {}
     if (dbUser[0]?.role === 'super_admin') {
       metadata.ledger_tier = 3

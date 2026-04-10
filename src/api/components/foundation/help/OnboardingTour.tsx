@@ -8,7 +8,7 @@ import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 
 /**
- * GameProductions Foundation Onboarding Tour (v1.3.0)
+ * Foundation Onboarding Tour (v1.3.0)
  * Standardized tour engine using 'driver.js'.
  * Supports custom steps and state-tracked play (localStorage check).
  */

@@ -20,7 +20,7 @@ type OGMetadata = {
 };
 
 /**
- * GameProductions Foundation Identity Head (v1.3.0)
+ * Foundation Identity Head (v1.3.0)
  * Centralized component for dynamic branding assets.
  * Enforces use of the specific app logo for Favicons, OG Tags, and Shortcuts.
  */

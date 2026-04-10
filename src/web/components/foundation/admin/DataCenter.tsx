@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 
 /**
- * GameProductions Foundation Data Center (v1.3.0)
+ * Foundation Data Center (v1.3.0)
  * Standardization of bulk data operations (Import/Export).
  * Implements D1 batching logic to prevent worker timeouts.
  */

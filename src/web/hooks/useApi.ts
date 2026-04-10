@@ -23,7 +23,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
     abortControllerRef.current = new AbortController()
 
     // Pacing: Don't fetch more than once every 2 seconds unless triggered manually
-    if (Date.now() - lastFetchTime.current < 2000 && options.refreshInterval) return
+    if (Date.now() - lastFetchTime.current < 2000) return
     
     // Visibility Check: Don't fetch if tab is hidden
     if (document.visibilityState !== 'visible') return
@@ -54,9 +54,12 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
       const json = await res.json()
       
       // Only update state if data actually changed
-      if (JSON.stringify(json) !== JSON.stringify(data)) {
-        setData(json)
-      }
+      setData((prevData) => {
+        if (JSON.stringify(json) !== JSON.stringify(prevData)) {
+          return json;
+        }
+        return prevData;
+      });
       lastFetchTime.current = Date.now()
     } catch (err: any) {
       if (err.name === 'AbortError') return; // Ignore cancellations
@@ -64,7 +67,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
     } finally {
       setLoading(false)
     }
-  }, [path, token, data, options.refreshInterval, logout])
+  }, [path, token, options.refreshInterval, logout])
 
   useEffect(() => {
     fetcher()

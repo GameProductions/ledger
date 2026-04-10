@@ -119,7 +119,7 @@ const UserMenu: React.FC<{
                   </button>
                 ))}
 
-                {!isPcc && globalRole === 'super_admin' && (
+                {!isPcc && (globalRole === 'super_admin' || profile?.globalRole === 'super_admin') && (
                   <button 
                     onClick={() => { window.location.hash = '#/system-pcc/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"

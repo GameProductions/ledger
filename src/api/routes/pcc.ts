@@ -18,7 +18,7 @@ import { CURRENT_VERSION } from '../constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
 import { getDb } from '../db'
-import { users, households, systemConfig, systemFeatureFlags, systemRegistry, auditLogs as pccAuditLogs, pccAuditLogs as systemPccAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements } from '../db/schema'
+import { users, households, systemConfig, systemFeatureFlags, systemRegistry, pccAuditLogs as systemPccAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements, auditLogs, paySchedules, householdInvites, accounts, linkedProviders } from '../db/schema'
 import { eq, or, and, sql, desc, count, like } from 'drizzle-orm'
 
 const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -481,11 +481,18 @@ pcc.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(
 pcc.delete('/households/:id', async (c) => {
   const { id } = c.req.param()
   const db = getDb(c.env)
+  // Hard delete cascading backwards slowly...
   await db.batch([
-    db.delete(households).where(eq(households.id, id)),
-    db.delete(userHouseholds).where(eq(userHouseholds.householdId, id))
+    db.delete(auditLogs).where(eq(auditLogs.householdId, id)),
+    db.delete(transactions).where(eq(transactions.householdId, id)),
+    db.delete(paySchedules).where(eq(paySchedules.householdId, id)),
+    db.delete(subscriptions).where(eq(subscriptions.householdId, id)),
+    db.delete(serviceProviders).where(eq(serviceProviders.householdId, id)),
+    db.delete(householdInvites).where(eq(householdInvites.householdId, id)),
+    db.delete(userHouseholds).where(eq(userHouseholds.householdId, id)),
+    db.delete(accounts).where(eq(accounts.householdId, id)),
+    db.delete(households).where(eq(households.id, id))
   ])
-  await logAudit(c, 'households', id, 'ADMIN_PURGE')
   return c.json({ success: true })
 })
 

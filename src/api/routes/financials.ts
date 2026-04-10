@@ -457,6 +457,21 @@ financials.post('/transfers', zValidator('json', TransferSchema), async (c) => {
 })
 
 // Buckets
+financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), targetCents: z.number().int().min(100) })), async (c) => {
+  const householdId = c.get('householdId')
+  const { name, targetCents } = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = `buck-${crypto.randomUUID()}`
+  await db.insert(savingsBuckets).values({
+    id,
+    householdId,
+    name,
+    targetCents,
+    currentCents: 0
+  })
+  return c.json({ success: true, id })
+})
+
 financials.get('/buckets', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)

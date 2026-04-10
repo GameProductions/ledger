@@ -10,7 +10,7 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], paySchedules = [], onDayClick, onItemClick }) => {
-  const [currentDate, setCurrentDate] = React.useState(new Date(2026, 2, 1)); // Default to March 2026 for now
+  const [currentDate, setCurrentDate] = React.useState(new Date());
   
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
@@ -48,8 +48,24 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
     <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500">
       <div className="calendar-header flex items-center justify-between mb-8 px-4">
         <div className="flex items-center gap-6">
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap">{monthName} <span className="text-primary">{year}</span></h2>
-          <div className="flex gap-2">
+          <div className="relative">
+            <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity">
+              {monthName} <span className="text-primary">{year}</span>
+            </h2>
+            <input 
+              type="month" 
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+              value={`${year}-${String(month + 1).padStart(2, '0')}`}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const [y, m] = e.target.value.split('-');
+                  setCurrentDate(new Date(parseInt(y), parseInt(m) - 1, 1));
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-2 items-center">
+            <button onClick={() => setCurrentDate(new Date())} className="px-3 h-8 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-all text-xs tracking-widest uppercase">Today</button>
             <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs">◀</button>
             <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs">▶</button>
           </div>
@@ -78,7 +94,7 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
 
         {days.map(day => {
           const dayItems = getItemsForDay(day);
-          const isToday = day === new Date().getDate() && month === new Date().getMonth();
+          const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
           
           return (
             <div 

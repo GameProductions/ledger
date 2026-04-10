@@ -10,8 +10,15 @@ const UserMenu: React.FC<{
   setView?: (v: 'list'|'calendar') => void,
   isPcc?: boolean 
 }> = ({ view, setView, isPcc = false }) => {
-  const { user, logout, globalRole, isImpersonating } = useAuth()
+  const { user, logout, globalRole, setGlobalRole, isImpersonating } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
+
+  React.useEffect(() => {
+    if (profile?.globalRole && profile.globalRole !== globalRole) {
+      if (setGlobalRole) setGlobalRole(profile.globalRole);
+      localStorage.setItem('ledger_global_role', profile.globalRole);
+    }
+  }, [profile, globalRole, setGlobalRole])
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'

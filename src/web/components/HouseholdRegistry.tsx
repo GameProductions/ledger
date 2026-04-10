@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Shield, Edit3, Plus, Send, Copy, Check, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
@@ -12,7 +13,17 @@ const rawApiUrl = import.meta.env.VITE_API_URL;
 const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
 const HouseholdRegistry: React.FC = () => {
-  const { data: profile, mutate: mutateProfile } = useApi('/api/user/profile');
+  const { data: profile } = useApi('/api/user/profile');
+  const { data: households } = useApi('/api/user/households');
+  const { householdId } = useAuth();
+  
+  const currentHousehold = useMemo(() => {
+    if (Array.isArray(households) && householdId) {
+      return households.find((h: any) => h.id === householdId)
+    }
+    return null
+  }, [households, householdId]);
+
   const { showToast } = useToast();
   const [isRenaming, setIsRenaming] = useState(false);
   const [householdName, setHouseholdName] = useState('');
@@ -25,10 +36,10 @@ const HouseholdRegistry: React.FC = () => {
   const [creating, setCreating] = useState(false);
 
   React.useEffect(() => {
-    if (profile?.household_name) {
-      setHouseholdName(profile.household_name);
+    if (currentHousehold?.name) {
+      setHouseholdName(currentHousehold.name);
     }
-  }, [profile]);
+  }, [currentHousehold]);
 
   const handleRename = async () => {
     const token = localStorage.getItem('ledger_token');
@@ -139,13 +150,13 @@ const HouseholdRegistry: React.FC = () => {
                         />
                         <button onClick={handleRename} className="px-3 py-1 bg-emerald-500 text-black text-xs font-black uppercase rounded hover:scale-105 transition-all">Save</button>
                         <button onClick={() => {
-                          setHouseholdName(profile?.household_name || '');
+                          setHouseholdName(currentHousehold?.name || '');
                           setIsRenaming(false);
                         }} className="px-3 py-1 bg-white/10 text-white text-xs font-black uppercase rounded hover:bg-white/20 transition-all">Cancel</button>
                       </div>
                     ) : (
                       <>
-                        <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{profile?.household_name || 'Personal Account'}</h3>
+                        <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{currentHousehold?.name || 'Personal Account'}</h3>
                         <button onClick={() => setIsRenaming(true)} className="text-slate-500 hover:text-emerald-500">
                            <Edit3 size={16} />
                         </button>

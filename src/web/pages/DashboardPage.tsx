@@ -11,7 +11,6 @@ import SmartInsights from '../components/SmartInsights'
 import InviteManager from '../components/InviteManager'
 import TransferForm from '../components/TransferForm'
 import SpendingHeatmap from '../components/SpendingHeatmap'
-import ImportWizard from '../components/ImportWizard'
 import HealthScore from '../components/HealthScore'
 import AICoach from '../components/AICoach'
 import DeveloperSettings from '../components/DeveloperSettings'
@@ -439,6 +438,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-4">Activity Heatmap</div>
                 <SpendingHeatmap transactions={transactions || []} />
               </section>
+              <AuditChronicle />
             </div>
 
             <section className="card bg-primary/5 border-primary/20">
@@ -462,7 +462,33 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 )) : <p className="text-xs text-secondary italic opacity-40">No templates available.</p>}
               </div>
 
-              <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={(e) => { e.preventDefault(); /* ... */ }}>
+              <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={async (e) => { 
+                e.preventDefault(); 
+                const descInput = document.getElementById('qe-desc') as HTMLInputElement;
+                const amountInput = document.getElementById('qe-amount') as HTMLInputElement;
+                if(!descInput.value || !amountInput.value) return;
+                try {
+                  await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+                    },
+                    body: JSON.stringify({ 
+                      description: descInput.value, 
+                      amount_cents: Math.round(parseFloat(amountInput.value) * 100), 
+                      transaction_date: new Date().toISOString().split('T')[0], 
+                      status: 'none' 
+                    })
+                  });
+                  mutateTx();
+                  descInput.value = '';
+                  amountInput.value = '';
+                  showToast('Transaction Added');
+                } catch(err) {
+                  showToast('Failed to add transaction');
+                }
+              }}>
                 <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
                 <div className="flex gap-2 sm:contents">
                   <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
@@ -546,6 +572,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <SavingsBuckets />
               <BudgetProgress />
               <TransferForm />
+              <Subscriptions />
+              <WhatIfLedger />
             </div>
           </div>
         )}
@@ -573,15 +601,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         {activeTab === 'ledgers' && (
           <div className="space-y-8 stagger">
             <div className="dashboard-grid">
-              <Subscriptions />
-              <WhatIfLedger />
-              <AuditChronicle />
-            </div>
-
-            <div className="dashboard-grid">
               <InviteManager />
               <DeveloperSettings />
-              <ImportWizard />
             </div>
           </div>
         )}
@@ -743,6 +764,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   onChange={(val) => setFundCategoryId(val)}
                   placeholder="Choose a category..."
                 />
+                <a href="#/settings" className="text-[10px] sm:text-xs text-primary font-black uppercase tracking-widest hover:underline mt-2 inline-block ml-1">Manage Categories &rarr;</a>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>

@@ -48,13 +48,18 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
     <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500">
       <div className="calendar-header flex items-center justify-between mb-8 px-4">
         <div className="flex items-center gap-6">
-          <div className="relative">
+          <div 
+            className="relative"
+            onClick={(e) => {
+              try { e.currentTarget.querySelector('input')?.showPicker(); } catch(err) {}
+            }}
+          >
             <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap cursor-pointer hover:opacity-80 transition-opacity">
               {monthName} <span className="text-primary">{year}</span>
             </h2>
             <input 
               type="month" 
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full pointer-events-none" 
               value={`${year}-${String(month + 1).padStart(2, '0')}`}
               onChange={(e) => {
                 if (e.target.value) {

@@ -36,7 +36,7 @@ export function PasskeyChallenge({ onSuccess, appName, children }: PasskeyChalle
           throw new Error((data as any).error || 'Failed to generate auth challenge');
         }
         const options = await resp.json() as any;
-        const asseResp = await startAuthentication({ optionsJSON: options });
+        const asseResp = await startAuthentication(options);
         
         const verificationResp = await fetch('/api/admin/webauthn/verify-auth', {
           method: 'POST',

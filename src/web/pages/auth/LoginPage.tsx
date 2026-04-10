@@ -66,6 +66,11 @@ const LoginPage: React.FC = () => {
   };
 
   const handleLogin = async () => {
+    if (!username || !password) {
+      showToast('Please enter both User ID and Password', 'error')
+      return
+    }
+
     setLoading(true)
     try {
       const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -138,7 +143,7 @@ const LoginPage: React.FC = () => {
       const options = await optRes.json()
       
       // Real WebAuthn Authentication Prompt
-      const assertion = await startAuthentication({ optionsJSON: options })
+      const assertion = await startAuthentication(options)
       
       const verifyRes = await fetch(`${apiUrl}/auth/passkeys/login-verify`, {
         method: 'POST',
@@ -225,7 +230,6 @@ const LoginPage: React.FC = () => {
                 placeholder="Username or email" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                required
                 autoComplete="username webauthn"
                 className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold"
               />
@@ -235,10 +239,9 @@ const LoginPage: React.FC = () => {
                     placeholder="••••••••" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
                     autoComplete="current-password"
-                    showReveal
-                    className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono"
+                    showReveal={true}
+                    className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono tracking-widest text-lg"
                   />
                 <div className="flex justify-end">
                    <button 

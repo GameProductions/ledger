@@ -15,10 +15,10 @@ const AuditChronicle: React.FC = () => {
               {new Date(log.created_at).toLocaleString()} • {log.actor_id}
             </div>
             <div style={{ fontSize: '0.9rem', fontWeight: 'bold', margin: '0.2rem 0' }}>
-              {log.action.toUpperCase()} {log.table_name.slice(0, -1)}
+              {log?.action?.toUpperCase() || ''} {log?.table_name?.slice(0, -1) || 'Unknown'}
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-              Record: {log.record_id.substring(0, 8)}...
+              Record: {log?.record_id?.substring(0, 8) || 'N/A'}...
             </div>
           </div>
         )) || <p style={{ color: 'var(--text-secondary)' }}>No history found.</p>}

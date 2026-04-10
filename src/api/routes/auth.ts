@@ -724,12 +724,13 @@ auth.post('/passkeys/login-verify', async (c) => {
     expectedChallenge,
     expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
     expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
-     // @ts-ignore
-    authenticator: {
-      credentialId: Buffer.from(passkey.credentialId, 'base64'),
-      credentialPublicKey: Buffer.from(passkey.publicKey, 'base64'),
-      counter: passkey.counter || 0,
-    },
+    requireUserVerification: true,
+    credential: {
+      id: passkey.credentialId,
+      publicKey: Buffer.from(passkey.publicKey, 'base64'),
+      counter: passkey.counter,
+      transports: passkey.transports ? passkey.transports.split(',') : undefined
+    } as any
   })
 
   if (!verification.verified) {

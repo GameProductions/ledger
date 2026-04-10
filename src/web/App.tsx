@@ -79,7 +79,7 @@ const AppContent: React.FC = () => {
 
     // 3. Platform Command Center (PCC) - Super-Admin Only
     if (path.startsWith('#/system-pcc')) {
-      if (globalRole !== 'super_admin') return <DashboardPage view={view} setView={setView} />
+      if (globalRole !== 'super_admin' && localStorage.getItem('ledger_global_role') !== 'super_admin') return <DashboardPage view={view} setView={setView} />
       
       const renderPCC = () => {
         if (path === '#/system-pcc/dashboard') return <PCCDashboard />

@@ -1,4 +1,4 @@
-export const CURRENT_VERSION = 'v3.20.2'
+export const CURRENT_VERSION = 'v3.23.0'
 
 export const VERSION_UPDATES = [
   { version: 'v3.20.2', title: 'Identity & Polish', description: 'Restructured the Settings Portal, refined the master user dropdown, and resolved critical backend authentication bugs.' },

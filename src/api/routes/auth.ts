@@ -16,10 +16,36 @@ import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
 import { Buffer } from 'node:buffer'
 import { getDb } from '../db'
-import { users, passkeys } from '../db/schema'
+import { users, passkeys, sessions } from '../db/schema'
 import { eq, or } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+
+
+async function createSessionTracker(c: any, userId: string) {
+  const db = getDb(c.env)
+  const sessionId = `sess-${crypto.randomUUID()}`
+  const userAgent = c.req.header('User-Agent') || 'Unknown'
+  const cfIp = c.req.header('CF-Connecting-IP') || 'Unknown'
+  
+  const browserM = userAgent.match(/(firefox|msie|chrome|safari|trident|edge)/i)
+  const osM = userAgent.match(/(mac os x|windows nt|linux|android|iphone|ipad)/i)
+  
+  const browser = browserM ? browserM[0] : 'Unknown'
+  const os = osM ? osM[0] : 'Unknown'
+  
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId,
+    deviceName: `${os} Device`,
+    os,
+    browser,
+    ipAddress: cfIp,
+    lastActiveAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  })
+}
+
 
 // Pass loginAudit as a parameter to handlers if needed, or handle it here
 // Since logAudit is in index.ts, we might need to pass it or move it to a utility
@@ -50,6 +76,7 @@ auth.post('/login', zValidator('json', z.object({
     }
 
     const token = await authService.generateToken(user.id)
+    await createSessionTracker(c, user.id)
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
     return c.json({ 
@@ -231,6 +258,7 @@ auth.get('/callback/discord', async (c) => {
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     const token = await authService.generateToken(finalUserId!)
+    await createSessionTracker(c, finalUserId!)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -360,6 +388,7 @@ auth.get('/callback/google', async (c) => {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens)
     const token = await authService.generateToken(userId)
+    await createSessionTracker(c, userId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -463,6 +492,7 @@ auth.get('/callback/dropbox', async (c) => {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('dropbox', socialProfile, socialTokens)
     const token = await authService.generateToken(userId)
+    await createSessionTracker(c, userId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -563,6 +593,7 @@ auth.get('/callback/onedrive', async (c) => {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('onedrive', socialProfile, socialTokens)
     const token = await authService.generateToken(userId)
+    await createSessionTracker(c, userId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -742,6 +773,7 @@ auth.post('/passkeys/login-verify', async (c) => {
 
   const authService = new AuthService(c.env)
   const token = await authService.generateToken(passkey.userId)
+  await createSessionTracker(c, passkey.userId)
   await logAudit(c, 'users', passkey.userId, 'login', null, { strategy: 'passkey' })
   
   return c.json({ token })

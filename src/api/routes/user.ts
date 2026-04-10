@@ -15,8 +15,8 @@ import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '../db'
-import { users, userOnboarding, households, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '../db/schema'
-import { eq, and, sql, desc, or, gt } from 'drizzle-orm'
+import { users, userOnboarding, sessions, households, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '../db/schema'
+import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -175,7 +175,7 @@ user.get('/households', async (c) => {
     countryCode: households.countryCode,
     unallocatedBalanceCents: households.unallocatedBalanceCents,
     role: userHouseholds.role
-  }).from(households).innerJoin(userHouseholds, eq(households.id, userHouseholds.householdId)).where(eq(userHouseholds.userId, userId))
+  }).from(households).innerJoin(userHouseholds, eq(households.id, userHouseholds.householdId)).where(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')))
   
   return c.json(results)
 })
@@ -205,7 +205,7 @@ user.post('/households/invite', zValidator('json', z.object({ email: z.string().
 
   const household = await db.select({ name: households.name, role: userHouseholds.role })
     .from(households).innerJoin(userHouseholds, eq(households.id, userHouseholds.householdId))
-    .where(and(eq(userHouseholds.userId, userId), eq(households.id, householdId))).limit(1).then(res => res[0])
+    .where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(households.id, householdId))).limit(1).then(res => res[0])
   
   if (!household || household.role !== 'admin') {
     throw new HTTPException(403, { message: 'Forbidden: Only household admins can generate invites' })
@@ -251,7 +251,7 @@ user.post('/households/join', zValidator('json', JoinHouseholdSchema), async (c)
     throw new HTTPException(410, { message: 'Invitation expired' })
   }
 
-  const existing = await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, invite.householdId))).limit(1).then(res => res[0])
+  const existing = await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(userHouseholds.householdId, invite.householdId))).limit(1).then(res => res[0])
   if (existing) throw new HTTPException(409, { message: 'You are already a member of this household' })
 
   await db.batch([
@@ -272,7 +272,7 @@ user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema), async (
   const db = getDb(c.env)
 
   if (globalRole !== 'super_admin') {
-     const membership = await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+     const membership = await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
      if (!membership || (membership.role !== 'admin' && membership.role !== 'super_admin')) {
        throw new HTTPException(403, { message: 'Forbidden: Insufficient permissions to rename household' })
      }
@@ -508,3 +508,183 @@ user.delete('/totps/:id', async (c) => {
 })
 
 export default user
+
+
+// Sessions
+user.get('/sessions', async (c) => {
+  const userId = c.get('userId') as string
+  const db = getDb(c.env)
+  const results = await db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.lastActiveAt))
+  return c.json(results)
+})
+
+user.delete('/sessions/:id', async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(sessions).where(and(eq(sessions.id, id), eq(sessions.userId, userId)))
+  await logAudit(c, 'sessions', id, 'REVOKE', null, null)
+  return c.json({ success: true })
+})
+
+
+
+// Phase 3: Household Management Expansions
+
+user.get('/households/:id/members', async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  
+  // Verify membership
+  const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+  if (!membership) return c.json({ error: 'Forbidden' }, 403)
+    
+  const members = await db.select({
+    id: users.id,
+    email: users.email,
+    displayName: users.displayName,
+    avatarUrl: users.avatarUrl,
+    role: userHouseholds.role
+  }).from(users).innerJoin(userHouseholds, eq(users.id, userHouseholds.userId)).where(eq(userHouseholds.householdId, id))
+  
+  return c.json(members)
+})
+
+user.get('/households/:id/invites', async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  const results = await db.select().from(householdInvites).where(and(eq(householdInvites.householdId, id), eq(householdInvites.status, 'pending')))
+  return c.json(results)
+})
+
+user.delete('/households/:id/invites/:inviteId', async (c) => {
+  const userId = c.get('userId') as string
+  const { id, inviteId } = c.req.param()
+  const db = getDb(c.env)
+  
+  const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+  if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+    
+  await db.delete(householdInvites).where(eq(householdInvites.id, inviteId))
+  await logAudit(c, 'households', id, 'INVITE_REVOKED', null, { inviteId })
+  return c.json({ success: true })
+})
+
+user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ role: z.enum(['observer', 'member', 'admin', 'owner']) })), async (c) => {
+  const userId = c.get('userId') as string
+  const { id, memberId } = c.req.param()
+  const { role } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+  if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+    
+  await db.update(userHouseholds).set({ role }).where(and(eq(userHouseholds.userId, memberId), eq(userHouseholds.householdId, id)))
+  await logAudit(c, 'households', id, 'MEMBER_ROLE_UPDATED', null, { memberId, role })
+  return c.json({ success: true })
+})
+
+user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transferToUserId: z.string().optional() }).optional()), async (c) => {
+  const userId = c.get('userId') as string
+  const { id, memberId } = c.req.param()
+  const db = getDb(c.env)
+  
+  // You can kick yourself (leave) or admins/owners can kick others
+  if (userId !== memberId) {
+    const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+    if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+  }
+  
+  // Ghost-Bill check
+  const orphanedBills = await db.select().from(subscriptions).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId))).limit(1).then(res => res[0])
+  
+  if (orphanedBills) {
+    const body = await c.req.json().catch(() => ({}))
+    if (!body.transferToUserId) {
+       return c.json({ error: 'Ghost-Bill Lock: User owns active bills.', requiresTransfer: true }, 400)
+    } else {
+       await db.update(subscriptions).set({ ownerId: body.transferToUserId }).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId)))
+       await logAudit(c, 'households', id, 'OWNERSHIP_TRANSFERRED', null, { from: memberId, to: body.transferToUserId, type: 'subscriptions_batch' })
+    }
+  }
+
+  await db.delete(userHouseholds).where(and(eq(userHouseholds.userId, memberId), eq(userHouseholds.householdId, id)))
+  await logAudit(c, 'households', id, 'MEMBER_EJECTED', null, { memberId })
+  return c.json({ success: true })
+})
+
+user.delete('/households/:id', async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  
+  const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+  if (!membership || membership.role !== 'owner') return c.json({ error: 'Only owners can archive households' }, 403)
+    
+  await db.update(households).set({ status: 'archived' }).where(eq(households.id, id))
+  await logAudit(c, 'households', id, 'ARCHIVED', null, null)
+  return c.json({ success: true })
+})
+
+user.post('/households/restore/:entityType/:entityId', async (c) => {
+  const userId = c.get('userId') as string
+  const { entityType, entityId } = c.req.param()
+  const db = getDb(c.env)
+  
+  let targetTable;
+  switch(entityType) {
+    case 'households': targetTable = households; break;
+    case 'accounts': targetTable = accounts; break;
+    case 'providers': targetTable = serviceProviders; break;
+    case 'payment_methods': targetTable = userPaymentMethods; break;
+    default: return c.json({ error: 'Invalid entity' }, 400)
+  }
+  
+  await db.update(targetTable).set({ status: 'active' }).where(eq(targetTable.id, entityId))
+  await logAudit(c, entityType, entityId, 'RESTORED', null, null)
+  return c.json({ success: true })
+})
+
+
+user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const { newOwnerId } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+  if (!membership || membership.role !== 'owner') return c.json({ error: 'Only the current owner can transfer household ownership' }, 403)
+    
+  // Validate target is a member
+  const targetMember = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, newOwnerId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
+  if (!targetMember) return c.json({ error: 'Target user is not a member of this household' }, 400)
+    
+  // Transaction equivalent
+  await db.update(userHouseholds).set({ role: 'owner' }).where(and(eq(userHouseholds.userId, newOwnerId), eq(userHouseholds.householdId, id)))
+  await db.update(userHouseholds).set({ role: 'admin' }).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id)))
+  
+  await logAudit(c, 'households', id, 'OWNERSHIP_TRANSFERRED', null, { from: userId, to: newOwnerId, context: 'household_core' })
+  return c.json({ success: true })
+})
+
+user.patch('/providers/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const { newOwnerId } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const provider = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id)).limit(1).then(res => res[0])
+  if (!provider) return c.json({ error: 'Not found' }, 404)
+    
+  // Verify permissions (admin or current creator)
+  if (provider.createdBy !== userId) {
+     const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, provider.householdId))).limit(1).then(res => res[0])
+     if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+  }
+  
+  await db.update(serviceProviders).set({ createdBy: newOwnerId }).where(eq(serviceProviders.id, id))
+  await logAudit(c, 'service_providers', id, 'OWNERSHIP_TRANSFERRED', null, { from: provider.createdBy, to: newOwnerId })
+  return c.json({ success: true })
+})

@@ -465,3 +465,43 @@ financials.get('/buckets', async (c) => {
 })
 
 export default financials
+
+
+// Phase 4 Transfers
+financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const { newOwnerId } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const sub = await db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1).then(res => res[0])
+  if (!sub) return c.json({ error: 'Not found' }, 404)
+    
+  if (sub.ownerId !== userId) {
+     const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, sub.householdId))).limit(1).then(res => res[0])
+     if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+  }
+  
+  await db.update(subscriptions).set({ ownerId: newOwnerId }).where(eq(subscriptions.id, id))
+  await logAudit(c, 'subscriptions', id, 'OWNERSHIP_TRANSFERRED', null, { from: sub.ownerId, to: newOwnerId })
+  return c.json({ success: true })
+})
+
+financials.patch('/transactions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+  const userId = c.get('userId') as string
+  const id = c.req.param('id')
+  const { newOwnerId } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const txn = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1).then(res => res[0])
+  if (!txn) return c.json({ error: 'Not found' }, 404)
+    
+  if (txn.ownerId !== userId) {
+     const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, txn.householdId))).limit(1).then(res => res[0])
+     if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+  }
+  
+  await db.update(transactions).set({ ownerId: newOwnerId }).where(eq(transactions.id, id))
+  await logAudit(c, 'transactions', id, 'OWNERSHIP_TRANSFERRED', null, { from: txn.ownerId, to: newOwnerId })
+  return c.json({ success: true })
+})

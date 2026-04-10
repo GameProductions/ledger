@@ -8,6 +8,7 @@ export const households = sqliteTable('households', {
   currency: text('currency').default('USD'),
   countryCode: text('country_code').default('US'),
   unallocatedBalanceCents: integer('unallocated_balance_cents').default(0),
+  status: text('status').default('active'),
 });
 
 export const users = sqliteTable('users', {
@@ -69,6 +70,7 @@ export const accounts = sqliteTable('accounts', {
   type: text('type').notNull(),
   balanceCents: integer('balance_cents').default(0),
   currency: text('currency').default('USD'),
+  status: text('status').default('active'),
 }, (table) => ({
   householdIdx: index('idx_accounts_household').on(table.householdId),
 }));
@@ -178,6 +180,11 @@ export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
   passkeyVerifiedAt: text('passkey_verified_at'),
+  deviceName: text('device_name'),
+  os: text('os'),
+  browser: text('browser'),
+  ipAddress: text('ip_address'),
+  lastActiveAt: text('last_active_at'),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -307,6 +314,7 @@ export const serviceProviders = sqliteTable('service_providers', {
   visibility: text('visibility').default('public'), // public, household, private
   householdId: text('household_id').references(() => households.id),
   createdBy: text('created_by'),
+  status: text('status').default('active'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 export const loanPayments = sqliteTable('loan_payments', {
@@ -461,6 +469,7 @@ export const userPaymentMethods = sqliteTable('user_payment_methods', {
   userId: text('user_id').notNull().references(() => users.id),
   provider: text('provider').notNull(),
   token: text('token').notNull(),
+  status: text('status').default('active'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

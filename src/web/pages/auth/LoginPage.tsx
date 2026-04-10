@@ -15,6 +15,8 @@ const LoginPage: React.FC = () => {
   const { showToast } = useToast()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [totpCode, setTotpCode] = useState('')
+  const [mfaRequired, setMfaRequired] = useState(false)
   const [loading, setLoading] = useState(false)
   
   // Recovery State
@@ -77,7 +79,7 @@ const LoginPage: React.FC = () => {
       const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, totpCode: totpCode || undefined })
       })
       
       if (!res.ok) {
@@ -87,6 +89,13 @@ const LoginPage: React.FC = () => {
       }
 
       const authData = await res.json()
+      
+      if (authData.requires2FA) {
+        setMfaRequired(true)
+        setLoading(false)
+        return
+      }
+
       if (authData.token) {
         const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
           headers: { 'Authorization': `Bearer ${authData.token}` },
@@ -255,8 +264,9 @@ const LoginPage: React.FC = () => {
               </div>
 
             <div className="space-y-4 pt-2">
-              <Button 
-                type="submit" 
+              <Button
+                type="button" 
+                onClick={(e) => { e.preventDefault(); handleLogin() }}
                 variant="primary" 
                 size="lg" 
                 className="w-full py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl shadow-primary/20"

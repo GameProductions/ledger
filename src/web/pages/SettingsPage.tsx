@@ -10,6 +10,9 @@ import { Input } from '../components/ui/Input'
 import { PasswordChecklist } from '../components/PasswordChecklist'
 import { Price } from '../components/Price'
 import HouseholdRegistry from '../components/HouseholdRegistry'
+import { useTabState } from '../hooks/useTabState'
+import { SecurityDashboard } from '../components/SecurityDashboard'
+import { ArchivalVault } from '../components/ArchivalVault'
 import { PasskeyModule } from '../components/PasskeyModule'
 import { TotpModule } from '../components/TotpModule'
 import ThemeSwitcher from '../components/ThemeSwitcher'
@@ -24,7 +27,7 @@ const SettingsPage: React.FC = () => {
   const { data: accounts } = useApi('/api/financials/accounts')
   const { data: identities, mutate: mutateIdentities } = useApi('/api/user/identities')
 
-  const [activeTab, setActiveTab] = useState<'security' | 'social' | 'display' | 'data'>('security')
+  const [activeTab, setActiveTab] = useTabState<'security' | 'social' | 'display' | 'data'>('security')
 
   // Profile Identity State
   const [name, setName] = useState('')
@@ -357,7 +360,9 @@ const SettingsPage: React.FC = () => {
           
           {/* TAB: SECURITY */}
           {activeTab === 'security' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 reveal">
+            <div className="space-y-12 reveal">
+              <SecurityDashboard />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="card p-8 space-y-6 border-l-4 border-blue-500/50">
                  <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500">
@@ -399,6 +404,7 @@ const SettingsPage: React.FC = () => {
                 <PasskeyModule />
                 <TotpModule />
               </div>
+            </div>
             </div>
           )}
 
@@ -616,6 +622,7 @@ const SettingsPage: React.FC = () => {
                     <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Manage household members and access</p>
                   </div>
                   <HouseholdRegistry />
+                  <ArchivalVault />
               </section>
             </div>
           )}

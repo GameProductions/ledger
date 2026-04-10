@@ -1,0 +1,33 @@
+
+> ledger@3.23.0 build
+> npm run build:web
+
+
+> ledger@3.23.0 build:web
+> vite build
+
+vite v7.3.2 building client environment for production...
+transforming...
+✓ 2715 modules transformed.
+✗ Build failed in 1.18s
+error during build:
+src/web/components/SecurityDashboard.tsx (3:28): "CardHeader" is not exported by "src/web/components/ui/Card.tsx", imported by "src/web/components/SecurityDashboard.tsx".
+file: /Users/morenicano/Documents/coding/projects/bots/ledger/src/web/components/SecurityDashboard.tsx:3:28
+
+1: import React, { useEffect, useState } from 'react';
+2: import { Shield, Smartphone, Monitor, Trash2, ShieldAlert } from 'lucide-react';
+3: import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+                               ^
+4: import { Button } from './ui/Button';
+5: import { useAuth } from '../context/AuthContext';
+
+    at getRollupError (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/parseAst.js:406:41)
+    at error (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/parseAst.js:402:42)
+    at Module.error (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:17380:16)
+    at Module.traceVariable (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:17813:29)
+    at ModuleScope.findVariable (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:15403:39)
+    at FunctionScope.findVariable (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at FunctionBodyScope.findVariable (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:5676:38)
+    at Identifier.bind (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:5450:40)
+    at CallExpression.bind (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:2828:28)
+    at CallExpression.bind (file:///Users/morenicano/Documents/coding/projects/bots/ledger/node_modules/rollup/dist/es/shared/node-entry.js:12512:15)

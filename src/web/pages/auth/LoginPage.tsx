@@ -225,13 +225,21 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          <form 
-            className="space-y-8"
-            onSubmit={(e) => { 
-              e.preventDefault(); 
-              handleLogin(); 
-            }}
-          >
+          <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+            {mfaRequired ? (
+              <div className="space-y-4 reveal">
+                <p className="text-gray-400 text-sm mb-4">Enter the 6-digit code from your authenticator app.</p>
+                <Input 
+                  label="AUTHENTICATOR CODE" 
+                  type="text" 
+                  value={totpCode} 
+                  onChange={e => setTotpCode(e.target.value)} 
+                  placeholder="000000"
+                  className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono tracking-[0.5em] text-center text-xl"
+                  autoFocus
+                />
+              </div>
+            ) : (
             <div className="space-y-6">
               <Input 
                 label="User ID"
@@ -262,6 +270,7 @@ const LoginPage: React.FC = () => {
                    </button>
                 </div>
               </div>
+            )}
 
             <div className="space-y-4 pt-2">
               <Button

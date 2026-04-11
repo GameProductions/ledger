@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import Subscriptions from '../components/Subscriptions'
 import Calendar from '../components/Calendar'
@@ -31,7 +31,41 @@ import { PaySchedulesList } from '../components/PaySchedulesList'
 import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
 import { projectPaydays } from '../utils/payCycleUtils'
-import { AlertTriangle, Info, Bell, XCircle } from 'lucide-react';
+import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2 } from 'lucide-react';
+
+const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
+  overview: [
+    { id: 'calendar', visible: true },
+    { id: 'safe-to-spend', visible: true }
+  ],
+  activity: [
+    { id: 'recent-activity', visible: true },
+    { id: 'spending-trend', visible: true },
+    { id: 'activity-heatmap', visible: true },
+    { id: 'audit-chronicle', visible: true },
+    { id: 'add-transaction', visible: true }
+  ],
+  planning: [
+    { id: 'future-balance', visible: true },
+    { id: 'budget-categories', visible: true },
+    { id: 'pay-schedules-list', visible: true },
+    { id: 'pay-cycle-timeline', visible: true },
+    { id: 'savings-buckets', visible: true },
+    { id: 'budget-progress', visible: true },
+    { id: 'transfer-form', visible: true },
+    { id: 'bills-list', visible: true },
+    { id: 'installments-list', visible: true },
+    { id: 'subscriptions', visible: true },
+    { id: 'what-if-ledger', visible: true }
+  ],
+  insights: [
+    { id: 'financial-health', visible: true },
+    { id: 'ai-coach', visible: true },
+    { id: 'smart-insights', visible: true },
+    { id: 'goal-seek', visible: true },
+    { id: 'future-flow', visible: true }
+  ]
+};
 
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
@@ -75,10 +109,44 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   useEffect(() => {
     if (user?.settings_json) {
        try {
-         setSettings(JSON.parse(user.settings_json))
+         const parsed = JSON.parse(user.settings_json)
+         setSettings(parsed)
+         if (parsed.dashboard_layout) {
+             const merged = { ...DEFAULT_LAYOUT };
+             Object.keys(parsed.dashboard_layout).forEach(tab => {
+                 if (merged[tab]) {
+                     const savedWidgets = parsed.dashboard_layout[tab];
+                     const defaultWidgets = merged[tab];
+                     const activeIds = savedWidgets.map((w: any) => w.id);
+                     merged[tab] = [
+                         ...savedWidgets,
+                         ...defaultWidgets.filter((w: any) => !activeIds.includes(w.id))
+                     ];
+                 }
+             });
+             setLayout(merged);
+         }
        } catch(e) {}
     }
   }, [user])
+
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
+  const [isCustomizing, setIsCustomizing] = useState(false);
+
+  const saveLayout = async (newLayout: any) => {
+    setLayout(newLayout);
+    const newSettings = { ..._settings, dashboard_layout: newLayout };
+    setSettings(newSettings);
+    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+      method: 'PATCH',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+    });
+    showToast('Layout saved');
+  };
 
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -251,70 +319,36 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     showToast('Entry Deleted')
   }
 
-  return (
-    <MainLayout view={view} setView={setView}>
-      <AnimatePresence>
-        {announcements && announcements.length > 0 && (
-          <div className="mb-8 space-y-4">
-            {Array.isArray(announcements) && announcements.map((ann: any) => (
-              <motion.div 
-                key={ann.id}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className={`p-5 rounded-[2rem] border flex items-start gap-4 shadow-2xl backdrop-blur-2xl ${
-                  ann.priority === 'critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
-                  ann.priority === 'warning' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
-                  'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                  ann.priority === 'critical' ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]' :
-                  ann.priority === 'warning' ? 'bg-orange-500 text-black' :
-                  'bg-emerald-500 text-black'
-                }`}>
-                  {ann.priority === 'critical' ? <AlertTriangle size={24} /> :
-                   ann.priority === 'warning' ? <Bell size={24} /> :
-                   <Info size={24} />}
-                </div>
-                <div className="flex-1 pt-1">
-                  <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
-                  <p className="text-xs font-bold opacity-70 leading-relaxed">{ann.content_md}</p>
-                </div>
-                {user?.global_role === 'super_admin' && (
-                  <button 
-                    onClick={() => mutateAnnouncements()}
-                    className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"
-                  >
-                    <XCircle size={18} className="opacity-30" />
-                  </button>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </AnimatePresence>
-      <GuidedTour />
-      <div className="reveal">
-        <OnboardingChecklist />
-      </div>
 
-      <div className="tab-container mt-8 reveal">
-        {(tabs || []).map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-          >
-            <span>{tab.icon}</span> {tab.label}
-          </button>
-        ))}
-      </div>
 
-      <div className="tab-content">
-        {activeTab === 'overview' && (
-          <div className="dashboard-grid stagger">
-            <section className="card">
+  const renderWidget = (id: string) => {
+    switch(id) {
+      case 'calendar': return (
+            <section key="calendar" className="card relative h-auto">
+              <Calendar 
+                  transactions={transactions || []} 
+                  subscriptions={subscriptions || []} 
+                  bills={bills || []}
+                  installments={installments || []}
+                  paySchedules={projectedPaydays}
+                  onDayClick={(date) => {
+                    setSelectedCalendarDate(date)
+                    setSelectedCalendarItem(null)
+                    setIsCalendarModalOpen(true)
+                  }}
+                  onItemClick={(item) => {
+                    if (item.type === 'pay_schedule') {
+                      setSelectedPayday(item);
+                    } else {
+                      setSelectedCalendarItem(item)
+                      setIsCalendarModalOpen(true)
+                    }
+                  }}
+                />
+            </section>
+      );
+      case 'safe-to-spend': return (
+            <section key="safe-to-spend" className="card">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold">Safe-to-Spend Balance</h3>
                 <SearchableSelect 
@@ -333,8 +367,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
               <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
             </section>
-
-            <section className="card">
+      );
+      case 'future-balance': return (
+            <section key="future-balance" className="card">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold">Future Balance</h3>
                 <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
@@ -357,13 +392,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 ))}
               </div>
             </section>
-
-          </div>
-        )}
-
-        {activeTab === 'activity' && (
-          <div className="space-y-8">
-            <section className="card stagger">
+      );
+      case 'recent-activity': return (
+            <section key="recent-activity" className="card animate-in fade-in zoom-in duration-500">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold">Recent Activity</h3>
                 <div className="flex items-center gap-4">
@@ -458,20 +489,22 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 )) : <p className="text-xs text-secondary italic opacity-40 py-4 px-2">No activity records found.</p>}
               </div>
             </section>
-
-            <div className="dashboard-grid">
-              <section className="card">
+      );
+      case 'spending-trend': return (
+              <section key="spending-trend" className="card animate-in fade-in zoom-in duration-500">
                 <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-4">Spending Trend</div>
                 <SpendingChart data={transactions || []} />
               </section>
-              <section className="card">
+      );
+      case 'activity-heatmap': return (
+              <section key="activity-heatmap" className="card animate-in fade-in zoom-in duration-500 delay-75">
                 <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-4">Activity Heatmap</div>
                 <SpendingHeatmap transactions={transactions || []} />
               </section>
-              <AuditChronicle />
-            </div>
-
-            <section className="card bg-primary/5 border-primary/20">
+      );
+      case 'audit-chronicle': return <AuditChronicle key="audit-chronicle" />;
+      case 'add-transaction': return (
+            <section key="add-transaction" className="card bg-primary/5 border-primary/20 animate-in fade-in zoom-in duration-500 delay-150">
               <h3 className="text-lg font-bold mb-1">Add Transaction</h3>
               <p className="text-xs text-secondary uppercase font-bold opacity-60 mb-6">Instantly record new entries</p>
               
@@ -527,41 +560,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
               </form>
             </section>
-          </div>
-        )}
-
-        {activeTab === 'planning' && (
-          <div className="space-y-8 stagger">
-            <section className="card">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold">Cash Flow Calendar</h3>
-              </div>
-              {view === 'calendar' && (
-                <Calendar 
-                  transactions={transactions || []} 
-                  subscriptions={subscriptions || []} 
-                  bills={bills || []}
-                  installments={installments || []}
-                  paySchedules={projectedPaydays}
-                  onDayClick={(date) => {
-                    setSelectedCalendarDate(date)
-                    setSelectedCalendarItem(null)
-                    setIsCalendarModalOpen(true)
-                  }}
-                  onItemClick={(item) => {
-                    if (item.type === 'pay_schedule') {
-                      setSelectedPayday(item);
-                    } else {
-                      setSelectedCalendarItem(item)
-                      setIsCalendarModalOpen(true)
-                    }
-                  }}
-                />
-              )}
-            </section>
-
-            <div className="dashboard-grid stagger">
-              <section className="card">
+      );
+      case 'budget-categories': return (
+              <section key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                   <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
                   <div className="flex flex-wrap gap-2">
@@ -607,24 +608,18 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   )) : <p className="text-sm text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
                 </div>
               </section>
-              
-              <PaySchedulesList />
-
-              <PayCycleTimeline paydays={projectedPaydays} liabilities={[...(subscriptions || []), ...(bills || []), ...(installments || [])]} />
-              <SavingsBuckets />
-              <BudgetProgress />
-              <TransferForm />
-              <BillsList />
-              <InstallmentsList />
-              <Subscriptions />
-              <WhatIfLedger />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'insights' && (
-          <div className="dashboard-grid stagger">
-            <section className="card">
+      );
+      case 'pay-schedules-list': return <PaySchedulesList key="pay-schedules-list" />;
+      case 'pay-cycle-timeline': return <PayCycleTimeline key="pay-cycle-timeline" paydays={projectedPaydays} liabilities={[...(subscriptions || []), ...(bills || []), ...(installments || [])]} />;
+      case 'savings-buckets': return <SavingsBuckets key="savings-buckets" />;
+      case 'budget-progress': return <BudgetProgress key="budget-progress" />;
+      case 'transfer-form': return <TransferForm key="transfer-form" />;
+      case 'bills-list': return <BillsList key="bills-list" />;
+      case 'installments-list': return <InstallmentsList key="installments-list" />;
+      case 'subscriptions': return <Subscriptions key="subscriptions" />;
+      case 'what-if-ledger': return <WhatIfLedger key="what-if-ledger" />;
+      case 'financial-health': return (
+            <section key="financial-health" className="card animate-in fade-in zoom-in duration-500">
               <h3 className="text-lg font-bold mb-6">Financial Health</h3>
               <HealthScore score={analysis?.healthScore || 0} />
               <button 
@@ -634,15 +629,164 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 📥 Download Statement Summary
               </button>
             </section>
+      );
+      case 'ai-coach': return <AICoach key="ai-coach" />;
+      case 'smart-insights': return <SmartInsights key="smart-insights" insights={insightsData?.insights || []} />;
+      case 'goal-seek': return <GoalSeek key="goal-seek" />;
+      case 'future-flow': return <FutureFlow key="future-flow" />;
+      default: return null;
+    }
+  }
 
-            <AICoach />
-            <SmartInsights insights={insightsData?.insights || []} />
-            <GoalSeek />
-            <FutureFlow />
+  const renderLayoutCustomizer = () => {
+    if (!isCustomizing) return null;
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[9999] p-4 flex items-center justify-center pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsCustomizing(false); }}>
+        <div className="card w-full max-w-lg p-8 max-h-[80vh] overflow-y-auto space-y-6" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center bg-deep sticky top-0 pb-4 z-10 border-b border-white/5">
+              <div>
+                  <h3 className="text-xl font-black uppercase tracking-tighter italic m-0">Customize Layout</h3>
+                  <p className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
+              </div>
+              <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2">✕</button>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Tab Configuration</h4>
+            <Reorder.Group 
+                axis="y" 
+                values={layout[activeTab] || []} 
+                onReorder={(newOrder) => {
+                    setLayout({ ...layout, [activeTab]: newOrder });
+                }}
+                className="space-y-2"
+            >
+                {layout[activeTab]?.map((item) => (
+                    <Reorder.Item 
+                        key={item.id} 
+                        value={item}
+                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${item.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <GripVertical size={16} className="text-secondary/50" />
+                            <span className="text-xs font-black uppercase tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
+                        </div>
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const newTabItems = layout[activeTab].map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
+                                setLayout({ ...layout, [activeTab]: newTabItems });
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            {item.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
+                        </button>
+                    </Reorder.Item>
+                ))}
+            </Reorder.Group>
+            
+          </div>
+          
+          <div className="pt-6 border-t border-white/5 flex gap-4 sticky bottom-0 bg-deep pt-4">
+              <button 
+                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                  onClick={() => setIsCustomizing(false)}
+              >
+                  Cancel
+              </button>
+              <button 
+                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all transition-all"
+                  onClick={() => { saveLayout(layout); setIsCustomizing(false); }}
+              >
+                  Save Global Layout
+              </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <MainLayout view={view} setView={setView}>
+      <AnimatePresence>
+        {announcements && announcements.length > 0 && (
+          <div className="mb-8 space-y-4">
+            {Array.isArray(announcements) && announcements.map((ann: any) => (
+              <motion.div 
+                key={ann.id}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className={`p-5 rounded-[2rem] border flex items-start gap-4 shadow-2xl backdrop-blur-2xl ${
+                  ann.priority === 'critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                  ann.priority === 'warning' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
+                  'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                  ann.priority === 'critical' ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]' :
+                  ann.priority === 'warning' ? 'bg-orange-500 text-black' :
+                  'bg-emerald-500 text-black'
+                }`}>
+                  {ann.priority === 'critical' ? <AlertTriangle size={24} /> :
+                   ann.priority === 'warning' ? <Bell size={24} /> :
+                   <Info size={24} />}
+                </div>
+                <div className="flex-1 pt-1">
+                  <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                  <p className="text-xs font-bold opacity-70 leading-relaxed">{ann.content_md}</p>
+                </div>
+                {user?.global_role === 'super_admin' && (
+                  <button 
+                    onClick={() => mutateAnnouncements()}
+                    className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"
+                  >
+                    <XCircle size={18} className="opacity-30" />
+                  </button>
+                )}
+              </motion.div>
+            ))}
           </div>
         )}
-
+      </AnimatePresence>
+      <GuidedTour />
+      <div className="reveal">
+        <OnboardingChecklist />
       </div>
+
+      
+      <div className="tab-container mt-8 reveal">
+        {(tabs || []).map(tab => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+          >
+            <span>{tab.icon}</span> {tab.label}
+          </button>
+        ))}
+      </div>
+      
+      <div className="flex justify-end pr-4 sm:pr-8 md:pr-12 lg:pr-24 -mt-10 mb-4 reveal relative z-10 transition-all duration-700 mx-auto max-w-7xl">
+        <button 
+          onClick={() => setIsCustomizing(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl"
+        >
+          <Settings2 size={14} className="text-secondary hover:text-white" /> Customize View
+        </button>
+      </div>
+
+      <div className="tab-content relative">
+         <div className="dashboard-grid stagger min-h-[50vh]">
+            {layout[activeTab]?.filter(w => w.visible).map(w => (
+                <React.Fragment key={w.id}>
+                    {renderWidget(w.id)}
+                </React.Fragment>
+            ))}
+         </div>
+      </div>
+
+      {renderLayoutCustomizer()}
 
       {toast && <div className="status-toast reveal"><span>●</span> {toast}</div>}
 

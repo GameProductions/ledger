@@ -35,9 +35,12 @@ app.use("*", cors({
     if (origin.endsWith(".gpnet.dev") || origin.endsWith(".glosonproductions.com") || origin.includes("localhost") || origin.includes("127.0.0.1")) {
       return origin;
     }
-    return "https://gpnet.dev";
+    return "https://ledger.gpnet.dev";
   },
-  allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowHeaders: ["Content-Type", "Authorization", "x-household-id", "X-Ledger-Integrity"],
+  credentials: true,
+  maxAge: 600,
 }));
 
 

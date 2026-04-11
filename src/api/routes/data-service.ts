@@ -330,4 +330,28 @@ data.get('/tools/tokens', async (c) => {
   return c.json(results)
 })
 
+data.patch('/tools/tokens/:id', zValidator('json', z.object({ name: z.string().min(1).max(100) })), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const { name } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  await db.update(personalAccessTokens)
+    .set({ name })
+    .where(and(eq(personalAccessTokens.id, id), eq(personalAccessTokens.householdId, householdId)))
+    
+  return c.json({ success: true })
+})
+
+data.delete('/tools/tokens/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  
+  await db.delete(personalAccessTokens)
+    .where(and(eq(personalAccessTokens.id, id), eq(personalAccessTokens.householdId, householdId)))
+    
+  return c.json({ success: true })
+})
+
 export default data

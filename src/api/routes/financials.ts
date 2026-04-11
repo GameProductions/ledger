@@ -13,12 +13,9 @@ import {
 import { dispatchWebhook } from '../services/webhook-service'
 import { getDb } from '../db'
 import { 
-  accounts, 
-  categories, 
-  creditCards, 
-  transactions, 
   transactionTimeline, 
-  savingsBuckets 
+  savingsBuckets,
+  systemConfig
 } from '../db/schema'
 import { eq, and, desc, like, inArray, sql } from 'drizzle-orm'
 
@@ -110,19 +107,36 @@ financials.get('/transactions', async (c) => {
 financials.post('/transactions', zValidator('json', TransactionSchema), async (c) => {
   const householdId = c.get('householdId')
   const data = c.req.valid('json')
+  const db = getDb(c.env)
+
+  // God Mode Enforcement: Check if accounts/categories are required
+  const config = await db.select({ configValue: systemConfig.configValue })
+    .from(systemConfig)
+    .where(eq(systemConfig.configKey, 'REQUIRE_TRANSACTION_CONTEXT'))
+    .limit(1)
+    .then(res => res[0]);
+
+  const isRequired = config?.configValue === 'true';
+
+  if (isRequired) {
+    if (!data.account_id) {
+      throw new HTTPException(400, { message: 'Account ID is required for transactions (Policy: REQUIRE_TRANSACTION_CONTEXT)' })
+    }
+    if (!data.category_id) {
+      throw new HTTPException(400, { message: 'Category ID is required for transactions (Policy: REQUIRE_TRANSACTION_CONTEXT)' })
+    }
+  }
   
   const id = crypto.randomUUID()
   const date = data.transaction_date || new Date().toISOString().split('T')[0]
-  
-  const db = getDb(c.env)
   
   // To replace DB.batch for transactions AND category deduction, we logically perform both. 
   // Native Cloudflare D1 via Drizzle can use batch()
   const insertTx = db.insert(transactions).values({
     id,
     householdId,
-    accountId: data.account_id,
-    categoryId: data.category_id,
+    accountId: data.account_id || 'default-account', // Fallback if policy disabled
+    categoryId: data.category_id || null,
     description: data.description,
     amountCents: data.amount_cents,
     transactionDate: date

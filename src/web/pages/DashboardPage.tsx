@@ -81,8 +81,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'activity', label: 'Activity', icon: '💸' },
     { id: 'planning', label: 'Planning', icon: '🍱' },
-    { id: 'insights', label: 'Insights', icon: '🧠' },
-    { id: 'ledgers', label: 'Utilities', icon: '🗓️' }
+    { id: 'insights', label: 'Insights', icon: '🧠' }
   ]
 
   const handleDeposit = async () => {
@@ -608,14 +607,6 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           </div>
         )}
 
-        {activeTab === 'ledgers' && (
-          <div className="space-y-8 stagger">
-            <div className="dashboard-grid">
-              <InviteManager />
-              <DeveloperSettings />
-            </div>
-          </div>
-        )}
       </div>
 
       {toast && <div className="status-toast reveal"><span>●</span> {toast}</div>}

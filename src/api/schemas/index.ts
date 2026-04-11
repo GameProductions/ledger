@@ -10,8 +10,8 @@ export const PaginationSchema = z.object({
 export const TransactionSchema = z.object({
   amount_cents: z.number().int(),
   description: z.string().min(1).max(255),
-  account_id: z.string().uuid().or(z.string().regex(/^(acc-|plaid-|privacy-|retirement-|method-)/)),
-  category_id: z.string().uuid().or(z.string().regex(/^(cat-|plaid-|privacy-)/)),
+  account_id: z.string().uuid().or(z.string().regex(/^(acc-|plaid-|privacy-|retirement-|method-)/)).optional(),
+  category_id: z.string().uuid().or(z.string().regex(/^(cat-|plaid-|privacy-)/)).optional(),
   transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   owner_id: z.string().optional(),
   status: z.string().optional().default('unpaid'),

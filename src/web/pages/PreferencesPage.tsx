@@ -4,6 +4,9 @@ import { useApi } from '../hooks/useApi'
 import { ArrowLeft, Palette, Layout } from 'lucide-react'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { MainLayout } from '../components/layout/MainLayout'
+import InviteManager from '../components/InviteManager'
+import DeveloperSettings from '../components/DeveloperSettings'
+import { ShieldCheck, Terminal } from 'lucide-react'
 
 const PreferencesPage: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -144,6 +147,24 @@ const PreferencesPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+            </section>
+
+            <section className="card p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <ShieldCheck size={20} className="text-secondary" />
+                <h3 className="text-lg font-bold">Household Management</h3>
+              </div>
+              <p className="text-sm text-secondary mb-6">Manage roles and invite partners to collaborate on your household finances.</p>
+              <InviteManager />
+            </section>
+
+            <section className="card p-8 border-primary/20 bg-primary/5">
+              <div className="flex items-center gap-3 mb-6">
+                <Terminal size={20} className="text-primary" />
+                <h3 className="text-lg font-bold text-primary">Advanced Developer Tools</h3>
+              </div>
+              <p className="text-sm text-secondary mb-6">Configure webhooks and personal access tokens for API integrations.</p>
+              <DeveloperSettings />
             </section>
           </div>
         </div>

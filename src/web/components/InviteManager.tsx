@@ -1,15 +1,19 @@
 import React, { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 const InviteManager: React.FC = () => {
+  const { token, householdId } = useAuth()
   const [invited, setInvited] = useState(false)
   const [link, setLink] = useState('')
 
   const generateInvite = async () => {
+    if (!token) return
+
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/households/invite`, {
       method: 'POST',
       headers: { 
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_household_id') || ''
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
       }
     })
     if (!res.ok) {

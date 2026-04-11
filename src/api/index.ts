@@ -17,6 +17,7 @@ import planningRoutes from './routes/planning'
 import userRoutes from './routes/user'
 import pccRoutes from './routes/pcc'
 import dataRoutes from './routes/data-service'
+import interopRoutes from './routes/interop'
 import backupRoutes from './routes/backup'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
@@ -134,6 +135,11 @@ app.use('*', async (c, next) => {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
           );
+        `),
+        c.env.DB.prepare(`
+          INSERT INTO system_config (id, config_key, config_value, value_type)
+          SELECT 'sys-rc-' || lower(hex(randomblob(4))), 'REQUIRE_TRANSACTION_CONTEXT', 'true', 'boolean'
+          WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE config_key = 'REQUIRE_TRANSACTION_CONTEXT');
         `)
       ]);
     } catch (e) {
@@ -301,6 +307,7 @@ ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)
 ledger.route('/api/user', userRoutes)
 ledger.route('/api/data', dataRoutes)
+ledger.route('/api/interop', interopRoutes)
 ledger.route('/api/pcc', pccRoutes)
 ledger.route('/api/backup', backupRoutes)
 ledger.route('/api/support', supportRoutes)

@@ -7,7 +7,7 @@ LEDGER is a production-grade personal and household finance platform built for s
 
 ### 🛡️ Security & Forensic Integrity
 - **Identity Mirroring (God Mode)**: Securely impersonate users for support with a hardened confirmation workflow and privacy masking.
-- **Hardened Hashing**: PBKDF2-SHA256 with **600,000 iterations** for maximum password security.
+- **Hardened Hashing**: PBKDF2-SHA256 with **100,000 iterations** for maximum password security.
 - **Zero-Trust Validation**: Strict Zod-powered input validation on all API endpoints.
 - **Forensic Audit Logging**: Detailed actor-to-target mapping for all administrative actions.
 

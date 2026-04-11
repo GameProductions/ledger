@@ -23,6 +23,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [status, setStatus] = useState(initialData?.status || 'unpaid');
   const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmation_number || '');
   const [frequency, setFrequency] = useState(initialData?.frequency || 'biweekly');
+  const [semiMonthlyDay1, setSemiMonthlyDay1] = useState(initialData?.semi_monthly_day_1 || 1);
+  const [semiMonthlyDay2, setSemiMonthlyDay2] = useState(initialData?.semi_monthly_day_2 || 15);
+  const [isRecurring, setIsRecurring] = useState(initialData?.is_recurring || false);
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [showTimeline, setShowTimeline] = useState(false);
 
@@ -38,12 +41,26 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         estimated_amount_cents: Math.round(parseFloat(amount) * 100),
         next_pay_date: currentDate,
         frequency,
+        semi_monthly_day_1: frequency === 'semi-monthly' ? semiMonthlyDay1 : null,
+        semi_monthly_day_2: frequency === 'semi-monthly' ? semiMonthlyDay2 : null,
         notes
+      });
+    } else if (type === 'bill') {
+      onSave({
+        id: initialData?.id,
+        type: 'bill',
+        name: description,
+        amount_cents: Math.round(parseFloat(amount) * 100),
+        due_date: currentDate,
+        status: status,
+        notes: notes,
+        is_recurring: isRecurring,
+        frequency: isRecurring ? 'monthly' : null
       });
     } else {
       onSave({
         id: initialData?.id,
-        type,
+        type: 'charge',
         description,
         amount_cents: Math.round(parseFloat(amount) * 100),
         date: currentDate,
@@ -139,30 +156,70 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
-                      <TypeableSelect 
-                        options={[
-                          { value: 'weekly', label: 'WEEKLY' },
-                          { value: 'biweekly', label: 'BIWEEKLY' },
-                          { value: 'semi-monthly', label: 'SEMI-MONTHLY' },
-                          { value: 'monthly', label: 'MONTHLY' }
-                        ]}
-                        value={frequency}
-                        onChange={(val) => setFrequency(val)}
-                      />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Internal Notes</label>
-                      <input 
-                        type="text" 
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="e.g. Include bonus"
-                        className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
-                      />
-                   </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                       <TypeableSelect 
+                         options={[
+                           { value: 'weekly', label: 'WEEKLY' },
+                           { value: 'biweekly', label: 'BIWEEKLY' },
+                           { value: 'semi-monthly', label: 'SEMI-MONTHLY' },
+                           { value: 'monthly', label: 'MONTHLY' }
+                         ]}
+                         value={frequency}
+                         onChange={(val) => setFrequency(val)}
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Internal Notes</label>
+                       <input 
+                         type="text" 
+                         value={notes}
+                         onChange={(e) => setNotes(e.target.value)}
+                         placeholder="e.g. Include bonus"
+                         className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
+                       />
+                    </div>
+                  </div>
+
+                  {frequency === 'semi-monthly' && (
+                    <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">First Day of Month</label>
+                         <input 
+                           type="number" min="1" max="31"
+                           value={semiMonthlyDay1}
+                           onChange={(e) => setSemiMonthlyDay1(Number(e.target.value))}
+                           className="w-full p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-white font-bold"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">Second Day of Month</label>
+                         <input 
+                           type="number" min="1" max="31"
+                           value={semiMonthlyDay2}
+                           onChange={(e) => setSemiMonthlyDay2(Number(e.target.value))}
+                           className="w-full p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-white font-bold"
+                         />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {type === 'bill' && (
+                <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+                    <input 
+                      type="checkbox" 
+                      id="isRecurring"
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      className="w-5 h-5 accent-amber-500"
+                    />
+                    <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
+                        This is a recurring monthly bill
+                    </label>
                 </div>
               )}
 

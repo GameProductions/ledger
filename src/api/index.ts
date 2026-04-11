@@ -140,7 +140,57 @@ app.use('*', async (c, next) => {
           INSERT INTO system_config (id, config_key, config_value, value_type)
           SELECT 'sys-rc-' || lower(hex(randomblob(4))), 'REQUIRE_TRANSACTION_CONTEXT', 'true', 'boolean'
           WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE config_key = 'REQUIRE_TRANSACTION_CONTEXT');
-        `)
+        `),
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS bills (
+            id TEXT PRIMARY KEY,
+            household_id TEXT NOT NULL REFERENCES households(id),
+            name TEXT NOT NULL,
+            amount_cents INTEGER NOT NULL,
+            due_date TEXT NOT NULL,
+            status TEXT DEFAULT 'unpaid',
+            notes TEXT,
+            category_id TEXT REFERENCES categories(id),
+            account_id TEXT REFERENCES accounts(id),
+            is_recurring INTEGER DEFAULT 0,
+            frequency TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        // Migration: Subscriptions to Bills
+        c.env.DB.prepare(`
+          INSERT OR IGNORE INTO bills (id, household_id, name, amount_cents, due_date, status, is_recurring, frequency)
+          SELECT id, household_id, name, amount_cents, COALESCE(next_billing_date, DATE('now')), 'pending', 1, billing_cycle
+          FROM subscriptions
+          WHERE id NOT IN (SELECT id FROM bills);
+        `),
+        c.env.DB.prepare(`
+          DELETE FROM subscriptions WHERE id IN (SELECT id FROM bills);
+        `),
+        // Patch Pay Schedules
+        c.env.DB.prepare(`ALTER TABLE pay_schedules ADD COLUMN semi_monthly_day_1 INTEGER;`).catch(() => null),
+        c.env.DB.prepare(`ALTER TABLE pay_schedules ADD COLUMN semi_monthly_day_2 INTEGER;`).catch(() => null),
+        // Liability Splitting
+        c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS liability_splits (
+            id TEXT PRIMARY KEY,
+            household_id TEXT NOT NULL REFERENCES households(id),
+            target_id TEXT NOT NULL,
+            target_type TEXT NOT NULL,
+            originator_user_id TEXT NOT NULL REFERENCES users(id),
+            assigned_user_id TEXT NOT NULL REFERENCES users(id),
+            split_type TEXT NOT NULL,
+            split_value INTEGER NOT NULL,
+            calculated_amount_cents INTEGER NOT NULL,
+            override_date TEXT,
+            override_frequency TEXT,
+            status TEXT DEFAULT 'pending',
+            is_master_ledger_public INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+        `),
+        c.env.DB.prepare(`ALTER TABLE liability_splits ADD COLUMN is_master_ledger_public INTEGER DEFAULT 0;`).catch(() => null)
       ]);
     } catch (e) {
       console.error('[Self-Heal] Failed to verify system tables:', e);

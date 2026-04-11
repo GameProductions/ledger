@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
-import { Link, Bell } from 'lucide-react'
+import { Link, Bell, ShieldCheck, Share2 } from 'lucide-react'
 
 import { Price } from './Price'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { ReminderManager } from './ReminderManager'
+import { LiabilitySplitter } from './LiabilitySplitter'
 
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -15,6 +16,27 @@ const Subscriptions: React.FC = () => {
   const { data: linkedAccounts } = useApi('/api/user/linked-accounts')
   const [showAdd, setShowAdd] = useState(false)
   const [reminderTarget, setReminderTarget] = useState<{id: string, name: string} | null>(null)
+
+  const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
+    if (!token) return;
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/splits/subscription/${targetId}/public`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_public: isPublic })
+    });
+
+    if (res.ok) {
+        showToast(isPublic ? 'Master Ledger is now public' : 'Master Ledger is now private');
+        mutate();
+    }
+  };
+  
+  // UI State for Splits
+  const [openSplitterId, setOpenSplitterId] = useState<string | null>(null)
+  const [openTrackerId, setOpenTrackerId] = useState<string | null>(null)
 
   if (loading) return <div>Loading subscriptions...</div>
 
@@ -104,32 +126,109 @@ const Subscriptions: React.FC = () => {
 
       <div style={{ display: 'grid', gap: '1rem' }}>
         {subs?.map((sub: any) => (
-          <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div>
-              <div style={{ fontWeight: '800', display: 'flex', gap: '0.5rem', alignItems: 'center' }} className="text-sm tracking-tight">
-                {sub.name}
-                {sub.is_trial ? (
-                  <span style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem', background: 'var(--secondary)', color: 'black', borderRadius: '0.25rem', fontWeight: '900' }}>TRIAL</span>
-                ) : null}
+          <div key={sub.id} className="relative bg-white/[0.03] rounded-xl border border-white/5 p-4 space-y-4">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: '800', display: 'flex', gap: '0.5rem', alignItems: 'center' }} className="text-sm tracking-tight">
+                  {sub.name}
+                  {sub.is_trial ? (
+                    <span style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem', background: 'var(--secondary)', color: 'black', borderRadius: '0.25rem', fontWeight: '900' }}>TRIAL</span>
+                  ) : null}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }} className="mt-0.5 font-medium opacity-60">
+                  {sub.is_trial ? `Trial Ends: ${sub.trial_end_date}` : `Due: ${sub.next_billing_date}`}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  {sub.provider_account_id && (
+                    <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
+                      <Link size={10} /> Account Linked
+                    </div>
+                  )}
+                  <button onClick={() => setReminderTarget({ id: sub.id, name: sub.name })} className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-primary transition-colors">
+                    <Bell size={10} /> Alerts
+                  </button>
+                  {!sub.is_split_originator && !sub.is_split_portion && (
+                      <button onClick={() => setOpenSplitterId(openSplitterId === sub.id ? null : sub.id)} className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-emerald-500 transition-colors">
+                        <Share2 size={10} /> Split
+                      </button>
+                  )}
+                </div>
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }} className="mt-0.5 font-medium opacity-60">
-                {sub.is_trial ? `Trial Ends: ${sub.trial_end_date}` : `Due: ${sub.next_billing_date}`}
-              </div>
-              <div className="flex gap-2 mt-2">
-                {sub.provider_account_id && (
-                  <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
-                    <Link size={10} /> Account Linked
-                  </div>
-                )}
-                <button onClick={() => setReminderTarget({ id: sub.id, name: sub.name })} className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-primary transition-colors">
-                  <Bell size={10} /> Alerts
-                </button>
+              <div className="flex flex-col items-end">
+                <Price amountCents={sub.amount_cents} className="font-black tracking-tighter text-lg" />
+                <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billing_cycle}</div>
               </div>
             </div>
-            <div className="flex flex-col items-end">
-              <Price amountCents={sub.amount_cents} className="font-black tracking-tighter text-lg" />
-              <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billing_cycle}</div>
-            </div>
+
+            {sub.is_split_portion && (
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80 bg-white/5 border border-white/10 rounded-lg p-2 w-fit">
+                    <Share2 size={12} /> Assigned Split Portion
+                </div>
+            )}
+
+            {/* Premium Internal Tracking for Originators */}
+            {sub.is_split_originator && sub.splits && (
+                <div>
+                    <button 
+                        onClick={() => setOpenTrackerId(openTrackerId === sub.id ? null : sub.id)}
+                        className="w-full bg-primary/10 border border-primary/20 rounded-xl p-3 flex flex-col hover:bg-primary/20 transition-all text-left group/tracker shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
+                    >
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck size={14} className="text-primary group-hover/tracker:scale-110 transition-transform" />
+                                <span className="text-[10px] uppercase font-black tracking-widest text-primary">Master Split Ledger</span>
+                            </div>
+                            <span className="text-[10px] uppercase font-black text-white/40">{openTrackerId === sub.id ? 'Close' : 'View Stats'}</span>
+                        </div>
+                        {openTrackerId === sub.id && (
+                            <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center justify-between px-2 py-1 bg-white/5 rounded-lg border border-white/5 mb-2">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Broadcasting Status</span>
+                                    <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={sub.splits?.[0]?.is_master_ledger_public || false} 
+                                            onChange={(e) => handleTogglePublic(sub.id, e.target.checked)}
+                                            className="sr-only peer" 
+                                        />
+                                        <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/40 after:border-white/10 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                                    </label>
+                                </div>
+                                {sub.splits.map((split: any) => (
+                                    <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assigned_user_id.substring(0, 2)}</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Portion</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                                                split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
+                                            }`}>
+                                                {split.status}
+                                            </span>
+                                            <Price amountCents={split.calculated_amount_cents} className="text-[11px] font-black tracking-widest" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </button>
+                </div>
+            )}
+
+            {openSplitterId === sub.id && (
+                <div className="mt-2 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-top-2">
+                    <LiabilitySplitter 
+                        targetId={sub.id} 
+                        targetType="subscription" 
+                        totalAmountCents={sub.amount_cents} 
+                        onComplete={() => {
+                            setOpenSplitterId(null);
+                            mutate();
+                        }} 
+                    />
+                </div>
+            )}
           </div>
         ))}
         {subs?.length === 0 && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No subscriptions tracked yet.</p>}

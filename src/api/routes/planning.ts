@@ -8,7 +8,9 @@ import {
   InstallmentPlanSchema, 
   LoanSchema, 
   OwnershipTransferSchema,
-  PayScheduleSchema
+  PayScheduleSchema,
+  BillSchema,
+  LiabilitySplitSchema
 } from '../schemas'
 import { logAudit } from '../utils'
 import { getDb } from '../db'
@@ -21,7 +23,10 @@ import {
   categories,
   households,
   templates,
-  paySchedules
+  paySchedules,
+  bills,
+  liabilitySplits,
+  systemAnnouncements
 } from '../db/schema'
 import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
 
@@ -40,9 +45,42 @@ const toSnake = (obj: any) => {
 // Subscriptions
 planning.get('/subscriptions', async (c) => {
   const householdId = c.get('householdId')
+  const user = c.get('user') as any
   const db = getDb(c.env)
-  const results = await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId))
-  return c.json(results.map(toSnake))
+  
+  const allSubs = await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId))
+  const splits = await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'subscription')))
+  
+  const results = allSubs.map(sub => {
+    const userSplit = splits.find(s => s.targetId === sub.id && s.assignedUserId === user?.id)
+    if (userSplit) {
+       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter(s => s.targetId === sub.id) : undefined;
+       return {
+         ...toSnake(sub),
+         amount_cents: userSplit.calculatedAmountCents,
+         next_billing_date: userSplit.overrideDate || sub.nextBillingDate,
+         billing_cycle: userSplit.overrideFrequency || sub.billingCycle,
+         is_split_portion: true,
+         split_id: userSplit.id,
+         splits: publicSplits ? publicSplits.map(toSnake) : undefined
+       }
+    }
+    
+    const originatedSplits = splits.filter(s => s.targetId === sub.id && s.originatorUserId === user?.id)
+    if (originatedSplits.length > 0) {
+      const remainingCents = sub.amountCents - originatedSplits.reduce((acc, curr) => acc + curr.calculatedAmountCents, 0)
+      return {
+        ...toSnake(sub),
+        amount_cents: remainingCents,
+        is_split_originator: true,
+        splits: originatedSplits.map(toSnake)
+      }
+    }
+
+    return toSnake(sub)
+  })
+
+  return c.json(results)
 })
 
 planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c) => {
@@ -101,6 +139,112 @@ planning.delete('/subscriptions/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// Bills
+planning.get('/bills', async (c) => {
+  const householdId = c.get('householdId')
+  const user = c.get('user') as any
+  const db = getDb(c.env)
+
+  const allBills = await db.select().from(bills).where(eq(bills.householdId, householdId))
+  const splits = await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'bill')))
+  
+  const results = allBills.map(bill => {
+    // Check if this bill has any splits assigned specifically to the user rendering the request
+    const userSplit = splits.find(s => s.targetId === bill.id && s.assignedUserId === user?.id)
+    if (userSplit) {
+       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter(s => s.targetId === bill.id) : undefined;
+       return {
+         ...toSnake(bill),
+         amount_cents: userSplit.calculatedAmountCents,
+         due_date: userSplit.overrideDate || bill.dueDate,
+         frequency: userSplit.overrideFrequency || bill.frequency,
+         is_split_portion: true,
+         split_id: userSplit.id,
+         splits: publicSplits ? publicSplits.map(toSnake) : undefined
+       }
+    }
+    // If there is a split but not assigned to the user, the user might be the originator
+    // Typically, if you assigned it away, you shouldn't see that portion on *your* projection.
+    // However, the dashboard logic handles showing only what the user owes.
+    // For now, if the user originated a split, they still see their remaining part.
+    const originatedSplits = splits.filter(s => s.targetId === bill.id && s.originatorUserId === user?.id)
+    if (originatedSplits.length > 0) {
+      const remainingCents = bill.amountCents - originatedSplits.reduce((acc, curr) => acc + curr.calculatedAmountCents, 0)
+      return {
+        ...toSnake(bill),
+        amount_cents: remainingCents,
+        is_split_originator: true,
+        splits: originatedSplits.map(toSnake)
+      }
+    }
+
+    return toSnake(bill)
+  })
+
+  return c.json(results)
+})
+
+planning.post('/bills', zValidator('json', BillSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const db = getDb(c.env)
+  
+  await db.insert(bills).values({
+    id,
+    householdId,
+    name: data.name,
+    amountCents: data.amount_cents,
+    dueDate: data.due_date,
+    status: data.status || 'unpaid',
+    notes: data.notes || null,
+    categoryId: data.category_id || null,
+    accountId: data.account_id || null,
+    isRecurring: data.is_recurring || false,
+    frequency: data.frequency || null
+  })
+  
+  await logAudit(c, 'bills', id, 'create', null, data)
+  return c.json({ success: true, id })
+})
+
+planning.patch('/bills/:id', zValidator('json', BillSchema.partial()), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const oldResult = await db.select().from(bills).where(and(eq(bills.id, id), eq(bills.householdId, householdId))).limit(1)
+  const old = oldResult[0]
+  if (!old) return c.json({ error: 'Not found' }, 404)
+
+  const updates: any = {}
+  if (data.name !== undefined) updates.name = data.name
+  if (data.amount_cents !== undefined) updates.amountCents = data.amount_cents
+  if (data.due_date !== undefined) updates.dueDate = data.due_date
+  if (data.status !== undefined) updates.status = data.status
+  if (data.notes !== undefined) updates.notes = data.notes
+  if (data.category_id !== undefined) updates.categoryId = data.category_id
+  if (data.account_id !== undefined) updates.accountId = data.account_id
+  if (data.is_recurring !== undefined) updates.isRecurring = data.is_recurring
+  if (data.frequency !== undefined) updates.frequency = data.frequency
+  
+  if (Object.keys(updates).length > 0) {
+    await db.update(bills).set(updates).where(and(eq(bills.id, id), eq(bills.householdId, householdId)))
+    await logAudit(c, 'bills', id, 'update', toSnake(old), data)
+  }
+
+  return c.json({ success: true })
+})
+
+planning.delete('/bills/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(bills).where(and(eq(bills.id, id), eq(bills.householdId, householdId)))
+  return c.json({ success: true })
+})
+
 planning.post('/subscriptions/:id/transfer', zValidator('json', OwnershipTransferSchema), async (c) => {
   const householdId = c.get('householdId')
   const id = c.req.param('id')
@@ -131,9 +275,42 @@ planning.post('/subscriptions/:id/transfer', zValidator('json', OwnershipTransfe
 // Installment Plans
 planning.get('/installment-plans', async (c) => {
   const householdId = c.get('householdId')
+  const user = c.get('user') as any
   const db = getDb(c.env)
-  const results = await db.select().from(installmentPlans).where(eq(installmentPlans.householdId, householdId))
-  return c.json(results.map(toSnake))
+  
+  const allInstallments = await db.select().from(installmentPlans).where(eq(installmentPlans.householdId, householdId))
+  const splits = await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'installment')))
+  
+  const results = allInstallments.map(inst => {
+    const userSplit = splits.find(s => s.targetId === inst.id && s.assignedUserId === user?.id)
+    if (userSplit) {
+       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter(s => s.targetId === inst.id) : undefined;
+       return {
+         ...toSnake(inst),
+         installment_amount_cents: userSplit.calculatedAmountCents,
+         next_payment_date: userSplit.overrideDate || inst.nextPaymentDate,
+         frequency: userSplit.overrideFrequency || inst.frequency,
+         is_split_portion: true,
+         split_id: userSplit.id,
+         splits: publicSplits ? publicSplits.map(toSnake) : undefined
+       }
+    }
+    
+    const originatedSplits = splits.filter(s => s.targetId === inst.id && s.originatorUserId === user?.id)
+    if (originatedSplits.length > 0) {
+      const remainingCents = inst.installmentAmountCents - originatedSplits.reduce((acc, curr) => acc + curr.calculatedAmountCents, 0)
+      return {
+        ...toSnake(inst),
+        installment_amount_cents: remainingCents,
+        is_split_originator: true,
+        splits: originatedSplits.map(toSnake)
+      }
+    }
+
+    return toSnake(inst)
+  })
+
+  return c.json(results)
 })
 
 planning.post('/installment-plans', zValidator('json', InstallmentPlanSchema), async (c) => {
@@ -297,7 +474,9 @@ planning.post('/pay-schedules', zValidator('json', PayScheduleSchema), async (c)
     frequency,
     nextPayDate: next_pay_date || null,
     estimatedAmountCents: estimated_amount_cents || null,
-    notes: notes || null
+    notes: notes || null,
+    semiMonthlyDay1: data.semi_monthly_day_1 || null,
+    semiMonthlyDay2: data.semi_monthly_day_2 || null,
   })
   
   await logAudit(c, 'pay_schedules', id, 'create', null, { name, frequency, estimated_amount_cents })
@@ -320,6 +499,8 @@ planning.patch('/pay-schedules/:id', zValidator('json', PayScheduleSchema.partia
   if (data.next_pay_date !== undefined) updates.nextPayDate = data.next_pay_date
   if (data.estimated_amount_cents !== undefined) updates.estimatedAmountCents = data.estimated_amount_cents
   if (data.notes !== undefined) updates.notes = data.notes
+  if (data.semi_monthly_day_1 !== undefined) updates.semiMonthlyDay1 = data.semi_monthly_day_1
+  if (data.semi_monthly_day_2 !== undefined) updates.semiMonthlyDay2 = data.semi_monthly_day_2
   
   if (Object.keys(updates).length > 0) {
     await db.update(paySchedules).set(updates).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))
@@ -477,5 +658,70 @@ planning.get('/templates', async (c) => {
 // Reminders
 planning.route('/reminders', remindersApi)
 
+
+// Liability Splits
+planning.post('/splits', zValidator('json', z.object({
+  splits: z.array(LiabilitySplitSchema)
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const user = c.get('user') as any
+  const { splits } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  for (const splitData of splits) {
+    const id = crypto.randomUUID()
+    await db.insert(liabilitySplits).values({
+      id,
+      householdId,
+      targetId: splitData.target_id,
+      targetType: splitData.target_type,
+      originatorUserId: user.id,
+      assignedUserId: splitData.assigned_user_id,
+      splitType: splitData.split_type,
+      splitValue: splitData.split_value,
+      calculatedAmountCents: splitData.calculated_amount_cents,
+      overrideDate: splitData.override_date || null,
+      overrideFrequency: splitData.override_frequency || null,
+      status: splitData.status || 'pending',
+      isMasterLedgerPublic: splitData.is_master_ledger_public || false
+    })
+    
+    // Create System Announcement Notification
+    if (user.id !== splitData.assigned_user_id) {
+       await db.insert(systemAnnouncements).values({
+         id: crypto.randomUUID(),
+         title: `You've been assigned a split liability`,
+         contentMd: `A user has assigned a \${(splitData.calculated_amount_cents / 100).toFixed(2)} portion of a \${splitData.target_type} to you. It will now appear on your Lifecycle projection.`,
+         priority: 'info',
+         actorId: splitData.assigned_user_id,
+         isActive: 1
+       })
+    }
+  }
+
+  return c.json({ success: true })
+})
+
+planning.patch('/splits/:targetType/:targetId/public', zValidator('json', z.object({
+  is_public: z.boolean()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const user = c.get('user') as any
+  const targetType = c.req.param('targetType')
+  const targetId = c.req.param('targetId')
+  const { is_public } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  await db.update(liabilitySplits)
+    .set({ isMasterLedgerPublic: is_public })
+    .where(and(
+      eq(liabilitySplits.householdId, householdId),
+      eq(liabilitySplits.targetType, targetType),
+      eq(liabilitySplits.targetId, targetId),
+      eq(liabilitySplits.originatorUserId, user.id)
+    ))
+
+  return c.json({ success: true })
+})
 
 export default planning

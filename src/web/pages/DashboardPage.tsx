@@ -25,6 +25,10 @@ import { GuidedTour } from '../components/GuidedTour';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { CalendarEntryModal } from '../components/CalendarEntryModal'
+import { BillsList } from '../components/BillsList'
+import { InstallmentsList } from '../components/InstallmentsList'
+import { PayCycleTimeline } from '../components/PayCycleTimeline'
+import { projectPaydays } from '../utils/payCycleUtils'
 import { AlertTriangle, Info, Bell, XCircle } from 'lucide-react';
 
 
@@ -34,6 +38,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: transactions, mutate: mutateTx } = useApi('/api/financials/transactions')
   const { data: subscriptions, mutate: mutateSubs } = useApi('/api/planning/subscriptions')
   const { data: paySchedules, mutate: mutateSchedules } = useApi('/api/planning/pay-schedules')
+  const { data: bills, mutate: mutateBills } = useApi('/api/planning/bills')
   const { data: templates } = useApi('/api/planning/templates')
   const [timeframe, setTimeframe] = useState('paycheck')
   const { data: analysis } = useApi(`/api/data/analysis/summary?timeframe=${timeframe}`)
@@ -41,6 +46,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: forecast } = useApi('/api/data/analysis/forecast')
   const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
   const { data: announcements, mutate: mutateAnnouncements } = useApi('/api/pcc/announcements')
+  const { data: installments, mutate: mutateInstallments } = useApi('/api/planning/installment-plans')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -78,11 +84,18 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'activity', label: 'Activity', icon: '💸' },
-    { id: 'planning', label: 'Planning', icon: '🍱' },
-    { id: 'insights', label: 'Insights', icon: '🧠' }
+    { id: 'overview', label: 'Wallet', icon: '💰' },
+    { id: 'insights', label: 'Advisor', icon: '🤖' },
+    { id: 'planning', label: 'Lifecycle', icon: '🗓️' },
   ]
+
+  const projectedPaydays = React.useMemo(() => {
+    if (!paySchedules) return [];
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+    return projectPaydays(paySchedules, start, end);
+  }, [paySchedules]);
 
   const handleDeposit = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/deposit`, {
@@ -153,7 +166,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const handleCalendarSave = async (data: any) => {
     const isNew = !data.id
-    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/bills' : data.type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
     const method = isNew ? 'POST' : 'PATCH'
     const url = isNew ? endpoint : `${endpoint}/${data.id}`
     
@@ -169,10 +182,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         }
     } else if (data.type === 'bill') {
         payload = {
-            name: data.description,
+            name: data.name,
             amount_cents: data.amount_cents,
-            next_billing_date: data.date,
-            status: 'active'
+            due_date: data.due_date,
+            status: data.status,
+            notes: data.notes,
+            is_recurring: data.is_recurring,
+            frequency: data.frequency
         }
     } else {
         payload = {
@@ -194,7 +210,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     })
     
     if (data.type === 'pay_schedule') mutateSchedules()
-    else if (data.type === 'bill') mutateSubs()
+    else if (data.type === 'bill') mutateBills()
+    else if (data.type === 'subscription') mutateSubs()
     else mutateTx()
     
     setIsCalendarModalOpen(false)
@@ -209,7 +226,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const confirmCalendarDelete = async () => {
     if (!deletePending) return
     const { id, type } = deletePending
-    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
     
     await fetch(`${import.meta.env.VITE_API_URL}${endpoint}/${id}`, {
       method: 'DELETE',
@@ -220,6 +237,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     })
     
     if (type === 'pay_schedule') mutateSchedules()
+    else if (type === 'bill') mutateBills()
     else if (type === 'subscription') mutateSubs()
     else mutateTx()
     
@@ -514,20 +532,24 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold">Cash Flow Calendar</h3>
               </div>
-              <Calendar 
-                transactions={transactions || []} 
-                subscriptions={subscriptions || []}
-                paySchedules={paySchedules || []}
-                onDayClick={(date) => {
-                  setSelectedCalendarDate(date)
-                  setSelectedCalendarItem(null)
-                  setIsCalendarModalOpen(true)
-                }}
-                onItemClick={(item) => {
-                  setSelectedCalendarItem(item)
-                  setIsCalendarModalOpen(true)
-                }}
-              />
+              {view === 'calendar' && (
+                <Calendar 
+                  transactions={transactions || []} 
+                  subscriptions={subscriptions || []} 
+                  bills={bills || []}
+                  installments={installments || []}
+                  paySchedules={projectedPaydays}
+                  onDayClick={(date) => {
+                    setSelectedCalendarDate(date)
+                    setSelectedCalendarItem(null)
+                    setIsCalendarModalOpen(true)
+                  }}
+                  onItemClick={(item) => {
+                    setSelectedCalendarItem(item)
+                    setIsCalendarModalOpen(true)
+                  }}
+                />
+              )}
             </section>
 
             <div className="dashboard-grid stagger">
@@ -578,9 +600,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
               </section>
 
+              <PayCycleTimeline paydays={projectedPaydays} liabilities={[...(subscriptions || []), ...(bills || []), ...(installments || [])]} />
               <SavingsBuckets />
               <BudgetProgress />
               <TransferForm />
+              <BillsList />
+              <InstallmentsList />
               <Subscriptions />
               <WhatIfLedger />
             </div>

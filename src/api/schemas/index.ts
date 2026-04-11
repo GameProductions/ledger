@@ -64,7 +64,34 @@ export const PayScheduleSchema = z.object({
   frequency: z.enum(['weekly', 'biweekly', 'semi-monthly', 'monthly']),
   next_pay_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   estimated_amount_cents: z.number().int().positive().optional().nullable(),
-  notes: z.string().max(1000).optional().nullable()
+  notes: z.string().max(1000).optional().nullable(),
+  semi_monthly_day_1: z.number().int().min(1).max(31).optional().nullable(),
+  semi_monthly_day_2: z.number().int().min(1).max(31).optional().nullable(),
+})
+
+export const BillSchema = z.object({
+  name: z.string().min(1).max(100),
+  amount_cents: z.number().int().positive(),
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  status: z.enum(['unpaid', 'paid', 'pending']).optional().default('unpaid'),
+  notes: z.string().max(1000).optional().nullable(),
+  category_id: z.string().optional().nullable(),
+  account_id: z.string().optional().nullable(),
+  is_recurring: z.boolean().optional().default(false),
+  frequency: z.string().optional().nullable(),
+})
+
+export const LiabilitySplitSchema = z.object({
+  target_id: z.string(),
+  target_type: z.enum(['bill', 'subscription', 'installment']),
+  assigned_user_id: z.string(),
+  split_type: z.enum(['percentage', 'fixed']),
+  split_value: z.number().int().positive(),
+  calculated_amount_cents: z.number().int().positive(),
+  override_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  override_frequency: z.string().optional().nullable(),
+  status: z.enum(['pending', 'paid', 'overdue']).optional().default('pending'),
+  is_master_ledger_public: z.boolean().optional().default(false),
 })
 
 export const CreditCardSchema = z.object({

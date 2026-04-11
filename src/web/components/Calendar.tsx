@@ -4,13 +4,17 @@ import { Price } from './Price'
 interface CalendarProps {
   transactions: any[];
   subscriptions?: any[];
+  bills?: any[];
+  installments?: any[];
   paySchedules?: any[];
   onDayClick: (date: Date) => void;
   onItemClick: (item: any) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], paySchedules = [], onDayClick, onItemClick }) => {
+const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], bills = [], installments = [], paySchedules = [], onDayClick, onItemClick }) => {
   const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [hoverItem, setHoverItem] = React.useState<any>(null);
+  const [hoverPos, setHoverPos] = React.useState<{ x: number, y: number }>({ x: 0, y: 0 });
   
   const month = currentDate.getMonth();
   const year = currentDate.getFullYear();
@@ -31,15 +35,25 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
       return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
     }).map(tx => ({ ...tx, type: 'transaction' }));
 
-    const dayBills = (Array.isArray(subscriptions) ? subscriptions : []).filter(sub => {
-      const d = new Date(sub.next_billing_date);
-      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
-    }).map(sub => ({ ...sub, type: 'subscription', description: sub.name }));
+    const dayBills = (Array.isArray(subscriptions) ? subscriptions : [])
+      .concat(Array.isArray(bills) ? bills : [])
+      .concat(Array.isArray(installments) ? installments : [])
+      .filter(sub => {
+        const dateStr = sub.next_billing_date || sub.due_date || sub.next_payment_date;
+        if (!dateStr) return false;
+        const d = new Date(dateStr);
+        return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    }).map(sub => ({ 
+        ...sub, 
+        type: sub.due_date ? 'bill' : sub.next_payment_date ? 'installment' : 'subscription', 
+        description: sub.name, 
+        amount_cents: sub.amount_cents || sub.installment_amount_cents 
+    }));
 
     const dayPays = (Array.isArray(paySchedules) ? paySchedules : []).filter(pay => {
-      const d = pay.next_pay_date ? new Date(pay.next_pay_date) : null;
+      const d = pay.date ? new Date(pay.date) : pay.next_pay_date ? new Date(pay.next_pay_date) : null;
       return d && d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
-    }).map(pay => ({ ...pay, type: 'pay_schedule', description: `${pay.name}`, amount_cents: pay.estimated_amount_cents || 0 }));
+    }).map(pay => ({ ...pay, type: 'pay_schedule', description: `${pay.name}`, amount_cents: pay.amount_cents || pay.estimated_amount_cents || 0 }));
 
     return [...dayPays, ...dayBills, ...dayTxs];
   };
@@ -116,7 +130,7 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
                 {dayItems.length > 0 ? (
                    <div className="flex gap-1">
                      {dayItems.some(i => i.type === 'pay_schedule') && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>}
-                     {dayItems.some(i => i.type === 'subscription') && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>}
+                     {(dayItems.some(i => i.type === 'subscription') || dayItems.some(i => i.type === 'installment')) && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>}
                      {dayItems.some(i => i.type === 'transaction') && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>}
                    </div>
                 ) : (
@@ -134,15 +148,25 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
                   <div 
                     key={`${item.type}-${item.id}`} 
                     onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
-                    className={`text-xs p-2 rounded-xl truncate font-bold border transition-all hover:brightness-125 ${
+                    onMouseEnter={(e) => {
+                       if (item.notes || item.note) {
+                           setHoverItem(item);
+                           setHoverPos({ x: e.clientX, y: e.clientY });
+                       }
+                    }}
+                    onMouseLeave={() => setHoverItem(null)}
+                    className={`text-[10px] p-1.5 rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between gap-1 ${
                       item.type === 'pay_schedule'
                         ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                        : item.type === 'subscription' 
+                        : (item.type === 'subscription' || item.type === 'bill' || item.type === 'installment')
                           ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
                           : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     }`}
                   >
-                    <Price amountCents={item.amount_cents} options={{ minimumFractionDigits: 0 }} /> {item.description}
+                    <span className="truncate flex items-center gap-1">
+                        <Price amountCents={item.amount_cents} options={{ minimumFractionDigits: 0 }} /> {item.description}
+                    </span>
+                    {(item.notes || item.note) && <span className="text-[8px] animate-pulse">📝</span>}
                   </div>
                 ))}
                 {dayItems.length > 3 && (
@@ -155,6 +179,25 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], p
           );
         })}
       </div>
+
+      {hoverItem && (
+        <div 
+          className="fixed z-[9999] pointer-events-none p-4 rounded-2xl bg-black/60 backdrop-blur-2xl border border-white/10 shadow-2xl transition-all animate-in fade-in zoom-in duration-200"
+          style={{ 
+            left: `${hoverPos.x + 10}px`, 
+            top: `${hoverPos.y + 10}px`,
+            maxWidth: '240px'
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`w-2 h-2 rounded-full ${hoverItem.type === 'pay_schedule' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/50">{hoverItem.description}</h4>
+          </div>
+          <p className="text-[11px] font-bold text-white leading-relaxed italic border-l-2 border-primary/40 pl-3">
+            "{hoverItem.notes || hoverItem.note}"
+          </p>
+        </div>
+      )}
     </div>
   );
 };

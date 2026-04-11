@@ -98,6 +98,8 @@ export const paySchedules = sqliteTable('pay_schedules', {
   nextPayDate: text('next_pay_date'),
   estimatedAmountCents: integer('estimated_amount_cents'),
   notes: text('notes'),
+  semiMonthlyDay1: integer('semi_monthly_day_1'),
+  semiMonthlyDay2: integer('semi_monthly_day_2'),
 });
 
 export const transactions = sqliteTable('transactions', {
@@ -145,6 +147,44 @@ export const subscriptions = sqliteTable('subscriptions', {
   ownerId: text('owner_id').references(() => users.id),
 }, (table) => ({
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
+}));
+
+export const bills = sqliteTable('bills', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  name: text('name').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  dueDate: text('due_date').notNull(),
+  status: text('status').default('unpaid'), // unpaid, paid, pending
+  notes: text('notes'),
+  categoryId: text('category_id').references(() => categories.id),
+  accountId: text('account_id').references(() => accounts.id),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  frequency: text('frequency'), // weekly, monthly, etc
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_bills_household').on(table.householdId),
+}));
+
+export const liabilitySplits = sqliteTable('liability_splits', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  targetId: text('target_id').notNull(),
+  targetType: text('target_type').notNull(), // 'bill', 'subscription', 'installment'
+  originatorUserId: text('originator_user_id').notNull().references(() => users.id),
+  assignedUserId: text('assigned_user_id').notNull().references(() => users.id),
+  splitType: text('split_type').notNull(), // 'percentage', 'fixed'
+  splitValue: integer('split_value').notNull(), // percentage amount or exact cents depending on splitType
+  calculatedAmountCents: integer('calculated_amount_cents').notNull(),
+  overrideDate: text('override_date'),
+  overrideFrequency: text('override_frequency'),
+  status: text('status').default('pending'), // 'pending', 'paid', 'overdue'
+  isMasterLedgerPublic: integer('is_master_ledger_public', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  targetIdx: index('idx_liability_splits_target').on(table.targetType, table.targetId),
+  assignedUserIdx: index('idx_liability_splits_assigned').on(table.assignedUserId),
 }));
 
 export const reminders = sqliteTable('reminders', {

@@ -147,6 +147,25 @@ export const subscriptions = sqliteTable('subscriptions', {
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));
 
+export const reminders = sqliteTable('reminders', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  userId: text('user_id').notNull().references(() => users.id),
+  targetId: text('target_id').notNull(),
+  targetType: text('target_type').notNull(), // 'subscription', 'installment_plan', 'pay_schedule', 'credit_card_statement'
+  deliveryType: text('delivery_type').notNull(), // 'discord_dm', 'discord_webhook', 'email', 'in_app'
+  deliveryTarget: text('delivery_target'), // contains webhook URL or Discord User ID 
+  frequencyDays: integer('frequency_days').notNull(), // exact days before the bill date (e.g., 3)
+  timeOfDay: text('time_of_day').default('09:00'), // Customizable time of day (UTC/Local)
+  note: text('note'), 
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  lastSentAt: text('last_sent_at'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  targetIdx: index('idx_reminders_target').on(table.targetType, table.targetId),
+  userIdx: index('idx_reminders_user').on(table.userId)
+}));
+
 export const holidays = sqliteTable('holidays', {
   id: text('id').primaryKey(),
   date: text('date').notNull(),

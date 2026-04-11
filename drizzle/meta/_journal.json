@@ -43,6 +43,13 @@
       "when": 1775805884426,
       "tag": "0005_typical_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1775898511945,
+      "tag": "0006_clear_obadiah_stane",
+      "breakpoints": true
     }
   ]
 }

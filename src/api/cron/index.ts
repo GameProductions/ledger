@@ -2,7 +2,7 @@ import { Bindings } from '../types'
 import { SchedulingService } from '../services/scheduling.service'
 import { decrypt } from '../utils'
 import { getDb } from '../db'
-import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory } from '../db/schema'
+import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules } from '../db/schema'
 import { eq, sql, lte, and } from 'drizzle-orm'
 
 const toSnake = (obj: any) => {
@@ -249,6 +249,106 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
       })
     }
   }
+
+  // 1.5 Process Universal Reminders
+  ctx.waitUntil((async () => {
+    try {
+      const activeReminders = await db.select().from(reminders).where(eq(reminders.isActive, true));
+
+      for (const reminder of activeReminders) {
+          let targetDateStr: string | null = null;
+          let itemName = 'Item';
+          let itemAmount = 0;
+
+          if (reminder.targetType === 'subscription') {
+              const res = await db.select().from(subscriptions).where(eq(subscriptions.id, reminder.targetId)).limit(1);
+              if (res[0]) {
+                  targetDateStr = res[0].nextBillingDate;
+                  itemName = res[0].name;
+                  itemAmount = res[0].amountCents;
+              }
+          } else if (reminder.targetType === 'installment_plan') {
+              const res = await db.select().from(installmentPlans).where(eq(installmentPlans.id, reminder.targetId)).limit(1);
+              if (res[0]) {
+                  targetDateStr = res[0].nextPaymentDate;
+                  itemName = res[0].name;
+                  itemAmount = res[0].installmentAmountCents;
+              }
+          } else if (reminder.targetType === 'pay_schedule') {
+              const res = await db.select().from(paySchedules).where(eq(paySchedules.id, reminder.targetId)).limit(1);
+              if (res[0]) {
+                  targetDateStr = res[0].nextPayDate;
+                  itemName = res[0].name;
+                  itemAmount = res[0].estimatedAmountCents || 0;
+              }
+          }
+
+          if (!targetDateStr) continue;
+
+          // Deduplication: Has it been sent today?
+          if (reminder.lastSentAt && reminder.lastSentAt.startsWith(nowIso.split('T')[0])) continue;
+
+          const targetDateObj = new Date(targetDateStr);
+          // Set to start of day for stable difference calculations
+          targetDateObj.setUTCHours(0,0,0,0);
+          const compareObj = new Date(now);
+          compareObj.setUTCHours(0,0,0,0);
+
+          const diffTime = targetDateObj.getTime() - compareObj.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays === reminder.frequencyDays || (reminder.frequencyDays === 0 && diffDays === 0)) {
+              
+              // Formatting
+              const amountStr = itemAmount ? `\nAmount: **$${(itemAmount / 100).toFixed(2)}**` : '';
+              const notesStr = reminder.note ? `\nNotes: ${reminder.note}` : '';
+              const daysStr = diffDays === 0 ? 'TODAY' : `in ${diffDays} days`;
+              const message = `🔔 **LEDGER Reminder**: You have an upcoming ${reminder.targetType.replace('_', ' ')} for **${itemName}** due ${daysStr}.${amountStr}${notesStr}`;
+
+              // Delivery Execution
+              if (reminder.deliveryType === 'discord_webhook' && reminder.deliveryTarget) {
+                  await fetch(reminder.deliveryTarget, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ content: message })
+                  });
+                  await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
+              } else if (reminder.deliveryType === 'discord_dm') {
+                  let discordId = reminder.deliveryTarget;
+                  if (!discordId) {
+                      const idRes = await db.select().from(userIdentities).where(and(eq(userIdentities.userId, reminder.userId), eq(userIdentities.provider, 'discord'))).limit(1);
+                      if (idRes[0]) discordId = idRes[0].providerUserId;
+                  }
+
+                  if (discordId && env.DISCORD_TOKEN) {
+                      const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+                          method: 'POST',
+                          headers: {
+                              'Authorization': `Bot ${env.DISCORD_TOKEN}`,
+                              'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({ recipient_id: discordId })
+                      });
+                      const dmChannel: any = await dmRes.json();
+                      if (dmChannel.id) {
+                          await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+                              method: 'POST',
+                              headers: {
+                                  'Authorization': `Bot ${env.DISCORD_TOKEN}`,
+                                  'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({ content: message })
+                          });
+                          await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
+                      }
+                  }
+              }
+          }
+      }
+    } catch (e: any) {
+        console.error('[Reminders] Failed to process universal reminders:', e.message);
+    }
+  })());
 
   // 2. Weekly Maintenance (Sundays) & Backups
   if (event.cron === "0 0 * * SUN" || event.cron === "0 0 * * *") {

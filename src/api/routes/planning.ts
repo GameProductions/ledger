@@ -464,6 +464,8 @@ planning.post('/budget/rollover', async (c) => {
   return c.json({ success: true, count: cats.length })
 })
 
+import remindersApi from './reminders'
+
 // Transaction Templates
 planning.get('/templates', async (c) => {
   const householdId = c.get('householdId')
@@ -471,5 +473,9 @@ planning.get('/templates', async (c) => {
   const results = await db.select().from(templates).where(eq(templates.householdId, householdId))
   return c.json(results.map(toSnake))
 })
+
+// Reminders
+planning.route('/reminders', remindersApi)
+
 
 export default planning

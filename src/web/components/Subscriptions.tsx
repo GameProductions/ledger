@@ -2,10 +2,11 @@ import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
-import { Link } from 'lucide-react'
+import { Link, Bell } from 'lucide-react'
 
 import { Price } from './Price'
 import { SearchableSelect } from './ui/SearchableSelect'
+import { ReminderManager } from './ReminderManager'
 
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -13,11 +14,20 @@ const Subscriptions: React.FC = () => {
   const { data: subs, loading, mutate } = useApi('/api/planning/subscriptions')
   const { data: linkedAccounts } = useApi('/api/user/linked-accounts')
   const [showAdd, setShowAdd] = useState(false)
+  const [reminderTarget, setReminderTarget] = useState<{id: string, name: string} | null>(null)
 
   if (loading) return <div>Loading subscriptions...</div>
 
   return (
     <section className="card">
+      {reminderTarget && (
+        <ReminderManager 
+          targetId={reminderTarget.id} 
+          targetType="subscription" 
+          targetName={reminderTarget.name} 
+          onClose={() => setReminderTarget(null)} 
+        />
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscription Manager</h3>
         <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
@@ -61,7 +71,7 @@ const Subscriptions: React.FC = () => {
                     label: acc.provider_name,
                     metadata: { email: acc.email_attached }
                   })) || []}
-                  value="" // Value managed by form usually, but for SearchableSelect we need a way to pass this.
+                  value="" 
                   onChange={(val) => {
                     const hiddenInput = document.getElementById('hidden-linked-account') as HTMLInputElement;
                     if (hiddenInput) hiddenInput.value = val;
@@ -105,11 +115,16 @@ const Subscriptions: React.FC = () => {
               <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }} className="mt-0.5 font-medium opacity-60">
                 {sub.is_trial ? `Trial Ends: ${sub.trial_end_date}` : `Due: ${sub.next_billing_date}`}
               </div>
-              {sub.provider_account_id && (
-                <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
-                   <Link size={10} /> Account Linked
-                </div>
-              )}
+              <div className="flex gap-2 mt-2">
+                {sub.provider_account_id && (
+                  <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
+                    <Link size={10} /> Account Linked
+                  </div>
+                )}
+                <button onClick={() => setReminderTarget({ id: sub.id, name: sub.name })} className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-primary transition-colors">
+                  <Bell size={10} /> Alerts
+                </button>
+              </div>
             </div>
             <div className="flex flex-col items-end">
               <Price amountCents={sub.amount_cents} className="font-black tracking-tighter text-lg" />

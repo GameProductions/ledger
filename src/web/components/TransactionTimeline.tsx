@@ -16,7 +16,7 @@ interface TransactionTimelineProps {
   transactionId: string;
   onActivity?: () => void;
 }
-const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transactionId, onActivity }) => {
+export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transactionId, onActivity }) => {
   const [entries, setEntries] = useState<TimelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');

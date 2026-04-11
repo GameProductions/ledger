@@ -94,6 +94,14 @@ export const LiabilitySplitSchema = z.object({
   is_master_ledger_public: z.boolean().optional().default(false),
 })
 
+export const PayExceptionSchema = z.object({
+  pay_schedule_id: z.string(),
+  original_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  override_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  override_amount_cents: z.number().int().optional().nullable(),
+  note: z.string().max(1000).optional().nullable()
+})
+
 export const CreditCardSchema = z.object({
   account_id: z.string(),
   credit_limit_cents: z.number().int().positive(),

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Price } from './Price';
 import { groupLiabilitiesByCycle } from '../utils/payCycleUtils';
-import { Wallet, ArrowRight, Calendar as CalendarIcon, AlertCircle } from 'lucide-react';
+import { Wallet, ArrowRight, Calendar as CalendarIcon, AlertCircle, MessageSquare, Shield } from 'lucide-react';
 import { format, parseISO, isAfter } from 'date-fns';
 
 interface PayCycleTimelineProps {
@@ -42,13 +42,30 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                     <div className="text-xs font-black uppercase tracking-widest text-blue-500 mb-1">
                       {format(parseISO(cycle.payday.date), 'EEEE, MMM do')}
                     </div>
-                    <h4 className="text-lg font-black italic tracking-tighter uppercase">{cycle.payday.name}</h4>
+                    <div className="flex items-center gap-2">
+                       <h4 className="text-lg font-black italic tracking-tighter uppercase">{cycle.payday.name}</h4>
+                       {cycle.payday.is_override && (
+                         <span className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-md">
+                           <Shield size={10} className="text-indigo-400" />
+                           <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400">Personal Override</span>
+                         </span>
+                       )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <Price amountCents={cycle.payday.amount_cents} className="text-2xl font-black tracking-tighter text-white" />
                     <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Estimated Deposit</div>
                   </div>
                 </div>
+
+                {cycle.payday.notes && (
+                  <div className="flex gap-3 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
+                    <MessageSquare size={14} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-indigo-200/60 italic leading-relaxed">
+                      {cycle.payday.notes}
+                    </p>
+                  </div>
+                )}
 
                 {/* Bills List for this cycle */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

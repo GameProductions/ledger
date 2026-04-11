@@ -27,6 +27,7 @@ import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { CalendarEntryModal } from '../components/CalendarEntryModal'
 import { BillsList } from '../components/BillsList'
 import { InstallmentsList } from '../components/InstallmentsList'
+import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
 import { projectPaydays } from '../utils/payCycleUtils'
 import { AlertTriangle, Info, Bell, XCircle } from 'lucide-react';
@@ -47,6 +48,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
   const { data: announcements, mutate: mutateAnnouncements } = useApi('/api/pcc/announcements')
   const { data: installments, mutate: mutateInstallments } = useApi('/api/planning/installment-plans')
+  const { data: payExceptions, mutate: mutateExceptions } = useApi('/api/planning/pay-exceptions')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -57,6 +59,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
   const [selectedCalendarItem, setSelectedCalendarItem] = useState<any>(null)
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>()
+  const [selectedPayday, setSelectedPayday] = useState<any | null>(null)
 
   const { data: budgetsData, mutate: mutateBudgets } = useApi('/api/planning/budgets')
   const [showFundModal, setShowFundModal] = useState(false)
@@ -94,8 +97,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 3, 0);
-    return projectPaydays(paySchedules, start, end);
-  }, [paySchedules]);
+    return projectPaydays(paySchedules, start, end, payExceptions);
+  }, [paySchedules, payExceptions]);
 
   const handleDeposit = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/deposit`, {
@@ -545,8 +548,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     setIsCalendarModalOpen(true)
                   }}
                   onItemClick={(item) => {
-                    setSelectedCalendarItem(item)
-                    setIsCalendarModalOpen(true)
+                    if (item.type === 'pay_schedule') {
+                      setSelectedPayday(item);
+                    } else {
+                      setSelectedCalendarItem(item)
+                      setIsCalendarModalOpen(true)
+                    }
                   }}
                 />
               )}
@@ -876,6 +883,16 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       >
         <p className="text-secondary text-sm font-medium">Are you sure you want to delete this entry? This action cannot be undone.</p>
       </Modal>
+      {selectedPayday && (
+        <PaydayExceptionModal 
+          payday={selectedPayday} 
+          isOpen={!!selectedPayday} 
+          onClose={() => setSelectedPayday(null)} 
+          onUpdate={() => {
+            mutateExceptions();
+          }} 
+        />
+      )}
     </MainLayout>
   )
 }

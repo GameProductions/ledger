@@ -102,6 +102,22 @@ export const paySchedules = sqliteTable('pay_schedules', {
   semiMonthlyDay2: integer('semi_monthly_day_2'),
 });
 
+export const payExceptions = sqliteTable('pay_exceptions', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  userId: text('user_id').notNull().references(() => users.id), // Forced privacy
+  payScheduleId: text('pay_schedule_id').notNull().references(() => paySchedules.id),
+  originalDate: text('original_date').notNull(), // The projected date this exception targets
+  overrideDate: text('override_date'),
+  overrideAmountCents: integer('override_amount_cents'),
+  note: text('note'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_pay_exceptions_household').on(table.householdId),
+  userIdx: index('idx_pay_exceptions_user').on(table.userId),
+  scheduleIdx: index('idx_pay_exceptions_schedule').on(table.payScheduleId),
+}));
+
 export const transactions = sqliteTable('transactions', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id),

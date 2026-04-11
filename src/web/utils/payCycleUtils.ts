@@ -1,17 +1,22 @@
 import { addWeeks, addDays, getDaysInMonth, setDate, isAfter, isBefore, startOfMonth, endOfMonth, parseISO, format } from 'date-fns';
 
 export interface PaydayInstance {
+  id?: string;
+  pay_schedule_id: string;
   date: string;
+  original_date: string;
   name: string;
   amount_cents: number;
   notes?: string;
   type: 'pay_schedule';
+  is_override?: boolean;
 }
 
 export const projectPaydays = (
   schedules: any[],
   viewStart: Date,
-  viewEnd: Date
+  viewEnd: Date,
+  exceptions: any[] = []
 ): PaydayInstance[] => {
   const instances: PaydayInstance[] = [];
 
@@ -44,12 +49,19 @@ export const projectPaydays = (
     
     while (isBefore(current, viewEnd) && iteration < maxIterations) {
       if (!isBefore(current, viewStart)) {
+        const dateStr = format(current, 'yyyy-MM-dd');
+        const exception = exceptions.find(ex => ex.pay_schedule_id === schedule.id && ex.original_date === dateStr);
+        
         instances.push({
-          date: format(current, 'yyyy-MM-dd'),
+          id: exception?.id,
+          pay_schedule_id: schedule.id,
+          date: exception?.override_date || dateStr,
+          original_date: dateStr,
           name: schedule.name,
-          amount_cents: amount,
-          notes: notes,
-          type: 'pay_schedule'
+          amount_cents: exception?.override_amount_cents ?? amount,
+          notes: exception?.note || notes,
+          type: 'pay_schedule',
+          is_override: !!exception
         });
       }
 

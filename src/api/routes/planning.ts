@@ -10,7 +10,8 @@ import {
   OwnershipTransferSchema,
   PayScheduleSchema,
   BillSchema,
-  LiabilitySplitSchema
+  LiabilitySplitSchema,
+  PayExceptionSchema
 } from '../schemas'
 import { logAudit } from '../utils'
 import { getDb } from '../db'
@@ -24,6 +25,7 @@ import {
   households,
   templates,
   paySchedules,
+  payExceptions,
   bills,
   liabilitySplits,
   systemAnnouncements
@@ -515,6 +517,72 @@ planning.delete('/pay-schedules/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   await db.delete(paySchedules).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))
+  return c.json({ success: true })
+})
+
+// Pay Exceptions (Private Notes & Overrides)
+planning.get('/pay-exceptions', async (c) => {
+  const householdId = c.get('householdId')
+  const user = c.get('user') as any
+  const db = getDb(c.env)
+  
+  const results = await db.select().from(payExceptions).where(and(
+    eq(payExceptions.householdId, householdId),
+    eq(payExceptions.userId, user.id)
+  ))
+  
+  return c.json(results.map(toSnake))
+})
+
+planning.post('/pay-exceptions', zValidator('json', PayExceptionSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  // Upsert logic: check if exception exists for this schedule + original_date + user
+  const existing = await db.select().from(payExceptions).where(and(
+    eq(payExceptions.householdId, householdId),
+    eq(payExceptions.userId, userId),
+    eq(payExceptions.payScheduleId, data.pay_schedule_id),
+    eq(payExceptions.originalDate, data.original_date)
+  )).limit(1)
+
+  if (existing[0]) {
+    await db.update(payExceptions).set({
+      overrideDate: data.override_date || null,
+      overrideAmountCents: data.override_amount_cents || null,
+      note: data.note || null
+    }).where(eq(payExceptions.id, existing[0].id))
+    return c.json({ success: true, id: existing[0].id })
+  } else {
+    const id = crypto.randomUUID()
+    await db.insert(payExceptions).values({
+      id,
+      householdId,
+      userId,
+      payScheduleId: data.pay_schedule_id,
+      originalDate: data.original_date,
+      overrideDate: data.override_date || null,
+      overrideAmountCents: data.override_amount_cents || null,
+      note: data.note || null
+    })
+    return c.json({ success: true, id })
+  }
+})
+
+planning.delete('/pay-exceptions/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  
+  await db.delete(payExceptions).where(and(
+    eq(payExceptions.id, id),
+    eq(payExceptions.householdId, householdId),
+    eq(payExceptions.userId, userId)
+  ))
+  
   return c.json({ success: true })
 })
 

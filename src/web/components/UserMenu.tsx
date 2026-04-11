@@ -5,6 +5,15 @@ import { useApi } from '../hooks/useApi'
 import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard } from 'lucide-react'
 import { Masked } from './ui/Masked'
 
+const sanitizeImageUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  // Allow relative paths, http://, or https://. Block javascript: etc.
+  if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('/') || url.startsWith('data:image/')) {
+    return url;
+  }
+  return undefined;
+};
+
 const UserMenu: React.FC<{ 
   view?: string, 
   setView?: (v: 'list'|'calendar') => void,
@@ -15,7 +24,7 @@ const UserMenu: React.FC<{
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'
-  const avatarUrl = profile?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isPcc ? [
     { icon: LayoutDashboard, label: 'Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },

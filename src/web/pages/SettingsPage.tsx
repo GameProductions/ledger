@@ -21,6 +21,14 @@ import { formatHumanError } from '../utils/error-handler'
 const rawApiUrl = import.meta.env.VITE_API_URL;
 const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
+const sanitizeImageUrl = (url: string | undefined): string | undefined => {
+  if (!url) return undefined;
+  if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('/') || url.startsWith('data:image/')) {
+    return url;
+  }
+  return undefined;
+};
+
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
   const { data: profile, mutate } = useApi('/api/user/profile')
@@ -64,7 +72,7 @@ const SettingsPage: React.FC = () => {
     }
   }, [profile])
 
-  const avatarUrl = profile?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   // -------------- HANDLERS --------------
 
@@ -257,7 +265,7 @@ const SettingsPage: React.FC = () => {
           <div className="relative group shrink-0">
             <div className="absolute -inset-6 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
             <img 
-              src={avatar || avatarUrl} 
+              src={sanitizeImageUrl(avatar) || avatarUrl} 
               alt="Profile" 
               className="w-32 h-32 rounded-full border-4 border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] group-hover:border-primary transition-all duration-500 relative z-10"
             />

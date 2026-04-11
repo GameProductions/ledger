@@ -18,7 +18,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ "${{ github.event_name }}" == "issues" ]]; then
-            gh issue edit ${{ github.event.issue.number }} --add-assignee morenicano
+            gh issue edit ${{ github.event.issue.number }} --repo ${{ github.repository }} --add-assignee morenicano
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            gh pr edit ${{ github.event.pull_request.number }} --add-assignee morenicano
+            gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --add-assignee morenicano
           fi

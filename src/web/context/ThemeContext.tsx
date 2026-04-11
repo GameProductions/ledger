@@ -109,7 +109,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const fetchBroadcast = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/theme/broadcast`);
+        const res = await fetch(`/api/theme/broadcast`);
         const data = await res.json();
         if (data.themeId) setBroadcastThemeId(data.themeId);
       } catch (e) {}

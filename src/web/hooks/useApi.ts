@@ -33,7 +33,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
         signal: abortControllerRef.current.signal,
         headers: {
           Authorization: `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
+          'x-household-id': (window.localStorage.getItem('ledger_household_id') || 'household-abc')
         }
       })
       

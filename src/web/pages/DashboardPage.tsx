@@ -29,7 +29,7 @@ import { AlertTriangle, Info, Bell, XCircle } from 'lucide-react';
 
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
-  const { user } = useAuth()
+  const { user, token, householdId } = useAuth()
   const { data: _accounts } = useApi('/api/financials/accounts')
   const { data: transactions, mutate: mutateTx } = useApi('/api/financials/transactions')
   const { data: subscriptions, mutate: mutateSubs } = useApi('/api/planning/subscriptions')
@@ -90,7 +90,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
       },
       body: JSON.stringify({ amount_cents: parseFloat(depositAmount) * 100 })
     })
@@ -106,7 +107,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
       },
       body: JSON.stringify({ 
         category_id: fundCategoryId,
@@ -126,7 +128,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const confirmRollover = async () => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/rollover`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      }
     })
     mutateBudgets()
     setIsRolloverModalOpen(false)
@@ -138,8 +143,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
       },
       body: JSON.stringify({ status: current ? 'none' : 'reconciled' })
     })
@@ -183,7 +188,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       method,
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
       },
       body: JSON.stringify(payload)
     })
@@ -208,7 +214,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     
     await fetch(`${import.meta.env.VITE_API_URL}${endpoint}/${id}`, {
       method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      }
     })
     
     if (type === 'pay_schedule') mutateSchedules()
@@ -468,18 +477,19 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 const amountInput = document.getElementById('qe-amount') as HTMLInputElement;
                 if(!descInput.value || !amountInput.value) return;
                 try {
-                  await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-                    },
-                    body: JSON.stringify({ 
-                      description: descInput.value, 
-                      amount_cents: Math.round(parseFloat(amountInput.value) * 100), 
-                      transaction_date: new Date().toISOString().split('T')[0], 
-                      status: 'none' 
-                    })
+                    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'x-household-id': householdId || ''
+                      },
+                      body: JSON.stringify({ 
+                        description: descInput.value, 
+                        amount_cents: Math.round(parseFloat(amountInput.value) * 100), 
+                        transaction_date: new Date().toISOString().split('T')[0], 
+                        status: 'none' 
+                      })
                   });
                   mutateTx();
                   descInput.value = '';
@@ -654,7 +664,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                             method: 'POST',
                             headers: { 
                               'Content-Type': 'application/json',
-                              'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+                              'Authorization': `Bearer ${token}`,
+                              'x-household-id': householdId || ''
                             },
                             body: JSON.stringify({ linkedToIds: [t.id] })
                           })
@@ -691,8 +702,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           method: 'POST',
                           headers: { 
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-                            'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
+                            'Authorization': `Bearer ${token}`,
+                            'x-household-id': householdId || ''
                           },
                           body: JSON.stringify({ linkedToIds: [t.id] })
                         })
@@ -725,8 +736,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     method: 'POST',
                     headers: { 
                       'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-                      'x-household-id': localStorage.getItem('ledger_household_id') || 'household-abc'
+                      'Authorization': `Bearer ${token}`,
+                      'x-household-id': householdId || ''
                     },
                     body: JSON.stringify({ targetId: 'all' })
                   })

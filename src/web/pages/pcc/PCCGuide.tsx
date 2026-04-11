@@ -13,7 +13,7 @@ interface Walkthrough {
 }
 
 const PCCGuide: React.FC = () => {
-  const { token } = useAuth();
+  const { token, householdId } = useAuth();
   const [walkthroughs, setWalkthroughs] = useState<Walkthrough[]>([]);
   const [selectedWalkthrough, setSelectedWalkthrough] = useState<Walkthrough | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,8 +21,11 @@ const PCCGuide: React.FC = () => {
   useEffect(() => {
     const fetchWalkthroughs = async () => {
       try {
-        const res = await fetch('/api/pcc/walkthroughs', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetch(`/api/pcc/walkthroughs`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          }
         });
         if (res.ok) {
           const data = await res.json();

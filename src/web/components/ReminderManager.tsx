@@ -11,6 +11,7 @@ interface ReminderManagerProps {
 }
 
 export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targetType, targetName, onClose }) => {
+  const { token, householdId } = useAuth()
   const { showToast } = useToast()
   const { data: reminders, loading, mutate } = useApi(`/api/planning/reminders/${targetType}/${targetId}`)
   const [showAdd, setShowAdd] = useState(false)
@@ -22,9 +23,8 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!token) return
     const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-    const token = localStorage.getItem('token')
-    const householdId = localStorage.getItem('householdId')
 
     const res = await fetch(`${apiUrl}/api/planning/reminders`, {
       method: 'POST',
@@ -55,9 +55,8 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
   }
 
   const handleDelete = async (id: string) => {
+    if (!token) return
     const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
-    const token = localStorage.getItem('token')
-    const householdId = localStorage.getItem('householdId')
 
     const res = await fetch(`${apiUrl}/api/planning/reminders/${id}`, {
       method: 'DELETE',

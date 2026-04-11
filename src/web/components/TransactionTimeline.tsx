@@ -16,16 +16,18 @@ interface TransactionTimelineProps {
   onActivity?: () => void;
 }
 
-export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transactionId, onActivity }) => {
-  const [entries, setEntries] = useState<TimelineEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newNote, setNewNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { token, householdId } = useAuth();
   const { showToast } = useToast();
 
   const fetchTimeline = async () => {
+    if (!token) return;
     try {
-      const res = await fetch(`/api/financials/transactions/${transactionId}/timeline`);
+      const res = await fetch(`/api/financials/transactions/${transactionId}/timeline`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': householdId || ''
+        }
+      });
       const data = await res.json();
       setEntries(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -37,15 +39,19 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
 
   useEffect(() => {
     fetchTimeline();
-  }, [transactionId]);
+  }, [transactionId, token, householdId]);
 
   const handleAddNote = async (type: 'note' | 'confirmation' = 'note') => {
-    if (!newNote.trim()) return;
+    if (!newNote.trim() || !token) return;
     setIsSubmitting(true);
     try {
       const res = await fetch(`/api/financials/transactions/${transactionId}/timeline`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': householdId || ''
+        },
         body: JSON.stringify({ type, content: newNote.trim() })
       });
       if (res.ok) {

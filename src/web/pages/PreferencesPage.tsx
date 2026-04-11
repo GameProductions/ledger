@@ -6,7 +6,7 @@ import ThemeSwitcher from '../components/ThemeSwitcher'
 import { MainLayout } from '../components/layout/MainLayout'
 
 const PreferencesPage: React.FC = () => {
-  const { token } = useAuth()
+  const { token, householdId } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
   const settings = JSON.parse(profile?.settings_json || '{}')
 
@@ -16,7 +16,8 @@ const PreferencesPage: React.FC = () => {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
       },
       body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
     })

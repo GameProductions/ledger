@@ -72,6 +72,19 @@ export const projectPaydays = (
           current = addMonths(current, 1);
           current = setDate(current, Math.min(day, getDaysInMonth(current)));
       }
+      else if (frequency === 'quarterly') {
+          const day = current.getDate();
+          current = addMonths(current, 3);
+          current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      }
+      else if (frequency === 'annually') {
+          const day = current.getDate();
+          current = addMonths(current, 12);
+          current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      }
+      else if (frequency === 'manual') {
+          break; // Don't repeat
+      }
       else if (frequency === 'semi-monthly') {
           // Handle semi-monthly logic
           const d1 = schedule.semi_monthly_day_1 || 1;

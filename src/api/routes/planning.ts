@@ -465,20 +465,21 @@ planning.get('/pay-schedules', async (c) => {
 
 planning.post('/pay-schedules', zValidator('json', PayScheduleSchema), async (c) => {
   const householdId = c.get('householdId')
-  const { name, frequency, next_pay_date, estimated_amount_cents, notes } = c.req.valid('json')
+  const { name, frequency, next_pay_date, estimated_amount_cents, notes, semi_monthly_day_1, semi_monthly_day_2, user_id } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   
   await db.insert(paySchedules).values({
     id,
     householdId,
+    userId: user_id || c.get('userId'),
     name,
     frequency,
     nextPayDate: next_pay_date || null,
     estimatedAmountCents: estimated_amount_cents || null,
     notes: notes || null,
-    semiMonthlyDay1: data.semi_monthly_day_1 || null,
-    semiMonthlyDay2: data.semi_monthly_day_2 || null,
+    semiMonthlyDay1: semi_monthly_day_1 || null,
+    semiMonthlyDay2: semi_monthly_day_2 || null,
   })
   
   await logAudit(c, 'pay_schedules', id, 'create', null, { name, frequency, estimated_amount_cents })
@@ -503,6 +504,7 @@ planning.patch('/pay-schedules/:id', zValidator('json', PayScheduleSchema.partia
   if (data.notes !== undefined) updates.notes = data.notes
   if (data.semi_monthly_day_1 !== undefined) updates.semiMonthlyDay1 = data.semi_monthly_day_1
   if (data.semi_monthly_day_2 !== undefined) updates.semiMonthlyDay2 = data.semi_monthly_day_2
+  if (data.user_id !== undefined) updates.userId = data.user_id
   
   if (Object.keys(updates).length > 0) {
     await db.update(paySchedules).set(updates).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))

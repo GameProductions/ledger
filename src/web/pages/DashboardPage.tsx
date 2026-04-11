@@ -27,6 +27,7 @@ import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { CalendarEntryModal } from '../components/CalendarEntryModal'
 import { BillsList } from '../components/BillsList'
 import { InstallmentsList } from '../components/InstallmentsList'
+import { PaySchedulesList } from '../components/PaySchedulesList'
 import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
 import { projectPaydays } from '../utils/payCycleUtils'
@@ -606,6 +607,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   )) : <p className="text-sm text-secondary italic opacity-50 px-2 py-4">No budget envelopes found.</p>}
                 </div>
               </section>
+              
+              <PaySchedulesList />
 
               <PayCycleTimeline paydays={projectedPaydays} liabilities={[...(subscriptions || []), ...(bills || []), ...(installments || [])]} />
               <SavingsBuckets />

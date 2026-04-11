@@ -93,8 +93,9 @@ export const categories = sqliteTable('categories', {
 export const paySchedules = sqliteTable('pay_schedules', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id),
+  userId: text('user_id').references(() => users.id), // Added Ownership
   name: text('name').notNull(),
-  frequency: text('frequency', { enum: ['weekly', 'biweekly', 'semi-monthly', 'monthly'] }).notNull(),
+  frequency: text('frequency', { enum: ['weekly', 'biweekly', 'semi-monthly', 'monthly', 'quarterly', 'annually', 'manual'] }).notNull(),
   nextPayDate: text('next_pay_date'),
   estimatedAmountCents: integer('estimated_amount_cents'),
   notes: text('notes'),

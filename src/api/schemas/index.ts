@@ -61,12 +61,13 @@ export const SubscriptionSchema = z.object({
 
 export const PayScheduleSchema = z.object({
   name: z.string().min(1).max(100),
-  frequency: z.enum(['weekly', 'biweekly', 'semi-monthly', 'monthly']),
+  frequency: z.enum(['weekly', 'biweekly', 'semi-monthly', 'monthly', 'quarterly', 'annually', 'manual']),
   next_pay_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   estimated_amount_cents: z.number().int().positive().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   semi_monthly_day_1: z.number().int().min(1).max(31).optional().nullable(),
   semi_monthly_day_2: z.number().int().min(1).max(31).optional().nullable(),
+  user_id: z.string().optional().nullable(),
 })
 
 export const BillSchema = z.object({

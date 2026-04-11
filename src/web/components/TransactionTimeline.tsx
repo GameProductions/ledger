@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, MessageSquare, Hash, Activity, Send } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 interface TimelineEntry {
   id: string;
@@ -15,7 +16,11 @@ interface TransactionTimelineProps {
   transactionId: string;
   onActivity?: () => void;
 }
-
+const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transactionId, onActivity }) => {
+  const [entries, setEntries] = useState<TimelineEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newNote, setNewNote] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { token, householdId } = useAuth();
   const { showToast } = useToast();
 

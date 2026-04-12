@@ -364,7 +364,8 @@ button.primary:hover {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  width: 100%;
+  width: 92%;
+  margin: 0 auto;
 }
 
 @media (min-width: 768px) {
@@ -388,9 +389,6 @@ button.primary:hover {
 
 .dashboard-span-full, .dashboard-full-width {
   grid-column: 1 / -1 !important;
-  width: 92% !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
 }
 
 /* Ensure controls are contained */

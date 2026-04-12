@@ -58,8 +58,8 @@ app.use('*', (c, next) => {
   // All other routes (POST/PATCH/DELETE) are now CSRF-protected
   return csrf()(c, next)
 })
- Riverside Fix: The previous logic skipped CSRF for all /api/ and /auth/ routes.
- State-changing operations are now strictly validated globally.
+// Riverside Fix: The previous logic skipped CSRF for all /api/ and /auth/ routes.
+// State-changing operations are now strictly validated globally.
 
 // 5. Rate Limiting (Persistent via Durable Objects)
 app.use('*', async (c, next) => {

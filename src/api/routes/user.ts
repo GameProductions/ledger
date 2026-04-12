@@ -85,6 +85,7 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
   
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
+    await logAudit(c, 'users', userId, 'UPDATE', null, updates)
   }
   
   return c.json({ success: true, message: 'Profile updated' })

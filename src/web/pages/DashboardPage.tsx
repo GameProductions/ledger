@@ -19,6 +19,7 @@ import { Price } from '../components/Price'
 import FutureFlow from '../components/FutureFlow'
 import GoalSeek from '../components/GoalSeek'
 import SavingsBuckets from '../components/SavingsBuckets'
+import { TransactionLedger } from '../components/TransactionLedger'
 import { MainLayout } from '../components/layout/MainLayout'
 import { Modal } from '../components/ui/Modal';
 import { GuidedTour } from '../components/GuidedTour';
@@ -36,6 +37,7 @@ import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings
 const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
   overview: [
     { id: 'calendar', visible: true },
+    { id: 'transaction-ledger', visible: true },
     { id: 'safe-to-spend', visible: true }
   ],
   activity: [
@@ -347,6 +349,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
             </section>
       );
+      case 'transaction-ledger': return (
+        <TransactionLedger key="transaction-ledger" />
+      )
       case 'safe-to-spend': return (
             <section key="safe-to-spend" className="card">
               <div className="flex justify-between items-center mb-4">

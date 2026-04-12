@@ -34,19 +34,22 @@ export class Vault {
 
   async fetch(request: Request) {
     const url = new URL(request.url)
-    const householdId = url.searchParams.get('householdId')
-    const key = `vault:${householdId}`
+    const householdId = url.searchParams.get('householdId') || request.headers.get('x-household-id')
+    
+    if (!householdId) {
+      return new Response('Household Context Required', { status: 400 })
+    }
+    
+    const vaultKey = `vault:${householdId}`
 
     if (request.method === 'PUT') {
       const { data } = await request.json() as any
-      await this.state.storage.put(key, data)
+      await this.state.storage.put(vaultKey, data)
       return new Response(JSON.stringify({ success: true }))
     }
 
     if (request.method === 'GET') {
-      const key = url.searchParams.get('key')
-      if (!key) return new Response('Key required', { status: 400 })
-      const value = await this.state.storage.get(key)
+      const value = await this.state.storage.get(vaultKey)
       return new Response(JSON.stringify({ value }))
     }
 
@@ -74,8 +77,31 @@ export class RateLimiter {
     }
     
     await this.state.storage.put(key, current + 1)
+
+    // Schedule cleanup alarm for 2 minutes from now, if not already scheduled
+    const currentAlarm = await this.state.storage.getAlarm()
+    if (!currentAlarm) {
+      await this.state.storage.setAlarm(Date.now() + 120000)
+    }
+
     return new Response(JSON.stringify({ remaining: limit - current - 1 }), { 
       headers: { 'X-RateLimit-Limit': limit.toString(), 'X-RateLimit-Remaining': (limit - current - 1).toString() } 
     })
+  }
+
+  async alarm() {
+    const currentMinute = Math.floor(Date.now() / 60000)
+    const map = await this.state.storage.list()
+    
+    for (const key of map.keys()) {
+      const parts = key.split(':')
+      if (parts.length > 1) {
+        const windowMinute = parseInt(parts[parts.length - 1], 10)
+        // Delete if older than 2 minutes
+        if (windowMinute < currentMinute - 1) {
+          await this.state.storage.delete(key)
+        }
+      }
+    }
   }
 }

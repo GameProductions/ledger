@@ -134,11 +134,28 @@ export const transactions = sqliteTable('transactions', {
   confirmationNumber: text('confirmation_number'),
   linkedTransactionId: text('linked_transaction_id'),
   reconciliationStatus: text('reconciliation_status').default('unreconciled'),
+  notes: text('notes'),
+  rawDescription: text('raw_description'),
+  parentId: text('parent_id'),
+  providerId: text('provider_id').references(() => serviceProviders.id),
+  billId: text('bill_id').references(() => bills.id),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
   accountIdx: index('idx_transactions_account').on(table.accountId),
   categoryIdx: index('idx_transactions_category').on(table.categoryId),
+  parentIdx: index('idx_transactions_parent').on(table.parentId),
+  providerIdx: index('idx_transactions_provider').on(table.providerId),
 }));
+
+export const transactionPairingRules = sqliteTable('transaction_pairing_rules', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  pattern: text('pattern').notNull(),
+  targetProviderId: text('target_provider_id').references(() => serviceProviders.id),
+  targetCategoryId: text('target_category_id').references(() => categories.id),
+  autoConfirm: integer('auto_confirm', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
 
 export const sharedBalances = sqliteTable('shared_balances', {
   id: text('id').primaryKey(),

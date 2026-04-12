@@ -433,7 +433,10 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
     
   await db.batch([addPayment, updateBalance])
   
-  // 3. Send Receipt (Wait Until)
+  // 3. Log Audit
+  await logAudit(c, 'personal_loans', loanId, 'ADD_PAYMENT', null, { payment_id: id, amount_cents: data.amount_cents })
+
+  // 4. Send Receipt (Wait Until)
   if (c.env.RESEND_API_KEY && data.email) {
     c.executionCtx.waitUntil(
       fetch('https://api.resend.com/emails', {
@@ -519,6 +522,7 @@ planning.delete('/pay-schedules/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   await db.delete(paySchedules).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))
+  await logAudit(c, 'pay_schedules', id, 'delete')
   return c.json({ success: true })
 })
 
@@ -651,6 +655,8 @@ planning.post('/budget/fund', zValidator('json', z.object({
     db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${amount_cents}` }).where(and(eq(categories.id, category_id), eq(categories.householdId, householdId)))
   ])
 
+  await logAudit(c, 'categories', category_id, 'FUND_ENVELOPE', null, { amount_cents })
+
   return c.json({ success: true })
 })
 
@@ -663,6 +669,8 @@ planning.post('/budget/deposit', zValidator('json', z.object({
   const db = getDb(c.env)
 
   await db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents + ${amount_cents}` }).where(eq(households.id, householdId))
+
+  await logAudit(c, 'households', householdId, 'DEPOSIT_FUNDS', null, { amount_cents })
 
   return c.json({ success: true })
 })
@@ -680,6 +688,12 @@ planning.post('/budget/transfer', zValidator('json', z.object({
     db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents - ${amount_cents}` }).where(and(eq(categories.id, from_category_id), eq(categories.householdId, householdId))),
     db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${amount_cents}` }).where(and(eq(categories.id, to_category_id), eq(categories.householdId, householdId)))
   ])
+
+  await logAudit(c, 'categories', 'TRANSFER', 'TRANSFER_ENVELOPE', null, { 
+    from: from_category_id, 
+    to: to_category_id, 
+    amount_cents 
+  })
 
   return c.json({ success: true })
 })

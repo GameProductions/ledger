@@ -118,7 +118,7 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
 
   for (const conn of connections) {
     try {
-      const token = await decrypt(conn.accessToken, env.ENCRYPTION_KEY)
+      const token = await decrypt(conn.accessToken, env.ENCRYPTION_KEY || env.JWT_SECRET)
       if (token === 'DECRYPTION_FAILED') {
         throw new Error('Token decryption failed')
       }

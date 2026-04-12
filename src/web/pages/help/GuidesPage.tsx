@@ -40,6 +40,12 @@ export const GuidesPage: React.FC = () => {
       duration: '10 min read',
       icon: <RefreshCw size={20} className="text-emerald-400" />,
       topics: ['Variable Recurrences', 'Subscription Detection', 'Cron Patterns']
+    },
+    {
+      title: 'Mastering the Ledger: Splitting & Smart Matching',
+      duration: '7 min read',
+      icon: <Zap size={20} className="text-purple-400" />,
+      topics: ['Splitting Receipts', 'Linking Transfers to Bills', 'Auto-Categorization']
     }
   ];
 
@@ -112,6 +118,14 @@ export const FAQPage: React.FC = () => {
     {
       q: "How secure is my bank connection?",
       a: "We use AES-GCM 256-bit encryption for all external tokens. We never store your bank passwords; we only hold revocable OAuth access tokens granted by providers like Plaid or Akoya."
+    },
+    {
+      q: "Can I link multiple bills to a single deposit or transfer?",
+      a: "Yes! Using the 'Link to Bill/Transfer' tool in the ledger, you can take a single large deposit (e.g. $1,000) and link multiple smaller expenses or bills to it. The system will keep track of how much of that original amount has been allocated."
+    },
+    {
+      q: "How does splitting a transaction work?",
+      a: "If you bought groceries and household supplies in one $100 trip, you can split that single receipt into two separate categories (e.g. $60 Groceries, $40 Supplies). The original $100 bank entry remains in your history as the 'parent' to keep your records accurate."
     }
   ];
 

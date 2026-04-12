@@ -6,6 +6,7 @@ import { EmailService } from './email.service'
 import { getDb } from '../db'
 import { users, userIdentities, passwordResets, passkeys, adminInvitations, totps } from '../db/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
+import { encrypt, decrypt } from '../utils'
 
 export class AuthService {
   constructor(private env: Bindings) {}
@@ -56,7 +57,13 @@ export class AuthService {
       
       let isValid = false
       for (const t of userTotps) {
-        if (await verifyTOTP(t.secret, totpCode)) {
+        let decryptedSecret = t.secret
+        if (t.secret.includes('.')) {
+          const attempt = await decrypt(t.secret, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET)
+          if (attempt !== 'DECRYPTION_FAILED') decryptedSecret = attempt
+        }
+        
+        if (await verifyTOTP(decryptedSecret, totpCode)) {
           isValid = true
           break
         }
@@ -104,6 +111,10 @@ export class AuthService {
       
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      
+      const accessTokenEnc = tokens?.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+      const refreshTokenEnc = tokens?.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+
       await db.insert(userIdentities).values({
         id: identityId,
         userId: userId,
@@ -112,18 +123,22 @@ export class AuthService {
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: tokens?.access_token ?? null,
-        refreshToken: tokens?.refresh_token ?? null,
+        accessToken: accessTokenEnc,
+        refreshToken: refreshTokenEnc,
         tokenExpiresAt: expiresAt,
       })
     } else if (tokens) {
       const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      
+      const accessTokenEnc = tokens.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+      const refreshTokenEnc = tokens.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+
       await db.update(userIdentities).set({
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: tokens.access_token ?? null,
-        refreshToken: tokens.refresh_token ?? null,
+        accessToken: accessTokenEnc,
+        refreshToken: refreshTokenEnc,
         tokenExpiresAt: expiresAt,
         updatedAt: new Date().toISOString()
       }).where(and(eq(userIdentities.provider, provider), eq(userIdentities.providerUserId, profile.id)))
@@ -148,6 +163,10 @@ export class AuthService {
     if (!existing) {
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      
+      const accessTokenEnc = tokens?.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+      const refreshTokenEnc = tokens?.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+
       await db.insert(userIdentities).values({
         id: identityId,
         userId: userId,
@@ -156,18 +175,22 @@ export class AuthService {
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: tokens?.access_token ?? null,
-        refreshToken: tokens?.refresh_token ?? null,
+        accessToken: accessTokenEnc,
+        refreshToken: refreshTokenEnc,
         tokenExpiresAt: expiresAt,
       })
     } else {
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+      
+      const accessTokenEnc = tokens?.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+      const refreshTokenEnc = tokens?.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
+
       await db.update(userIdentities).set({
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: tokens?.access_token ?? null,
-        refreshToken: tokens?.refresh_token ?? null,
+        accessToken: accessTokenEnc,
+        refreshToken: refreshTokenEnc,
         tokenExpiresAt: expiresAt,
         updatedAt: new Date().toISOString()
       }).where(and(
@@ -189,10 +212,11 @@ export class AuthService {
     const db = getDb(this.env)
     const isValid = await verifyTOTP(secret, code)
     if (isValid) {
+      const encryptedSecret = await encrypt(secret, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET)
       await db.insert(totps).values({
         id: crypto.randomUUID(),
         userId,
-        secret,
+        secret: encryptedSecret,
         name
       })
       await db.update(users).set({ totpEnabled: 1 }).where(eq(users.id, userId))

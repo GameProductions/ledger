@@ -13,7 +13,7 @@ import {
 } from '../schemas'
 import { EmailService } from '../services/email.service'
 import { hashPassword } from '../auth-utils'
-import { logAudit } from '../utils'
+import { logAudit, encrypt } from '../utils'
 import { CURRENT_VERSION } from '../constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
@@ -530,7 +530,7 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
     db.update(sharedBalances).set({ fromUserId: targetId }).where(eq(sharedBalances.fromUserId, sourceId)),
     db.update(sharedBalances).set({ toUserId: targetId }).where(eq(sharedBalances.toUserId, sourceId)),
     
-    // Forensic Dossier
+    // Audit History
     db.run(sql`UPDATE pcc_audit_logs SET user_id = ${targetId} WHERE user_id = ${sourceId}`),
 
     // Purge
@@ -586,7 +586,63 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
   return c.json({ success: true })
 })
 
-// Identity Mirroring (Impersonation)
+// Database Migration Operations
+pcc.post('/admin/maintenance/migrate-secrets', async (c) => {
+  const db = getDb(c.env)
+  let migratedCount = 0
+  const secretKey = c.env.ENCRYPTION_KEY || c.env.JWT_SECRET
+
+  // 1. TOTPs
+  const allTotps = await db.select({ id: totps.id, secret: totps.secret }).from(totps)
+  const totpUpdates = []
+  for (const t of allTotps) {
+    if (t.secret && !t.secret.includes('.')) {
+      const encrypted = await encrypt(t.secret, secretKey)
+      totpUpdates.push(db.update(totps).set({ secret: encrypted }).where(eq(totps.id, t.id)))
+      migratedCount++
+    }
+  }
+
+  // 2. User Identities (OAuth tokens)
+  const allIdentities = await db.select({ 
+    id: userIdentities.id, 
+    accessToken: userIdentities.accessToken, 
+    refreshToken: userIdentities.refreshToken 
+  }).from(userIdentities)
+  
+  const identityUpdates = []
+  for (const idty of allIdentities) {
+    let needsUpdate = false
+    const updates: any = {}
+    
+    if (idty.accessToken && !idty.accessToken.includes('.')) {
+      updates.accessToken = await encrypt(idty.accessToken, secretKey)
+      needsUpdate = true
+    }
+    
+    if (idty.refreshToken && !idty.refreshToken.includes('.')) {
+      updates.refreshToken = await encrypt(idty.refreshToken, secretKey)
+      needsUpdate = true
+    }
+    
+    if (needsUpdate) {
+      identityUpdates.push(db.update(userIdentities).set(updates).where(eq(userIdentities.id, idty.id)))
+      migratedCount++
+    }
+  }
+
+  // Batch execution
+  const allQueries = [...totpUpdates, ...identityUpdates]
+  const chunkSize = 50
+  for (let i = 0; i < allQueries.length; i += chunkSize) {
+    await db.batch(allQueries.slice(i, i + chunkSize) as any)
+  }
+
+  await logAudit(c, 'system_config', 'MIGRATION', 'ENCRYPT_SECRETS', null, { migrated_count: migratedCount })
+  return c.json({ success: true, count: migratedCount })
+})
+
+// User Support Access (Impersonation)
 pcc.post('/admin/users/:userId/impersonate', async (c) => {
   try {
     const { userId } = c.req.param()
@@ -607,7 +663,7 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
       { 
         target_name: target.displayName,
         target_household_id: targetHouseholdId,
-        action: 'IDENTITY_MIRROR_COMMENCED'
+        action: 'SUPPORT_ACCESS_STARTED'
       }
     )
     
@@ -622,7 +678,7 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
     })
   } catch (err: any) {
     console.error('[PCC Impersonate Error]', err)
-    throw new HTTPException(500, { message: 'Forensic system failure' })
+    throw new HTTPException(500, { message: 'Support access system failure' })
   }
 })
 

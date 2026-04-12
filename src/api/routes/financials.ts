@@ -11,13 +11,15 @@ import {
   TimelineEntrySchema 
 } from '../schemas'
 import { dispatchWebhook } from '../services/webhook-service'
+import { logAudit } from '../utils'
 import { getDb } from '../db'
 import { 
   transactionTimeline, 
   savingsBuckets,
   systemConfig
 } from '../db/schema'
-import { eq, and, desc, like, inArray, sql } from 'drizzle-orm'
+import { eq, and, desc, asc, like, inArray, sql, gte, lte } from 'drizzle-orm'
+import { inferTransactionDetails } from '../inference'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -75,6 +77,10 @@ financials.post('/credit-cards', zValidator('json', CreditCardSchema), async (c)
     statementClosingDay: data.statement_closing_day,
     paymentDueDay: data.payment_due_day,
   })
+  await logAudit(c, 'credit_cards', id, 'CREATE', null, { 
+    account_id: data.account_id, 
+    credit_limit: data.credit_limit_cents 
+  })
   return c.json({ success: true, id })
 })
 
@@ -89,19 +95,40 @@ financials.get('/transactions', async (c) => {
   const categoryId = c.req.query('category_id')
   const accountId = c.req.query('account_id')
   const q = c.req.query('q')
+  const sortBy = c.req.query('sort_by') || 'date' // 'date', 'amount'
+  const sortDir = c.req.query('sort_dir') || 'desc' // 'asc', 'desc'
+  const startDate = c.req.query('start_date')
+  const endDate = c.req.query('end_date')
 
   const db = getDb(c.env)
+
+  const orderByCol = sortBy === 'amount' ? transactions.amountCents : transactions.transactionDate
+  const orderFunc = sortDir === 'asc' ? asc : desc
+
   const query = db.select().from(transactions).where(
     and(
       eq(transactions.householdId, householdId),
       categoryId ? eq(transactions.categoryId, categoryId) : undefined,
       accountId ? eq(transactions.accountId, accountId) : undefined,
+      startDate ? gte(transactions.transactionDate, startDate) : undefined,
+      endDate ? lte(transactions.transactionDate, endDate) : undefined,
       q ? like(transactions.description, `%${q}%`) : undefined
     )
-  ).orderBy(desc(transactions.transactionDate)).limit(limit || 50).offset(offset || 0)
+  ).orderBy(orderFunc(orderByCol)).limit(limit || 50).offset(offset || 0)
 
   const results = await query
   return c.json(results.map(toSnake))
+})
+
+financials.post('/transactions/infer', zValidator('json', z.object({
+  raw_description: z.string()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { raw_description } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const suggestions = await inferTransactionDetails(db, householdId, raw_description)
+  return c.json({ suggestions })
 })
 
 financials.post('/transactions', zValidator('json', TransactionSchema), async (c) => {
@@ -139,7 +166,12 @@ financials.post('/transactions', zValidator('json', TransactionSchema), async (c
     categoryId: data.category_id || null,
     description: data.description,
     amountCents: data.amount_cents,
-    transactionDate: date
+    transactionDate: date,
+    notes: data.notes || null,
+    rawDescription: data.raw_description || null,
+    parentId: data.parent_id || null,
+    providerId: data.provider_id || null,
+    billId: data.bill_id || null
   })
 
   if (data.category_id) {
@@ -151,6 +183,12 @@ financials.post('/transactions', zValidator('json', TransactionSchema), async (c
   } else {
     await insertTx
   }
+  
+  await logAudit(c, 'transactions', id, 'CREATE', null, { 
+    amount: data.amount_cents, 
+    account_id: data.account_id, 
+    category_id: data.category_id 
+  })
   
   return c.json({ success: true, id })
 })
@@ -224,6 +262,8 @@ financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySc
     await db.update(transactions).set({ confirmationNumber: content }).where(eq(transactions.id, id))
   }
   
+  await logAudit(c, 'transactions', id, 'ADD_TIMELINE_ENTRY', null, { type, content })
+  
   return c.json({ success: true, id: entryId })
 })
 
@@ -258,6 +298,81 @@ financials.patch('/transactions/:id/reconcile', async (c) => {
     .set({ reconciliationStatus: reconciled ? 'reconciled' : 'unreconciled' })
     .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
   
+  await logAudit(c, 'transactions', id, 'RECONCILE', null, { reconciled })
+  
+  return c.json({ success: true })
+})
+
+financials.patch('/transactions/bulk-reconcile', zValidator('json', z.object({
+  transaction_ids: z.array(z.string()),
+  reconciled: z.boolean()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { transaction_ids, reconciled } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  if (transaction_ids.length === 0) return c.json({ success: true })
+
+  // D1 / SQLite IN clause limits, chunking just in case
+  const chunkSize = 50;
+  for (let i = 0; i < transaction_ids.length; i += chunkSize) {
+    const chunk = transaction_ids.slice(i, i + chunkSize);
+    await db.update(transactions)
+      .set({ reconciliationStatus: reconciled ? 'reconciled' : 'unreconciled' })
+      .where(and(eq(transactions.householdId, householdId), inArray(transactions.id, chunk)))
+  }
+  
+  await logAudit(c, 'transactions', 'batch_reconcile', 'UPDATE', null, { 
+    count: transaction_ids.length, 
+    reconciled 
+  })
+  
+  return c.json({ success: true })
+})
+
+financials.post('/transactions/:id/split', zValidator('json', z.object({
+  splits: z.array(z.object({
+    amount_cents: z.number().int(),
+    category_id: z.string().optional().nullable(),
+    description: z.string()
+  }))
+})), async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const { splits } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const original = await db.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.householdId, householdId))).limit(1).then(res => res[0])
+  if (!original) throw new HTTPException(404, { message: 'Transaction not found' })
+
+  const totalSplitAmount = splits.reduce((sum, split) => sum + split.amount_cents, 0)
+  if (Math.abs(totalSplitAmount) !== Math.abs(original.amountCents)) {
+    throw new HTTPException(400, { message: 'Split amounts must equal original transaction amount' })
+  }
+
+  const inserts = splits.map(split => {
+    return db.insert(transactions).values({
+      id: crypto.randomUUID(),
+      householdId,
+      accountId: original.accountId,
+      categoryId: split.category_id || null,
+      description: split.description,
+      amountCents: split.amount_cents,
+      transactionDate: original.transactionDate,
+      parentId: id, // Link to original
+      status: original.status,
+      ownerId: original.ownerId
+    })
+  })
+
+  // We could delete the original, or mark it as an invisible 'parent'
+  // The ledger will traditionally filter out transactions that are parents of splits.
+  const markParent = db.update(transactions).set({ reconciliationStatus: 'split' }).where(eq(transactions.id, id))
+
+  await db.batch([...inserts, markParent])
+
+  await logAudit(c, 'transactions', id, 'SPLIT', null, { split_count: splits.length })
+
   return c.json({ success: true })
 })
 
@@ -276,6 +391,9 @@ financials.post('/transactions/:id/link', async (c) => {
     .where(and(eq(transactions.id, targetId), eq(transactions.householdId, householdId)))
     
   await db.batch([b1, b2])
+  
+  await logAudit(c, 'transactions', id, 'LINK', null, { target_id: targetId })
+  
   return c.json({ success: true })
 })
 
@@ -293,6 +411,7 @@ financials.post('/transactions/:id/unlink', async (c) => {
     const b1 = db.update(transactions).set({ linkedTransactionId: null, reconciliationStatus: 'unreconciled' }).where(eq(transactions.id, id))
     const b2 = db.update(transactions).set({ linkedTransactionId: null, reconciliationStatus: 'unreconciled' }).where(eq(transactions.id, targetId))
     await db.batch([b1, b2])
+    await logAudit(c, 'transactions', id, 'UNLINK', null, { target_id: targetId })
   }
   return c.json({ success: true })
 })
@@ -324,10 +443,12 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
          id: crypto.randomUUID(),
          transactionId: id,
          type: 'status_change',
-         content: `Status changed to \${data.status}`
+         content: `Status changed to ${data.status}`
        })
     }
   }
+  
+  await logAudit(c, 'transactions', id, 'UPDATE', null, updates)
   
   return c.json({ success: true })
 })
@@ -392,6 +513,11 @@ financials.post('/transactions/import/confirm', zValidator('json', z.object({
     const chunk = inserts.slice(i, i + chunkSize);
     await db.batch(chunk as any)
   }
+  
+  await logAudit(c, 'transactions', 'batch_import', 'IMPORT', null, { 
+    count: inserts.length, 
+    account_id: accountId 
+  })
   
   return c.json({ success: true, count: inserts.length })
 })
@@ -466,6 +592,12 @@ financials.post('/transfers', zValidator('json', TransferSchema), async (c) => {
       })
     }).catch(err => console.error('Discord Webhook failed', err))
   }
+  
+  await logAudit(c, 'transfers', id, 'CREATE', null, { 
+    from: from_account_id, 
+    to: to_account_id, 
+    amount: amount_cents 
+  })
   
   return c.json({ success: true, id })
 })

@@ -15,7 +15,19 @@ export const TransactionSchema = z.object({
   transaction_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   owner_id: z.string().optional(),
   status: z.string().optional().default('unpaid'),
-  confirmation_number: z.string().optional().nullable()
+  confirmation_number: z.string().optional().nullable(),
+  notes: z.string().max(1000).optional().nullable(),
+  raw_description: z.string().optional().nullable(),
+  parent_id: z.string().uuid().optional().nullable(),
+  provider_id: z.string().uuid().optional().nullable(),
+  bill_id: z.string().uuid().optional().nullable(),
+})
+
+export const TransactionPairingRuleSchema = z.object({
+  pattern: z.string().min(1),
+  target_provider_id: z.string().uuid().optional().nullable(),
+  target_category_id: z.string().uuid().optional().nullable(),
+  auto_confirm: z.boolean().optional().default(false)
 })
 
 export const TimelineEntrySchema = z.object({

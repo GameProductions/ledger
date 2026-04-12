@@ -217,6 +217,7 @@ ledger.use('/auth/password/*', authMiddleware)
 ledger.use('/api/pcc/*', pccMiddleware)
 
 ledger.route('/auth', authRoutes)
+ledger.route('/api/auth', authRoutes)
 ledger.route('/api/auth', webauthnRoutes)
 ledger.route('/api/financials', financialsRoutes)
 ledger.route('/api/planning', planningRoutes)

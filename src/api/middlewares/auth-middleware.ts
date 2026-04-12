@@ -52,6 +52,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       if (patResult.length > 0) {
         c.set('householdId', String(patResult[0].householdId))
         c.set('userId', 'pat-user') 
+        c.set('user', { id: 'pat-user', globalRole: 'user', status: 'active' })
         c.set('globalRole', 'user')
         await next()
         return
@@ -151,6 +152,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     }
     
     c.set('userId', userId)
+    c.set('user', user)
     c.set('globalRole', globalRole as string)
     c.set('householdId', String(activeHouseholdId))
     if (payload.impersonatorId) c.set('impersonatorId', payload.impersonatorId)

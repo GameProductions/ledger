@@ -93,8 +93,8 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], b
   });
 
   return (
-    <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500">
-      <div className="calendar-header flex flex-col md:flex-row items-start md:items-center justify-between mb-8 px-4 gap-4">
+    <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500 relative overflow-hidden">
+      <div className="calendar-header flex flex-col md:flex-row items-start md:items-center justify-between mb-8 px-4 gap-4 relative z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div 
             className="relative"

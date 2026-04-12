@@ -784,9 +784,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       <div className="tab-content relative">
          <div className="dashboard-grid stagger min-h-[50vh]">
             {layout[activeTab]?.filter(w => w.visible).map(w => (
-                <React.Fragment key={w.id}>
+                <div 
+                  key={w.id} 
+                  className={activeTab === 'overview' && (w.id === 'calendar' || w.id === 'transaction-ledger') ? 'dashboard-full-width' : ''}
+                >
                     {renderWidget(w.id)}
-                </React.Fragment>
+                </div>
             ))}
          </div>
       </div>

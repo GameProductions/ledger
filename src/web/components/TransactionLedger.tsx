@@ -99,7 +99,7 @@ export const TransactionLedger: React.FC = () => {
   }
 
   return (
-    <div className="card w-full" id="transaction-ledger">
+    <div className="card w-full relative overflow-hidden" id="transaction-ledger">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           📖 Transaction Ledger

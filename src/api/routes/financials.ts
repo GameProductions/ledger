@@ -14,9 +14,17 @@ import { dispatchWebhook } from '../services/webhook-service'
 import { logAudit } from '../utils'
 import { getDb } from '../db'
 import { 
+  categories,
+  accounts,
+  transactions,
+  creditCards,
   transactionTimeline, 
   savingsBuckets,
-  systemConfig
+  systemConfig,
+  templates,
+  installmentPlans,
+  userHouseholds,
+  subscriptions
 } from '../db/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte } from 'drizzle-orm'
 import { inferTransactionDetails } from '../inference'

@@ -386,8 +386,17 @@ button.primary:hover {
   margin-bottom: 2rem;
 }
 
-.dashboard-span-full {
+.dashboard-span-full, .dashboard-full-width {
   grid-column: 1 / -1 !important;
+  width: 92% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Ensure controls are contained */
+.calendar-container, .card {
+  position: relative;
+  overflow: visible;
 }
 
 /* Container-based card adjustments */

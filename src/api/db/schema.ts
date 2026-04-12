@@ -103,7 +103,9 @@ export const paySchedules = sqliteTable('pay_schedules', {
   notes: text('notes'),
   semiMonthlyDay1: integer('semi_monthly_day_1'),
   semiMonthlyDay2: integer('semi_monthly_day_2'),
-});
+}, (table) => ({
+  householdIdx: index('idx_pay_schedules_household').on(table.householdId),
+}));
 
 export const payExceptions = sqliteTable('pay_exceptions', {
   id: text('id').primaryKey(),
@@ -201,9 +203,11 @@ export const bills = sqliteTable('bills', {
   frequency: text('frequency'), // weekly, monthly, etc
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
+  ownerId: text('owner_id').references(() => users.id),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_bills_household').on(table.householdId),
+  ownerIdx: index('idx_bills_owner').on(table.ownerId),
 }));
 
 export const liabilitySplits = sqliteTable('liability_splits', {

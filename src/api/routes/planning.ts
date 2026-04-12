@@ -102,8 +102,8 @@ planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c
     accountId: account_id || null,
     paymentMode: payment_mode || 'manual',
     ownerId: owner_id || c.get('userId'),
-    upcomingAmountCents: data.upcoming_amount_cents || null,
-    upcomingEffectiveDate: data.upcoming_effective_date || null
+    upcomingAmountCents: (c.req.valid('json') as any).upcoming_amount_cents || null,
+    upcomingEffectiveDate: (c.req.valid('json') as any).upcoming_effective_date || null
   })
   
   await logAudit(c, 'subscriptions', id, 'create', null, { name, amount_cents, billing_cycle, payment_mode, owner_id })
@@ -209,6 +209,7 @@ planning.post('/bills', zValidator('json', BillSchema), async (c) => {
     accountId: data.account_id || null,
     isRecurring: data.is_recurring || false,
     frequency: data.frequency || null,
+    ownerId: data.owner_id || c.get('userId'),
     upcomingAmountCents: data.upcoming_amount_cents || null,
     upcomingEffectiveDate: data.upcoming_effective_date || null
   })
@@ -237,6 +238,7 @@ planning.patch('/bills/:id', zValidator('json', BillSchema.partial()), async (c)
   if (data.account_id !== undefined) updates.accountId = data.account_id
   if (data.is_recurring !== undefined) updates.isRecurring = data.is_recurring
   if (data.frequency !== undefined) updates.frequency = data.frequency
+  if (data.owner_id !== undefined) updates.ownerId = data.owner_id
   if (data.upcoming_amount_cents !== undefined) updates.upcomingAmountCents = data.upcoming_amount_cents
   if (data.upcoming_effective_date !== undefined) updates.upcomingEffectiveDate = data.upcoming_effective_date
   

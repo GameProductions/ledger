@@ -98,6 +98,7 @@ export const BillSchema = z.object({
   account_id: z.string().optional().nullable(),
   is_recurring: z.boolean().optional().default(false),
   frequency: z.string().optional().nullable(),
+  owner_id: z.string().optional(),
   upcoming_amount_cents: z.number().int().positive().optional(),
   upcoming_effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })

@@ -20,6 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null))
   const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","display_name":"Administrator","email":"admin@example.com"}' : 'null')))
   const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id') || (isDev ? 'household-abc' : null))
+  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || 'user')
   const [privacyMode, setPrivacyMode] = useState<boolean>(localStorage.getItem('ledger_privacy_mode') === 'true')
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
 

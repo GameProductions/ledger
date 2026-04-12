@@ -100,9 +100,6 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     // 3. Household Context Logic
     // Skip strict household check for User-level routes (e.g., profile, passkeys, internal auth)
     const isUserLevelRoute = path.startsWith('/api/user') || 
-                            path.startsWith('/api/planning/') ||
-                            path.startsWith('/api/financials/') ||
-                            path.startsWith('/api/data/') ||
                             path.startsWith('/auth/passkeys/') || 
                             path.startsWith('/auth/password/') ||
                             path === '/api/auth/verify' ||

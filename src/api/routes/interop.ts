@@ -49,7 +49,10 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
   const db = getDb(c.env)
   
   const id = crypto.randomUUID()
-  const secret = 'whk_' + crypto.randomUUID().replace(/-/g, '')
+  const rawSecret = 'whk_' + crypto.randomUUID().replace(/-/g, '')
+  
+  const { encrypt } = require('../utils')
+  const secret = await encrypt(rawSecret, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
   
   await db.insert(webhooks).values({
     id,
@@ -57,10 +60,7 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
     url,
     secret,
     eventList: JSON.stringify(events),
-    isActive: true
-  })
-  
-  return c.json({ success: true, id, secret })
+  return c.json({ success: true, id, secret: rawSecret })
 })
 
 interop.patch('/developer/webhooks/:id', zValidator('json', z.object({

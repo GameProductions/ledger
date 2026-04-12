@@ -691,8 +691,30 @@ pcc.post('/admin/maintenance/migrate-secrets', async (c) => {
     }
   }
 
+  // 3. Webhooks
+  const allWebhooks = await db.select({ id: webhooks.id, secret: webhooks.secret }).from(webhooks)
+  const webhookUpdates = []
+  for (const w of allWebhooks) {
+    if (w.secret && !w.secret.includes('.')) {
+      const encrypted = await encrypt(w.secret, secretKey)
+      webhookUpdates.push(db.update(webhooks).set({ secret: encrypted }).where(eq(webhooks.id, w.id)))
+      migratedCount++
+    }
+  }
+
+  // 4. External Connections
+  const allExternal = await db.select({ id: externalConnections.id, accessToken: externalConnections.accessToken }).from(externalConnections)
+  const externalUpdates = []
+  for (const ex of allExternal) {
+    if (ex.accessToken && !ex.accessToken.includes('.')) {
+      const encrypted = await encrypt(ex.accessToken, secretKey)
+      externalUpdates.push(db.update(externalConnections).set({ accessToken: encrypted }).where(eq(externalConnections.id, ex.id)))
+      migratedCount++
+    }
+  }
+
   // Batch execution
-  const allQueries = [...totpUpdates, ...identityUpdates]
+  const allQueries = [...totpUpdates, ...identityUpdates, ...webhookUpdates, ...externalUpdates]
   const chunkSize = 50
   for (let i = 0; i < allQueries.length; i += chunkSize) {
     await db.batch(allQueries.slice(i, i + chunkSize) as any)

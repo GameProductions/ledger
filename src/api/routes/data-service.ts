@@ -11,11 +11,30 @@ import {
   accounts,
   reports,
   serviceProviders,
-  personalAccessTokens
+  personalAccessTokens,
+  userHouseholds
 } from '../db/schema'
-import { eq, and, desc, asc, like, gt, lt, gte, or, sql } from 'drizzle-orm'
+import { eq, and, desc, asc, like, gt, lt, gte, or, sql, inArray } from 'drizzle-orm'
+import { hashToken } from '../utils'
 
 const data = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+
+const isPrivateIp = (url: string) => {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase()
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return true
+    
+    // Check for common private IP ranges
+    const parts = hostname.split('.').map(Number)
+    if (parts.length === 4) {
+      if (parts[0] === 10) return true
+      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
+      if (parts[0] === 192 && parts[1] === 168) return true
+      if (parts[0] === 169 && parts[1] === 254) return true // Link-local / metadata
+    }
+  } catch (e) {}
+  return false
+}
 
 const toSnake = (obj: any) => {
   if (!obj || typeof obj !== 'object') return obj;
@@ -166,6 +185,11 @@ data.post('/scrape', zValidator('json', z.object({
 })), async (c) => {
   const { url, type } = c.req.valid('json')
   
+  // Audit Phase 4: SSRF Shielding
+  if (isPrivateIp(url)) {
+    throw new HTTPException(403, { message: 'Security Block: Internal network targets are prohibited.' })
+  }
+
   try {
     const response = await fetch(url)
     const html = await response.text()
@@ -219,6 +243,19 @@ data.post('/import/confirm', zValidator('json', z.object({
   const db = getDb(c.env)
 
   if (type === 'transactions') {
+    const db = getDb(c.env)
+    // Audit Phase 4: Identity Guarding
+    // Verify that all owner_ids in the import belong to the current household
+    const distinctOwners = [...new Set(items.map(i => i.owner_id).filter(Boolean))] as string[]
+    
+    let authorizedOwners: string[] = []
+    if (distinctOwners.length > 0) {
+      const validMembers = await db.select({ userId: userHouseholds.userId })
+        .from(userHouseholds)
+        .where(and(eq(userHouseholds.householdId, householdId), inArray(userHouseholds.userId, distinctOwners)))
+      authorizedOwners = validMembers.map(m => m.userId)
+    }
+
     const records = items.map(item => ({
       id: crypto.randomUUID(),
       householdId,
@@ -227,7 +264,7 @@ data.post('/import/confirm', zValidator('json', z.object({
       amountCents: Math.round(item.amount * 100),
       transactionDate: item.date,
       notes: item.notes || null,
-      ownerId: item.owner_id || null
+      ownerId: (item.owner_id && authorizedOwners.includes(item.owner_id)) ? item.owner_id : userId
     }))
     
     // Chunk inserts due to D1 limits (100 rows per batch recommended)
@@ -305,17 +342,21 @@ data.post('/history/lock', async (c) => {
 data.post('/tools/tokens', zValidator('json', z.object({ name: z.string().min(1).max(50) })), async (c) => {
   const householdId = c.get('householdId')
   const { name } = c.req.valid('json')
-  const tokenValue = crypto.randomUUID().replace(/-/g, '')
-  const id = `ledger_${tokenValue}`
-  const db = getDb(c.env)
   
+  // Audit Phase 4: Cryptographic Hashing for PATs
+  const rawToken = crypto.randomUUID().replace(/-/g, '')
+  const tokenValue = `ledger_${rawToken}`
+  const tokenHash = await hashToken(tokenValue)
+  
+  const db = getDb(c.env)
   await db.insert(personalAccessTokens).values({
-    id,
+    id: tokenHash, // Use hash as ID for lookup
     householdId,
     name
   })
     
-  return c.json({ token: id })
+  // Return the raw token ONLY once
+  return c.json({ token: tokenValue })
 })
 
 data.get('/tools/tokens', async (c) => {

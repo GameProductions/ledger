@@ -36,6 +36,10 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
 
     const events = (hook.eventList as string).split(',')
     if (events.includes('*') || events.includes(event)) {
+      const { decrypt } = require('../utils')
+      const decSecret = await decrypt(hook.secret as string, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+      const finalSecret = decSecret === 'DECRYPTION_FAILED' ? hook.secret : decSecret
+
       const deliveryId = crypto.randomUUID()
       
       // Log Attempt
@@ -51,7 +55,7 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Ledger-Signature': hook.secret as string,
+            'X-Ledger-Signature': finalSecret as string,
             'X-Ledger-Event': event
           },
           body: JSON.stringify({

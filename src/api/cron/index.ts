@@ -387,7 +387,6 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
         }));
       }
 
-      }
     }
   }
 

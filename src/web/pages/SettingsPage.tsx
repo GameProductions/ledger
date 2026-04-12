@@ -17,17 +17,11 @@ import { PasskeyModule } from '../components/PasskeyModule'
 import { TotpModule } from '../components/TotpModule'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { formatHumanError } from '../utils/error-handler'
+import { sanitizeImageUrl } from '../utils/security'
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
 const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
-const sanitizeImageUrl = (url: string | undefined): string | undefined => {
-  if (!url) return undefined;
-  if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('/') || url.startsWith('data:image/')) {
-    return url;
-  }
-  return undefined;
-};
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()

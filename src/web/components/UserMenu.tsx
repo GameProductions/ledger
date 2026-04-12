@@ -4,15 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone } from 'lucide-react'
 import { Masked } from './ui/Masked'
+import { sanitizeImageUrl } from '../utils/security'
 
-const sanitizeImageUrl = (url: string | undefined): string | undefined => {
-  if (!url) return undefined;
-  // Allow relative paths, http://, or https://. Block javascript: etc.
-  if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('/') || url.startsWith('data:image/')) {
-    return url;
-  }
-  return undefined;
-};
 
 const UserMenu: React.FC<{ 
   view?: string, 

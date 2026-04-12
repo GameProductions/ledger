@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { InteractionType, InteractionResponseType, verifyKey } from 'discord-interactions'
 import { Bindings, Variables } from '../types'
-import { getQuickChartUrl } from '../services/chart-service'
+import { getLegacyExternalChartUrl } from '../services/chart-service'
 import { getDb } from '../db'
 import { accounts, subscriptions, categories, auditLogs } from '../db/schema'
 import { eq, lte, and, desc } from 'drizzle-orm'
@@ -61,22 +61,30 @@ discord.post('/interactions', async (c) => {
         envelopeBalanceCents: categories.envelopeBalanceCents
       }).from(categories).where(eq(categories.householdId, householdId)).limit(5);
       
+      const totalInCats = cats.reduce((sum, cat) => sum + (cat.envelopeBalanceCents || 0), 0)
       const labels = cats.map(cat => cat.name)
-      const data = cats.map(cat => (cat.envelopeBalanceCents || 0) / 100)
-      const chartUrl = getQuickChartUrl('pie', labels, data, 'Budget Distribution')
+      
+      // FORENSIC PRIVACY: Send percentages to 3rd party instead of raw currency amounts
+      const data = cats.map(cat => {
+        if (totalInCats === 0) return 0
+        return Math.round(((cat.envelopeBalanceCents || 0) / totalInCats) * 100)
+      })
+      
+      const chartUrl = getLegacyExternalChartUrl('pie', labels, data, 'Portfolio Weighting (%)')
 
       return c.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: { 
-          content: "📈 **LEDGER Health Report**: Here is your current budget distribution across categories.",
+          content: "📈 **LEDGER Health Report**: Here is your current portfolio weighting across core categories.",
           embeds: [{
-            title: "Budget Distribution",
+            title: "Portfolio Allocation (%)",
             image: { url: chartUrl },
             color: 0x6366f1
           }]
         }
       })
     }
+
 
     if (name === 'ledger-audit') {
       const results = await db.select({

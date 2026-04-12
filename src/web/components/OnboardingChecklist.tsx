@@ -77,7 +77,7 @@ export const OnboardingChecklist: React.FC = () => {
             className="primary"
             style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
           >
-            {completedSteps.length === 0 ? 'Launch Guided Setup' : 'Continue Setup'}
+            {(completedSteps || []).length === 0 ? 'Launch Guided Setup' : 'Continue Setup'}
           </button>
         )}
         <button 

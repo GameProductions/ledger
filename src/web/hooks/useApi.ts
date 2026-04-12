@@ -5,7 +5,7 @@ const rawApiUrl = import.meta.env.VITE_API_URL;
 const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
 export const useApi = <T = any>(path: string, options: { refreshInterval?: number } = {}) => {
-  const { token, logout } = useAuth()
+  const { token, logout, householdId } = useAuth()
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
@@ -33,7 +33,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
         signal: abortControllerRef.current.signal,
         headers: {
           Authorization: `Bearer ${token}`,
-          'x-household-id': (window.localStorage.getItem('ledger_household_id') || 'household-abc')
+          'x-household-id': householdId || (window.localStorage.getItem('ledger_household_id') || 'household-abc')
         }
       })
       
@@ -67,7 +67,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
     } finally {
       setLoading(false)
     }
-  }, [path, token, options.refreshInterval, logout])
+  }, [path, token, householdId, options.refreshInterval, logout])
 
   useEffect(() => {
     fetcher()

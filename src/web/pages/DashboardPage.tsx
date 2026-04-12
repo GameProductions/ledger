@@ -714,9 +714,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   return (
     <MainLayout view={view} setView={setView}>
       <AnimatePresence>
-        {announcements && announcements.length > 0 && (
+        {Array.isArray(announcements) && announcements.length > 0 && (
           <div className="mb-8 space-y-4">
-            {Array.isArray(announcements) && announcements.map((ann: any) => (
+            {announcements.map((ann: any) => (
               <motion.div 
                 key={ann.id}
                 initial={{ opacity: 0, y: -20 }}
@@ -865,7 +865,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amount_cents) / 100).toFixed(2)}</span>
                       </div>
                     ))}
-                  {(!smartSuggestions || smartSuggestions.find((s: any) => s.source.id === linkingTx.id)?.candidates.length === 0) && (
+                  {(!smartSuggestions || !smartSuggestions.find((s: any) => s.source.id === linkingTx.id)?.candidates?.length) && (
                     <p className="text-xs text-secondary italic opacity-50 px-2 py-4">Scanning records for patterns...</p>
                   )}
                 </div>

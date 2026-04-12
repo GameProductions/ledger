@@ -4,7 +4,6 @@ type DurableObjectState = any;
 // --- DURABLE OBJECT: HouseholdSession ---
 export class HouseholdSession {
   state: DurableObjectState
-  users: Set<string> = new Set()
 
   constructor(state: DurableObjectState) {
     this.state = state
@@ -14,11 +13,16 @@ export class HouseholdSession {
     const url = new URL(request.url)
     if (url.pathname === '/join') {
       const { userId } = await request.json() as any
-      this.users.add(userId)
-      return new Response(JSON.stringify({ activeCount: this.users.size }))
+      const users: string[] = (await this.state.storage.get('active_users')) || []
+      if (!users.includes(userId)) {
+        users.push(userId)
+        await this.state.storage.put('active_users', users)
+      }
+      return new Response(JSON.stringify({ activeCount: users.length }))
     }
     if (url.pathname === '/status') {
-      return new Response(JSON.stringify({ activeCount: this.users.size }))
+      const users: string[] = (await this.state.storage.get('active_users')) || []
+      return new Response(JSON.stringify({ activeCount: users.length }))
     }
     return new Response('Not Found', { status: 404 })
   }
@@ -36,6 +40,7 @@ export class Vault {
     const url = new URL(request.url)
     const householdId = url.searchParams.get('householdId') || request.headers.get('x-household-id')
     
+    // FORENSIC AUDIT: Verify that the request is properly contextualized
     if (!householdId) {
       return new Response('Household Context Required', { status: 400 })
     }
@@ -61,6 +66,7 @@ export class Vault {
 export class RateLimiter {
   state: DurableObjectState
   constructor(state: DurableObjectState) { this.state = state }
+
   async fetch(request: Request) {
     const url = new URL(request.url)
     const ip = url.searchParams.get('ip') || 'anon'
@@ -91,7 +97,9 @@ export class RateLimiter {
 
   async alarm() {
     const currentMinute = Math.floor(Date.now() / 60000)
-    const map = await this.state.storage.list()
+    
+    // FORENSIC HARDENING: Process in chunks to avoid DO CPU limits
+    const map = await this.state.storage.list({ limit: 100 })
     
     for (const key of map.keys()) {
       const parts = key.split(':')
@@ -103,5 +111,11 @@ export class RateLimiter {
         }
       }
     }
+
+    // Reschedule alarm if there's potentially more work
+    if (map.size > 0) {
+      await this.state.storage.setAlarm(Date.now() + 60000)
+    }
   }
 }
+

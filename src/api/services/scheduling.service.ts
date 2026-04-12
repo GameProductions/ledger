@@ -63,11 +63,22 @@ export class SchedulingService {
     nextLocalDate = increment(nextLocalDate);
 
     // 4. Catch-up logic (if fromDate is specified and next occurrence is in the past)
+    let iterations = 0;
+    const MAX_LOOKAHEAD_ITERATIONS = 500;
+    
     while (fromZonedTime(nextLocalDate, tz) <= fromDate) {
       nextLocalDate = increment(nextLocalDate);
+      iterations++;
+      
+      // FORENSIC STABILITY: Prevent infinite loops on misconfigured short intervals
+      if (iterations >= MAX_LOOKAHEAD_ITERATIONS) {
+        console.error('[SchedulingService] Max lookahead iterations exceeded for schedule:', schedule.id);
+        return null;
+      }
     }
 
     const nextUtc = fromZonedTime(nextLocalDate, tz);
+
 
     // 5. Terminal Check: End Date
     if (schedule.end_date && nextUtc > parseISO(schedule.end_date)) {

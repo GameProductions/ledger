@@ -113,11 +113,19 @@ backup.post('/restore', zValidator('json', z.object({
 
       if (actualCols.length === 0) continue;
 
+      // 3. Strict Pre-execution Regex Check
+      const invalidCol = actualCols.find(c => !/^[a-z0-9_]+$/.test(c));
+      const invalidTable = !/^[a-z0-9_]+$/.test(table);
+      
+      if (invalidCol || invalidTable) {
+        throw new HTTPException(400, { message: 'Invalid characters in SQL structure. Aborting restore to prevent injection.' });
+      }
+
       const placeholders = actualCols.map(() => '?').join(', ');
       const cols = actualCols.join(', ');
       const values = actualCols.map(c => sanitizedRow[c]);
       
-      // 3. SECURE EXECUTION: Column names are now verified against a static whitelist
+      // 4. SECURE EXECUTION: Column names are now verified against a static whitelist and strict regex
       await db.prepare(`INSERT OR REPLACE INTO ${table} (${cols}) VALUES (${placeholders})`)
         .bind(...values).run();
       

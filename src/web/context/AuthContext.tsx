@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const logout = () => {
+    // FORENSIC HARDENING: Clear memory state before storage for immediate UI lockout
     (window as any)._ledger_is_logging_out = true
     setToken(null)
     setUser(null)
@@ -74,6 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGlobalRole(null)
     setPrivacyMode(false)
     setIsImpersonating(false)
+    
+    // Clear storage
     localStorage.removeItem('ledger_token')
     localStorage.removeItem('ledger_user')
     localStorage.removeItem('ledger_household_id')
@@ -90,8 +93,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleSetHouseholdId = (id: string) => {
     setHouseholdId(id)
     localStorage.setItem('ledger_household_id', id)
-    window.location.reload() // Force reload to refresh all useApi hooks
+    // Removed window.location.reload() - useApi will now be reactive
   }
+
 
   return (
     <AuthContext.Provider value={{ 

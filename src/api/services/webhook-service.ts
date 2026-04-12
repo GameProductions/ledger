@@ -10,8 +10,15 @@ export const isValidWebhookUrl = (url: string) => {
     const parsed = new URL(url)
     if (parsed.protocol !== 'https:') return false
     const hostname = parsed.hostname.toLowerCase()
-    const blacklist = ['localhost', '127.0.0.1', '0.0.0.0', '::1', 'metadata.google.internal', '169.254.169.254']
-    if (blacklist.includes(hostname)) return false
+    
+    // FORENSIC HARDENING: Comprehensive SSRF blocklist
+    const blacklist = [
+      'localhost', '127.0.0.1', '0.0.0.0', '::1', 
+      'metadata.google.internal', '169.254.169.254',
+      'internal', 'nodes', 'vault', 'worker', 'd1'
+    ]
+    if (blacklist.some(h => hostname.includes(h))) return false
+    
     return true
   } catch (e) {
     return false
@@ -41,7 +48,22 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
       const finalSecret = decSecret === 'DECRYPTION_FAILED' ? hook.secret : decSecret
 
       const deliveryId = crypto.randomUUID()
-      
+      const payload = {
+        id: crypto.randomUUID(),
+        event,
+        timestamp: new Date().toISOString(),
+        data
+      }
+      const bodyStr = JSON.stringify(payload)
+
+      // FORENSIC HARDENING: Generate HMAC-SHA256 signature instead of sending raw secret
+      const encoder = new TextEncoder()
+      const key = await crypto.subtle.importKey(
+        'raw', encoder.encode(finalSecret as string), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      )
+      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(bodyStr))
+      const sigHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
+
       // Log Attempt
       await db.insert(webhookDeliveryLogs).values({
         id: deliveryId,
@@ -55,15 +77,10 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'X-Ledger-Signature': finalSecret as string,
+            'X-Ledger-Signature': sigHex,
             'X-Ledger-Event': event
           },
-          body: JSON.stringify({
-            id: crypto.randomUUID(),
-            event,
-            timestamp: new Date().toISOString(),
-            data
-          })
+          body: bodyStr
         }).then(async (res) => {
           await db.update(webhookDeliveryLogs).set({ statusCode: res.status }).where(eq(webhookDeliveryLogs.id, deliveryId))
         }).catch(async (err) => {
@@ -73,3 +90,4 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
     }
   }
 }
+

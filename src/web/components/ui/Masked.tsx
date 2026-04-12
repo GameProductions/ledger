@@ -20,12 +20,18 @@ export const Masked: React.FC<MaskedProps> = ({ children, forceShow = false }) =
   return (
     <div className="relative inline-block group/masked">
       <motion.div
-        animate={{ filter: shouldMask ? 'blur(8px)' : 'blur(0px)' }}
+        animate={{ filter: shouldMask ? 'blur(2px)' : 'blur(0px)' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={shouldMask ? 'select-none pointer-events-none' : ''}
       >
-        {children}
+        {/* FORENSIC PRIVACY: Do not render sensitive children in the DOM when masked */}
+        {shouldMask ? (
+          <span className="font-mono tracking-widest text-emerald-500/80">••••••</span>
+        ) : (
+          children
+        )}
       </motion.div>
+
       
       <AnimatePresence>
         {shouldMask && (

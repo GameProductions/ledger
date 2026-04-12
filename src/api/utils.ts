@@ -35,12 +35,22 @@ export const logAudit = async (
 
 export const encrypt = async (text: string, key: string) => {
   const encoder = new TextEncoder()
-  const encodedKey = await crypto.subtle.importKey(
-    'raw', encoder.encode(key), { name: 'AES-GCM' }, false, ['encrypt']
+  
+  // FORENSIC HARDENING: Derive a strong key from the secret using PBKDF2
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(key), 'PBKDF2', false, ['deriveKey']
   )
+  const pbkdf2Key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: encoder.encode('ledger-crypto-v1'), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  )
+
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv }, encodedKey, encoder.encode(text)
+    { name: 'AES-GCM', iv }, pbkdf2Key, encoder.encode(text)
   )
   return `${Buffer.from(iv).toString('base64')}.${Buffer.from(new Uint8Array(encrypted)).toString('base64')}`
 }
@@ -49,19 +59,30 @@ export const decrypt = async (encryptedData: string, key: string) => {
   try {
     const [ivBase64, contentBase64] = encryptedData.split('.')
     const encoder = new TextEncoder()
-    const encodedKey = await crypto.subtle.importKey(
-      'raw', encoder.encode(key), { name: 'AES-GCM' }, false, ['decrypt']
+    
+    // FORENSIC HARDENING: Derive the same key from the secret using PBKDF2
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw', encoder.encode(key), 'PBKDF2', false, ['deriveKey']
     )
+    const pbkdf2Key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: encoder.encode('ledger-crypto-v1'), iterations: 100000, hash: 'SHA-256' },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    )
+
     const iv = Buffer.from(ivBase64, 'base64')
     const content = Buffer.from(contentBase64, 'base64')
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv }, encodedKey, content
+      { name: 'AES-GCM', iv }, pbkdf2Key, content
     )
     return new TextDecoder().decode(decrypted)
   } catch (e) {
     return 'DECRYPTION_FAILED'
   }
 }
+
 
 export const hashToken = async (token: string) => {
   const encoder = new TextEncoder()

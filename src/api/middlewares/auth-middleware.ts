@@ -5,7 +5,7 @@ import { Bindings, Variables } from '../types'
 import { getDb } from '../db'
 import { personalAccessTokens, users, households, userHouseholds } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
-import { hashToken } from '../utils'
+import { hashToken, logAudit } from '../utils'
 
 let patAuthQuery: any;
 let verifyUserQuery: any;
@@ -42,7 +42,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     // 1. Check for Personal Access Tokens (PATs) first
     if (token.startsWith('ledger_')) {
       if (!patAuthQuery) {
-        patAuthQuery = db.select({ householdId: personalAccessTokens.householdId })
+        patAuthQuery = db.select({ householdId: personalAccessTokens.householdId, scopes: personalAccessTokens.scopes })
           .from(personalAccessTokens)
           .where(eq(personalAccessTokens.id, sql.placeholder('tokenHash')))
           .limit(1)
@@ -57,6 +57,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         c.set('userId', 'pat-user') 
         c.set('user', { id: 'pat-user', globalRole: 'user', status: 'active' })
         c.set('globalRole', 'user')
+        c.set('tokenScopes', (patResult[0].scopes as string) || 'READ,WRITE')
         await next()
         return
       }
@@ -128,8 +129,13 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
     if (!hhResult[0]) {
       if (globalRole === 'super_admin') {
+        const auditReason = c.req.header('x-audit-reason')
+        if (!auditReason) {
+          throw new HTTPException(403, { message: 'Super Admin access requires x-audit-reason header' })
+        }
         activeHouseholdId = 'ledger-main-001'
-        console.info(`[Forensic Audit] Super Admin ${userId} bypassing membership for virtual root access.`)
+        console.info(`[Forensic Audit] Super Admin ${userId} bypassing membership for virtual root access. Reason: ${auditReason}`)
+        c.executionCtx.waitUntil(logAudit(c, 'households', activeHouseholdId, 'FORENSIC_BYPASS_ROOT', null, { reason: auditReason }))
       } else {
         throw new HTTPException(401, { message: 'Invalid or missing Household' })
       }
@@ -152,7 +158,12 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       }
     } else if (globalRole === 'super_admin' && activeHouseholdId !== payload.householdId) {
        // Forensic Bypass Logging
-       console.warn(`[Forensic Bypass] Super Admin ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId})`)
+       const auditReason = c.req.header('x-audit-reason')
+       if (!auditReason) {
+         throw new HTTPException(403, { message: 'Super Admin access requires x-audit-reason header' })
+       }
+       console.warn(`[Forensic Bypass] Super Admin ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId}). Reason: ${auditReason}`)
+       c.executionCtx.waitUntil(logAudit(c, 'households', String(activeHouseholdId), 'FORENSIC_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId }))
     }
     
     c.set('userId', userId)

@@ -336,6 +336,7 @@ export const personalAccessTokens = sqliteTable('personal_access_tokens', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id),
   name: text('name'),
+  scopes: text('scopes').default('READ,WRITE'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   lastUsedAt: text('last_used_at'),
 });

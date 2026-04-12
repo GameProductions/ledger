@@ -74,17 +74,34 @@ export class AuthService {
     return { requires2FA: false }
   }
 
-  async generateToken(userId: string, householdId: string = 'ledger-main-001', impersonatorId?: string) {
+  async generateToken(userId: string, householdId?: string, impersonatorId?: string) {
+    const db = getDb(this.env)
+    
+    // FORENSIC HARDENING: Do not rely on hardcoded defaults for household context
+    let targetHouseholdId = householdId
+    if (!targetHouseholdId) {
+      const userHh = await db.select({ householdId: userHouseholds.householdId })
+        .from(userHouseholds)
+        .where(eq(userHouseholds.userId, userId))
+        .limit(1)
+      targetHouseholdId = userHh[0]?.householdId || 'ledger-main-001'
+    }
+
+    const [user] = await db.select({ globalRole: users.globalRole }).from(users).where(eq(users.id, userId)).limit(1)
+
     const payload: any = {
       sub: userId,
-      householdId,
+      householdId: targetHouseholdId,
+      globalRole: user?.globalRole || 'user',
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
     }
+    
     if (impersonatorId) payload.impersonatorId = impersonatorId
 
     if (!this.env.JWT_SECRET) throw new HTTPException(500, { message: 'Internal error' })
     return await sign(payload, this.env.JWT_SECRET, 'HS256')
   }
+
 
   async findOrCreateSocialUser(provider: string, profile: { id: string, email: string, avatar?: string, name?: string }, tokens?: { access_token: string, refresh_token?: string, expires_in?: number }) {
     const db = getDb(this.env)

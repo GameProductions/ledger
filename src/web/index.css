@@ -437,15 +437,18 @@ button.primary:hover {
   border: 1px solid var(--glass-border);
   border-radius: 1.25rem;
   margin-bottom: 2rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
-.tab-container::-webkit-scrollbar {
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
 
 .tab-button {
   padding: 0.8rem 1.5rem;

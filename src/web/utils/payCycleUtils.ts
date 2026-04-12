@@ -137,3 +137,52 @@ export const groupLiabilitiesByCycle = (liabilities: any[], paydays: PaydayInsta
 
     return cycles;
 };
+
+export const getPayPeriodRange = (
+  paydays: PaydayInstance[],
+  scheduleId: string,
+  type: 'previous' | 'current' | 'next',
+  anchorDate: Date = new Date()
+) => {
+  const schedulePaydays = [...paydays]
+    .filter(p => !scheduleId || p.pay_schedule_id === scheduleId)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (schedulePaydays.length < 2) return null;
+
+  const anchorStr = format(anchorDate, 'yyyy-MM-dd');
+  
+  // Find the index of the payday that is <= anchorDate
+  let currentIdx = -1;
+  for (let i = 0; i < schedulePaydays.length; i++) {
+    if (schedulePaydays[i].date <= anchorStr) {
+      currentIdx = i;
+    } else {
+      break;
+    }
+  }
+
+  if (type === 'current') {
+    if (currentIdx === -1 || currentIdx >= schedulePaydays.length - 1) return null;
+    return { 
+        start: parseISO(schedulePaydays[currentIdx].date), 
+        end: addDays(parseISO(schedulePaydays[currentIdx + 1].date), -1) 
+    };
+  } else if (type === 'next') {
+    const nextIdx = currentIdx + 1;
+    if (nextIdx >= schedulePaydays.length - 1) return null;
+    return { 
+        start: parseISO(schedulePaydays[nextIdx].date), 
+        end: addDays(parseISO(schedulePaydays[nextIdx + 1].date), -1) 
+    };
+  } else if (type === 'previous') {
+    const prevIdx = currentIdx - 1;
+    if (prevIdx < 0) return null;
+    return { 
+        start: parseISO(schedulePaydays[prevIdx].date), 
+        end: addDays(parseISO(schedulePaydays[currentIdx].date), -1) 
+    };
+  }
+
+  return null;
+};

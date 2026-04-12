@@ -322,8 +322,6 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     showToast('Entry Deleted')
   }
 
-
-
   const renderWidget = (id: string) => {
     switch(id) {
       case 'calendar': return (
@@ -334,6 +332,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   bills={bills || []}
                   installments={installments || []}
                   paySchedules={projectedPaydays}
+                  payScheduleDefinitions={paySchedules}
                   onDayClick={(date) => {
                     setSelectedCalendarDate(date)
                     setSelectedCalendarItem(null)
@@ -763,26 +762,26 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       </div>
 
       
-      <div className="tab-container mt-8 reveal">
-        {(tabs || []).map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-          >
-            <span>{tab.icon}</span> {tab.label}
-          </button>
-        ))}
-      </div>
-      
-      <div className="flex justify-end pr-4 sm:pr-8 md:pr-12 lg:pr-24 -mt-10 mb-4 reveal relative z-10 transition-all duration-700 mx-auto max-w-7xl">
+      <div className="tab-container mt-8 reveal flex items-center pr-2 overflow-hidden">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide flex-1 py-1">
+          {(tabs || []).map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+            >
+              <span>{tab.icon}</span> {tab.label}
+            </button>
+          ))}
+        </div>
         <button 
           onClick={() => setIsCustomizing(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl"
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ml-4 whitespace-nowrap"
         >
           <Settings2 size={14} className="text-secondary hover:text-white" /> Customize View
         </button>
       </div>
+
 
       <div className="tab-content relative">
          <div className="dashboard-grid stagger min-h-[50vh]">

@@ -82,7 +82,15 @@ export const BillsList: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-3">
                 {bills?.length > 0 ? bills.map((bill: any) => (
-                    <div key={bill.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-amber-500/30">
+                    <div key={bill.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-amber-500/30 overflow-hidden">
+                        {bill.upcoming_effective_date && (
+                            <div className="absolute top-0 right-0 bg-amber-500/10 border-b border-l border-amber-500/20 px-3 py-1 rounded-bl-xl">
+                                <div className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                                    Planned Adjustment: <Price amountCents={bill.upcoming_amount_cents} /> on {bill.upcoming_effective_date}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h4 className="font-black text-lg tracking-tighter uppercase italic">{bill.name}</h4>

@@ -387,16 +387,52 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
         }));
       }
 
-      // Subscription Trials
-      const targetDate = new Date(Date.now() + 3*24*60*60*1000).toISOString().split('T')[0];
-      const trials = await db.select().from(subscriptions).where(and(eq(subscriptions.trialEndDate, targetDate), eq(subscriptions.isTrial, true)));
-      for (const sub of trials) {
-        ctx.waitUntil(fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: `🔔 **LEDGER Trial Alert**: Your trial for **${sub.name}** ends in 3 days. Ensure you have **$${((sub.amountCents || 0) / 100).toFixed(2)}** ready!` })
-        }));
       }
     }
+  }
+
+  // 3. Automated Rate Reconciler (Daily)
+  if (event.cron === "0 0 * * *" || event.cron.includes("maintenance")) {
+    ctx.waitUntil((async () => {
+      try {
+        const types = [
+          { table: subscriptions, amountField: 'amountCents' },
+          { table: bills, amountField: 'amountCents' },
+          { table: installmentPlans, amountField: 'installmentAmountCents' },
+          { table: paySchedules, amountField: 'estimatedAmountCents' }
+        ];
+
+        for (const { table, amountField } of types) {
+          const pending = await db.select().from(table as any).where(lte((table as any).upcomingEffectiveDate, nowIso.split('T')[0]));
+          
+          for (const item of pending) {
+            console.log(`[RateReconciler] Applying upcoming change for ${item.id} in \${(table as any).tableName}: \${item[amountField]} -> \${item.upcomingAmountCents}`);
+            
+            const updates: any = {
+              [amountField]: item.upcomingAmountCents,
+              upcomingAmountCents: null,
+              upcomingEffectiveDate: null
+            };
+
+            await db.update(table as any).set(updates).where(eq((table as any).id, item.id));
+
+            await db.insert(systemAuditLogs).values({
+              id: crypto.randomUUID(),
+              userId: 'system',
+              action: 'RATE_AUTO_UPDATE',
+              target: (table as any).tableName,
+              detailsJson: JSON.stringify({ 
+                id: item.id, 
+                oldAmount: item[amountField], 
+                newAmount: item.upcomingAmountCents,
+                effectiveDate: item.upcomingEffectiveDate
+              })
+            });
+          }
+        }
+      } catch (e: any) {
+        console.error('[RateReconciler] Failed to reconcile upcoming changes:', e.message);
+      }
+    })());
   }
 }

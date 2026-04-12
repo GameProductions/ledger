@@ -69,7 +69,15 @@ export const InstallmentsList: React.FC = () => {
                     const paidAmountCents = paidPayments * inst.installment_amount_cents;
 
                     return (
-                        <div key={inst.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-indigo-500/30">
+                        <div key={inst.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-indigo-500/30 overflow-hidden">
+                            {inst.upcoming_effective_date && (
+                                <div className="absolute top-0 right-0 bg-indigo-500/10 border-b border-l border-indigo-500/20 px-3 py-1 rounded-bl-xl">
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                                        Rate Change: <Price amountCents={inst.upcoming_amount_cents} /> on {inst.upcoming_effective_date}
+                                    </div>
+                                </div>
+                            )}
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h4 className="font-black text-lg tracking-tighter uppercase italic">{inst.name}</h4>

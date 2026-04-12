@@ -208,6 +208,36 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
+              {(type === 'bill' || type === 'pay_schedule') && (
+                <div className={`p-4 border rounded-2xl space-y-4 animate-in zoom-in-95 duration-300 ${type === 'pay_schedule' ? 'bg-blue-500/5 border-blue-500/10' : 'bg-amber-500/5 border-amber-500/10'}`}>
+                  <div className={`text-[10px] font-black uppercase tracking-widest ${type === 'pay_schedule' ? 'text-blue-500' : 'text-amber-500'}`}>Planned Rate Adjustment (Optional)</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
+                       <div className="relative">
+                        <input 
+                          type="number" step="0.01"
+                          value={upcomingAmount}
+                          onChange={(e) => setUpcomingAmount(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full p-3 pl-8 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 font-bold text-xs">$</span>
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
+                       <input 
+                        type="date"
+                        value={upcomingDate}
+                        onChange={(e) => setUpcomingDate(e.target.value)}
+                        className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
+                       />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {type === 'bill' && (
                 <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
                     <input 

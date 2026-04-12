@@ -58,7 +58,9 @@ export const InstallmentPlanSchema = z.object({
   next_payment_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   account_id: z.string().optional(),
   payment_mode: z.enum(['manual', 'autopay']).optional(),
-  status: z.enum(['active', 'completed', 'cancelled']).optional()
+  status: z.enum(['active', 'completed', 'cancelled']).optional(),
+  upcoming_amount_cents: z.number().int().positive().optional(),
+  upcoming_effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
 export const SubscriptionSchema = z.object({
@@ -68,7 +70,9 @@ export const SubscriptionSchema = z.object({
   next_billing_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   account_id: z.string().optional(),
   payment_mode: z.enum(['manual', 'autopay']).optional(),
-  owner_id: z.string().optional()
+  owner_id: z.string().optional(),
+  upcoming_amount_cents: z.number().int().positive().optional(),
+  upcoming_effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
 export const PayScheduleSchema = z.object({
@@ -80,6 +84,8 @@ export const PayScheduleSchema = z.object({
   semi_monthly_day_1: z.number().int().min(1).max(31).optional().nullable(),
   semi_monthly_day_2: z.number().int().min(1).max(31).optional().nullable(),
   user_id: z.string().optional().nullable(),
+  upcoming_amount_cents: z.number().int().positive().optional(),
+  upcoming_effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
 export const BillSchema = z.object({
@@ -92,6 +98,8 @@ export const BillSchema = z.object({
   account_id: z.string().optional().nullable(),
   is_recurring: z.boolean().optional().default(false),
   frequency: z.string().optional().nullable(),
+  upcoming_amount_cents: z.number().int().positive().optional(),
+  upcoming_effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
 export const LiabilitySplitSchema = z.object({

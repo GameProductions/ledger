@@ -101,7 +101,9 @@ planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c
     nextBillingDate: next_billing_date,
     accountId: account_id || null,
     paymentMode: payment_mode || 'manual',
-    ownerId: owner_id || c.get('userId')
+    ownerId: owner_id || c.get('userId'),
+    upcomingAmountCents: data.upcoming_amount_cents || null,
+    upcomingEffectiveDate: data.upcoming_effective_date || null
   })
   
   await logAudit(c, 'subscriptions', id, 'create', null, { name, amount_cents, billing_cycle, payment_mode, owner_id })
@@ -125,6 +127,8 @@ planning.patch('/subscriptions/:id', zValidator('json', SubscriptionSchema.parti
   if (data.next_billing_date !== undefined) updates.nextBillingDate = data.next_billing_date
   if (data.account_id !== undefined) updates.accountId = data.account_id
   if (data.payment_mode !== undefined) updates.paymentMode = data.payment_mode
+  if (data.upcoming_amount_cents !== undefined) updates.upcomingAmountCents = data.upcoming_amount_cents
+  if (data.upcoming_effective_date !== undefined) updates.upcomingEffectiveDate = data.upcoming_effective_date
   
   if (Object.keys(updates).length > 0) {
     await db.update(subscriptions).set(updates).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId)))
@@ -204,7 +208,9 @@ planning.post('/bills', zValidator('json', BillSchema), async (c) => {
     categoryId: data.category_id || null,
     accountId: data.account_id || null,
     isRecurring: data.is_recurring || false,
-    frequency: data.frequency || null
+    frequency: data.frequency || null,
+    upcomingAmountCents: data.upcoming_amount_cents || null,
+    upcomingEffectiveDate: data.upcoming_effective_date || null
   })
   
   await logAudit(c, 'bills', id, 'create', null, data)
@@ -231,6 +237,8 @@ planning.patch('/bills/:id', zValidator('json', BillSchema.partial()), async (c)
   if (data.account_id !== undefined) updates.accountId = data.account_id
   if (data.is_recurring !== undefined) updates.isRecurring = data.is_recurring
   if (data.frequency !== undefined) updates.frequency = data.frequency
+  if (data.upcoming_amount_cents !== undefined) updates.upcomingAmountCents = data.upcoming_amount_cents
+  if (data.upcoming_effective_date !== undefined) updates.upcomingEffectiveDate = data.upcoming_effective_date
   
   if (Object.keys(updates).length > 0) {
     await db.update(bills).set(updates).where(and(eq(bills.id, id), eq(bills.householdId, householdId)))
@@ -333,7 +341,9 @@ planning.post('/installment-plans', zValidator('json', InstallmentPlanSchema), a
     frequency,
     nextPaymentDate: next_payment_date,
     accountId: account_id || null,
-    paymentMode: payment_mode || 'manual'
+    paymentMode: payment_mode || 'manual',
+    upcomingAmountCents: data.upcoming_amount_cents || null,
+    upcomingEffectiveDate: data.upcoming_effective_date || null
   })
   
   await logAudit(c, 'installment_plans', id, 'create', null, { name, total_amount_cents })
@@ -360,6 +370,8 @@ planning.patch('/installment-plans/:id', zValidator('json', InstallmentPlanSchem
   if (data.account_id !== undefined) updates.accountId = data.account_id
   if (data.payment_mode !== undefined) updates.paymentMode = data.payment_mode
   if (data.status !== undefined) updates.status = data.status
+  if (data.upcoming_amount_cents !== undefined) updates.upcomingAmountCents = data.upcoming_amount_cents
+  if (data.upcoming_effective_date !== undefined) updates.upcomingEffectiveDate = data.upcoming_effective_date
   
   if (Object.keys(updates).length > 0) {
     await db.update(installmentPlans).set(updates).where(and(eq(installmentPlans.id, id), eq(installmentPlans.householdId, householdId)))
@@ -484,6 +496,8 @@ planning.post('/pay-schedules', zValidator('json', PayScheduleSchema), async (c)
     notes: notes || null,
     semiMonthlyDay1: semi_monthly_day_1 || null,
     semiMonthlyDay2: semi_monthly_day_2 || null,
+    upcomingAmountCents: data.upcoming_amount_cents || null,
+    upcomingEffectiveDate: data.upcoming_effective_date || null,
   })
   
   await logAudit(c, 'pay_schedules', id, 'create', null, { name, frequency, estimated_amount_cents })
@@ -509,6 +523,8 @@ planning.patch('/pay-schedules/:id', zValidator('json', PayScheduleSchema.partia
   if (data.semi_monthly_day_1 !== undefined) updates.semiMonthlyDay1 = data.semi_monthly_day_1
   if (data.semi_monthly_day_2 !== undefined) updates.semiMonthlyDay2 = data.semi_monthly_day_2
   if (data.user_id !== undefined) updates.userId = data.user_id
+  if (data.upcoming_amount_cents !== undefined) updates.upcomingAmountCents = data.upcoming_amount_cents
+  if (data.upcoming_effective_date !== undefined) updates.upcomingEffectiveDate = data.upcoming_effective_date
   
   if (Object.keys(updates).length > 0) {
     await db.update(paySchedules).set(updates).where(and(eq(paySchedules.id, id), eq(paySchedules.householdId, householdId)))

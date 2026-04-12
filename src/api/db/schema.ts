@@ -98,6 +98,8 @@ export const paySchedules = sqliteTable('pay_schedules', {
   frequency: text('frequency', { enum: ['weekly', 'biweekly', 'semi-monthly', 'monthly', 'quarterly', 'annually', 'manual'] }).notNull(),
   nextPayDate: text('next_pay_date'),
   estimatedAmountCents: integer('estimated_amount_cents'),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
   notes: text('notes'),
   semiMonthlyDay1: integer('semi_monthly_day_1'),
   semiMonthlyDay2: integer('semi_monthly_day_2'),
@@ -179,6 +181,8 @@ export const subscriptions = sqliteTable('subscriptions', {
   accountId: text('account_id').references(() => accounts.id),
   paymentMode: text('payment_mode').default('manual'),
   ownerId: text('owner_id').references(() => users.id),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));
@@ -195,6 +199,8 @@ export const bills = sqliteTable('bills', {
   accountId: text('account_id').references(() => accounts.id),
   isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
   frequency: text('frequency'), // weekly, monthly, etc
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_bills_household').on(table.householdId),
@@ -375,6 +381,8 @@ export const installmentPlans = sqliteTable('installment_plans', {
   accountId: text('account_id').references(() => accounts.id),
   paymentMode: text('payment_mode').default('manual'), // manual or autopay
   status: text('status').default('active'),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({
   householdIdx: index('idx_installments_household').on(table.householdId),
 }));

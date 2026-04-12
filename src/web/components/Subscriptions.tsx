@@ -76,7 +76,9 @@ const Subscriptions: React.FC = () => {
               next_billing_date: formData.get('date'),
               trial_end_date: formData.get('trial_date') || null,
               is_trial: !!formData.get('trial_date'),
-              provider_account_id: formData.get('linked_account') || null
+              provider_account_id: formData.get('linked_account') || null,
+              upcoming_amount_cents: formData.get('upcoming_amount') ? Math.round(parseFloat(formData.get('upcoming_amount') as string) * 100) : null,
+              upcoming_effective_date: formData.get('upcoming_date') || null
             })
           }).then(() => {
             showToast('Subscription added!', 'success')
@@ -120,13 +122,37 @@ const Subscriptions: React.FC = () => {
               <input name="trial_date" type="date" style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
             </div>
           </div>
+
+          <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl space-y-2">
+            <div className="text-[10px] font-black uppercase tracking-widest text-primary">Planned Rate Change (Optional)</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Upcoming Amount</label>
+                <input name="upcoming_amount" type="number" step="0.01" placeholder="0.00" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Effective Date</label>
+                <input name="upcoming_date" type="date" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+              </div>
+            </div>
+          </div>
+
           <button type="submit" className="primary py-3 font-black uppercase text-xs tracking-widest mt-2">Activate Subscription Tracking</button>
         </form>
       )}
 
       <div style={{ display: 'grid', gap: '1rem' }}>
         {subs?.map((sub: any) => (
-          <div key={sub.id} className="relative bg-white/[0.03] rounded-xl border border-white/5 p-4 space-y-4">
+          <div key={sub.id} className="relative bg-white/[0.03] rounded-xl border border-white/5 p-4 space-y-4 overflow-hidden">
+            {sub.upcoming_effective_date && (
+               <div className="absolute top-0 right-0 bg-primary/20 border-b border-l border-primary/20 px-3 py-1 rounded-bl-xl">
+                 <div className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                   <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                   Rate Change: <Price amountCents={sub.upcoming_amount_cents} /> on {sub.upcoming_effective_date}
+                 </div>
+               </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: '800', display: 'flex', gap: '0.5rem', alignItems: 'center' }} className="text-sm tracking-tight">

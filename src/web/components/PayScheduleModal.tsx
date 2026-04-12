@@ -27,6 +27,8 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
     const [d1, setD1] = React.useState(schedule?.semi_monthly_day_1 || 1);
     const [d2, setD2] = React.useState(schedule?.semi_monthly_day_2 || 15);
     const [userId, setUserId] = React.useState(schedule?.user_id || '');
+    const [upcomingAmountCents, setUpcomingAmountCents] = React.useState(schedule?.upcoming_amount_cents || 0);
+    const [upcomingEffectiveDate, setUpcomingEffectiveDate] = React.useState(schedule?.upcoming_effective_date || '');
 
     React.useEffect(() => {
         if (schedule) {
@@ -38,6 +40,8 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
             setD1(schedule.semi_monthly_day_1 || 1);
             setD2(schedule.semi_monthly_day_2 || 15);
             setUserId(schedule.user_id || '');
+            setUpcomingAmountCents(schedule.upcoming_amount_cents || 0);
+            setUpcomingEffectiveDate(schedule.upcoming_effective_date || '');
         }
     }, [schedule]);
 
@@ -53,7 +57,9 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
             notes,
             semi_monthly_day_1: frequency === 'semi-monthly' ? d1 : null,
             semi_monthly_day_2: frequency === 'semi-monthly' ? d2 : null,
-            user_id: userId || null
+            user_id: userId || null,
+            upcoming_amount_cents: upcomingAmountCents || null,
+            upcoming_effective_date: upcomingEffectiveDate || null
         };
 
         const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
@@ -195,6 +201,35 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                         className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-primary outline-none transition-all min-h-[80px]"
                         placeholder="Additional details..."
                     />
+                </div>
+
+                {/* Upcoming Adjustment */}
+                <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Planned Pay Adjustment (Optional)</div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <span className="text-[9px] font-bold text-white/40 uppercase">Upcoming Net Pay</span>
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    value={upcomingAmountCents ? upcomingAmountCents / 100 : ''}
+                                    onChange={(e) => setUpcomingAmountCents(e.target.value ? Math.round(parseFloat(e.target.value) * 100) : 0)}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-emerald-500 pl-6"
+                                    placeholder="0.00"
+                                />
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/20 font-bold text-xs">$</span>
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <span className="text-[9px] font-bold text-white/40 uppercase">Effective Date</span>
+                            <input
+                                type="date"
+                                value={upcomingEffectiveDate}
+                                onChange={(e) => setUpcomingEffectiveDate(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-emerald-500"
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/10">

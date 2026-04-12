@@ -20,9 +20,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null))
   const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","display_name":"Administrator","email":"admin@example.com"}' : 'null')))
   const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id') || (isDev ? 'household-abc' : null))
-  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || (isDev ? 'super_admin' : 'user'))
   const [privacyMode, setPrivacyMode] = useState<boolean>(localStorage.getItem('ledger_privacy_mode') === 'true')
-  const [isImpersonating, setIsImpersonating] = useState<boolean>(localStorage.getItem('ledger_impersonation_active') === 'true')
+  const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
+
+  // Audit Phase 3: Zero-Trust Identity Verification
+  React.useEffect(() => {
+    if (token) {
+      const verifySession = async () => {
+        try {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (res.ok) {
+            const data = await res.json()
+            setGlobalRole(data.globalRole)
+            setIsImpersonating(data.isImpersonating)
+            localStorage.setItem('ledger_global_role', data.globalRole)
+          } else if (res.status === 401) {
+            logout()
+          }
+        } catch (err) {
+          console.error('[Auth] Verification failed', err)
+        }
+      }
+      verifySession()
+    }
+  }, [token])
 
   const login = (newToken: string, newUser: any) => {
     (window as any)._ledger_is_logging_out = false

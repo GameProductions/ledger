@@ -26,7 +26,12 @@ backup.get('/export', async (c) => {
     'credit_cards',
     'variable_schedules',
     'personal_loans',
-    'loan_payments'
+    'loan_payments',
+    'bills',
+    'liability_splits',
+    'investment_holdings',
+    'schedules',
+    'webhooks'
   ]
 
   const dump: Record<string, any[]> = {}
@@ -50,38 +55,78 @@ backup.get('/export', async (c) => {
   })
 })
 
-// 🛑 RESTORE: Atomic Ingestion Protocol
+// 🛑 RESTORE: Atomic Ingestion Protocol (v3.26.0 - Hardened)
+const TABLE_WHITELIST: Record<string, string[]> = {
+  households: ['id', 'name', 'currency', 'country_code', 'status'],
+  accounts: ['id', 'household_id', 'name', 'type', 'balance_cents', 'currency', 'status'],
+  categories: ['id', 'household_id', 'name', 'icon', 'color', 'monthly_budget_cents', 'envelope_balance_cents', 'rollover_enabled', 'rollover_cents', 'emergency_fund'],
+  transactions: ['id', 'household_id', 'account_id', 'category_id', 'amount_cents', 'description', 'transaction_date', 'status', 'is_recurring', 'provider_id', 'bill_id'],
+  subscriptions: ['id', 'household_id', 'name', 'amount_cents', 'billing_cycle', 'next_billing_date', 'category_id', 'account_id', 'payment_mode'],
+  pay_schedules: ['id', 'household_id', 'userId', 'name', 'frequency', 'next_pay_date', 'estimated_amount_cents', 'semi_monthly_day_1', 'semi_monthly_day_2'],
+  pay_exceptions: ['id', 'household_id', 'userId', 'pay_schedule_id', 'original_date', 'override_date', 'override_amount_cents', 'note'],
+  savings_buckets: ['id', 'household_id', 'name', 'target_cents', 'current_cents', 'target_date', 'category_id'],
+  templates: ['id', 'household_id', 'name', 'description', 'amount_cents', 'category_id', 'account_id'],
+  installment_plans: ['id', 'household_id', 'name', 'total_amount_cents', 'installment_amount_cents', 'total_installments', 'remaining_installments', 'frequency', 'next_payment_date', 'status'],
+  credit_cards: ['id', 'household_id', 'account_id', 'credit_limit_cents', 'interest_rate_apy', 'statement_closing_day', 'payment_due_day'],
+  personal_loans: ['id', 'household_id', 'lender_user_id', 'borrower_name', 'total_amount_cents', 'remaining_balance_cents', 'interest_rate_apy', 'origination_date'],
+  loan_payments: ['id', 'loan_id', 'amount_cents', 'platform', 'method'],
+  bills: ['id', 'household_id', 'name', 'amount_cents', 'due_date', 'status', 'is_recurring', 'frequency'],
+  liability_splits: ['id', 'household_id', 'target_id', 'target_type', 'assigned_user_id', 'split_type', 'split_value', 'calculated_amount_cents', 'status'],
+  investment_holdings: ['id', 'household_id', 'account_id', 'name', 'quantity', 'value_cents'],
+  schedules: ['id', 'household_id', 'target_id', 'target_type', 'frequency', 'next_run_at', 'status'],
+  webhooks: ['id', 'household_id', 'url', 'secret', 'event_list', 'is_active']
+};
+
 backup.post('/restore', zValidator('json', z.object({
   data: z.record(z.string(), z.array(z.any()))
 })), async (c) => {
   const householdId = c.get('householdId')
   const { data } = c.req.valid('json')
+  const db = c.env.DB;
   
-  // We perform separate transactions for each table to avoid massive batch limits
-  // but we use a sequence to ensure atomicity within reason.
-  
-  const tables = Object.keys(data)
+  let totalRestored = 0;
+  const tables = Object.keys(data).filter(t => !!TABLE_WHITELIST[t]);
   
   for (const table of tables) {
     const rows = data[table]
     if (!rows || rows.length === 0) continue
     
-    // Safety check: only restore to the current household
-    const filteredRows = rows.map(r => ({ ...r, household_id: householdId }))
+    const allowedColumns = TABLE_WHITELIST[table];
     
-    for (const row of filteredRows) {
-      const keys = Object.keys(row)
-      const values = Object.values(row)
-      const placeholders = keys.map(() => '?').join(', ')
-      const cols = keys.join(', ')
+    for (const row of rows) {
+      // 1. Sanitize keys: only allow columns specified in the whitelist
+      const sanitizedRow: any = {};
+      const actualCols: string[] = [];
       
-      await c.env.DB.prepare(`INSERT OR REPLACE INTO ${table} (${cols}) VALUES (${placeholders})`)
-        .bind(...values).run()
+      allowedColumns.forEach(col => {
+        if (row[col] !== undefined) {
+          sanitizedRow[col] = row[col];
+          actualCols.push(col);
+        }
+      });
+
+      // 2. Force Household Context if the table supports it
+      if (allowedColumns.includes('household_id')) {
+        sanitizedRow['household_id'] = householdId;
+        if (!actualCols.includes('household_id')) actualCols.push('household_id');
+      }
+
+      if (actualCols.length === 0) continue;
+
+      const placeholders = actualCols.map(() => '?').join(', ');
+      const cols = actualCols.join(', ');
+      const values = actualCols.map(c => sanitizedRow[c]);
+      
+      // 3. SECURE EXECUTION: Column names are now verified against a static whitelist
+      await db.prepare(`INSERT OR REPLACE INTO ${table} (${cols}) VALUES (${placeholders})`)
+        .bind(...values).run();
+      
+      totalRestored++;
     }
   }
 
-  await logAudit(c, 'households', householdId, 'RESTORE', null, { table_count: tables.length })
-  return c.json({ success: true, tables_restored: tables.length })
+  await logAudit(c, 'households', householdId, 'RESTORE', null, { rows_restored: totalRestored, tables_count: tables.length })
+  return c.json({ success: true, rows_restored: totalRestored, tables_count: tables.length })
 })
 
 // 🛑 CLOUD SYNC: Provider Redundancy (Google/Dropbox/OneDrive)

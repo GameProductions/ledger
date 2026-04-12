@@ -18,7 +18,7 @@ import { CURRENT_VERSION } from '../constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
 import { getDb } from '../db'
-import { users, households, systemConfig, systemFeatureFlags, systemRegistry, pccAuditLogs as systemPccAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements, auditLogs, paySchedules, householdInvites, accounts, linkedProviders } from '../db/schema'
+import { users, households, systemConfig, systemFeatureFlags, systemRegistry, pccAuditLogs as systemPccAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements, auditLogs, paySchedules, householdInvites, accounts, linkedProviders, adminInvitations } from '../db/schema'
 import { eq, or, and, sql, desc, count, like } from 'drizzle-orm'
 
 const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -548,7 +548,7 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
 // System Announcements (v3.21)
 pcc.get('/announcements', async (c) => {
   const db = getDb(c.env)
-  const results = await db.run(sql`SELECT * FROM system_announcements WHERE is_active = 1 AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP) ORDER BY created_at DESC`).then(res => res.results)
+  const results = await db.select().from(systemAnnouncements).orderBy(desc(systemAnnouncements.createdAt))
   return c.json(results)
 })
 
@@ -574,6 +574,66 @@ pcc.post('/announcements', zValidator('json', z.object({
 
   await logAudit(c, 'system_announcements', id, 'BROADCAST_CREATED', {}, { title, priority })
   return c.json({ success: true, id })
+})
+
+pcc.patch('/announcements/:id', zValidator('json', z.object({
+  title: z.string().optional(),
+  content_md: z.string().optional(),
+  priority: z.string().optional(),
+  is_active: z.boolean().optional()
+})), async (c) => {
+  const id = c.req.param('id')
+  const { title, content_md, priority, is_active } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const updates: any = {}
+  if (title) updates.title = title
+  if (content_md) updates.contentMd = content_md
+  if (priority) updates.priority = priority
+  if (is_active !== undefined) updates.isActive = is_active ? 1 : 0
+  
+  await db.update(systemAnnouncements).set(updates).where(eq(systemAnnouncements.id, id))
+  return c.json({ success: true })
+})
+
+pcc.delete('/announcements/:id', async (c) => {
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(systemAnnouncements).where(eq(systemAnnouncements.id, id))
+  return c.json({ success: true })
+})
+
+// Admin Invitations
+pcc.get('/invitations', async (c) => {
+  const db = getDb(c.env)
+  const results = await db.select().from(adminInvitations).orderBy(desc(adminInvitations.createdAt))
+  return c.json(results)
+})
+
+pcc.post('/invitations', zValidator('json', z.object({
+  role: z.enum(['super_admin', 'operator']).default('super_admin'),
+  expires_in_hours: z.number().default(24)
+})), async (c) => {
+  const { role, expires_in_hours } = c.req.valid('json')
+  const token = 'admin_inv_' + crypto.randomUUID().replace(/-/g, '')
+  const expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
+  const db = getDb(c.env)
+  
+  await db.insert(adminInvitations).values({
+    token,
+    role,
+    expiresAt,
+    isClaimed: 0
+  })
+  
+  return c.json({ success: true, token, expires_at: expiresAt })
+})
+
+pcc.delete('/invitations/:token', async (c) => {
+  const token = c.req.param('token')
+  const db = getDb(c.env)
+  await db.delete(adminInvitations).where(eq(adminInvitations.token, token))
+  return c.json({ success: true })
 })
 
 // Maintenance Operations
@@ -679,6 +739,139 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
   } catch (err: any) {
     console.error('[PCC Impersonate Error]', err)
     throw new HTTPException(500, { message: 'Support access system failure' })
+  }
+})
+
+// Database Self-Healing (v3.26.0 - Shifted from Global Middleware)
+pcc.post('/admin/maintenance/self-heal', async (c) => {
+  try {
+    const db = c.env.DB;
+    await db.batch([
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS system_config (
+          id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
+          config_key TEXT NOT NULL UNIQUE,
+          config_value TEXT,
+          value_type TEXT DEFAULT 'string',
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS system_feature_flags (
+          id TEXT PRIMARY KEY,
+          feature_key TEXT NOT NULL UNIQUE,
+          enabled_globally INTEGER DEFAULT 0,
+          target_user_ids TEXT,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS system_registry (
+          id TEXT PRIMARY KEY,
+          item_type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          logo_url TEXT,
+          website_url TEXT,
+          metadata_json TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS billing_processors (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          website_url TEXT,
+          branding_url TEXT,
+          support_url TEXT,
+          subscription_id_notes TEXT,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS system_announcements (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          content_md TEXT NOT NULL,
+          priority TEXT DEFAULT 'info',
+          is_active INTEGER DEFAULT 1,
+          expires_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS system_walkthroughs (
+          id TEXT PRIMARY KEY,
+          version TEXT NOT NULL,
+          title TEXT NOT NULL,
+          content_md TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS pcc_audit_logs (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          target TEXT NOT NULL,
+          target_id TEXT,
+          details_json TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+      `),
+      db.prepare(`
+        INSERT INTO system_config (id, config_key, config_value, value_type)
+        SELECT 'sys-rc-' || lower(hex(randomblob(4))), 'REQUIRE_TRANSACTION_CONTEXT', 'true', 'boolean'
+        WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE config_key = 'REQUIRE_TRANSACTION_CONTEXT');
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS bills (
+          id TEXT PRIMARY KEY,
+          household_id TEXT NOT NULL REFERENCES households(id),
+          name TEXT NOT NULL,
+          amount_cents INTEGER NOT NULL,
+          due_date TEXT NOT NULL,
+          status TEXT DEFAULT 'unpaid',
+          notes TEXT,
+          is_recurring INTEGER DEFAULT 0,
+          frequency TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      db.prepare(`
+        INSERT OR IGNORE INTO bills (id, household_id, name, amount_cents, due_date, status, is_recurring, frequency)
+        SELECT id, household_id, name, amount_cents, COALESCE(next_billing_date, DATE('now')), 'pending', 1, billing_cycle
+        FROM subscriptions
+        WHERE id NOT IN (SELECT id FROM bills);
+      `),
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS liability_splits (
+          id TEXT PRIMARY KEY,
+          household_id TEXT NOT NULL REFERENCES households(id),
+          target_id TEXT NOT NULL,
+          target_type TEXT NOT NULL,
+          originator_user_id TEXT NOT NULL REFERENCES users(id),
+          assigned_user_id TEXT NOT NULL REFERENCES users(id),
+          split_type TEXT NOT NULL,
+          split_value INTEGER NOT NULL,
+          calculated_amount_cents INTEGER NOT NULL,
+          override_date TEXT,
+          override_frequency TEXT,
+          status TEXT DEFAULT 'pending',
+          is_master_ledger_public INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `)
+    ]);
+
+    await logAudit(c, 'system', 'DB', 'MAINTENANCE_SELF_HEAL', {}, { status: 'COMPLETE' });
+    return c.json({ success: true, message: 'System tables verified and healed.' });
+  } catch (err: any) {
+    console.error('[Self-Heal Error]', err);
+    throw new HTTPException(500, { message: `Self-Heal failure: ${err.message}` });
   }
 })
 

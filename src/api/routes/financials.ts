@@ -21,10 +21,9 @@ import {
   transactionTimeline, 
   savingsBuckets,
   systemConfig,
-  templates,
-  installmentPlans,
   userHouseholds,
-  subscriptions
+  subscriptions,
+  investmentHoldings
 } from '../db/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte } from 'drizzle-orm'
 import { inferTransactionDetails } from '../inference'
@@ -246,7 +245,16 @@ financials.get('/transactions/export', async (c) => {
 
 financials.get('/transactions/:id/timeline', async (c) => {
   const id = c.req.param('id')
+  const householdId = c.get('householdId')
   const db = getDb(c.env)
+  
+  // Verify transaction belongs to household
+  const tx = await db.select({ id: transactions.id }).from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+    .limit(1).then(res => res[0])
+
+  if (!tx) throw new HTTPException(404, { message: 'Transaction not found in this household' })
+
   const results = await db.select().from(transactionTimeline)
     .where(eq(transactionTimeline.transactionId, id))
     .orderBy(desc(transactionTimeline.createdAt))
@@ -255,10 +263,19 @@ financials.get('/transactions/:id/timeline', async (c) => {
 
 financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema), async (c) => {
   const id = c.req.param('id')
+  const householdId = c.get('householdId')
   const { type, content } = c.req.valid('json')
   const entryId = crypto.randomUUID()
   
   const db = getDb(c.env)
+
+  // Verify transaction belongs to household
+  const tx = await db.select({ id: transactions.id }).from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+    .limit(1).then(res => res[0])
+
+  if (!tx) throw new HTTPException(404, { message: 'Transaction not found in this household' })
+
   await db.insert(transactionTimeline).values({
     id: entryId,
     transactionId: id,
@@ -674,3 +691,52 @@ financials.patch('/transactions/:id/transfer', zValidator('json', z.object({ new
   await logAudit(c, 'transactions', id, 'OWNERSHIP_TRANSFERRED', null, { from: txn.ownerId, to: newOwnerId })
   return c.json({ success: true })
 })
+
+// Investment Holdings
+financials.get('/investments', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(investmentHoldings).where(eq(investmentHoldings.householdId, householdId)).orderBy(desc(investmentHoldings.createdAt))
+  return c.json(results.map(toSnake))
+})
+
+financials.post('/investments', zValidator('json', z.object({
+  name: z.string().min(1),
+  asset_type: z.string(),
+  quantity: z.number().default(1),
+  cost_basis_cents: z.number(),
+  current_valuation_cents: z.number(),
+  currency: z.string().default('USD'),
+  institution_id: z.string().optional()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const db = getDb(c.env)
+  
+  await db.insert(investmentHoldings).values({
+    id,
+    householdId,
+    name: data.name,
+    assetType: data.asset_type,
+    quantity: data.quantity,
+    costBasisCents: data.cost_basis_cents,
+    currentValuationCents: data.current_valuation_cents,
+    currency: data.currency,
+    institutionId: data.institution_id || null
+  })
+  
+  await logAudit(c, 'investment_holdings', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
+})
+
+financials.delete('/investments/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(investmentHoldings).where(and(eq(investmentHoldings.id, id), eq(investmentHoldings.householdId, householdId)))
+  await logAudit(c, 'investment_holdings', id, 'DELETE')
+  return c.json({ success: true })
+})
+
+export default financials

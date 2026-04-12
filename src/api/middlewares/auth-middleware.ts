@@ -17,6 +17,16 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     let token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) {
       token = c.req.query('auth_token')
+      
+      // Security: Only allow query tokens for safe, explicit document/export formats
+      if (token) {
+        const format = c.req.query('format')
+        const allowedFormats = ['pdf', 'csv', 'json', 'xlsx']
+        if (!format || !allowedFormats.includes(format)) {
+          console.warn(`[Auth Violation] Blocked attempts to use query-token on non-export path: ${path}`)
+          throw new HTTPException(403, { message: 'Tokens in query disallowed for this resource type' })
+        }
+      }
     }
     
     if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
@@ -111,6 +121,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     if (!hhResult[0]) {
       if (globalRole === 'super_admin') {
         activeHouseholdId = 'ledger-main-001'
+        console.info(`[Forensic Audit] Super Admin ${userId} bypassing membership for virtual root access.`)
       } else {
         throw new HTTPException(401, { message: 'Invalid or missing Household' })
       }
@@ -131,6 +142,9 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         console.warn(`[Auth] Access Denied: User ${userId} is not a member of Household ${activeHouseholdId}`)
         throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
+    } else if (globalRole === 'super_admin' && activeHouseholdId !== payload.householdId) {
+       // Forensic Bypass Logging
+       console.warn(`[Forensic Bypass] Super Admin ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId})`)
     }
     
     c.set('userId', userId)

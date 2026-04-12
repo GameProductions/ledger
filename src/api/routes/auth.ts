@@ -21,6 +21,16 @@ import { eq, or } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
+// Zero-Trust Identity Verification (Phase 3 Audit)
+auth.get('/verify', (c) => {
+  return c.json({
+    userId: c.get('userId'),
+    householdId: c.get('householdId'),
+    globalRole: c.get('globalRole') || 'user',
+    isImpersonating: !!c.get('isImpersonating')
+  })
+})
+
 
 async function createSessionTracker(c: any, userId: string) {
   const db = getDb(c.env)

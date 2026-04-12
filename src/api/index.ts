@@ -48,170 +48,35 @@ app.use('*', secureHeaders({
   referrerPolicy: 'strict-origin-when-cross-origin',
   xPermittedCrossDomainPolicies: 'none',
 }))
+// 4. Global Security Controls
 app.use('*', (c, next) => {
   const path = c.req.path
-  if (path.startsWith('/api/') || path.startsWith('/auth/') || path.includes('.well-known')) {
+  // Exempt specific public read-only system manifests
+  if (path.includes('.well-known') || path === '/ping' || path === '/openapi.json') {
     return next()
   }
+  // All other routes (POST/PATCH/DELETE) are now CSRF-protected
   return csrf()(c, next)
 })
-
-// 4. Self-Healing Middleware (v3.15.1 - Expanded v3.21)
-app.use('*', async (c, next) => {
-  if (c.req.path.startsWith('/api/')) {
-    try {
-      await c.env.DB.batch([
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS system_config (
-            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
-            config_key TEXT NOT NULL UNIQUE,
-            config_value TEXT,
-            value_type TEXT DEFAULT 'string',
-            description TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS system_feature_flags (
-            id TEXT PRIMARY KEY,
-            feature_key TEXT NOT NULL UNIQUE,
-            enabled_globally INTEGER DEFAULT 0,
-            target_user_ids TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS system_registry (
-            id TEXT PRIMARY KEY,
-            item_type TEXT NOT NULL,
-            name TEXT NOT NULL,
-            logo_url TEXT,
-            website_url TEXT,
-            metadata_json TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS billing_processors (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            website_url TEXT,
-            branding_url TEXT,
-            support_url TEXT,
-            subscription_id_notes TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS system_announcements (
-            id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            content_md TEXT NOT NULL,
-            priority TEXT DEFAULT 'info',
-            actor_id TEXT REFERENCES users(id),
-            is_active INTEGER DEFAULT 1,
-            expires_at DATETIME,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS system_walkthroughs (
-            id TEXT PRIMARY KEY,
-            version TEXT NOT NULL,
-            title TEXT NOT NULL,
-            content_md TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS pcc_audit_logs (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            action TEXT NOT NULL,
-            target TEXT NOT NULL,
-            target_id TEXT,
-            details_json TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-          );
-        `),
-        c.env.DB.prepare(`
-          INSERT INTO system_config (id, config_key, config_value, value_type)
-          SELECT 'sys-rc-' || lower(hex(randomblob(4))), 'REQUIRE_TRANSACTION_CONTEXT', 'true', 'boolean'
-          WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE config_key = 'REQUIRE_TRANSACTION_CONTEXT');
-        `),
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS bills (
-            id TEXT PRIMARY KEY,
-            household_id TEXT NOT NULL REFERENCES households(id),
-            name TEXT NOT NULL,
-            amount_cents INTEGER NOT NULL,
-            due_date TEXT NOT NULL,
-            status TEXT DEFAULT 'unpaid',
-            notes TEXT,
-            category_id TEXT REFERENCES categories(id),
-            account_id TEXT REFERENCES accounts(id),
-            is_recurring INTEGER DEFAULT 0,
-            frequency TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        // Migration: Subscriptions to Bills
-        c.env.DB.prepare(`
-          INSERT OR IGNORE INTO bills (id, household_id, name, amount_cents, due_date, status, is_recurring, frequency)
-          SELECT id, household_id, name, amount_cents, COALESCE(next_billing_date, DATE('now')), 'pending', 1, billing_cycle
-          FROM subscriptions
-          WHERE id NOT IN (SELECT id FROM bills);
-        `),
-        c.env.DB.prepare(`
-          DELETE FROM subscriptions WHERE id IN (SELECT id FROM bills);
-        `),
-        // Patch Pay Schedules
-        c.env.DB.prepare(`ALTER TABLE pay_schedules ADD COLUMN semi_monthly_day_1 INTEGER;`).catch(() => null),
-        c.env.DB.prepare(`ALTER TABLE pay_schedules ADD COLUMN semi_monthly_day_2 INTEGER;`).catch(() => null),
-        // Liability Splitting
-        c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS liability_splits (
-            id TEXT PRIMARY KEY,
-            household_id TEXT NOT NULL REFERENCES households(id),
-            target_id TEXT NOT NULL,
-            target_type TEXT NOT NULL,
-            originator_user_id TEXT NOT NULL REFERENCES users(id),
-            assigned_user_id TEXT NOT NULL REFERENCES users(id),
-            split_type TEXT NOT NULL,
-            split_value INTEGER NOT NULL,
-            calculated_amount_cents INTEGER NOT NULL,
-            override_date TEXT,
-            override_frequency TEXT,
-            status TEXT DEFAULT 'pending',
-            is_master_ledger_public INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-        `),
-        c.env.DB.prepare(`ALTER TABLE liability_splits ADD COLUMN is_master_ledger_public INTEGER DEFAULT 0;`).catch(() => null)
-      ]);
-    } catch (e) {
-      console.error('[Self-Heal] Failed to verify system tables:', e);
-    }
-  }
-  await next();
-});
+ Riverside Fix: The previous logic skipped CSRF for all /api/ and /auth/ routes.
+ State-changing operations are now strictly validated globally.
 
 // 5. Rate Limiting (Persistent via Durable Objects)
-app.use('/api/*', async (c, next) => {
-  const ip = c.req.header('cf-connecting-ip') || 'anon'
-  const id = c.env.RATE_LIMITER.idFromName(ip)
-  const obj = c.env.RATE_LIMITER.get(id)
-  const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=100`, c.req.url))
-  
-  c.header('X-RateLimit-Limit', res.headers.get('X-RateLimit-Limit') || '100')
-  c.header('X-RateLimit-Remaining', res.headers.get('X-RateLimit-Remaining') || '99')
-  
-  if (res.status === 429) {
-    c.header('Retry-After', res.headers.get('Retry-After') || '60')
-    return c.json({ error: 'Too many requests' }, 429)
+app.use('*', async (c, next) => {
+  const path = c.req.path
+  if (path.startsWith('/api/') || path.startsWith('/auth/')) {
+    const ip = c.req.header('cf-connecting-ip') || 'anon'
+    const id = c.env.RATE_LIMITER.idFromName(ip)
+    const obj = c.env.RATE_LIMITER.get(id)
+    const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=100`, c.req.url))
+    
+    c.header('X-RateLimit-Limit', res.headers.get('X-RateLimit-Limit') || '100')
+    c.header('X-RateLimit-Remaining', res.headers.get('X-RateLimit-Remaining') || '99')
+    
+    if (res.status === 429) {
+      c.header('Retry-After', res.headers.get('Retry-After') || '60')
+      return c.json({ error: 'Too many requests' }, 429)
+    }
   }
   await next()
 })
@@ -221,7 +86,7 @@ app.use('/api/*', async (c, next) => {
 // 6. Maintenance Mode Protocol (v3.21) - Forensic Override for Admins
 app.use('/api/*', async (c, next) => {
   const path = c.req.path
-  if (path.includes('/api/pcc/') || path.includes('/api/config') || path.includes('/api/auth/')) {
+  if (path.includes('/api/pcc/') || path.includes('/api/config') || path.includes('/api/auth/') || path.startsWith('/auth/')) {
     return await next()
   }
 

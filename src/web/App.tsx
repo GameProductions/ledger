@@ -39,9 +39,12 @@ const PCCSearch = lazy(() => import('./pages/pcc/PCCSearch'))
 const PCCAudit = lazy(() => import('./pages/pcc/PCCAudit'))
 const PCCProviders = lazy(() => import('./pages/pcc/PCCProviders'))
 const PCCProcessors = lazy(() => import('./pages/pcc/PCCProcessors'))
+const AdminCommandCenter = lazy(() => import('./pages/pcc/AdminCommandCenter'))
 const PCCGuide = lazy(() => import('./pages/pcc/PCCGuide'))
 const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
+const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
+const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
 import { PasskeyChallenge } from './components/PasskeyChallenge'
 
 const AppContent: React.FC = () => {
@@ -91,6 +94,7 @@ const AppContent: React.FC = () => {
         if (path === '#/system-pcc/audit') return <PCCAudit />
         if (path === '#/system-pcc/providers') return <PCCProviders />
         if (path === '#/system-pcc/processors') return <PCCProcessors />
+        if (path === '#/system-pcc/command') return <AdminCommandCenter />
         if (path === '#/system-pcc/guide') return <PCCGuide />
         return <PCCDashboard />
       }
@@ -108,6 +112,8 @@ const AppContent: React.FC = () => {
     if (path === '#/reports') return <ReportsPage />
     if (path === '#/payments') return <PaymentCentralPage />
     if (path === '#/data') return <DataCenterPage />
+    if (path === '#/loans') return <LoanManagerPage />
+    if (path === '#/investments') return <InvestmentPortfolioPage />
     if (path.startsWith('#/snapshot/')) return <SnapshotViewer />
     if (path === '#/backup') return <BackupHub />
     if (path === '#/help') return <HelpCenter />

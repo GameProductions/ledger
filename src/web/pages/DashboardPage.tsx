@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
@@ -739,7 +740,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
                 <div className="flex-1 pt-1">
                   <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
-                  <p className="text-xs font-bold opacity-70 leading-relaxed">{ann.content_md}</p>
+                  <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
+                    <ReactMarkdown>{ann.content_md}</ReactMarkdown>
+                  </div>
                 </div>
                 {user?.global_role === 'super_admin' && (
                   <button 

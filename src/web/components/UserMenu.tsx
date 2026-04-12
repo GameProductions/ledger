@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone } from 'lucide-react'
 import { Masked } from './ui/Masked'
 
 const sanitizeImageUrl = (url: string | undefined): string | undefined => {
@@ -31,12 +31,16 @@ const UserMenu: React.FC<{
     { icon: Cpu, label: 'System Configuration', hash: '#/system-pcc/config', color: 'text-blue-400' },
     { icon: Database, label: 'Master Record List', hash: '#/system-pcc/registry', color: 'text-orange-400' },
     { icon: Users, label: 'Manage All Users', hash: '#/system-pcc/users', color: 'text-primary' },
+    { icon: Megaphone, label: 'Admin Command Center', hash: '#/system-pcc/command', color: 'text-rose-500' },
     { icon: Activity, label: 'Safety & Action Logs', hash: '#/system-pcc/audit', color: 'text-secondary' },
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
+    { icon: HandCoins, label: 'Loan Manager', hash: '#/loans', color: 'text-orange-400' },
+    { icon: Briefcase, label: 'Investments', hash: '#/investments', color: 'text-indigo-400' },
     { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },
     { icon: HelpCircle, label: 'Help & Guides', hash: '#/help', color: 'text-blue-400' },
+    { icon: MessageSquare, label: 'Forensic Support', hash: '#/help/support', color: 'text-primary' },
   ]
 
   return (

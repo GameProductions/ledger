@@ -63,4 +63,31 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
   return c.json({ success: true, id, secret })
 })
 
+interop.patch('/developer/webhooks/:id', zValidator('json', z.object({
+  url: z.string().url().optional(),
+  events: z.array(z.string()).optional(),
+  is_active: z.boolean().optional()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const { url, events, is_active } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const updates: any = {}
+  if (url) updates.url = url
+  if (events) updates.eventList = JSON.stringify(events)
+  if (is_active !== undefined) updates.isActive = is_active
+  
+  await db.update(webhooks).set(updates).where(and(eq(webhooks.id, id), eq(webhooks.householdId, householdId)))
+  return c.json({ success: true })
+})
+
+interop.delete('/developer/webhooks/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(webhooks).where(and(eq(webhooks.id, id), eq(webhooks.householdId, householdId)))
+  return c.json({ success: true })
+})
+
 export default interop

@@ -7,8 +7,11 @@ const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast, showPrompt } = useToast()
   const { data: tokens, mutate: mutateTokens } = useApi('/api/data/tools/tokens')
+  const { data: webhooksList, mutate: mutateWebhooks } = useApi('/api/interop/developer/webhooks')
   const [newToken, setNewToken] = useState<string | null>(null)
   const [webhookUrl, setWebhookUrl] = useState('')
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [scheduleData, setScheduleData] = useState({ frequency: 'weekly' })
 
   const createToken = async () => {
     const name = await showPrompt('Name for this token?')
@@ -71,6 +74,89 @@ const DeveloperSettings: React.FC = () => {
     })
     setWebhookUrl('')
     showToast('Webhook added!', 'success')
+    mutateWebhooks()
+  }
+
+  const deleteWebhook = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this webhook?')) return
+    await fetch(`${import.meta.env.VITE_API_URL}/api/interop/developer/webhooks/${id}`, {
+      method: 'DELETE',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      }
+    })
+    mutateWebhooks()
+    showToast('Webhook deleted', 'success')
+  }
+
+  const exportData = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/export`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'x-household-id': householdId || '' }
+      })
+      const data = await res.json()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ledger_backup_${new Date().toISOString().split('T')[0]}.json`
+      a.click()
+      showToast('Export successful', 'success')
+    } catch (err) {
+      showToast('Export failed', 'error')
+    }
+  }
+
+  const handleRestore = async () => {
+    if (!restoreFile) return
+    if (!confirm('WARNING: This will replace current records with matching IDs. Continue?')) return
+
+    try {
+      const text = await restoreFile.text()
+      const body = JSON.parse(text)
+      
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/restore`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': householdId || ''
+        },
+        body: JSON.stringify(body)
+      })
+      
+      if (res.ok) {
+        showToast('System Restored Successfully', 'success')
+        setRestoreFile(null)
+      } else {
+        throw new Error('Restore failed')
+      }
+    } catch (err) {
+      showToast('Failed to restore data', 'error')
+    }
+  }
+
+  const createBackupSchedule = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/planning/schedules`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': householdId || ''
+        },
+        body: JSON.stringify({
+          target_id: 'system_backup',
+          target_type: 'backup',
+          frequency: scheduleData.frequency,
+          next_run_at: new Date().toISOString()
+        })
+      })
+      showToast('Backup scheduled', 'success')
+    } catch (err) {
+      showToast('Failed to schedule backup', 'error')
+    }
   }
 
   return (
@@ -128,6 +214,68 @@ const DeveloperSettings: React.FC = () => {
               style={{ flex: 1, padding: '0.8rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', borderRadius: '0.5rem', color: 'white' }}
             />
             <button onClick={addWebhook}>Add</button>
+          </div>
+          <ul style={{ listStyle: 'none', marginTop: '1rem', padding: 0 }}>
+            {webhooksList?.map((w: any) => (
+              <li key={w.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', padding: '0.6rem 0', borderBottom: '1px solid var(--glass-border)' }}>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                  <div style={{ fontWeight: 'bold', color: 'var(--primary)', truncate: true }}>{w.url}</div>
+                  <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Events: {w.event_list}</div>
+                </div>
+                <button 
+                  onClick={() => deleteWebhook(w.id)}
+                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', color: 'var(--red-500)', opacity: 0.6 }}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '3rem', borderTop: '1px solid var(--glass-border)', paddingTop: '2rem' }}>
+        <h4 style={{ marginBottom: '1.5rem' }}>📦 Data Migration & Safety</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+          <div className="p-4 bg-white/5 rounded-2xl border border-glass-border">
+            <h5 className="text-secondary uppercase tracking-widest text-[10px] mb-3">Snapshot Engine</h5>
+            <p className="text-xs opacity-60 mb-4">Export your entire forensic record as a portable JSON ledger.</p>
+            <button onClick={exportData} className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-bold py-3 transition-all">Download .JSON Export</button>
+          </div>
+
+          <div className="p-4 bg-white/5 rounded-2xl border border-glass-border">
+            <h5 className="text-secondary uppercase tracking-widest text-[10px] mb-3">Atomic Ingestion</h5>
+            <p className="text-xs opacity-60 mb-4">Ingest a ledger file to restore records. <span className="text-red-400 font-bold">Overwrites existing IDs.</span></p>
+            <div className="flex gap-2">
+              <input 
+                type="file" 
+                accept=".json"
+                onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
+                className="hidden" 
+                id="restore-upload"
+              />
+              <label htmlFor="restore-upload" className="flex-1 p-3 bg-white/10 hover:bg-white/20 border border-glass-border rounded-xl cursor-pointer text-center text-xs transition-all">
+                {restoreFile ? restoreFile.name : 'Choose Backup File'}
+              </label>
+              <button disabled={!restoreFile} onClick={handleRestore} className="p-3 bg-red-500/20 text-red-400 border border-red-500/40 font-bold disabled:opacity-40">Restore</button>
+            </div>
+          </div>
+
+          <div className="p-4 bg-white/5 rounded-2xl border border-glass-border">
+            <h5 className="text-secondary uppercase tracking-widest text-[10px] mb-3">Cloud Automation</h5>
+            <p className="text-xs opacity-60 mb-4">Configure automated snapshots to secure cloud providers.</p>
+            <div className="flex gap-2">
+              <select 
+                value={scheduleData.frequency}
+                onChange={(e) => setScheduleData({ frequency: e.target.value })}
+                className="flex-1 bg-black/40 border border-glass-border rounded-xl p-3 text-xs outline-none focus:border-primary"
+              >
+                <option value="daily">Daily Snapshots</option>
+                <option value="weekly">Weekly Snapshots</option>
+                <option value="monthly">Monthly Snapshots</option>
+              </select>
+              <button onClick={createBackupSchedule} className="p-3 bg-white/10 hover:bg-white/20 border border-glass-border rounded-xl text-xs transition-all">Enable</button>
+            </div>
           </div>
         </div>
       </div>

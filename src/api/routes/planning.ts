@@ -28,7 +28,8 @@ import {
   payExceptions,
   bills,
   liabilitySplits,
-  systemAnnouncements
+  systemAnnouncements,
+  schedules
 } from '../db/schema'
 import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
 
@@ -426,10 +427,10 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
     method: data.method
   })
   
-  // 2. Update Balance
+  // 2. Update Balance (Harden with household_id constraint)
   const updateBalance = db.update(personalLoans)
-    .set({ remainingBalanceCents: sql`remaining_balance_cents - \${data.amount_cents}` })
-    .where(eq(personalLoans.id, loanId))
+    .set({ remainingBalanceCents: sql`remaining_balance_cents - ${data.amount_cents}` })
+    .where(and(eq(personalLoans.id, loanId), eq(personalLoans.householdId, householdId)))
     
   await db.batch([addPayment, updateBalance])
   
@@ -753,6 +754,24 @@ planning.post('/splits', zValidator('json', z.object({
   const db = getDb(c.env)
   
   for (const splitData of splits) {
+    // SECURITY: Verify target existence and ownership
+    let targetExists = false;
+    if (splitData.target_type === 'bill') {
+      const res = await db.select({ id: bills.id }).from(bills).where(and(eq(bills.id, splitData.target_id), eq(bills.householdId, householdId))).limit(1);
+      if (res[0]) targetExists = true;
+    } else if (splitData.target_type === 'subscription') {
+      const res = await db.select({ id: subscriptions.id }).from(subscriptions).where(and(eq(subscriptions.id, splitData.target_id), eq(subscriptions.householdId, householdId))).limit(1);
+      if (res[0]) targetExists = true;
+    } else if (splitData.target_type === 'installment') {
+      const res = await db.select({ id: installmentPlans.id }).from(installmentPlans).where(and(eq(installmentPlans.id, splitData.target_id), eq(installmentPlans.householdId, householdId))).limit(1);
+      if (res[0]) targetExists = true;
+    }
+
+    if (!targetExists) {
+      console.warn(`[Phantom Split Blocked] User ${user.id} attempted to split invalid/foreign target ${splitData.target_id} (${splitData.target_type})`);
+      continue; // Skip this one to prevent corruption, or throw 403
+    }
+
     const id = crypto.randomUUID()
     await db.insert(liabilitySplits).values({
       id,
@@ -775,7 +794,7 @@ planning.post('/splits', zValidator('json', z.object({
        await db.insert(systemAnnouncements).values({
          id: crypto.randomUUID(),
          title: `You've been assigned a split liability`,
-         contentMd: `A user has assigned a \${(splitData.calculated_amount_cents / 100).toFixed(2)} portion of a \${splitData.target_type} to you. It will now appear on your Lifecycle projection.`,
+         contentMd: `A user has assigned a ${(splitData.calculated_amount_cents / 100).toFixed(2)} portion of a ${splitData.target_type} to you. It will now appear on your Lifecycle projection.`,
          priority: 'info',
          actorId: splitData.assigned_user_id,
          isActive: 1
@@ -805,6 +824,46 @@ planning.patch('/splits/:targetType/:targetId/public', zValidator('json', z.obje
       eq(liabilitySplits.originatorUserId, user.id)
     ))
 
+  return c.json({ success: true })
+})
+
+// Automated Schedules (Backups, etc)
+planning.get('/schedules', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(schedules).where(eq(schedules.householdId, householdId))
+  return c.json(results.map(toSnake))
+})
+
+planning.post('/schedules', zValidator('json', z.object({
+  target_id: z.string(),
+  target_type: z.string(),
+  frequency: z.string(),
+  next_run_at: z.string()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { target_id, target_type, frequency, next_run_at } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const id = crypto.randomUUID()
+  await db.insert(schedules).values({
+    id,
+    householdId,
+    targetId: target_id,
+    targetType: target_type,
+    frequency,
+    nextRunAt: next_run_at,
+    status: 'active'
+  })
+  
+  return c.json({ success: true, id })
+})
+
+planning.delete('/schedules/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(schedules).where(and(eq(schedules.id, id), eq(schedules.householdId, householdId)))
   return c.json({ success: true })
 })
 

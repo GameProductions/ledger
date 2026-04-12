@@ -5,10 +5,22 @@ import { Bindings, Variables } from '../types'
 import { HTTPException } from 'hono/http-exception'
 import { getDb } from '../db'
 import { supportIssues } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
 
 const support = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+
+support.get('/issues', async (c) => {
+  const userId = c.get('userId')
+  const db = getDb(c.env)
+  
+  const results = await db.select()
+    .from(supportIssues)
+    .where(eq(supportIssues.userId, userId))
+    .orderBy(desc(supportIssues.createdAt))
+    
+  return c.json(results)
+})
 
 const SupportIssueSchema = z.object({
   title: z.string().min(5),

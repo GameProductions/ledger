@@ -650,8 +650,6 @@ financials.get('/buckets', async (c) => {
   return c.json(results.map(toSnake))
 })
 
-export default financials
-
 
 // Phase 4 Transfers
 financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {

@@ -60,6 +60,9 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
     url,
     secret,
     eventList: JSON.stringify(events),
+    isActive: true
+  })
+  
   return c.json({ success: true, id, secret: rawSecret })
 })
 

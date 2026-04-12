@@ -108,18 +108,18 @@ export const TransactionLedger: React.FC = () => {
           </button>
         </h2>
         
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="relative group/search">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary group-focus-within/search:text-primary transition-colors" />
             <input 
               value={q}
               onChange={e => setQ(e.target.value)}
-              placeholder="Search descriptions..." 
-              className="pl-9 pr-4 py-1.5 text-sm bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary"
+              placeholder="Search..." 
+              className="pl-9 pr-4 py-1.5 text-xs bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary w-32 focus:w-48 transition-all font-black uppercase tracking-widest"
             />
           </div>
-          <button className="p-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10">
-            <Filter size={16} />
+          <button className="p-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all">
+            <Filter size={14} className="text-secondary" />
           </button>
         </div>
       </div>

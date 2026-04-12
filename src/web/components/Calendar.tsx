@@ -124,34 +124,34 @@ const Calendar: React.FC<CalendarProps> = ({ transactions, subscriptions = [], b
           </div>
         </div>
         
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex gap-1 bg-white/5 p-1 rounded-xl">
-             <button onClick={() => setDisplayMode('calendar')} className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}>Grid</button>
-             <button onClick={() => setDisplayMode('list')} className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'list' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}>List</button>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
+               <button onClick={() => setDisplayMode('calendar')} className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}>Grid</button>
+               <button onClick={() => setDisplayMode('list')} className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'list' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}>List</button>
+            </div>
+            
+            <div className="flex gap-2">
+              <select 
+                value={filterType} 
+                onChange={(e: any) => setFilterType(e.target.value)}
+                className="bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-lg text-secondary focus:text-white outline-none"
+              >
+                 <option value="all">All Items</option>
+                 <option value="pay_schedule">Paydays</option>
+                 <option value="bill">Bills & Subs</option>
+                 <option value="transaction">Transfers</option>
+              </select>
+              
+              <select 
+                value={sortBy} 
+                onChange={(e: any) => setSortBy(e.target.value)}
+                className="bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-lg text-secondary focus:text-white outline-none"
+              >
+                 <option value="date_asc">Oldest First</option>
+                 <option value="date_desc">Newest First</option>
+              </select>
+            </div>
           </div>
-          
-          <select 
-            value={filterType} 
-            onChange={(e: any) => setFilterType(e.target.value)}
-            className="bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-lg text-secondary focus:text-white outline-none"
-          >
-             <option value="all">All Items</option>
-             <option value="pay_schedule">Paydays</option>
-             <option value="bill">Bills & Subs</option>
-             <option value="transaction">Transfers</option>
-          </select>
-          
-          <select 
-            value={sortBy} 
-            onChange={(e: any) => setSortBy(e.target.value)}
-            className="bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest px-3 py-2 rounded-lg text-secondary focus:text-white outline-none"
-          >
-             <option value="date_asc">Oldest First</option>
-             <option value="date_desc">Newest First</option>
-             <option value="amount_asc">Lowest Amount</option>
-             <option value="amount_desc">Highest Amount</option>
-          </select>
-        </div>
       </div>
 
       {displayMode === 'calendar' ? (

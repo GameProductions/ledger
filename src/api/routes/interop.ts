@@ -6,6 +6,7 @@ import { getDb } from '../db'
 import { webhooks, transactions } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { getCoachingAnswer } from '../services/coach-service'
+import { encrypt } from '../utils'
 
 const interop = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -51,7 +52,6 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
   const id = crypto.randomUUID()
   const rawSecret = 'whk_' + crypto.randomUUID().replace(/-/g, '')
   
-  const { encrypt } = require('../utils')
   const secret = await encrypt(rawSecret, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
   
   await db.insert(webhooks).values({

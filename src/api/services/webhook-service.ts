@@ -3,6 +3,7 @@ import { Bindings, Variables } from '../types'
 import { getDb } from '../db'
 import { webhooks, webhookDeliveryLogs } from '../db/schema'
 import { eq, and } from 'drizzle-orm'
+import { decrypt } from '../utils'
 
 export const isValidWebhookUrl = (url: string) => {
   try {
@@ -36,7 +37,6 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
 
     const events = (hook.eventList as string).split(',')
     if (events.includes('*') || events.includes(event)) {
-      const { decrypt } = require('../utils')
       const decSecret = await decrypt(hook.secret as string, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
       const finalSecret = decSecret === 'DECRYPTION_FAILED' ? hook.secret : decSecret
 

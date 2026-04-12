@@ -1,6 +1,7 @@
-export const CURRENT_VERSION = 'v3.29.1'
+export const CURRENT_VERSION = 'v3.29.2'
 
 export const VERSION_UPDATES = [
+  { version: 'v3.29.2', title: 'Immortal State Hardening (Final)', description: 'Definitive resolution for all context-driven 500 errors. Purged legacy CommonJS artifacts, enforced strict user verification across all planning routes, and modernized global error diagnostics.' },
   { version: 'v3.29.1', title: 'Stability Hardened (Consolidated Routing)', description: 'Consolidated API architecture to resolve route-matching conflicts. Migrated to strict ESM imports in auth middleware and implemented an API Shield handler to prevent unintended SPA fallbacks.' },
   { version: 'v3.25.0', title: 'Forensic Intelligence & Hardened Infrastructure', description: 'Implemented the high-density Transaction Ledger with smart matching, automated splitting/linking, and a full infrastructure hardening pass (Durable Object alarms, zero-jargon logs, and 100% audit coverage).' },
   { version: 'v3.20.2', title: 'Identity & Polish', description: 'Restructured the Settings Portal, refined the master user dropdown, and resolved critical backend authentication bugs.' },

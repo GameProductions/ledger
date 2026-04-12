@@ -535,7 +535,7 @@ planning.get('/pay-exceptions', async (c) => {
   
   const results = await db.select().from(payExceptions).where(and(
     eq(payExceptions.householdId, householdId),
-    eq(payExceptions.userId, user.id)
+    eq(payExceptions.userId, user?.id || 'unknown')
   ))
   
   return c.json(results.map(toSnake))
@@ -768,7 +768,7 @@ planning.post('/splits', zValidator('json', z.object({
     }
 
     if (!targetExists) {
-      console.warn(`[Phantom Split Blocked] User ${user.id} attempted to split invalid/foreign target ${splitData.target_id} (${splitData.target_type})`);
+      console.warn(`[Phantom Split Blocked] User ${user?.id || 'unknown'} attempted to split invalid/foreign target ${splitData.target_id} (${splitData.target_type})`);
       continue; // Skip this one to prevent corruption, or throw 403
     }
 
@@ -776,9 +776,8 @@ planning.post('/splits', zValidator('json', z.object({
     await db.insert(liabilitySplits).values({
       id,
       householdId,
-      targetId: splitData.target_id,
       targetType: splitData.target_type,
-      originatorUserId: user.id,
+      originatorUserId: user?.id || 'unknown',
       assignedUserId: splitData.assigned_user_id,
       splitType: splitData.split_type,
       splitValue: splitData.split_value,
@@ -790,7 +789,7 @@ planning.post('/splits', zValidator('json', z.object({
     })
     
     // Create System Announcement Notification
-    if (user.id !== splitData.assigned_user_id) {
+    if (user?.id !== splitData.assigned_user_id) {
        await db.insert(systemAnnouncements).values({
          id: crypto.randomUUID(),
          title: `You've been assigned a split liability`,
@@ -821,7 +820,7 @@ planning.patch('/splits/:targetType/:targetId/public', zValidator('json', z.obje
       eq(liabilitySplits.householdId, householdId),
       eq(liabilitySplits.targetType, targetType),
       eq(liabilitySplits.targetId, targetId),
-      eq(liabilitySplits.originatorUserId, user.id)
+      eq(liabilitySplits.originatorUserId, user?.id || 'unknown')
     ))
 
   return c.json({ success: true })

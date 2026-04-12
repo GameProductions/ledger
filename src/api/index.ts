@@ -191,10 +191,14 @@ app.get('/.well-known/microsoft-identity-association.json', msVerification)
 // 7. Global Error Handler
 app.onError((err, c) => {
   const isProduction = c.env.ENVIRONMENT === 'production'
-  console.error('[Global Error]', err)
+  const status = (err as any).status || 500
+  
+  console.error(`[Global Error] ${c.req.method} ${c.req.path} - Status: ${status}`, err)
+  
   return c.json({
     error: isProduction ? 'Internal Server Error' : err.message,
-    status: (err as any).status || 500,
+    status,
+    path: isProduction ? undefined : c.req.path,
     stack: isProduction ? undefined : err.stack
-  }, (err as any).status || 500)
+  }, status)
 })

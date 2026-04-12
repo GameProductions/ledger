@@ -57,6 +57,13 @@
       "when": 1775980562522,
       "tag": "0007_magical_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1776020027808,
+      "tag": "0008_demonic_mimic",
+      "breakpoints": true
     }
   ]
 }

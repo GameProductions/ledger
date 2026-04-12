@@ -1,6 +1,7 @@
-export const CURRENT_VERSION = 'v3.25.0'
+export const CURRENT_VERSION = 'v3.29.1'
 
 export const VERSION_UPDATES = [
+  { version: 'v3.29.1', title: 'Stability Hardened (Consolidated Routing)', description: 'Consolidated API architecture to resolve route-matching conflicts. Migrated to strict ESM imports in auth middleware and implemented an API Shield handler to prevent unintended SPA fallbacks.' },
   { version: 'v3.25.0', title: 'Forensic Intelligence & Hardened Infrastructure', description: 'Implemented the high-density Transaction Ledger with smart matching, automated splitting/linking, and a full infrastructure hardening pass (Durable Object alarms, zero-jargon logs, and 100% audit coverage).' },
   { version: 'v3.20.2', title: 'Identity & Polish', description: 'Restructured the Settings Portal, refined the master user dropdown, and resolved critical backend authentication bugs.' },
   { version: 'v3.19.11', title: 'Immortal Resilience (Total PCC Hardening)', description: 'Definitive Forensic Audit and deep-hardening of the entire PCC (Data Center) administrative suite, achieving a Zero-Crash state across all system management modules.' },

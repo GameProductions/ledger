@@ -5,6 +5,7 @@ import { Bindings, Variables } from '../types'
 import { getDb } from '../db'
 import { personalAccessTokens, users, households, userHouseholds } from '../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
+import { hashToken } from '../utils'
 
 let patAuthQuery: any;
 let verifyUserQuery: any;
@@ -31,7 +32,10 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     
     if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
     const jwtSecret = c.env.JWT_SECRET
-    if (!jwtSecret) throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
+    if (!jwtSecret) {
+      console.error('[Auth Critical] JWT_SECRET is not defined in environment.')
+      throw new HTTPException(500, { message: 'JWT_SECRET is not defined' })
+    }
     
     const db = getDb(c.env)
 
@@ -45,7 +49,6 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
           .prepare()
       }
       
-      const { hashToken } = require('../utils')
       const tokenHash = await hashToken(token)
       const patResult = await patAuthQuery.execute({ tokenHash })
       
@@ -100,6 +103,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
                             path.startsWith('/auth/passkeys/') || 
                             path.startsWith('/auth/password/') ||
                             path === '/api/user' ||
+                            path === '/api/auth/verify' ||
+                            path === '/auth/verify' ||
                             path === '/auth/totp/setup' ||
                             path === '/auth/totp/verify'
 

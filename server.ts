@@ -65,7 +65,12 @@ app.get('/favicon.ico', async (c, next) => {
 // 3. Mount Backend API (Protected Domain)
 app.route('/', apiApp);
 
-// 4. Frontend Orchestration (SPA Fallback)
+// 4. API Shield: Explicit 404 for missing API routes to prevent HTML fallthrough
+app.all('/api/*', (c) => {
+  return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
+})
+
+// 5. Frontend Orchestration (SPA Fallback)
 app.get('*', async (c) => {
   const path = c.req.path;
   if (path.includes('.') && !path.endsWith('.html')) return c.notFound();

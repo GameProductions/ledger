@@ -1,13 +1,14 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
-import { cors } from 'hono/cors'
 import { csrf } from 'hono/csrf'
 import { secureHeaders } from 'hono/secure-headers'
 import { openApiSpec } from './openapi'
 import { Bindings, Variables } from './types'
 import { authMiddleware } from './middlewares/auth-middleware'
 import { pccMiddleware } from './middlewares/pcc-middleware'
-import { AUTH_EXCLUSIONS } from './constants'
+import { getDb } from './db'
+import { systemConfig } from './db/schema'
+import { eq } from 'drizzle-orm'
 
 // Route Imports
 import authRoutes from './routes/auth'
@@ -21,20 +22,17 @@ import interopRoutes from './routes/interop'
 import backupRoutes from './routes/backup'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
-import { handleScheduled } from './cron'
 
 // Durable Objects Exports (Required for Cloudflare)
 export { HouseholdSession, Vault, RateLimiter } from './durable-objects'
 
-// Root App (Supporting both root domain and /ledger/ prefix)
+// Root App (Consolidated v3.29.1)
 export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// 🛑 PROTOCOL ZERO: Root-Level verification placeholder
-
-// 1. Root-Level verification placeholder (moved below middleware for better header support)
-
-// 2. Global Middleware (CORS managed by server entry point)
+// 1. Global Middleware & Security
 app.use('*', logger())
+
+// [SECURITY] Strict Content Security Policy & Headers
 app.use('*', secureHeaders({
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
@@ -48,20 +46,17 @@ app.use('*', secureHeaders({
   referrerPolicy: 'strict-origin-when-cross-origin',
   xPermittedCrossDomainPolicies: 'none',
 }))
-// 4. Global Security Controls
+
+// Global CSRF Protection (Exempting non-mutating manifests)
 app.use('*', (c, next) => {
   const path = c.req.path
-  // Exempt specific public read-only system manifests
-  if (path.includes('.well-known') || path === '/ping' || path === '/openapi.json') {
+  if (path.includes('.well-known') || path === '/ping' || path === '/openapi.json' || path === '/api/health') {
     return next()
   }
-  // All other routes (POST/PATCH/DELETE) are now CSRF-protected
   return csrf()(c, next)
 })
-// Riverside Fix: The previous logic skipped CSRF for all /api/ and /auth/ routes.
-// State-changing operations are now strictly validated globally.
 
-// 5. Rate Limiting (Persistent via Durable Objects)
+// Rate Limiting (Persistent via Durable Objects)
 app.use('*', async (c, next) => {
   const path = c.req.path
   if (path.startsWith('/api/') || path.startsWith('/auth/')) {
@@ -81,42 +76,10 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// 4. Authentication Protocol (v3.17.3 - Migrated to Targeted Handlers)
+// 2. Health & System Information
+app.get('/ping', (c) => c.text('PONG - LEDGER v3.29.1 IS LIVE'))
 
-// 6. Maintenance Mode Protocol (v3.21) - Forensic Override for Admins
-app.use('/api/*', async (c, next) => {
-  const path = c.req.path
-  if (path.includes('/api/pcc/') || path.includes('/api/config') || path.includes('/api/auth/') || path.startsWith('/auth/')) {
-    return await next()
-  }
-
-  try {
-    const config = await getDb(c.env).select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, 'MAINTENANCE_MODE')).limit(1).then(res => res[0]);
-    if (config?.configValue === 'true') {
-      const user = c.get('userId') as any
-      if (user?.global_role !== 'super_admin') {
-        return c.json({ 
-          error: 'System Maintenance in Progress', 
-          message: 'Ledger is currently under scheduled maintenance. God Mode users retain full access.' 
-        }, 503)
-      }
-    }
-  } catch (e) {}
-  await next()
-})
-
-import { getDb } from './db'
-import { systemConfig } from './db/schema'
-import { eq } from 'drizzle-orm'
-
-// 5. Route Mounting
-const ledger = new Hono<{ Bindings: Bindings, Variables: Variables }>()
-
-// Health & Docs
-ledger.get('/ping', (c) => c.text(`PONG - LEDGER ${c.env.ENVIRONMENT === 'production' ? 'v3.20.1' : 'DEV'} IS LIVE`))
-import pkg from '../../package.json';
-
-ledger.get('/api/health', async (c) => {
+app.get('/api/health', async (c) => {
   let dbStatus = "connected";
   try {
      await getDb(c.env).select({ configKey: systemConfig.configKey }).from(systemConfig).limit(1);
@@ -129,17 +92,47 @@ ledger.get('/api/health', async (c) => {
     database: dbStatus,
     service: "ledger",
     environment: c.env.ENVIRONMENT || "development",
-    versions: {
-      production: pkg.version, 
-      development: `${pkg.version}-dev`
-    },
     timestamp: Date.now() 
   });
 })
-ledger.get('/openapi.json', (c) => c.json(openApiSpec))
 
-// System Config & Theme (Universal Context)
-ledger.get('/api/config', async (c) => {
+app.get('/openapi.json', (c) => c.json(openApiSpec))
+
+// 3. Global Auth Middleware Allocation
+app.use('/api/*', async (c, next) => {
+  const path = c.req.path
+  const method = c.req.method
+
+  const publicPaths = ['/api/config', '/api/theme/broadcast', '/api/health']
+  const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS')
+  
+  if (isPublicApi) return await next()
+  return authMiddleware(c, next)
+})
+
+// Specific Middleware Chains
+app.use('/auth/profile/*', authMiddleware)
+app.use('/auth/totp/*', authMiddleware)
+app.use('/auth/vault/*', authMiddleware)
+app.use('/auth/password/*', authMiddleware)
+app.use('/api/pcc/*', pccMiddleware)
+
+// 4. Route Mounting (Targeted Protocols)
+app.route('/auth', authRoutes)
+app.route('/api/auth', authRoutes) // Cross-namespace verification support
+app.route('/api/auth', webauthnRoutes)
+app.route('/api/financials', financialsRoutes)
+app.route('/api/planning', planningRoutes)
+app.route('/api/user', userRoutes)
+app.route('/api/data', dataRoutes)
+app.route('/api/interop', interopRoutes)
+app.route('/api/pcc', pccRoutes)
+app.route('/api/backup', backupRoutes)
+app.route('/api/support', supportRoutes)
+app.route('/api/discord', discordRoutes)
+
+// 5. System Configuration & Theme Handling
+app.get('/api/config', async (c) => {
   const cached = await c.env.LEDGER_CACHE?.get('API_CONFIG', 'json')
   if (cached) return c.json(cached)
 
@@ -151,7 +144,7 @@ ledger.get('/api/config', async (c) => {
   return c.json(result)
 })
 
-ledger.get('/api/theme/broadcast', async (c) => {
+app.get('/api/theme/broadcast', async (c) => {
   try {
     const cached = await c.env.LEDGER_CACHE?.get('THEME_BROADCAST', 'json')
     if (cached) return c.json(cached)
@@ -168,7 +161,7 @@ ledger.get('/api/theme/broadcast', async (c) => {
   }
 })
 
-ledger.post('/api/theme/broadcast', async (c) => {
+app.post('/api/theme/broadcast', async (c) => {
   const { themeId } = await c.req.json()
   const db = getDb(c.env)
   await db.insert(systemConfig).values({
@@ -183,7 +176,7 @@ ledger.post('/api/theme/broadcast', async (c) => {
   return c.json({ success: true })
 })
 
-// 1. Root-Level verification (Microsoft Identity) - Redundant on both routers
+// 6. Identity Verification (Bridges)
 const msVerification = (c: any) => {
   c.header('Content-Type', 'application/json; charset=utf-8')
   c.header('Access-Control-Allow-Origin', '*')
@@ -193,48 +186,9 @@ const msVerification = (c: any) => {
     ]
   })
 }
-
-ledger.get('/.well-known/microsoft-identity-association.json', msVerification)
 app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
-// 6. Global Route Mounting
-// 6. Global Route Mounting
-// Targeted Authentication Protocol (v3.17.3)
-ledger.use('/api/*', async (c, next) => {
-  const path = c.req.path
-  const method = c.req.method
-
-  const isPublicApi = path === '/api/config' || path === '/api/theme/broadcast' || path.startsWith('/api/discord') || (method === 'OPTIONS')
-  if (isPublicApi) return await next()
-  
-  return authMiddleware(c, next)
-})
-
-ledger.use('/auth/profile/*', authMiddleware)
-ledger.use('/auth/totp/*', authMiddleware)
-ledger.use('/auth/vault/*', authMiddleware)
-ledger.use('/auth/password/*', authMiddleware)
-ledger.use('/api/pcc/*', pccMiddleware)
-
-ledger.route('/auth', authRoutes)
-ledger.route('/api/auth', authRoutes)
-ledger.route('/api/auth', webauthnRoutes)
-ledger.route('/api/financials', financialsRoutes)
-ledger.route('/api/planning', planningRoutes)
-ledger.route('/api/user', userRoutes)
-ledger.route('/api/data', dataRoutes)
-ledger.route('/api/interop', interopRoutes)
-ledger.route('/api/pcc', pccRoutes)
-ledger.route('/api/backup', backupRoutes)
-ledger.route('/api/support', supportRoutes)
-
-ledger.route('/api/discord', discordRoutes)
-
-
-// 6. Global Error Handler
-app.route('/', ledger) // Evolutionary Leap: Supports root domain directly
-
-// 6. Global Error Handler
+// 7. Global Error Handler
 app.onError((err, c) => {
   const isProduction = c.env.ENVIRONMENT === 'production'
   console.error('[Global Error]', err)

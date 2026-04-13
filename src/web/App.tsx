@@ -47,8 +47,6 @@ const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
 const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
 import { MaintenanceView } from './components/MaintenanceView'
-
-import { MaintenanceView } from './components/MaintenanceView'
 import { AlertTriangle, WifiOff, ExternalLink } from 'lucide-react'
 
 const AppContent: React.FC = () => {

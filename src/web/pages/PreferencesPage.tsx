@@ -11,7 +11,7 @@ import { ShieldCheck, Terminal } from 'lucide-react'
 const PreferencesPage: React.FC = () => {
   const { token, householdId } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
-  const settings = JSON.parse(profile?.settings_json || '{}')
+  const settings = JSON.parse(profile?.settingsJson || '{}')
 
   const updateSettings = async (newSettings: any) => {
     if (!token) return
@@ -22,16 +22,16 @@ const PreferencesPage: React.FC = () => {
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     })
     window.location.reload()
   }
 
   const toggleWidget = (widgetId: string) => {
-    const layout = settings.dashboard_layout || {}
+    const layout = settings.dashboardLayout || {}
     const newSettings = {
       ...settings,
-      dashboard_layout: {
+      dashboardLayout: {
         ...layout,
         [widgetId]: !layout[widgetId]
       }
@@ -141,8 +141,8 @@ const PreferencesPage: React.FC = () => {
                       <div className="text-sm font-bold">{w.name}</div>
                       <div className="text-xs text-secondary">{w.desc}</div>
                     </div>
-                    <div className={`w-10 h-6 rounded-full transition-all relative ${settings.dashboard_layout?.[w.id] !== false ? 'bg-primary' : 'bg-white/10'}`}>
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.dashboard_layout?.[w.id] !== false ? 'right-1' : 'left-1'}`} />
+                    <div className={`w-10 h-6 rounded-full transition-all relative ${settings.dashboardLayout?.[w.id] !== false ? 'bg-primary' : 'bg-white/10'}`}>
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.dashboardLayout?.[w.id] !== false ? 'right-1' : 'left-1'}`} />
                     </div>
                   </div>
                 ))}
@@ -163,7 +163,7 @@ const PreferencesPage: React.FC = () => {
                 <Terminal size={20} className="text-primary" />
                 <h3 className="text-lg font-bold text-primary">Advanced Developer Tools</h3>
               </div>
-              <p className="text-sm text-secondary mb-6">Configure webhooks and personal access tokens for API integrations.</p>
+              <p className="text-sm text-secondary mb-6">Configure webhooks and personal access tokens for service connections.</p>
               <DeveloperSettings />
             </section>
           </div>

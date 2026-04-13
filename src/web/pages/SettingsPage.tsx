@@ -40,7 +40,7 @@ const SettingsPage: React.FC = () => {
   
   // UI Display Settings State
   const [timezone, setTimezone] = useState('UTC')
-  const settingsJson = JSON.parse(profile?.settings_json || '{}')
+  const settingsJson = JSON.parse(profile?.settingsJson || '{}')
 
   // Modals / Edit Trackers
   const [isEditingAlias, setIsEditingAlias] = useState(false)
@@ -58,7 +58,7 @@ const SettingsPage: React.FC = () => {
   // Initialization
   useEffect(() => {
     if (profile) {
-      setName(profile.display_name || profile.displayName || '')
+      setName(profile.displayName || profile.displayName || '')
       setUsername(profile.username || '')
       setEmail(profile.email || '')
       setAvatar(profile.avatar_url || profile.avatarUrl || '')
@@ -79,10 +79,10 @@ const SettingsPage: React.FC = () => {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+          'x-household-id': localStorage.getItem('ledger_householdId') || ''
         },
         body: JSON.stringify({ 
-          display_name: name,
+          displayName: name,
           username: username,
           email: email,
           avatar_url: avatar || null,
@@ -112,7 +112,7 @@ const SettingsPage: React.FC = () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     })
     window.location.reload()
   }
@@ -126,7 +126,7 @@ const SettingsPage: React.FC = () => {
         headers: { 
           'Content-Type': 'application/json', 
           'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+          'x-household-id': localStorage.getItem('ledger_householdId') || ''
         },
         body: JSON.stringify({ newPassword })
       })
@@ -138,7 +138,7 @@ const SettingsPage: React.FC = () => {
             const cred = new (window as any).PasswordCredential({
               id: profile?.email || user?.email || '',
               password: newPassword,
-              name: profile?.display_name || user?.display_name
+              name: profile?.displayName || user?.displayName
             });
             navigator.credentials.store(cred);
           } catch (e) {
@@ -164,7 +164,7 @@ const SettingsPage: React.FC = () => {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+          'x-household-id': localStorage.getItem('ledger_householdId') || ''
         }
       });
       if (res.ok) {
@@ -191,7 +191,7 @@ const SettingsPage: React.FC = () => {
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_household_id') || ''
+          'x-household-id': localStorage.getItem('ledger_householdId') || ''
         },
         body: JSON.stringify({ provider, identityId })
       })
@@ -206,10 +206,10 @@ const SettingsPage: React.FC = () => {
 
   // Display Settings Helpers
   const toggleWidget = (widgetId: string) => {
-    const layout = settingsJson.dashboard_layout || {}
+    const layout = settingsJson.dashboardLayout || {}
     const newSettings = {
       ...settingsJson,
-      dashboard_layout: {
+      dashboardLayout: {
         ...layout,
         [widgetId]: !layout[widgetId]
       }
@@ -578,8 +578,8 @@ const SettingsPage: React.FC = () => {
                           <div className="text-sm font-bold">{w.name}</div>
                           <div className="text-xs text-secondary">{w.desc}</div>
                         </div>
-                        <div className={`w-10 h-6 rounded-full transition-all relative ${settingsJson.dashboard_layout?.[w.id] !== false ? 'bg-primary' : 'bg-white/10'}`}>
-                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settingsJson.dashboard_layout?.[w.id] !== false ? 'right-1' : 'left-1'}`} />
+                        <div className={`w-10 h-6 rounded-full transition-all relative ${settingsJson.dashboardLayout?.[w.id] !== false ? 'bg-primary' : 'bg-white/10'}`}>
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settingsJson.dashboardLayout?.[w.id] !== false ? 'right-1' : 'left-1'}`} />
                         </div>
                       </div>
                     ))}

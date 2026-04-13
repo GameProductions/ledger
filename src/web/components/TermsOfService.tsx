@@ -14,7 +14,7 @@ const TermsOfService: React.FC = () => {
 
       <section style={{ marginBottom: '2rem' }}>
         <h3>2. Description of Service</h3>
-        <p>LEDGER is a financial management tool provided by GameProductions. We utilize a "Sovereign Data" model where your information is stored in encrypted edge databases (Cloudflare D1) and <strong>optionally synchronized with your personal cloud storage providers for redundancy and whole-household restoration.</strong></p>
+        <p>LEDGER is a financial management tool provided by GameProductions. We utilize a "Secure Data" model where your information is stored in encrypted edge databases (Cloudflare D1) and <strong>optionally synchronized with your personal cloud storage providers for redundancy and whole-household restoration.</strong></p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

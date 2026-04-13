@@ -18,87 +18,90 @@ import { CURRENT_VERSION } from '../constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
 import { getDb } from '../db'
-import { users, households, systemConfig, systemFeatureFlags, systemRegistry, pccAuditLogs as systemPccAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements, auditLogs, paySchedules, householdInvites, accounts, linkedProviders, adminInvitations } from '../db/schema'
+import { users, households, systemConfig, systemFeatureFlags, systemRegistry, adminAuditLogs as systemAdminAuditLogs, systemAuditLogs, billingProcessors, serviceProviders, systemWalkthroughs, userHouseholds, passkeys, externalConnections, userIdentities, userLinkedAccounts, transactions, subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements, auditLogs, paySchedules, householdInvites, accounts, linkedProviders, adminInvitations } from '../db/schema'
 import { eq, or, and, sql, desc, count, like } from 'drizzle-orm'
 
-const pcc = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+const admin = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Dashboard Stats
-pcc.get('/stats', async (c) => {
+admin.get('/stats', async (c) => {
   const db = getDb(c.env)
   const userCount = await db.select({ count: count() }).from(users).then(res => res[0].count)
   const activeToday = await db.select({ count: count() }).from(users).where(sql`last_active_at > date("now", "-1 day")`).then(res => res[0].count)
   const householdCount = await db.select({ count: count() }).from(households).then(res => res[0].count)
   
   return c.json({
-    totalUsers: userCount || 0,
-    activeToday: activeToday || 0,
-    totalHouseholds: householdCount || 0,
-    version: CURRENT_VERSION
+    success: true,
+    data: {
+      totalUsers: userCount || 0,
+      activeToday: activeToday || 0,
+      totalHouseholds: householdCount || 0,
+      version: CURRENT_VERSION
+    }
   })
 })
 
 // System Configuration
-pcc.get('/config', async (c) => {
+admin.get('/config', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
-  return c.json(results || [])
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
+admin.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
-  const { config_value } = c.req.valid('json')
+  const { configValue } = c.req.valid('json')
   const db = getDb(c.env)
   
-  await db.update(systemConfig).set({ configValue: config_value, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
-  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
+  await db.update(systemConfig).set({ configValue, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
+  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { configValue })
   if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
   return c.json({ success: true })
 })
 
 // Feature Flags
-pcc.get('/features', async (c) => {
+admin.get('/features', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
+admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
   const id = c.req.param('id')
-  const { enabled_globally, target_user_ids } = c.req.valid('json')
+  const { enabledGlobally, targetUserIds } = c.req.valid('json')
   const db = getDb(c.env)
   
   await db.update(systemFeatureFlags).set({ 
-    enabledGlobally: enabled_globally ? 1 : 0, 
+    enabledGlobally: enabledGlobally ? 1 : 0, 
     updatedAt: sql`CURRENT_TIMESTAMP` 
   }).where(eq(systemFeatureFlags.id, id))
   
-  // Note: we're omitting target_user_ids since it's missing in some schema versions, raw SQL could patch it:
-  await db.run(sql`UPDATE system_feature_flags SET target_user_ids = ${target_user_ids} WHERE id = ${id}`);
+  // Note: we're omitting targetUserIds since it's missing in some schema versions, raw SQL could patch it:
+  await db.run(sql`UPDATE system_feature_flags SET target_user_ids = ${targetUserIds} WHERE id = ${id}`);
   
-  await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabled_globally })
+  await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabledGlobally })
   return c.json({ success: true })
 })
 
 // Master Record List (Registry)
-pcc.get('/records', async (c) => {
+admin.get('/records', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemRegistry).orderBy(systemRegistry.itemType, systemRegistry.name)
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
+admin.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  const metadata = data.metadata_json || {}
+  const metadata = data.metadataJson || {}
   const db = getDb(c.env)
   
   await db.insert(systemRegistry).values({
     id,
-    itemType: data.item_type,
+    itemType: data.itemType,
     name: data.name,
-    logoUrl: data.logo_url || null,
-    websiteUrl: data.website_url || null,
+    logoUrl: data.logoUrl || null,
+    websiteUrl: data.websiteUrl || null,
     metadataJson: JSON.stringify(metadata)
   })
   
@@ -106,7 +109,7 @@ pcc.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
   return c.json({ success: true, id })
 })
 
-pcc.delete('/records/:id', async (c) => {
+admin.delete('/records/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   await db.delete(systemRegistry).where(eq(systemRegistry.id, id))
@@ -115,7 +118,7 @@ pcc.delete('/records/:id', async (c) => {
 })
 
 // User Management
-pcc.get('/users', async (c) => {
+admin.get('/users', async (c) => {
   const db = getDb(c.env)
   const results = await db.select({
     id: users.id,
@@ -126,17 +129,17 @@ pcc.get('/users', async (c) => {
     createdAt: users.createdAt,
     lastActiveAt: users.lastActiveAt
   }).from(users).orderBy(desc(users.createdAt))
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) => {
+admin.post('/users/provisioning', zValidator('json', CreateUserAdminSchema, (result, c) => {
   if (!result.success) {
-    console.error('[Provisioning Validation Failed]', result.error)
+    console.error('[Admin Validation Failed]', result.error)
     return c.json({ success: false, error: result.error }, 400)
   }
 }), async (c) => {
   const data = c.req.valid('json')
-  const { username, email, password, display_name, global_role, force_password_change } = data
+  const { username, email, password, displayName, globalRole, forcePasswordChange } = data
   const db = getDb(c.env)
   
   const existing = await db.select({ id: users.id }).from(users).where(or(eq(users.username, username), eq(users.email, email))).limit(1).then(res => res[0])
@@ -150,55 +153,61 @@ pcc.post('/admin/users', zValidator('json', CreateUserAdminSchema, (result, c) =
     username,
     email,
     passwordHash,
-    displayName: display_name,
-    globalRole: global_role,
+    displayName,
+    globalRole,
     status: 'active',
-    forcePasswordChange: force_password_change ? 1 : 0
+    forcePasswordChange: forcePasswordChange ? 1 : 0
   })
   
-  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, global_role })
+  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, globalRole })
   
   const emailService = new EmailService(c.env)
   try {
     await emailService.sendProvisioningEmail(email, username, password)
   } catch (err) {
-    console.error('[Provisioning] Failed to send onboarding email:', err)
+    console.error('[Admin] Failed to send onboarding email:', err)
   }
 
   return c.json({ success: true, id: userId })
 })
 
 // Audit Vault
-pcc.get('/audit', async (c) => {
+admin.get('/audit', async (c) => {
   const db = getDb(c.env)
   // Simple raw query fallback for complex multi-table self-joins for audit logs
   const { results } = await c.env.DB.prepare(`
     SELECT 
       a.id, 
       a.action, 
-      a.table_name as target_type, 
-      a.record_id as target_id, 
-      a.new_values_json as details_json, 
-      a.created_at,
-      u_actor.display_name as actor_name,
-      u_target.display_name as target_name
+      a.table_name as targetType, 
+      a.record_id as targetId, 
+      a.new_values_json as detailsJson, 
+      a.created_at as createdAt,
+      u_actor.display_name as actorName,
+      u_target.display_name as targetName
     FROM audit_logs a
     LEFT JOIN users u_actor ON a.actor_id = u_actor.id
     LEFT JOIN users u_target ON a.record_id = u_target.id AND a.table_name = 'users'
     ORDER BY a.created_at DESC 
     LIMIT 200
   `).all()
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.get('/audit/system', async (c) => {
+admin.get('/audit/system', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemAuditLogs).orderBy(desc(systemAuditLogs.createdAt)).limit(100)
-  return c.json(results)
+  const results = await db.select({
+    id: systemAuditLogs.id,
+    action: systemAuditLogs.action,
+    target: systemAuditLogs.target,
+    detailsJson: systemAuditLogs.detailsJson,
+    createdAt: systemAuditLogs.createdAt
+  }).from(systemAuditLogs).orderBy(desc(systemAuditLogs.createdAt)).limit(100)
+  return c.json({ success: true, data: results || [] })
 })
 
 // Global Search
-pcc.get('/search', async (c) => {
+admin.get('/search', async (c) => {
   const q = c.req.query('q') || ''
   if (q.length < 2) return c.json({ users: [], registry: [] })
   const db = getDb(c.env)
@@ -215,17 +224,17 @@ pcc.get('/search', async (c) => {
     itemType: systemRegistry.itemType
   }).from(systemRegistry).where(like(systemRegistry.name, `%${q}%`)).limit(10)
 
-  return c.json({ users: usersRes, registry: registryRes })
+  return c.json({ success: true, data: { users: usersRes, registry: registryRes } })
 })
 
 // Payment Networks (Processors)
-pcc.get('/networks', async (c) => {
+admin.get('/networks', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(billingProcessors).orderBy(billingProcessors.name)
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
+admin.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
@@ -233,26 +242,26 @@ pcc.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
   await db.insert(billingProcessors).values({
     id,
     name: data.name,
-    websiteUrl: data.website_url,
-    brandingUrl: data.branding_url,
-    supportUrl: data.support_url,
-    subscriptionIdNotes: data.subscription_id_notes
+    websiteUrl: data.websiteUrl,
+    brandingUrl: data.brandingUrl,
+    supportUrl: data.supportUrl,
+    subscriptionIdNotes: data.subscriptionIdNotes
   })
   await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
   return c.json({ success: true, id })
 })
 
-pcc.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
+admin.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const db = getDb(c.env)
   
   const updates: any = { updatedAt: sql`CURRENT_TIMESTAMP` }
   if (data.name) updates.name = data.name
-  if (data.website_url) updates.websiteUrl = data.website_url
-  if (data.branding_url) updates.brandingUrl = data.branding_url
-  if (data.support_url) updates.supportUrl = data.support_url
-  if (data.subscription_id_notes) updates.subscriptionIdNotes = data.subscription_id_notes
+  if (data.websiteUrl) updates.websiteUrl = data.websiteUrl
+  if (data.brandingUrl) updates.brandingUrl = data.brandingUrl
+  if (data.supportUrl) updates.supportUrl = data.supportUrl
+  if (data.subscriptionIdNotes) updates.subscriptionIdNotes = data.subscriptionIdNotes
 
   if (Object.keys(updates).length > 1) {
     await db.update(billingProcessors).set(updates).where(eq(billingProcessors.id, id))
@@ -261,11 +270,11 @@ pcc.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()),
   return c.json({ success: true })
 })
 
-pcc.delete('/networks/:id', async (c) => {
+admin.delete('/networks/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   // Check for linked providers
-  const linked = await db.select({ count: count() }).from(serviceProviders).where(sql`billing_processor_id = ${id}`)
+  const linked = await db.select({ count: count() }).from(serviceProviders).where(eq(serviceProviders.billingProcessorId, id))
   if (linked[0].count > 0) {
     throw new HTTPException(400, { message: 'Cannot delete network with active service provider links' })
   }
@@ -275,37 +284,44 @@ pcc.delete('/networks/:id', async (c) => {
 })
 
 // Providers
-pcc.get('/providers', async (c) => {
+admin.get('/providers', async (c) => {
   // Using direct prepared statement logic here for complex join not modeled perfectly yet
   const { results } = await c.env.DB.prepare(`
-    SELECT sp.*, bp.name as billing_processor_name 
+    SELECT 
+      sp.id, 
+      sp.name, 
+      sp.url as websiteUrl, 
+      sp.icon_url as brandingUrl, 
+      sp.billing_processor_id as billingProcessorId, 
+      sp.is_3rd_party_capable as is3rdPartyCapable,
+      bp.name as billingProcessorName 
     FROM service_providers sp 
     LEFT JOIN billing_processors bp ON sp.billing_processor_id = bp.id 
     ORDER BY sp.name ASC
   `).all()
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/providers', zValidator('json', ProviderSchema), async (c) => {
+admin.post('/providers', zValidator('json', ProviderSchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   // We use db.run to satisfy fields missed in static export or simply generic structure
-  await db.run(sql`INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (${id}, ${data.name}, ${data.website_url || null}, ${data.branding_url || null}, ${data.billing_processor_id}, ${data.is_3rd_party_capable ? 1 : 0})`)
+  await db.run(sql`INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (${id}, ${data.name}, ${data.websiteUrl || null}, ${data.brandingUrl || null}, ${data.billingProcessorId}, ${data.is3rdPartyCapable ? 1 : 0})`)
   await logAudit(c, 'service_providers', id, 'admin_create', null, data)
   return c.json({ success: true, id })
 })
 
-pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async (c) => {
+admin.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async (c) => {
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const db = getDb(c.env)
-  const { name, website_url, branding_url, billing_processor_id, is_3rd_party_capable } = data
+  const { name, websiteUrl, brandingUrl, billingProcessorId, is3rdPartyCapable } = data
   try {
     await db.run(sql`
        UPDATE service_providers SET 
-       name = COALESCE(${name}, name), url = COALESCE(${website_url}, url), icon_url = COALESCE(${branding_url}, icon_url), 
-       billing_processor_id = COALESCE(${billing_processor_id}, billing_processor_id), is_3rd_party_capable = COALESCE(${is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null}, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
+       name = COALESCE(${name}, name), url = COALESCE(${websiteUrl}, url), icon_url = COALESCE(${brandingUrl}, icon_url), 
+       billing_processor_id = COALESCE(${billingProcessorId}, billing_processor_id), is_3rd_party_capable = COALESCE(${is3rdPartyCapable !== undefined ? (is3rdPartyCapable ? 1 : 0) : null}, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
        WHERE id = ${id}
     `)
     await logAudit(c, 'service_providers', id, 'admin_update', null, data)
@@ -315,7 +331,7 @@ pcc.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), async 
   }
 })
 
-pcc.delete('/providers/:id', async (c) => {
+admin.delete('/providers/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   await db.delete(serviceProviders).where(eq(serviceProviders.id, id))
@@ -324,59 +340,59 @@ pcc.delete('/providers/:id', async (c) => {
 })
 
 // Walkthroughs
-pcc.get('/walkthroughs', async (c) => {
+admin.get('/walkthroughs', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemWalkthroughs).orderBy(desc(systemWalkthroughs.createdAt))
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/walkthroughs', zValidator('json', z.object({
+admin.post('/walkthroughs', zValidator('json', z.object({
   version: z.string(),
   title: z.string(),
-  content_md: z.string()
+  contentMd: z.string()
 })), async (c) => {
-  const { version, title, content_md } = c.req.valid('json')
+  const { version, title, contentMd } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(systemWalkthroughs).values({
-    id, version, title, contentMd: content_md
+    id, version, title, contentMd
   })
   await logAudit(c, 'system_walkthroughs', id, 'SYNC_WALKTHROUGH', {}, { version, title })
   return c.json({ success: true, id })
 })
 
 // System-wide User Management (Admin)
-pcc.get('/admin/users', async (c) => {
+admin.get('/users/management', async (c) => {
   const db = getDb(c.env)
   const results = await db.select({
     id: users.id, email: users.email, username: users.username, globalRole: users.globalRole, status: users.status, createdAt: users.createdAt, lastActiveAt: users.lastActiveAt
   }).from(users).orderBy(desc(users.createdAt))
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.patch('/admin/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
+admin.patch('/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
   const { userId } = c.req.param()
-  const { global_role, status, display_name, email } = c.req.valid('json')
+  const { globalRole, status, displayName, email } = c.req.valid('json')
   const db = getDb(c.env)
   
   const old = await db.select({ globalRole: users.globalRole, status: users.status, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
   if (!old) throw new HTTPException(404, { message: 'User not found' })
 
   const updates: any = {}
-  if (global_role) updates.globalRole = global_role
+  if (globalRole) updates.globalRole = globalRole
   if (status) updates.status = status
-  if (display_name) updates.displayName = display_name
+  if (displayName) updates.displayName = displayName
   if (email) updates.email = email
 
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
   }
     
-  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status, display_name, email })
+  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { globalRole, status, displayName, email })
   return c.json({ success: true })
 })
 
-pcc.get('/admin/users/:userId/details', async (c) => {
+admin.get('/users/:userId/details', async (c) => {
   const { userId } = c.req.param()
   const db = getDb(c.env)
   
@@ -388,35 +404,38 @@ pcc.get('/admin/users/:userId/details', async (c) => {
   
   if (!userFields) throw new HTTPException(404, { message: 'User not found' })
 
-  const connections = await db.run(sql`SELECT id, provider, status, created_at FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ${userId})`).then(res => res.results)
+  const connections = await db.run(sql`SELECT id, provider, status, created_at as createdAt FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ${userId})`).then(res => res.results)
   const socialLinks = await db.select({ id: userIdentities.id, provider: userIdentities.provider, providerId: userIdentities.providerUserId, createdAt: userIdentities.createdAt }).from(userIdentities).where(eq(userIdentities.userId, userId))
   const userPasskeys = await db.select({ id: passkeys.id, name: passkeys.name, aaguid: passkeys.aaguid, createdAt: passkeys.createdAt }).from(passkeys).where(eq(passkeys.userId, userId))
   
   const history = await db.run(sql`
-    SELECT action, target, created_at, details_json 
-    FROM pcc_audit_logs 
+    SELECT action, target, created_at as createdAt, details_json 
+    FROM admin_audit_logs 
     WHERE user_id = ${userId} OR (target = 'users' AND target_id = ${userId})
     ORDER BY created_at DESC LIMIT 15
   `).then(res => res.results)
 
   return c.json({
-    profile: {
-      ...userFields,
-      has_2fa: userFields.totpSecret ? 1 : 0
-    },
-    security: {
-      mfa_enabled: !!userFields.totpSecret,
-      passkeys: userPasskeys,
-      force_password_change: !!userFields.forcePasswordChange
-    },
-    linked_accounts: connections,
-    social_links: socialLinks,
-    history: history
+    success: true,
+    data: {
+      profile: {
+        ...userFields,
+        has2fa: userFields.totpSecret ? 1 : 0
+      },
+      security: {
+        mfaEnabled: !!userFields.totpSecret,
+        passkeys: userPasskeys,
+        forcePasswordChange: !!userFields.forcePasswordChange
+      },
+      linkedAccounts: connections,
+      socialLinks: socialLinks,
+      history: history
+    }
   })
 })
 
 // Administrative Overrides (v3.16.1)
-pcc.post('/admin/users/:userId/password/reset', zValidator('json', z.object({
+admin.post('/users/:userId/password/reset', zValidator('json', z.object({
   newPassword: z.string().min(8),
   isTemporary: z.boolean().optional().default(true)
 })), async (c) => {
@@ -426,22 +445,22 @@ pcc.post('/admin/users/:userId/password/reset', zValidator('json', z.object({
   const passwordHash = await hashPassword(newPassword)
   await db.update(users).set({ passwordHash, forcePasswordChange: isTemporary ? 1 : 0 }).where(eq(users.id, userId))
     
-  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { is_temporary: isTemporary })
+  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { isTemporary })
   return c.json({ success: true })
 })
 
-pcc.patch('/admin/users/:userId/passkeys/:id', zValidator('json', z.object({
+admin.patch('/users/:userId/passkeys/:id', zValidator('json', z.object({
   name: z.string().min(1).max(100)
 })), async (c) => {
   const { userId, id } = c.req.param()
   const { name } = c.req.valid('json')
   const db = getDb(c.env)
   await db.update(passkeys).set({ name }).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
-  await logAudit(c, 'passkeys', id, 'ADMIN_RENAME_PASSKEY', { userId }, { new_name: name })
+  await logAudit(c, 'passkeys', id, 'ADMIN_RENAME_PASSKEY', { userId }, { newName: name })
   return c.json({ success: true })
 })
 
-pcc.delete('/admin/users/:userId/passkeys/:id', async (c) => {
+admin.delete('/users/:userId/passkeys/:id', async (c) => {
   const { userId, id } = c.req.param()
   const db = getDb(c.env)
   await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
@@ -450,26 +469,26 @@ pcc.delete('/admin/users/:userId/passkeys/:id', async (c) => {
 })
 
 // External Connections Management
-pcc.get('/connections', async (c) => {
+admin.get('/connections', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(externalConnections).orderBy(desc(externalConnections.createdAt))
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 // Household Management (God Mode)
-pcc.get('/households', async (c) => {
+admin.get('/households', async (c) => {
   // Complex aggregation better ran natively
   const { results } = await c.env.DB.prepare(`
-    SELECT h.*, count(uh.user_id) as member_count 
+    SELECT h.*, count(uh.user_id) as memberCount 
     FROM households h 
     LEFT JOIN user_households uh ON h.id = uh.household_id 
     GROUP BY h.id 
     ORDER BY h.name ASC
   `).all()
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
+admin.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
   const { id } = c.req.param()
   const { name } = c.req.valid('json')
   const db = getDb(c.env)
@@ -478,7 +497,7 @@ pcc.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(
   return c.json({ success: true })
 })
 
-pcc.delete('/households/:id', async (c) => {
+admin.delete('/households/:id', async (c) => {
   const { id } = c.req.param()
   const db = getDb(c.env)
   // Hard delete cascading backwards slowly...
@@ -497,7 +516,7 @@ pcc.delete('/households/:id', async (c) => {
 })
 
 // Administrative Protocol: Account Unification (v3.20)
-pcc.post('/admin/users/merge', zValidator('json', z.object({
+admin.post('/users/merge', zValidator('json', z.object({
   sourceId: z.string().uuid(),
   targetId: z.string().uuid()
 })), async (c) => {
@@ -531,7 +550,7 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
     db.update(sharedBalances).set({ toUserId: targetId }).where(eq(sharedBalances.toUserId, sourceId)),
     
     // Audit History
-    db.run(sql`UPDATE pcc_audit_logs SET user_id = ${targetId} WHERE user_id = ${sourceId}`),
+    db.run(sql`UPDATE admin_audit_logs SET user_id = ${targetId} WHERE user_id = ${sourceId}`),
 
     // Purge
     db.delete(users).where(eq(users.id, sourceId))
@@ -546,57 +565,57 @@ pcc.post('/admin/users/merge', zValidator('json', z.object({
 })
 
 // System Announcements (v3.21)
-pcc.get('/announcements', async (c) => {
+admin.get('/announcements', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemAnnouncements).orderBy(desc(systemAnnouncements.createdAt))
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/announcements', zValidator('json', z.object({
+admin.post('/announcements', zValidator('json', z.object({
   title: z.string().min(1),
-  content_md: z.string().min(1),
+  contentMd: z.string().min(1),
   priority: z.enum(['info', 'warning', 'critical']).default('info'),
-  expires_in_hours: z.number().optional()
+  expiresInHours: z.number().optional()
 })), async (c) => {
-  const { title, content_md, priority, expires_in_hours } = c.req.valid('json')
+  const { title, contentMd, priority, expiresInHours } = c.req.valid('json')
   const id = crypto.randomUUID()
   const actorId = c.get('userId') as string
   const db = getDb(c.env)
   
   let expiresAt = null
-  if (expires_in_hours) {
-    expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
+  if (expiresInHours) {
+    expiresAt = new Date(Date.now() + expiresInHours * 3600000).toISOString()
   }
 
   await db.insert(systemAnnouncements).values({
-    id, title, contentMd: content_md, priority, actorId, expiresAt
+    id, title, contentMd, priority, actorId, expiresAt
   })
 
   await logAudit(c, 'system_announcements', id, 'BROADCAST_CREATED', {}, { title, priority })
   return c.json({ success: true, id })
 })
 
-pcc.patch('/announcements/:id', zValidator('json', z.object({
+admin.patch('/announcements/:id', zValidator('json', z.object({
   title: z.string().optional(),
-  content_md: z.string().optional(),
+  contentMd: z.string().optional(),
   priority: z.string().optional(),
-  is_active: z.boolean().optional()
+  isActive: z.boolean().optional()
 })), async (c) => {
   const id = c.req.param('id')
-  const { title, content_md, priority, is_active } = c.req.valid('json')
+  const { title, contentMd, priority, isActive } = c.req.valid('json')
   const db = getDb(c.env)
   
   const updates: any = {}
   if (title) updates.title = title
-  if (content_md) updates.contentMd = content_md
+  if (contentMd) updates.contentMd = contentMd
   if (priority) updates.priority = priority
-  if (is_active !== undefined) updates.isActive = is_active ? 1 : 0
+  if (isActive !== undefined) updates.isActive = isActive ? 1 : 0
   
   await db.update(systemAnnouncements).set(updates).where(eq(systemAnnouncements.id, id))
   return c.json({ success: true })
 })
 
-pcc.delete('/announcements/:id', async (c) => {
+admin.delete('/announcements/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   await db.delete(systemAnnouncements).where(eq(systemAnnouncements.id, id))
@@ -604,13 +623,13 @@ pcc.delete('/announcements/:id', async (c) => {
 })
 
 // Admin Invitations
-pcc.get('/invitations', async (c) => {
+admin.get('/invitations', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(adminInvitations).orderBy(desc(adminInvitations.createdAt))
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
-pcc.post('/invitations', zValidator('json', z.object({
+admin.post('/invitations', zValidator('json', z.object({
   role: z.enum(['super_admin', 'operator']).default('super_admin'),
   expires_in_hours: z.number().default(24)
 })), async (c) => {
@@ -626,10 +645,10 @@ pcc.post('/invitations', zValidator('json', z.object({
     isClaimed: 0
   })
   
-  return c.json({ success: true, token, expires_at: expiresAt })
+  return c.json({ success: true, token, expiresAt })
 })
 
-pcc.delete('/invitations/:token', async (c) => {
+admin.delete('/invitations/:token', async (c) => {
   const token = c.req.param('token')
   const db = getDb(c.env)
   await db.delete(adminInvitations).where(eq(adminInvitations.token, token))
@@ -637,7 +656,7 @@ pcc.delete('/invitations/:token', async (c) => {
 })
 
 // Maintenance Operations
-pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean() })), async (c) => {
+admin.post('/maintenance', zValidator('json', z.object({ enabled: z.boolean() })), async (c) => {
   const { enabled } = c.req.valid('json')
   const db = getDb(c.env)
   await db.update(systemConfig).set({ configValue: enabled ? 'true' : 'false' }).where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
@@ -647,7 +666,7 @@ pcc.post('/admin/maintenance', zValidator('json', z.object({ enabled: z.boolean(
 })
 
 // Database Migration Operations
-pcc.post('/admin/maintenance/migrate-secrets', async (c) => {
+admin.post('/maintenance/migrate-secrets', async (c) => {
   const db = getDb(c.env)
   let migratedCount = 0
   const secretKey = c.env.ENCRYPTION_KEY || c.env.JWT_SECRET
@@ -725,7 +744,7 @@ pcc.post('/admin/maintenance/migrate-secrets', async (c) => {
 })
 
 // User Support Access (Impersonation)
-pcc.post('/admin/users/:userId/impersonate', async (c) => {
+admin.post('/users/:userId/impersonate', async (c) => {
   try {
     const { userId } = c.req.param()
     const db = getDb(c.env)
@@ -759,13 +778,13 @@ pcc.post('/admin/users/:userId/impersonate', async (c) => {
       }
     })
   } catch (err: any) {
-    console.error('[PCC Impersonate Error]', err)
+    console.error('[Admin Impersonate Error]', err)
     throw new HTTPException(500, { message: 'Support access system failure' })
   }
 })
 
 // Database Self-Healing (v3.26.0 - Shifted from Global Middleware)
-pcc.post('/admin/maintenance/self-heal', async (c) => {
+admin.post('/maintenance/self-heal', async (c) => {
   try {
     const db = c.env.DB;
     await db.batch([
@@ -897,4 +916,4 @@ pcc.post('/admin/maintenance/self-heal', async (c) => {
   }
 })
 
-export default pcc
+export default admin

@@ -20,7 +20,7 @@ const PrivacyPolicy: React.FC = () => {
         <ul>
           <li><strong>Passkeys Metadata</strong>: When you enroll a Passkey, we store public keys and metadata (e.g., provider name, device type). <strong>Actual biometric data (fingerprints, FaceID) never leaves your device and is not accessible to LEDGER.</strong></li>
           <li><strong>Identity Synchronization Assets</strong>: We synchronize display names and avatar URLs from linked Discord or Google accounts. You may choose to retain or revert these assets when unlinking an account.</li>
-          <li><strong>Financial Profiles</strong>: Your accounts and budgets are stored in a sovereign edge database (Cloudflare D1).</li>
+          <li><strong>Financial Profiles</strong>: Your accounts and budgets are stored in a secure edge database (Cloudflare D1).</li>
           <li><strong>Redundancy Backups</strong>: Encrypted backups are optionally pushed to your personal cloud storage (GDrive/Dropbox/OneDrive).</li>
         </ul>
         </p>

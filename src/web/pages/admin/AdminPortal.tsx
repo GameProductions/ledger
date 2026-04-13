@@ -3,12 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import UserMenu from '../../components/UserMenu';
 import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock, Globe, Zap } from 'lucide-react';
 
-interface PCCPortalProps {
+interface AdminPortalProps {
   children: React.ReactNode;
   activePath: string;
 }
 
-const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
+const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   const { user } = useAuth();
 
   React.useEffect(() => {
@@ -17,7 +17,7 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
     return () => { document.title = originalTitle; };
   }, []);
 
-  if (!user || user.global_role !== 'super_admin') {
+  if (!user || user.globalRole !== 'super_admin') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white p-6 text-center shadow-[inset_0_0_100px_rgba(239,68,68,0.1)]">
         <div className="animate-in zoom-in duration-500">
@@ -30,16 +30,17 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   }
 
   const navItems = [
-    { name: 'God Dashboard', path: '#/system-pcc/dashboard', icon: LayoutDashboard },
-    { name: 'User Directory', path: '#/system-pcc/users', icon: Users },
-    { name: 'Household Registry', path: '#/system-pcc/households', icon: Shield },
-    { name: 'Service Providers', path: '#/system-pcc/providers', icon: Globe },
-    { name: 'Payment Networks', path: '#/system-pcc/processors', icon: Zap },
-    { name: 'Safety Vault', path: '#/system-pcc/audit', icon: Activity },
-    { name: 'Master Records', path: '#/system-pcc/registry', icon: Database },
-    { name: 'Global Search', path: '#/system-pcc/search', icon: Search },
-    { name: 'Platform Settings', path: '#/system-pcc/config', icon: Settings },
-    { name: 'God Guide', path: '#/system-pcc/guide', icon: FileText },
+    { name: 'God Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
+    { name: 'User Directory', path: '#/admin/users', icon: Users },
+    { name: 'Household Registry', path: '#/admin/households', icon: Shield },
+    { name: 'Service Providers', path: '#/admin/providers', icon: Globe },
+    { name: 'Payment Networks', path: '#/admin/processors', icon: Zap },
+    { name: 'Safety Vault', path: '#/admin/audit', icon: Activity },
+    { name: 'Master Records', path: '#/admin/registry', icon: Database },
+    { name: 'Global Search', path: '#/admin/search', icon: Search },
+    { name: 'Platform Settings', path: '#/admin/config', icon: Settings },
+    { name: 'God Broadcast', path: '#/admin/broadcast', icon: Zap },
+    { name: 'God Guide', path: '#/admin/guide', icon: FileText },
   ];
 
   return (
@@ -66,7 +67,7 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
             <Shield size={16} className="text-emerald-500" />
             <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Secure Connection Active</span>
           </div>
-          <UserMenu isPcc={true} />
+          <UserMenu isAdminPortal={true} />
         </div>
       </header>
 
@@ -127,4 +128,4 @@ const PCCPortal: React.FC<PCCPortalProps> = ({ children, activePath }) => {
   );
 };
 
-export default PCCPortal;
+export default AdminPortal;

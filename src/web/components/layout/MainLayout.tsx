@@ -30,7 +30,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
               <div className="p-3 bg-primary/10 rounded-xl text-primary font-bold text-sm border border-primary/20">Executive Overview</div>
               <div className="p-3 hover:bg-white/5 rounded-xl text-sm transition-colors cursor-pointer">Cash Flow Analysis</div>
               <div className="p-3 hover:bg-white/5 rounded-xl text-sm transition-colors cursor-pointer">Asset Ledger</div>
-              <div onClick={() => window.location.hash = '#/system-pcc/audit'} className="p-3 hover:bg-white/5 rounded-xl text-sm transition-colors cursor-pointer">Security Audit</div>
+              <div onClick={() => window.location.hash = '#/admin/audit'} className="p-3 hover:bg-white/5 rounded-xl text-sm transition-colors cursor-pointer">Security Audit</div>
               <div onClick={() => window.location.hash = '#/help/support'} className="p-3 mt-4 bg-primary/5 text-primary border border-primary/20 rounded-xl text-sm font-bold flex items-center gap-2 cursor-pointer hover:bg-primary/10 transition-all group">
                 <HelpCircle size={16} className="group-hover:rotate-12 transition-transform" />
                 Support Portal

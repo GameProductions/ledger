@@ -87,7 +87,7 @@ export const BillsList: React.FC = () => {
                             <div className="absolute top-0 right-0 bg-amber-500/10 border-b border-l border-amber-500/20 px-3 py-1 rounded-bl-xl">
                                 <div className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
                                     <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                                    Planned Adjustment: <Price amountCents={bill.upcoming_amount_cents} /> on {bill.upcoming_effective_date}
+                                    Planned Adjustment: <Price amountCents={bill.upcoming_amountCents} /> on {bill.upcoming_effective_date}
                                 </div>
                             </div>
                         )}
@@ -103,13 +103,13 @@ export const BillsList: React.FC = () => {
                                         {bill.status}
                                     </span>
                                     <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                                        Due: {bill.due_date}
+                                        Due: {bill.dueDate}
                                     </span>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <Price amountCents={bill.amount_cents} className="text-xl font-black tracking-tighter" />
-                                {bill.is_recurring && (
+                                <Price amountCents={bill.amountCents} className="text-xl font-black tracking-tighter" />
+                                {bill.isRecurring && (
                                     <div className="text-[9px] font-black uppercase tracking-widest text-primary/60 mt-0.5">Recurring Monthly</div>
                                 )}
                             </div>
@@ -170,7 +170,7 @@ export const BillsList: React.FC = () => {
                                                         }`}>
                                                             {split.status}
                                                         </span>
-                                                        <Price amountCents={split.calculated_amount_cents} className="text-[11px] font-black tracking-widest" />
+                                                        <Price amountCents={split.calculated_amountCents} className="text-[11px] font-black tracking-widest" />
                                                     </div>
                                                 </div>
                                             ))}
@@ -222,7 +222,7 @@ export const BillsList: React.FC = () => {
                                 <LiabilitySplitter 
                                     targetId={bill.id} 
                                     targetType="bill" 
-                                    totalAmountCents={bill.amount_cents} 
+                                    totalAmountCents={bill.amountCents} 
                                     onComplete={() => {
                                         setOpenSplitterId(null);
                                         mutate();

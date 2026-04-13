@@ -19,7 +19,7 @@ export const ToursPage: React.FC = () => {
       action: 'Start Experience'
     },
     {
-      title: 'PCC Command Protocols',
+      title: 'Admin Command Protocols',
       description: 'Administrator guide for global search and system config.',
       icon: <Star className="text-orange-400" />,
       action: 'Launch Protocol'

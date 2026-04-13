@@ -14,11 +14,11 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   
   const settings = useMemo(() => {
     try {
-      return JSON.parse(profile?.settings_json || '{}')
+      return JSON.parse(profile?.settingsJson || '{}')
     } catch {
       return {}
     }
-  }, [profile?.settings_json])
+  }, [profile?.settingsJson])
 
   const currency = settings.currency || globalConfig?.config?.PLATFORM_DEFAULT_CURRENCY || 'USD'
 

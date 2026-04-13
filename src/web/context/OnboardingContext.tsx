@@ -40,19 +40,21 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (res.ok) {
-        const data = await res.json()
-        setCompletedSteps(data.completed_steps)
-        setIsCompleted(data.is_completed)
-        setUpdates(data.updates || [])
-        setCurrentVersion(data.current_version || 'v2.0.0')
-        
-        // Show tour if there are new updates OR if onboarding not started
-        if (data.updates?.length > 0 || (!data.is_completed && data.completed_steps.length === 0)) {
-          setActiveStep('welcome')
+        const envelope = await res.json()
+        if (envelope.success && envelope.data) {
+          const data = envelope.data
+          setCompletedSteps(data.completedSteps || [])
+          setIsCompleted(data.isCompleted || false)
+          setUpdates(data.updates || [])
+          setCurrentVersion(data.currentVersion || 'v3.29.4')
+          
+          if ((data.updates?.length || 0) > 0 || (!data.isCompleted && Array.isArray(data.completedSteps) && data.completedSteps.length === 0)) {
+            setActiveStep('welcome')
+          }
         }
       }
     } catch (error) {
-      console.error('Failed to fetch onboarding status:', error)
+      console.error('[FORENSIC_FAILURE] Failed to fetch onboarding status:', error)
     } finally {
       setIsLoading(false)
     }
@@ -69,13 +71,16 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         body: JSON.stringify({ step, isLast, version })
       })
       if (res.ok) {
-        const data = await res.json()
-        setCompletedSteps(data.completed_steps)
-        setIsCompleted(data.is_completed)
-        if (isLast) setActiveStep(null)
+        const envelope = await res.json()
+        if (envelope.success && envelope.data) {
+          const data = envelope.data
+          setCompletedSteps(data.completedSteps || [])
+          setIsCompleted(data.isCompleted || false)
+          if (isLast) setActiveStep(null)
+        }
       }
     } catch (error) {
-      console.error('Failed to update onboarding step:', error)
+      console.error('[FORENSIC_FAILURE] Failed to update onboarding step:', error)
     }
   }
 

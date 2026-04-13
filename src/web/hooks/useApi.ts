@@ -33,30 +33,34 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
         signal: abortControllerRef.current.signal,
         headers: {
           Authorization: `Bearer ${token}`,
-          'x-household-id': householdId || (window.localStorage.getItem('ledger_household_id') || 'household-abc')
+          'x-household-id': householdId || ''
         }
       })
       
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
-          // Check if we are already logging out to prevent spam
           const isLoggingOut = (window as any)._ledger_is_logging_out;
           if (!isLoggingOut) {
             (window as any)._ledger_is_logging_out = true;
             console.error(`Auth Error (${res.status}) on ${path}. Initiating global logout.`);
             logout();
           }
-          return; // Stop processing this failed request
+          return;
         }
         throw new Error(`API Error: ${res.status}`);
       }
 
-      const json = await res.json()
+      const envelope = await res.json()
       
-      // Only update state if data actually changed
+      // Zero-Trust Validation: Every response MUST follow the { success: true, data: T } envelope
+      if (envelope.success !== true || envelope.data === undefined) {
+        console.error(`[FORENSIC_FAILURE] Malformed response envelope from ${path}`, envelope);
+        throw new Error(`API Protocol Error: Strict envelope missing for ${path}`);
+      }
+
       setData((prevData) => {
-        if (JSON.stringify(json) !== JSON.stringify(prevData)) {
-          return json;
+        if (JSON.stringify(envelope.data) !== JSON.stringify(prevData)) {
+          return envelope.data;
         }
         return prevData;
       });
@@ -70,6 +74,11 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
   }, [path, token, householdId, options.refreshInterval, logout])
 
   useEffect(() => {
+    // Reset state when path or household changes to prevent stale data flickering
+    setData(null)
+    setLoading(true)
+    setError(null)
+    
     fetcher()
     
     let interval: any;

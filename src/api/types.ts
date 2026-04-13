@@ -30,6 +30,7 @@ export type Bindings = {
   ONEDRIVE_CLIENT_SECRET: string
   GITHUB_TOKEN: string
   GITHUB_REPO: string
+  MAINTENANCE_MODE?: string
 }
 
 export type Variables = {

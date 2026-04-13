@@ -18,9 +18,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isDev = import.meta.env.DEV;
   const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null))
-  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","display_name":"Administrator","email":"admin@example.com"}' : 'null')))
-  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_household_id') || (isDev ? 'household-abc' : null))
-  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_global_role') || 'user')
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","displayName":"Administrator","email":"admin@example.com"}' : 'null')))
+  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_householdId') || (isDev ? 'household-abc' : null))
+  const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_globalRole') || 'user')
   const [privacyMode, setPrivacyMode] = useState<boolean>(localStorage.getItem('ledger_privacy_mode') === 'true')
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
 
@@ -33,10 +33,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             headers: { 'Authorization': `Bearer ${token}` }
           })
           if (res.ok) {
-            const data = await res.json()
-            setGlobalRole(data.globalRole)
-            setIsImpersonating(data.isImpersonating)
-            localStorage.setItem('ledger_global_role', data.globalRole)
+            const envelope = await res.json()
+            if (envelope.success && envelope.data) {
+              const { globalRole: role, isImpersonating: imp } = envelope.data
+              setGlobalRole(role)
+              setIsImpersonating(imp)
+              localStorage.setItem('ledger_globalRole', role)
+            } else {
+              console.error('[FORENSIC_FAILURE] Malformed verify response', envelope)
+              logout()
+            }
           } else if (res.status === 401) {
             logout()
           }
@@ -55,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGlobalRole(newUser.globalRole || 'user')
     localStorage.setItem('ledger_token', newToken)
     localStorage.setItem('ledger_user', JSON.stringify(newUser))
-    localStorage.setItem('ledger_global_role', newUser.globalRole || 'user')
+    localStorage.setItem('ledger_globalRole', newUser.globalRole || 'user')
     
     // Clear impersonation on fresh login
     setIsImpersonating(false)
@@ -63,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const hId = newUser.householdId || 'ledger-main-001'
     setHouseholdId(hId)
-    localStorage.setItem('ledger_household_id', hId)
+    localStorage.setItem('ledger_householdId', hId)
   }
 
   const logout = () => {
@@ -79,8 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Clear storage
     localStorage.removeItem('ledger_token')
     localStorage.removeItem('ledger_user')
-    localStorage.removeItem('ledger_household_id')
-    localStorage.removeItem('ledger_global_role')
+    localStorage.removeItem('ledger_householdId')
+    localStorage.removeItem('ledger_globalRole')
     localStorage.removeItem('ledger_privacy_mode')
     localStorage.removeItem('ledger_impersonation_active')
   }
@@ -92,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleSetHouseholdId = (id: string) => {
     setHouseholdId(id)
-    localStorage.setItem('ledger_household_id', id)
+    localStorage.setItem('ledger_householdId', id)
     // Removed window.location.reload() - useApi will now be reactive
   }
 

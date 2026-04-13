@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { useToast } from '../../context/ToastContext';
 import { Plus, Trash2, Zap, Building2, Search, ShieldAlert, ExternalLink } from 'lucide-react';
 
-const PCCData: React.FC = () => {
+const AdminData: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -22,7 +22,7 @@ const PCCData: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/records`, {
+      const res = await fetch(`${apiUrl}/api/admin/records`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -49,7 +49,7 @@ const PCCData: React.FC = () => {
       metadata_json: newItem.metadata_json || {}
     };
 
-    const res = await fetch(`${apiUrl}/api/pcc/records`, {
+    const res = await fetch(`${apiUrl}/api/admin/records`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(submissionData)
@@ -71,7 +71,7 @@ const PCCData: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/records/${id}`, {
+    const res = await fetch(`${apiUrl}/api/admin/records/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -84,10 +84,10 @@ const PCCData: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></PCCPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></AdminPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/registry">
+    <AdminPortal activePath="#/admin/registry">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-primary/50 underline-offset-8">System Data</h2>
@@ -195,8 +195,8 @@ const PCCData: React.FC = () => {
           </div>
         )}
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCData;
+export default AdminData;

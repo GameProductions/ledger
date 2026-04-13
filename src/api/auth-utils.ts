@@ -98,70 +98,38 @@ export async function verifyTOTP(secret: string, token: string, window = 1): Pro
   return false
 }
 
-// --- WEBAUTHN UTILS (Simplified Assertion Verification) ---
+import { 
+  verifyRegistrationResponse, 
+  verifyAuthenticationResponse,
+  VerifyRegistrationResponseOpts,
+  VerifyAuthenticationResponseOpts
+} from '@simplewebauthn/server';
+
+// --- WEBAUTHN UTILS (Industrial Verified) ---
 export async function verifyWebAuthnAssertion(
-  publicKey: ArrayBuffer,
-  signature: ArrayBuffer,
-  clientDataJSON: ArrayBuffer,
-  authenticatorData: ArrayBuffer,
-  challenge: string
+  options: VerifyAuthenticationResponseOpts
 ): Promise<boolean> {
-  // 1. Verify challenge in clientDataJSON
-  const clientData = JSON.parse(new TextDecoder().decode(clientDataJSON))
-  if (clientData.challenge !== challenge) return false
-
-  // 2. Reconstruct signature base: authenticatorData + SHA-256(clientDataJSON)
-  const clientDataHash = await crypto.subtle.digest('SHA-256', clientDataJSON)
-  const signedData = new Uint8Array(authenticatorData.byteLength + clientDataHash.byteLength)
-  signedData.set(new Uint8Array(authenticatorData), 0)
-  signedData.set(new Uint8Array(clientDataHash), authenticatorData.byteLength)
-
-  // 3. Verify signature using stored public key
-  // This expects the publicKey to be in SPKI format. 
-  // Authenticator public keys are usually in COSE format, requiring conversion.
-  // For this implementation, we assume the conversion to SPKI was done at registration.
   try {
-    const key = await crypto.subtle.importKey(
-      'spki',
-      publicKey,
-      { name: 'ECDSA', namedCurve: 'P-256', hash: 'SHA-256' },
-      false,
-      ['verify']
-    )
-    return await crypto.subtle.verify(
-      { name: 'ECDSA', hash: 'SHA-256' },
-      key,
-      signature,
-      signedData
-    )
+    const verification = await verifyAuthenticationResponse(options);
+    return verification.verified;
   } catch (e) {
-    console.error('[WebAuthn] Assertion verification failed', e)
-    return false
+    console.error('[WebAuthn] Assertion verification failed', e);
+    return false;
   }
 }
 
 export async function verifyWebAuthnRegistration(
-  attestationResponse: any,
-  challenge: string
-): Promise<{ success: boolean; publicKey?: ArrayBuffer; credentialId?: string }> {
-  // Simplified verification for demo/implementation
-  // In production, use @simplewebauthn/server
+  options: VerifyRegistrationResponseOpts
+): Promise<{ success: boolean; registrationInfo?: any }> {
   try {
-    const clientData = JSON.parse(new TextDecoder().decode(base64ToBuffer(attestationResponse.clientDataJSON)))
-    if (clientData.challenge !== challenge) return { success: false }
-    
-    // Extract public key and credential ID from attestationObject (CBOR encoded)
-    // This requires a CBOR parser which we don't have. 
-    // For this implementation, we assume the client sends the public key in SPKI format 
-    // during a "dev-only" or "simplified" registration step.
-    
+    const verification = await verifyRegistrationResponse(options);
     return { 
-      success: true, 
-      publicKey: base64ToBuffer(attestationResponse.publicKey), // Mocking extraction
-      credentialId: attestationResponse.id 
-    }
+      success: verification.verified, 
+      registrationInfo: verification.registrationInfo 
+    };
   } catch (e) {
-    return { success: false }
+    console.error('[WebAuthn] Registration verification failed', e);
+    return { success: false };
   }
 }
 

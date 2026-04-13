@@ -10,8 +10,8 @@ import { sanitizeImageUrl } from '../utils/security'
 const UserMenu: React.FC<{ 
   view?: string, 
   setView?: (v: 'list'|'calendar') => void,
-  isPcc?: boolean 
-}> = ({ view, setView, isPcc = false }) => {
+  isAdminPortal?: boolean 
+}> = ({ view, setView, isAdminPortal = false }) => {
   const { user, logout, globalRole, setGlobalRole, isImpersonating } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
@@ -19,13 +19,13 @@ const UserMenu: React.FC<{
   const isHome = !window.location.hash || window.location.hash === '#/'
   const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
-  const menuItems = isPcc ? [
-    { icon: LayoutDashboard, label: 'Dashboard', hash: '#/system-pcc/dashboard', color: 'text-emerald-500' },
-    { icon: Cpu, label: 'System Configuration', hash: '#/system-pcc/config', color: 'text-blue-400' },
-    { icon: Database, label: 'Master Record List', hash: '#/system-pcc/registry', color: 'text-orange-400' },
-    { icon: Users, label: 'Manage All Users', hash: '#/system-pcc/users', color: 'text-primary' },
-    { icon: Megaphone, label: 'Admin Command Center', hash: '#/system-pcc/command', color: 'text-rose-500' },
-    { icon: Activity, label: 'Safety & Action Logs', hash: '#/system-pcc/audit', color: 'text-secondary' },
+  const menuItems = isAdminPortal ? [
+    { icon: LayoutDashboard, label: 'God Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
+    { icon: Cpu, label: 'System Configuration', hash: '#/admin/config', color: 'text-blue-400' },
+    { icon: Database, label: 'Master Registry', hash: '#/admin/registry', color: 'text-orange-400' },
+    { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
+    { icon: Megaphone, label: 'God Broadcast', hash: '#/admin/broadcast', color: 'text-rose-500' },
+    { icon: Activity, label: 'Safety Vault', hash: '#/admin/audit', color: 'text-secondary' },
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
@@ -33,7 +33,7 @@ const UserMenu: React.FC<{
     { icon: Briefcase, label: 'Investments', hash: '#/investments', color: 'text-indigo-400' },
     { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },
     { icon: HelpCircle, label: 'Help & Guides', hash: '#/help', color: 'text-blue-400' },
-    { icon: MessageSquare, label: 'Forensic Support', hash: '#/help/support', color: 'text-primary' },
+    { icon: MessageSquare, label: 'High-Priority Support', hash: '#/help/support', color: 'text-primary' },
   ]
 
   return (
@@ -60,7 +60,7 @@ const UserMenu: React.FC<{
           <Masked>
             <span className="text-sm font-bold text-white">{(profile?.displayName || user?.displayName || 'User')}</span>
           </Masked>
-          {isPcc ? (
+          {isAdminPortal ? (
             <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>
           ) : isImpersonating ? (
             <span className="text-[10px] text-purple-400 font-black uppercase tracking-tighter">Impersonating</span>
@@ -83,7 +83,7 @@ const UserMenu: React.FC<{
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                  {isPcc ? 'Administrative Access' : isImpersonating ? 'Mirrored Identity' : 'Authenticated Account'}
+                  {isAdminPortal ? 'Manager Portal Access' : isImpersonating ? 'Mirrored Identity' : 'Authenticated Account'}
                 </div>
                 <Masked>
                   <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
@@ -91,7 +91,7 @@ const UserMenu: React.FC<{
               </div>
 
               <div className="space-y-1">
-                {isPcc ? (
+                {isAdminPortal ? (
                   <button 
                     onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-emerald-400 transition-colors text-left"
@@ -125,9 +125,9 @@ const UserMenu: React.FC<{
                   </button>
                 ))}
 
-                {!isPcc && (globalRole === 'super_admin' || profile?.globalRole === 'super_admin') && (
+                {!isAdminPortal && (globalRole === 'super_admin' || profile?.globalRole === 'super_admin') && (
                   <button 
-                    onClick={() => { window.location.hash = '#/system-pcc/dashboard'; setIsOpen(false); }}
+                    onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"
                     style={{ background: 'none', border: 'none' }}
                   >
@@ -136,7 +136,7 @@ const UserMenu: React.FC<{
                   </button>
                 )}
 
-                {!isPcc && setView && isHome && (
+                {!isAdminPortal && setView && isHome && (
                   <div className="px-3 py-2 border-t border-glass-border mt-2">
                     <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
                     <div className="grid grid-cols-2 gap-2">

@@ -58,7 +58,7 @@ const JoinHouseholdPage: React.FC = () => {
       
       // Store the new household ID and redirect
       if (data.householdId) {
-        localStorage.setItem('ledger_household_id', data.householdId)
+        localStorage.setItem('ledger_householdId', data.householdId)
       }
       
       setTimeout(() => {

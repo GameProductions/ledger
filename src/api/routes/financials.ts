@@ -8,7 +8,10 @@ import {
   PaginationSchema, 
   TransferSchema, 
   CreditCardSchema,
-  TimelineEntrySchema 
+  TimelineEntrySchema,
+  CategoryOutputSchema,
+  AccountOutputSchema,
+  TransactionOutputSchema
 } from '../schemas'
 import { dispatchWebhook } from '../services/webhook-service'
 import { logAudit } from '../utils'
@@ -30,22 +33,17 @@ import { inferTransactionDetails } from '../inference'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-const toSnake = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  const res: any = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    res[snakeKey] = obj[key];
-  }
-  return res;
-}
+const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Categories
 financials.get('/categories', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(categories).where(eq(categories.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ 
+    success: true, 
+    data: results.map(row => CategoryOutputSchema.parse(row)) 
+  })
 })
 
 // Accounts
@@ -56,10 +54,13 @@ financials.get('/accounts', async (c) => {
     id: accounts.id,
     name: accounts.name,
     type: accounts.type,
-    balance_cents: accounts.balanceCents,
+    balanceCents: accounts.balanceCents, // Use camelCase directly
     currency: accounts.currency
   }).from(accounts).where(eq(accounts.householdId, householdId))
-  return c.json(results)
+  return c.json({ 
+    success: true, 
+    data: results.map(row => AccountOutputSchema.parse(row)) 
+  })
 })
 
 // Credit Cards
@@ -67,7 +68,10 @@ financials.get('/credit-cards', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(creditCards).where(eq(creditCards.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ 
+    success: true, 
+    data: results // Drizzle matches camelCase, we can add a schema later if needed but for now this is clean
+  })
 })
 
 financials.post('/credit-cards', zValidator('json', CreditCardSchema), async (c) => {
@@ -102,8 +106,8 @@ financials.get('/transactions', async (c) => {
   const categoryId = c.req.query('category_id')
   const accountId = c.req.query('account_id')
   const q = c.req.query('q')
-  const sortBy = c.req.query('sort_by') || 'date' // 'date', 'amount'
-  const sortDir = c.req.query('sort_dir') || 'desc' // 'asc', 'desc'
+  const sortBy = c.req.query('sort_by') || 'date' 
+  const sortDir = c.req.query('sort_dir') || 'desc'
   const startDate = c.req.query('start_date')
   const endDate = c.req.query('end_date')
 
@@ -112,7 +116,7 @@ financials.get('/transactions', async (c) => {
   const orderByCol = sortBy === 'amount' ? transactions.amountCents : transactions.transactionDate
   const orderFunc = sortDir === 'asc' ? asc : desc
 
-  const query = db.select().from(transactions).where(
+  const results = await db.select().from(transactions).where(
     and(
       eq(transactions.householdId, householdId),
       categoryId ? eq(transactions.categoryId, categoryId) : undefined,
@@ -123,8 +127,11 @@ financials.get('/transactions', async (c) => {
     )
   ).orderBy(orderFunc(orderByCol)).limit(limit || 50).offset(offset || 0)
 
-  const results = await query
-  return c.json(results.map(toSnake))
+  return c.json({ 
+    success: true, 
+    data: results.map(row => TransactionOutputSchema.parse(row)),
+    meta: { limit, offset }
+  })
 })
 
 financials.post('/transactions/infer', zValidator('json', z.object({
@@ -240,7 +247,8 @@ financials.get('/transactions/export', async (c) => {
     })
   }
 
-  return c.json(snakeResults)
+  const results = await query
+  return c.json({ success: true, data: results })
 })
 
 financials.get('/transactions/:id/timeline', async (c) => {
@@ -258,7 +266,7 @@ financials.get('/transactions/:id/timeline', async (c) => {
   const results = await db.select().from(transactionTimeline)
     .where(eq(transactionTimeline.transactionId, id))
     .orderBy(desc(transactionTimeline.createdAt))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: results })
 })
 
 financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema), async (c) => {
@@ -303,7 +311,7 @@ financials.get('/transactions/suggest-links', async (c) => {
   // Actually db.all(sql`...`) works in Drizzle! Wait, Drizzle instance doesn't have `.all()` exposed that easily unless it's a D1 `session.all()`.
   // I will just use `c.env.DB.prepare(...).all()` here because Drizzle ORM doesn't easily map this specific self-join with julianday without messy raw sql wrappers.
   const { results } = await c.env.DB.prepare(`
-    SELECT t1.id as original_id, t2.id as suggested_id, t1.description, t2.description as suggested_description, t1.amount_cents
+    SELECT t1.id as originalId, t2.id as suggestedId, t1.description, t2.description as suggestedDescription, t1.amount_cents as amountCents
     FROM transactions t1
     JOIN transactions t2 ON t1.household_id = t2.household_id 
       AND t1.amount_cents = -t2.amount_cents
@@ -311,7 +319,7 @@ financials.get('/transactions/suggest-links', async (c) => {
     WHERE t1.household_id = ? AND t1.id < t2.id
     LIMIT 5
   `).bind(householdId).all()
-  return c.json(results)
+  return c.json({ success: true, data: results })
 })
 
 financials.patch('/transactions/:id/reconcile', async (c) => {
@@ -647,7 +655,7 @@ financials.get('/buckets', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(savingsBuckets).where(eq(savingsBuckets.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: results })
 })
 
 
@@ -695,7 +703,7 @@ financials.get('/investments', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(investmentHoldings).where(eq(investmentHoldings.householdId, householdId)).orderBy(desc(investmentHoldings.createdAt))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: results })
 })
 
 financials.post('/investments', zValidator('json', z.object({

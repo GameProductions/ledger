@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 import { Shield, Lock, Activity, Zap, Terminal, Key, Calendar, List, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../context/AuthContext';
@@ -8,11 +8,11 @@ interface Walkthrough {
   id: string;
   version: string;
   title: string;
-  content_md: string;
+  contentMd: string;
   created_at: string;
 }
 
-const PCCGuide: React.FC = () => {
+const AdminGuide: React.FC = () => {
   const { token, householdId } = useAuth();
   const [walkthroughs, setWalkthroughs] = useState<Walkthrough[]>([]);
   const [selectedWalkthrough, setSelectedWalkthrough] = useState<Walkthrough | null>(null);
@@ -21,7 +21,7 @@ const PCCGuide: React.FC = () => {
   useEffect(() => {
     const fetchWalkthroughs = async () => {
       try {
-        const res = await fetch(`/api/pcc/walkthroughs`, {
+        const res = await fetch(`/api/admin/walkthroughs`, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'x-household-id': householdId || ''
@@ -43,7 +43,7 @@ const PCCGuide: React.FC = () => {
   }, [token]);
 
   return (
-    <PCCPortal activePath="#/system-pcc/guide">
+    <AdminPortal activePath="#/admin/guide">
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -122,7 +122,7 @@ const PCCGuide: React.FC = () => {
                    </div>
                    
                    <div className="prose prose-invert prose-emerald max-w-none prose-p:text-slate-400 prose-headings:italic prose-headings:uppercase prose-headings:font-black prose-headings:tracking-tighter prose-code:text-emerald-400 prose-code:bg-emerald-500/5 prose-code:px-1 prose-code:rounded">
-                      <ReactMarkdown>{selectedWalkthrough.content_md}</ReactMarkdown>
+                      <ReactMarkdown>{selectedWalkthrough.contentMd}</ReactMarkdown>
                    </div>
                 </div>
               ) : (
@@ -165,7 +165,7 @@ const PCCGuide: React.FC = () => {
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Audit_04</div>
                   <h4 className="text-sm font-bold text-white uppercase">Audit Trail</h4>
-                  <p className="text-sm text-slate-500 leading-relaxed">Every PCC interaction generates a audit entry in the Audit Trail.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Every Admin interaction generates a audit entry in the Audit Trail.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3 shadow-xl hover:border-purple-500/30 transition-all group/card">
                   <div className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover/card:text-purple-400">Mirror_05</div>
@@ -182,8 +182,8 @@ const PCCGuide: React.FC = () => {
             <Lock size={48} />
         </div>
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCGuide;
+export default AdminGuide;

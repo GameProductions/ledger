@@ -24,10 +24,13 @@ const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 // Zero-Trust Identity Verification (Phase 3 Audit)
 auth.get('/verify', (c) => {
   return c.json({
-    userId: c.get('userId'),
-    householdId: c.get('householdId'),
-    globalRole: c.get('globalRole') || 'user',
-    isImpersonating: !!c.get('isImpersonating')
+    success: true,
+    data: {
+      userId: c.get('userId'),
+      householdId: c.get('householdId'),
+      globalRole: c.get('globalRole') || 'user',
+      isImpersonating: !!c.get('isImpersonating')
+    }
   })
 })
 
@@ -82,7 +85,7 @@ auth.post('/login', zValidator('json', z.object({
     const twoFactor = await authService.verify2FA(user, totpCode)
     
     if (twoFactor.requires2FA) {
-      return c.json({ requires2FA: true }, 202)
+      return c.json({ success: true, data: { requires2FA: true } }, 202)
     }
 
     const token = await authService.generateToken(user.id)
@@ -90,13 +93,16 @@ auth.post('/login', zValidator('json', z.object({
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
     return c.json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        email: user.email, 
-        displayName: user.displayName,
-        force_password_change: !!user.forcePasswordChange
-      } 
+      success: true,
+      data: {
+        token, 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          displayName: user.displayName,
+          forcePasswordChange: !!user.forcePasswordChange
+        }
+      }
     })
   } catch (e: any) {
     throw new HTTPException(e.status || 401, { message: e.message || 'Unauthorized' })
@@ -109,7 +115,7 @@ auth.post('/totp/setup', async (c) => {
   const authService = new AuthService(c.env)
   const secret = await authService.setupTOTP(userId)
   const otpauth = `otpauth://totp/LEDGER:${userId}?secret=${secret}&issuer=LEDGER`
-  return c.json({ secret, qrUrl: otpauth })
+  return c.json({ success: true, data: { secret, qrUrl: otpauth } })
 })
 
 auth.post('/totp/verify', zValidator('json', z.object({ code: z.string(), secret: z.string(), name: z.string().optional() })), async (c) => {
@@ -643,7 +649,7 @@ auth.post('/passkeys/register-options', async (c) => {
     maxAge: 300,
   })
 
-  return c.json(options)
+  return c.json({ success: true, data: options })
 })
 
 auth.post('/passkeys/register-verify', zValidator('json', z.object({
@@ -736,7 +742,7 @@ auth.post('/passkeys/login-options', async (c) => {
     maxAge: 300,
   })
 
-  return c.json(options)
+  return c.json({ success: true, data: options })
 })
 
 auth.post('/passkeys/login-verify', async (c) => {
@@ -786,7 +792,7 @@ auth.post('/passkeys/login-verify', async (c) => {
   await createSessionTracker(c, passkey.userId)
   await logAudit(c, 'users', passkey.userId, 'login', null, { strategy: 'passkey' })
   
-  return c.json({ token })
+  return c.json({ success: true, data: { token } })
 })
 
 // --- PASSWORD LIFECYCLE (v2.4.0) ---

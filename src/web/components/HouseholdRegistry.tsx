@@ -43,7 +43,7 @@ const HouseholdRegistry: React.FC = () => {
 
   const handleRename = async () => {
     const token = localStorage.getItem('ledger_token');
-    const householdId = localStorage.getItem('ledger_household_id');
+    const householdId = localStorage.getItem('ledger_householdId');
     try {
       const res = await fetch(`${API_URL}/api/user/households/${householdId}`, {
         method: 'PATCH',
@@ -99,7 +99,7 @@ const HouseholdRegistry: React.FC = () => {
   const generateInvite = async () => {
     setLoading(true);
     const token = localStorage.getItem('ledger_token');
-    const householdId = localStorage.getItem('ledger_household_id');
+    const householdId = localStorage.getItem('ledger_householdId');
     try {
       const res = await fetch(`${API_URL}/api/user/households/invite`, {
         method: 'POST',

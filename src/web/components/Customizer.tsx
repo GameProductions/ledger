@@ -11,10 +11,10 @@ const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleWidget = (widgetId: string) => {
-    const layout = settings.dashboard_layout || {}
+    const layout = settings.dashboardLayout || {}
     const newSettings = {
       ...settings,
-      dashboard_layout: {
+      dashboardLayout: {
         ...layout,
         [widgetId]: !layout[widgetId]
       }
@@ -59,7 +59,7 @@ const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
                   <span style={{ fontSize: '0.9rem' }}>{w.name}</span>
                   <input 
                     type="checkbox" 
-                    checked={settings.dashboard_layout?.[w.id] !== false} 
+                    checked={settings.dashboardLayout?.[w.id] !== false} 
                     onChange={() => toggleWidget(w.id)}
                   />
                 </label>

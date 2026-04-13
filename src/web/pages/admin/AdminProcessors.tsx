@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink, ShieldAlert } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
-const PCCProcessors: React.FC = () => {
+const AdminProcessors: React.FC = () => {
   const [processors, setProcessors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -12,21 +12,23 @@ const PCCProcessors: React.FC = () => {
   
   const [newItem, setNewItem] = useState({
     name: '',
-    website_url: '',
-    branding_url: '',
-    support_url: '',
-    subscription_id_notes: ''
+    websiteUrl: '',
+    brandingUrl: '',
+    supportUrl: '',
+    subscriptionIdNotes: ''
   });
 
   const fetchProcessors = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/networks`, {
+      const res = await fetch(`${apiUrl}/api/admin/networks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      setProcessors(Array.isArray(data) ? data : []);
+      if (data.success) {
+        setProcessors(data.data || []);
+      }
     } catch (err) {
       console.error('Failed to fetch processors:', err);
     } finally {
@@ -44,8 +46,8 @@ const PCCProcessors: React.FC = () => {
     const apiUrl = import.meta.env.VITE_API_URL;
     
     const url = editingId 
-      ? `${apiUrl}/api/pcc/networks/${editingId}`
-      : `${apiUrl}/api/pcc/networks`;
+      ? `${apiUrl}/api/admin/networks/${editingId}`
+      : `${apiUrl}/api/admin/networks`;
     
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -59,7 +61,7 @@ const PCCProcessors: React.FC = () => {
       showToast(editingId ? 'Processor configuration updated' : 'New processor registered', 'success');
       setShowAdd(false);
       setEditingId(null);
-      setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
+      setNewItem({ name: '', websiteUrl: '', brandingUrl: '', supportUrl: '', subscriptionIdNotes: '' });
       fetchProcessors();
     } else {
       const err = await res.json();
@@ -71,10 +73,10 @@ const PCCProcessors: React.FC = () => {
     setEditingId(processor.id);
     setNewItem({
       name: processor.name,
-      website_url: processor.website_url || '',
-      branding_url: processor.branding_url || '',
-      support_url: processor.support_url || '',
-      subscription_id_notes: processor.subscription_id_notes || ''
+      websiteUrl: processor.websiteUrl || '',
+      brandingUrl: processor.brandingUrl || '',
+      supportUrl: processor.supportUrl || '',
+      subscriptionIdNotes: processor.subscriptionIdNotes || ''
     });
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -85,7 +87,7 @@ const PCCProcessors: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/networks/${id}`, {
+    const res = await fetch(`${apiUrl}/api/admin/networks/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -99,10 +101,10 @@ const PCCProcessors: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></PCCPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></AdminPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/processors">
+    <AdminPortal activePath="#/admin/processors">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
@@ -112,7 +114,7 @@ const PCCProcessors: React.FC = () => {
           onClick={() => {
             if (showAdd) {
                 setEditingId(null);
-                setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
+                setNewItem({ name: '', websiteUrl: '', brandingUrl: '', supportUrl: '', subscriptionIdNotes: '' });
             }
             setShowAdd(!showAdd);
           }}
@@ -147,8 +149,8 @@ const PCCProcessors: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
                 <input 
                   type="url" 
-                  value={newItem.website_url} 
-                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
+                  value={newItem.websiteUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, websiteUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
@@ -157,8 +159,8 @@ const PCCProcessors: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
                 <input 
                   type="url" 
-                  value={newItem.branding_url} 
-                  onChange={(e) => setNewItem({ ...newItem, branding_url: e.target.value })}
+                  value={newItem.brandingUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, brandingUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
@@ -169,8 +171,8 @@ const PCCProcessors: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Site URL</label>
                 <input 
                   type="url" 
-                  value={newItem.support_url} 
-                  onChange={(e) => setNewItem({ ...newItem, support_url: e.target.value })}
+                  value={newItem.supportUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, supportUrl: e.target.value })}
                   placeholder="https://support.stripe.com"
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
@@ -178,8 +180,8 @@ const PCCProcessors: React.FC = () => {
               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
                 <textarea 
-                  value={newItem.subscription_id_notes} 
-                  onChange={(e) => setNewItem({ ...newItem, subscription_id_notes: e.target.value })}
+                  value={newItem.subscriptionIdNotes} 
+                  onChange={(e) => setNewItem({ ...newItem, subscriptionIdNotes: e.target.value })}
                   placeholder="e.g. Look for keys starting with 'sub_' in the metadata."
                   rows={3}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
@@ -213,8 +215,8 @@ const PCCProcessors: React.FC = () => {
             
             <div className="flex items-center gap-5 mb-8">
               <div className="w-20 h-20 rounded-3xl bg-black/40 flex items-center justify-center overflow-hidden border border-white/5 p-4 shadow-inner">
-                {processor.branding_url ? (
-                  <img src={processor.branding_url} alt="" className="w-full h-full object-contain" />
+                {processor.brandingUrl ? (
+                  <img src={processor.brandingUrl} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <CreditCard size={32} className="text-blue-500/40" />
                 )}
@@ -222,20 +224,20 @@ const PCCProcessors: React.FC = () => {
               <div>
                 <h3 className="font-black text-xl tracking-tighter italic uppercase">{processor.name}</h3>
                 <div className="flex gap-3 mt-2">
-                  {processor.website_url && (
-                    <a href={processor.website_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-blue-400 border border-white/5 transition-all"><Globe size={14} /></a>
+                  {processor.websiteUrl && (
+                    <a href={processor.websiteUrl} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-blue-400 border border-white/5 transition-all"><Globe size={14} /></a>
                   )}
-                  {processor.support_url && (
-                    <a href={processor.support_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-emerald-400 border border-white/5 transition-all"><LifeBuoy size={14} /></a>
+                  {processor.supportUrl && (
+                    <a href={processor.supportUrl} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-emerald-400 border border-white/5 transition-all"><LifeBuoy size={14} /></a>
                   )}
                 </div>
               </div>
             </div>
-
-            {processor.subscription_id_notes && (
+            
+            {processor.subscriptionIdNotes && (
               <div className="mt-4 p-5 rounded-2xl bg-black/20 border border-white/5 shadow-inner">
                 <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-2 opacity-60 italic">Identification Logic</p>
-                <p className="text-xs text-slate-400 leading-relaxed italic">{processor.subscription_id_notes}</p>
+                <p className="text-xs text-slate-400 leading-relaxed italic">{processor.subscriptionIdNotes}</p>
               </div>
             )}
             
@@ -258,8 +260,8 @@ const PCCProcessors: React.FC = () => {
           </div>
         )}
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCProcessors;
+export default AdminProcessors;

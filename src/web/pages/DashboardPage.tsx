@@ -84,14 +84,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: insightsData } = useApi('/api/data/analysis/insights')
   const { data: forecast } = useApi('/api/data/analysis/forecast')
   const { data: smartSuggestions } = useApi('/api/financials/transactions/suggest-links')
-  const { data: announcements, mutate: mutateAnnouncements } = useApi('/api/pcc/announcements')
+  const { data: announcements, mutate: mutateAnnouncements } = useApi('/api/admin/announcements')
   const { data: installments, mutate: mutateInstallments } = useApi('/api/planning/installment-plans')
   const { data: payExceptions, mutate: mutateExceptions } = useApi('/api/planning/pay-exceptions')
   const [toast, setToast] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
-  const [_settings, setSettings] = useState<any>({ dashboard_layout: {} })
+  const [_settings, setSettings] = useState<any>({ dashboardLayout: {} })
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
@@ -110,23 +110,23 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [depositAmount, setDepositAmount] = useState('')
 
   useEffect(() => {
-    if (user?.settings_json) {
+    if (user?.settingsJson) {
        try {
-         const parsed = JSON.parse(user.settings_json)
+         const parsed = JSON.parse(user.settingsJson)
          setSettings(parsed)
-         if (parsed.dashboard_layout) {
+         if (parsed.dashboardLayout) {
              const merged = { ...DEFAULT_LAYOUT };
-             Object.keys(parsed.dashboard_layout).forEach(tab => {
-                 if (merged[tab]) {
-                     const savedWidgets = parsed.dashboard_layout[tab];
-                     const defaultWidgets = merged[tab];
-                     const activeIds = savedWidgets.map((w: any) => w.id);
-                     merged[tab] = [
-                         ...savedWidgets,
-                         ...defaultWidgets.filter((w: any) => !activeIds.includes(w.id))
-                     ];
-                 }
-             });
+              Object.keys(parsed.dashboardLayout).forEach(tab => {
+                  if (merged[tab] && Array.isArray(parsed.dashboardLayout[tab])) {
+                      const savedWidgets = parsed.dashboardLayout[tab];
+                      const defaultWidgets = merged[tab];
+                      const activeIds = savedWidgets.map((w: any) => w.id);
+                      merged[tab] = [
+                          ...savedWidgets,
+                          ...defaultWidgets.filter((w: any) => !activeIds.includes(w.id))
+                      ];
+                  }
+              });
              setLayout(merged);
          }
        } catch(e) {}
@@ -138,7 +138,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const saveLayout = async (newLayout: any) => {
     setLayout(newLayout);
-    const newSettings = { ..._settings, dashboard_layout: newLayout };
+    const newSettings = { ..._settings, dashboardLayout: newLayout };
     setSettings(newSettings);
     await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
       method: 'PATCH',
@@ -146,7 +146,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     });
     showToast('Layout saved');
   };
@@ -180,7 +180,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ amount_cents: parseFloat(depositAmount) * 100 })
+      body: JSON.stringify({ amountCents: parseFloat(depositAmount) * 100 })
     })
     mutateBudgets()
     setShowDepositModal(false)
@@ -198,8 +198,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'x-household-id': householdId || ''
       },
       body: JSON.stringify({ 
-        category_id: fundCategoryId,
-        amount_cents: parseFloat(fundAmount) * 100 
+        categoryId: fundCategoryId,
+        amountCents: parseFloat(fundAmount) * 100 
       })
     })
     mutateBudgets()
@@ -250,26 +250,26 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (data.type === 'pay_schedule') {
         payload = {
             name: data.name,
-            estimated_amount_cents: data.estimated_amount_cents,
-            next_pay_date: data.next_pay_date,
+            estimatedAmountCents: data.estimatedAmountCents,
+            nextPayDate: data.nextPayDate,
             frequency: data.frequency,
             notes: data.notes
         }
     } else if (data.type === 'bill') {
         payload = {
             name: data.name,
-            amount_cents: data.amount_cents,
-            due_date: data.due_date,
+            amountCents: data.amountCents,
+            dueDate: data.dueDate,
             status: data.status,
             notes: data.notes,
-            is_recurring: data.is_recurring,
+            isRecurring: data.isRecurring,
             frequency: data.frequency
         }
     } else {
         payload = {
             description: data.description,
-            amount_cents: data.amount_cents,
-            transaction_date: data.date,
+            amountCents: data.amountCents,
+            transactionDate: data.date,
             status: 'none'
         }
     }
@@ -431,9 +431,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div className="space-y-1">
                 {Array.isArray(transactions) ? transactions.filter((tx: any) => {
                   const matchesSearch = tx.description?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                     (tx.confirmation_number && tx.confirmation_number.toLowerCase().includes(searchQuery.toLowerCase()))
+                                     (tx.confirmationNumber && tx.confirmationNumber.toLowerCase().includes(searchQuery.toLowerCase()))
                   const matchesStatus = filterStatus === 'all' || 
-                                     (filterStatus === 'unmatched' ? tx.reconciliation_status !== 'reconciled' : tx.reconciliation_status === 'reconciled')
+                                     (filterStatus === 'unmatched' ? tx.reconciliationStatus !== 'reconciled' : tx.reconciliationStatus === 'reconciled')
                   return matchesSearch && matchesStatus
                 })?.map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
@@ -462,18 +462,18 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           {(tx.status === 'unpaid' || !tx.status) && (
                             <span className="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase font-black border border-red-500/20">Unpaid</span>
                           )}
-                          {tx.reconciliation_status === 'reconciled' && (
+                          {tx.reconciliationStatus === 'reconciled' && (
                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Cleared</span>
                           )}
                         </div>
                         <div className="text-xs text-secondary uppercase font-bold opacity-60 flex items-center gap-2">
-                           {tx.transaction_date}
-                           {tx.confirmation_number && <span className="text-slate-500 pr-2 border-r border-white/10">#{tx.confirmation_number}</span>}
+                           {tx.transactionDate}
+                           {tx.confirmationNumber && <span className="text-slate-500 pr-2 border-r border-white/10">#{tx.confirmationNumber}</span>}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
-                      <Price amountCents={tx.amount_cents} className="text-lg font-black tracking-tighter" />
+                      <Price amountCents={tx.amountCents} className="text-lg font-black tracking-tighter" />
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => setLinkingTx(tx)}
@@ -521,7 +521,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       const descInput = document.getElementById('qe-desc') as HTMLInputElement
                       const amountInput = document.getElementById('qe-amount') as HTMLInputElement
                       if (descInput) descInput.value = tpl.name
-                      if (amountInput) amountInput.value = (tpl.amount_cents / 100).toFixed(2)
+                      if (amountInput) amountInput.value = (tpl.amountCents / 100).toFixed(2)
                     }}
                     className="text-[12px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all font-bold"
                   >
@@ -545,8 +545,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       },
                       body: JSON.stringify({ 
                         description: descInput.value, 
-                        amount_cents: Math.round(parseFloat(amountInput.value) * 100), 
-                        transaction_date: new Date().toISOString().split('T')[0], 
+                        amountCents: Math.round(parseFloat(amountInput.value) * 100), 
+                        transactionDate: new Date().toISOString().split('T')[0], 
                         status: 'none' 
                       })
                   });
@@ -577,7 +577,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   </div>
                 </div>
                 <div className="text-3xl font-black text-primary mb-1">
-                  <Price amountCents={budgetsData?.unallocated_balance_cents || 0} />
+                  <Price amountCents={budgetsData?.unallocatedBalanceCents || 0} />
                 </div>
                 <div className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
                 
@@ -592,20 +592,20 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                                 <p className="text-[10px] text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
                              </div>
                           </div>
-                          <div className={`text-xl font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
-                             <Price amountCents={b.envelope_balance_cents || 0} />
+                          <div className={`text-xl font-black tracking-tighter ${((b.envelopeBalanceCents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
+                             <Price amountCents={b.envelopeBalanceCents || 0} />
                           </div>
                        </div>
                        
                        <div className="space-y-2">
                           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
                              <span className="text-secondary opacity-60">Activity</span>
-                             <span className="text-white opacity-80"><Price amountCents={b.spend_cents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthly_budget_cents || 0} /></span></span>
+                             <span className="text-white opacity-80"><Price amountCents={b.spendCents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthlyBudgetCents || 0} /></span></span>
                           </div>
                           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                              <div 
-                               className={`h-full transition-all duration-700 ${((b.spend_cents || 0) > (b.monthly_budget_cents || 0)) ? 'bg-red-500' : 'bg-primary'}`}
-                               style={{ width: `${Math.min(100, Math.max(0, ((b.spend_cents || 0) / (b.monthly_budget_cents || 1)) * 100))}%` }}
+                               className={`h-full transition-all duration-700 ${((b.spendCents || 0) > (b.monthlyBudgetCents || 0)) ? 'bg-red-500' : 'bg-primary'}`}
+                               style={{ width: `${Math.min(100, Math.max(0, ((b.spendCents || 0) / (b.monthlyBudgetCents || 1)) * 100))}%` }}
                              />
                           </div>
                        </div>
@@ -740,10 +740,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="flex-1 pt-1">
                   <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
                   <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
-                    <ReactMarkdown>{ann.content_md}</ReactMarkdown>
+                    <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
                   </div>
                 </div>
-                {user?.global_role === 'super_admin' && (
+                {user?.globalRole === 'super_admin' && (
                   <button 
                     onClick={() => mutateAnnouncements()}
                     className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"
@@ -785,7 +785,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
       <div className="tab-content relative">
          <div className="dashboard-grid stagger min-h-[50vh]">
-            {layout[activeTab]?.filter(w => w.visible).map(w => (
+            {(layout[activeTab] || []).filter((w: any) => w.visible).map((w: any) => (
                 <div 
                   key={w.id} 
                   className={activeTab === 'overview' && (w.id === 'calendar' || w.id === 'transaction-ledger') ? 'dashboard-full-width' : ''}
@@ -806,7 +806,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
             <div className="h-4 w-px bg-glass-border" />
             <span className="text-lg sm:text-xl font-black tracking-tighter">
-              <Price amountCents={transactions?.filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + t.amount_cents, 0) || 0} />
+              <Price amountCents={(Array.isArray(transactions) ? transactions : []).filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + (t.amountCents || 0), 0)} />
             </span>
           </div>
           <button 
@@ -824,7 +824,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="text-xl font-black m-0">Match: {linkingTx.description}</h3>
-                <Price amountCents={linkingTx.amount_cents} className="text-2xl font-black tracking-tighter text-primary" />
+                <Price amountCents={linkingTx.amountCents} className="text-2xl font-black tracking-tighter text-primary" />
               </div>
               <button onClick={() => setLinkingTx(null)} className="text-2xl opacity-50 hover:opacity-100 transition-opacity">×</button>
             </div>
@@ -862,7 +862,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                             <p className="text-xs uppercase font-black text-primary opacity-60">{t.type} • {t.confidence} confidence</p>
                           </div>
                         </div>
-                        <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amount_cents) / 100).toFixed(2)}</span>
+                        <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amountCents) / 100).toFixed(2)}</span>
                       </div>
                     ))}
                   {(!smartSuggestions || !smartSuggestions.find((s: any) => s.source.id === linkingTx.id)?.candidates?.length) && (
@@ -895,11 +895,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     >
                       <div>
                         <div className="font-bold group-hover:text-primary transition-colors">{t.description}</div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{t.transaction_date}</div>
+                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{t.transactionDate}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-black tracking-tighter text-lg">${(t.amount_cents / 100).toFixed(2)}</div>
-                        {Math.abs(t.amount_cents) === Math.abs(linkingTx.amount_cents) && (
+                        <div className="font-black tracking-tighter text-lg">${(t.amountCents / 100).toFixed(2)}</div>
+                        {Math.abs(t.amountCents) === Math.abs(linkingTx.amountCents) && (
                           <span className="text-[10px] text-primary font-black uppercase">Exact Match</span>
                         )}
                       </div>
@@ -909,7 +909,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
             </div>
             
-            {linkingTx.reconciliation_status === 'reconciled' && (
+            {linkingTx.reconciliationStatus === 'reconciled' && (
               <button 
                 onClick={async () => {
                   await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/unlink`, {
@@ -949,7 +949,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     value: b.id,
                     label: b.name,
                     icon: <span className="text-sm">{b.icon}</span>,
-                    metadata: { subtext: `$${((b.envelope_balance_cents || 0)/100).toFixed(2)}` }
+                    metadata: { subtext: `$${((b.envelopeBalanceCents || 0)/100).toFixed(2)}` }
                   })) : []}
                   value={fundCategoryId}
                   onChange={(val) => setFundCategoryId(val)}

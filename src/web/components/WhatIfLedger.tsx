@@ -7,13 +7,13 @@ const WhatIfLedger: React.FC = () => {
   const [disabledSubs, setDisabledSubs] = useState<string[]>([])
   
   const originalTotal = useMemo(() => {
-    return subs?.reduce((acc: number, sub: any) => acc + sub.amount_cents, 0) || 0
+    return subs?.reduce((acc: number, sub: any) => acc + sub.amountCents, 0) || 0
   }, [subs])
 
   const projectedTotal = useMemo(() => {
     return subs?.reduce((acc: number, sub: any) => {
       if (disabledSubs.includes(sub.id)) return acc
-      return acc + sub.amount_cents
+      return acc + sub.amountCents
     }, 0) || 0
   }, [subs, disabledSubs])
 
@@ -43,7 +43,7 @@ const WhatIfLedger: React.FC = () => {
               />
               <span style={{ textDecoration: disabledSubs.includes(sub.id) ? 'line-through' : 'none' }}>{sub.name}</span>
             </div>
-            <Price amountCents={sub.amount_cents} className="font-bold" />
+            <Price amountCents={sub.amountCents} className="font-bold" />
           </label>
         ))}
       </div>

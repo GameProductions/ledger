@@ -27,7 +27,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   const { showToast } = useToast();
   
   // Available Household Members for Mapping
-  const { data: members } = useApi<any[]>('/api/pcc/users');
+  const { data: members } = useApi<any[]>('/api/admin/users');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -291,7 +291,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                               >
                                 <option value="">Auto ({item.owner_name || 'Generic'})</option>
                                 {members?.map((m: any) => (
-                                  <option key={m.id} value={m.id}>{m.display_name}</option>
+                                  <option key={m.id} value={m.id}>{m.displayName}</option>
                                 ))}
                               </select>
                            </div>

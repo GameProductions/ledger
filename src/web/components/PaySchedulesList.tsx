@@ -30,7 +30,7 @@ export const PaySchedulesList: React.FC = () => {
 
     // Calculate Projected Monthly Income (Rough estimate based on frequency)
     const projectedMonthlyCents = schedules?.reduce((acc: number, s: any) => {
-        const amount = s.estimated_amount_cents || 0;
+        const amount = s.estimated_amountCents || 0;
         switch (s.frequency) {
             case 'weekly': return acc + (amount * 4.33);
             case 'biweekly': return acc + (amount * 2.16);
@@ -101,18 +101,18 @@ export const PaySchedulesList: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-6">
-                            {(s.upcoming_effective_date || s.upcoming_amount_cents) && (
+                            {(s.upcoming_effective_date || s.upcoming_amountCents) && (
                                 <div className="hidden lg:flex flex-col items-end px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-right-2">
                                     <div className="text-[8px] font-black uppercase tracking-widest text-emerald-500/60">Planned Adjustment</div>
                                     <div className="flex items-center gap-1.5">
-                                        <Price amountCents={s.upcoming_amount_cents} className="text-[10px] font-black text-emerald-500" />
+                                        <Price amountCents={s.upcoming_amountCents} className="text-[10px] font-black text-emerald-500" />
                                         <span className="text-[8px] text-emerald-500/40 font-bold">@ {s.upcoming_effective_date}</span>
                                     </div>
                                 </div>
                             )}
                             <div className="text-right">
-                                <Price amountCents={s.estimated_amount_cents} className="text-lg font-black tracking-tighter" />
-                                <div className="text-[9px] font-black uppercase tracking-widest text-white/20">Next: {s.next_pay_date || 'N/A'}</div>
+                                <Price amountCents={s.estimated_amountCents} className="text-lg font-black tracking-tighter" />
+                                <div className="text-[9px] font-black uppercase tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
                             </div>
                             
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

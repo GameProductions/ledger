@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 import { Building2, Globe, Plus, Trash2, Edit2, Zap, Server, ShieldAlert } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 
-const PCCProviders: React.FC = () => {
+const AdminProviders: React.FC = () => {
   const [providers, setProviders] = useState<any[]>([]);
   const [processors, setProcessors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -14,13 +14,13 @@ const PCCProviders: React.FC = () => {
 
   const [newItem, setNewItem] = useState({
     name: '',
-    billing_processor_id: '',
-    website_url: '',
-    branding_url: '',
-    logo_url: '',
-    support_email: '',
-    privacy_policy_url: '',
-    is_3rd_party_capable: false
+    billingProcessorId: '',
+    websiteUrl: '',
+    brandingUrl: '',
+    logoUrl: '',
+    supportEmail: '',
+    privacyPolicyUrl: '',
+    is3rdPartyCapable: false
   });
 
   const fetchData = async () => {
@@ -29,15 +29,15 @@ const PCCProviders: React.FC = () => {
       const apiUrl = import.meta.env.VITE_API_URL;
       
       const [provRes, procRes] = await Promise.all([
-        fetch(`${apiUrl}/api/pcc/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${apiUrl}/api/pcc/processors`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${apiUrl}/api/admin/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/admin/networks`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       
       const provData = await provRes.json();
       const procData = await procRes.json();
       
-      setProviders(Array.isArray(provData) ? provData : []);
-      setProcessors(Array.isArray(procData) ? procData : []);
+      if (provData.success) setProviders(provData.data || []);
+      if (procData.success) setProcessors(procData.data || []);
     } catch (err) {
       console.error('Data acquisition failure:', err);
     } finally {
@@ -55,8 +55,8 @@ const PCCProviders: React.FC = () => {
     const apiUrl = import.meta.env.VITE_API_URL;
     
     const url = editingId 
-      ? `${apiUrl}/api/pcc/providers/${editingId}`
-      : `${apiUrl}/api/pcc/providers`;
+      ? `${apiUrl}/api/admin/providers/${editingId}`
+      : `${apiUrl}/api/admin/providers`;
     
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -70,7 +70,7 @@ const PCCProviders: React.FC = () => {
       showToast(editingId ? 'Provider configuration synchronized' : 'New service provider authorized', 'success');
       setShowAdd(false);
       setEditingId(null);
-      setNewItem({ name: '', billing_processor_id: '', website_url: '', branding_url: '', logo_url: '', support_email: '', privacy_policy_url: '', is_3rd_party_capable: false });
+      setNewItem({ name: '', billingProcessorId: '', websiteUrl: '', brandingUrl: '', logoUrl: '', supportEmail: '', privacyPolicyUrl: '', is3rdPartyCapable: false });
       fetchData();
     } else {
       const err = await res.json();
@@ -82,13 +82,13 @@ const PCCProviders: React.FC = () => {
     setEditingId(provider.id);
     setNewItem({
       name: provider.name,
-      billing_processor_id: provider.billing_processor_id || '',
-      website_url: provider.website_url || '',
-      branding_url: provider.branding_url || '',
-      logo_url: provider.logo_url || provider.branding_url || '',
-      support_email: provider.support_email || '',
-      privacy_policy_url: provider.privacy_policy_url || '',
-      is_3rd_party_capable: !!provider.is_3rd_party_capable
+      billingProcessorId: provider.billingProcessorId || '',
+      websiteUrl: provider.websiteUrl || '',
+      brandingUrl: provider.brandingUrl || '',
+      logoUrl: provider.logoUrl || provider.brandingUrl || '',
+      supportEmail: provider.supportEmail || '',
+      privacyPolicyUrl: provider.privacyPolicyUrl || '',
+      is3rdPartyCapable: !!provider.is3rdPartyCapable
     });
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -99,7 +99,7 @@ const PCCProviders: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    const res = await fetch(`${apiUrl}/api/pcc/providers/${id}`, {
+    const res = await fetch(`${apiUrl}/api/admin/providers/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -113,10 +113,10 @@ const PCCProviders: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></PCCPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></AdminPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/providers">
+    <AdminPortal activePath="#/admin/providers">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>
@@ -126,7 +126,7 @@ const PCCProviders: React.FC = () => {
           onClick={() => {
             if (showAdd) {
                 setEditingId(null);
-                setNewItem({ name: '', billing_processor_id: '', website_url: '', branding_url: '', logo_url: '', support_email: '', privacy_policy_url: '', is_3rd_party_capable: false });
+                setNewItem({ name: '', billingProcessorId: '', websiteUrl: '', brandingUrl: '', logoUrl: '', supportEmail: '', privacyPolicyUrl: '', is3rdPartyCapable: false });
             }
             setShowAdd(!showAdd);
           }}
@@ -163,34 +163,34 @@ const PCCProviders: React.FC = () => {
                    options={(processors || []).map(proc => ({ 
                      value: proc.id, 
                      label: proc.name,
-                     icon: proc.branding_url ? <img src={proc.branding_url} className="w-5 h-5" alt="" /> : null
+                     icon: proc.brandingUrl ? <img src={proc.brandingUrl} className="w-5 h-5" alt="" /> : null
                    }))}
-                   value={newItem.billing_processor_id}
-                   onChange={(val) => setNewItem({ ...newItem, billing_processor_id: val })}
+                   value={newItem.billingProcessorId}
+                   onChange={(val) => setNewItem({ ...newItem, billingProcessorId: val })}
                    placeholder="Select Processor..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                 <div>
+                  <div>
                     <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo URL</label>
                     <input 
                       type="url" 
-                      value={newItem.logo_url} 
-                      onChange={(e) => setNewItem({ ...newItem, logo_url: e.target.value, branding_url: e.target.value })}
+                      value={newItem.logoUrl} 
+                      onChange={(e) => setNewItem({ ...newItem, logoUrl: e.target.value, brandingUrl: e.target.value })}
                       placeholder="https://..."
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                     />
-                 </div>
-                 <div className="flex items-center gap-3 pt-6">
+                  </div>
+                  <div className="flex items-center gap-3 pt-6">
                     <input 
                       type="checkbox" 
-                      id="3rd_party_capable"
-                      checked={newItem.is_3rd_party_capable} 
-                      onChange={(e) => setNewItem({ ...newItem, is_3rd_party_capable: e.target.checked })}
+                      id="is3rdPartyCapable"
+                      checked={newItem.is3rdPartyCapable} 
+                      onChange={(e) => setNewItem({ ...newItem, is3rdPartyCapable: e.target.checked })}
                       className="w-5 h-5 rounded bg-black/40 border border-white/10 text-emerald-500 accent-emerald-500"
                     />
-                    <label htmlFor="3rd_party_capable" className="text-xs font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
-                 </div>
+                    <label htmlFor="is3rdPartyCapable" className="text-xs font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
+                  </div>
               </div>
             </div>
             <div className="space-y-6">
@@ -198,8 +198,8 @@ const PCCProviders: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate HQ (Website)</label>
                 <input 
                   type="url" 
-                  value={newItem.website_url} 
-                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
+                  value={newItem.websiteUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, websiteUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />
@@ -208,8 +208,8 @@ const PCCProviders: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Intel (Email)</label>
                 <input 
                   type="email" 
-                  value={newItem.support_email} 
-                  onChange={(e) => setNewItem({ ...newItem, support_email: e.target.value })}
+                  value={newItem.supportEmail} 
+                  onChange={(e) => setNewItem({ ...newItem, supportEmail: e.target.value })}
                   placeholder="support@..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />
@@ -218,8 +218,8 @@ const PCCProviders: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Privacy & Data Ownership Docs (Privacy Policy)</label>
                 <input 
                   type="url" 
-                  value={newItem.privacy_policy_url} 
-                  onChange={(e) => setNewItem({ ...newItem, privacy_policy_url: e.target.value })}
+                  value={newItem.privacyPolicyUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, privacyPolicyUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />
@@ -236,8 +236,8 @@ const PCCProviders: React.FC = () => {
         {(providers || []).map(provider => (
           <div key={provider.id} className="p-8 rounded-[3rem] bg-white/5 border border-white/5 flex items-center gap-8 group hover:border-emerald-500/20 transition-all relative overflow-visible shadow-lg bg-gradient-to-br from-white/2 to-transparent">
             <div className="w-20 h-20 rounded-3xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden p-3 shadow-inner group-hover:border-emerald-500/30 transition-all">
-                {provider.logo_url || provider.branding_url ? (
-                  <img src={provider.logo_url || provider.branding_url} alt="" className="w-full h-full object-contain" />
+                {provider.logoUrl || provider.brandingUrl ? (
+                  <img src={provider.logoUrl || provider.brandingUrl} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <Building2 size={32} className="text-emerald-500/30" />
                 )}
@@ -246,19 +246,19 @@ const PCCProviders: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <h3 className="font-black text-2xl tracking-tighter italic uppercase underline underline-offset-4 decoration-white/10">{provider.name}</h3>
-                {provider.is_3rd_party_capable && (
+                {provider.is3rdPartyCapable && (
                   <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-black text-[12px] uppercase tracking-[0.2em] border border-blue-500/20">3rd Party SDK Ready</span>
                 )}
               </div>
               <div className="flex items-center gap-6 mt-3 text-slate-500 text-sm">
-                {provider.website_url && (
-                    <a href={provider.website_url} target="_blank" rel="noreferrer" className="hover:text-blue-400 flex items-center gap-2 transition-all font-bold tracking-tight italic">
-                        <Globe size={14} className="text-secondary" /> {new URL(provider.website_url).hostname}
+                {provider.websiteUrl && (
+                    <a href={provider.websiteUrl} target="_blank" rel="noreferrer" className="hover:text-blue-400 flex items-center gap-2 transition-all font-bold tracking-tight italic">
+                        <Globe size={14} className="text-secondary" /> {new URL(provider.websiteUrl).hostname}
                     </a>
                 )}
-                {provider.processor_name && (
+                {provider.billingProcessorName && (
                     <span className="flex items-center gap-2 opacity-60 font-black uppercase text-xs tracking-widest text-emerald-500">
-                        <Zap size={14} /> Powered by {provider.processor_name}
+                        <Zap size={14} /> Powered by {provider.billingProcessorName}
                     </span>
                 )}
               </div>
@@ -296,8 +296,8 @@ const PCCProviders: React.FC = () => {
           </div>
         )}
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCProviders;
+export default AdminProviders;

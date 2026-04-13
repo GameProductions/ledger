@@ -13,17 +13,17 @@ const LoanManagerPage: React.FC = () => {
   
   const [isAdding, setIsAdding] = useState(false);
   const [newLoan, setNewLoan] = useState({
-    borrower_name: '',
-    borrower_contact: '',
-    total_amount_cents: 0,
-    interest_rate_apy: 0,
-    term_months: 12,
+    borrowerName: '',
+    borrowerContact: '',
+    total_amountCents: 0,
+    interestRateApy: 0,
+    termMonths: 12,
     origination_date: new Date().toISOString().split('T')[0]
   });
 
   const [paymentData, setPaymentData] = useState({
     loanId: '',
-    amount_cents: 0,
+    amountCents: 0,
     email: ''
   });
 
@@ -69,7 +69,7 @@ const LoanManagerPage: React.FC = () => {
   const handleLogPayment = async (loanId: string) => {
     const amountStr = prompt('Enter payment amount (e.g. 50.00):');
     if (!amountStr) return;
-    const amount_cents = Math.round(parseFloat(amountStr) * 100);
+    const amountCents = Math.round(parseFloat(amountStr) * 100);
     const email = prompt('Enter recipient email for receipt (optional):') || '';
 
     try {
@@ -80,7 +80,7 @@ const LoanManagerPage: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'x-household-id': householdId || ''
         },
-        body: JSON.stringify({ amount_cents, email, method: 'Manual Entry' })
+        body: JSON.stringify({ amountCents, email, method: 'Manual Entry' })
       });
       if (res.ok) {
         showToast('Payment Logged Successfully', 'success');
@@ -122,8 +122,8 @@ const LoanManagerPage: React.FC = () => {
                 <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary opacity-40" />
                 <input 
                   required
-                  value={newLoan.borrower_name}
-                  onChange={e => setNewLoan({...newLoan, borrower_name: e.target.value})}
+                  value={newLoan.borrowerName}
+                  onChange={e => setNewLoan({...newLoan, borrowerName: e.target.value})}
                   className="w-full bg-black/40 border border-glass-border rounded-xl py-4 pl-12 pr-4 text-sm font-bold focus:border-amber-500 transition-all"
                   placeholder="Full name..."
                 />
@@ -134,8 +134,8 @@ const LoanManagerPage: React.FC = () => {
               <div className="relative">
                 <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary opacity-40" />
                 <input 
-                  value={newLoan.borrower_contact}
-                  onChange={e => setNewLoan({...newLoan, borrower_contact: e.target.value})}
+                  value={newLoan.borrowerContact}
+                  onChange={e => setNewLoan({...newLoan, borrowerContact: e.target.value})}
                   className="w-full bg-black/40 border border-glass-border rounded-xl py-4 pl-12 pr-4 text-sm font-bold focus:border-amber-500 transition-all"
                   placeholder="+1 (555) 000-0000 / email"
                 />
@@ -148,8 +148,8 @@ const LoanManagerPage: React.FC = () => {
                 <input 
                   type="number"
                   required
-                  value={newLoan.total_amount_cents / 100}
-                  onChange={e => setNewLoan({...newLoan, total_amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
+                  value={newLoan.total_amountCents / 100}
+                  onChange={e => setNewLoan({...newLoan, total_amountCents: Math.round(parseFloat(e.target.value) * 100)})}
                   className="w-full bg-black/40 border border-glass-border rounded-xl py-4 pl-12 pr-4 text-sm font-bold focus:border-amber-500 transition-all"
                   placeholder="0.00"
                 />
@@ -160,8 +160,8 @@ const LoanManagerPage: React.FC = () => {
                <input 
                   type="number"
                   step="0.01"
-                  value={newLoan.interest_rate_apy}
-                  onChange={e => setNewLoan({...newLoan, interest_rate_apy: parseFloat(e.target.value)})}
+                  value={newLoan.interestRateApy}
+                  onChange={e => setNewLoan({...newLoan, interestRateApy: parseFloat(e.target.value)})}
                   className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-amber-500 transition-all"
                 />
             </div>
@@ -169,8 +169,8 @@ const LoanManagerPage: React.FC = () => {
               <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Term (Months)</label>
                <input 
                   type="number"
-                  value={newLoan.term_months}
-                  onChange={e => setNewLoan({...newLoan, term_months: parseInt(e.target.value)})}
+                  value={newLoan.termMonths}
+                  onChange={e => setNewLoan({...newLoan, termMonths: parseInt(e.target.value)})}
                   className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-amber-500 transition-all"
                 />
             </div>
@@ -188,8 +188,8 @@ const LoanManagerPage: React.FC = () => {
                 
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-white">{loan.borrower_name}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{loan.borrower_contact || 'No contact provided'}</p>
+                    <h3 className="text-xl font-bold text-white">{loan.borrowerName}</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{loan.borrowerContact || 'No contact provided'}</p>
                   </div>
                   <button onClick={() => handleDeleteLoan(loan.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
                     <Trash2 size={16} />
@@ -199,16 +199,16 @@ const LoanManagerPage: React.FC = () => {
                 <div className="space-y-4 mb-8">
                    <div className="flex justify-between items-end border-b border-white/5 pb-2">
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Outstanding</span>
-                      <Price amountCents={loan.remaining_balance_cents} className="text-2xl font-black italic text-white" />
+                      <Price amountCents={loan.remainingBalanceCents} className="text-2xl font-black italic text-white" />
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-[8px] font-black uppercase tracking-[0.3em] text-secondary mb-1">Original</p>
-                        <Price amountCents={loan.total_amount_cents} className="text-sm font-bold opacity-60" />
+                        <Price amountCents={loan.total_amountCents} className="text-sm font-bold opacity-60" />
                       </div>
                       <div className="text-right">
                         <p className="text-[8px] font-black uppercase tracking-[0.3em] text-secondary mb-1">Interest</p>
-                        <p className="text-sm font-bold text-emerald-500">{loan.interest_rate_apy}% APY</p>
+                        <p className="text-sm font-bold text-emerald-500">{loan.interestRateApy}% APY</p>
                       </div>
                    </div>
                 </div>

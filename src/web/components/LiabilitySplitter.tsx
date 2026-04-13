@@ -15,7 +15,7 @@ interface LiabilitySplitterProps {
 export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, targetType, totalAmountCents, onComplete }) => {
     const { token, user } = useAuth();
     const { showToast } = useToast();
-    const { data: household } = useApi('/api/pcc/households/current');
+    const { data: household } = useApi('/api/admin/households/current');
     
     const [splitMode, setSplitMode] = useState<'percentage' | 'fixed'>('percentage');
     const [assignments, setAssignments] = useState<Record<string, number>>({});
@@ -43,7 +43,7 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
             assigned_user_id: uid,
             split_type: splitMode,
             split_value: assignments[uid],
-            calculated_amount_cents: calculatedCents(uid),
+            calculated_amountCents: calculatedCents(uid),
             status: 'pending',
             is_master_ledger_public: isMasterPublic
         }));

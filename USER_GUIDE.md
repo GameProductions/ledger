@@ -1,6 +1,6 @@
 # LEDGER v3.19.2: User Guide & Documentation
 
-Welcome to LEDGER—your sovereign financial infrastructure. This guide is designed to help you navigate the platform's advanced features and maximize your financial intelligence.
+Welcome to LEDGER—your secure financial infrastructure. This guide is designed to help you navigate the platform's advanced features and maximize your financial intelligence.
 
 ## 🚀 Getting Started
 
@@ -34,7 +34,7 @@ The Payment Orchestrator gives you absolute control over your transaction lifecy
 ### Security Keys & Passkeys
 LEDGER prioritizes modern, phishing-resistant authentication:
 - **Passkeys**: Use your device's biometric or hardware security key (FIDO2) for "Sentinel-grade" security.
-- **Social Accounts**: Connect your Discord or Google identities for a seamless, sovereign login experience.
+- **Social Accounts**: Connect your Discord or Google identities for a seamless, secure login experience.
 
 ### Privacy Masking
 When using the platform in public, or during an administrative support session, you can toggle **Privacy Mode** to mask sensitive balances and PII.

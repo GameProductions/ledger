@@ -23,6 +23,28 @@ export const TransactionSchema = z.object({
   bill_id: z.string().uuid().optional().nullable(),
 })
 
+export const TransactionOutputSchema = z.object({
+  id: z.string(),
+  amountCents: z.number().int(),
+  description: z.string(),
+  accountId: z.string(),
+  categoryId: z.string().nullable(),
+  transactionDate: z.string(),
+  ownerId: z.string().nullable(),
+  status: z.string(),
+  confirmationNumber: z.string().nullable(),
+  notes: z.string().nullable(),
+  rawDescription: z.string().nullable(),
+  parentId: z.string().nullable(),
+  providerId: z.string().nullable(),
+  billId: z.string().nullable(),
+  reconciliationStatus: z.string().nullable(),
+  linkedTransactionId: z.string().nullable(),
+  receiptR2Key: z.string().nullable(),
+  updatedAt: z.string().optional(),
+  createdAt: z.string().optional()
+})
+
 export const TransactionPairingRuleSchema = z.object({
   pattern: z.string().min(1),
   target_provider_id: z.string().uuid().optional().nullable(),
@@ -172,18 +194,18 @@ export const OwnershipTransferSchema = z.object({
 // --- INTEROP & EXTERNAL SCHEMAS ---
 export const BillingProcessorSchema = z.object({
   name: z.string().min(1).max(100),
-  website_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  branding_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  support_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  subscription_id_notes: z.string().max(500).optional()
+  websiteUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  brandingUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  supportUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  subscriptionIdNotes: z.string().max(500).optional()
 })
 
 export const ProviderSchema = z.object({
   name: z.string().min(1).max(100),
-  website_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  branding_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  billing_processor_id: z.string().uuid().or(z.string().length(0)).nullable().optional(),
-  is_3rd_party_capable: z.boolean().optional().default(false)
+  websiteUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  brandingUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  billingProcessorId: z.string().uuid().or(z.string().length(0)).nullable().optional(),
+  is3rdPartyCapable: z.boolean().optional().default(false)
 })
 
 export const UserPaymentMethodSchema = z.object({
@@ -211,9 +233,9 @@ export const WebhookSchema = z.object({
 
 // --- ADMIN SCHEMAS ---
 export const UpdateUserAdminSchema = z.object({
-  global_role: z.enum(['user', 'super_admin']).optional(),
+  globalRole: z.enum(['user', 'super_admin']).optional(),
   status: z.enum(['active', 'suspended', 'deactivated', 'pending']).optional(),
-  display_name: z.string().min(1).max(100).optional(),
+  displayName: z.string().min(1).max(100).optional(),
   email: z.string().email().optional()
 })
 
@@ -221,24 +243,66 @@ export const CreateUserAdminSchema = z.object({
   username: z.string().min(3).max(50),
   email: z.string().email(),
   password: z.string().min(8),
-  display_name: z.string().min(1).max(100),
-  global_role: z.enum(['user', 'super_admin']).default('user'),
-  force_password_change: z.boolean().optional().default(true)
+  displayName: z.string().min(1).max(100),
+  globalRole: z.enum(['user', 'super_admin']).default('user'),
+  forcePasswordChange: z.boolean().optional().default(true)
 })
 
 export const SystemRegistrySchema = z.object({
-  item_type: z.string(),
+  itemType: z.string(),
   name: z.string().min(1).max(100),
-  logo_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  website_url: z.string().url().or(z.string().length(0)).nullable().optional(),
-  metadata_json: z.any().optional()
+  logoUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  websiteUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
+  metadataJson: z.any().optional()
 })
 
 export const UpdateSystemConfigSchema = z.object({
-  config_value: z.string()
+  configValue: z.string()
 })
 
 export const UpdateSystemFeatureSchema = z.object({
-  enabled_globally: z.boolean(),
-  target_user_ids: z.string().nullable().optional()
+  enabledGlobally: z.boolean(),
+  targetUserIds: z.string().nullable().optional()
+})
+
+// --- ENVELOPES ---
+export const EnvelopeSchema = z.object({
+  success: z.boolean(),
+  data: z.any(),
+  error: z.string().optional(),
+  meta: z.object({
+    total: z.number().optional(),
+    limit: z.number().optional(),
+    offset: z.number().optional()
+  }).optional()
+})
+
+// --- OUTPUT DTOs ---
+export const CategoryOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  envelopeBalanceCents: z.number().int(),
+  color: z.string().nullable(),
+  icon: z.string().nullable(),
+  householdId: z.string()
+})
+
+export const AccountOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  balanceCents: z.number().int(),
+  currency: z.string()
+})
+
+export const UserOutputSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  email: z.string(),
+  displayName: z.string(),
+  globalRole: z.string(),
+  status: z.string(),
+  avatarUrl: z.string().nullable(),
+  timezone: z.string().nullable()
 })

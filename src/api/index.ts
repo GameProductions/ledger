@@ -5,7 +5,7 @@ import { secureHeaders } from 'hono/secure-headers'
 import { openApiSpec } from './openapi'
 import { Bindings, Variables } from './types'
 import { authMiddleware } from './middlewares/auth-middleware'
-import { pccMiddleware } from './middlewares/pcc-middleware'
+import { adminMiddleware } from './middlewares/admin-middleware'
 import { getDb } from './db'
 import { systemConfig } from './db/schema'
 import { eq } from 'drizzle-orm'
@@ -16,7 +16,7 @@ import webauthnRoutes from './routes/webauthn'
 import financialsRoutes from './routes/financials'
 import planningRoutes from './routes/planning'
 import userRoutes from './routes/user'
-import pccRoutes from './routes/pcc'
+import adminRoutes from './routes/admin'
 import dataRoutes from './routes/data-service'
 import interopRoutes from './routes/interop'
 import backupRoutes from './routes/backup'
@@ -34,6 +34,8 @@ app.use('*', logger())
 
 // [SECURITY] Strict Content Security Policy & Headers
 app.use('*', secureHeaders({
+  frameAncestors: ["'none'"],
+  referrerPolicy: 'strict-origin-when-cross-origin',
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
@@ -43,7 +45,6 @@ app.use('*', secureHeaders({
     connectSrc: ["'self'", "https://api.gpnet.dev", "https://ledger.gpnet.dev", "http://localhost:8787"],
     upgradeInsecureRequests: [],
   },
-  referrerPolicy: 'strict-origin-when-cross-origin',
   xPermittedCrossDomainPolicies: 'none',
 }))
 
@@ -59,6 +60,68 @@ app.use('*', (c, next) => {
 // Rate Limiting (Persistent via Durable Objects)
 app.use('*', async (c, next) => {
   const path = c.req.path
+  
+  // 1. Maintenance Mode Check (Hierarchical Protocol v3.30.0)
+  const isHardLocked = c.env.MAINTENANCE_MODE === 'true'
+  let isSoftLocked = false
+  let isGlobalLocked = false
+  
+  // Try to get from cache first to avoid D1 cold starts on every request
+  try {
+    const configCache = await c.env.LEDGER_CACHE?.get('API_CONFIG', 'json') as any
+    if (configCache && configCache.MAINTENANCE_MODE === 'true') {
+      isSoftLocked = true
+    } else if (!configCache) {
+      // If cache is empty, we must check DB to ensure we don't bypass on cache flush
+      const db = getDb(c.env)
+      const dbConfig = await db.select({ configValue: systemConfig.configValue })
+        .from(systemConfig)
+        .where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
+        .limit(1)
+        .then(res => res[0])
+      
+      if (dbConfig?.configValue === 'true') isSoftLocked = true
+    }
+
+    // --- LEVEL 3: Global Fleet Lock Check (Foundation Command Center) ---
+    // Cache the global status for 60 seconds to avoid DDOSing Foundation
+    const globalStatusCache = await c.env.LEDGER_CACHE?.get('GLOBAL_FLEET_STATUS')
+    if (globalStatusCache === 'true') {
+      isGlobalLocked = true
+    } else if (globalStatusCache === null) {
+      // Fallback: Perform background fetch to Foundation
+      // We assume Foundation is at id.gpnet.dev (using relative fallback for dev)
+      const foundationUrl = c.env.ENVIRONMENT === 'production' ? 'https://id.gpnet.dev' : 'http://localhost:8787'
+      try {
+        const res = await fetch(`${foundationUrl}/api/fleet/status`)
+        const data = await res.json() as any
+        if (data.globalMaintenance === true) {
+          isGlobalLocked = true
+          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'true', { expirationTtl: 60 })
+        } else {
+          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'false', { expirationTtl: 60 })
+        }
+      } catch (fetchErr) {
+        console.error('[Global Lock Fetch Failed]', fetchErr)
+      }
+    }
+  } catch (e) {
+    console.error('[Maintenance Check Error]', e)
+    // Fallback: If DB/Cache is unreachable, we default to whatever the Hard Lock says
+  }
+
+  const isMaintenanceActive = isHardLocked || isSoftLocked || isGlobalLocked
+  const isAdminPath = path.startsWith('/api/admin') || path.startsWith('/auth/admin')
+  const isPublicPath = path === '/ping' || path === '/api/health' || path === '/api/config' || path === '/api/theme/broadcast' || path.includes('.well-known')
+  
+  if (isMaintenanceActive && !isAdminPath && !isPublicPath) {
+    return c.json({ 
+      error: 'System Under Maintenance', 
+      code: 'MAINTENANCE_ACTIVE',
+      message: 'The Ledger platform is currently undergoing scheduled forensic hardening. Normal services will resume shortly.'
+    }, 503)
+  }
+
   if (path.startsWith('/api/') || path.startsWith('/auth/')) {
     const ip = c.req.header('cf-connecting-ip') || 'anon'
     const id = c.env.RATE_LIMITER.idFromName(ip)
@@ -115,7 +178,7 @@ app.use('/auth/profile/*', authMiddleware)
 app.use('/auth/totp/*', authMiddleware)
 app.use('/auth/vault/*', authMiddleware)
 app.use('/auth/password/*', authMiddleware)
-app.use('/api/pcc/*', pccMiddleware)
+app.use('/api/admin/*', adminMiddleware)
 
 // 4. Route Mounting (Targeted Protocols)
 app.route('/auth', authRoutes)
@@ -126,7 +189,7 @@ app.route('/api/planning', planningRoutes)
 app.route('/api/user', userRoutes)
 app.route('/api/data', dataRoutes)
 app.route('/api/interop', interopRoutes)
-app.route('/api/pcc', pccRoutes)
+app.route('/api/admin', adminRoutes)
 app.route('/api/backup', backupRoutes)
 app.route('/api/support', supportRoutes)
 app.route('/api/discord', discordRoutes)

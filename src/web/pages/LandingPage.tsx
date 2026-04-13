@@ -41,7 +41,7 @@ const LandingPage: React.FC = () => {
       icon: <Cloud className="text-secondary" size={32} />,
     },
     {
-      title: 'Forensic Audit Logs',
+      title: 'Security Audit Logs',
       description: 'Every state change is cryptographically logged and auditable, ensuring immutable financial integrity.',
       icon: <Shield className="text-emerald-500" size={32} />,
     },
@@ -54,7 +54,7 @@ const LandingPage: React.FC = () => {
 
   const exhaustiveFeatures = [
     { name: 'AI Forecasts', icon: <Activity className="text-primary" />, desc: 'Predictive cash-flow modeling' },
-    { name: 'Passkey Auth', icon: <Fingerprint className="text-secondary" />, desc: 'Passwordless FIDO2 security' },
+    { name: 'Biometric Check', icon: <Fingerprint className="text-secondary" />, desc: 'Passwordless FIDO2 security' },
     { name: 'Multi-Household', icon: <Users className="text-emerald-500" />, desc: 'Secure family member isolation' },
     { name: 'PWA Offline', icon: <Zap className="text-amber-500" />, desc: 'Native app feel on every device' },
     { name: 'Luxury UI', icon: <Layout className="text-purple-500" />, desc: 'Professional custom skin engine' },
@@ -62,7 +62,7 @@ const LandingPage: React.FC = () => {
     { name: 'Docker Ready', icon: <Server className="text-blue-400" />, desc: 'Official containerized builds' },
     { name: 'Audit Timelines', icon: <Layers className="text-slate-400" />, desc: 'Historical integrity tracking' },
     { name: 'Cloud Sync', icon: <HardDrive className="text-cyan-400" />, desc: 'Google Drive, Dropbox, OneDrive' },
-    { name: 'Discord OAuth', icon: <FileCode className="text-indigo-400" />, desc: 'Integrated identity provider' }
+    { name: 'Discord Identity', icon: <FileCode className="text-indigo-400" />, desc: 'Integrated identity service' }
   ]
 
   const integrations = [
@@ -107,14 +107,14 @@ const LandingPage: React.FC = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">v3.18.0 Open Sovereign Platform</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">v3.18.0 Open Secure Service</span>
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
               Financial Data Ownership. <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
-              A high-integrity forensic ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
+              A high-integrity security ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
@@ -156,8 +156,8 @@ const LandingPage: React.FC = () => {
       <section className="py-32 px-6 bg-white/[0.01] border-y border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic uppercase">Identity & Backup Integration</h2>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Trusted protocols for secure state synchronization</p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic uppercase">Identity & Backup Connection</h2>
+            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Trusted services for secure status check</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 items-center justify-items-center mb-32">
@@ -201,8 +201,8 @@ const LandingPage: React.FC = () => {
       {/* Features */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-24">
-          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Protocols</h2>
-          <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Complete feature audit of the ledger engine</p>
+          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Status</h2>
+          <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Complete feature audit of the service engine</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -220,7 +220,7 @@ const LandingPage: React.FC = () => {
       <section className="py-40 px-6 max-w-7xl mx-auto border-t border-white/5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-8">Hardened Security Architecture</div>
+            <div className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-8">Hardened Security Design</div>
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-12 italic leading-[0.9]">Encrypted. <br/> Resilient. <br/> Private.</h2>
             <p className="text-slate-400 font-medium mb-12 leading-relaxed opacity-80">
               LEDGER utilizes military-grade AES-256-GCM encryption for all client-side state. Your session is protected by FIDO2/WebAuthn biometrics and secure OAuth isolation.
@@ -255,7 +255,7 @@ const LandingPage: React.FC = () => {
       {/* Footer is provided by GlobalLayout */}
       <footer className="py-10 border-t border-white/5 opacity-40 text-center">
         <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">
-          <GithubIcon size={12} /> Forensic Repository
+          <GithubIcon size={12} /> Service Repository
         </a>
       </footer>
     </div>

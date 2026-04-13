@@ -18,7 +18,7 @@ export const users = sqliteTable('users', {
   username: text('username').unique(),
   passwordHash: text('password_hash'),
   avatarUrl: text('avatar_url'),
-  totpSecret: text('totp_secret'),
+  totpSecret: text('totp_secret'), // [LEGACY] Use 'totps' table for modern identity security
   totpEnabled: integer('totp_enabled').default(0),
   globalRole: text('global_role').default('user'),
   status: text('status').default('active'),
@@ -44,6 +44,7 @@ export const userIdentities = sqliteTable('user_identities', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
+  userIdx: index('idx_user_identities_user').on(table.userId),
   uniqueIdentity: uniqueIndex('idx_user_identities_unique').on(table.provider, table.providerUserId),
 }));
 
@@ -53,7 +54,9 @@ export const passwordResets = sqliteTable('password_resets', {
   token: text('token').notNull(),
   isUsed: integer('is_used').default(0),
   expiresAt: text('expires_at').notNull(),
-});
+}, (table) => ({
+  userIdx: index('idx_pass_resets_user').on(table.userId),
+}));
 
 export const userHouseholds = sqliteTable('user_households', {
   userId: text('user_id').notNull().references(() => users.id),
@@ -159,7 +162,11 @@ export const transactionPairingRules = sqliteTable('transaction_pairing_rules', 
   targetCategoryId: text('target_category_id').references(() => categories.id),
   autoConfirm: integer('auto_confirm', { mode: 'boolean' }).default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_pairing_rules_household').on(table.householdId),
+  providerIdx: index('idx_pairing_rules_provider').on(table.targetProviderId),
+  categoryIdx: index('idx_pairing_rules_category').on(table.targetCategoryId),
+}));
 
 export const sharedBalances = sqliteTable('shared_balances', {
   id: text('id').primaryKey(),
@@ -168,7 +175,10 @@ export const sharedBalances = sqliteTable('shared_balances', {
   toUserId: text('to_user_id').notNull(),
   amountCents: integer('amount_cents').notNull(),
   transactionId: text('transaction_id').references(() => transactions.id),
-});
+}, (table) => ({
+  householdIdx: index('idx_shared_balances_household').on(table.householdId),
+  transactionIdx: index('idx_shared_balances_transaction').on(table.transactionId),
+}));
 
 export const subscriptions = sqliteTable('subscriptions', {
   id: text('id').primaryKey(),
@@ -290,7 +300,9 @@ export const sessions = sqliteTable('sessions', {
   lastActiveAt: text('last_active_at'),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  userIdx: index('idx_sessions_user').on(table.userId),
+}));
 
 export const totps = sqliteTable('totps', {
   id: text('id').primaryKey(),
@@ -299,7 +311,9 @@ export const totps = sqliteTable('totps', {
   name: text('name').default('Authenticator App'),
   lastUsedAt: text('last_used_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  userIdx: index('idx_totps_user').on(table.userId),
+}));
 
 export const passkeys = sqliteTable('passkeys', {
   id: text('id').primaryKey(),
@@ -313,7 +327,9 @@ export const passkeys = sqliteTable('passkeys', {
   backedUp: integer('backed_up', { mode: 'boolean' }).default(false),
   lastUsedAt: text('last_used_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  userIdx: index('idx_passkeys_user').on(table.userId),
+}));
 
 export const systemFeatureFlags = sqliteTable('system_feature_flags', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6))))`),
@@ -339,7 +355,9 @@ export const personalAccessTokens = sqliteTable('personal_access_tokens', {
   scopes: text('scopes').default('READ,WRITE'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   lastUsedAt: text('last_used_at'),
-});
+}, (table) => ({
+  householdIdx: index('idx_pat_household').on(table.householdId),
+}));
 
 export const creditCards = sqliteTable('credit_cards', {
   id: text('id').primaryKey(),
@@ -350,7 +368,10 @@ export const creditCards = sqliteTable('credit_cards', {
   statementClosingDay: integer('statement_closing_day'),
   paymentDueDay: integer('payment_due_day'),
   nextStatementDate: text('next_statement_date'),
-});
+}, (table) => ({
+  householdIdx: index('idx_credit_cards_household').on(table.householdId),
+  accountIdx: index('idx_credit_cards_account').on(table.accountId),
+}));
 
 export const savingsBuckets = sqliteTable('savings_buckets', {
   id: text('id').primaryKey(),
@@ -371,7 +392,9 @@ export const transactionTimeline = sqliteTable('transaction_timeline', {
   type: text('type').notNull(),
   content: text('content'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  transactionIdx: index('idx_timeline_transaction').on(table.transactionId),
+}));
 
 export const installmentPlans = sqliteTable('installment_plans', {
   id: text('id').primaryKey(),
@@ -403,7 +426,10 @@ export const personalLoans = sqliteTable('personal_loans', {
   interestRateApy: integer('interest_rate_apy').default(0),
   termMonths: integer('term_months'),
   originationDate: text('origination_date').notNull(),
-});
+}, (table) => ({
+  householdIdx: index('idx_personal_loans_household').on(table.householdId),
+  lenderIdx: index('idx_personal_loans_lender').on(table.lenderUserId),
+}));
 export const reports = sqliteTable('reports', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id),
@@ -412,7 +438,9 @@ export const reports = sqliteTable('reports', {
   periodEnd: text('period_end'),
   dataJson: text('data_json'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_reports_household').on(table.householdId),
+}));
 
 export const serviceProviders = sqliteTable('service_providers', {
   id: text('id').primaryKey(),
@@ -422,7 +450,9 @@ export const serviceProviders = sqliteTable('service_providers', {
   createdBy: text('created_by'),
   status: text('status').default('active'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_providers_household').on(table.householdId),
+}));
 export const loanPayments = sqliteTable('loan_payments', {
   id: text('id').primaryKey(),
   loanId: text('loan_id').notNull().references(() => personalLoans.id),
@@ -431,7 +461,9 @@ export const loanPayments = sqliteTable('loan_payments', {
   externalId: text('external_id'),
   method: text('method'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  loanIdx: index('idx_loan_payments_loan').on(table.loanId),
+}));
 
 export const systemConfig = sqliteTable('system_config', {
   id: text('id').primaryKey(),
@@ -497,7 +529,9 @@ export const externalConnections = sqliteTable('external_connections', {
   status: text('status').default('active'),
   lastSyncAt: text('last_sync_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_ext_conn_household').on(table.householdId),
+}));
 
 export const privacyCards = sqliteTable('privacy_cards', {
   id: text('id').primaryKey(),
@@ -507,7 +541,9 @@ export const privacyCards = sqliteTable('privacy_cards', {
   hostname: text('hostname'),
   spendLimitCents: integer('spend_limit_cents'),
   state: text('state'),
-});
+}, (table) => ({
+  householdIdx: index('idx_privacy_cards_household').on(table.householdId),
+}));
 
 export const investmentHoldings = sqliteTable('investment_holdings', {
   id: text('id').primaryKey(),
@@ -516,7 +552,10 @@ export const investmentHoldings = sqliteTable('investment_holdings', {
   name: text('name').notNull(),
   quantity: integer('quantity').notNull(),
   valueCents: integer('value_cents').notNull(),
-});
+}, (table) => ({
+  householdIdx: index('idx_invest_holdings_household').on(table.householdId),
+  accountIdx: index('idx_invest_holdings_account').on(table.accountId),
+}));
 
 export const schedules = sqliteTable('schedules', {
   id: text('id').primaryKey(),
@@ -540,7 +579,10 @@ export const scheduleHistory = sqliteTable('schedule_history', {
   actionStatus: text('action_status').notNull(),
   detailsJson: text('details_json'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  scheduleIdx: index('idx_sched_history_schedule').on(table.scheduleId),
+  householdIdx: index('idx_sched_history_household').on(table.householdId),
+}));
 
 export const webhooks = sqliteTable('webhooks', {
   id: text('id').primaryKey(),
@@ -549,7 +591,9 @@ export const webhooks = sqliteTable('webhooks', {
   secret: text('secret').notNull(),
   eventList: text('event_list').notNull(),
   isActive: integer('is_active', { mode: 'boolean' }).default(true),
-});
+}, (table) => ({
+  householdIdx: index('idx_webhooks_household').on(table.householdId),
+}));
 
 export const webhookDeliveryLogs = sqliteTable('webhook_delivery_logs', {
   id: text('id').primaryKey(),
@@ -558,9 +602,11 @@ export const webhookDeliveryLogs = sqliteTable('webhook_delivery_logs', {
   statusCode: integer('status_code').default(0),
   error: text('error'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  webhookIdx: index('idx_webhook_logs_webhook').on(table.webhookId),
+}));
 
-export const pccAuditLogs = sqliteTable('pcc_audit_logs', {
+export const adminAuditLogs = sqliteTable('admin_audit_logs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
   action: text('action').notNull(),
@@ -577,7 +623,9 @@ export const userPaymentMethods = sqliteTable('user_payment_methods', {
   token: text('token').notNull(),
   status: text('status').default('active'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  userIdx: index('idx_payment_methods_user').on(table.userId),
+}));
 
 export const userLinkedAccounts = sqliteTable('user_linked_accounts', {
   id: text('id').primaryKey(),
@@ -585,7 +633,9 @@ export const userLinkedAccounts = sqliteTable('user_linked_accounts', {
   provider: text('provider').notNull(),
   accountId: text('account_id').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  userIdx: index('idx_linked_accounts_user').on(table.userId),
+}));
 
 export const supportIssues = sqliteTable('support_issues', {
   id: text('id').primaryKey(),
@@ -606,7 +656,9 @@ export const userOnboarding = sqliteTable('user_onboarding', {
   stepId: text('step_id').notNull(),
   status: text('status').default('pending'),
   completedAt: text('completed_at'),
-});
+}, (table) => ({
+  userIdx: index('idx_onboarding_user').on(table.userId),
+}));
 
 export const userPreferences = sqliteTable('user_preferences', {
   userId: text('user_id').notNull().references(() => users.id),
@@ -633,7 +685,10 @@ export const householdInvites = sqliteTable('household_invites', {
   status: text('status').default('pending'),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_house_invites_household').on(table.householdId),
+  createdByIdx: index('idx_house_invites_creator').on(table.createdBy),
+}));
 
 export const linkedProviders = sqliteTable('linked_providers', {
   id: text('id').primaryKey(),
@@ -643,6 +698,9 @@ export const linkedProviders = sqliteTable('linked_providers', {
   customLabel: text('custom_label'),
   metadata: text('metadata'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  userIdx: index('idx_linked_providers_user').on(table.userId),
+  providerIdx: index('idx_linked_providers_provider').on(table.serviceProviderId),
+}));
 
 

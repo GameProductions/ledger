@@ -71,13 +71,13 @@ const Subscriptions: React.FC = () => {
             },
             body: JSON.stringify({
               name: formData.get('name'),
-              amount_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
+              amountCents: Math.round(parseFloat(formData.get('amount') as string) * 100),
               billing_cycle: formData.get('cycle'),
               next_billing_date: formData.get('date'),
               trial_end_date: formData.get('trial_date') || null,
               is_trial: !!formData.get('trial_date'),
               provider_account_id: formData.get('linked_account') || null,
-              upcoming_amount_cents: formData.get('upcoming_amount') ? Math.round(parseFloat(formData.get('upcoming_amount') as string) * 100) : null,
+              upcoming_amountCents: formData.get('upcoming_amount') ? Math.round(parseFloat(formData.get('upcoming_amount') as string) * 100) : null,
               upcoming_effective_date: formData.get('upcoming_date') || null
             })
           }).then(() => {
@@ -92,8 +92,8 @@ const Subscriptions: React.FC = () => {
                <SearchableSelect 
                   options={linkedAccounts?.map((acc: any) => ({
                     value: acc.id,
-                    label: acc.provider_name,
-                    metadata: { email: acc.email_attached }
+                    label: acc.providerName,
+                    metadata: { email: acc.emailAttached }
                   })) || []}
                   value="" 
                   onChange={(val) => {
@@ -148,7 +148,7 @@ const Subscriptions: React.FC = () => {
                <div className="absolute top-0 right-0 bg-primary/20 border-b border-l border-primary/20 px-3 py-1 rounded-bl-xl">
                  <div className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                   Rate Change: <Price amountCents={sub.upcoming_amount_cents} /> on {sub.upcoming_effective_date}
+                   Rate Change: <Price amountCents={sub.upcoming_amountCents} /> on {sub.upcoming_effective_date}
                  </div>
                </div>
             )}
@@ -181,7 +181,7 @@ const Subscriptions: React.FC = () => {
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <Price amountCents={sub.amount_cents} className="font-black tracking-tighter text-lg" />
+                <Price amountCents={sub.amountCents} className="font-black tracking-tighter text-lg" />
                 <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billing_cycle}</div>
               </div>
             </div>
@@ -232,7 +232,7 @@ const Subscriptions: React.FC = () => {
                                             }`}>
                                                 {split.status}
                                             </span>
-                                            <Price amountCents={split.calculated_amount_cents} className="text-[11px] font-black tracking-widest" />
+                                            <Price amountCents={split.calculated_amountCents} className="text-[11px] font-black tracking-widest" />
                                         </div>
                                     </div>
                                 ))}
@@ -247,7 +247,7 @@ const Subscriptions: React.FC = () => {
                     <LiabilitySplitter 
                         targetId={sub.id} 
                         targetType="subscription" 
-                        totalAmountCents={sub.amount_cents} 
+                        totalAmountCents={sub.amountCents} 
                         onComplete={() => {
                             setOpenSplitterId(null);
                             mutate();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 
-const PCCConfig: React.FC = () => {
+const AdminConfig: React.FC = () => {
   const [configs, setConfigs] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -12,11 +12,15 @@ const PCCConfig: React.FC = () => {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = import.meta.env.VITE_API_URL;
         const [configRes, featureRes] = await Promise.all([
-          fetch(`${apiUrl}/api/pcc/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/pcc/features`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${apiUrl}/api/admin/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/admin/features`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
-        setConfigs(await configRes.json());
-        setFeatures(await featureRes.json());
+        
+        const configData = await configRes.json();
+        const featureData = await featureRes.json();
+        
+        setConfigs(configData.data || []);
+        setFeatures(featureData.data || []);
       } catch (err) {
         console.error('Failed to fetch PCC config:', err);
       } finally {
@@ -28,28 +32,30 @@ const PCCConfig: React.FC = () => {
 
   const handleUpdateConfig = async (id: string, value: string) => {
     const token = localStorage.getItem('ledger_token');
-    await fetch(`/api/pcc/config/${id}`, {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    await fetch(`${apiUrl}/api/admin/config/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config_value: value })
+      body: JSON.stringify({ configValue: value })
     });
-    setConfigs(prev => prev.map(c => c.id === id ? { ...c, config_value: value } : c));
+    setConfigs(prev => prev.map(c => c.id === id ? { ...c, configValue: value } : c));
   };
 
   const handleToggleFeature = async (id: string, enabled: boolean) => {
     const token = localStorage.getItem('ledger_token');
-    await fetch(`/api/pcc/features/${id}`, {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    await fetch(`${apiUrl}/api/admin/features/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled_globally: enabled ? 1 : 0 })
+      body: JSON.stringify({ enabledGlobally: enabled })
     });
-    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabled_globally: enabled ? 1 : 0 } : f));
+    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabledGlobally: enabled ? 1 : 0 } : f));
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/config"><div className="animate-pulse">Loading settings...</div></PCCPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></AdminPortal>;
 
   return (
-    <PCCPortal activePath="#/system-pcc/config">
+    <AdminPortal activePath="#/admin/config">
       <div className="space-y-12">
         {/* System Overrides */}
         <section>
@@ -61,17 +67,17 @@ const PCCConfig: React.FC = () => {
             {(configs || []).map(cfg => (
               <div key={cfg.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
                 <div className="mb-4">
-                  <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.config_key}</p>
+                  <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.configKey || cfg.config_key}</p>
                   <p className="text-sm text-gray-500">{cfg.description || 'No description provided.'}</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <input 
                     type="text" 
-                    value={cfg.config_value} 
+                    value={cfg.configValue ?? cfg.config_value ?? ''} 
                     onChange={(e) => handleUpdateConfig(cfg.id, e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
                   />
-                  <span className="text-xs text-gray-600 uppercase font-black">{cfg.value_type}</span>
+                  <span className="text-xs text-gray-600 uppercase font-black">{cfg.valueType || cfg.value_type}</span>
                 </div>
               </div>
             ))}
@@ -88,28 +94,28 @@ const PCCConfig: React.FC = () => {
             {(features || []).map(feat => (
               <div key={feat.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabled_globally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabledGlobally || feat.enabled_globally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>
                     🚀
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
                       className="sr-only peer"
-                      checked={!!feat.enabled_globally}
+                      checked={!!(feat.enabledGlobally || feat.enabled_globally)}
                       onChange={(e) => handleToggleFeature(feat.id, e.target.checked)}
                     />
                     <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 cursor-pointer"></div>
                   </label>
                 </div>
-                <h4 className="font-bold text-sm mb-1">{feat.feature_key}</h4>
+                <h4 className="font-bold text-sm mb-1">{feat.featureKey || feat.feature_key}</h4>
                 <p className="text-sm text-gray-500 line-clamp-2">{feat.description}</p>
               </div>
             ))}
           </div>
         </section>
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCConfig;
+export default AdminConfig;

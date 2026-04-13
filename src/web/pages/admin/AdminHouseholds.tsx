@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const PCCHouseholds: React.FC = () => {
+const AdminHouseholds: React.FC = () => {
   const [households, setHouseholds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,11 +14,13 @@ const PCCHouseholds: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/households`, {
+      const res = await fetch(`${apiUrl}/api/admin/households`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      setHouseholds(data);
+      if (data.success) {
+        setHouseholds(data.data || []);
+      }
     } catch (err) {
       console.error('Failed to fetch households:', err);
     } finally {
@@ -35,7 +37,7 @@ const PCCHouseholds: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      await fetch(`${apiUrl}/api/pcc/households/${id}`, {
+      await fetch(`${apiUrl}/api/admin/households/${id}`, {
         method: 'PATCH',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -56,7 +58,7 @@ const PCCHouseholds: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      await fetch(`${apiUrl}/api/pcc/households/${id}`, {
+      await fetch(`${apiUrl}/api/admin/households/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -72,16 +74,16 @@ const PCCHouseholds: React.FC = () => {
   );
 
   if (loading) return (
-    <PCCPortal activePath="#/system-pcc/households">
+    <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
         <div className="text-xs font-black uppercase tracking-[0.3em]">Synching household registry...</div>
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 
   return (
-    <PCCPortal activePath="#/system-pcc/households">
+    <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
           <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
@@ -153,7 +155,7 @@ const PCCHouseholds: React.FC = () => {
                   <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Members</div>
                   <div className="flex items-center gap-2">
                      <Users size={14} className="text-emerald-500" />
-                     <span className="text-sm font-bold text-slate-300">{h.member_count} Nodes</span>
+                     <span className="text-sm font-bold text-slate-300">{h.memberCount} Nodes</span>
                   </div>
                </div>
                <div>
@@ -177,8 +179,8 @@ const PCCHouseholds: React.FC = () => {
           </motion.div>
         ))}
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCHouseholds;
+export default AdminHouseholds;

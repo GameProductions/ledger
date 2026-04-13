@@ -16,20 +16,6 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
   try {
     const path = c.req.path
     let token = c.req.header('Authorization')?.replace('Bearer ', '')
-    if (!token) {
-      token = c.req.query('auth_token')
-      
-      // Security: Only allow query tokens for safe, explicit document/export formats
-      if (token) {
-        const format = c.req.query('format')
-        const allowedFormats = ['pdf', 'csv', 'json', 'xlsx']
-        if (!format || !allowedFormats.includes(format)) {
-          console.warn(`[Auth Violation] Blocked attempts to use query-token on non-export path: ${path}`)
-          throw new HTTPException(403, { message: 'Tokens in query disallowed for this resource type' })
-        }
-      }
-    }
-    
     if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
     const jwtSecret = c.env.JWT_SECRET
     if (!jwtSecret) {

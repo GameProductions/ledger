@@ -39,25 +39,28 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-      const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
+      const res = await fetch(`${apiUrl}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
       
-      if (!profileRes.ok) {
-        const errorBody = await profileRes.text();
-        console.error(`[handleTokenLogin] Profile fetch failed (${profileRes.status}):`, errorBody);
+      if (!res.ok) {
         showToast('Session initialization failed: Invalid profile response', 'error');
         return;
       }
       
-      const profile = await profileRes.json();
+      const envelope = await res.json();
+      if (!envelope.success || !envelope.data) {
+        showToast('Login sequence failed: Malformed profile envelope', 'error');
+        return;
+      }
       
-      if (profile.force_password_change) {
+      const profile = envelope.data;
+      
+      if (profile.forcePasswordChange) {
         setIsForcingChange(true)
-        // Store token temporarily or login later
       } else {
-        login(token, { ...profile, userId: profile.id, globalRole: profile.global_role });
+        login(token, profile);
         window.location.hash = '#/';
       }
     } catch (e) {
@@ -83,12 +86,18 @@ const LoginPage: React.FC = () => {
       })
       
       if (!res.ok) {
-        const error = await res.json()
-        showToast(`Login Failed: ${error.error || 'Unknown error'}`, 'error')
+        const envelope = await res.json()
+        showToast(`Login Failed: ${envelope.error || 'Unknown error'}`, 'error')
         return
       }
 
-      const authData = await res.json()
+      const loginEnvelope = await res.json()
+      if (!loginEnvelope.success || !loginEnvelope.data) {
+        showToast('Login Protocol Error: Invalid server response', 'error')
+        return
+      }
+      
+      const authData = loginEnvelope.data;
       
       if (authData.requires2FA) {
         setMfaRequired(true)
@@ -103,27 +112,30 @@ const LoginPage: React.FC = () => {
         })
 
         if (!profileRes.ok) {
-          const errorBody = await profileRes.text();
-          console.error(`[handleLogin] Profile fetch failed (${profileRes.status}):`, errorBody);
           showToast('Login sequence failed: Profile retrieval error', 'error');
           return;
         }
 
-        const profile = await profileRes.json()
+        const profileEnvelope = await profileRes.json()
+        if (!profileEnvelope.success || !profileEnvelope.data) {
+          showToast('Forensic Identity Error: Missing profile data', 'error');
+          return;
+        }
         
-        if (profile.force_password_change) {
+        const profile = profileEnvelope.data;
+        
+        if (profile.forcePasswordChange) {
            setIsForcingChange(true)
-           login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
+           login(authData.token, profile)
         } else {
-           login(authData.token, { ...profile, userId: username, globalRole: profile.global_role })
+           login(authData.token, profile)
            
-           // Forensic Credential Harvesting for Password Managers
            if ((window as any).PasswordCredential) {
              try {
                const cred = new (window as any).PasswordCredential({
                  id: username,
                  password: password,
-                 name: profile.display_name
+                 name: profile.displayName
                });
                navigator.credentials.store(cred);
              } catch (e) {
@@ -149,10 +161,14 @@ const LoginPage: React.FC = () => {
         method: 'POST',
         credentials: 'include'
       })
-      const options = await optRes.json()
       
-      // Real WebAuthn Authentication Prompt
-      const assertion = await startAuthentication(options)
+      const optEnvelope = await optRes.json()
+      if (!optEnvelope.success || !optEnvelope.data) {
+        showToast('Biometric Protocol Error: Options delivery failed', 'error')
+        return
+      }
+      
+      const assertion = await startAuthentication(optEnvelope.data)
       
       const verifyRes = await fetch(`${apiUrl}/auth/passkeys/login-verify`, {
         method: 'POST',
@@ -161,11 +177,11 @@ const LoginPage: React.FC = () => {
         body: JSON.stringify({ assertion })
       })
       
-      const authData = await verifyRes.json()
-      if (authData.token) {
-        handleTokenLogin(authData.token)
+      const authEnvelope = await verifyRes.json()
+      if (authEnvelope.success && authEnvelope.data?.token) {
+        handleTokenLogin(authEnvelope.data.token)
       } else {
-        showToast(authData.error || 'Authentication failed', 'error')
+        showToast(authEnvelope.error || 'Authentication failed', 'error')
       }
     } catch (e: any) {
       if (e.name === 'NotAllowedError') {
@@ -186,7 +202,7 @@ const LoginPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: recoveryEmail })
       })
-      showToast('Recovery protocol initiated. Check console.', 'success')
+      showToast('Recovery process initiated. Check console.', 'success')
       setIsForgotModalOpen(false)
     } catch (e) {
       showToast('Recovery failed', 'error')
@@ -266,7 +282,7 @@ const LoginPage: React.FC = () => {
                     onClick={() => setIsForgotModalOpen(true)}
                     className="text-xs font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors"
                    >
-                     Forgot Protocol?
+                     Forgot Details?
                    </button>
                 </div>
               </div>
@@ -335,11 +351,11 @@ const LoginPage: React.FC = () => {
       <Modal
         isOpen={isForgotModalOpen}
         onClose={() => setIsForgotModalOpen(false)}
-        title="Forensic Recovery"
+        title="Identity Recovery"
         footer={
            <>
              <Button variant="secondary" onClick={() => setIsForgotModalOpen(false)}>Abort</Button>
-             <Button variant="primary" onClick={handleRequestReset}>Initiate Protocol</Button>
+             <Button variant="primary" onClick={handleRequestReset}>Start Recovery</Button>
            </>
         }
       >
@@ -360,15 +376,15 @@ const LoginPage: React.FC = () => {
       <Modal
         isOpen={!!resetToken}
         onClose={() => setResetToken(null)}
-        title="Credential Reconstruction"
+        title="Password Reset"
         footer={
-           <Button variant="primary" className="w-full" onClick={handleResetPassword} disabled={newPassword.length < 8}>Reset Credential</Button>
+           <Button variant="primary" className="w-full" onClick={handleResetPassword} disabled={newPassword.length < 8}>Reset Password</Button>
         }
       >
         <div className="space-y-6">
            <div className="relative">
              <Input 
-              label="New Secure Password"
+              label="New Password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -386,19 +402,19 @@ const LoginPage: React.FC = () => {
       <Modal
         isOpen={isForcingChange}
         onClose={() => {}} // Mandatory change
-        title="Security Enforcement"
+        title="Security Check"
         footer={
            <Button variant="primary" className="w-full" onClick={async () => {
              // Logic to update and login
              await handleResetPassword();
              setIsForcingChange(false);
-           }} disabled={newPassword.length < 8}>Commit & Session Init</Button>
+           }} disabled={newPassword.length < 8}>Commit & Enter</Button>
         }
       >
         <div className="space-y-6">
            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
               <RefreshCw className="text-blue-500 mt-1 animate-spin-slow" size={20} />
-              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">An administrator has requested a mandatory security refresh for your account. Please establish a new password to proceed.</p>
+              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">A manager has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
            </div>
            <div className="relative">
              <Input 

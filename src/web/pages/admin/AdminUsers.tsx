@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 import { 
   MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, 
   Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert, Monitor 
@@ -42,11 +42,15 @@ const UserDetailsModal: React.FC<{
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/details`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/${userId}/details`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      setDetails(data);
+      if (data.success) {
+        setDetails(data.data);
+      } else {
+        showToast(data.error || 'Identity Resolution Failed', 'error');
+      }
     } catch (err) {
       console.error('Failed to fetch user details:', err);
     } finally {
@@ -64,7 +68,7 @@ const UserDetailsModal: React.FC<{
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/password/reset`, {
+      await fetch(`${apiUrl}/api/admin/users/${userId}/password/reset`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: manualPass, isTemporary: isTemp })
@@ -83,7 +87,7 @@ const UserDetailsModal: React.FC<{
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
     try {
-      await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${id}`, {
+      await fetch(`${apiUrl}/api/admin/users/${userId}/passkeys/${id}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName })
@@ -100,7 +104,7 @@ const UserDetailsModal: React.FC<{
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
     try {
-      await fetch(`${apiUrl}/api/pcc/admin/users/${userId}/passkeys/${removingPk.id}`, {
+      await fetch(`${apiUrl}/api/admin/users/${userId}/passkeys/${removingPk.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -129,7 +133,7 @@ const UserDetailsModal: React.FC<{
           <div className="flex items-center gap-6">
             <div className="relative">
                <img 
-                 src={details?.profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${details?.profile?.id || userId}`} 
+                 src={details?.profile?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${details?.profile?.id || userId}`} 
                  className="w-24 h-24 rounded-[1.5rem] border-4 border-white/5 shadow-2xl" 
                  alt="User"
                />
@@ -139,7 +143,7 @@ const UserDetailsModal: React.FC<{
             </div>
             <div>
               <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details?.profile?.display_name || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
+                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details?.profile?.displayName || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
                 <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                    {details?.profile?.status || 'Unknown'}
                 </span>
@@ -167,19 +171,19 @@ const UserDetailsModal: React.FC<{
                 <div>
                   <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-1">Registration</label>
                   <div className="text-sm text-slate-300 font-bold">
-                    {details?.profile?.created_at ? new Date(details.profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
+                    {details?.profile?.createdAt ? new Date(details.profile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-1">Last Interaction</label>
                   <div className="text-sm text-slate-300 font-bold">
-                    {details?.profile?.last_active_at ? new Date(details.profile.last_active_at).toLocaleString() : 'No History'}
+                    {details?.profile?.lastActiveAt ? new Date(details.profile.lastActiveAt).toLocaleString() : 'No History'}
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-1">Access Role</label>
                   <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-xs font-black text-white uppercase tracking-widest inline-block mt-2">
-                    {details?.profile?.global_role || 'Unknown'}
+                    {details?.profile?.globalRole || 'Unknown'}
                   </div>
                 </div>
               </div>
@@ -314,7 +318,7 @@ const UserDetailsModal: React.FC<{
                 <div key={idx} className="relative pl-5 border-l border-white/10 py-1 hover:border-emerald-500 transition-colors">
                   <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-white/10" />
                   <div className="text-xs font-black uppercase text-slate-300 tracking-tight">{log.action?.replace(/_/g, ' ')?.replace('ADMIN ', '') || 'OPERATION'}</div>
-                  <div className="text-[12px] text-slate-600 font-mono mt-1">{new Date(log.created_at).toLocaleString()}</div>
+                  <div className="text-[12px] text-slate-600 font-mono mt-1">{new Date(log.createdAt).toLocaleString()}</div>
                 </div>
               )) : (
                 <div className="text-center py-12 opacity-10 italic text-xs font-black uppercase tracking-widest">Pristine Audit Trail</div>
@@ -413,9 +417,9 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     username: '',
     email: '',
     password: '',
-    display_name: '',
-    global_role: 'user',
-    force_password_change: true
+    displayName: '',
+    globalRole: 'user',
+    forcePasswordChange: true
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -436,7 +440,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/users`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/provisioning`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -497,8 +501,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                     type="text"
                     placeholder="e.g. John Wick"
                     className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-sm font-bold focus:border-emerald-500/50 outline-none transition-all"
-                    value={formData.display_name}
-                    onChange={e => setFormData({ ...formData, display_name: e.target.value })}
+                    value={formData.displayName}
+                    onChange={e => setFormData({ ...formData, displayName: e.target.value })}
                   />
                 </div>
               </div>
@@ -544,8 +548,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                  </div>
                  <select 
                    className="bg-black border border-white/10 p-2 rounded-lg text-xs font-black uppercase text-emerald-500 outline-none"
-                   value={formData.global_role}
-                   onChange={e => setFormData({ ...formData, global_role: e.target.value })}
+                   value={formData.globalRole}
+                   onChange={e => setFormData({ ...formData, globalRole: e.target.value })}
                  >
                    <option value="user">USER</option>
                    <option value="super_admin">SUPER_ADMIN</option>
@@ -555,8 +559,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
               <div className="flex items-center gap-3 ml-1">
                 <input 
                   type="checkbox" 
-                  checked={formData.force_password_change}
-                  onChange={e => setFormData({ ...formData, force_password_change: e.target.checked })}
+                  checked={formData.forcePasswordChange}
+                  onChange={e => setFormData({ ...formData, forcePasswordChange: e.target.checked })}
                   className="accent-emerald-500"
                 />
                 <label className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer">Enforce Forensic Reset on First Login</label>
@@ -588,7 +592,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
   );
 };
 
-const PCCUsers: React.FC = () => {
+const AdminUsers: React.FC = () => {
   const { showToast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -608,11 +612,15 @@ const PCCUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/users`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/management`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      setUsers(data);
+      if (data.success) {
+        setUsers(data.data || []);
+      } else {
+        showToast(data.error || 'Failed to resolve users', 'error');
+      }
     } catch (err) {
       console.error('Failed to fetch users:', err);
     } finally {
@@ -627,7 +635,7 @@ const PCCUsers: React.FC = () => {
   const handleUpdate = async (id: string, updates: any) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
-    await fetch(`${apiUrl}/api/pcc/admin/users/${id}`, {
+    await fetch(`${apiUrl}/api/admin/users/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(updates)
@@ -642,7 +650,7 @@ const PCCUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/users/${userToDelete.id}`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -664,7 +672,7 @@ const PCCUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/users/merge`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/merge`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ sourceId: mergeSource, targetId: mergeTarget })
@@ -686,21 +694,21 @@ const PCCUsers: React.FC = () => {
 
   const filteredUsers = users.filter(u => 
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) return (
-    <PCCPortal activePath="#/system-pcc/users">
+    <AdminPortal activePath="#/admin/users">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
         <div className="text-xs font-black uppercase tracking-[0.3em]">Loading users...</div>
       </div>
-    </PCCPortal>
+    </AdminPortal>
   );
 
   return (
-    <PCCPortal activePath="#/system-pcc/users">
+    <AdminPortal activePath="#/admin/users">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
           <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
@@ -742,19 +750,19 @@ const PCCUsers: React.FC = () => {
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
                     <img 
-                      src={u.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} 
+                      src={u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} 
                       className="w-10 h-10 rounded-xl border border-white/10 group-hover:border-emerald-500/50 transition-all" 
                       alt="Avatar"
                     />
                     <div>
-                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.display_name || u.username || u.email || 'System User'}</div>
+                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.displayName || u.username || u.email || 'System User'}</div>
                       <div className="text-xs text-slate-500 font-mono tracking-tighter">{u.email}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-8 py-6">
-                  <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${u.global_role === 'super_admin' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
-                    {u.global_role}
+                  <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${u.globalRole === 'super_admin' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+                    {u.globalRole}
                   </span>
                 </td>
                 <td className="px-8 py-6">
@@ -794,7 +802,7 @@ const PCCUsers: React.FC = () => {
                           <div className="h-px bg-white/5 my-1" />
                           
                           <button 
-                            onClick={() => handleUpdate(u.id, { global_role: u.global_role === 'user' ? 'super_admin' : 'user' })}
+                            onClick={() => handleUpdate(u.id, { globalRole: u.globalRole === 'user' ? 'super_admin' : 'user' })}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/5 rounded-xl transition-all"
                           >
                             <Shield size={16} className="text-primary" />
@@ -896,7 +904,7 @@ const PCCUsers: React.FC = () => {
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {users.filter(u => 
                 u.id !== mergeSource && 
-                (u.display_name?.toLowerCase().includes(mergeSearchTerm.toLowerCase()) || 
+                (u.displayName?.toLowerCase().includes(mergeSearchTerm.toLowerCase()) || 
                  u.email?.toLowerCase().includes(mergeSearchTerm.toLowerCase()))
               ).map(u => (
                 <div 
@@ -905,9 +913,9 @@ const PCCUsers: React.FC = () => {
                   className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${mergeTarget === u.id ? 'bg-orange-500/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <img src={u.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} className="w-8 h-8 rounded-lg" />
+                    <img src={u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} className="w-8 h-8 rounded-lg" />
                     <div>
-                      <p className="text-sm font-black uppercase text-white tracking-tight">{u.display_name || u.username}</p>
+                      <p className="text-sm font-black uppercase text-white tracking-tight">{u.displayName || u.username}</p>
                       <p className="text-[10px] font-mono text-slate-500">{u.email}</p>
                     </div>
                   </div>
@@ -932,7 +940,7 @@ const PCCUsers: React.FC = () => {
           }
         >
           <div className="space-y-4">
-            <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.display_name || userToDelete?.username}</strong>?</p>
+            <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.displayName || userToDelete?.username}</strong>?</p>
             <p className="text-red-500 text-xs font-black uppercase tracking-widest">CRITICAL ACTION: This will remove all associated data and credentials. This cannot be undone.</p>
           </div>
         </Modal>
@@ -943,7 +951,7 @@ const PCCUsers: React.FC = () => {
           onShowToast={showToast}
         />
       </AnimatePresence>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
@@ -968,7 +976,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/users/${target.id}/impersonate`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/${target.id}/impersonate`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -976,13 +984,13 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
       
       if (data.token && data.impersonationContext) {
         const { householdId, profile, globalRole } = data.impersonationContext;
-        onShowToast(`Identity mirrored: Accessing as ${profile.display_name}`, 'success');
+        onShowToast(`Identity mirrored: Accessing as ${profile.displayName}`, 'success');
         
         // Persona Synchronization
         localStorage.setItem('ledger_token', data.token);
         localStorage.setItem('ledger_user', JSON.stringify(profile));
-        localStorage.setItem('ledger_global_role', globalRole || 'user');
-        localStorage.setItem('ledger_household_id', householdId);
+        localStorage.setItem('ledger_globalRole', globalRole || 'user');
+        localStorage.setItem('ledger_householdId', householdId);
         localStorage.setItem('ledger_impersonation_active', 'true');
         localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
         
@@ -1023,7 +1031,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
             <Monitor size={24} />
           </div>
           <div>
-            <p className="text-sm font-black uppercase text-white tracking-widest">{target.display_name || target.username}</p>
+            <p className="text-sm font-black uppercase text-white tracking-widest">{target.displayName || target.username}</p>
             <p className="text-[10px] font-mono text-purple-400">{target.email}</p>
           </div>
         </div>
@@ -1054,4 +1062,4 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
   );
 };
 
-export default PCCUsers;
+export default AdminUsers;

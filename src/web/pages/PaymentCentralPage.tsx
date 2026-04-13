@@ -27,11 +27,11 @@ const PaymentCentralPage: React.FC = () => {
   
   const [newAccount, setNewAccount] = useState({
     provider_id: '',
-    payment_method_id: '',
-    email_attached: '',
-    membership_start_date: '',
-    membership_end_date: '',
-    subscription_id: '',
+    paymentMethodId: '',
+    emailAttached: '',
+    membershipStartDate: '',
+    membershipEndDate: '',
+    subscriptionId: '',
     notes: '',
     status: 'active'
   });
@@ -108,7 +108,7 @@ const PaymentCentralPage: React.FC = () => {
     if (res.ok) {
       showToast('Account linked successfully!', 'success');
       setShowLinkAccount(false);
-      setNewAccount({ provider_id: '', payment_method_id: '', email_attached: '', membership_start_date: '', membership_end_date: '', subscription_id: '', notes: '', status: 'active' });
+      setNewAccount({ provider_id: '', paymentMethodId: '', emailAttached: '', membershipStartDate: '', membershipEndDate: '', subscriptionId: '', notes: '', status: 'active' });
       fetchData();
     }
   };
@@ -228,8 +228,8 @@ const PaymentCentralPage: React.FC = () => {
                       <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Attached Email</label>
                       <input 
                         type="email" 
-                        value={newAccount.email_attached} 
-                        onChange={(e) => setNewAccount({ ...newAccount, email_attached: e.target.value })}
+                        value={newAccount.emailAttached} 
+                        onChange={(e) => setNewAccount({ ...newAccount, emailAttached: e.target.value })}
                         placeholder="account@email.com"
                         className="w-full bg-black/40 border border-amber-500/20 rounded-xl px-4 py-3 text-sm focus:border-amber-500/50"
                       />
@@ -243,8 +243,8 @@ const PaymentCentralPage: React.FC = () => {
                             label: m.name, 
                             metadata: { subtext: (m.type || '').replace('_', ' ') }
                           }))}
-                          value={newAccount.payment_method_id}
-                          onChange={(val) => setNewAccount({ ...newAccount, payment_method_id: val })}
+                          value={newAccount.paymentMethodId}
+                          onChange={(val) => setNewAccount({ ...newAccount, paymentMethodId: val })}
                           placeholder="Choose Method..."
                         />
                       </div>
@@ -254,10 +254,10 @@ const PaymentCentralPage: React.FC = () => {
                           options={(subscriptions || []).map(s => ({ 
                             value: s.id, 
                             label: s.name, 
-                            metadata: { subtext: `$${((s.amount_cents || 0)/100).toFixed(2)}` }
+                            metadata: { subtext: `$${((s.amountCents || 0)/100).toFixed(2)}` }
                           }))}
-                          value={newAccount.subscription_id}
-                          onChange={(val) => setNewAccount({ ...newAccount, subscription_id: val })}
+                          value={newAccount.subscriptionId}
+                          onChange={(val) => setNewAccount({ ...newAccount, subscriptionId: val })}
                           placeholder="Choose Plan..."
                         />
                       </div>
@@ -267,8 +267,8 @@ const PaymentCentralPage: React.FC = () => {
                         <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Member Since</label>
                         <input 
                           type="date" 
-                          value={newAccount.membership_start_date} 
-                          onChange={(e) => setNewAccount({ ...newAccount, membership_start_date: e.target.value })}
+                          value={newAccount.membershipStartDate} 
+                          onChange={(e) => setNewAccount({ ...newAccount, membershipStartDate: e.target.value })}
                           className="w-full bg-black/40 border border-amber-500/20 rounded-xl px-4 py-3 text-sm"
                         />
                       </div>
@@ -276,8 +276,8 @@ const PaymentCentralPage: React.FC = () => {
                         <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Plan End Date</label>
                         <input 
                           type="date" 
-                          value={newAccount.membership_end_date} 
-                          onChange={(e) => setNewAccount({ ...newAccount, membership_end_date: e.target.value })}
+                          value={newAccount.membershipEndDate} 
+                          onChange={(e) => setNewAccount({ ...newAccount, membershipEndDate: e.target.value })}
                           className="w-full bg-black/40 border border-amber-500/20 rounded-xl px-4 py-3 text-sm"
                         />
                       </div>
@@ -324,8 +324,8 @@ const PaymentCentralPage: React.FC = () => {
                     
                     <div className="flex items-center justify-between mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center overflow-hidden">
-                         {account.provider_branding ? (
-                           <img src={account.provider_branding} alt="" className="w-8 h-8 object-contain" />
+                         {account.providerBranding ? (
+                           <img src={account.providerBranding} alt="" className="w-8 h-8 object-contain" />
                          ) : (
                            <Globe size={24} className="text-slate-600" />
                          )}
@@ -336,25 +336,25 @@ const PaymentCentralPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <h4 className="text-xl font-black tracking-tighter uppercase italic">{account.provider_name}</h4>
+                    <h4 className="text-xl font-black tracking-tighter uppercase italic">{account.providerName}</h4>
                     
                     <div className="mt-6 space-y-4">
-                      {account.email_attached && (
+                      {account.emailAttached && (
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
                           <Mail size={14} className="text-amber-500/60" />
-                          <span>{account.email_attached}</span>
+                          <span>{account.emailAttached}</span>
                         </div>
                       )}
-                      {account.payment_method_name && (
+                      {account.paymentMethodName && (
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
                           <Zap size={14} className="text-cyan-500/60" />
-                          <span>Charged to: <span className="text-white">{account.payment_method_name}</span></span>
+                          <span>Charged to: <span className="text-white">{account.paymentMethodName}</span></span>
                         </div>
                       )}
-                      {(account.membership_start_date || account.membership_end_date) && (
+                      {(account.membershipStartDate || account.membershipEndDate) && (
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
                           <Calendar size={14} className="text-purple-500/60" />
-                          <span>Period: {account.membership_start_date || 'N/A'} — {account.membership_end_date || 'Active'}</span>
+                          <span>Period: {account.membershipStartDate || 'N/A'} — {account.membershipEndDate || 'Active'}</span>
                         </div>
                       )}
                     </div>
@@ -366,10 +366,10 @@ const PaymentCentralPage: React.FC = () => {
                            <span className={`w-1.5 h-1.5 rounded-full ${account.status === 'active' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span> {account.status}
                         </p>
                       </div>
-                      {account.subscription_id && (
+                      {account.subscriptionId && (
                          <div className="text-right">
                             <p className="text-[10px] font-black text-slate-600 uppercase">Linked Subscription</p>
-                            <p className="text-xs font-black text-blue-400 uppercase italic">{account.subscription_name || 'Linked'}</p>
+                            <p className="text-xs font-black text-blue-400 uppercase italic">{account.subscriptionName || 'Linked'}</p>
                          </div>
                       )}
                     </div>

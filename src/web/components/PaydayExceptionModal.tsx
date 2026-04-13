@@ -12,7 +12,7 @@ interface PaydayExceptionModalProps {
         date: string;
         original_date: string;
         name: string;
-        amount_cents: number;
+        amountCents: number;
         notes?: string;
         is_override?: boolean;
     };
@@ -28,12 +28,12 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
 
     // Form State
     const [note, setNote] = React.useState(payday.notes || '');
-    const [overrideAmountCents, setOverrideAmountCents] = React.useState<number | null>(payday.is_override ? payday.amount_cents : null);
+    const [overrideAmountCents, setOverrideAmountCents] = React.useState<number | null>(payday.is_override ? payday.amountCents : null);
     const [overrideDate, setOverrideDate] = React.useState<string | null>(payday.is_override ? payday.date : null);
 
     React.useEffect(() => {
         setNote(payday.notes || '');
-        setOverrideAmountCents(payday.is_override ? payday.amount_cents : null);
+        setOverrideAmountCents(payday.is_override ? payday.amountCents : null);
         setOverrideDate(payday.is_override ? payday.date : null);
     }, [payday]);
 
@@ -52,7 +52,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                 pay_schedule_id: payday.pay_schedule_id,
                 original_date: payday.original_date,
                 override_date: overrideDate || null,
-                override_amount_cents: overrideAmountCents || null,
+                override_amountCents: overrideAmountCents || null,
                 note: note || null
             })
         });
@@ -104,7 +104,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/10">
                         <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Projected Amount</div>
-                        <Price amountCents={payday.amount_cents} className="text-sm font-bold" />
+                        <Price amountCents={payday.amountCents} className="text-sm font-bold" />
                     </div>
                 </div>
 

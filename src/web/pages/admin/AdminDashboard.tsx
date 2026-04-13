@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import PCCPortal from './PCCPortal';
+import AdminPortal from './AdminPortal';
 
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../context/ToastContext';
 import { AnimatePresence } from 'framer-motion';
 
-const PCCDashboard: React.FC = () => {
+const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [systemLogs, setSystemLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,19 +23,22 @@ const PCCDashboard: React.FC = () => {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = import.meta.env.VITE_API_URL;
         const [statsRes, logsRes, configRes] = await Promise.all([
-          fetch(`${apiUrl}/api/pcc/stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/pcc/audit/system`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/pcc/config`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${apiUrl}/api/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/admin/audit/system`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/admin/config`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
+        
         const statsData = await statsRes.json();
         const logsData = await logsRes.json();
         const configData = await configRes.json();
         
-        setStats(statsData);
-        setSystemLogs(logsData);
+        if (statsData.success) setStats(statsData.data);
+        if (logsData.success) setSystemLogs(logsData.data);
 
-        const maintenance = configData.find((c: any) => c.config_key === 'MAINTENANCE_MODE');
-        setMaintenanceEnabled(maintenance?.config_value === 'true');
+        if (configData.success) {
+          const maintenance = configData.data.find((c: any) => c.configKey === 'MAINTENANCE_MODE');
+          setMaintenanceEnabled(maintenance?.configValue === 'true');
+        }
       } catch (err) {
         console.error('Failed to fetch PCC data:', err);
       } finally {
@@ -50,12 +53,13 @@ const PCCDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/admin/maintenance`, {
+      const res = await fetch(`${apiUrl}/api/admin/maintenance`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !maintenanceEnabled })
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
         setMaintenanceEnabled(!maintenanceEnabled);
         showToast(`Maintenance mode ${!maintenanceEnabled ? 'enabled' : 'disabled'}`, 'info');
       }
@@ -72,7 +76,7 @@ const PCCDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/pcc/announcements`, {
+      const res = await fetch(`${apiUrl}/api/admin/announcements`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -81,7 +85,8 @@ const PCCDashboard: React.FC = () => {
           priority: announcement.priority 
         })
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
         showToast('Announcement broadcasted', 'success');
         setIsAnnouncementModalOpen(false);
         setAnnouncement({ title: '', content: '', priority: 'info' });
@@ -93,7 +98,7 @@ const PCCDashboard: React.FC = () => {
     }
   };
 
-  if (loading) return <PCCPortal activePath="#/system-pcc/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></PCCPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></AdminPortal>;
 
   const statCards = [
     { label: 'Total Users', value: stats?.totalUsers || 0, color: 'emerald' },
@@ -103,7 +108,7 @@ const PCCDashboard: React.FC = () => {
   ];
 
   return (
-    <PCCPortal activePath="#/system-pcc/dashboard">
+    <AdminPortal activePath="#/admin/dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {statCards.map((stat) => (
           <div key={stat.label} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative">
@@ -131,7 +136,7 @@ const PCCDashboard: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-bold">{log.action.replace(/_/g, ' ')}</p>
-                      <p className="text-sm text-gray-500 uppercase tracking-tight">{log.target} • {new Date(log.created_at).toLocaleString()}</p>
+                      <p className="text-sm text-gray-500 uppercase tracking-tight">{log.target} • {new Date(log.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
                   <span className={`px-2 py-0.5 text-sm font-black uppercase rounded-full border ${
@@ -165,16 +170,21 @@ const PCCDashboard: React.FC = () => {
             >
               Send System Message
             </button>
-            <button 
-              onClick={handleToggleMaintenance}
-              disabled={loadingMaintenance}
-              className={`w-full text-left p-3 rounded-xl font-bold text-sm transition-all border ${
+              className={`w-full text-left p-3 rounded-xl font-bold text-sm transition-all border relative overflow-hidden ${
                 maintenanceEnabled 
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' 
                 : 'bg-red-500/20 hover:bg-red-500/30 text-red-500 border-red-500/20'
               }`}
             >
-              {loadingMaintenance ? 'Processing...' : maintenanceEnabled ? 'Resume Site Access' : 'Turn Off Site Access'}
+              {loadingMaintenance && (
+                <div className="absolute inset-0 bg-inherit flex items-center px-3 gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current/20 border-t-current" />
+                  <span>Executing Protocol...</span>
+                </div>
+              )}
+              <span className={loadingMaintenance ? 'opacity-0' : ''}>
+                {maintenanceEnabled ? 'Resume Site Access' : 'Turn Off Site Access'}
+              </span>
             </button>
           </div>
         </div>
@@ -239,8 +249,8 @@ const PCCDashboard: React.FC = () => {
           </Modal>
         )}
       </AnimatePresence>
-    </PCCPortal>
+    </AdminPortal>
   );
 };
 
-export default PCCDashboard;
+export default AdminDashboard;

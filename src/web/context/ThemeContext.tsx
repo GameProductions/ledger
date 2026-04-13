@@ -129,7 +129,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     // Sync to server if user is logged in and not overridden by broadcast
     if (token && user && !broadcastThemeId) {
-       const currentSettings = JSON.parse(user.settings_json || '{}');
+       const currentSettings = JSON.parse(user.settingsJson || '{}');
        if (currentSettings.theme !== activeThemeId) {
           fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
             method: 'PATCH',
@@ -137,7 +137,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ settings_json: JSON.stringify({ ...currentSettings, theme: activeThemeId }) })
+            body: JSON.stringify({ settingsJson: JSON.stringify({ ...currentSettings, theme: activeThemeId }) })
           }).catch(() => {});
        }
     }

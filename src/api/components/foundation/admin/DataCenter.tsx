@@ -51,7 +51,7 @@ export const DataCenter = ({ tables, onImport, onExport }) => {
                 className="btn-export" 
                 onClick={() => onExport(table.name)}
               >
-                Export Sovereign Snapshot (.json)
+                Export Secure Snapshot (.json)
               </button>
             </div>
           </div>

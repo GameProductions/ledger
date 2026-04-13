@@ -9,7 +9,9 @@ import {
   UpdateHouseholdSchema, 
   UserPaymentMethodSchema, 
   UserLinkedAccountSchema,
-  JoinHouseholdSchema
+  JoinHouseholdSchema,
+  UserOutputSchema,
+  EnvelopeSchema
 } from '../schemas'
 import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
@@ -23,9 +25,12 @@ const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 // Profile & Identity
 user.get('/me', (c) => {
   return c.json({
-    userId: c.get('userId'),
-    householdId: c.get('householdId'),
-    globalRole: c.get('globalRole')
+    success: true,
+    data: {
+      userId: c.get('userId'),
+      householdId: c.get('householdId'),
+      globalRole: c.get('globalRole')
+    }
   })
 })
 
@@ -46,10 +51,13 @@ user.get('/profile', async (c) => {
   }).from(users).where(eq(users.id, userId as string))
   
   if (!results || results.length === 0) {
-    return c.json({ error: 'User not found' }, 404)
+    return c.json({ success: false, error: 'User not found' }, 404)
   }
   
-  return c.json(results[0])
+  return c.json({
+    success: true,
+    data: UserOutputSchema.parse(results[0])
+  })
 })
 
 user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
@@ -123,10 +131,13 @@ user.get('/onboarding', async (c) => {
   const recentUpdates = VERSION_UPDATES.filter(v => v.version > lastVersion)
   
   return c.json({
-    completed_steps: completedSteps,
-    is_completed: completedSteps.length >= 4,
-    updates: recentUpdates,
-    current_version: CURRENT_VERSION
+    success: true,
+    data: {
+      completedSteps: completedSteps,
+      isCompleted: completedSteps.length >= 4,
+      updates: recentUpdates,
+      currentVersion: CURRENT_VERSION
+    }
   })
 })
 
@@ -178,7 +189,10 @@ user.get('/households', async (c) => {
     role: userHouseholds.role
   }).from(households).innerJoin(userHouseholds, eq(households.id, userHouseholds.householdId)).where(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')))
   
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.post('/households', zValidator('json', CreateHouseholdSchema), async (c) => {
@@ -318,7 +332,10 @@ user.get('/notifications', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)
   const results = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId))
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.patch('/notifications', zValidator('json', z.array(z.object({
@@ -383,7 +400,10 @@ user.get('/identities', async (c) => {
     avatarUrl: userIdentities.avatarUrl,
     createdAt: userIdentities.createdAt
   }).from(userIdentities).where(eq(userIdentities.userId, userId))
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.delete('/identities/:id', async (c) => {
@@ -408,7 +428,10 @@ user.get('/providers', async (c) => {
      JOIN service_providers sp ON lp.service_provider_id = sp.id
      WHERE lp.user_id = ?`
   ).bind(userId).all()
-  return c.json(dbRes.results)
+  return c.json({
+    success: true,
+    data: dbRes.results
+  })
 })
 
 user.post('/providers/link', zValidator('json', z.object({
@@ -435,7 +458,10 @@ user.get('/linked-accounts', async (c) => {
     JOIN service_providers sp ON la.service_provider_id = sp.id 
     WHERE la.user_id = ?
   `).bind(userId).all()
-  return c.json(dbRes.results)
+  return c.json({
+    success: true,
+    data: dbRes.results
+  })
 })
 
 user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema), async (c) => {
@@ -465,7 +491,10 @@ user.get('/passkeys', async (c) => {
     aaguid: passkeys.aaguid,
     createdAt: passkeys.createdAt
   }).from(passkeys).where(eq(passkeys.userId, userId))
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.get('/totps', async (c) => {
@@ -476,7 +505,10 @@ user.get('/totps', async (c) => {
     name: totps.name,
     createdAt: totps.createdAt
   }).from(totps).where(eq(totps.userId, userId))
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.patch('/totps/:id', zValidator('json', z.object({ name: z.string() })), async (c) => {
@@ -515,7 +547,10 @@ user.get('/sessions', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)
   const results = await db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.lastActiveAt))
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.delete('/sessions/:id', async (c) => {
@@ -548,7 +583,10 @@ user.get('/households/:id/members', async (c) => {
     role: userHouseholds.role
   }).from(users).innerJoin(userHouseholds, eq(users.id, userHouseholds.userId)).where(eq(userHouseholds.householdId, id))
   
-  return c.json(members)
+  return c.json({
+    success: true,
+    data: members
+  })
 })
 
 user.get('/households/:id/invites', async (c) => {
@@ -556,7 +594,10 @@ user.get('/households/:id/invites', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   const results = await db.select().from(householdInvites).where(and(eq(householdInvites.householdId, id), eq(householdInvites.status, 'pending')))
-  return c.json(results)
+  return c.json({
+    success: true,
+    data: results
+  })
 })
 
 user.delete('/households/:id/invites/:inviteId', async (c) => {

@@ -6,25 +6,27 @@ export interface PaydayInstance {
   date: string;
   original_date: string;
   name: string;
-  amount_cents: number;
+  amountCents: number;
   notes?: string;
   type: 'pay_schedule';
   is_override?: boolean;
 }
 
 export const projectPaydays = (
-  schedules: any[],
+  schedules: any[] = [],
   viewStart: Date,
   viewEnd: Date,
   exceptions: any[] = []
 ): PaydayInstance[] => {
   const instances: PaydayInstance[] = [];
+  if (!Array.isArray(schedules)) return [];
+  const safeExceptions = Array.isArray(exceptions) ? exceptions : [];
 
   schedules.forEach(schedule => {
-    if (!schedule.next_pay_date) return;
+    if (!schedule.nextPayDate) return;
     
-    let current = parseISO(schedule.next_pay_date);
-    const amount = schedule.estimated_amount_cents || 0;
+    let current = parseISO(schedule.nextPayDate);
+    const amount = schedule.estimated_amountCents || 0;
     const notes = schedule.notes || '';
     const frequency = schedule.frequency;
 
@@ -50,7 +52,7 @@ export const projectPaydays = (
     while (isBefore(current, viewEnd) && iteration < maxIterations) {
       if (!isBefore(current, viewStart)) {
         const dateStr = format(current, 'yyyy-MM-dd');
-        const exception = exceptions.find(ex => ex.pay_schedule_id === schedule.id && ex.original_date === dateStr);
+        const exception = safeExceptions.find(ex => ex.pay_schedule_id === schedule.id && ex.original_date === dateStr);
         
         instances.push({
           id: exception?.id,
@@ -58,7 +60,7 @@ export const projectPaydays = (
           date: exception?.override_date || dateStr,
           original_date: dateStr,
           name: schedule.name,
-          amount_cents: exception?.override_amount_cents ?? amount,
+          amountCents: exception?.override_amountCents ?? amount,
           notes: exception?.note || notes,
           type: 'pay_schedule',
           is_override: !!exception
@@ -113,14 +115,16 @@ function addMonths(date: Date, amount: number) {
     return d;
 }
 
-export const groupLiabilitiesByCycle = (liabilities: any[], paydays: PaydayInstance[]) => {
-    const sortedPaydays = [...paydays].sort((a, b) => a.date.localeCompare(b.date));
+export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: PaydayInstance[] = []) => {
+    const safeLiabilities = Array.isArray(liabilities) ? liabilities : [];
+    const safePaydays = Array.isArray(paydays) ? paydays : [];
+    const sortedPaydays = [...safePaydays].sort((a, b) => a.date.localeCompare(b.date));
     const cycles: { payday: PaydayInstance, items: any[], total_cents: number }[] = [];
 
     sortedPaydays.forEach((payday, idx) => {
         const nextPayday = sortedPaydays[idx + 1];
         const items = liabilities.filter(item => {
-            const date = item.due_date || item.next_billing_date || item.next_payment_date || item.transaction_date;
+            const date = item.dueDate || item.next_billing_date || item.next_payment_date || item.transactionDate;
             if (!date) return false;
             
             const isAtOrAfterPayday = date >= payday.date;
@@ -131,7 +135,7 @@ export const groupLiabilitiesByCycle = (liabilities: any[], paydays: PaydayInsta
         cycles.push({
             payday,
             items,
-            total_cents: items.reduce((acc, curr) => acc + (curr.amount_cents || curr.installment_amount_cents || 0), 0)
+            total_cents: items.reduce((acc, curr) => acc + (curr.amountCents || curr.installment_amountCents || 0), 0)
         });
     });
 
@@ -139,12 +143,13 @@ export const groupLiabilitiesByCycle = (liabilities: any[], paydays: PaydayInsta
 };
 
 export const getPayPeriodRange = (
-  paydays: PaydayInstance[],
+  paydays: PaydayInstance[] | null | undefined,
   scheduleId: string,
   type: 'previous' | 'current' | 'next',
   anchorDate: Date = new Date()
 ) => {
-  const schedulePaydays = [...paydays]
+  const safePaydays = Array.isArray(paydays) ? paydays : [];
+  const schedulePaydays = [...safePaydays]
     .filter(p => !scheduleId || p.pay_schedule_id === scheduleId)
     .sort((a, b) => a.date.localeCompare(b.date));
 

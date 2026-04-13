@@ -33,7 +33,14 @@ import { inferTransactionDetails } from '../inference'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+const toSnake = (obj: any) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  return Object.keys(obj).reduce((acc: any, key) => {
+    const snake = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    acc[snake] = obj[key];
+    return acc;
+  }, {});
+}
 
 // Categories
 financials.get('/categories', async (c) => {
@@ -247,8 +254,7 @@ financials.get('/transactions/export', async (c) => {
     })
   }
 
-  const results = await query
-  return c.json({ success: true, data: results })
+  return c.json({ success: true, data: snakeResults })
 })
 
 financials.get('/transactions/:id/timeline', async (c) => {

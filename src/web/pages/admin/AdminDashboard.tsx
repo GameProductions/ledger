@@ -170,6 +170,9 @@ const AdminDashboard: React.FC = () => {
             >
               Send System Message
             </button>
+            <button 
+              onClick={handleToggleMaintenance}
+              disabled={loadingMaintenance}
               className={`w-full text-left p-3 rounded-xl font-bold text-sm transition-all border relative overflow-hidden ${
                 maintenanceEnabled 
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' 

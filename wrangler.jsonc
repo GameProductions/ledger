@@ -69,6 +69,10 @@
     {
       "tag": "v3",
       "new_classes": ["RateLimiter"]
+    },
+    {
+      "tag": "v4-decommission-ratelimiter",
+      "deleted_classes": ["RateLimiter"]
     }
   ],
   "triggers": {

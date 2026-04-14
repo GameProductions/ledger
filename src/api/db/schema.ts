@@ -278,16 +278,24 @@ export const templates = sqliteTable('templates', {
 });
 
 export const auditLogs = sqliteTable('audit_logs', {
-  id: text('id').primaryKey(),
+  id: integer('id').primaryKey({ autoIncrement: true }),
   householdId: text('household_id').notNull().references(() => households.id),
   actorId: text('actor_id').notNull(),
-  tableName: text('table_name').notNull(),
-  recordId: text('record_id').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
   action: text('action').notNull(),
-  oldValuesJson: text('old_values_json'),
-  newValuesJson: text('new_values_json'),
+  severity: text('severity').default('INFO'), // INFO, WARN, CRITICAL
+  targetType: text('target_type'),
+  targetId: text('target_id'),
+  recordId: text('record_id'), // For table row identifiers
+  oldValuesJson: text('old_values_json').default('{}'),
+  newValuesJson: text('new_values_json').default('{}'),
+  metadataJson: text('metadata_json').default('{}'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  householdIdx: index('idx_audit_logs_household').on(table.householdId),
+  actorIdx: index('idx_audit_logs_actor').on(table.actorId),
+}));
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),

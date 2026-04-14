@@ -23,6 +23,10 @@
   ],
   "kv_namespaces": [
     {
+      "binding": "TITAN_GUARD_CACHE",
+      "id": "3b5176621a954976ba0b6d78a2c9af08"
+    },
+    {
       "binding": "LEDGER_CACHE",
       "id": "82e77de9e9e4478bbf2859af4f143820"
     },
@@ -51,10 +55,6 @@
         "name": "VAULT",
         "class_name": "Vault"
       },
-      {
-        "name": "RATE_LIMITER",
-        "class_name": "RateLimiter"
-      }
     ]
   },
   "migrations": [

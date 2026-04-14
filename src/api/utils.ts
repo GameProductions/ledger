@@ -5,32 +5,47 @@ import { auditLogs } from './db/schema'
 
 export const logAudit = async (
   c: Context<{ Bindings: Bindings; Variables: Variables }>, 
-  tableName: string, 
+  targetType: string, 
   recordId: string, 
   action: string, 
-  oldData: any = null, 
-  newData: any = null
+  oldValues: any = null, 
+  newValues: any = null,
+  metadata: any = null
 ) => {
-  const id = crypto.randomUUID()
   const householdId = c.get('householdId') || 'ledger-main-001'
   const actorId = c.get('userId') || 'system'
   const impersonatorId = c.get('impersonatorId')
-  const newValues = newData ? { ...newData } : {}
+  
+  // Titan Guard v1.2.1: Robust Telemetry Extraction
+  const ipAddress = c.req.header('cf-connecting-ip') || 
+                    c.req.header('CF-Connecting-IP') || 
+                    c.req.header('x-forwarded-for') || 
+                    c.req.header('x-real-ip') || 
+                    '0.0.0.0';
+  
+  const userAgent = c.req.header('user-agent') || 
+                    c.req.header('User-Agent') || 
+                    'Unknown-UA';
+  
+  const finalNewValues = newValues ? { ...newValues } : {}
   if (impersonatorId) {
-    (newValues as any)._impersonator_id = impersonatorId
+    (finalNewValues as any)._impersonator_id = impersonatorId
   }
 
   const db = getDb(c.env)
   await db.insert(auditLogs).values({
-    id,
     householdId,
     actorId,
-    tableName,
-    recordId,
+    ipAddress,
+    userAgent,
     action,
-    oldValuesJson: oldData ? JSON.stringify(oldData) : null,
-    newValuesJson: Object.keys(newValues).length > 0 ? JSON.stringify(newValues) : null
-  });
+    severity: action.includes('CRITICAL') || action.includes('ADMIN') || action.includes('DELETE') ? 'CRITICAL' : 'INFO',
+    targetType,
+    recordId,
+    oldValuesJson: oldValues ? JSON.stringify(oldValues) : '{}',
+    newValuesJson: Object.keys(finalNewValues).length > 0 ? JSON.stringify(finalNewValues) : '{}',
+    metadataJson: metadata ? JSON.stringify(metadata) : '{}',
+  }).catch(e => console.error('[AUDIT_FAILURE]', e));
 }
 
 export const encrypt = async (text: string, key: string) => {

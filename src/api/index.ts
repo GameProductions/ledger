@@ -9,6 +9,8 @@ import { adminMiddleware } from './middlewares/admin-middleware'
 import { getDb } from './db'
 import { systemConfig } from './db/schema'
 import { eq } from 'drizzle-orm'
+import { logAudit } from './utils'
+import { ipRateLimit } from './utils/rate-limit'
 
 // Route Imports
 import authRoutes from './routes/auth'
@@ -24,7 +26,7 @@ import discordRoutes from './discord'
 import supportRoutes from './routes/support'
 
 // Durable Objects Exports (Required for Cloudflare)
-export { HouseholdSession, Vault, RateLimiter } from './durable-objects'
+export { HouseholdSession, Vault } from './durable-objects'
 
 // Root App (Consolidated v3.29.1)
 export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -57,7 +59,7 @@ app.use('*', (c, next) => {
   return csrf()(c, next)
 })
 
-// Rate Limiting (Persistent via Durable Objects)
+// Traffic Governance Protocols (Titan Guard v6.1)
 app.use('*', async (c, next) => {
   const path = c.req.path
   
@@ -112,7 +114,7 @@ app.use('*', async (c, next) => {
 
   const isMaintenanceActive = isHardLocked || isSoftLocked || isGlobalLocked
   const isAdminPath = path.startsWith('/api/admin') || path.startsWith('/auth/admin')
-  const isPublicPath = path === '/ping' || path === '/api/health' || path === '/api/config' || path === '/api/theme/broadcast' || path.includes('.well-known')
+  const isPublicPath = path === '/ping' || path === '/api/health' || path.includes('.well-known')
   
   if (isMaintenanceActive && !isAdminPath && !isPublicPath) {
     return c.json({ 
@@ -122,22 +124,13 @@ app.use('*', async (c, next) => {
     }, 503)
   }
 
-  if (path.startsWith('/api/') || path.startsWith('/auth/')) {
-    const ip = c.req.header('cf-connecting-ip') || 'anon'
-    const id = c.env.RATE_LIMITER.idFromName(ip)
-    const obj = c.env.RATE_LIMITER.get(id)
-    const res = await obj.fetch(new URL(`http://rate-limit?ip=${encodeURIComponent(ip)}&limit=100`, c.req.url))
-    
-    c.header('X-RateLimit-Limit', res.headers.get('X-RateLimit-Limit') || '100')
-    c.header('X-RateLimit-Remaining', res.headers.get('X-RateLimit-Remaining') || '99')
-    
-    if (res.status === 429) {
-      c.header('Retry-After', res.headers.get('Retry-After') || '60')
-      return c.json({ error: 'Too many requests' }, 429)
-    }
-  }
   await next()
 })
+
+// Adaptive Fleet Shield (v6.1)
+app.use('/auth/*', ipRateLimit('AUTH'))
+app.use('/api/auth/*', ipRateLimit('AUTH'))
+app.use('/api/*', ipRateLimit('API'))
 
 // 2. Health & System Information
 app.get('/ping', (c) => c.text('PONG - LEDGER v3.29.1 IS LIVE'))
@@ -166,7 +159,7 @@ app.use('/api/*', async (c, next) => {
   const path = c.req.path
   const method = c.req.method
 
-  const publicPaths = ['/api/config', '/api/theme/broadcast', '/api/health']
+  const publicPaths = ['/api/theme/broadcast', '/api/health']
   const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS')
   
   if (isPublicApi) return await next()
@@ -179,6 +172,8 @@ app.use('/auth/totp/*', authMiddleware)
 app.use('/auth/vault/*', authMiddleware)
 app.use('/auth/password/*', authMiddleware)
 app.use('/api/admin/*', adminMiddleware)
+app.use('/api/config', authMiddleware)
+app.use('/api/theme/broadcast', authMiddleware)
 
 // 4. Route Mounting (Targeted Protocols)
 app.route('/auth', authRoutes)
@@ -195,15 +190,15 @@ app.route('/api/support', supportRoutes)
 app.route('/api/discord', discordRoutes)
 
 // 5. System Configuration & Theme Handling
-app.get('/api/config', async (c) => {
-  const cached = await c.env.LEDGER_CACHE?.get('API_CONFIG', 'json')
+app.get('/api/config', authMiddleware, async (c) => {
+  const cached = await c.env.TITAN_GUARD_CACHE?.get('API_CONFIG', 'json')
   if (cached) return c.json(cached)
 
   const db = getDb(c.env)
   const configs = await db.select({ configKey: systemConfig.configKey, configValue: systemConfig.configValue }).from(systemConfig);
   const result = configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {})
   
-  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
+  if (c.env.TITAN_GUARD_CACHE) c.executionCtx.waitUntil(c.env.TITAN_GUARD_CACHE.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
   return c.json(result)
 })
 
@@ -227,6 +222,13 @@ app.get('/api/theme/broadcast', async (c) => {
 app.post('/api/theme/broadcast', async (c) => {
   const { themeId } = await c.req.json()
   const db = getDb(c.env)
+  
+  const prevState = await db.select({ configValue: systemConfig.configValue })
+    .from(systemConfig)
+    .where(eq(systemConfig.configKey, "broadcast_theme_id"))
+    .limit(1)
+    .then(res => res[0]);
+
   await db.insert(systemConfig).values({
     id: crypto.randomUUID(),
     configKey: 'broadcast_theme_id',
@@ -235,7 +237,12 @@ app.post('/api/theme/broadcast', async (c) => {
     target: [systemConfig.configKey],
     set: { configValue: JSON.stringify(themeId) }
   });
+  
   if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('THEME_BROADCAST'))
+  
+  // Mandatory Titan Guard Telemetry
+  c.executionCtx.waitUntil(logAudit(c, 'system_config', 'broadcast_theme_id', 'UPDATE_THEME_BROADCAST', prevState, { themeId }));
+  
   return c.json({ success: true })
 })
 

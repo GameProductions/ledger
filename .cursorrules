@@ -33,19 +33,20 @@ This document serves as the absolute source of truth for all projects within the
   - All projects MUST define their custom domain route: `"{project-name}.gpnet.dev/*"`.
   - The `workers_dev` flag MUST be set to `false` for production.
 - **Unified Hono Router**: Use a single Hono entry point to handle all traffic.
+- **CDN Manifest & Icon Purity**: To ensure 3rd-party password managers (like 1Password / AgileBits) and external crawlers can securely bind rich icons, the Hono router MUST explicitly route `app.get('/apple-touch-icon.png', serveStatic({ path: 'apple-touch-icon.png', manifest }));` at the root level alongside `favicon.ico`.
 - **Path Branching**: 
   - `/api/*`: Reserved for bot logic, webhooks, and backend API.
   - `/admin/*`: Dedicated directory for project-level administrative tools.
   - `/godmode/*`: High-security portal for Super Admins.
   - `/*`: Reserved for the PWA (frontend) and static assets.
 - **Webhook Exemption**: Any Bearer/Token auth guards or strict middlewares acting globally on the `/api/*` blanket must explicitly whitelist routes containing `/discord` or `/interactions`. Failure to do this will block native webhook validation tools from remote platforms (e.g., Discord) causing 401s that break server-to-server operations.
-- **CORS**: Strict CORS policies allowing only the project's own domain and authorized local development origins.
+- **CORS Consolidation (v2.3.0)**: CORS MUST be handled exclusively in the root entry point (`server.ts`). Secondary CORS middlewares in sub-routers (e.g., `src/api/index.ts`) are strictly prohibited as they cause preflight (`OPTIONS`) request failures. The root CORS handler MUST explicitly allow `Authorization`, `x-household-id`, and `X-Ledger-Integrity` headers.
 
 ## 3. Database & Persistence (SQL)
 - **Standard**: Use the native Cloudflare D1 client (`c.env.DB`) orchestrated purely through Drizzle ORM.
 - **ORM Policy (v1.5.0)**: **Drizzle ORM is STRICTLY REQUIRED** across all GameProductions projects. Legacy raw SQL/wrappers must be aggressively phased out.
 - **Schema Management**: All definitions must exist inside `src/api/db/schema.ts` and managed via `drizzle-kit`.
-- **Legacy Archival Protocol**: NEVER delete legacy `.db`, `.sqlite`, or `schema.sql` files during modernized migrations. All obsolete database structures MUST be moved directly into a root `archive/` directory to preserve fail-safes.
+- **Legacy Archival Protocol**: All obsolete database structures, physical `.db`/`.sqlite` files, and raw SQL migrations MUST be moved into a root `archive/` directory. For in-place D1 schema migrations, follow the strict protocols defined in **Section 14**.
 
 ## 4. User & Identity Management
 - **Account Creation**:
@@ -68,7 +69,7 @@ This document serves as the absolute source of truth for all projects within the
   - **Pathing (v1.3.0)**: All God Mode tools MUST be located in `app/routes/godmode/` and use a dedicated `GodModeLayout`.
   - **Isolation (v1.3.0)**: Never mention or list God Mode features/capabilities outside of designated God Mode routes or protected administrative documentation. Public documentation and landing pages MUST remain clean of any "God Mode" references.
   - **Impersonation**: Must support "View As" mode with a persistent warning header.
-  - **Audit Logging**: Every action in `GodMode` must be logged to a central audit trail.
+  - **Audit Logging (v2.3.0)**: Sensitive administrative actions MUST be logged using a centralized audit utility. This utility MUST comply with the **Titan Guard v1.2** forensic standard (see Section 14), capturing actor, action, target entity, state changes, and network forensics (IP/UA).
   - **Walkthrough History (v1.3.0)**: A full history of all project `walkthrough.md` files MUST be preserved and synchronized within the God Mode "Help" or "Audit" section for comprehensive architectural traceability.
   - **Setup Guides (v1.3.0)**: The God Mode "Help" section MUST contain exhaustive, step-by-step setup instructions for all platform integrations. This includes:
     - **Exact Enpoints**: Providing the project's specific callback and interactions URLs (e.g., `https://[project].gpnet.dev/api/...`).
@@ -93,10 +94,14 @@ This document serves as the absolute source of truth for all projects within the
   - MUST include a compelling **Application Description** immediately following the hero section.
   - MUST include a section labeled **"Features"** containing an exhaustive list of application capabilities.
   - MUST include an **"Integrations"** section listing supported 3rd-party services and options.
-- **Universal Footer**: 
-  - Mandatory on every application.
-  - Content: - Top Row: App Name + Version (Left), Legal Links (Right); - Bottom Row: `[Current Year] GameProductions™. All rights reserved.`
+  - **Naming Policy (v1.6.0)**: **Application names must NEVER be prefixed with "GameProductions"** in UI headers, page titles, or internal identifiers. "GameProductions" is the organization name and its usage must be restricted to legal disclosures, copyright tags, and repository URLs. (e.g., "I Am" instead of "GameProductions I Am").
+- **Universal Footer**: Every project MUST implement a standard floating footer.
+  - Content: 
+    - Top Row: App Name + Version (Left), Legal Links (Right)
+    - Bottom Row (Standard): `{new Date().getFullYear()} GameProductions™. All rights reserved.`
+    - Bottom Row (Gloson Production): `{new Date().getFullYear()} GameProductions™ | Gloson Production™. All rights reserved.`
 - **Notifications**: Dismissable toasts only. Do NOT use browser alerts.
+- **What's New Modals**: All update/release notes modals MUST use a vertical, scrollable list (`.scrollable-list`). They must track the last version viewed by the user so that upon their next visit, they see an aggregated view of all versions and changes released since their last recorded view.
 
 ## 6. Local Development & Deployment
 - **Local-First Testing**: Mandatory local testing before any deployment. 
@@ -163,7 +168,6 @@ All projects MUST adhere to this directory layout:
 
 
 ## 10. Tone & Branding
-- **God Mode** is the only allowed themed jargon.
 - **Branding**: GameProductions copyright MUST be a permanent fixture in the footer.
 - **Versioning**: Only permitted in the App Footer and update prompts.
 - **Fluid Responsiveness**: Layouts must natively adjust based on visible space.
@@ -204,3 +208,18 @@ All projects MUST adhere to this directory layout:
 - **Rule 13.6 (D1 Foreign Indexing)**: Explicitly map native database indexing via `index()` usage inside `drizzle-orm` mappings for heavily queried foreign keys (`householdId`, `userId`) to prevent full table scans.
 - **Rule 13.7 (PWA Offline First)**: Implement `sw.js` offline caching logic for primary static assets to ensure absolute network independence and instant WebUI visual resolution upon disconnected state.
 - **Rule 13.8 (E2E Validation)**: Advanced projects must configure robust end-to-end user-flow validations simulating human navigation via the `Playwright` engine.
+- **Rule 13.9 (Error Sanitization - v2.3.0)**: API handlers MUST implement production-aware error catching. In `production`, sensitive identifiers, raw database errors, and internal configuration keys must be stripped from the response body and replaced with generic error messages (e.g., "An internal error occurred") to prevent information disclosure.
+## 14. Destructive SQL & Migration Law (v2.3.0)
+- **Archive Before Action**: Any destructive change (table drop, column removal, type change) MUST be preceded by an archival step. Rename the existing table to `[original_name]_archive_[timestamp]`.
+- **Rebuild with Compliance**: Reconstruct the table using the new, compliant structure explicitly defined in `schema.ts`.
+- **Data Hydration**: Migrate data from the archive back into the new structure.
+- **Rule Enforcement**: Apply all organizational rules (e.g., encryption, normalization, strict typing) during migration to make the data compliant with the new structure.
+- **Auto-Generation**: For new required fields that didn't exist in the legacy data (e.g., `severity`, `actorId` hashes), use appropriate defaults or generated values if the field usually provides them.
+- **Human Verification**: If a required field cannot be reasonably auto-populated or generated, STOP and verify options with the user.
+- **1:1 Validation**: Always perform a 1:1 row count verification between the archive and the new table. Report the final result and any discrepancies to the user.
+- **Legacy Purging**: Once a migration is confirmed by the user as successful, the archive table may be dropped to maintain database hygiene.
+## 15. AI Agent & Assistant Protocol (v2.3.0)
+- **Language Standard**: All AI interactions, agent persona communications, status reports, tool summaries, and user-facing responses MUST be in English. No other languages are permitted unless explicitly requested.
+- **Tone & Jargon**: The assistant must maintain a professional and premium tone. **God Mode** is the only allowed themed jargon.
+- **Migration & Verifiability**: During database migrations (Rule 14), the agent MUST explicitly perform a 1:1 row count verification between the archive and new table. The agent MUST report the exact results and any anomalies to the user before requesting final decommission approval.
+- **Operational Consistency**: Maintain English as the sole operational language for all internal and external communication.

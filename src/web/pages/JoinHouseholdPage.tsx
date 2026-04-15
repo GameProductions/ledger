@@ -131,7 +131,7 @@ const JoinHouseholdPage: React.FC = () => {
         )}
 
         <div className="text-xs text-slate-600 font-bold uppercase tracking-widest">
-           v3.14.1 Security Protocol Active
+           Security Protocol Active
         </div>
       </div>
     </div>

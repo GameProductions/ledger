@@ -47,7 +47,7 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <footer style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-        <p>Updated as of March 29, 2026 (v3.17.1). This document is updated whenever significant changes are made to the LEDGER data processing, identity engines, or administrative protocols.</p>
+        <p>This document is updated whenever significant changes are made to the LEDGER data processing, identity engines, or administrative protocols.</p>
       </footer>
     </div>
   )

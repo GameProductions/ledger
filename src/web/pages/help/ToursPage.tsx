@@ -8,7 +8,7 @@ export const ToursPage: React.FC = () => {
   const tours = [
     {
       title: 'Full Platform Walkthrough',
-      description: 'The standard 5-minute onboarding experience (v3.0.0) for new users.',
+      description: 'The standard 5-minute onboarding experience for new users.',
       icon: <Compass className="text-blue-400" />,
       action: 'Restart Tour'
     },

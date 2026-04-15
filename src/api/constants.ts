@@ -1,4 +1,4 @@
-export const CURRENT_VERSION = 'v3.29.2'
+export const CURRENT_VERSION = 'Stable'
 
 export const VERSION_UPDATES = [
   { version: 'v3.29.2', title: 'Immortal State Hardening (Final)', description: 'Definitive resolution for all context-driven 500 errors. Purged legacy CommonJS artifacts, enforced strict user verification across all planning routes, and modernized global error diagnostics.' },

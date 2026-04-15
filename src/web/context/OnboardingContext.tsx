@@ -46,7 +46,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setCompletedSteps(data.completedSteps || [])
           setIsCompleted(data.isCompleted || false)
           setUpdates(data.updates || [])
-          setCurrentVersion(data.currentVersion || 'v3.29.4')
+          setCurrentVersion(data.currentVersion || 'latest')
           
           if ((data.updates?.length || 0) > 0 || (!data.isCompleted && Array.isArray(data.completedSteps) && data.completedSteps.length === 0)) {
             setActiveStep('welcome')

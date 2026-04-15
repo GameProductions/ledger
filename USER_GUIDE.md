@@ -1,4 +1,4 @@
-# LEDGER v3.19.2: User Guide & Documentation
+# LEDGER Stable: User Guide & Documentation
 
 Welcome to LEDGER—your secure financial infrastructure. This guide is designed to help you navigate the platform's advanced features and maximize your financial intelligence.
 
@@ -11,7 +11,7 @@ Collaborate with your family or housemates under a unified ledger.
 - **Invites**: Use the **"Invite others to join your household"** feature in Settings to add members.
 
 ### 2. User Onboarding
-Upon your first login, or after a major update (like v3.19.0), you will see a **Guided Tour**. Look for the "What's New" notification to stay informed about the latest stability and security enhancements.
+Upon your first login, or after a major update, you will see a **Guided Tour**. Look for the "What's New" notification to stay informed about the latest stability and security enhancements.
 
 ## 💳 Transaction Privacy & Data Ownership
 

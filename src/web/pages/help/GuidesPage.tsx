@@ -64,7 +64,7 @@ export const GuidesPage: React.FC = () => {
           {guides.map((guide, i) => (
             <div 
               key={i} 
-              onClick={() => showToast(`Opening "${guide.title}"... Content coming in v3.15`, 'info')}
+              onClick={() => showToast(`Opening "${guide.title}"... Documentation currently being standardized.`, 'info')}
               className="group p-8 bg-black/40 hover:bg-gradient-to-r hover:from-white/10 hover:to-transparent border border-white/5 rounded-[2.5rem] transition-all cursor-pointer relative overflow-hidden"
             >
               <div className="flex items-start justify-between relative z-10">

@@ -9,7 +9,7 @@ interface MaskedProps {
 }
 
 /**
- * Masked Component (v3.22)
+ * Masked Component
  * High-fidelity privacy masking for sensitive data.
  * Applies a CSS blur filter when privacyMode is active.
  */

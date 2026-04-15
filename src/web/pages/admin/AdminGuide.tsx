@@ -53,7 +53,7 @@ const AdminGuide: React.FC = () => {
             </h2>
             <div className="flex items-center gap-3">
               <p className="text-sm text-slate-500 uppercase tracking-[0.3em] font-bold">System Documentation</p>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-mono">v2.5.1_DYNAMIC</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-mono">DYNAMIC</span>
             </div>
           </div>
           

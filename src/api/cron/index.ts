@@ -364,7 +364,7 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
             const { results } = await env.DB.prepare(`SELECT * FROM ${table}`).all();
             dump[table] = results;
           }
-          const payload = JSON.stringify({ version: 'v3.22.0', timestamp: nowIso, data: dump });
+          const payload = JSON.stringify({ version: 'Stable', timestamp: nowIso, data: dump });
           const filename = `ledger_automated_backup_${nowIso.split('T')[0]}.json`;
           
           await env.BACKUPS.put(filename, payload);

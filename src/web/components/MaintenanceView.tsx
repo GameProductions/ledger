@@ -58,7 +58,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
           Forensic Hardening
         </h1>
         <p className="mb-8 text-lg font-medium text-slate-400">
-          Standardization v3.26.1 in progress{dots}
+          Standardization in progress{dots}
         </p>
 
         {/* Status Box */}

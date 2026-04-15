@@ -29,7 +29,7 @@ import supportRoutes from './routes/support'
 // Durable Objects Exports (Required for Cloudflare)
 export { HouseholdSession, Vault } from './durable-objects'
 
-// Root App (Consolidated v3.29.1)
+// Root App (Consolidated)
 export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // 1. Global Middleware & Security
@@ -78,7 +78,7 @@ app.use('/api/*', cors({
 app.use('*', async (c, next) => {
   const path = c.req.path
   
-  // 1. Maintenance Mode Check (Hierarchical Protocol v3.30.0)
+  // 1. Maintenance Mode Check (Hierarchical Protocol)
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true'
   let isSoftLocked = false
   let isGlobalLocked = false
@@ -142,13 +142,13 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// Adaptive Fleet Shield (v6.1)
+// Adaptive Fleet Shield
 app.use('/auth/*', ipRateLimit('AUTH'))
 app.use('/api/auth/*', ipRateLimit('AUTH'))
 app.use('/api/*', ipRateLimit('API'))
 
 // 2. Health & System Information
-app.get('/ping', (c) => c.text('PONG - LEDGER v3.29.1 IS LIVE'))
+app.get('/ping', (c) => c.text('PONG - LEDGER IS LIVE'))
 
 app.get('/api/health', async (c) => {
   let dbStatus = "connected";

@@ -107,7 +107,7 @@ const LandingPage: React.FC = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">v3.18.0 Open Secure Service</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
               Financial Data Ownership. <br/>
@@ -245,7 +245,7 @@ const LandingPage: React.FC = () => {
                 <div className="text-center p-12">
                    <Fingerprint size={80} className="text-primary mx-auto mb-8 animate-pulse" />
                    <h3 className="text-2xl font-black uppercase italic mb-4">Biometric Identity</h3>
-                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Protocol Version v3.1</p>
+                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Biometric Identity Protocol</p>
                 </div>
              </div>
           </div>

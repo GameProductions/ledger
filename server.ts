@@ -8,7 +8,7 @@ import { handleScheduled } from './src/api/cron';
 import { Bindings } from './src/api/types';
 
 /**
- * Foundation v2.0.4: Unified Entry Point (Ledger v3.19.11)
+ * Foundation: Unified Entry Point
  * This file orchestrates both the Hono Financial API and static asset serving
  * for the Ledger PWA, ensuring compliance with the 'Command Central' protocol.
  */
@@ -44,13 +44,13 @@ app.use("*", cors({
 }));
 
 
-// 1. Foundation Integrity Protocol (v3.19.11)
+// 1. Foundation Integrity Protocol
 app.use('*', async (c, next) => {
   c.header('X-Ledger-Integrity', `certified-${CURRENT_VERSION.replace('v', '')}`);
   await next();
 });
 
-// 2. Static Asset Serving (PWA) - Terminal Asset Isolation (v3.19.5)
+// 2. Static Asset Serving (PWA) - Terminal Asset Isolation
 app.use('/assets/*', serveStatic({ root: './', manifest }));
 app.use('/brand/*', serveStatic({ root: './', manifest }));
 app.get('/manifest.json', serveStatic({ path: 'manifest.json', manifest }));

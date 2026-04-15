@@ -32,6 +32,7 @@ export type Bindings = {
   GITHUB_TOKEN: string
   GITHUB_REPO: string
   MAINTENANCE_MODE?: string
+  FOUNDATION_URL?: string
 }
 
 export type Variables = {

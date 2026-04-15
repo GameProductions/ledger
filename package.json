@@ -6,6 +6,8 @@
     "dev": "wrangler dev",
     "build:web": "vite build",
     "build": "npm run build:web",
+    "lint": "eslint .",
+    "test": "vitest",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

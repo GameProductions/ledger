@@ -85,9 +85,9 @@ app.use('*', async (c, next) => {
   
   // Try to get from cache first to avoid D1 cold starts on every request
   try {
-    const configCache = await c.env.LEDGER_CACHE?.get('API_CONFIG', 'json') as any
+    const configCache = await (c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE)?.get('API_CONFIG', 'json') as Record<string, string>;
     if (configCache && configCache.MAINTENANCE_MODE === 'true') {
-      isSoftLocked = true
+      isSoftLocked = true;
     } else if (!configCache) {
       // If cache is empty, we must check DB to ensure we don't bypass on cache flush
       const db = getDb(c.env)
@@ -108,18 +108,18 @@ app.use('*', async (c, next) => {
     } else if (globalStatusCache === null) {
       // Fallback: Perform background fetch to Foundation
       // We assume Foundation is at id.gpnet.dev (using relative fallback for dev)
-      const foundationUrl = c.env.ENVIRONMENT === 'production' ? 'https://id.gpnet.dev' : 'http://localhost:8787'
+      const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://id.gpnet.dev' : 'http://localhost:8787');
       try {
-        const res = await fetch(`${foundationUrl}/api/fleet/status`)
-        const data = await res.json() as any
+        const res = await fetch(`${foundationUrl}/api/fleet/status`);
+        const data = await res.json() as { globalMaintenance: boolean };
         if (data.globalMaintenance === true) {
-          isGlobalLocked = true
-          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'true', { expirationTtl: 60 })
+          isGlobalLocked = true;
+          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'true', { expirationTtl: 60 });
         } else {
-          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'false', { expirationTtl: 60 })
+          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'false', { expirationTtl: 60 });
         }
       } catch (fetchErr) {
-        console.error('[Global Lock Fetch Failed]', fetchErr)
+        console.error('[Global Lock Fetch Failed]', fetchErr);
       }
     }
   } catch (e) {
@@ -210,9 +210,10 @@ app.get('/api/config', async (c) => {
 
   const db = getDb(c.env)
   const configs = await db.select({ configKey: systemConfig.configKey, configValue: systemConfig.configValue }).from(systemConfig);
-  const result = configs.reduce((acc: any, curr: any) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {})
+  const result = configs.reduce((acc: Record<string, string>, curr: { configKey: string | null; configValue: string | null }) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {})
   
-  if (c.env.TITAN_GUARD_CACHE) c.executionCtx.waitUntil(c.env.TITAN_GUARD_CACHE.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
+  const cache = c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE;
+  if (cache) c.executionCtx.waitUntil(cache.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
   return c.json(result)
 })
 

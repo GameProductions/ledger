@@ -21,6 +21,12 @@ export const TransactionSchema = z.object({
   parent_id: z.string().uuid().optional().nullable(),
   provider_id: z.string().uuid().optional().nullable(),
   bill_id: z.string().uuid().optional().nullable(),
+  attention_required: z.boolean().optional().default(false),
+  needs_balance_transfer: z.boolean().optional().default(false),
+  transfer_timing: z.string().optional().nullable(),
+  is_borrowed: z.boolean().optional().default(false),
+  borrow_source: z.string().optional().nullable(),
+  accounted_for: z.boolean().optional().default(false),
 })
 
 export const TransactionOutputSchema = z.object({
@@ -41,6 +47,12 @@ export const TransactionOutputSchema = z.object({
   reconciliationStatus: z.string().nullable(),
   linkedTransactionId: z.string().nullable(),
   receiptR2Key: z.string().nullable(),
+  attentionRequired: z.boolean().nullable().optional(),
+  needsBalanceTransfer: z.boolean().nullable().optional(),
+  transferTiming: z.string().nullable().optional(),
+  isBorrowed: z.boolean().nullable().optional(),
+  borrowSource: z.string().nullable().optional(),
+  accountedFor: z.boolean().nullable().optional(),
   updatedAt: z.string().optional(),
   createdAt: z.string().optional()
 })

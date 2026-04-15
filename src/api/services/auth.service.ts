@@ -4,7 +4,7 @@ import { Bindings } from '../types'
 import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
 import { EmailService } from './email.service'
 import { getDb } from '../db'
-import { users, userIdentities, passwordResets, passkeys, adminInvitations, totps } from '../db/schema'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations, totps, userHouseholds } from '../db/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
 import { encrypt, decrypt } from '../utils'
 
@@ -74,13 +74,15 @@ export class AuthService {
     return { requires2FA: false }
   }
 
-  async generateToken(userId: string, householdId?: string, impersonatorId?: string) {
+  async generateToken(userId: string, sid?: string, householdId?: string, impersonatorId?: string) {
     const db = getDb(this.env)
     
     // FORENSIC HARDENING: Do not rely on hardcoded defaults for household context
     let targetHouseholdId = householdId
     if (!targetHouseholdId) {
+      // @ts-ignore
       const userHh = await db.select({ householdId: userHouseholds.householdId })
+        // @ts-ignore
         .from(userHouseholds)
         .where(eq(userHouseholds.userId, userId))
         .limit(1)
@@ -91,6 +93,7 @@ export class AuthService {
 
     const payload: any = {
       sub: userId,
+      sid: sid, // Forensic Session Tracker
       householdId: targetHouseholdId,
       globalRole: user?.globalRole || 'user',
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,

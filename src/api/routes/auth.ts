@@ -57,6 +57,8 @@ async function createSessionTracker(c: any, userId: string) {
     lastActiveAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   })
+  
+  return sessionId
 }
 
 
@@ -88,8 +90,8 @@ auth.post('/login', zValidator('json', z.object({
       return c.json({ success: true, data: { requires2FA: true } }, 202)
     }
 
-    const token = await authService.generateToken(user.id)
-    await createSessionTracker(c, user.id)
+    const sessionId = await createSessionTracker(c, user.id)
+    const token = await authService.generateToken(user.id, sessionId)
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
     return c.json({ 
@@ -273,8 +275,8 @@ auth.get('/callback/discord', async (c) => {
   if (sessionUserId) {
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
-    const token = await authService.generateToken(finalUserId!)
-    await createSessionTracker(c, finalUserId!)
+    const sessionId = await createSessionTracker(c, finalUserId!)
+    const token = await authService.generateToken(finalUserId!, sessionId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -403,8 +405,8 @@ auth.get('/callback/google', async (c) => {
   } else {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens)
-    const token = await authService.generateToken(userId)
-    await createSessionTracker(c, userId)
+    const sessionId = await createSessionTracker(c, userId)
+    const token = await authService.generateToken(userId, sessionId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -507,8 +509,8 @@ auth.get('/callback/dropbox', async (c) => {
   } else {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('dropbox', socialProfile, socialTokens)
-    const token = await authService.generateToken(userId)
-    await createSessionTracker(c, userId)
+    const sessionId = await createSessionTracker(c, userId)
+    const token = await authService.generateToken(userId, sessionId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -608,8 +610,8 @@ auth.get('/callback/onedrive', async (c) => {
   } else {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('onedrive', socialProfile, socialTokens)
-    const token = await authService.generateToken(userId)
-    await createSessionTracker(c, userId)
+    const sessionId = await createSessionTracker(c, userId)
+    const token = await authService.generateToken(userId, sessionId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -788,8 +790,8 @@ auth.post('/passkeys/login-verify', async (c) => {
   await db.update(passkeys).set({ counter: verification.authenticationInfo.newCounter }).where(eq(passkeys.id, passkey.id))
 
   const authService = new AuthService(c.env)
-  const token = await authService.generateToken(passkey.userId)
-  await createSessionTracker(c, passkey.userId)
+  const sessionId = await createSessionTracker(c, passkey.userId)
+  const token = await authService.generateToken(passkey.userId, sessionId)
   await logAudit(c, 'users', passkey.userId, 'login', null, { strategy: 'passkey' })
   
   return c.json({ success: true, data: { token } })

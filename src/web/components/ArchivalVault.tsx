@@ -65,7 +65,7 @@ export function ArchivalVault() {
                       <p className="text-sm text-gray-400 mt-1">Archived on {item.deletedAt}</p>
                     </div>
                     <Button 
-                      variant="outline" 
+                      variant="glass" 
                       onClick={() => restoreEntity(item.type, item.id)}
                       className="border-white/10 hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/30"
                     >

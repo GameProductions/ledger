@@ -89,7 +89,7 @@ discord.post('/interactions', async (c) => {
     if (name === 'ledger-audit') {
       const results = await db.select({
         action: auditLogs.action,
-        tableName: auditLogs.tableName,
+        tableName: auditLogs.targetType,
         createdAt: auditLogs.createdAt
       }).from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(5);
       

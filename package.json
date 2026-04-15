@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.29.3",
+  "version": "3.29.4",
   "scripts": {
     "dev": "wrangler dev",
     "build:web": "vite build",
@@ -20,7 +20,7 @@
     "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
     "framer-motion": "^12.38.0",
-    "hono": "^4.12.9",
+    "hono": "^4.12.14",
     "jose": "^6.0.8",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.8.0",
@@ -34,8 +34,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.14.3",
-    "@cloudflare/workers-types": "^4.20260411.1",
+    "@cloudflare/vitest-pool-workers": "^0.14.6",
+    "@cloudflare/workers-types": "^4.20260415.1",
     "@eslint/js": "^9.21.0",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.2",
@@ -58,7 +58,7 @@
     "typescript-eslint": "^8.57.2",
     "vite": "^8.0.8",
     "vitest": "^4.1.4",
-    "wrangler": "^4.81.1"
+    "wrangler": "^4.83.0"
   },
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "*",

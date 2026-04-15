@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { Price } from './Price'
-import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical } from 'lucide-react'
+import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { QuickAttentionAdd } from './QuickAttentionAdd'
 
 export const TransactionLedger: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -14,6 +15,7 @@ export const TransactionLedger: React.FC = () => {
   const [sortBy, setSortBy] = useState('date') // 'date' | 'amount'
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
   const [limit, setLimit] = useState(50)
+  const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false)
   
   // Data Fetching
   const { data: transactions, mutate: mutateTx } = useApi(`/api/financials/transactions?q=${q}&sort_by=${sortBy}&sort_dir=${sortDir}&limit=${limit}`)
@@ -84,6 +86,19 @@ export const TransactionLedger: React.FC = () => {
     }
   }
 
+  const resolveAttention = async (id: string) => {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ accounted_for: true })
+    })
+    mutateTx()
+  }
+
   const bulkReconcile = async (reconciled: boolean) => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/bulk-reconcile`, {
       method: 'PATCH',
@@ -100,6 +115,9 @@ export const TransactionLedger: React.FC = () => {
 
   return (
     <div className="card w-full relative overflow-hidden" id="transaction-ledger">
+      
+      <QuickAttentionAdd onAdded={mutateTx} />
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           📖 Transaction Ledger
@@ -118,6 +136,13 @@ export const TransactionLedger: React.FC = () => {
               className="pl-9 pr-4 py-1.5 text-xs bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary w-32 focus:w-48 transition-all font-black uppercase tracking-widest"
             />
           </div>
+          <button 
+            onClick={() => setShowNeedsAttentionOnly(!showNeedsAttentionOnly)}
+            className={`p-2 border rounded-xl transition-all ${showNeedsAttentionOnly ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' : 'bg-white/5 border-white/10 text-secondary hover:bg-white/10'}`}
+            title="Filter by Needs Attention"
+          >
+            <Flag size={14} className={showNeedsAttentionOnly ? 'fill-current' : ''} />
+          </button>
           <button className="p-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all">
             <Filter size={14} className="text-secondary" />
           </button>
@@ -144,14 +169,19 @@ export const TransactionLedger: React.FC = () => {
           </thead>
           <tbody>
             {!transactions ? <tr><td colSpan={6} className="text-center py-8">Loading ledger...</td></tr> : 
-              transactions.map((tx: any) => (
+              transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accountedFor : true).map((tx: any) => (
               <React.Fragment key={tx.id}>
                 <tr className={`border-b border-white/5 hover:bg-white/5 transition-colors ${selectedIds.includes(tx.id) ? 'bg-primary/5' : ''}`}>
                   <td className="py-2 pl-2">
                     <input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelect(tx.id)} />
                   </td>
                   <td className="py-2 opacity-80 whitespace-nowrap">{tx.transactionDate}</td>
-                  <td className="py-2 font-medium">{tx.description}</td>
+                  <td className="py-2 font-medium flex items-center gap-2">
+                    {tx.description}
+                    {tx.attentionRequired && !tx.accountedFor && (
+                       <Flag size={14} className="text-orange-500" />
+                    )}
+                  </td>
                   <td className="py-2">
                     {tx.categoryId ? (
                       <span className="px-2 py-0.5 bg-white/10 rounded-full text-xs opacity-80">
@@ -174,7 +204,7 @@ export const TransactionLedger: React.FC = () => {
                     )}
                   </td>
                   <td className={`py-2 text-right font-bold ${tx.amountCents > 0 ? 'text-emerald-400' : 'text-white'}`}>
-                    <Price cents={Math.abs(tx.amountCents)} />
+                    <Price amountCents={Math.abs(tx.amountCents)} />
                   </td>
                   <td className="py-2 pr-2 text-right">
                     <button onClick={() => setExpandedId(expandedId === tx.id ? null : tx.id)} className="p-1 hover:bg-white/10 rounded">
@@ -205,13 +235,32 @@ export const TransactionLedger: React.FC = () => {
                             <li>Status: {tx.reconciliationStatus}</li>
                             {tx.owner_id && <li>Owner ID: {tx.owner_id}</li>}
                           </ul>
-                          {tx.notes && (
-                            <div className="mt-2 bg-yellow-500/10 border border-yellow-500/20 p-2 rounded text-yellow-500">
-                              Note: {tx.notes}
-                            </div>
-                          )}
-                        </div>
+                            {tx.notes && (
+                              <div className="mt-2 bg-yellow-500/10 border border-yellow-500/20 p-2 rounded text-yellow-500">
+                                Note: {tx.notes}
+                              </div>
+                            )}
+                          </div>
                       </div>
+
+                      {tx.attentionRequired && !tx.accountedFor && (
+                        <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+                           <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <h4 className="text-orange-400 font-bold uppercase tracking-widest text-xs flex items-center gap-1"><Flag size={12} /> Attention Required</h4>
+                                {tx.needsBalanceTransfer && <p className="text-sm">🔄 Balance Transfer timing: <span className="text-white font-bold">{tx.transferTiming === 'same_day' ? 'Same Day' : 'Future'}</span></p>}
+                                {tx.isBorrowed && <p className="text-sm">💸 Borrowed Funds Source: <span className="text-white font-bold">{tx.borrowSource || 'Not specified'}</span></p>}
+                              </div>
+                              <button 
+                                onClick={() => resolveAttention(tx.id)}
+                                className="px-4 py-2 bg-orange-500 text-black font-bold uppercase tracking-widest text-xs rounded-lg hover:scale-105 transition-transform"
+                              >
+                                Mark Accounted For
+                              </button>
+                           </div>
+                        </div>
+                      )}
+
                     </td>
                   </tr>
                 )}
@@ -232,7 +281,7 @@ export const TransactionLedger: React.FC = () => {
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-widest opacity-60">Selection Sum ({selectedIds.length} items)</span>
               <span className={`text-xl font-bold ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                <Price cents={selectionSumCents} />
+                <Price amountCents={selectionSumCents} />
               </span>
             </div>
             <div className="w-px h-8 bg-white/20"></div>
@@ -274,7 +323,7 @@ export const TransactionLedger: React.FC = () => {
       <Modal isOpen={!!activeSplitTx} onClose={() => setActiveSplitTx(null)} title="Split Transaction">
         {activeSplitTx && (
           <div className="space-y-4">
-             <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price cents={activeSplitTx.amountCents} /></span></p>
+             <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amountCents={activeSplitTx.amountCents} /></span></p>
              <div className="grid grid-cols-2 gap-4">
                 <div>
                    <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 1 Amount</label>

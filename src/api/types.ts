@@ -39,4 +39,5 @@ export type Variables = {
   userId: string
   globalRole: string
   impersonatorId?: string
+  [key: string]: any
 }

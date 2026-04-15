@@ -219,7 +219,7 @@ const DeveloperSettings: React.FC = () => {
             {webhooksList?.map((w: any) => (
               <li key={w.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', padding: '0.6rem 0', borderBottom: '1px solid var(--glass-border)' }}>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ fontWeight: 'bold', color: 'var(--primary)', truncate: true }}>{w.url}</div>
+                  <div className="truncate" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{w.url}</div>
                   <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Events: {w.event_list}</div>
                 </div>
                 <button 

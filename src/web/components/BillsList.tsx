@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Trash2, AlertCircle, Calendar as CalendarIcon, ExternalLink, ShieldCheck, Share2 } from 'lucide-react';
 import { LiabilitySplitter } from './LiabilitySplitter';
+import { Price } from './Price';
 
 
 export const BillsList: React.FC = () => {

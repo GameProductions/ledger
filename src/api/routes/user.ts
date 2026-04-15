@@ -17,7 +17,7 @@ import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '../db'
-import { users, userOnboarding, sessions, households, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '../db/schema'
+import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '../db/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -721,7 +721,7 @@ user.patch('/providers/:id/transfer', zValidator('json', z.object({ newOwnerId: 
     
   // Verify permissions (admin or current creator)
   if (provider.createdBy !== userId) {
-     const membership = await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, provider.householdId))).limit(1).then(res => res[0])
+     const membership = provider.householdId ? await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, provider.householdId))).limit(1).then(res => res[0]) : null
      if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
   }
   

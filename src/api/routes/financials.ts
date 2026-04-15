@@ -192,7 +192,13 @@ financials.post('/transactions', zValidator('json', TransactionSchema), async (c
     rawDescription: data.raw_description || null,
     parentId: data.parent_id || null,
     providerId: data.provider_id || null,
-    billId: data.bill_id || null
+    billId: data.bill_id || null,
+    attentionRequired: data.attention_required,
+    needsBalanceTransfer: data.needs_balance_transfer,
+    transferTiming: data.transfer_timing || null,
+    isBorrowed: data.is_borrowed,
+    borrowSource: data.borrow_source || null,
+    accountedFor: data.accounted_for,
   })
 
   if (data.category_id) {
@@ -408,7 +414,7 @@ financials.post('/transactions/:id/split', zValidator('json', z.object({
   // The ledger will traditionally filter out transactions that are parents of splits.
   const markParent = db.update(transactions).set({ reconciliationStatus: 'split' }).where(eq(transactions.id, id))
 
-  await db.batch([...inserts, markParent])
+  await db.batch([...inserts, markParent] as any)
 
   await logAudit(c, 'transactions', id, 'SPLIT', null, { split_count: splits.length })
 
@@ -470,6 +476,12 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.description !== undefined) updates.description = data.description
   if (data.amount_cents !== undefined) updates.amountCents = data.amount_cents
   if (data.transaction_date !== undefined) updates.transactionDate = data.transaction_date
+  if (data.attention_required !== undefined) updates.attentionRequired = data.attention_required
+  if (data.needs_balance_transfer !== undefined) updates.needsBalanceTransfer = data.needs_balance_transfer
+  if (data.transfer_timing !== undefined) updates.transferTiming = data.transfer_timing
+  if (data.is_borrowed !== undefined) updates.isBorrowed = data.is_borrowed
+  if (data.borrow_source !== undefined) updates.borrowSource = data.borrow_source
+  if (data.accounted_for !== undefined) updates.accountedFor = data.accounted_for
   
   if (Object.keys(updates).length > 0) {
     const db = getDb(c.env)
@@ -733,7 +745,7 @@ financials.post('/investments', zValidator('json', z.object({
     assetType: data.asset_type,
     quantity: data.quantity,
     costBasisCents: data.cost_basis_cents,
-    currentValuationCents: data.current_valuation_cents,
+    valueCents: data.current_valuation_cents,
     currency: data.currency,
     institutionId: data.institution_id || null
   })

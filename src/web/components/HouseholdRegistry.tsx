@@ -55,7 +55,7 @@ const HouseholdRegistry: React.FC = () => {
       });
       if (res.ok) {
         showToast('Household renamed successfully', 'success');
-        mutateProfile();
+        window.location.reload();
         setIsRenaming(false);
       } else {
         const err = await res.json();

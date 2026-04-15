@@ -141,3 +141,5 @@ export function PasskeyChallenge({ onSuccess, appName, children }: PasskeyChalle
     </div>
   );
 }
+
+export default PasskeyChallenge;

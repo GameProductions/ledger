@@ -2,6 +2,7 @@ import React from 'react';
 import { GlassHeader } from '../ui/GlassHeader';
 import MobileNav from '../ui/MobileNav';
 import { useTheme } from '../../context/ThemeContext';
+import { HelpCircle } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;

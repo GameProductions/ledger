@@ -28,7 +28,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring || false);
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [showTimeline, setShowTimeline] = useState(false);
-
+  const [upcomingAmount, setUpcomingAmount] = useState(initialData?.upcoming_amountCents ? (initialData.upcoming_amountCents / 100).toString() : '');
+  const [upcomingDate, setUpcomingDate] = useState(initialData?.upcoming_effective_date || '');
+  
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -46,6 +46,7 @@ const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
 const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
+const PasskeyChallenge = lazy(() => import('./components/PasskeyChallenge'))
 import { MaintenanceView } from './components/MaintenanceView'
 import { AlertTriangle, WifiOff, ExternalLink } from 'lucide-react'
 

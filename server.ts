@@ -78,7 +78,7 @@ app.get('*', async (c) => {
 });
 
 // 5. Durable Object Exports (Required for Cloudflare Orchestration)
-export { HouseholdSession, Vault, RateLimiter } from './src/api/durable-objects'
+export { HouseholdSession, Vault } from './src/api/durable-objects'
 
 export default {
   fetch: app.fetch,

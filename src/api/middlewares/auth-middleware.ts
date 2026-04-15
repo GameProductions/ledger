@@ -15,6 +15,7 @@ let verifyMembershipQuery: any;
 export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) => {
   try {
     const path = c.req.path
+    if (path === '/api/config') return await next()
     let token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
     const jwtSecret = c.env.JWT_SECRET

@@ -10,7 +10,6 @@ import {
   Clock, 
   CreditCard, 
   ArrowRight,
-  Today as TodayIcon,
   List as ListIcon,
   Grid as GridIcon
 } from 'lucide-react'

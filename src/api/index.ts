@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 import { csrf } from 'hono/csrf'
 import { secureHeaders } from 'hono/secure-headers'
+import { cors } from 'hono/cors'
 import { openApiSpec } from './openapi'
 import { Bindings, Variables } from './types'
 import { authMiddleware } from './middlewares/auth-middleware'
@@ -36,9 +37,9 @@ app.use('*', logger())
 
 // [SECURITY] Strict Content Security Policy & Headers
 app.use('*', secureHeaders({
-  frameAncestors: ["'none'"],
   referrerPolicy: 'strict-origin-when-cross-origin',
   contentSecurityPolicy: {
+    frameAncestors: ["'self'", "https://*.gpnet.dev", "http://localhost:*"],
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
@@ -58,6 +59,20 @@ app.use('*', (c, next) => {
   }
   return csrf()(c, next)
 })
+
+// Strict CORS Validation
+app.use('/api/*', cors({
+  origin: (origin, c) => {
+    const allowed = [`https://ledger.gpnet.dev`, 'https://gpnet.dev', 'http://localhost:5173', 'http://localhost:8787'];
+    if (allowed.includes(origin)) return origin;
+    return `https://ledger.gpnet.dev`; 
+  },
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposeHeaders: ['Content-Range', 'X-Total-Count'],
+  credentials: true,
+  maxAge: 600,
+}))
 
 // Traffic Governance Protocols (Titan Guard v6.1)
 app.use('*', async (c, next) => {
@@ -172,7 +187,6 @@ app.use('/auth/totp/*', authMiddleware)
 app.use('/auth/vault/*', authMiddleware)
 app.use('/auth/password/*', authMiddleware)
 app.use('/api/admin/*', adminMiddleware)
-app.use('/api/config', authMiddleware)
 app.use('/api/theme/broadcast', authMiddleware)
 
 // 4. Route Mounting (Targeted Protocols)
@@ -190,7 +204,7 @@ app.route('/api/support', supportRoutes)
 app.route('/api/discord', discordRoutes)
 
 // 5. System Configuration & Theme Handling
-app.get('/api/config', authMiddleware, async (c) => {
+app.get('/api/config', async (c) => {
   const cached = await c.env.TITAN_GUARD_CACHE?.get('API_CONFIG', 'json')
   if (cached) return c.json(cached)
 

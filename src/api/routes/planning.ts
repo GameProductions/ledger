@@ -344,8 +344,8 @@ planning.post('/installment-plans', zValidator('json', InstallmentPlanSchema), a
     nextPaymentDate: next_payment_date,
     accountId: account_id || null,
     paymentMode: payment_mode || 'manual',
-    upcomingAmountCents: data.upcoming_amount_cents || null,
-    upcomingEffectiveDate: data.upcoming_effective_date || null
+    upcomingAmountCents: (c.req.valid('json') as any).upcoming_amount_cents || null,
+    upcomingEffectiveDate: (c.req.valid('json') as any).upcoming_effective_date || null
   })
   
   await logAudit(c, 'installment_plans', id, 'create', null, { name, total_amount_cents })
@@ -498,8 +498,8 @@ planning.post('/pay-schedules', zValidator('json', PayScheduleSchema), async (c)
     notes: notes || null,
     semiMonthlyDay1: semi_monthly_day_1 || null,
     semiMonthlyDay2: semi_monthly_day_2 || null,
-    upcomingAmountCents: data.upcoming_amount_cents || null,
-    upcomingEffectiveDate: data.upcoming_effective_date || null,
+    upcomingAmountCents: (c.req.valid('json') as any).upcoming_amount_cents || null,
+    upcomingEffectiveDate: (c.req.valid('json') as any).upcoming_effective_date || null,
   })
   
   await logAudit(c, 'pay_schedules', id, 'create', null, { name, frequency, estimated_amount_cents })
@@ -795,6 +795,7 @@ planning.post('/splits', zValidator('json', z.object({
       id,
       householdId,
       targetType: splitData.target_type,
+      targetId: splitData.target_id,
       originatorUserId: user?.id || 'unknown',
       assignedUserId: splitData.assigned_user_id,
       splitType: splitData.split_type,
@@ -814,7 +815,7 @@ planning.post('/splits', zValidator('json', z.object({
          contentMd: `A user has assigned a ${(splitData.calculated_amount_cents / 100).toFixed(2)} portion of a ${splitData.target_type} to you. It will now appear on your Lifecycle projection.`,
          priority: 'info',
          actorId: splitData.assigned_user_id,
-         isActive: 1
+         isActive: true
        })
     }
   }

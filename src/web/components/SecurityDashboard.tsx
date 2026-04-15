@@ -87,7 +87,7 @@ export function SecurityDashboard() {
                 </div>
                 {idx !== 0 && (
                   <Button 
-                    variant="ghost" 
+                    variant="glass" 
                     size="sm" 
                     onClick={() => revokeSession(s.id)}
                     className="text-red-400 hover:text-red-300 hover:bg-red-400/10"

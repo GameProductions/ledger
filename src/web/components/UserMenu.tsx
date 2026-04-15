@@ -12,7 +12,7 @@ const UserMenu: React.FC<{
   setView?: (v: 'list'|'calendar') => void,
   isAdminPortal?: boolean 
 }> = ({ view, setView, isAdminPortal = false }) => {
-  const { user, logout, globalRole, setGlobalRole, isImpersonating } = useAuth()
+  const { user, logout, globalRole, isImpersonating } = useAuth() as any
   const { data: profile } = useApi('/api/user/profile')
   const [isOpen, setIsOpen] = useState(false)
 

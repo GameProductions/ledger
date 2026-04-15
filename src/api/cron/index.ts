@@ -2,7 +2,7 @@ import { Bindings } from '../types'
 import { SchedulingService } from '../services/scheduling.service'
 import { decrypt } from '../utils'
 import { getDb } from '../db'
-import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules } from '../db/schema'
+import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills } from '../db/schema'
 import { eq, sql, lte, and } from 'drizzle-orm'
 
 const toSnake = (obj: any) => {

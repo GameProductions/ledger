@@ -146,6 +146,12 @@ export const transactions = sqliteTable('transactions', {
   parentId: text('parent_id'),
   providerId: text('provider_id').references(() => serviceProviders.id),
   billId: text('bill_id').references(() => bills.id),
+  attentionRequired: integer('attention_required', { mode: 'boolean' }).default(false),
+  needsBalanceTransfer: integer('needs_balance_transfer', { mode: 'boolean' }).default(false),
+  transferTiming: text('transfer_timing'),
+  isBorrowed: integer('is_borrowed', { mode: 'boolean' }).default(false),
+  borrowSource: text('borrow_source'),
+  accountedFor: integer('accounted_for', { mode: 'boolean' }).default(false),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
   accountIdx: index('idx_transactions_account').on(table.accountId),
@@ -455,6 +461,7 @@ export const serviceProviders = sqliteTable('service_providers', {
   name: text('name').notNull(),
   visibility: text('visibility').default('public'), // public, household, private
   householdId: text('household_id').references(() => households.id),
+  billingProcessorId: text('billing_processor_id'),
   createdBy: text('created_by'),
   status: text('status').default('active'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
@@ -556,10 +563,15 @@ export const privacyCards = sqliteTable('privacy_cards', {
 export const investmentHoldings = sqliteTable('investment_holdings', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id),
-  accountId: text('account_id').notNull(),
+  accountId: text('account_id'),
   name: text('name').notNull(),
+  assetType: text('asset_type').notNull().default('misc'),
   quantity: integer('quantity').notNull(),
+  costBasisCents: integer('cost_basis_cents'),
   valueCents: integer('value_cents').notNull(),
+  currency: text('currency').default('USD'),
+  institutionId: text('institution_id'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_invest_holdings_household').on(table.householdId),
   accountIdx: index('idx_invest_holdings_account').on(table.accountId),

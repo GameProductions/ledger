@@ -13,7 +13,7 @@ type HelpItem = {
 };
 
 /**
- * Foundation Help Center (v1.3.0)
+ * Foundation Help Center (Stable)
  * Searchable, categorized help system.
  * Ported setup guides for YouTube, Twitch, Plaid, etc.
  */

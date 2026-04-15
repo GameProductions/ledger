@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 
 /**
- * Foundation Data Center (v1.3.0)
+ * Foundation Data Center (Stable)
  * Standardization of bulk data operations (Import/Export).
  * Implements D1 batching logic to prevent worker timeouts.
  */
@@ -61,7 +61,7 @@ export const DataCenter = ({ tables, onImport, onExport }) => {
 
   return (
     <div className="gp-data-center">
-      <h2>Data Center (v1.3.0)</h2>
+      <h2>Data Center (Stable)</h2>
       <p className="description">Manage high-performance imports and encrypted backups.</p>
 
       <div className="table-registry scrollable-list">

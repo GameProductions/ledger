@@ -20,7 +20,7 @@ type OGMetadata = {
 };
 
 /**
- * Foundation Identity Head (v1.3.0)
+ * Foundation Identity Head (Stable)
  * Centralized component for dynamic branding assets.
  * Enforces use of the specific app logo for Favicons, OG Tags, and Shortcuts.
  */

@@ -16,7 +16,7 @@ type AuditEntry = {
 };
 
 /**
- * Foundation Audit Trail (v1.3.0)
+ * Foundation Audit Trail (Stable)
  * Standardized forensic history view.
  * Visualizes the 'history' JSON column for audit-compliant data tracking.
  */

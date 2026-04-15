@@ -12,7 +12,7 @@ type OGMetadata = {
 };
 
 /**
- * Foundation OG Meta Tag Editor (v1.3.0)
+ * Foundation OG Meta Tag Editor (Stable)
  * Admin-only UI for overriding app-sharing metadata.
  * Part of the God Mode Branding suite.
  */

@@ -8,7 +8,7 @@ interface FooterProps {
 }
 
 /**
- * Universal Footer (v1.6.0)
+ * Universal Footer (Stable)
  * Standardized branding and legal disclosure for all GameProductions apps.
  */
 export const Footer: React.FC<FooterProps> = ({ appName, version, isGloson = false }) => {

@@ -62,7 +62,7 @@ Take total command of your infrastructure. Deploy the entire ecosystem—API, We
 
 LEDGER is the direct successor to the **CASH** platform, evolving through several major architectural eras:
 
-- **CASH v1.5.6 (Gold Era)**: Introduced the signature "Glassmorphism" UI and fluid Framer-motion transitions.
+- **CASH Stable (Gold Era)**: Introduced the signature "Glassmorphism" UI and fluid Framer-motion transitions.
 - **v3.11.x (Hardening Era)**: Transitioned authentication to Node.js `Buffer` logic for cross-environment Bit-Perfect Cryptographic Stability.
 - **v3.13.x (Mobility Era)**: Full Mobile-First refactor and PWA Asset Hardening.
 - **v3.15.x (Secure Era)**: Rebranded from "Territory" to **"Household Management"** and adopted Plain English terminology.

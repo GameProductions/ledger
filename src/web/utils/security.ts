@@ -1,5 +1,5 @@
 /**
- * Security Utility (v1.0.0)
+ * Security Utility (Stable)
  * 🏺 Enforcing safe boundaries for external data.
  */
 

@@ -126,7 +126,7 @@ user.get('/onboarding', async (c) => {
   const completedSteps = completedNodes.map(r => r.stepId)
   
   const userResult = await db.select({ lastViewedVersion: users.lastViewedVersion }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
-  const lastVersion = userResult?.lastViewedVersion || 'v1.0.0'
+  const lastVersion = userResult?.lastViewedVersion || 'Stable'
   
   const recentUpdates = VERSION_UPDATES.filter(v => v.version > lastVersion)
   

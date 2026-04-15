@@ -797,7 +797,7 @@ auth.post('/passkeys/login-verify', async (c) => {
   return c.json({ success: true, data: { token } })
 })
 
-// --- PASSWORD LIFECYCLE (v2.4.0) ---
+// --- PASSWORD LIFECYCLE (Stable) ---
 
 auth.post('/password/reset-request', zValidator('json', z.object({ identifier: z.string() })), async (c) => {
   const { identifier } = c.req.valid('json')

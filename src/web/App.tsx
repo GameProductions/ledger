@@ -245,7 +245,7 @@ const AppContent: React.FC = () => {
       </Suspense>
       <Toaster position="bottom-right" />
       
-      {/* Synchronization Telemetry (Fleet v1.0.0 Rule) */}
+      {/* Synchronization Telemetry (Fleet Stable Rule) */}
       <AnimatePresence>
         {retryAttempt > 0 && (
           <motion.div 

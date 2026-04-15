@@ -16,7 +16,7 @@ export const logAudit = async (
   const actorId = c.get('userId') || 'system'
   const impersonatorId = c.get('impersonatorId')
   
-  // Titan Guard v1.2.1: Robust Telemetry Extraction
+  // Titan Guard Stable: Robust Telemetry Extraction
   const ipAddress = c.req.header('cf-connecting-ip') || 
                     c.req.header('CF-Connecting-IP') || 
                     c.req.header('x-forwarded-for') || 

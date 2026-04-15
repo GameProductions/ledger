@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 
 /**
- * Foundation Value Input (v1.3.0)
+ * Foundation Value Input (Stable)
  * Standardized, high-fidelity UI component for currency and price inputs.
  * Enforces cent-perfect math and precision handling for all organization apps.
  */

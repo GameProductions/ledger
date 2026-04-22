@@ -102,25 +102,30 @@ app.use('*', async (c, next) => {
 
     // --- LEVEL 3: Global Fleet Lock Check (Foundation Command Center) ---
     // Cache the global status for 60 seconds to avoid DDOSing Foundation
-    const globalStatusCache = await c.env.LEDGER_CACHE?.get('GLOBAL_FLEET_STATUS')
+    const globalStatusCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('global:maintenance')
     if (globalStatusCache === 'true') {
       isGlobalLocked = true
     } else if (globalStatusCache === null) {
       // Fallback: Perform background fetch to Foundation
-      // We assume Foundation is at id.gpnet.dev (using relative fallback for dev)
       const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://id.gpnet.dev' : 'http://localhost:8787');
       try {
         const res = await fetch(`${foundationUrl}/api/fleet/status`);
         const data = await res.json() as { globalMaintenance: boolean };
         if (data.globalMaintenance === true) {
           isGlobalLocked = true;
-          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'true', { expirationTtl: 60 });
+          await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'true', { expirationTtl: 60 });
         } else {
-          await c.env.LEDGER_CACHE?.put('GLOBAL_FLEET_STATUS', 'false', { expirationTtl: 60 });
+          await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'false', { expirationTtl: 60 });
         }
       } catch (fetchErr) {
         console.error('[Global Lock Fetch Failed]', fetchErr);
       }
+    }
+
+    // --- LEVEL 2.5: Remote Individual Lock (Foundation Project Switch) ---
+    const remoteIndividualCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger')
+    if (remoteIndividualCache === 'true') {
+      isGlobalLocked = true;
     }
   } catch (e) {
     console.error('[Maintenance Check Error]', e)
@@ -158,8 +163,17 @@ app.get('/api/health', async (c) => {
      dbStatus = "error";
   }
 
+  const isHardLocked = c.env.MAINTENANCE_MODE === 'true';
+  const configCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('API_CONFIG', 'json') as Record<string, string>;
+  const localMaintenance = configCache?.MAINTENANCE_MODE === 'true';
+  const globalCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('global:maintenance');
+  const projectCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger');
+  
+  const isMaintenance = isHardLocked || localMaintenance || globalCache === 'true' || projectCache === 'true';
+
   return c.json({
-    status: dbStatus === "connected" ? "online" : "degraded",
+    status: isMaintenance ? "maintenance" : (dbStatus === "connected" ? "online" : "degraded"),
+    maintenance: isMaintenance,
     database: dbStatus,
     service: "ledger",
     environment: c.env.ENVIRONMENT || "development",

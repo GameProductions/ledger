@@ -107,7 +107,7 @@ app.use('*', async (c, next) => {
       isGlobalLocked = true
     } else if (globalStatusCache === null) {
       // Fallback: Perform background fetch to Foundation
-      const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://id.gpnet.dev' : 'http://localhost:8787');
+      const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://foundation.gpnet.dev' : 'http://localhost:8787');
       try {
         const res = await fetch(`${foundationUrl}/api/fleet/status`);
         const data = await res.json() as { globalMaintenance: boolean };
@@ -164,10 +164,11 @@ app.get('/api/health', async (c) => {
   }
 
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true';
-  const configCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('API_CONFIG', 'json') as Record<string, string>;
+  const kv = c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE;
+  const configCache = kv ? await kv.get('API_CONFIG', 'json') as Record<string, string> : null;
   const localMaintenance = configCache?.MAINTENANCE_MODE === 'true';
-  const globalCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('global:maintenance');
-  const projectCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger');
+  const globalCache = kv ? await kv.get('global:maintenance') : null;
+  const projectCache = kv ? await kv.get('project:maintenance:ledger') : null;
   
   const isMaintenance = isHardLocked || localMaintenance || globalCache === 'true' || projectCache === 'true';
 

@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { Shield, User, Key, Trash2, Mail, CheckCircle, XCircle } from 'lucide-react';
 
 /**
- * Foundation User Management Engine (Stable)
- * Standardized interface for administrative user control, Role assignments, and Forensic auditing.
+ * Foundation User Management (Stable)
+ * Standardized interface for administrative user control, Role assignments, and security auditing.
  */
 export const UserManager = (props: any) => {
   const { users = [], onUpdate, onDelete } = props;
@@ -22,15 +22,15 @@ export const UserManager = (props: any) => {
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <Shield className="w-6 h-6 text-cyan-400" />
-            Identity Control
+            User Access
           </h2>
-          <p className="text-slate-500 text-sm mt-1">Manage organizational access and forensic identities.</p>
+          <p className="text-slate-500 text-sm mt-1">Manage user access and security.</p>
         </div>
         
         <div className="relative">
           <input 
             type="text"
-            placeholder="Search identities..."
+            placeholder="Search users..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-300 focus:border-cyan-500/50 outline-none w-64 transition-all"
@@ -42,7 +42,7 @@ export const UserManager = (props: any) => {
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-900/50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-              <th className="px-8 py-4">Identity</th>
+              <th className="px-8 py-4">User</th>
               <th className="px-8 py-4">Status</th>
               <th className="px-8 py-4">Roles</th>
               <th className="px-8 py-4">Last Activity</th>
@@ -103,7 +103,7 @@ export const UserManager = (props: any) => {
                     <button 
                       onClick={() => onDelete(user.id)}
                       className="p-2 hover:bg-slate-800 rounded-lg text-red-400/50 hover:text-red-400 transition-colors"
-                      title="Revoke Identity"
+                      title="Delete User"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

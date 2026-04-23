@@ -331,7 +331,7 @@ const UserDetailsModal: React.FC<{
         <div className="p-8 bg-black/60 flex items-center justify-between border-t border-white/5">
           <div className="flex items-center gap-6">
              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Secure Protocol</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Secure System</span>
                 <span className="text-xs font-black text-slate-400 font-mono">USER_DIRECTORY_V2.4</span>
              </div>
              <div className="h-8 w-px bg-white/5" />
@@ -1000,7 +1000,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
         throw new Error(data.error || 'Access failed');
       }
     } catch (err: any) {
-      onShowToast(err.message || 'Access protocol failed', 'error');
+      onShowToast(err.message || 'Access failed', 'error');
     } finally {
       setImpersonating(false);
     }

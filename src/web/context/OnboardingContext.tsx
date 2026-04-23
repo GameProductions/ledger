@@ -54,7 +54,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       }
     } catch (error) {
-      console.error('[FORENSIC_FAILURE] Failed to fetch onboarding status:', error)
+      console.error('[DIAGNOSTIC_FAILURE] Failed to fetch onboarding status:', error)
     } finally {
       setIsLoading(false)
     }
@@ -80,7 +80,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       }
     } catch (error) {
-      console.error('[FORENSIC_FAILURE] Failed to update onboarding step:', error)
+      console.error('[DIAGNOSTIC_FAILURE] Failed to update onboarding step:', error)
     }
   }
 

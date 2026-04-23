@@ -33,8 +33,8 @@ export class EmailService {
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-        <h2 style="color: #0f172a; margin-top: 0;">Password Reset Procedure</h2>
-        <p style="color: #475569; line-height: 1.6;">A password reset has been initiated for your account. Use the button below to set a new password and regain access to the platform.</p>
+        <h2 style="color: #0f172a; margin-top: 0;">Password Reset</h2>
+        <p style="color: #475569; line-height: 1.6;">A password reset has been requested for your account. Use the button below to set a new password and regain access to the platform.</p>
         <div style="margin: 32px 0;">
           <a href="${resetLink}" style="background-color: #10b981; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Reset Password</a>
         </div>
@@ -44,10 +44,10 @@ export class EmailService {
       </div>
     `
 
-    return await this.sendEmail(to, 'Action Required: Account Recovery Procedure', html)
+    return await this.sendEmail(to, 'Action Required: Account Recovery', html)
   }
 
-  async sendProvisioningEmail(to: string, username: string, temporaryPass: string) {
+  async sendSetupEmail(to: string, username: string, temporaryPass: string) {
     const webUrl = this.env.WEB_URL || 'https://ledger.gpnet.dev'
     const loginLink = `${webUrl}/#/login`
 
@@ -68,7 +68,7 @@ export class EmailService {
       </div>
     `
 
-    return await this.sendEmail(to, 'Account Activated: Welcome to Ledger', html)
+    return await this.sendEmail(to, 'Account Ready: Welcome to Ledger', html)
   }
 
   async sendInvitationEmail(to: string, householdName: string, inviteUrl: string) {
@@ -93,7 +93,7 @@ export class EmailService {
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #ef4444; border-radius: 12px; background-color: #ffffff;">
         <h2 style="color: #ef4444; margin-top: 0;">Security Alert: Account Change</h2>
         <p style="color: #475569; line-height: 1.6;">A security-critical change has been detected on your account: <strong style="color: #0f172a;">${action}</strong>.</p>
-        <p style="color: #475569; line-height: 1.6;">If this was performed by you, no further action is required. If you did not authorize this change, please initiate an **Account Recovery Procedure** immediately.</p>
+        <p style="color: #475569; line-height: 1.6;">If this was performed by you, no further action is required. If you did not authorize this change, please initiate an **Account Recovery** immediately.</p>
         <hr style="border: 0; border-top: 1px solid #fecaca; margin: 32px 0;" />
         <p style="color: #b91c1c; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">Security System Active</p>
       </div>

@@ -6,7 +6,7 @@ const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 
 export const useApi = <T = any>(path: string, options: { refreshInterval?: number } = {}) => {
   const { token, logout, householdId } = useAuth()
-  const [data, setData] = useState<T | null>(null)
+  const [data, setData] = useState<T | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
   const [trigger, setTrigger] = useState(0)
@@ -54,8 +54,8 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
       
       // Zero-Trust Validation: Every response MUST follow the { success: true, data: T } envelope
       if (envelope.success !== true || envelope.data === undefined) {
-        console.error(`[FORENSIC_FAILURE] Malformed response envelope from ${path}`, envelope);
-        throw new Error(`API Protocol Error: Strict envelope missing for ${path}`);
+        console.error(`[DIAGNOSTIC_FAILURE] Malformed response envelope from ${path}`, envelope);
+        throw new Error(`API System Error: Strict envelope missing for ${path}`);
       }
 
       setData((prevData) => {
@@ -75,7 +75,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
 
   useEffect(() => {
     // Reset state when path or household changes to prevent stale data flickering
-    setData(null)
+    setData(undefined)
     setLoading(true)
     setError(null)
     

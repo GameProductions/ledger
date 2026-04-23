@@ -132,7 +132,7 @@ admin.get('/users', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
-admin.post('/users/provisioning', zValidator('json', CreateUserAdminSchema, (result, c) => {
+admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c) => {
   if (!result.success) {
     console.error('[Admin Validation Failed]', result.error)
     return c.json({ success: false, error: result.error }, 400)
@@ -163,9 +163,9 @@ admin.post('/users/provisioning', zValidator('json', CreateUserAdminSchema, (res
   
   const emailService = new EmailService(c.env)
   try {
-    await emailService.sendProvisioningEmail(email, username, password)
+    await emailService.sendSetupEmail(email, username, password)
   } catch (err) {
-    console.error('[Admin] Failed to send onboarding email:', err)
+    console.error('[Admin] Failed to send setup email:', err)
   }
 
   return c.json({ success: true, id: userId })

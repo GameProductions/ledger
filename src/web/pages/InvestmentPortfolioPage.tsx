@@ -76,7 +76,7 @@ const InvestmentPortfolioPage: React.FC = () => {
                <p className="text-xs font-black uppercase tracking-[0.4em] text-secondary">Asset Registry</p>
             </div>
             <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white uppercase underline decoration-emerald-500/50 underline-offset-8">Investment Portfolio</h1>
-            <p className="mt-4 text-slate-400 font-medium max-w-xl">Track your non-liquid holdings, stocks, and crypto assets in one secure forensic vault.</p>
+            <p className="mt-4 text-slate-400 font-medium max-w-xl">Track your non-liquid holdings, stocks, and crypto assets in one secure vault.</p>
           </div>
 
           <button 

@@ -44,11 +44,20 @@ const ReportsPage: React.FC = () => {
           fetch(`${apiUrl}/api/interop/reports`, { headers })
         ]);
 
-        if (spendRes.ok) setCategorySpending(await spendRes.json());
-        if (nwRes.ok) setNetWorth(await nwRes.json());
-        if (reportsRes.ok) setReports(await reportsRes.json());
+        if (spendRes.ok) {
+          const res = await spendRes.json();
+          setCategorySpending((res.success ? res.data : res) || []);
+        }
+        if (nwRes.ok) {
+          const res = await nwRes.json();
+          setNetWorth((res.success ? res.data : res) || { current_net_worth_cents: 0, history: [] });
+        }
+        if (reportsRes.ok) {
+          const res = await reportsRes.json();
+          setReports((res.success ? res.data : res) || []);
+        }
       } catch (e) {
-        showToast('Failed to load financial intelligence data', 'error');
+        showToast('Failed to load financial analysis data', 'error');
       }
     };
 
@@ -117,7 +126,7 @@ const ReportsPage: React.FC = () => {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-4xl font-black tracking-tighter">Financial Insights</h1>
-            <p className="text-secondary font-medium opacity-60">High-fidelity longitudinal insights and category analysis.</p>
+            <p className="text-secondary font-medium opacity-60">High-quality historical insights and category analysis.</p>
           </div>
           <div className="flex gap-2">
             <button 
@@ -156,8 +165,8 @@ const ReportsPage: React.FC = () => {
              </div>
 
              <div className="mt-12 h-48 w-full flex items-end gap-1">
-                {netWorth.history.length > 0 ? (
-                  netWorth.history.map((h, i) => (
+                {(netWorth.history || []).length > 0 ? (
+                  (netWorth.history || []).map((h, i) => (
                     <div 
                       key={i} 
                       className="flex-1 bg-gradient-to-t from-primary/40 to-primary/10 rounded-t-lg transition-all hover:scale-x-110 cursor-pointer group relative"
@@ -182,7 +191,7 @@ const ReportsPage: React.FC = () => {
             
             <div className="relative aspect-square flex items-center justify-center">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                {categorySpending.map((cat, i) => {
+                {(categorySpending || []).map((cat, i) => {
                   const percent = (cat.total_cents / totalSpend) * 100;
                   const offset = categorySpending.slice(0, i).reduce((sum, c) => sum + (c.total_cents / totalSpend) * 100, 0);
                   return (
@@ -206,7 +215,7 @@ const ReportsPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {categorySpending.slice(0, 5).map((cat, i) => (
+              {(categorySpending || []).slice(0, 5).map((cat, i) => (
                 <div key={i} className="flex items-center justify-between group">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
@@ -244,8 +253,8 @@ const ReportsPage: React.FC = () => {
            <Card className="p-8 space-y-6">
               <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50">Report Archive</div>
               <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                {reports.length > 0 ? (
-                  reports.map((r, i) => (
+                {(reports || []).length > 0 ? (
+                  (reports || []).map((r, i) => (
                     <div key={i} className="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all group">
                        <div className="flex items-center gap-4">
                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">

@@ -310,10 +310,14 @@ export const AccountOutputSchema = z.object({
 
 export const UserOutputSchema = z.object({
   id: z.string(),
-  username: z.string().nullable(),
-  email: z.string().nullable(),
-  displayName: z.string().nullable(),
-  globalRole: z.string().nullable(),
-  status: z.string().nullable(),
-  avatarUrl: z.string().nullable()
+  username: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  displayName: z.string().nullable().optional(),
+  globalRole: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
+  settingsJson: z.string().nullable().optional(),
+  totpEnabled: z.number().nullable().optional(),
+  forcePasswordChange: z.union([z.boolean(), z.number()]).nullable().optional(),
+  createdAt: z.string().nullable().optional()
 })

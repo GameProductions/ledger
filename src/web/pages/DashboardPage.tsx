@@ -435,7 +435,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   const matchesStatus = filterStatus === 'all' || 
                                      (filterStatus === 'unmatched' ? tx.reconciliationStatus !== 'reconciled' : tx.reconciliationStatus === 'reconciled')
                   return matchesSearch && matchesStatus
-                })?.map((tx: any) => (
+                }).map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
                     <div className="flex items-center gap-4 flex-1">
                       <input 
@@ -666,7 +666,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 }}
                 className="space-y-2"
             >
-                {layout[activeTab]?.map((item) => (
+                {(layout[activeTab] || []).map((item) => (
                     <Reorder.Item 
                         key={item.id} 
                         value={item}
@@ -679,7 +679,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
-                                const newTabItems = layout[activeTab].map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
+                                const newTabItems = (layout[activeTab] || []).map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
                                 setLayout({ ...layout, [activeTab]: newTabItems });
                             }}
                             className="p-2 hover:bg-white/10 rounded-lg transition-colors"

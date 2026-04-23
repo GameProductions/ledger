@@ -131,7 +131,7 @@ const PreferencesPage: React.FC = () => {
               </div>
               <p className="text-sm text-secondary mb-6">Toggle which features are visible on your command center.</p>
               <div className="space-y-3">
-                {widgets.map(w => (
+                {(widgets || []).map(w => (
                   <div 
                     key={w.id} 
                     onClick={() => toggleWidget(w.id)}

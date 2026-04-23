@@ -76,7 +76,7 @@ const ReportsPage: React.FC = () => {
         },
         body: JSON.stringify({ 
           name: `Financial Snapshot - ${new Date().toLocaleDateString()}`,
-          data: categorySpending.map(c => ({ 
+          data: (categorySpending || []).map(c => ({ 
             date: new Date().toLocaleDateString(), 
             description: c.name, 
             amount: (c.total_cents / 100).toFixed(2) 

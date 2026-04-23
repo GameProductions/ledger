@@ -293,7 +293,7 @@ const PaymentCentralPage: React.FC = () => {
                   <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Secure Methods</h3>
                   <span className="text-xs font-black text-amber-500 uppercase italic px-2 py-0.5 bg-amber-500/10 rounded">{(paymentMethods || []).length}</span>
                </div>
-               {(paymentMethods || [])?.map(method => (
+               {(paymentMethods || []).map(method => (
                  <div key={method.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 group">
                     <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center text-amber-500 border border-white/5">
                       <CreditCard size={20} />
@@ -318,7 +318,7 @@ const PaymentCentralPage: React.FC = () => {
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               {(linkedAccounts || [])?.map(account => (
+               {(linkedAccounts || []).map(account => (
                  <div key={account.id} className="p-6 rounded-[2.5rem] bg-black/40 border border-white/5 hover:border-amber-500/30 transition-all group overflow-hidden relative">
                     <div className="absolute -right-4 -top-4 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl group-hover:bg-amber-500/10 transition-all"></div>
                     

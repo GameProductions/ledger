@@ -182,7 +182,7 @@ const LoanManagerPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loans && loans.length > 0 ? (
-            loans.map((loan: any) => (
+            (loans || []).map((loan: any) => (
               <div key={loan.id} className="card p-6 bg-deep/40 border-glass-border group relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5 text-4xl group-hover:scale-110 transition-transform"><HandCoins /></div>
                 

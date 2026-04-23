@@ -136,7 +136,7 @@ export const AdminBroadcast: React.FC = () => {
 
             <div className="space-y-4">
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary ml-2">Active Messages</h4>
-              {announcements?.length > 0 ? announcements.map((a: any) => (
+              {announcements?.length > 0 ? (announcements || []).map((a: any) => (
                 <div key={a.id} className="card p-4 border-l-4 border-l-primary flex justify-between items-center group">
                   <div>
                     <div className="font-bold text-sm">{a.title}</div>
@@ -181,7 +181,7 @@ export const AdminBroadcast: React.FC = () => {
 
             <div className="space-y-4">
               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary ml-2">Pending Invitations</h4>
-              {invitations?.length > 0 ? invitations.map((i: any) => (
+              {invitations?.length > 0 ? (invitations || []).map((i: any) => (
                 <div key={i.token} className="card p-4 border-l-4 border-l-secondary flex justify-between items-center group">
                   <div>
                     <div className="font-mono text-xs text-primary">{i.token.substring(0, 16)}...</div>

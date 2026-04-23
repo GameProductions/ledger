@@ -36,7 +36,7 @@ export const ToursPage: React.FC = () => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {tours.map((tour, i) => (
+          {(tours || []).map((tour, i) => (
             <div key={i} className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] space-y-6 flex flex-col justify-between group">
               <div className="space-y-4">
                 <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">

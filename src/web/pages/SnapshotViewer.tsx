@@ -48,7 +48,7 @@ const SnapshotViewer: React.FC = () => {
                  </tr>
                </thead>
                <tbody className="divide-y divide-white/5">
-                 {snapshot.data.map((row: any, i: number) => (
+                 {(snapshot.data || []).map((row: any, i: number) => (
                    <tr key={i} className="text-sm">
                      <td className="py-4 font-medium opacity-60">{row.date || row.Date}</td>
                      <td className="py-4 font-bold">{row.description || row.Description}</td>

@@ -61,7 +61,7 @@ export const GuidesPage: React.FC = () => {
         </header>
 
         <div className="grid grid-cols-1 gap-6">
-          {guides.map((guide, i) => (
+          {(guides || []).map((guide, i) => (
             <div 
               key={i} 
               onClick={() => showToast(`Opening "${guide.title}"... Documentation currently being standardized.`, 'info')}
@@ -87,7 +87,7 @@ export const GuidesPage: React.FC = () => {
               </div>
               
               <div className="mt-8 flex flex-wrap gap-3 relative z-10">
-                {guide.topics.map((t, j) => (
+                {(guide.topics || []).map((t, j) => (
                   <span key={j} className="px-4 py-1.5 bg-white/5 rounded-xl text-xs font-black text-secondary uppercase tracking-widest border border-white/5">
                     {t}
                   </span>
@@ -138,7 +138,7 @@ export const FAQPage: React.FC = () => {
         </header>
 
         <div className="space-y-10">
-          {faqs.map((faq, i) => (
+          {(faqs || []).map((faq, i) => (
             <div key={i} className="space-y-4 group p-8 rounded-[2rem] bg-white/5 border border-white/5 hover:border-white/10 transition-all">
               <h3 className="text-xl font-black italic uppercase tracking-tighter text-white flex items-center gap-6">
                 <span className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center text-sm font-black border border-primary/20 shadow-2xl">Q</span>

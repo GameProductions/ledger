@@ -117,7 +117,7 @@ const UserDetailsModal: React.FC<{
 
   if (loading) return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="animate-pulse text-emerald-500 font-black tracking-widest text-sm uppercase">Loading User Details...</div>
+      <div className="animate-pulse text-emerald-500 font-black tracking-widest text-sm uppercase">Loading User...</div>
     </div>
   );
 
@@ -159,12 +159,12 @@ const UserDetailsModal: React.FC<{
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 border-b border-white/5">
-          {/* Identity Pulse */}
+          {/* User Summary */}
           <div className="p-8 border-r border-white/5 space-y-8">
             <div>
               <div className="flex items-center gap-2 text-emerald-500 mb-6">
                 <Activity size={16} />
-                <span className="text-xs font-black uppercase tracking-[0.2em]">User Activity Summary</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em]">Activity</span>
               </div>
               
               <div className="space-y-6">
@@ -201,7 +201,7 @@ const UserDetailsModal: React.FC<{
             </div>
           </div>
 
-          {/* Biometric Registry */}
+          {/* Security Keys */}
           <div className="p-8 border-r border-white/5 bg-black/40 lg:col-span-2 space-y-8">
               <div className="flex items-center justify-between mb-2">
                  <div className="flex items-center gap-2 text-primary">
@@ -253,7 +253,7 @@ const UserDetailsModal: React.FC<{
                   <div className="flex items-center justify-between">
                      <div className="flex items-center gap-2 text-orange-500">
                         <ShieldAlert size={18} />
-                        <span className="text-xs font-black uppercase tracking-[0.2em]">Account Recovery Tools</span>
+                        <span className="text-xs font-black uppercase tracking-[0.2em]">Security Tools</span>
                      </div>
                      <button 
                        onClick={generatePassword}
@@ -291,7 +291,7 @@ const UserDetailsModal: React.FC<{
                             onChange={(e) => setIsTemp(e.target.checked)}
                             className="accent-orange-500"
                           />
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">Temporary Credential</span>
+                          <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">Temporary Password</span>
                        </label>
                        
                        <button 
@@ -331,7 +331,7 @@ const UserDetailsModal: React.FC<{
         <div className="p-8 bg-black/60 flex items-center justify-between border-t border-white/5">
           <div className="flex items-center gap-6">
              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Secure System</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">System</span>
                 <span className="text-xs font-black text-slate-400 font-mono">USER_DIRECTORY_V2.4</span>
              </div>
              <div className="h-8 w-px bg-white/5" />
@@ -440,7 +440,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/api/admin/users/provisioning`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/setup`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -484,7 +484,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">System Handle</label>
+                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Username</label>
                   <input 
                     required
                     type="text"
@@ -495,7 +495,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Display Alias</label>
+                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Display Name</label>
                   <input 
                     required
                     type="text"
@@ -508,7 +508,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Identity Email</label>
+                <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Email</label>
                 <input 
                   required
                   type="email"

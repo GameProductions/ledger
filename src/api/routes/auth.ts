@@ -152,7 +152,7 @@ auth.get('/login/discord', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/auth/callback/discord`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
   const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -331,7 +331,7 @@ auth.get('/login/google', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/auth/callback/google`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/google`
   const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -434,7 +434,7 @@ auth.get('/login/dropbox', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/auth/callback/dropbox`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/dropbox`
   const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -538,7 +538,7 @@ auth.get('/login/onedrive', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/auth/callback/onedrive`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/onedrive`
   const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {

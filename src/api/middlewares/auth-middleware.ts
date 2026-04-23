@@ -15,7 +15,21 @@ let verifyMembershipQuery: any;
 export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) => {
   try {
     const path = c.req.path
-    if (path === '/api/config') return await next()
+    
+    // Public Access Paths (Bypass Token Requirement)
+    if (
+      path === '/api/config' || 
+      path === '/api/auth/login' || 
+      path.startsWith('/api/auth/callback/') ||
+      path === '/api/auth/passkeys/login-options' ||
+      path === '/api/auth/passkeys/login-verify' ||
+      path === '/api/auth/password/reset-request' ||
+      path === '/api/auth/password/reset' ||
+      path === '/api/auth/admin/claim'
+    ) {
+      return await next()
+    }
+
     let token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
     const jwtSecret = c.env.JWT_SECRET
@@ -88,12 +102,11 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     // 3. Household Context Logic
     // Skip strict household check for User-level routes (e.g., profile, passkeys, internal auth)
     const isUserLevelRoute = path.startsWith('/api/user') || 
-                            path.startsWith('/auth/passkeys/') || 
-                            path.startsWith('/auth/password/') ||
+                            path.startsWith('/api/auth/passkeys/') || 
+                            path.startsWith('/api/auth/password/') ||
                             path === '/api/auth/verify' ||
-                            path === '/auth/verify' ||
-                            path === '/auth/totp/setup' ||
-                            path === '/auth/totp/verify'
+                            path === '/api/auth/totp/setup' ||
+                            path === '/api/auth/totp/verify'
 
     if (isUserLevelRoute) {
       c.set('userId', userId)

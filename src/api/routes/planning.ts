@@ -457,14 +457,14 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
       fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer \${c.env.RESEND_API_KEY}`,
+          'Authorization': `Bearer ${c.env.RESEND_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           from: 'LEDGER <receipts@gpnet.dev>',
           to: data.email,
-          subject: `Payment Receipt: \${data.amount_cents / 100}`,
-          html: `<p>Thank you for your payment of $\${(data.amount_cents / 100).toFixed(2)}!</p>`
+          subject: `Payment Receipt: ${data.amount_cents / 100}`,
+          html: `<p>Thank you for your payment of $${(data.amount_cents / 100).toFixed(2)}!</p>`
         })
       })
     )

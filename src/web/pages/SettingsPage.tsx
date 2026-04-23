@@ -121,7 +121,7 @@ const SettingsPage: React.FC = () => {
     setChangingPass(true)
     try {
       // Fix: Prepend /api to the endpoint path
-      const res = await fetch(`${API_URL}/auth/password/change`, {
+      const res = await fetch(`${API_URL}/api/auth/password/change`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
@@ -469,7 +469,7 @@ const SettingsPage: React.FC = () => {
                                 <button 
                                   onClick={() => {
                                     const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-                                    window.location.href = `${baseApi}/auth/login/${provider.id}?auth_token=${token}`;
+                                    window.location.href = `${baseApi}/api/auth/login/${provider.id}?auth_token=${token}`;
                                   }}
                                   className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs transition-all"
                                 >

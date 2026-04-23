@@ -29,7 +29,7 @@ export const TotpModule = () => {
     setIsSettingUp(true);
     setAuthenticatorName(`Authenticator App ${totps ? totps.length + 1 : 1}`);
     try {
-      const res = await fetch(`${API_URL}/auth/totp/setup`, {
+      const res = await fetch(`${API_URL}/api/auth/totp/setup`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -59,7 +59,7 @@ export const TotpModule = () => {
 
     setIsVerifying(true);
     try {
-      const res = await fetch(`${API_URL}/auth/totp/verify`, {
+      const res = await fetch(`${API_URL}/api/auth/totp/verify`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

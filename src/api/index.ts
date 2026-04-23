@@ -133,7 +133,7 @@ app.use('*', async (c, next) => {
   }
 
   const isMaintenanceActive = isHardLocked || isSoftLocked || isGlobalLocked
-  const isAdminPath = path.startsWith('/api/admin') || path.startsWith('/auth/admin')
+  const isAdminPath = path.startsWith('/api/admin')
   const isPublicPath = path === '/ping' || path === '/api/health' || path.includes('.well-known')
   
   if (isMaintenanceActive && !isAdminPath && !isPublicPath) {
@@ -148,7 +148,6 @@ app.use('*', async (c, next) => {
 })
 
 // Adaptive Fleet Shield
-app.use('/auth/*', ipRateLimit('AUTH'))
 app.use('/api/auth/*', ipRateLimit('AUTH'))
 app.use('/api/*', ipRateLimit('API'))
 
@@ -197,16 +196,11 @@ app.use('/api/*', async (c, next) => {
 })
 
 // Specific Middleware Chains
-app.use('/auth/profile/*', authMiddleware)
-app.use('/auth/totp/*', authMiddleware)
-app.use('/auth/vault/*', authMiddleware)
-app.use('/auth/password/*', authMiddleware)
 app.use('/api/admin/*', adminMiddleware)
 app.use('/api/theme/broadcast', authMiddleware)
 
 // 4. Route Mounting (Targeted Protocols)
-app.route('/auth', authRoutes)
-app.route('/api/auth', authRoutes) // Cross-namespace verification support
+app.route('/api/auth', authRoutes)
 app.route('/api/auth', webauthnRoutes)
 app.route('/api/financials', financialsRoutes)
 app.route('/api/planning', planningRoutes)

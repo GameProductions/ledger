@@ -583,7 +583,7 @@ financials.post('/transactions/:id/receipt', async (c) => {
   if (!file) return c.json({ error: 'No file uploaded' }, 400)
   if (!c.env.ASSETS) return c.json({ error: 'Assets Bucket not configured' }, 500)
 
-  const key = `receipts/\${householdId}/\${id}-\${Date.now()}`
+  const key = `receipts/${householdId}/${id}-${Date.now()}`
   await c.env.ASSETS.put(key, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type }
   })

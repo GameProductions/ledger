@@ -197,7 +197,7 @@ app.use('/api/*', async (c, next) => {
 
 // Specific Middleware Chains
 app.use('/api/admin/*', adminMiddleware)
-app.use('/api/theme/broadcast', authMiddleware)
+app.post('/api/theme/broadcast', authMiddleware)
 
 // 4. Route Mounting (Targeted Protocols)
 app.route('/api/auth', authRoutes)

@@ -310,11 +310,10 @@ export const AccountOutputSchema = z.object({
 
 export const UserOutputSchema = z.object({
   id: z.string(),
-  username: z.string(),
-  email: z.string(),
-  displayName: z.string(),
-  globalRole: z.string(),
-  status: z.string(),
-  avatarUrl: z.string().nullable(),
-  timezone: z.string().nullable()
+  username: z.string().nullable(),
+  email: z.string().nullable(),
+  displayName: z.string().nullable(),
+  globalRole: z.string().nullable(),
+  status: z.string().nullable(),
+  avatarUrl: z.string().nullable()
 })

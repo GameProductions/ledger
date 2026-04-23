@@ -83,7 +83,7 @@ planning.get('/subscriptions', async (c) => {
     return toSnake(sub)
   })
 
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c) => {
@@ -188,7 +188,7 @@ planning.get('/bills', async (c) => {
     return toSnake(bill)
   })
 
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 planning.post('/bills', zValidator('json', BillSchema), async (c) => {
@@ -323,7 +323,7 @@ planning.get('/installment-plans', async (c) => {
     return toSnake(inst)
   })
 
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 planning.post('/installment-plans', zValidator('json', InstallmentPlanSchema), async (c) => {
@@ -388,7 +388,7 @@ planning.get('/p2p/loans', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(personalLoans).where(eq(personalLoans.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: (results || []).map(toSnake) })
 })
 
 planning.post('/p2p/loans', zValidator('json', LoanSchema), async (c) => {
@@ -478,7 +478,7 @@ planning.get('/pay-schedules', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: (results || []).map(toSnake) })
 })
 
 planning.post('/pay-schedules', zValidator('json', PayScheduleSchema), async (c) => {
@@ -556,7 +556,7 @@ planning.get('/pay-exceptions', async (c) => {
     eq(payExceptions.userId, user?.id || 'unknown')
   ))
   
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: (results || []).map(toSnake) })
 })
 
 planning.post('/pay-exceptions', zValidator('json', PayExceptionSchema), async (c) => {
@@ -755,7 +755,7 @@ planning.get('/templates', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(templates).where(eq(templates.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: (results || []).map(toSnake) })
 })
 
 // Reminders
@@ -850,7 +850,7 @@ planning.get('/schedules', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(schedules).where(eq(schedules.householdId, householdId))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: (results || []).map(toSnake) })
 })
 
 planning.post('/schedules', zValidator('json', z.object({

@@ -49,7 +49,7 @@ const AdminGuide: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-4">
             <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none">
-              Forensic <span className="text-emerald-500">Codex</span>
+              System <span className="text-emerald-500">Guide</span>
             </h2>
             <div className="flex items-center gap-3">
               <p className="text-sm text-slate-500 uppercase tracking-[0.3em] font-bold">System Documentation</p>
@@ -143,7 +143,7 @@ const AdminGuide: React.FC = () => {
         <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-blue-500/10 via-transparent to-emerald-500/10 border border-white/5 space-y-8 relative overflow-hidden">
             <div className="flex items-center gap-4 text-emerald-500">
                <Zap size={24} className="animate-pulse" />
-               <h3 className="text-2xl font-black tracking-tighter uppercase italic">Operational Protocols</h3>
+               <h3 className="text-2xl font-black tracking-tighter uppercase italic">System Procedures</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -160,18 +160,18 @@ const AdminGuide: React.FC = () => {
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Asset_03</div>
                   <h4 className="text-sm font-bold text-white uppercase">Asset Persistence</h4>
-                  <p className="text-sm text-slate-500 leading-relaxed">Determinest if synced avatars are retained after identity decoupling.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Determines if synced avatars are retained after unlinking accounts.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
-                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Audit_04</div>
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Logs</div>
                   <h4 className="text-sm font-bold text-white uppercase">Audit Trail</h4>
                   <p className="text-sm text-slate-500 leading-relaxed">Every Admin interaction generates a audit entry in the Audit Trail.</p>
                </div>
-               <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3 shadow-xl hover:border-purple-500/30 transition-all group/card">
-                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover/card:text-purple-400">Mirror_05</div>
-                  <h4 className="text-sm font-bold text-white uppercase">Forensic Mirroring</h4>
-                  <p className="text-sm text-slate-500 leading-relaxed">Identity mirroring is recorded with both administrative actor and target user context for absolute accountability.</p>
-               </div>
+                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3 shadow-xl hover:border-purple-500/30 transition-all group/card">
+                  <div className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover/card:text-purple-400">Access_05</div>
+                  <h4 className="text-sm font-bold text-white uppercase">Account Access Tracking</h4>
+                  <p className="text-sm text-slate-500 leading-relaxed">Account access is recorded with both super admin and target user context for absolute accountability.</p>
+                </div>
             </div>
         </div>
 

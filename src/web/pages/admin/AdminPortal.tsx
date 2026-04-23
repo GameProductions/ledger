@@ -13,7 +13,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
 
   React.useEffect(() => {
     const originalTitle = document.title;
-    document.title = "God Mode | COMMAND CENTER";
+    document.title = "Super Admin | COMMAND CENTER";
     return () => { document.title = originalTitle; };
   }, []);
 
@@ -22,15 +22,15 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
       <div className="flex items-center justify-center min-h-screen bg-black text-white p-6 text-center shadow-[inset_0_0_100px_rgba(239,68,68,0.1)]">
         <div className="animate-in zoom-in duration-500">
           <h1 className="text-6xl font-black text-red-500 mb-6 tracking-tighter shadow-glow-red italic">403: ACCESS DENIED</h1>
-          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to God Level administrators. Your unauthorized attempt has been archived for forensic review.</p>
-          <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Return to Surface</a>
+          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to Super Admins. Your unauthorized attempt has been recorded for security review.</p>
+          <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Return to Home</a>
         </div>
       </div>
     );
   }
 
   const navItems = [
-    { name: 'God Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Super Admin Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
     { name: 'User Directory', path: '#/admin/users', icon: Users },
     { name: 'Household Registry', path: '#/admin/households', icon: Shield },
     { name: 'Service Providers', path: '#/admin/providers', icon: Globe },
@@ -39,8 +39,8 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
     { name: 'Master Records', path: '#/admin/registry', icon: Database },
     { name: 'Global Search', path: '#/admin/search', icon: Search },
     { name: 'Platform Settings', path: '#/admin/config', icon: Settings },
-    { name: 'God Broadcast', path: '#/admin/broadcast', icon: Zap },
-    { name: 'God Guide', path: '#/admin/guide', icon: FileText },
+    { name: 'System Broadcast', path: '#/admin/broadcast', icon: Zap },
+    { name: 'Super Admin Guide', path: '#/admin/guide', icon: FileText },
   ];
 
   return (
@@ -54,10 +54,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight uppercase italic">GOD <span className="text-emerald-500">MODE</span></h1>
-                <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Omnipotent</span>
+                <h1 className="text-xl font-black tracking-tight uppercase italic">SUPER <span className="text-emerald-500">ADMIN</span></h1>
+                <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Authorized</span>
               </div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black">Universal Override</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black">Administrative Access</p>
             </div>
           </div>
         </div>
@@ -98,8 +98,8 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
                    <Lock size={16} className="text-blue-500" />
                    <div className="flex flex-col">
-                      <span className="text-sm font-black uppercase text-slate-600">Level</span>
-                      <span className="text-sm font-black text-blue-500 uppercase italic">GOD_LEVEL_OVERRIDE</span>
+                       <span className="text-sm font-black uppercase text-slate-600">Level</span>
+                       <span className="text-sm font-black text-blue-500 uppercase italic">SUPER_ADMIN_ACCESS</span>
                    </div>
                  </div>
              </div>

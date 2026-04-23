@@ -39,7 +39,7 @@ const AdminProviders: React.FC = () => {
       if (provData.success) setProviders(provData.data || []);
       if (procData.success) setProcessors(procData.data || []);
     } catch (err) {
-      console.error('Data acquisition failure:', err);
+      console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
@@ -67,14 +67,14 @@ const AdminProviders: React.FC = () => {
     });
 
     if (res.ok) {
-      showToast(editingId ? 'Provider configuration synchronized' : 'New service provider authorized', 'success');
+      showToast(editingId ? 'Provider updated' : 'New provider added', 'success');
       setShowAdd(false);
       setEditingId(null);
       setNewItem({ name: '', billingProcessorId: '', websiteUrl: '', brandingUrl: '', logoUrl: '', supportEmail: '', privacyPolicyUrl: '', is3rdPartyCapable: false });
       fetchData();
     } else {
       const err = await res.json();
-      showToast(err.message || 'Transmission failed', 'error');
+      showToast(err.message || 'Failed to save', 'error');
     }
   };
 
@@ -95,7 +95,7 @@ const AdminProviders: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('EXTERMINATION PROTOCOL: Purge this service provider? Links to active subscriptions will be orphaned.')) return;
+    if (!confirm('Warning: Are you sure you want to delete this provider? This will remove all associated records.')) return;
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -105,7 +105,7 @@ const AdminProviders: React.FC = () => {
     });
 
     if (res.ok) {
-      showToast('Provider purged from global registry', 'success');
+      showToast('Provider deleted', 'success');
       fetchData();
     } else {
       const err = await res.json();
@@ -120,7 +120,7 @@ const AdminProviders: React.FC = () => {
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>
-          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - Universal Biller Registry</p>
+          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Manage Service Providers</p>
         </div>
         <button 
           onClick={() => {
@@ -132,7 +132,7 @@ const AdminProviders: React.FC = () => {
           }}
           className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-emerald-500 text-black'} font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
-          {showAdd ? 'Abort Action' : <><Plus size={16} /> Register Provider</>}
+          {showAdd ? 'Cancel' : <><Plus size={16} /> Add Provider</>}
         </button>
       </div>
 
@@ -142,7 +142,7 @@ const AdminProviders: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                <ShieldAlert size={20} />
             </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Modify Strategy' : 'Setup Provider'}</h3>
+            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Edit Provider' : 'Add Provider'}</h3>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
@@ -158,7 +158,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Billing Nexus (Processor)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Billing Processor</label>
                 <SearchableSelect 
                    options={(processors || []).map(proc => ({ 
                      value: proc.id, 
@@ -195,7 +195,7 @@ const AdminProviders: React.FC = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate HQ (Website)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Website</label>
                 <input 
                   type="url" 
                   value={newItem.websiteUrl} 
@@ -205,7 +205,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Intel (Email)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Email</label>
                 <input 
                   type="email" 
                   value={newItem.supportEmail} 
@@ -215,7 +215,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Privacy & Data Ownership Docs (Privacy Policy)</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Privacy Policy</label>
                 <input 
                   type="url" 
                   value={newItem.privacyPolicyUrl} 
@@ -225,7 +225,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
               <button type="submit" className="w-full py-4 bg-emerald-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20">
-                {editingId ? 'Push Updates to Registry' : 'Authorize Infrastructure'}
+                {editingId ? 'Save Changes' : 'Add Provider'}
               </button>
             </div>
           </form>
@@ -266,7 +266,7 @@ const AdminProviders: React.FC = () => {
 
             <div className="hidden md:flex items-center gap-12">
                <div className="text-right space-y-1">
-                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Operational Protocol</p>
+                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Status</p>
                   <p className="text-xs font-black text-slate-300 uppercase flex items-center gap-2 justify-end">
                     <Server size={12} className="text-emerald-500" /> Identity Verified
                   </p>
@@ -292,7 +292,7 @@ const AdminProviders: React.FC = () => {
         {providers.length === 0 && (
           <div className="py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
             <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Providers Registered</h4>
-            <p className="text-sm text-slate-600 mt-2">Setup the universal registry to empower users with forensic bill tracking.</p>
+            <p className="text-sm text-slate-600 mt-2">Setup the provider registry to allow users to track their bills.</p>
           </div>
         )}
       </div>

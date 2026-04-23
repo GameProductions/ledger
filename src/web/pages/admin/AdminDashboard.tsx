@@ -156,10 +156,10 @@ const AdminDashboard: React.FC = () => {
 
         <div className="p-8 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full" />
-          <h3 className="text-lg font-bold mb-4 relative">God Mode</h3>
+          <h3 className="text-lg font-bold mb-4 relative">Super Admin Access</h3>
           <div className="space-y-3 relative">
             <button 
-              onClick={() => showToast('Protocol execution initiated...', 'info')}
+              onClick={() => showToast('System update started...', 'info')}
               className="w-full text-left p-3 rounded-xl bg-emerald-500 text-black font-bold text-sm hover:scale-[1.02] transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]"
             >
               Apply System Update
@@ -182,11 +182,11 @@ const AdminDashboard: React.FC = () => {
               {loadingMaintenance && (
                 <div className="absolute inset-0 bg-inherit flex items-center px-3 gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-current/20 border-t-current" />
-                  <span>Executing Protocol...</span>
+                  <span>Updating System...</span>
                 </div>
               )}
               <span className={loadingMaintenance ? 'opacity-0' : ''}>
-                {maintenanceEnabled ? 'Resume Site Access' : 'Turn Off Site Access'}
+                {maintenanceEnabled ? 'Enable Public Access' : 'Disable Public Access'}
               </span>
             </button>
           </div>
@@ -198,12 +198,12 @@ const AdminDashboard: React.FC = () => {
           <Modal
             isOpen={isAnnouncementModalOpen}
             onClose={() => setIsAnnouncementModalOpen(false)}
-            title="Broadcast System Announcement"
+            title="Send System Message"
             footer={
               <>
                 <Button variant="secondary" onClick={() => setIsAnnouncementModalOpen(false)}>Cancel</Button>
                 <Button variant="primary" onClick={handleSendAnnouncement} disabled={sending}>
-                  {sending ? 'Broadcasting...' : 'Execute Broadcast'}
+                  {sending ? 'Sending...' : 'Send Message'}
                 </Button>
               </>
             }

@@ -8,8 +8,8 @@ import AdminPortal from './AdminPortal';
 export const AdminBroadcast: React.FC = () => {
   const { token } = useAuth();
   const { showToast } = useToast();
-  const { data: announcements, mutate: mutateAnnouncements } = useApi('/api/admin/announcements');
-  const { data: invitations, mutate: mutateInvitations } = useApi('/api/admin/invitations');
+  const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/admin/announcements');
+  const { data: invitations = [], mutate: mutateInvitations } = useApi('/api/admin/invitations');
   
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', contentMd: '', priority: 'info' });
   const [inviteRole, setInviteRole] = useState<'super_admin' | 'operator'>('super_admin');
@@ -27,12 +27,12 @@ export const AdminBroadcast: React.FC = () => {
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Announcement Broadcasted', 'success');
+        showToast('Message Sent', 'success');
         setNewAnnouncement({ title: '', contentMd: '', priority: 'info' });
         mutateAnnouncements();
       }
     } catch (err) {
-      showToast('Failed to broadcast', 'error');
+      showToast('Failed to send', 'error');
     }
   };
 
@@ -85,12 +85,12 @@ export const AdminBroadcast: React.FC = () => {
       <div className="space-y-12 animate-in fade-in duration-1000">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-4xl font-black italic tracking-tighter uppercase text-white mb-2">Command Center</h2>
-            <p className="text-secondary text-sm uppercase tracking-widest font-bold opacity-60">System-wide orchestrator & broadcasts</p>
+            <h2 className="text-4xl font-black italic tracking-tighter uppercase text-white mb-2">System Control</h2>
+            <p className="text-secondary text-sm uppercase tracking-widest font-bold opacity-60">System management & messages</p>
           </div>
           <div className="px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-3">
              <ShieldCheck size={20} className="text-emerald-500" />
-             <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Global Admin Root</span>
+             <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Super Admin</span>
           </div>
         </header>
 
@@ -100,14 +100,14 @@ export const AdminBroadcast: React.FC = () => {
             <div className="card p-8 bg-deep/40 backdrop-blur-3xl border-glass-border">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-3 border-b border-glass-border pb-4 uppercase tracking-tighter">
                 <Megaphone size={24} className="text-primary" />
-                Emergency Broadcast
+                System Message
               </h3>
               
               <div className="space-y-4">
                 <input 
                   value={newAnnouncement.title}
                   onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
-                  placeholder="Broadcast Headline"
+                  placeholder="Message Title"
                   className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-primary transition-all"
                 />
                 <textarea 
@@ -128,14 +128,14 @@ export const AdminBroadcast: React.FC = () => {
                     <option value="critical">Critical/Maintenance</option>
                   </select>
                   <button onClick={createAnnouncement} className="flex-1 bg-primary text-white font-black uppercase tracking-widest rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2">
-                    <Send size={16} /> Broadcast
+                    <Send size={16} /> Send
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary ml-2">Active Signals</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary ml-2">Active Messages</h4>
               {announcements?.length > 0 ? announcements.map((a: any) => (
                 <div key={a.id} className="card p-4 border-l-4 border-l-primary flex justify-between items-center group">
                   <div>
@@ -148,7 +148,7 @@ export const AdminBroadcast: React.FC = () => {
                     <Trash2 size={16} />
                   </button>
                 </div>
-              )) : <p className="text-center text-xs text-secondary italic opacity-20">No active broadcasts</p>}
+              )) : <p className="text-center text-xs text-secondary italic opacity-20">No active messages</p>}
             </div>
           </section>
 
@@ -157,11 +157,11 @@ export const AdminBroadcast: React.FC = () => {
              <div className="card p-8 bg-deep/40 backdrop-blur-3xl border-glass-border">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-3 border-b border-glass-border pb-4 uppercase tracking-tighter">
                 <Ticket size={24} className="text-secondary" />
-                Administrative Invites
+                Super Admin Invitations
               </h3>
               
               <p className="text-xs text-secondary mb-6 font-medium leading-relaxed">
-                Generate volatile access tokens for administrative onboarding. Tokens expire strictly after 24 hours.
+                Create invitation links for super admin onboarding. Links expire after 24 hours.
               </p>
 
               <div className="flex gap-4">
@@ -170,7 +170,7 @@ export const AdminBroadcast: React.FC = () => {
                   onChange={e => setInviteRole(e.target.value as any)}
                   className="flex-1 bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-black uppercase tracking-widest appearance-none"
                 >
-                  <option value="super_admin">God Mode Access</option>
+                  <option value="super_admin">Full Super Admin Access</option>
                   <option value="operator">System Operator</option>
                 </select>
                 <button onClick={createInvite} className="flex-1 bg-secondary text-white font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all flex items-center justify-center gap-2">
@@ -180,7 +180,7 @@ export const AdminBroadcast: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary ml-2">Open Channels</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary ml-2">Pending Invitations</h4>
               {invitations?.length > 0 ? invitations.map((i: any) => (
                 <div key={i.token} className="card p-4 border-l-4 border-l-secondary flex justify-between items-center group">
                   <div>

@@ -18,9 +18,9 @@ export const TransactionLedger: React.FC = () => {
   const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false)
   
   // Data Fetching
-  const { data: transactions, mutate: mutateTx } = useApi(`/api/financials/transactions?q=${q}&sort_by=${sortBy}&sort_dir=${sortDir}&limit=${limit}`)
-  const { data: accounts } = useApi('/api/financials/accounts')
-  const { data: categories } = useApi('/api/financials/categories')
+  const { data: transactions = [], mutate: mutateTx } = useApi(`/api/financials/transactions?q=${q}&sort_by=${sortBy}&sort_dir=${sortDir}&limit=${limit}`)
+  const { data: accounts = [] } = useApi('/api/financials/accounts')
+  const { data: categories = [] } = useApi('/api/financials/categories')
 
   // Selection & Details State
   const [selectedIds, setSelectedIds] = useState<string[]>([])

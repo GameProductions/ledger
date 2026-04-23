@@ -54,7 +54,7 @@ const AdminHouseholds: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('GOD MODE WARNING: Are you sure you want to PURGE this household node? This will remove all memberships and associated financial trails.')) return;
+    if (!confirm('Warning: Are you sure you want to delete this household? This will remove all memberships and associated financial records.')) return;
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = import.meta.env.VITE_API_URL;
@@ -64,7 +64,7 @@ const AdminHouseholds: React.FC = () => {
       });
       setHouseholds(prev => prev.filter(h => h.id !== id));
     } catch (err) {
-      console.error('Purge failed:', err);
+      console.error('Deletion failed:', err);
     }
   };
 
@@ -77,7 +77,7 @@ const AdminHouseholds: React.FC = () => {
     <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-        <div className="text-xs font-black uppercase tracking-[0.3em]">Synching household registry...</div>
+        <div className="text-xs font-black uppercase tracking-[0.3em]">Loading household registry...</div>
       </div>
     </AdminPortal>
   );
@@ -87,9 +87,9 @@ const AdminHouseholds: React.FC = () => {
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
           <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
-            Household <span className="text-emerald-500">Inventory</span>
+            Household <span className="text-emerald-500">Registry</span>
           </h2>
-          <p className="text-sm text-slate-500 mt-2 uppercase tracking-widest font-bold">Manage system-wide territories and memberships</p>
+          <p className="text-sm text-slate-500 mt-2 uppercase tracking-widest font-bold">Manage households and memberships</p>
         </div>
         <div className="relative">
           <input 
@@ -152,11 +152,11 @@ const AdminHouseholds: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-white/5">
                <div>
-                  <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Members</div>
-                  <div className="flex items-center gap-2">
-                     <Users size={14} className="text-emerald-500" />
-                     <span className="text-sm font-bold text-slate-300">{h.memberCount} Nodes</span>
-                  </div>
+                   <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Members</div>
+                   <div className="flex items-center gap-2">
+                      <Users size={14} className="text-emerald-500" />
+                      <span className="text-sm font-bold text-slate-300">{h.memberCount} Members</span>
+                   </div>
                </div>
                <div>
                   <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Currency</div>
@@ -171,10 +171,10 @@ const AdminHouseholds: React.FC = () => {
                <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
                   <div className="bg-emerald-500 h-full" style={{ width: '65%' }} />
                </div>
-               <div className="flex justify-between items-center mt-2">
-                  <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Resource Capacity</span>
-                  <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">Optimal</span>
-               </div>
+                <div className="flex justify-between items-center mt-2">
+                   <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Resource Usage</span>
+                   <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">Optimal</span>
+                </div>
             </div>
           </motion.div>
         ))}

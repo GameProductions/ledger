@@ -13,7 +13,7 @@ const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
 export const TotpModule = () => {
   const { token } = useAuth();
   const { data: profile, mutate: refreshProfile } = useApi('/api/user/profile');
-  const { data: totps, mutate: refreshTotps } = useApi('/api/user/totps');
+  const { data: totps = [], mutate: refreshTotps } = useApi('/api/user/totps');
   
   const [setupData, setSetupData] = useState<{ secret: string; qrUrl: string } | null>(null);
   const [verificationCode, setVerificationCode] = useState('');

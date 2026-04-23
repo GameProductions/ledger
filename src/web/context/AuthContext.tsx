@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [privacyMode, setPrivacyMode] = useState<boolean>(localStorage.getItem('ledger_privacy_mode') === 'true')
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
 
-  // Audit Phase 3: Zero-Trust Identity Verification
+  // Session Verification
   React.useEffect(() => {
     if (token) {
       const verifySession = async () => {
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setIsImpersonating(imp)
               localStorage.setItem('ledger_globalRole', role)
             } else {
-              console.error('[FORENSIC_FAILURE] Malformed verify response', envelope)
+              console.error('[Verification failed] Malformed verify response', envelope)
               logout()
             }
           } else if (res.status === 401) {
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const logout = () => {
-    // FORENSIC HARDENING: Clear memory state before storage for immediate UI lockout
+    // Clear memory state before storage for immediate UI lockout
     (window as any)._ledger_is_logging_out = true
     setToken(null)
     setUser(null)

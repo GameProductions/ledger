@@ -278,7 +278,7 @@ financials.get('/transactions/:id/timeline', async (c) => {
   const results = await db.select().from(transactionTimeline)
     .where(eq(transactionTimeline.transactionId, id))
     .orderBy(desc(transactionTimeline.createdAt))
-  return c.json({ success: true, data: results })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema), async (c) => {
@@ -331,7 +331,7 @@ financials.get('/transactions/suggest-links', async (c) => {
     WHERE t1.household_id = ? AND t1.id < t2.id
     LIMIT 5
   `).bind(householdId).all()
-  return c.json({ success: true, data: results })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.patch('/transactions/:id/reconcile', async (c) => {
@@ -673,7 +673,7 @@ financials.get('/buckets', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(savingsBuckets).where(eq(savingsBuckets.householdId, householdId))
-  return c.json({ success: true, data: results })
+  return c.json({ success: true, data: results || [] })
 })
 
 
@@ -721,7 +721,7 @@ financials.get('/investments', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(investmentHoldings).where(eq(investmentHoldings.householdId, householdId)).orderBy(desc(investmentHoldings.createdAt))
-  return c.json({ success: true, data: results })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/investments', zValidator('json', z.object({

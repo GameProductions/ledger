@@ -9,7 +9,7 @@ import { PayScheduleModal } from './PayScheduleModal';
 export const PaySchedulesList: React.FC = () => {
     const { token } = useAuth();
     const { showToast } = useToast();
-    const { data: schedules, mutate: mutateSchedules } = useApi('/api/planning/pay-schedules');
+    const { data: schedules = [], mutate: mutateSchedules } = useApi('/api/planning/pay-schedules');
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [editingSchedule, setEditingSchedule] = React.useState<any>(null);
 

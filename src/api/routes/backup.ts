@@ -7,7 +7,7 @@ import { HTTPException } from 'hono/http-exception'
 
 const backup = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// 🛑 EXPORT: Privacy & Data Ownership Protocol (Full JSON Ledger Dump)
+// 🛑 EXPORT: Data Backup (Full JSON Account Export)
 backup.get('/export', async (c) => {
   const householdId = c.get('householdId')
   
@@ -55,7 +55,7 @@ backup.get('/export', async (c) => {
   })
 })
 
-// 🛑 RESTORE: Atomic Ingestion Protocol (v3.26.0 - Hardened)
+// 🛑 RESTORE: Data Restore (v3.26.0)
 const TABLE_WHITELIST: Record<string, string[]> = {
   households: ['id', 'name', 'currency', 'country_code', 'status'],
   accounts: ['id', 'household_id', 'name', 'type', 'balance_cents', 'currency', 'status'],
@@ -118,7 +118,7 @@ backup.post('/restore', zValidator('json', z.object({
       const invalidTable = !/^[a-z0-9_]+$/.test(table);
       
       if (invalidCol || invalidTable) {
-        throw new HTTPException(400, { message: 'Invalid characters in SQL structure. Aborting restore to prevent injection.' });
+        throw new HTTPException(400, { message: 'Invalid data format. Restore cancelled to ensure security.' });
       }
 
       const placeholders = actualCols.map(() => '?').join(', ');
@@ -196,7 +196,7 @@ backup.post('/cloud/:provider', async (c) => {
     }
   } catch (err: any) {
     console.error(`[CLOUD_SYNC] Failed for ${provider}:`, err)
-    throw new HTTPException(502, { message: `Cloud transport failure: ${err.message}` })
+    throw new HTTPException(502, { message: `Cloud sync failure: ${err.message}` })
   }
 
   await logAudit(c, 'households', householdId, 'CLOUD_SYNC', null, { provider })

@@ -59,7 +59,7 @@ export function SecurityDashboard() {
     }
   };
 
-  if (loading) return <div className="text-gray-400 p-8">Loading Security Forensics...</div>;
+  if (loading) return <div className="text-gray-400 p-8">Loading Security Details...</div>;
 
   return (
     <div className="space-y-6">

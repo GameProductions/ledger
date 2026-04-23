@@ -5,9 +5,9 @@ import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 
 const AdminDashboard: React.FC = () => {
-  const { data: users, loading: loadingUsers, mutate: mutateUsers } = useApi('/api/admin/users')
-  const { data: connections, loading: loadingConn, mutate: mutateConn } = useApi('/api/admin/connections')
-  const { data: audit, loading: loadingAudit, mutate: mutateAudit } = useApi('/api/admin/audit')
+  const { data: users = [], loading: loadingUsers, mutate: mutateUsers } = useApi('/api/admin/users')
+  const { data: connections = [], loading: loadingConn, mutate: mutateConn } = useApi('/api/admin/connections')
+  const { data: audit = [], loading: loadingAudit, mutate: mutateAudit } = useApi('/api/admin/audit')
   const [activeTab, setActiveTab] = useState<'users' | 'connections' | 'audit'>('users')
   const { showToast } = useToast()
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -53,7 +53,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="admin-dashboard dashboard reveal" style={{ padding: '2rem' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ margin: 0, fontSize: '2rem', color: 'var(--secondary)' }}>Manager Console</h1>
+        <h1 style={{ margin: 0, fontSize: '2rem', color: 'var(--secondary)' }}>Super Admin Console</h1>
       </header>
 
       <div className="card reveal" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', animationDelay: '0.1s' }}>
@@ -67,7 +67,7 @@ const AdminDashboard: React.FC = () => {
           <section className="card reveal">
             <div className="flex justify-between items-center mb-6">
               <h3>Registered Users</h3>
-              <button className="primary" onClick={() => setInviteModalOpen(true)}>+ Invite New Manager</button>
+              <button className="primary" onClick={() => setInviteModalOpen(true)}>+ Invite New Super Admin</button>
             </div>
             {loadingUsers ? <p>Loading users...</p> : (
               <table style={{ width: '100%', marginTop: '1rem', borderCollapse: 'collapse' }}>
@@ -96,7 +96,7 @@ const AdminDashboard: React.FC = () => {
                             value={u.globalRole}
                           >
                             <option value="user">User</option>
-                            <option value="super_admin">Manager</option>
+                            <option value="super_admin">Super Admin</option>
                           </select>
                           <button 
                             style={{ background: u.status === 'suspended' ? 'var(--primary)' : 'rgba(239, 68, 68, 0.2)', color: u.status === 'suspended' ? 'white' : '#ef4444' }}
@@ -215,7 +215,7 @@ const AdminDashboard: React.FC = () => {
       <Modal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
-        title="Invite New Manager"
+        title="Invite New Super Admin"
         footer={
           <>
             <Button variant="secondary" onClick={() => setInviteModalOpen(false)}>Cancel</Button>
@@ -236,7 +236,7 @@ const AdminDashboard: React.FC = () => {
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-secondary">Enter the email address of the user you wish to authorize as a Manager.</p>
+          <p className="text-sm text-secondary">Enter the email address of the user you wish to authorize as a Super Admin.</p>
           <input 
             type="email" 
             placeholder="admin@example.com"

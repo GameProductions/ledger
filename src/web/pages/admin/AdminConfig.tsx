@@ -60,8 +60,8 @@ const AdminConfig: React.FC = () => {
         {/* System Overrides */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Universal Switchboard</h2>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Key/Value Overrides</span>
+            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Platform Settings</h2>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Settings</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(configs || []).map(cfg => (
@@ -88,7 +88,7 @@ const AdminConfig: React.FC = () => {
         <section>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Feature Flags</h2>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Tiered Component Access</span>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Component Visibility</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {(features || []).map(feat => (

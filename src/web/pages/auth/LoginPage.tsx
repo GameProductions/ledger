@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
 
         const profileEnvelope = await profileRes.json()
         if (!profileEnvelope.success || !profileEnvelope.data) {
-          showToast('Forensic Identity Error: Missing profile data', 'error');
+          showToast('Security Identity Error: Missing profile data', 'error');
           return;
         }
         
@@ -360,7 +360,7 @@ const LoginPage: React.FC = () => {
         }
       >
         <div className="space-y-6">
-           <p className="text-secondary font-medium tracking-tight">Enter your registered identity to receive a forensic recovery token.</p>
+           <p className="text-secondary font-medium tracking-tight">Enter your registered identity to receive a security recovery token.</p>
            <Input 
             label="Recovery Identifier"
             placeholder="Username or email"
@@ -414,7 +414,7 @@ const LoginPage: React.FC = () => {
         <div className="space-y-6">
            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
               <RefreshCw className="text-blue-500 mt-1 animate-spin-slow" size={20} />
-              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">A manager has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
+              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">A super admin has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
            </div>
            <div className="relative">
              <Input 

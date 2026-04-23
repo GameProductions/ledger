@@ -8,7 +8,7 @@ import { Price } from './Price';
 
 export const InstallmentsList: React.FC = () => {
     const { token, householdId } = useAuth();
-    const { data: installments, loading, mutate } = useApi('/api/planning/installment-plans');
+    const { data: installments = [], loading, mutate } = useApi('/api/planning/installment-plans');
     const { showToast } = useToast();
     
     // UI State for Modals

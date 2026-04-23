@@ -15,7 +15,7 @@ const GithubIcon = ({ size = 20, className = "" }: { size?: number, className?: 
 const SupportPortal: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast } = useToast();
-  const { data: issues, mutate } = useApi('/api/support/issues');
+  const { data: issues = [], mutate } = useApi('/api/support/issues');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -65,7 +65,7 @@ const SupportPortal: React.FC = () => {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white mb-2">Forensic Support</h2>
+          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white mb-2">High-Priority Support</h2>
           <p className="text-secondary text-sm uppercase tracking-widest font-bold opacity-60">Report issues or request system enhancements</p>
         </div>
         <div className="flex items-center gap-3">
@@ -130,7 +130,7 @@ const SupportPortal: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Detailed Dossier</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Support Details</label>
               <textarea 
                 value={formData.description}
                 onChange={e => setFormData({...formData, description: e.target.value})}
@@ -148,7 +148,7 @@ const SupportPortal: React.FC = () => {
               className="w-full bg-gradient-to-r from-primary to-secondary text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Send size={16} />
-              {isSubmitting ? 'Dispatching...' : 'Dispatch Support Ticket'}
+              {isSubmitting ? 'Submitting...' : 'Submit Support Ticket'}
             </button>
           </form>
         </section>

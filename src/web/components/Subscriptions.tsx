@@ -12,8 +12,8 @@ import { LiabilitySplitter } from './LiabilitySplitter'
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
-  const { data: subs, loading, mutate } = useApi('/api/planning/subscriptions')
-  const { data: linkedAccounts } = useApi('/api/user/linked-accounts')
+  const { data: subs = [], loading, mutate } = useApi('/api/planning/subscriptions')
+  const { data: linkedAccounts = [] } = useApi('/api/user/linked-accounts')
   const [showAdd, setShowAdd] = useState(false)
   const [reminderTarget, setReminderTarget] = useState<{id: string, name: string} | null>(null)
 
@@ -51,7 +51,7 @@ const Subscriptions: React.FC = () => {
         />
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscription Manager</h3>
+        <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscriptions</h3>
         <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
           {showAdd ? 'Cancel' : '+ New Strategy'}
         </button>

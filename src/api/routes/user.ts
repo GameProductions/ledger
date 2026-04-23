@@ -365,7 +365,7 @@ user.get('/payment-methods', async (c) => {
   const db = getDb(c.env)
   // Assuming isActive exists via migrations or implicit, skipping if schema didn't include it. 
   const results = await db.select().from(userPaymentMethods).where(eq(userPaymentMethods.userId, userId))
-  return c.json(results || [])
+  return c.json({ success: true, data: results || [] })
 })
 
 user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema), async (c) => {
@@ -385,7 +385,7 @@ user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema), async
 user.get('/service-providers', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(serviceProviders)
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 user.get('/identities', async (c) => {

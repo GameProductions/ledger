@@ -9,7 +9,7 @@ import { Price } from '../components/Price';
 const InvestmentPortfolioPage: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast } = useToast();
-  const { data: investments, mutate } = useApi('/api/financials/investments');
+  const { data: investments = [], mutate } = useApi('/api/financials/investments');
   
   const [isAdding, setIsAdding] = useState(false);
   const [newInv, setNewInv] = useState({

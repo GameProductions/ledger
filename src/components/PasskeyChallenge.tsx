@@ -99,12 +99,12 @@ export function PasskeyChallenge({ onSuccess, appName, children }: PasskeyChalle
           </div>
           
           <h3 className="text-xl font-medium text-zinc-900 dark:text-zinc-100 mb-2 font-display tracking-tight">
-            Zero-Trust Vault
+            Verification Required
           </h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 max-w-[260px] leading-relaxed">
             {mode === 'auth' 
-              ? `Verify your identity using a cryptographic passkey to access ${appName || 'God Mode'}.` 
-              : 'Secure this trusted proxy by registering your primary hardware passkey.'}
+              ? `Verify your identity using a passkey to access ${appName || 'Super Admin Mode'}.` 
+              : 'Enable secure access by registering your passkey.'}
           </p>
 
           {error && (
@@ -123,7 +123,7 @@ export function PasskeyChallenge({ onSuccess, appName, children }: PasskeyChalle
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                Confirm Biometric Signature
+                Verify with Passkey
                 <Fingerprint className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
               </>
             )}

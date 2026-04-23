@@ -16,7 +16,7 @@ const AdminAudit: React.FC = () => {
         const data = await res.json();
         setLogs(data.data || []);
       } catch (err) {
-        console.error('Failed to fetch audit vault:', err);
+        console.error('Failed to fetch activity logs:', err);
       } finally {
         setLoading(false);
       }
@@ -30,7 +30,7 @@ const AdminAudit: React.FC = () => {
     <AdminPortal activePath="#/admin/audit">
        <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-cyan-500/50 underline-offset-8">Audit Vault</h2>
+          <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-cyan-500/50 underline-offset-8">Activity Logs</h2>
           <p className="text-sm text-gray-500 mt-2">Comprehensive ledger of all system-wide administrative and user events.</p>
         </div>
       </div>

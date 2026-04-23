@@ -58,14 +58,14 @@ const AdminProcessors: React.FC = () => {
     });
 
     if (res.ok) {
-      showToast(editingId ? 'Processor configuration updated' : 'New processor registered', 'success');
+      showToast(editingId ? 'Processor updated' : 'New processor added', 'success');
       setShowAdd(false);
       setEditingId(null);
       setNewItem({ name: '', websiteUrl: '', brandingUrl: '', supportUrl: '', subscriptionIdNotes: '' });
       fetchProcessors();
     } else {
       const err = await res.json();
-      showToast(err.message || 'Transmission failed', 'error');
+      showToast(err.message || 'Failed to save', 'error');
     }
   };
 
@@ -83,7 +83,7 @@ const AdminProcessors: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('EXTERMINATION PROTOCOL: Are you sure you want to purge this processor? This action is logged.')) return;
+    if (!confirm('Warning: Are you sure you want to delete this processor? This action will be logged.')) return;
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = import.meta.env.VITE_API_URL;
@@ -93,11 +93,11 @@ const AdminProcessors: React.FC = () => {
     });
 
     if (res.ok) {
-      showToast('Processor purged from registry', 'success');
+      showToast('Processor deleted', 'success');
       fetchProcessors();
     } else {
       const err = await res.json();
-      showToast(err.message || 'Purge failed', 'error');
+      showToast(err.message || 'Deletion failed', 'error');
     }
   };
 
@@ -108,7 +108,7 @@ const AdminProcessors: React.FC = () => {
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
-          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">God Mode - 3rd Party Infrastructure</p>
+          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Super Admin Mode - Billing Infrastructure</p>
         </div>
         <button 
           onClick={() => {
@@ -120,7 +120,7 @@ const AdminProcessors: React.FC = () => {
           }}
           className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-blue-500 text-black'} font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
-          {showAdd ? 'Abort Action' : <><Plus size={16} /> Register Processor</>}
+          {showAdd ? 'Cancel' : <><Plus size={16} /> Add Processor</>}
         </button>
       </div>
 
@@ -130,7 +130,7 @@ const AdminProcessors: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
                <ShieldAlert size={20} />
             </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Modify Strategy' : 'Initialize Infrastructure'}</h3>
+            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Edit Processor' : 'Add Processor'}</h3>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
@@ -168,7 +168,7 @@ const AdminProcessors: React.FC = () => {
             </div>
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Site URL</label>
+                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support URL</label>
                 <input 
                   type="url" 
                   value={newItem.supportUrl} 
@@ -188,7 +188,7 @@ const AdminProcessors: React.FC = () => {
                 />
               </div>
               <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
-                {editingId ? 'Push Updates to Grid' : 'Setup Processor'}
+                {editingId ? 'Save Changes' : 'Add Processor'}
               </button>
             </div>
           </form>
@@ -243,9 +243,9 @@ const AdminProcessors: React.FC = () => {
             
             <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6">
                <div>
-                  <p className="text-[10px] font-black text-slate-600 uppercase mb-1">Grid Status</p>
+                  <p className="text-[10px] font-black text-slate-600 uppercase mb-1">System Status</p>
                   <p className="text-xs font-black text-emerald-500 uppercase flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Active Infrastructure
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> System Active
                   </p>
                </div>
                <button className="text-xs font-black text-slate-500 uppercase hover:text-white flex items-center gap-1.5 transition-all hover:translate-x-1">Coverage <ExternalLink size={10} /></button>
@@ -255,8 +255,8 @@ const AdminProcessors: React.FC = () => {
 
         {processors.length === 0 && (
           <div className="col-span-full py-32 text-center rounded-[3rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
-            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Infrastructure Logged</h4>
-            <p className="text-sm text-slate-600 mt-2">Setup your first 3rd party billing processor to begin coverage mapping.</p>
+            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Processors Added</h4>
+            <p className="text-sm text-slate-600 mt-2">Setup your first billing processor to begin coverage mapping.</p>
           </div>
         )}
       </div>

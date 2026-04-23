@@ -1,9 +1,9 @@
 import { getLegacyExternalChartUrl } from '../services/chart-service'
 
 /**
- * LEDGER Forensic Coach
- * Processes household intelligence into safety recommendations.
- * FORENSIC HARDENING: Ensures zero-trust data anonymization in analysis.
+ * LEDGER Financial Advisor
+ * Processes account analysis into safety recommendations.
+ * SECURITY HARDENING: Ensures data anonymization in analysis.
  */
 export const getCoachingAnswer = (question: string, totalSpend: number) => {
   const amountStr = `$${(totalSpend/100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
@@ -11,11 +11,11 @@ export const getCoachingAnswer = (question: string, totalSpend: number) => {
   const rules = [
     { 
       trigger: ['afford', 'buy', 'purchase'], 
-      answer: `Analysis of your safety reserve suggests that while your current throughput of ${amountStr} is stable, you should cross-verify the 'Future Flow' projections before committing to major acquisitions.`
+      answer: `Analysis of your safety reserve suggests that while your current spending of ${amountStr} is stable, you should check your future projections before committing to major purchases.`
     },
     { 
       trigger: ['spend', 'total', 'much'], 
-      answer: `Household intelligence confirms your current operational burn rate is ${amountStr} for this cycle.`
+      answer: `Account analysis confirms your current spending rate is ${amountStr} for this cycle.`
     }
   ]
 
@@ -23,6 +23,6 @@ export const getCoachingAnswer = (question: string, totalSpend: number) => {
   
   if (matched) return matched.answer
   
-  return "Sentinel systems report stable financial health. Maintain current fiscal protocols and monitor your 'Vault' for changes."
+  return "Systems report stable financial health. Maintain current budget plans and monitor your account for changes."
 }
 

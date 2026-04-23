@@ -20,11 +20,11 @@ const UserMenu: React.FC<{
   const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isAdminPortal ? [
-    { icon: LayoutDashboard, label: 'God Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
+    { icon: LayoutDashboard, label: 'Super Admin Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
     { icon: Cpu, label: 'System Configuration', hash: '#/admin/config', color: 'text-blue-400' },
     { icon: Database, label: 'Master Registry', hash: '#/admin/registry', color: 'text-orange-400' },
     { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
-    { icon: Megaphone, label: 'God Broadcast', hash: '#/admin/broadcast', color: 'text-rose-500' },
+    { icon: Megaphone, label: 'Super Admin Broadcast', hash: '#/admin/broadcast', color: 'text-rose-500' },
     { icon: Activity, label: 'Safety Vault', hash: '#/admin/audit', color: 'text-secondary' },
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
@@ -61,7 +61,7 @@ const UserMenu: React.FC<{
             <span className="text-sm font-bold text-white">{(profile?.displayName || user?.displayName || 'User')}</span>
           </Masked>
           {isAdminPortal ? (
-            <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">GOD MODE</span>
+            <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">SUPER ADMIN</span>
           ) : isImpersonating ? (
             <span className="text-[10px] text-purple-400 font-black uppercase tracking-tighter">Impersonating</span>
           ) : null}
@@ -83,7 +83,7 @@ const UserMenu: React.FC<{
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                  {isAdminPortal ? 'Manager Portal Access' : isImpersonating ? 'Mirrored Identity' : 'Authenticated Account'}
+                  {isAdminPortal ? 'Super Admin Portal' : isImpersonating ? 'Mirrored Identity' : 'Authenticated Account'}
                 </div>
                 <Masked>
                   <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
@@ -98,7 +98,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <LayoutDashboard size={18} className="text-emerald-500" />
-                    <span>Exit God Mode</span>
+                    <span>Exit Super Admin</span>
                   </button>
                 ) : (
                   !isHome && (
@@ -132,7 +132,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <Shield size={18} className="text-emerald-500 group-hover:animate-pulse" />
-                    <span className="group-hover:text-emerald-400 transition-colors">God Mode</span>
+                    <span className="group-hover:text-emerald-400 transition-colors">Super Admin</span>
                   </button>
                 )}
 

@@ -8,7 +8,7 @@ interface QuickAttentionAddProps {
 }
 
 export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded }) => {
-  const { data: categories } = useApi('/api/financials/categories')
+  const { data: categories = [] } = useApi('/api/financials/categories')
 
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')

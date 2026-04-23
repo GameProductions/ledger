@@ -105,15 +105,15 @@ export const FAQPage: React.FC = () => {
   const faqs = [
     {
       q: "What if I lose my biometric device?",
-      a: "If your primary passkey is unavailable, you can use your forensic recovery protocol (Forgot Password) to receive a secure token via email. Alternatively, we recommend enrolling multiple passkeys (e.g., iPhone FaceID and a Yubikey) for redundancy."
+      a: "If your primary passkey is unavailable, you can use your account recovery procedure (Forgot Password) to receive a secure token via email. Alternatively, we recommend enrolling multiple passkeys (e.g., iPhone FaceID and a Yubikey) for redundancy."
     },
     {
       q: "Where is my data stored physically?",
-      a: "Your data is stored in Cloudflare's D1 distributed SQL database, while your cloud backups are pushed directly to your personal GDrive, Dropbox, or OneDrive storage. LEDGER does not maintain a copy outside of your household territory."
+      a: "Your data is stored in Cloudflare's D1 distributed SQL database, while your cloud backups are pushed directly to your personal GDrive, Dropbox, or OneDrive storage. LEDGER does not maintain a copy outside of your household."
     },
     {
       q: "Can I use LEDGER without a bank sync?",
-      a: "Absolutely. You can use the 'manual ledger' mode by creating manual accounts and importing CSV/JSON/QIF files directly via the Data Interop workstation."
+      a: "Absolutely. You can use the 'manual ledger' mode by creating manual accounts and importing CSV/JSON/QIF files directly via the data import settings."
     },
     {
       q: "How secure is my bank connection?",
@@ -133,7 +133,7 @@ export const FAQPage: React.FC = () => {
     <MainLayout>
       <div className="max-w-3xl mx-auto py-12 space-y-12">
         <header className="space-y-4 text-center">
-          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">FAQ Engine</div>
+          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Frequently Asked Questions</div>
           <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">Common Questions</h1>
         </header>
 

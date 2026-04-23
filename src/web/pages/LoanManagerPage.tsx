@@ -9,7 +9,7 @@ import { Price } from '../components/Price';
 const LoanManagerPage: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast } = useToast();
-  const { data: loans, mutate } = useApi('/api/planning/p2p/loans');
+  const { data: loans = [], mutate } = useApi('/api/planning/p2p/loans');
   
   const [isAdding, setIsAdding] = useState(false);
   const [newLoan, setNewLoan] = useState({

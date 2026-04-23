@@ -17,7 +17,7 @@ type AuditEntry = {
 
 /**
  * Foundation Audit Trail (Stable)
- * Standardized forensic history view.
+ * Standardized activity history view.
  * Visualizes the 'history' JSON column for audit-compliant data tracking.
  */
 export const AuditTrail = ({ entries }: { entries: AuditEntry[] }) => {
@@ -31,7 +31,7 @@ export const AuditTrail = ({ entries }: { entries: AuditEntry[] }) => {
   return (
     <div className="gp-audit-trail">
       <div className="audit-header">
-        <h3>Forensic Audit Trail</h3>
+        <h3>Activity History</h3>
         <input 
           type="text" 
           placeholder="Filter by action or user..." 

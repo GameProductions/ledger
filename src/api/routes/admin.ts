@@ -171,7 +171,7 @@ admin.post('/users/provisioning', zValidator('json', CreateUserAdminSchema, (res
   return c.json({ success: true, id: userId })
 })
 
-// Audit Vault
+// Activity Logs
 admin.get('/audit', async (c) => {
   const db = getDb(c.env)
   // Simple raw query fallback for complex multi-table self-joins for audit logs
@@ -434,7 +434,7 @@ admin.get('/users/:userId/details', async (c) => {
   })
 })
 
-// Administrative Overrides (v3.16.1)
+// Super Admin Overrides
 admin.post('/users/:userId/password/reset', zValidator('json', z.object({
   newPassword: z.string().min(8),
   isTemporary: z.boolean().optional().default(true)
@@ -475,7 +475,7 @@ admin.get('/connections', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
-// Household Management (God Mode)
+// Household Management (Super Admin Mode)
 admin.get('/households', async (c) => {
   // Complex aggregation better ran natively
   const { results } = await c.env.DB.prepare(`
@@ -515,7 +515,7 @@ admin.delete('/households/:id', async (c) => {
   return c.json({ success: true })
 })
 
-// Administrative Protocol: Account Unification (v3.20)
+// System Operation: Account Merge
 admin.post('/users/merge', zValidator('json', z.object({
   sourceId: z.string().uuid(),
   targetId: z.string().uuid()
@@ -528,9 +528,9 @@ admin.post('/users/merge', zValidator('json', z.object({
   const source = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, sourceId)).limit(1).then(res => res[0])
   const target = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, targetId)).limit(1).then(res => res[0])
   
-  if (!source || !target) throw new HTTPException(404, { message: 'Identity Resolution Failed: Source or Target record missing.' })
+  if (!source || !target) throw new HTTPException(404, { message: 'Merge Failed: Source or Target record missing.' })
 
-  // Atomic Migration Sequence
+  // Data Merge
   await db.batch([
     db.run(sql`INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ${targetId} as user_id, household_id FROM user_households WHERE user_id = ${sourceId}`),
     db.delete(userHouseholds).where(eq(userHouseholds.userId, sourceId)),
@@ -545,7 +545,7 @@ admin.post('/users/merge', zValidator('json', z.object({
     db.update(passkeys).set({ userId: targetId }).where(eq(passkeys.userId, sourceId)),
     db.update(userIdentities).set({ userId: targetId }).where(eq(userIdentities.userId, sourceId)),
     
-    // Social Liability
+    // Shared Balances
     db.update(sharedBalances).set({ fromUserId: targetId }).where(eq(sharedBalances.fromUserId, sourceId)),
     db.update(sharedBalances).set({ toUserId: targetId }).where(eq(sharedBalances.toUserId, sourceId)),
     
@@ -558,7 +558,7 @@ admin.post('/users/merge', zValidator('json', z.object({
 
   await logAudit(c, 'users', targetId, 'ADMIN_USER_MERGE', 
     { merged_source_id: sourceId, source_email: source.email }, 
-    { source_name: source.displayName, action: 'UNIFICATION_COMPLETE' }
+    { source_name: source.displayName, action: 'MERGE_COMPLETE' }
   )
   
   return c.json({ success: true })

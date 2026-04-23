@@ -9,7 +9,7 @@ import { Price } from './Price';
 
 export const BillsList: React.FC = () => {
     const { token, householdId, user } = useAuth();
-    const { data: bills, loading, mutate } = useApi('/api/planning/bills');
+    const { data: bills = [], loading, mutate } = useApi('/api/planning/bills');
     const { showToast } = useToast();
     
     // UI State for Modals

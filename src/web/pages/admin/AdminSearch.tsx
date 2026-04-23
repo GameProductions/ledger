@@ -91,7 +91,7 @@ const AdminSearch: React.FC = () => {
             {/* Registry Results */}
             <section>
               <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
-                System Entities <div className="h-[1px] flex-1 bg-blue-500/20" />
+                System Records <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(results.registry || []).map((r: any) => (

@@ -121,8 +121,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
           throw new HTTPException(403, { message: 'Super Admin access requires x-audit-reason header' })
         }
         activeHouseholdId = 'ledger-main-001'
-        console.info(`[Forensic Audit] Super Admin ${userId} bypassing membership for virtual root access. Reason: ${auditReason}`)
-        c.executionCtx.waitUntil(logAudit(c, 'households', activeHouseholdId, 'FORENSIC_BYPASS_ROOT', null, { reason: auditReason }))
+        console.info(`[Detailed Audit] Super Admin ${userId} bypassing membership for virtual root access. Reason: ${auditReason}`)
+        c.executionCtx.waitUntil(logAudit(c, 'households', activeHouseholdId, 'ADMIN_BYPASS_ROOT', null, { reason: auditReason }))
       } else {
         throw new HTTPException(401, { message: 'Invalid or missing Household' })
       }
@@ -144,13 +144,13 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
     } else if (globalRole === 'super_admin' && activeHouseholdId !== payload.householdId) {
-       // Forensic Bypass Logging
+       // Super Admin Bypass Logging
        const auditReason = c.req.header('x-audit-reason')
        if (!auditReason) {
          throw new HTTPException(403, { message: 'Super Admin access requires x-audit-reason header' })
        }
-       console.warn(`[Forensic Bypass] Super Admin ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId}). Reason: ${auditReason}`)
-       c.executionCtx.waitUntil(logAudit(c, 'households', String(activeHouseholdId), 'FORENSIC_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId }))
+       console.warn(`[Administrative Override] Super Admin ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId}). Reason: ${auditReason}`)
+       c.executionCtx.waitUntil(logAudit(c, 'households', String(activeHouseholdId), 'ADMIN_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId }))
     }
     
     c.set('userId', userId)

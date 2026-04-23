@@ -55,7 +55,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
         </div>
 
         <h1 className="mb-2 text-3xl font-bold tracking-tight text-white uppercase">
-          Forensic Hardening
+          Security Maintenance
         </h1>
         <p className="mb-8 text-lg font-medium text-slate-400">
           Standardization in progress{dots}
@@ -73,8 +73,8 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
                 <span className="font-mono text-emerald-400">ENCRYPTED</span>
              </div>
              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500">Security Protocols</span>
-                <span className="font-mono text-blue-400">RE-INDEXING</span>
+                <span className="text-slate-500">Security Systems</span>
+                <span className="font-mono text-blue-400">UPDATING</span>
              </div>
              <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">Access Control</span>
@@ -84,7 +84,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
         </div>
 
         <p className="mb-10 text-sm leading-relaxed text-slate-500">
-          The Ledger platform is currently undergoing scheduled forensic updates to ensure 
+          The Ledger platform is currently undergoing scheduled security updates to ensure 
           the integrity of your financial privacy. All data remains secure and encrypted.
         </p>
 

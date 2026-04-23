@@ -140,7 +140,7 @@ app.use('*', async (c, next) => {
     return c.json({ 
       error: 'System Under Maintenance', 
       code: 'MAINTENANCE_ACTIVE',
-      message: 'The Ledger platform is currently undergoing scheduled forensic hardening. Normal services will resume shortly.'
+      message: 'The Ledger platform is currently undergoing scheduled security maintenance. Normal services will resume shortly.'
     }, 503)
   }
 

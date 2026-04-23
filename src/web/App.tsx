@@ -183,7 +183,7 @@ const AppContent: React.FC = () => {
     // 3. Auth Guard
     if (!user) return <LoginPage />
 
-    // 3. Manager Portal (Admin) - Super-Admin Only
+    // 3. Super Admin Portal - Super-Admin Only
     if (isAdminPath) {
       if (globalRole !== 'super_admin' && localStorage.getItem('ledger_globalRole') !== 'super_admin') return <DashboardPage view={view} setView={setView} />
       

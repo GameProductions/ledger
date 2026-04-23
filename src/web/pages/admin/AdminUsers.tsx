@@ -49,7 +49,7 @@ const UserDetailsModal: React.FC<{
       if (data.success) {
         setDetails(data.data);
       } else {
-        showToast(data.error || 'Identity Resolution Failed', 'error');
+        showToast(data.error || 'User Search Failed', 'error');
       }
     } catch (err) {
       console.error('Failed to fetch user details:', err);
@@ -248,7 +248,7 @@ const UserDetailsModal: React.FC<{
                  )}
               </div>
 
-              {/* Forensic Overrides */}
+              {/* Recovery Tools */}
               <div className="pt-8 border-t border-white/5 space-y-6">
                   <div className="flex items-center justify-between">
                      <div className="flex items-center gap-2 text-orange-500">
@@ -299,7 +299,7 @@ const UserDetailsModal: React.FC<{
                         disabled={resetting || !manualPass}
                         className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all"
                        >
-                         Execute Secure Reset
+                         Reset Password
                        </button>
                     </div>
                  </div>
@@ -321,7 +321,7 @@ const UserDetailsModal: React.FC<{
                   <div className="text-[12px] text-slate-600 font-mono mt-1">{new Date(log.createdAt).toLocaleString()}</div>
                 </div>
               )) : (
-                <div className="text-center py-12 opacity-10 italic text-xs font-black uppercase tracking-widest">Pristine Audit Trail</div>
+                <div className="text-center py-12 opacity-10 italic text-xs font-black uppercase tracking-widest">No Activity History</div>
               )}
             </div>
           </div>
@@ -450,7 +450,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Provisioning failed');
+      if (!res.ok) throw new Error(data.error || 'Creation failed');
       
       onSuccess();
       onClose();
@@ -563,7 +563,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                   onChange={e => setFormData({ ...formData, forcePasswordChange: e.target.checked })}
                   className="accent-emerald-500"
                 />
-                <label className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer">Enforce Forensic Reset on First Login</label>
+                <label className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer">Require Password Change on First Login</label>
               </div>
 
               {error && <p className="text-red-500 text-xs font-black text-center uppercase tracking-widest">{error}</p>}
@@ -582,7 +582,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                   className="flex-[2] py-4 px-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3"
                  >
                    {loading ? <RefreshCw className="animate-spin" size={16} /> : <Shield size={16} />}
-                   Commit Provisioning
+                   Create User
                  </button>
               </div>
            </form>
@@ -806,7 +806,7 @@ const AdminUsers: React.FC = () => {
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/5 rounded-xl transition-all"
                           >
                             <Shield size={16} className="text-primary" />
-                            <span>Toggle Authority</span>
+                            <span>Change Permissions</span>
                           </button>
 
                           <button 
@@ -870,7 +870,7 @@ const AdminUsers: React.FC = () => {
         <Modal
           isOpen={!!mergeSource}
           onClose={() => { setMergeSource(null); setMergeSearchTerm(''); setMergeTarget(null); }}
-          title="Select Destination Account"
+          title="Select Target Account"
           footer={
             <>
               <Button variant="secondary" onClick={() => setMergeSource(null)}>Cancel</Button>
@@ -880,7 +880,7 @@ const AdminUsers: React.FC = () => {
                 disabled={!mergeTarget || merging}
                 onClick={handleMerge}
               >
-                {merging ? 'Merging...' : 'Execute Merge'}
+                {merging ? 'Merging...' : 'Merge Accounts'}
               </Button>
             </>
           }
@@ -984,7 +984,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
       
       if (data.token && data.impersonationContext) {
         const { householdId, profile, globalRole } = data.impersonationContext;
-        onShowToast(`Identity mirrored: Accessing as ${profile.displayName}`, 'success');
+        onShowToast(`User access active: Accessing as ${profile.displayName}`, 'success');
         
         // Persona Synchronization
         localStorage.setItem('ledger_token', data.token);
@@ -997,10 +997,10 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
         window.location.href = '/#/dashboard';
         window.location.reload();
       } else {
-        throw new Error(data.error || 'Mirroring failed');
+        throw new Error(data.error || 'Access failed');
       }
     } catch (err: any) {
-      onShowToast(err.message || 'Impersonation protocol failed', 'error');
+      onShowToast(err.message || 'Access protocol failed', 'error');
     } finally {
       setImpersonating(false);
     }
@@ -1010,7 +1010,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
     <Modal
       isOpen={!!target}
       onClose={onClose}
-      title="Confirm Identity Mirroring"
+      title="Confirm User Access"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -1020,7 +1020,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
             disabled={impersonating}
             onClick={handleCommenceMirroring}
           >
-            {impersonating ? 'Mirroring...' : 'Commence Identity Mirroring'}
+            {impersonating ? 'Accessing...' : 'Access User Account'}
           </Button>
         </>
       }
@@ -1039,8 +1039,8 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
         <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-black uppercase text-white tracking-widest">Privacy Mirroring</p>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Mask sensitive PII and financial data during this session</p>
+              <p className="text-xs font-black uppercase text-white tracking-widest">Privacy Protection</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Mask sensitive personal info and financial data during this session</p>
             </div>
             <button 
               onClick={() => setPrivacyMirror(!privacyMirror)}
@@ -1054,7 +1054,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
         <div className="flex items-start gap-3 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
           <ShieldAlert size={16} className="text-orange-500 mt-0.5 shrink-0" />
           <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-widest leading-relaxed">
-            Administrative Warning: You are about to mirror a live user session. All actions taken will be recorded in the forensic audit trails under your administrative ID.
+            Administrative Warning: You are about to access a live user session. All actions taken will be recorded in the security logs under your administrative ID.
           </p>
         </div>
       </div>

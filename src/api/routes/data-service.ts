@@ -77,12 +77,15 @@ data.get('/analysis/summary', async (c) => {
   const burnRate = (recentExpenseResult[0]?.total || 0) / 30
   
   return c.json({
-    healthScore: 85,
-    monthlyIncome: totalIncome,
-    monthlyExpense: totalExpense,
-    savingsRate: Math.round(savingsRate),
-    dailyBurnRate: Math.round(burnRate),
-    safetyNumberCents: (savings * 6)
+    success: true,
+    data: {
+      healthScore: 85,
+      monthlyIncome: totalIncome,
+      monthlyExpense: totalExpense,
+      savingsRate: Math.round(savingsRate),
+      dailyBurnRate: Math.round(burnRate),
+      safetyNumberCents: (savings * 6)
+    }
   })
 })
 
@@ -107,7 +110,7 @@ data.get('/analysis/category-spending', async (c) => {
   .groupBy(categories.id)
   .orderBy(desc(sql`SUM(ABS(${transactions.amountCents}))`))
 
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 data.get('/analysis/net-worth', async (c) => {
@@ -123,14 +126,17 @@ data.get('/analysis/net-worth', async (c) => {
     .orderBy(desc(reports.createdAt))
     .limit(6)
 
-  const history = snapshots.map((s: any) => ({
+  const history = (snapshots || []).map((s: any) => ({
     date: s.createdAt.split('T')[0],
     value: JSON.parse(s.dataJson).net_worth_cents
   })).reverse()
 
   return c.json({
-    current_net_worth_cents: netWorthCents,
-    history
+    success: true,
+    data: {
+      current_net_worth_cents: netWorthCents,
+      history
+    }
   })
 })
 
@@ -140,7 +146,7 @@ data.get('/analysis/insights', async (c) => {
     "Subscriptions are taking up 22% of your monthly budget. Consider a review of your ongoing costs.",
     "Your financial patterns indicate strong budget adherence.",
   ]
-  return c.json({ insights })
+  return c.json({ success: true, data: { insights } })
 })
 
 data.get('/analysis/forecast', async (c) => {
@@ -175,7 +181,7 @@ data.get('/analysis/forecast', async (c) => {
     return { date, balanceCents: Math.round(projectedBalance) }
   })
 
-  return c.json(forecast)
+  return c.json({ success: true, data: forecast || [] })
 })
 
 // Universal Scraper
@@ -305,7 +311,7 @@ data.get('/providers', async (c) => {
   }
   
   const results = await db.select().from(serviceProviders).where(and(...filters))
-  return c.json(results.map(toSnake))
+  return c.json({ success: true, data: (results || []).map(toSnake) })
 })
 
 // History (f.k.a. Reports)
@@ -320,7 +326,7 @@ data.get('/history', async (c) => {
     created_at: reports.createdAt
   }).from(reports).where(eq(reports.householdId, householdId)).orderBy(desc(reports.createdAt))
   
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 data.post('/history/lock', async (c) => {
@@ -368,7 +374,7 @@ data.get('/tools/tokens', async (c) => {
     created_at: personalAccessTokens.createdAt
   }).from(personalAccessTokens).where(eq(personalAccessTokens.householdId, householdId))
   
-  return c.json(results)
+  return c.json({ success: true, data: results || [] })
 })
 
 data.patch('/tools/tokens/:id', zValidator('json', z.object({ name: z.string().min(1).max(100) })), async (c) => {

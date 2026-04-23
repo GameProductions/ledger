@@ -67,7 +67,7 @@ export function SecurityDashboard() {
           
         
           <div className="divide-y divide-white/5">
-            {sessions.map((s, idx) => (
+            {(sessions || []).map((s: any, idx: number) => (
               <div key={s.id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">

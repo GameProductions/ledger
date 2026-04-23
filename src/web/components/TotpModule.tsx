@@ -157,7 +157,7 @@ export const TotpModule = () => {
 
           {hasAuthenticators && !setupData && (
              <div className="mb-8 space-y-3">
-               {totps.map((t: any) => (
+               {(totps || []).map((t: any) => (
                  <div key={t.id} className="bg-slate-950/50 flex items-center justify-between p-4 rounded-xl border border-slate-800 transition-colors hover:border-slate-700">
                    <div className="flex items-center gap-4">
                      <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center border border-amber-500/20">

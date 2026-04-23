@@ -53,7 +53,7 @@ export function ArchivalVault() {
                   <p className="text-sm mt-1">No archived infrastructures exist within this tier.</p>
                 </div>
              ) : (
-                archived.map(item => (
+                (archived || []).map((item: any) => (
                   <div key={item.id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                     <div>
                       <div className="flex items-center gap-2">

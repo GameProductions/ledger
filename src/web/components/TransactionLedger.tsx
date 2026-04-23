@@ -345,7 +345,7 @@ export const TransactionLedger: React.FC = () => {
              <p className="text-secondary text-sm mb-6">Select a parent transfer or bill to link this transaction to. This allows the system to accurately track multi-payment scenarios.</p>
              <select className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white mb-6">
                 <option value="">-- Select Parent Transaction --</option>
-                {transactions?.slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
+                {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
              </select>
              <button onClick={() => { setActiveLinkTx(null); mutateTx(); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
           </div>

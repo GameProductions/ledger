@@ -97,6 +97,17 @@ export const InstallmentPlanSchema = z.object({
   upcoming_effective_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
+export const TrackedExpenseSchema = z.object({
+  amount_cents: z.number().int(),
+  description: z.string().min(1).max(1000),
+  notes: z.string().max(1000).optional().nullable(),
+  attention_required: z.boolean().optional().default(false),
+  needs_balance_transfer: z.boolean().optional().default(false),
+  transfer_timing: z.string().optional().nullable(),
+  is_borrowed: z.boolean().optional().default(false),
+  borrow_source: z.string().optional().nullable(),
+})
+
 export const SubscriptionSchema = z.object({
   name: z.string().min(1).max(100),
   amount_cents: z.number().int().positive(),

@@ -160,6 +160,23 @@ export const transactions = sqliteTable('transactions', {
   providerIdx: index('idx_transactions_provider').on(table.providerId),
 }));
 
+export const trackedExpenses = sqliteTable('tracked_expenses', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id),
+  amountCents: integer('amount_cents').notNull(),
+  description: text('description').notNull(),
+  notes: text('notes'),
+  status: text('status').default('pending'), // pending, committed
+  attentionRequired: integer('attention_required', { mode: 'boolean' }).default(false),
+  needsBalanceTransfer: integer('needs_balance_transfer', { mode: 'boolean' }).default(false),
+  transferTiming: text('transfer_timing'),
+  isBorrowed: integer('is_borrowed', { mode: 'boolean' }).default(false),
+  borrowSource: text('borrow_source'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_tracked_expenses_household').on(table.householdId),
+}));
+
 export const transactionPairingRules = sqliteTable('transaction_pairing_rules', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id),

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import { Flag, ShieldAlert, ArrowRightLeft, HandCoins } from 'lucide-react'
 import { getApiUrl } from '../utils/api'
+import { TrackedExpenseList } from './TrackedExpenseList'
 
 interface QuickAttentionAddProps {
   onAdded: () => void;
@@ -25,7 +26,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     e.preventDefault()
     setLoading(true)
 
-    await fetch(`${getApiUrl()}/api/financials/transactions`, {
+    await fetch(`${getApiUrl()}/api/tracked-expenses`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -173,6 +174,8 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
           </button>
         </div>
       </form>
+
+      <TrackedExpenseList />
     </div>
   )
 }

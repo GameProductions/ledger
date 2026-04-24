@@ -31,20 +31,6 @@ export const HelpCenter = ({ items = [] }: any) => {
 
   return (
     <div className="gp-help-center">
-      <div className="help-header">
-        <input
-          type="text"
-          placeholder="Search for guides, faqs, and more..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select onChange={(e) => setCategory(e.target.value)}>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c.toUpperCase()}</option>
-          ))}
-        </select>
-      </div>
-
       <div className="help-content scrollable-list">
         {filteredItems.map((item) => (
           <div key={item.id} className="help-card">

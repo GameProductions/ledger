@@ -23,8 +23,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [isPromoteModalOpen, setIsPromoteModalOpen] = useState(false)
-  const [promoteDetails, setPromoteDetails] = useState({
+  const [isMoveToLedgerOpen, setIsMoveToLedgerOpen] = useState(false)
+  const [ledgerDetails, setLedgerDetails] = useState({
     account_id: '',
     category_id: '',
     transaction_date: new Date().toISOString().split('T')[0],
@@ -68,7 +68,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     }
   }
 
-  const handlePromote = async () => {
+  const handleMoveToLedger = async () => {
     const res = await fetch(`${getApiUrl()}/api/tracked-expenses/promote`, {
       method: 'POST',
       headers: {
@@ -78,13 +78,13 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       },
       body: JSON.stringify({
         ids: selectedIds,
-        transaction_details: promoteDetails
+        transaction_details: ledgerDetails
       })
     })
     if (res.ok) {
       mutate()
       setSelectedIds([])
-      setIsPromoteModalOpen(false)
+      setIsMoveToLedgerOpen(false)
     }
   }
 
@@ -171,7 +171,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                   <Edit3 size={12} /> Bulk Edit
                 </button>
                 <button 
-                  onClick={() => setIsPromoteModalOpen(true)}
+                  onClick={() => setIsMoveToLedgerOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
                 >
                   <Send size={12} /> Move to Ledger ({selectedIds.length})
@@ -289,7 +289,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       </div>
 
       {/* Move to Ledger Modal */}
-      <Modal isOpen={isPromoteModalOpen} onClose={() => setIsPromoteModalOpen(false)} title="Add to Main Ledger">
+      <Modal isOpen={isMoveToLedgerOpen} onClose={() => setIsMoveToLedgerOpen(false)} title="Add to Main Ledger">
         <div className="space-y-6 p-1">
           <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
             <p className="text-sm text-orange-200/80 font-medium">Moving {selectedIds.length} items to the transaction ledger.</p>
@@ -301,8 +301,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <CreditCard size={14} className="text-orange-500" /> Select Account
               </label>
               <select 
-                value={promoteDetails.account_id}
-                onChange={e => setPromoteDetails({...promoteDetails, account_id: e.target.value})}
+                value={ledgerDetails.account_id}
+                onChange={e => setLedgerDetails({...ledgerDetails, account_id: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none appearance-none"
               >
                 <option value="">Choose Account...</option>
@@ -314,8 +314,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <Tag size={14} className="text-orange-500" /> Select Category
               </label>
               <select 
-                value={promoteDetails.category_id}
-                onChange={e => setPromoteDetails({...promoteDetails, category_id: e.target.value})}
+                value={ledgerDetails.category_id}
+                onChange={e => setLedgerDetails({...ledgerDetails, category_id: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none appearance-none"
               >
                 <option value="">Choose Category...</option>
@@ -331,8 +331,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               </label>
               <input 
                 type="date"
-                value={promoteDetails.transaction_date}
-                onChange={e => setPromoteDetails({...promoteDetails, transaction_date: e.target.value})}
+                value={ledgerDetails.transaction_date}
+                onChange={e => setLedgerDetails({...ledgerDetails, transaction_date: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none"
               />
             </div>
@@ -344,8 +344,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 {['paid', 'pending'].map(s => (
                   <button
                     key={s}
-                    onClick={() => setPromoteDetails({...promoteDetails, status: s})}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${promoteDetails.status === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/40 border-white/10 text-secondary'}`}
+                    onClick={() => setLedgerDetails({...ledgerDetails, status: s})}
+                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${ledgerDetails.status === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/40 border-white/10 text-secondary'}`}
                   >
                     {s}
                   </button>
@@ -355,8 +355,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           </div>
 
           <button 
-            onClick={handlePromote}
-            disabled={!promoteDetails.account_id}
+            onClick={handleMoveToLedger}
+            disabled={!ledgerDetails.account_id}
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
           >
             <Send size={18} />

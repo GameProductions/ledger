@@ -73,11 +73,19 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
     }
   }, [path, token, householdId, options.refreshInterval, logout])
 
+  const lastPathRef = useRef<string>(path);
+  const lastHouseholdIdRef = useRef<string | null>(householdId);
+
   useEffect(() => {
-    // Reset state when path or household changes to prevent stale data flickering
-    setData(undefined)
-    setLoading(true)
-    setError(null)
+    // ONLY reset state if the resource path or context (household) actually changed
+    // This prevents infinite loops and flickering on simple re-renders or manual mutations
+    if (path !== lastPathRef.current || householdId !== lastHouseholdIdRef.current) {
+      setData(undefined)
+      setLoading(true)
+      setError(null)
+      lastPathRef.current = path
+      lastHouseholdIdRef.current = householdId
+    }
     
     fetcher()
     
@@ -98,7 +106,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
         abortControllerRef.current.abort()
       }
     }
-  }, [fetcher, trigger, options.refreshInterval])
+  }, [fetcher, trigger, options.refreshInterval, path, householdId])
 
   const mutate = () => setTrigger(v => v + 1)
 

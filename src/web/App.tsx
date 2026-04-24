@@ -267,7 +267,6 @@ const AppContent: React.FC = () => {
       </AnimatePresence>
 
       <OnboardingTour appId="ledger" />
-      <FoundationHelp appId="ledger" />
     </GlobalLayout>
   )
 }

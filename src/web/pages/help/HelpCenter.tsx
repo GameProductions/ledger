@@ -1,6 +1,7 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
-import { Book, HelpCircle, PlayCircle, MessageSquare, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Book, HelpCircle, PlayCircle, MessageSquare, AlertTriangle, ArrowRight, Search } from 'lucide-react';
+import { HelpCenter as FoundationHelp } from '../../components/foundation/help/HelpCenter';
 
 export const HelpCenter: React.FC = () => {
   const categories = [
@@ -80,6 +81,23 @@ export const HelpCenter: React.FC = () => {
             <AlertTriangle size={16} />
             Report Issue
           </a>
+        </section>
+
+        <section className="space-y-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Search className="text-primary" size={24} />
+            <h2 className="text-2xl font-black italic tracking-tighter text-white">Universal Search</h2>
+          </div>
+          <div className="glass-card p-1">
+            <FoundationHelp items={[
+              { id: '1', category: 'Basics', title: 'Wallet & Safe-to-Spend', content: 'Master your real-time spendable balance. LEDGER calculates exactly how much you can spend after accounting for upcoming bills and goals.' },
+              { id: '2', category: 'Planning', title: 'Future Balance Forecast', content: 'Visualize your financial trajectory. Our 6-month forecasting engine predicts your balance based on recurring schedules and historical data.' },
+              { id: '3', category: 'Automation', title: 'Smart Reconciliation', content: 'Link transactions automatically. Our matching engine detects patterns between bank imports and manual entries for a perfectly balanced ledger.' },
+              { id: '4', category: 'Security', title: 'Titan Guard Protection', content: 'Your privacy is paramount. LEDGER uses Titan Guard v6.1 encryption, ensuring your financial data never leaves your device unencrypted.' },
+              { id: '5', category: 'Lifecycle', title: 'Variable Pay Schedules', content: 'Handle complex income. Configure semi-monthly, bi-weekly, or irregular payday exceptions to keep your planning accurate.' },
+              { id: '6', category: 'Advanced', title: 'Envelope Budgeting', content: 'Allocate every dollar. Use our digital envelope system to fund specific categories and track spending progress throughout the month.' }
+            ]} />
+          </div>
         </section>
 
         <footer className="text-center pt-12 border-t border-white/5">

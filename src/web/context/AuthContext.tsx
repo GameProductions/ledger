@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token])
 
-  const login = (newToken: string, newUser: any) => {
+  const login = React.useCallback((newToken: string, newUser: any) => {
     (window as any)._ledger_is_logging_out = false
     setToken(newToken)
     setUser(newUser)
@@ -73,9 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hId = newUser.householdId || 'ledger-main-001'
     setHouseholdId(hId)
     localStorage.setItem('ledger_householdId', hId)
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = React.useCallback(() => {
     // Clear memory state before storage for immediate UI lockout
     (window as any)._ledger_is_logging_out = true
     setToken(null)
@@ -92,25 +92,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('ledger_globalRole')
     localStorage.removeItem('ledger_privacy_mode')
     localStorage.removeItem('ledger_impersonation_active')
-  }
+  }, [])
 
-  const handleSetPrivacyMode = (active: boolean) => {
+  const handleSetPrivacyMode = React.useCallback((active: boolean) => {
     setPrivacyMode(active)
     localStorage.setItem('ledger_privacy_mode', active ? 'true' : 'false')
-  }
+  }, [])
 
-  const handleSetHouseholdId = (id: string) => {
+  const handleSetHouseholdId = React.useCallback((id: string) => {
     setHouseholdId(id)
     localStorage.setItem('ledger_householdId', id)
     // Removed window.location.reload() - useApi will now be reactive
-  }
+  }, [])
+
+  const authValue = React.useMemo(() => ({ 
+    user, token, householdId, globalRole, privacyMode, isImpersonating,
+    login, logout, setHouseholdId: handleSetHouseholdId, setPrivacyMode: handleSetPrivacyMode 
+  }), [user, token, householdId, globalRole, privacyMode, isImpersonating, login, logout, handleSetHouseholdId, handleSetPrivacyMode])
 
 
   return (
-    <AuthContext.Provider value={{ 
-      user, token, householdId, globalRole, privacyMode, isImpersonating,
-      login, logout, setHouseholdId: handleSetHouseholdId, setPrivacyMode: handleSetPrivacyMode 
-    }}>
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   )

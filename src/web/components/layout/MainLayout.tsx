@@ -45,6 +45,29 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView 
         </div>
       </main>
 
+      <footer className="w-full py-12 px-8 border-t border-white/5 bg-deep/20 backdrop-blur-3xl mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <div className="text-xl font-black italic tracking-tighter text-white flex items-center gap-2">
+              <span className="text-primary">●</span> LEDGER
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary opacity-40">Modular Financial Intelligence</p>
+          </div>
+          
+          <div className="flex gap-8 items-center">
+            <a href="#/help" className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-all">Documentation</a>
+            <a href="#/settings" className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-all">Security</a>
+            <a href="#/help/support" className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-all">Support</a>
+          </div>
+
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">
+              &copy; {new Date().getFullYear()} GameProductions &bull; Built with Titan Guard v6.1
+            </p>
+          </div>
+        </div>
+      </footer>
+
       {view && setView && (
         <MobileNav activeView={view} onViewChange={setView as (v: string) => void} />
       )}

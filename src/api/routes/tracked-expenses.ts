@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../types'
 import { TrackedExpenseSchema, TransactionSchema } from '../schemas'
 import { getDb } from '../db'
-import { trackedExpenses, transactions, categories } from '../db/schema'
+import { trackedExpenses, transactions, categories, systemAuditLogs } from '../db/schema'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 
 const trackedExpensesRouter = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -148,7 +148,22 @@ trackedExpensesRouter.post('/promote', zValidator('json', z.object({
       )
     }
       
-    await db.batch([...promoTxs, updateTracked, ...categoryUpdates])
+    const auditLog = db.insert(systemAuditLogs).values({
+      id: crypto.randomUUID(),
+      householdId,
+      userId: 'system',
+      action: 'EXPENSE_PROMOTE',
+      target: 'transactions',
+      detailsJson: JSON.stringify({
+        itemCount: items.length,
+        itemIds: ids,
+        accountId: transaction_details.account_id,
+        categoryId: transaction_details.category_id,
+        totalAmountCents: items.reduce((sum, item) => sum + item.amountCents, 0)
+      })
+    })
+
+    await db.batch([...promoTxs, updateTracked, ...categoryUpdates, auditLog])
     
     return c.json({ success: true, data: null })
   } catch (error: any) {

@@ -374,7 +374,7 @@ const PaymentCentralPage: React.FC = () => {
                           <span>Period: {account.membership_start_date || 'N/A'} — {account.membership_end_date || 'Active'}</span>
                         </div>
                       )}
-                    </div>v>
+                    </div>
 
                     <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-4">
                       <div>

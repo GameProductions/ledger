@@ -157,7 +157,7 @@ const LoginPage: React.FC = () => {
   const handlePasskeyLogin = async () => {
     setLoading(true)
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+      const apiUrl = getApiUrl()
       const optRes = await fetch(`${apiUrl}/api/auth/passkeys/login-options`, { 
         method: 'POST',
         credentials: 'include'
@@ -169,7 +169,7 @@ const LoginPage: React.FC = () => {
         return
       }
       
-      const assertion = await startAuthentication(optEnvelope.data)
+      const assertion = await startAuthentication({ optionsJSON: optEnvelope.data })
       
       const verifyRes = await fetch(`${apiUrl}/api/auth/passkeys/login-verify`, {
         method: 'POST',

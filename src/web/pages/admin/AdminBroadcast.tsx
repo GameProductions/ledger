@@ -8,7 +8,7 @@ import { getApiUrl } from '../../utils/api';
 
 export const AdminBroadcast: React.FC = () => {
   const { token } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/admin/announcements');
   const { data: invitations = [], mutate: mutateInvitations } = useApi('/api/admin/invitations');
   
@@ -38,7 +38,8 @@ export const AdminBroadcast: React.FC = () => {
   };
 
   const deleteAnnouncement = async (id: string) => {
-    if (!confirm('Permanent delete?')) return;
+    const confirmed = await showConfirm('Are you sure you want to permanently delete this announcement?', 'Delete Announcement');
+    if (!confirmed) return;
     const res = await fetch(`${getApiUrl()}/api/admin/announcements/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }

@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, KeyRound, Copy, Check, QrCode as QrIcon, Smartphone, Trash2, Edit2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
 import { getApiUrl } from '../utils/api';
 
@@ -12,6 +12,7 @@ const API_URL = getApiUrl();
 
 export const TotpModule = () => {
   const { token } = useAuth();
+  const { showToast, showConfirm } = useToast();
   const { data: profile, mutate: refreshProfile } = useApi('/api/user/profile');
   const { data: totps = [], mutate: refreshTotps } = useApi('/api/user/totps');
   
@@ -37,7 +38,7 @@ export const TotpModule = () => {
       const data = await res.json();
       setSetupData({ secret: data.secret, qrUrl: data.qrUrl });
     } catch (err: any) {
-      toast.error('System Interruption: Failed to bridge secure OTP generation.');
+      showToast('System Interruption: Failed to bridge secure OTP generation.', 'error');
     } finally {
       setIsSettingUp(false);
     }
@@ -47,13 +48,13 @@ export const TotpModule = () => {
     if (!setupData) return;
     navigator.clipboard.writeText(setupData.secret);
     setCopied(true);
-    toast.success('Secret copied to clipboard.');
+    showToast('Secret copied to clipboard.', 'success');
     setTimeout(() => setCopied(false), 2000);
   };
 
   const verifySetup = async () => {
     if (verificationCode.length !== 6) {
-      toast.error('Invalid token length. Must be 6 digits.');
+      showToast('Invalid token length. Must be 6 digits.', 'error');
       return;
     }
 
@@ -70,31 +71,32 @@ export const TotpModule = () => {
       
       if (!res.ok) throw new Error('Verification blocked: Code mismatch.');
       
-      toast.success('Integrity Verified: Authenticator App successfully bound.');
+      showToast('Integrity Verified: Authenticator App successfully bound.', 'success');
       await refreshTotps();
       await refreshProfile();
       setSetupData(null);
       setVerificationCode('');
     } catch (err: any) {
-      toast.error(err.message || 'Verification Failed');
+      showToast(err.message || 'Verification Failed', 'error');
     } finally {
       setIsVerifying(false);
     }
   };
 
   const removeTotp = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this authenticator? It will no longer be able to generate valid 2FA codes for your account.')) return;
+    const confirmed = await showConfirm('Are you sure you want to remove this authenticator? It will no longer be able to generate valid 2FA codes for your account.', 'Remove Authenticator');
+    if (!confirmed) return;
     try {
       const res = await fetch(`${API_URL}/api/user/totps/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to delete authenticator');
-      toast.success('Authenticator removed successfully.');
+      showToast('Authenticator removed successfully.', 'success');
       await refreshTotps();
       await refreshProfile();
     } catch (err: any) {
-      toast.error(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -113,11 +115,11 @@ export const TotpModule = () => {
         body: JSON.stringify({ name: editName })
       });
       if (!res.ok) throw new Error('Failed to rename authenticator');
-      toast.success('Authenticator renamed');
+      showToast('Authenticator renamed', 'success');
       setEditingId(null);
       await refreshTotps();
     } catch (err: any) {
-      toast.error(err.message);
+      showToast(err.message, 'error');
     }
   };
 

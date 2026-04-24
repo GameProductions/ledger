@@ -11,7 +11,7 @@ interface PasskeyRecord {
 }
 
 export const AuthVault: React.FC = () => {
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   const [passkeys, setPasskeys] = useState<PasskeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -88,7 +88,8 @@ export const AuthVault: React.FC = () => {
   };
 
   const handleRevoke = async (id: string, name: string | null) => {
-    if (!confirm(`Revoke passkey "${name || 'Unnamed'}"? This cannot be undone.`)) return;
+    const confirmed = await showConfirm(`Revoke passkey "${name || 'Unnamed'}"? This cannot be undone.`, 'Revoke Passkey');
+    if (!confirmed) return;
     try {
       const resp = await fetch(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' });
       if (resp.ok) {

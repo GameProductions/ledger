@@ -9,7 +9,7 @@ import { getApiUrl } from '../utils/api';
 
 const InvestmentPortfolioPage: React.FC = () => {
   const { token, householdId } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   const { data: investments = [], mutate } = useApi('/api/financials/investments');
   
   const [isAdding, setIsAdding] = useState(false);
@@ -45,7 +45,8 @@ const InvestmentPortfolioPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Remove this asset from your portfolio?')) return;
+    const confirmed = await showConfirm('Remove this asset from your portfolio?', 'Remove Asset');
+    if (!confirmed) return;
     try {
       await fetch(`${getApiUrl()}/api/financials/investments/${id}`, {
         method: 'DELETE',

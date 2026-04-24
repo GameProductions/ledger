@@ -9,7 +9,7 @@ import { Price } from '../components/Price';
 
 const LoanManagerPage: React.FC = () => {
   const { token, householdId } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, showConfirm, showPrompt } = useToast();
   const { data: loans = [], mutate } = useApi('/api/planning/p2p/loans');
   
   const [isAdding, setIsAdding] = useState(false);
@@ -51,7 +51,8 @@ const LoanManagerPage: React.FC = () => {
   };
 
   const handleDeleteLoan = async (id: string) => {
-    if (!confirm('Permanently delete this loan and all associated payment records?')) return;
+    const confirmed = await showConfirm('Permanently delete this loan and all associated payment records?', 'Delete Loan');
+    if (!confirmed) return;
     try {
       await fetch(`${getApiUrl()}/api/planning/p2p/loans/${id}`, {
         method: 'DELETE',
@@ -68,10 +69,10 @@ const LoanManagerPage: React.FC = () => {
   };
 
   const handleLogPayment = async (loanId: string) => {
-    const amountStr = prompt('Enter payment amount (e.g. 50.00):');
+    const amountStr = await showPrompt('Enter payment amount (e.g. 50.00):', '', 'Log Payment');
     if (!amountStr) return;
     const amountCents = Math.round(parseFloat(amountStr) * 100);
-    const email = prompt('Enter recipient email for receipt (optional):') || '';
+    const email = await showPrompt('Enter recipient email for receipt (optional):', '', 'Receipt Recipient') || '';
 
     try {
       const res = await fetch(`${getApiUrl()}/api/planning/p2p/loans/${loanId}/payments`, {

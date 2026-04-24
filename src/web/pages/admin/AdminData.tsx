@@ -9,7 +9,7 @@ const AdminData: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   
   const [newItem, setNewItem] = useState({ 
     item_type: 'processor', 
@@ -68,7 +68,8 @@ const AdminData: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this item from the system?')) return;
+    const confirmed = await showConfirm('Are you sure you want to remove this item from the system?', 'Remove Item');
+    if (!confirmed) return;
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();

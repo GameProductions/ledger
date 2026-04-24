@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
+import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
 
 const AdminHouseholds: React.FC = () => {
+  const { showConfirm } = useToast();
   const [households, setHouseholds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +57,8 @@ const AdminHouseholds: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Warning: Are you sure you want to delete this household? This will remove all memberships and associated financial records.')) return;
+    const confirmed = await showConfirm('Warning: Are you sure you want to delete this household? This will remove all memberships and associated financial records.', 'Delete Household');
+    if (!confirmed) return;
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();

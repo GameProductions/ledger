@@ -9,7 +9,7 @@ const AdminProcessors: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const { showToast } = useToast();
+  const { showToast, showConfirm } = useToast();
   
   const [newItem, setNewItem] = useState({
     name: '',
@@ -84,7 +84,8 @@ const AdminProcessors: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Warning: Are you sure you want to delete this processor? This action will be logged.')) return;
+    const confirmed = await showConfirm('Warning: Are you sure you want to delete this processor? This action will be logged.', 'Delete Processor');
+    if (!confirmed) return;
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useCurrency } from '../context/CurrencyContext'
+import { useToast } from '../context/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
@@ -50,8 +51,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     }
   }
 
+  const { showToast, showConfirm } = useToast()
+
   const handleDelete = async (ids: string[]) => {
-    if (!confirm(`Are you sure you want to delete ${ids.length} item(s)?`)) return;
+    const confirmed = await showConfirm(`Are you sure you want to delete ${ids.length} item(s)?`, 'Delete Expenses')
+    if (!confirmed) return;
     
     const res = await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
       method: 'DELETE',

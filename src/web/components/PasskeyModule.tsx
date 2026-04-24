@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Key, Fingerprint, Trash2, Plus, RefreshCw, AlertTriangle } from 'lucide-react';
 import { startRegistration } from '@simplewebauthn/browser';
-import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
 
 const API_URL = getApiUrl();
@@ -59,6 +59,7 @@ const getServiceIconUrl = (service: string) => {
 
 export const PasskeyModule = () => {
   const { token } = useAuth();
+  const { showToast, showConfirm } = useToast();
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -78,7 +79,7 @@ export const PasskeyModule = () => {
       const data = await res.json() as any;
       setPasskeys(data.passkeys || []);
     } catch (err) {
-      toast.error('System Interruption: Could not retrieve passkeys from secure enclave.');
+      showToast('System Interruption: Could not retrieve passkeys from secure enclave.', 'error');
     } finally {
       setLoading(false);
     }
@@ -98,14 +99,15 @@ export const PasskeyModule = () => {
       
       setPasskeys(p => p.map(k => k.id === id ? { ...k, name: editName } : k));
       setEditingId(null);
-      toast.success('Binding Customized: The cryptographic hardware tag was updated.');
+      showToast('Binding Customized: The cryptographic hardware tag was updated.', 'success');
     } catch (err) {
-      toast.error('Rename Failed: System disconnected while relabeling the hardware binding.');
+      showToast('Rename Failed: System disconnected while relabeling the hardware binding.', 'error');
     }
   };
 
   const deletePasskey = async (id: string) => {
-    if (!confirm('Are you strictly sure you want to revoke this biometric signature? If this is your last passkey, you will trigger a hard 403 lock out on next authentication until manually bypassed by Discord!')) return;
+    const confirmed = await showConfirm('Are you strictly sure you want to revoke this biometric signature? If this is your last passkey, you will trigger a hard 403 lock out on next authentication until manually bypassed by Discord!', 'Revoke Biometric Signature');
+    if (!confirmed) return;
     
     try {
       const res = await fetch(`${API_URL}/api/auth/webauthn/passkeys/${id}`, { 
@@ -115,9 +117,9 @@ export const PasskeyModule = () => {
       if (!res.ok) throw new Error('Failed to revoke passkey');
       
       setPasskeys(p => p.filter(k => k.id !== id));
-      toast.success('Revocation Successful: The selected biometric signature has been burned.');
+      showToast('Revocation Successful: The selected biometric signature has been burned.', 'success');
     } catch (err) {
-      toast.error('Revocation Failed: Failed to burn the signature. Database may be constrained.');
+      showToast('Revocation Failed: Failed to burn the signature. Database may be constrained.', 'error');
     }
   };
 
@@ -157,11 +159,11 @@ export const PasskeyModule = () => {
         throw new Error(errMsg);
       }
 
-      toast.success('Enclave Updated: Successfully attached new hardware signature to your God Mode identity.');
+      showToast('Enclave Updated: Successfully attached new hardware signature to your God Mode identity.', 'success');
       fetchPasskeys(); // Refresh the list
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Hardware Bypass: The registration flow was interrupted or denied.');
+      showToast(err.message || 'Hardware Bypass: The registration flow was interrupted or denied.', 'error');
     } finally {
       setRegistering(false);
     }

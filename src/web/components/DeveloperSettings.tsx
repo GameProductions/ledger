@@ -6,7 +6,7 @@ import { getApiUrl } from '../utils/api'
 
 const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
-  const { showToast, showPrompt } = useToast()
+  const { showToast, showPrompt, showConfirm } = useToast()
   const { data: tokens = [], mutate: mutateTokens } = useApi('/api/data/tools/tokens')
   const { data: webhooksList, mutate: mutateWebhooks } = useApi('/api/interop/developer/webhooks')
   const [newToken, setNewToken] = useState<string | null>(null)
@@ -51,7 +51,8 @@ const DeveloperSettings: React.FC = () => {
   }
 
   const deleteToken = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this token? It will stop working immediately.')) return
+    const confirmed = await showConfirm('Are you sure you want to delete this token? It will stop working immediately.', 'Delete Token')
+    if (!confirmed) return
     
     const apiUrl = getApiUrl()
     await fetch(`${apiUrl}/api/data/tools/tokens/${id}`, {
@@ -83,7 +84,8 @@ const DeveloperSettings: React.FC = () => {
   }
 
   const deleteWebhook = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this webhook?')) return
+    const confirmed = await showConfirm('Are you sure you want to delete this webhook?', 'Delete Webhook')
+    if (!confirmed) return
     const apiUrl = getApiUrl()
     await fetch(`${apiUrl}/api/interop/developer/webhooks/${id}`, {
       method: 'DELETE',
@@ -117,7 +119,8 @@ const DeveloperSettings: React.FC = () => {
 
   const handleRestore = async () => {
     if (!restoreFile) return
-    if (!confirm('WARNING: This will replace current records with matching IDs. Continue?')) return
+    const confirmed = await showConfirm('WARNING: This will replace current records with matching IDs. Continue?', 'Data Restoration')
+    if (!confirmed) return
 
     try {
       const text = await restoreFile.text()

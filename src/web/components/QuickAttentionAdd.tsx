@@ -21,6 +21,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
   const [isBorrowed, setIsBorrowed] = useState(false)
   const [borrowSource, setBorrowSource] = useState('')
   const [loading, setLoading] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,6 +58,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     setNeedsBalanceTransfer(false)
     setIsBorrowed(false)
     setBorrowSource('')
+    setRefreshTrigger(prev => prev + 1)
     onAdded()
   }
 
@@ -179,7 +181,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
         </div>
       </form>
 
-      <TrackedExpenseList />
+      <TrackedExpenseList refreshTrigger={refreshTrigger} />
     </div>
   )
 }

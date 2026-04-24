@@ -6,10 +6,18 @@ import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight } from 'lucide-react'
 import { Modal } from './ui/Modal'
 
-export const TrackedExpenseList: React.FC = () => {
+interface TrackedExpenseListProps {
+  refreshTrigger?: number
+}
+
+export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshTrigger }) => {
   const { data: tracked = [], mutate } = useApi('/api/tracked-expenses')
   const { data: accounts = [] } = useApi('/api/financials/accounts')
   const { data: categories = [] } = useApi('/api/financials/categories')
+
+  React.useEffect(() => {
+    if (refreshTrigger) mutate()
+  }, [refreshTrigger, mutate])
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -155,7 +163,7 @@ export const TrackedExpenseList: React.FC = () => {
                   onClick={() => setIsPromoteModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
                 >
-                  <Send size={12} /> Promote ({selectedIds.length})
+                  <Send size={12} /> Move to Ledger ({selectedIds.length})
                 </button>
               </div>
               <div className="w-px h-4 bg-white/10 mx-1"></div>
@@ -261,11 +269,11 @@ export const TrackedExpenseList: React.FC = () => {
         ))}
       </div>
 
-      {/* Promote Modal */}
-      <Modal isOpen={isPromoteModalOpen} onClose={() => setIsPromoteModalOpen(false)} title="Promote to Ledger">
+      {/* Move to Ledger Modal */}
+      <Modal isOpen={isPromoteModalOpen} onClose={() => setIsPromoteModalOpen(false)} title="Add to Main Ledger">
         <div className="space-y-6 p-1">
           <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
-            <p className="text-sm text-orange-200/80 font-medium">Promoting {selectedIds.length} items to the transaction ledger.</p>
+            <p className="text-sm text-orange-200/80 font-medium">Moving {selectedIds.length} items to the transaction ledger.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

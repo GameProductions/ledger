@@ -7,7 +7,7 @@ import { getDb } from '../db'
 import { supportIssues, supportComments } from '../db/schema'
 import { eq, desc, and } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
-import { toSnake } from '../../utils/sanitizer'
+import { toSnake } from '../utils'
 
 const support = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 

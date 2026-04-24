@@ -245,7 +245,14 @@ const Calendar: React.FC<CalendarProps> = ({
               } ${isToday ? 'border-primary/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className={`text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>{format(date, 'd')}</span>
+                <span className={`text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>
+                  {format(date, 'd') === '1' ? (
+                    <span className="flex flex-col items-start leading-none">
+                      <span className="text-[8px] opacity-60 uppercase tracking-tighter">{format(date, 'MMM')}</span>
+                      <span>{format(date, 'd')}</span>
+                    </span>
+                  ) : format(date, 'd')}
+                </span>
                 {!isPadding && (dayItems.length > 0 ? (
                    <div className="flex gap-1">
                      {dayItems.some(i => i.type === 'pay_schedule') && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>}

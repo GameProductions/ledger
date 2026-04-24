@@ -31,6 +31,7 @@ import {
   systemAnnouncements,
   schedules
 } from '../db/schema'
+import remindersApi from './reminders'
 import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
 
 const planning = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -754,14 +755,17 @@ planning.post('/budget/rollover', async (c) => {
   return c.json({ success: true, count: cats.length })
 })
 
-import remindersApi from './reminders'
-
 // Transaction Templates
 planning.get('/templates', async (c) => {
-  const householdId = c.get('householdId')
-  const db = getDb(c.env)
-  const results = await db.select().from(templates).where(eq(templates.householdId, householdId))
-  return c.json({ success: true, data: (results || []).map(toSnake) })
+  try {
+    const householdId = c.get('householdId')
+    const db = getDb(c.env)
+    const results = await db.select().from(templates).where(eq(templates.householdId, householdId))
+    return c.json({ success: true, data: (results || []).map(toSnake) })
+  } catch (error: any) {
+    console.error(`[DIAGNOSTIC_FAILURE] GET /api/planning/templates:`, error)
+    return c.json({ error: 'Internal Server Error', details: error.message }, 500)
+  }
 })
 
 // Reminders

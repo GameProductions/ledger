@@ -71,6 +71,11 @@ const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
   ]
 };
 
+const DEFAULT_TABS_CONFIG = [
+  { id: 'overview', label: 'Wallet', icon: '💰', visible: true },
+  { id: 'planning', label: 'Lifecycle', icon: '🗓️', visible: true },
+  { id: 'insights', label: 'Advisor', icon: '🤖', visible: true },
+];
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user, token, householdId, logout } = useAuth()
@@ -93,7 +98,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
-  const [_settings, setSettings] = useState<any>({ dashboardLayout: {} })
+  const [_settings, setSettings] = useState<any>({ dashboardLayout: {}, tabConfig: [] })
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
@@ -111,11 +116,34 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [showDepositModal, setShowDepositModal] = useState(false)
   const [depositAmount, setDepositAmount] = useState('')
 
+  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
+  const [tabConfig, setTabConfig] = useState(DEFAULT_TABS_CONFIG);
+  const [isCustomizing, setIsCustomizing] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview')
+
   useEffect(() => {
     if (user?.settingsJson) {
        try {
          const parsed = JSON.parse(user.settingsJson)
          setSettings(parsed)
+         
+         if (parsed.tabConfig && Array.isArray(parsed.tabConfig)) {
+           // Merge saved tab config with defaults to ensure new tabs appear
+           const savedIds = parsed.tabConfig.map((t: any) => t.id);
+           const mergedTabs = [
+             ...parsed.tabConfig,
+             ...DEFAULT_TABS_CONFIG.filter(t => !savedIds.includes(t.id))
+           ];
+           setTabConfig(mergedTabs);
+           
+           // Ensure activeTab is actually visible
+           const currentTabVisible = mergedTabs.find(t => t.id === activeTab)?.visible;
+           if (!currentTabVisible) {
+             const firstVisible = mergedTabs.find(t => t.visible);
+             if (firstVisible) setActiveTab(firstVisible.id);
+           }
+         }
+
          if (parsed.dashboardLayout) {
              const merged = { ...DEFAULT_LAYOUT };
               Object.keys(parsed.dashboardLayout).forEach(tab => {
@@ -135,12 +163,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     }
   }, [user])
 
-  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
-  const [isCustomizing, setIsCustomizing] = useState(false);
-
-  const saveLayout = async (newLayout: any) => {
+  const saveLayout = async (newLayout: any, newTabConfig: any = tabConfig) => {
     setLayout(newLayout);
-    const newSettings = { ..._settings, dashboardLayout: newLayout };
+    setTabConfig(newTabConfig);
+    const newSettings = { ..._settings, dashboardLayout: newLayout, tabConfig: newTabConfig };
     setSettings(newSettings);
     await fetch(`${apiUrl}/api/user/profile`, {
       method: 'PATCH',
@@ -150,21 +176,16 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       },
       body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     });
-    showToast('Layout saved');
+    showToast('Layout settings saved');
   };
-
-  const [activeTab, setActiveTab] = useState('overview')
 
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
   }
 
-  const tabs = [
-    { id: 'overview', label: 'Wallet', icon: '💰' },
-    { id: 'insights', label: 'Advisor', icon: '🤖' },
-    { id: 'planning', label: 'Lifecycle', icon: '🗓️' },
-  ]
+  const tabs = tabConfig;
+
 
   const projectedPaydays = React.useMemo(() => {
     if (!paySchedules) return [];
@@ -659,6 +680,45 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           </div>
 
           <div className="space-y-4 pt-2">
+            <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation</h4>
+            <Reorder.Group 
+                axis="y" 
+                values={tabConfig} 
+                onReorder={(newOrder) => setTabConfig(newOrder)}
+                className="space-y-2"
+            >
+                {tabConfig.map((tab) => (
+                    <Reorder.Item 
+                        key={tab.id} 
+                        value={tab}
+                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${tab.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <GripVertical size={16} className="text-secondary/50" />
+                            <span className="text-sm font-bold text-white">{tab.icon} {tab.label}</span>
+                        </div>
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const newTabs = tabConfig.map(t => t.id === tab.id ? { ...t, visible: !t.visible } : t);
+                                setTabConfig(newTabs);
+                                
+                                // Fallback for activeTab if hidden
+                                if (tab.id === activeTab && tab.visible) {
+                                   const nextVisible = newTabs.find(t => t.visible);
+                                   if (nextVisible) setActiveTab(nextVisible.id);
+                                }
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            {tab.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
+                        </button>
+                    </Reorder.Item>
+                ))}
+            </Reorder.Group>
+          </div>
+
+          <div className="space-y-4 pt-2">
             <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Tab Configuration</h4>
             <Reorder.Group 
                 axis="y" 
@@ -697,13 +757,21 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="pt-6 border-t border-white/5 flex gap-4 sticky bottom-0 bg-deep pt-4">
               <button 
                   className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
-                  onClick={() => setIsCustomizing(false)}
+                  onClick={() => {
+                    // Reset to saved state on cancel
+                    if (user?.settingsJson) {
+                      const parsed = JSON.parse(user.settingsJson);
+                      if (parsed.tabConfig) setTabConfig(parsed.tabConfig);
+                      if (parsed.dashboardLayout) setLayout(parsed.dashboardLayout);
+                    }
+                    setIsCustomizing(false);
+                  }}
               >
                   Cancel
               </button>
               <button 
                   className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all transition-all"
-                  onClick={() => { saveLayout(layout); setIsCustomizing(false); }}
+                  onClick={() => { saveLayout(layout, tabConfig); setIsCustomizing(false); }}
               >
                   Save Global Layout
               </button>
@@ -766,7 +834,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       
       <div className="tab-container mt-8 reveal flex items-center pr-2 overflow-hidden">
         <div className="flex gap-4 overflow-x-auto scrollbar-hide flex-1 py-1">
-          {(tabs || []).map(tab => (
+          {(tabs || []).filter(t => t.visible).map(tab => (
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}

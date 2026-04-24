@@ -164,10 +164,21 @@ app.get('/api/health', async (c) => {
 
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true';
   const kv = c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE;
-  const configCache = kv ? await kv.get('API_CONFIG', 'json') as Record<string, string> : null;
-  const localMaintenance = configCache?.MAINTENANCE_MODE === 'true';
-  const globalCache = kv ? await kv.get('global:maintenance') : null;
-  const projectCache = kv ? await kv.get('project:maintenance:ledger') : null;
+  
+  let localMaintenance = false;
+  let globalCache = null;
+  let projectCache = null;
+
+  try {
+    if (kv) {
+      const configCache = await kv.get('API_CONFIG', 'json') as Record<string, string>;
+      localMaintenance = configCache?.MAINTENANCE_MODE === 'true';
+      globalCache = await kv.get('global:maintenance');
+      projectCache = await kv.get('project:maintenance:ledger');
+    }
+  } catch (e) {
+    console.warn(`[System] Health check failed to reach KV:`, e);
+  }
   
   const isMaintenance = isHardLocked || localMaintenance || globalCache === 'true' || projectCache === 'true';
 

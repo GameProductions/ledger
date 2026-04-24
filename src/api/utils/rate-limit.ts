@@ -25,46 +25,77 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
     const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '127.0.0.1';
     const botName = (c.env as any).APP_NAME || 'unknown';
     
-    // 1. Fetch Active Policy (Global -> Bot Specific)
-    const globalConfig = await kv.get(`tg:config:${tier}`, 'json') as any;
-    const botConfig = await kv.get(`tg:config:${botName}:${tier}`, 'json') as any;
-    
-    const policy = botConfig || globalConfig || DEFAULT_POLICIES[tier];
-    const { limit, window } = policy;
-
-    // 2. Perform Rate Limit Check
-    const key = `tg:bot:${botName}:rl:${tier}:${ip}`;
-    const current = await kv.get(key, 'json') as { count: number; reset: number } | null;
-
-    if (current) {
-      if (Date.now() > current.reset) {
-        // Reset expired
-        await kv.put(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
-      } else if (current.count >= limit) {
-        // 🚨 BLOCK TRIGGERED
-        console.error(`[Titan Guard] 🛑 Rate limit exceeded for ${ip} on ${botName} (${tier})`);
-        
-        // Log block for Foundation Monitoring
-        await kv.put(`tg:block:${ip}`, JSON.stringify({
-          bot: botName,
-          tier,
-          triggered: Date.now(),
-          limit,
-          window
-        }), { expirationTtl: 3600 }); // Retain for 1 hour for dashboard visibility
-
-        return c.json({ 
-          error: 'Shield Active', 
-          message: 'Security threshold exceeded. Please try again later.',
-          security_v: 'Titan Guard v6.1'
-        }, 429);
-      } else {
-        // Increment
-        await kv.put(key, JSON.stringify({ count: current.count + 1, reset: current.reset }), { expirationTtl: Math.ceil((current.reset - Date.now()) / 1000) + 60 });
+    try {
+      // 1. Fetch Active Policy (Global -> Bot Specific)
+      let globalConfig, botConfig;
+      try {
+        globalConfig = await kv.get(`tg:config:${tier}`, 'json') as any;
+        botConfig = await kv.get(`tg:config:${botName}:${tier}`, 'json') as any;
+      } catch (e) {
+        console.warn(`[Titan Guard] Failed to fetch config from KV:`, e);
       }
-    } else {
-      // First strike
-      await kv.put(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
+      
+      const policy = botConfig || globalConfig || DEFAULT_POLICIES[tier];
+      const { limit, window } = policy;
+
+      // 2. Perform Rate Limit Check
+      const key = `tg:bot:${botName}:rl:${tier}:${ip}`;
+      let current;
+      try {
+        current = await kv.get(key, 'json') as { count: number; reset: number } | null;
+      } catch (e) {
+        console.warn(`[Titan Guard] Failed to fetch rate limit state from KV:`, e);
+      }
+
+      if (current) {
+        if (Date.now() > current.reset) {
+          // Reset expired
+          try {
+            await kv.put(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
+          } catch (e) {
+            console.warn(`[Titan Guard] Failed to reset rate limit in KV:`, e);
+          }
+        } else if (current.count >= limit) {
+          // 🚨 BLOCK TRIGGERED
+          console.error(`[Titan Guard] 🛑 Rate limit exceeded for ${ip} on ${botName} (${tier})`);
+          
+          // Log block for Foundation Monitoring
+          try {
+            await kv.put(`tg:block:${ip}`, JSON.stringify({
+              bot: botName,
+              tier,
+              triggered: Date.now(),
+              limit,
+              window
+            }), { expirationTtl: 3600 });
+          } catch (e) {
+            console.warn(`[Titan Guard] Failed to log block in KV:`, e);
+          }
+
+          return c.json({ 
+            error: 'Shield Active', 
+            message: 'Security threshold exceeded. Please try again later.',
+            security_v: 'Titan Guard v6.1'
+          }, 429);
+        } else {
+          // Increment
+          try {
+            await kv.put(key, JSON.stringify({ count: current.count + 1, reset: current.reset }), { expirationTtl: Math.ceil((current.reset - Date.now()) / 1000) + 60 });
+          } catch (e) {
+            console.warn(`[Titan Guard] Failed to increment rate limit in KV:`, e);
+          }
+        }
+      } else {
+        // First strike
+        try {
+          await kv.put(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
+        } catch (e) {
+          console.warn(`[Titan Guard] Failed to initialize rate limit in KV:`, e);
+        }
+      }
+    } catch (error) {
+      console.error(`[Titan Guard] Critical failure in middleware:`, error);
+      // Fail-open to ensure service availability
     }
 
     await next();

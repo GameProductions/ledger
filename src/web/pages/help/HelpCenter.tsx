@@ -100,11 +100,7 @@ export const HelpCenter: React.FC = () => {
           </div>
         </section>
 
-        <footer className="text-center pt-12 border-t border-white/5">
-          <p className="text-secondary text-sm font-medium">
-            LEDGER Modular Architecture &bull; Universal Currency Ready.
-          </p>
-        </footer>
+
       </div>
     </MainLayout>
   );

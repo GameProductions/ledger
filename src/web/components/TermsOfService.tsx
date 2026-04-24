@@ -38,9 +38,7 @@ const TermsOfService: React.FC = () => {
         <p>These terms are governed by the laws of the jurisdiction in which GameProductions operates. We reserve the right to modify these terms at any time.</p>
       </section>
       
-      <footer style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-        <p>This document is updated whenever significant changes are made to the LEDGER terms of engagement.</p>
-      </footer>
+
     </div>
   )
 }

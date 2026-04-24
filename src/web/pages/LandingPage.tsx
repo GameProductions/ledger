@@ -252,12 +252,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer is provided by GlobalLayout */}
-      <footer className="py-10 border-t border-white/5 opacity-40 text-center">
-        <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-colors">
-          <GithubIcon size={12} /> Service Repository
-        </a>
-      </footer>
+
     </div>
   )
 }

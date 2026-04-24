@@ -61,9 +61,7 @@ const SnapshotViewer: React.FC = () => {
           </div>
         </div>
 
-        <footer className="text-center pt-12">
-           <p className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-20">Securely served by LEDGER Platform</p>
-        </footer>
+
       </div>
     </MainLayout>
   );

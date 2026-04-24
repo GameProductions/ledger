@@ -45,10 +45,6 @@ const PrivacyPolicy: React.FC = () => {
         <h3>6. Contact</h3>
         <p>For privacy-related inquiries, please reach out via the GameProductions support channel on Discord.</p>
       </section>
-
-      <footer style={{ marginTop: '4rem', paddingTop: '2rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-        <p>This document is updated whenever significant changes are made to the LEDGER data processing, identity systems, or administrative procedures.</p>
-      </footer>
     </div>
   )
 }

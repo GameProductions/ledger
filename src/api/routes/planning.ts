@@ -13,7 +13,7 @@ import {
   LiabilitySplitSchema,
   PayExceptionSchema
 } from '../schemas'
-import { logAudit } from '../utils'
+import { logAudit, toSnake } from '../utils'
 import { getDb } from '../db'
 import {
   subscriptions,
@@ -35,16 +35,6 @@ import remindersApi from './reminders'
 import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
 
 const planning = new Hono<{ Bindings: Bindings, Variables: Variables }>()
-
-const toSnake = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  const res: any = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    res[snakeKey] = obj[key];
-  }
-  return res;
-}
 
 // Subscriptions
 planning.get('/subscriptions', async (c) => {
@@ -84,7 +74,7 @@ planning.get('/subscriptions', async (c) => {
     return toSnake(sub)
   })
 
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c) => {
@@ -189,7 +179,7 @@ planning.get('/bills', async (c) => {
     return toSnake(bill)
   })
 
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 planning.post('/bills', zValidator('json', BillSchema), async (c) => {
@@ -324,7 +314,7 @@ planning.get('/installment-plans', async (c) => {
     return toSnake(inst)
   })
 
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 planning.post('/installment-plans', zValidator('json', InstallmentPlanSchema), async (c) => {

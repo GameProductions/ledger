@@ -37,9 +37,9 @@ const AdminConfig: React.FC = () => {
     await fetch(`${apiUrl}/api/admin/config/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ configValue: value })
+      body: JSON.stringify({ config_value: value })
     });
-    setConfigs(prev => prev.map(c => c.id === id ? { ...c, configValue: value } : c));
+    setConfigs(prev => prev.map(c => c.id === id ? { ...c, configValue: value, config_value: value } : c));
   };
 
   const handleToggleFeature = async (id: string, enabled: boolean) => {
@@ -48,9 +48,9 @@ const AdminConfig: React.FC = () => {
     await fetch(`${apiUrl}/api/admin/features/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabledGlobally: enabled })
+      body: JSON.stringify({ enabled_globally: enabled })
     });
-    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabledGlobally: enabled ? 1 : 0 } : f));
+    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabledGlobally: enabled ? 1 : 0, enabled_globally: enabled ? 1 : 0 } : f));
   };
 
   if (loading) return <AdminPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></AdminPortal>;

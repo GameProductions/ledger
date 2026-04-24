@@ -48,9 +48,8 @@ const AdminAudit: React.FC = () => {
               <p className="text-sm text-gray-300 font-medium">
                 Admin: <span className="text-emerald-400">{log.actorName || log.actor_name || 'System'}</span> 
                 {' ● '} 
-                Target: <span className="text-white">{log.targetName || log.target_name || log.targetType || log.target_type || 'Unknown'}</span> 
-                {' - '} 
-                ID: <span className="opacity-40 font-mono text-xs">{log.targetId || log.target_id || log.id}</span>
+                Target: <span className="text-white">{log.target_name || log.target_type || 'Unknown'}</span> 
+                ID: <span className="opacity-40 font-mono text-xs">{log.target_id || log.id}</span>
               </p>
               {(log.detailsJson || log.details_json) && (
                 <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5 font-mono text-xs text-gray-500 overflow-x-auto">

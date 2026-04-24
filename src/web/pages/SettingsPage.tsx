@@ -40,7 +40,7 @@ const SettingsPage: React.FC = () => {
   
   // UI Display Settings State
   const [timezone, setTimezone] = useState('UTC')
-  const settingsJson = JSON.parse(profile?.settingsJson || '{}')
+  const settingsJson = JSON.parse(profile?.settings_json || '{}')
 
   // Modals / Edit Trackers
   const [isEditingAlias, setIsEditingAlias] = useState(false)
@@ -58,15 +58,15 @@ const SettingsPage: React.FC = () => {
   // Setup
   useEffect(() => {
     if (profile) {
-      setName(profile.displayName || profile.displayName || '')
+      setName(profile.display_name || '')
       setUsername(profile.username || '')
       setEmail(profile.email || '')
-      setAvatar(profile.avatar_url || profile.avatarUrl || '')
+      setAvatar(profile.avatar_url || '')
       setTimezone(profile.timezone || 'UTC')
     }
   }, [profile])
 
-  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = sanitizeImageUrl(profile?.avatar_url) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   // -------------- HANDLERS --------------
 
@@ -82,7 +82,7 @@ const SettingsPage: React.FC = () => {
           'x-household-id': localStorage.getItem('ledger_householdId') || ''
         },
         body: JSON.stringify({ 
-          displayName: name,
+          display_name: name,
           username: username,
           email: email,
           avatar_url: avatar || null,
@@ -112,7 +112,7 @@ const SettingsPage: React.FC = () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
     })
     window.location.reload()
   }
@@ -138,7 +138,7 @@ const SettingsPage: React.FC = () => {
             const cred = new (window as any).PasswordCredential({
               id: profile?.email || user?.email || '',
               password: newPassword,
-              name: profile?.displayName || user?.displayName
+              name: profile?.display_name || user?.display_name
             });
             navigator.credentials.store(cred);
           } catch (e) {
@@ -325,7 +325,7 @@ const SettingsPage: React.FC = () => {
              <div className="flex flex-col">
                <span className="text-secondary opacity-40 italic text-[10px] font-black uppercase tracking-[0.2em] mb-1">Account Role</span>
                <span className="text-primary font-black uppercase tracking-widest text-sm">
-                 {profile?.globalRole === 'super_admin' ? 'Super Admin' : (profile?.globalRole || 'Standard User')}
+                 {profile?.global_role === 'super_admin' ? 'Super Admin' : (profile?.global_role || 'Standard User')}
                </span>
              </div>
              <div className="flex flex-col mt-4">
@@ -427,7 +427,7 @@ const SettingsPage: React.FC = () => {
                       { id: 'dropbox', name: 'Dropbox', icon: 'https://cdn-icons-png.flaticon.com/512/2111/2111381.png', color: 'bg-white' },
                       { id: 'onedrive', name: 'Onedrive', icon: 'https://cdn-icons-png.flaticon.com/512/873/873136.png', color: 'bg-white' }
                     ].map(provider => {
-                      const linked = (identities || []).find((i: any) => i.provider === provider.id);
+                                            const linked = Array.isArray(identities) ? (identities as any[]).find((i: any) => i.provider === provider.id) : undefined;
                       return (
                         <div key={provider.id} className="card p-6 flex flex-col justify-between space-y-6 group hover:border-primary/40 transition-all">
                            <div className="flex items-start justify-between">
@@ -608,7 +608,7 @@ const SettingsPage: React.FC = () => {
                                 <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Active Account</p>
                               </div>
                           </div>
-                          <Price amountCents={acc.balance_cents} className="text-lg font-black tracking-tighter" />
+                          <Price amount_cents={acc.balance_cents} className="text-lg font-black tracking-tighter" />
                         </div>
                     )) : (
                         <div className="col-span-full p-10 border-2 border-dashed border-white/5 rounded-3xl text-center opacity-30 grayscale italic">

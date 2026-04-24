@@ -12,11 +12,11 @@ const SpendingChart: React.FC<SpendingChartProps> = ({ data }) => {
   
   if (!data || data.length === 0) return <div style={{ height, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>No trend data yet</div>
 
-  const maxAmount = Math.max(...data.map(d => d.amountCents), 100000)
+  const maxAmount = Math.max(...data.map(d => d.amount_cents), 100000)
   
   const points = data.slice(-10).map((d, i) => {
     const x = (i / 9) * (width - 2 * padding) + padding
-    const y = height - ((d.amountCents / maxAmount) * (height - 2 * padding)) - padding
+    const y = height - ((d.amount_cents / maxAmount) * (height - 2 * padding)) - padding
     return `${x},${y}`
   }).join(' ')
 

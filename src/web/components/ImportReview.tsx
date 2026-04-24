@@ -292,7 +292,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                               >
                                 <option value="">Auto ({item.owner_name || 'Generic'})</option>
                                 {members?.map((m: any) => (
-                                  <option key={m.id} value={m.id}>{m.displayName}</option>
+                                  <option key={m.id} value={m.id}>{m.display_name}</option>
                                 ))}
                               </select>
                            </div>

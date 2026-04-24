@@ -14,7 +14,7 @@ import {
   TransactionOutputSchema
 } from '../schemas'
 import { dispatchWebhook } from '../services/webhook-service'
-import { logAudit } from '../utils'
+import { logAudit, toSnake } from '../utils'
 import { getDb } from '../db'
 import { 
   categories,
@@ -33,15 +33,6 @@ import { inferTransactionDetails } from '../inference'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-const toSnake = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  return Object.keys(obj).reduce((acc: any, key) => {
-    const snake = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    acc[snake] = obj[key];
-    return acc;
-  }, {});
-}
-
 // Categories
 financials.get('/categories', async (c) => {
   const householdId = c.get('householdId')
@@ -52,7 +43,7 @@ financials.get('/categories', async (c) => {
       success: true, 
       data: results.map(row => {
         try {
-          return CategoryOutputSchema.parse(row)
+          return CategoryOutputSchema.parse(toSnake(row))
         } catch (e: any) {
           console.error(`[DIAGNOSTIC_FAILURE] Category validation failed for row ${row.id}:`, e.errors || e.message);
           throw e;
@@ -82,7 +73,7 @@ financials.get('/accounts', async (c) => {
       success: true, 
       data: results.map(row => {
         try {
-          return AccountOutputSchema.parse(row)
+          return AccountOutputSchema.parse(toSnake(row))
         } catch (e: any) {
           console.error(`[DIAGNOSTIC_FAILURE] Account validation failed for row ${row.id}:`, e.errors || e.message);
           throw e;
@@ -102,7 +93,7 @@ financials.get('/credit-cards', async (c) => {
   const results = await db.select().from(creditCards).where(eq(creditCards.householdId, householdId))
   return c.json({ 
     success: true, 
-    data: results // Drizzle matches camelCase, we can add a schema later if needed but for now this is clean
+    data: toSnake(results)
   })
 })
 
@@ -168,7 +159,7 @@ financials.get('/transactions', async (c) => {
       success: true, 
       data: results.map(row => {
         try {
-          return TransactionOutputSchema.parse(row)
+          return TransactionOutputSchema.parse(toSnake(row))
         } catch (e: any) {
           console.error(`[DIAGNOSTIC_FAILURE] Transaction validation failed for row ${row.id}:`, e.errors || e.message);
           throw e;
@@ -341,7 +332,7 @@ financials.get('/transactions/:id/timeline', async (c) => {
   const results = await db.select().from(transactionTimeline)
     .where(eq(transactionTimeline.transactionId, id))
     .orderBy(desc(transactionTimeline.createdAt))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema, (result, c) => {
@@ -390,7 +381,7 @@ financials.get('/transactions/suggest-links', async (c) => {
   // Actually db.all(sql`...`) works in Drizzle! Wait, Drizzle instance doesn't have `.all()` exposed that easily unless it's a D1 `session.all()`.
   // I will just use `c.env.DB.prepare(...).all()` here because Drizzle ORM doesn't easily map this specific self-join with julianday without messy raw sql wrappers.
   const { results } = await c.env.DB.prepare(`
-    SELECT t1.id as originalId, t2.id as suggestedId, t1.description, t2.description as suggestedDescription, t1.amount_cents as amountCents
+    SELECT t1.id as original_id, t2.id as suggested_id, t1.description, t2.description as suggested_description, t1.amount_cents as amount_cents
     FROM transactions t1
     JOIN transactions t2 ON t1.household_id = t2.household_id 
       AND t1.amount_cents = -t2.amount_cents
@@ -741,20 +732,20 @@ financials.post('/transfers', zValidator('json', TransferSchema, (result, c) => 
 })
 
 // Buckets
-financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), targetCents: z.number().int().min(100) }), (result, c) => {
+financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), target_cents: z.number().int().min(100) }), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Bucket creation validation failed:`, result.error.errors);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
-  const { name, targetCents } = c.req.valid('json')
+  const { name, target_cents } = c.req.valid('json')
   const db = getDb(c.env)
   const id = `buck-${crypto.randomUUID()}`
   await db.insert(savingsBuckets).values({
     id,
     householdId,
     name,
-    targetCents,
+    targetCents: target_cents,
     currentCents: 0
   })
   return c.json({ success: true, id })
@@ -764,7 +755,7 @@ financials.get('/buckets', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(savingsBuckets).where(eq(savingsBuckets.householdId, householdId))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 

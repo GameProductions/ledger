@@ -107,3 +107,14 @@ export const hashToken = async (token: string) => {
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
 }
+
+export const toSnake = (obj: any): any => {
+  if (!obj || typeof obj !== 'object' || obj instanceof Date) return obj;
+  if (Array.isArray(obj)) return obj.map(toSnake);
+  
+  return Object.keys(obj).reduce((acc: any, key) => {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    acc[snakeKey] = toSnake(obj[key]);
+    return acc;
+  }, {});
+}

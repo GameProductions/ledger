@@ -114,36 +114,36 @@ const Calendar: React.FC<CalendarProps> = ({
   const getItemsForDate = (dateToCheck: Date) => {
     const dateStr = format(dateToCheck, 'yyyy-MM-dd');
     const dayTxs = (Array.isArray(transactions) ? transactions : []).filter(tx => {
-      return tx.transactionDate === dateStr;
+      return tx.transaction_date === dateStr;
     }).map(tx => ({ ...tx, type: 'transaction' }));
 
     const dayBills = (Array.isArray(subscriptions) ? subscriptions : [])
       .concat(Array.isArray(bills) ? bills : [])
       .concat(Array.isArray(installments) ? installments : [])
       .filter(sub => {
-        const subDateStr = sub.next_billing_date || sub.dueDate || sub.next_payment_date;
+        const subDateStr = sub.next_billing_date || sub.due_date || sub.next_payment_date;
         return subDateStr === dateStr;
     }).map(sub => ({ 
         ...sub, 
-        type: sub.dueDate ? 'bill' : sub.next_payment_date ? 'installment' : 'subscription', 
+        type: sub.due_date ? 'bill' : sub.next_payment_date ? 'installment' : 'subscription', 
         description: sub.name, 
-        amountCents: sub.amountCents || sub.installment_amountCents,
-        _date: parseISO(sub.next_billing_date || sub.dueDate || sub.next_payment_date)
+        amount_cents: sub.amount_cents || sub.installment_amount_cents,
+        _date: parseISO(sub.next_billing_date || sub.due_date || sub.next_payment_date)
     }));
 
     const dayPays = (Array.isArray(paySchedules) ? paySchedules : []).filter(pay => {
-      const payDateStr = pay.date || pay.nextPayDate;
+      const payDateStr = pay.date || pay.next_pay_date;
       return payDateStr === dateStr;
     }).map(pay => ({ 
         ...pay, 
         type: 'pay_schedule', 
         description: `${pay.name}`, 
-        amountCents: pay.amountCents || pay.estimated_amountCents || 0,
-        _date: parseISO(pay.date || pay.nextPayDate)
+        amount_cents: pay.amount_cents || pay.estimated_amount_cents || 0,
+        _date: parseISO(pay.date || pay.next_pay_date)
     }));
 
     // Backfill _date for sorting uniformly
-    dayTxs.forEach(t => t._date = parseISO(t.transactionDate));
+    dayTxs.forEach(t => t._date = parseISO(t.transaction_date));
 
     return [...dayPays, ...dayBills, ...dayTxs];
   };
@@ -155,8 +155,8 @@ const Calendar: React.FC<CalendarProps> = ({
   }).sort((a, b) => {
       if (sortBy === 'date_asc') return a._date.getTime() - b._date.getTime();
       if (sortBy === 'date_desc') return b._date.getTime() - a._date.getTime();
-      if (sortBy === 'amount_asc') return Math.abs(a.amountCents) - Math.abs(b.amountCents);
-      if (sortBy === 'amount_desc') return Math.abs(b.amountCents) - Math.abs(a.amountCents);
+      if (sortBy === 'amount_asc') return Math.abs(a.amount_cents) - Math.abs(b.amount_cents);
+      if (sortBy === 'amount_desc') return Math.abs(b.amount_cents) - Math.abs(a.amount_cents);
       return 0;
   });
 
@@ -290,7 +290,7 @@ const Calendar: React.FC<CalendarProps> = ({
                     }`}
                   >
                     <span className="truncate flex items-center gap-1">
-                        <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} /> {item.description}
+                        <Price amount_cents={item.amount_cents} options={{ minimumFractionDigits: 0 }} /> {item.description}
                     </span>
                     {(item.notes || item.note) && <span className="text-[8px] animate-pulse">📝</span>}
                   </div>
@@ -340,7 +340,7 @@ const Calendar: React.FC<CalendarProps> = ({
                             </div>
                         </div>
                         <div className="text-right">
-                           <Price amountCents={item.amountCents} className="text-lg font-black tracking-tighter" />
+                           <Price amount_cents={item.amount_cents} className="text-lg font-black tracking-tighter" />
                         </div>
                     </div>
                ))

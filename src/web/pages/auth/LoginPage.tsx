@@ -136,7 +136,7 @@ const LoginPage: React.FC = () => {
                const cred = new (window as any).PasswordCredential({
                  id: username,
                  password: password,
-                 name: profile.displayName
+                 name: profile.display_name
                });
                navigator.credentials.store(cred);
              } catch (e) {

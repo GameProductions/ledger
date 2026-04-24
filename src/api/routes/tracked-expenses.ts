@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../types'
 import { TrackedExpenseSchema, TransactionSchema } from '../schemas'
 import { getDb } from '../db'
+import { toSnake } from '../utils'
 import { trackedExpenses, transactions, categories, systemAuditLogs } from '../db/schema'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 
@@ -20,7 +21,7 @@ trackedExpensesRouter.get('/', async (c) => {
         eq(trackedExpenses.householdId, householdId),
         eq(trackedExpenses.status, 'pending')
       ))
-    return c.json({ success: true, data: results })
+    return c.json({ success: true, data: toSnake(results) })
   } catch (error: any) {
     console.error(`[TRACKED_EXPENSES_FETCH_FAILURE]`, error)
     return c.json({ error: 'Failed to fetch tracked expenses' }, 500)

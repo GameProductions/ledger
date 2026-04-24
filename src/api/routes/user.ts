@@ -13,7 +13,7 @@ import {
   UserOutputSchema,
   EnvelopeSchema
 } from '../schemas'
-import { logAudit } from '../utils'
+import { logAudit, toSnake } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '../db'
@@ -69,7 +69,7 @@ user.get('/profile', async (c) => {
     try {
       return c.json({
         success: true,
-        data: UserOutputSchema.parse(userData)
+        data: UserOutputSchema.parse(toSnake(userData))
       })
     } catch (e: any) {
       console.error(`[DIAGNOSTIC_FAILURE] User profile validation failed for ${userId}:`, e.errors || e.message);
@@ -224,7 +224,7 @@ user.get('/households', async (c) => {
   
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -273,10 +273,10 @@ user.get('/households/current', async (c) => {
 
   return c.json({
     success: true,
-    data: {
+    data: toSnake({
       ...household,
       members: formattedMembers
-    }
+    })
   })
 })
 
@@ -408,7 +408,7 @@ user.get('/preferences', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)
   const results = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId))
-  return c.json(results.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {}))
+  return c.json(toSnake(results.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {})))
 })
 
 user.patch('/preferences', zValidator('json', z.record(z.string(), z.string()), (result, c) => {
@@ -439,7 +439,7 @@ user.get('/notifications', async (c) => {
   const results = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId))
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -498,7 +498,7 @@ user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema, (resul
 user.get('/service-providers', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(serviceProviders)
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 user.get('/identities', async (c) => {
@@ -515,7 +515,7 @@ user.get('/identities', async (c) => {
   }).from(userIdentities).where(eq(userIdentities.userId, userId))
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -548,9 +548,9 @@ user.get('/providers', async (c) => {
 })
 
 user.post('/providers/link', zValidator('json', z.object({
-  serviceProviderId: z.string(),
-  accountReference: z.string().optional(),
-  customLabel: z.string().optional(),
+  service_provider_id: z.string(),
+  account_reference: z.string().optional(),
+  custom_label: z.string().optional(),
   metadata: z.string().optional()
 }), (result, c) => {
   if (!result.success) {
@@ -558,11 +558,11 @@ user.post('/providers/link', zValidator('json', z.object({
   }
 }), async (c) => {
   const userId = c.get('userId') as string
-  const { serviceProviderId, accountReference, customLabel, metadata } = c.req.valid('json')
+  const { service_provider_id, account_reference, custom_label, metadata } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(linkedProviders).values({
-    id, userId, serviceProviderId, accountReference, customLabel, metadata
+    id, userId, serviceProviderId: service_provider_id, accountReference: account_reference, customLabel: custom_label, metadata
   })
   return c.json({ success: true, id })
 })
@@ -614,7 +614,7 @@ user.get('/passkeys', async (c) => {
   }).from(passkeys).where(eq(passkeys.userId, userId))
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -628,7 +628,7 @@ user.get('/totps', async (c) => {
   }).from(totps).where(eq(totps.userId, userId))
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -674,7 +674,7 @@ user.get('/sessions', async (c) => {
   const results = await db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.lastActiveAt))
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -710,7 +710,7 @@ user.get('/households/:id/members', async (c) => {
   
   return c.json({
     success: true,
-    data: members
+    data: toSnake(members)
   })
 })
 
@@ -721,7 +721,7 @@ user.get('/households/:id/invites', async (c) => {
   const results = await db.select().from(householdInvites).where(and(eq(householdInvites.householdId, id), eq(householdInvites.status, 'pending')))
   return c.json({
     success: true,
-    data: results
+    data: toSnake(results)
   })
 })
 
@@ -756,7 +756,7 @@ user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ ro
   return c.json({ success: true })
 })
 
-user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transferToUserId: z.string().optional() }).optional(), (result, c) => {
+user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transfer_to_user_id: z.string().optional() }).optional(), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Member ejection validation failed:`, result.error.errors);
   }
@@ -775,12 +775,12 @@ user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ t
   const orphanedBills = await db.select().from(subscriptions).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId))).limit(1).then(res => res[0])
   
   if (orphanedBills) {
-    const body = await c.req.json().catch(() => ({}))
-    if (!body.transferToUserId) {
+    const data = c.req.valid('json')
+    if (!data?.transfer_to_user_id) {
        return c.json({ error: 'Ghost-Bill Lock: User owns active bills.', requiresTransfer: true }, 400)
     } else {
-       await db.update(subscriptions).set({ ownerId: body.transferToUserId }).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId)))
-       await logAudit(c, 'households', id, 'OWNERSHIP_TRANSFERRED', null, { from: memberId, to: body.transferToUserId, type: 'subscriptions_batch' })
+       await db.update(subscriptions).set({ ownerId: data.transfer_to_user_id }).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId)))
+       await logAudit(c, 'households', id, 'OWNERSHIP_TRANSFERRED', null, { from: memberId, to: data.transfer_to_user_id, type: 'subscriptions_batch' })
     }
   }
 

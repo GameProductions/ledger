@@ -230,12 +230,12 @@ const LoanManagerPage: React.FC = () => {
                 <div className="space-y-4 mb-8">
                    <div className="flex justify-between items-end border-b border-white/5 pb-2">
                       <span className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">Outstanding</span>
-                      <Price amountCents={loan.remaining_balance_cents} className="text-2xl font-black italic text-white" />
+                      <Price amount_cents={loan.remaining_balance_cents} className="text-2xl font-black italic text-white" />
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-secondary mb-1">Original</p>
-                        <Price amountCents={loan.total_amount_cents} className="text-sm font-bold opacity-60" />
+                        <Price amount_cents={loan.total_amount_cents} className="text-sm font-bold opacity-60" />
                       </div>
                       <div className="text-right">
                         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-secondary mb-1">Interest</p>

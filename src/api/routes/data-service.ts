@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings, Variables } from '../types'
-import { logAudit } from '../utils'
+import { logAudit, toSnake } from '../utils'
 import { getDb } from '../db'
 import {
   transactions,
@@ -36,16 +36,6 @@ const isPrivateIp = (url: string) => {
   return false
 }
 
-const toSnake = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  const res: any = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    res[snakeKey] = obj[key];
-  }
-  return res;
-}
-
 // Analysis & Insights (Plain English replacements for Analytics)
 data.get('/analysis/summary', async (c) => {
   const householdId = c.get('householdId')
@@ -76,15 +66,15 @@ data.get('/analysis/summary', async (c) => {
     
   const burnRate = (recentExpenseResult[0]?.total || 0) / 30
   
-  return c.json({
+    return c.json({
     success: true,
     data: {
-      healthScore: 85,
-      monthlyIncome: totalIncome,
-      monthlyExpense: totalExpense,
-      savingsRate: Math.round(savingsRate),
-      dailyBurnRate: Math.round(burnRate),
-      safetyNumberCents: (savings * 6)
+      health_score: 85,
+      monthly_income: totalIncome,
+      monthly_expense: totalExpense,
+      savings_rate: Math.round(savingsRate),
+      daily_burn_rate: Math.round(burnRate),
+      safety_number_cents: (savings * 6)
     }
   })
 })
@@ -110,7 +100,7 @@ data.get('/analysis/category-spending', async (c) => {
   .groupBy(categories.id)
   .orderBy(desc(sql`SUM(ABS(${transactions.amountCents}))`))
 
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 data.get('/analysis/net-worth', async (c) => {
@@ -181,7 +171,7 @@ data.get('/analysis/forecast', async (c) => {
     return { date, balanceCents: Math.round(projectedBalance) }
   })
 
-  return c.json({ success: true, data: forecast || [] })
+  return c.json({ success: true, data: toSnake(forecast) || [] })
 })
 
 // Universal Scraper
@@ -326,7 +316,7 @@ data.get('/history', async (c) => {
     created_at: reports.createdAt
   }).from(reports).where(eq(reports.householdId, householdId)).orderBy(desc(reports.createdAt))
   
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 data.post('/history/lock', async (c) => {
@@ -374,7 +364,7 @@ data.get('/tools/tokens', async (c) => {
     created_at: personalAccessTokens.createdAt
   }).from(personalAccessTokens).where(eq(personalAccessTokens.householdId, householdId))
   
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 data.patch('/tools/tokens/:id', zValidator('json', z.object({ name: z.string().min(1).max(100) })), async (c) => {

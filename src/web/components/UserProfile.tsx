@@ -8,7 +8,7 @@ const UserProfile: React.FC = () => {
   const [editing, setEditing] = useState(false)
 
   useEffect(() => {
-    if (profile) setName(profile.displayName)
+    if (profile) setName(profile.display_name)
   }, [profile])
 
   const handleUpdate = async () => {
@@ -18,7 +18,7 @@ const UserProfile: React.FC = () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
       },
-      body: JSON.stringify({ displayName: name })
+      body: JSON.stringify({ display_name: name })
     })
     setEditing(false)
     window.location.reload()
@@ -40,7 +40,7 @@ const UserProfile: React.FC = () => {
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }} onClick={() => setEditing(true)}>
           <img src={profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
-          <span style={{ fontWeight: 600 }}>{profile.displayName || 'Set Name'}</span>
+          <span style={{ fontWeight: 600 }}>{profile.display_name || 'Set Name'}</span>
         </div>
       )}
     </div>

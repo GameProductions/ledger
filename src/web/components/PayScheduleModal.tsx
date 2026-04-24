@@ -21,14 +21,14 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
     // Form State
     const [name, setName] = React.useState(schedule?.name || '');
-    const [amountCents, setAmountCents] = React.useState(schedule?.estimated_amountCents || 0);
+    const [amountCents, setAmountCents] = React.useState(schedule?.estimated_amount_cents || 0);
     const [frequency, setFrequency] = React.useState(schedule?.frequency || 'biweekly');
-    const [nextPayDate, setNextPayDate] = React.useState(schedule?.nextPayDate || new Date().toISOString().split('T')[0]);
+    const [nextPayDate, setNextPayDate] = React.useState(schedule?.next_pay_date || new Date().toISOString().split('T')[0]);
     const [notes, setNotes] = React.useState(schedule?.notes || '');
     const [d1, setD1] = React.useState(schedule?.semi_monthly_day_1 || 1);
     const [d2, setD2] = React.useState(schedule?.semi_monthly_day_2 || 15);
     const [userId, setUserId] = React.useState(schedule?.user_id || '');
-    const [upcomingAmountCents, setUpcomingAmountCents] = React.useState(schedule?.upcoming_amountCents || 0);
+    const [upcomingAmountCents, setUpcomingAmountCents] = React.useState(schedule?.upcoming_amount_cents || 0);
     const [upcomingEffectiveDate, setUpcomingEffectiveDate] = React.useState(schedule?.upcoming_effective_date || '');
 
     React.useEffect(() => {
@@ -186,7 +186,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                     >
                         <option value="">Household (Generic)</option>
                         {household?.members?.map((m: any) => (
-                            <option key={m.user.id} value={m.user.id}>{m.user.displayName || m.user.username}</option>
+                            <option key={m.user.id} value={m.user.id}>{m.user.display_name || m.user.username}</option>
                         ))}
                     </select>
                 </div>

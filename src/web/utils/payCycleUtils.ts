@@ -6,7 +6,7 @@ export interface PaydayInstance {
   date: string;
   original_date: string;
   name: string;
-  amountCents: number;
+  amount_cents: number;
   notes?: string;
   type: 'pay_schedule';
   is_override?: boolean;
@@ -23,10 +23,10 @@ export const projectPaydays = (
   const safeExceptions = Array.isArray(exceptions) ? exceptions : [];
 
   schedules.forEach(schedule => {
-    if (!schedule.nextPayDate) return;
+    if (!schedule.next_pay_date) return;
     
-    let current = parseISO(schedule.nextPayDate);
-    const amount = schedule.estimated_amountCents || 0;
+    let current = parseISO(schedule.next_pay_date);
+    const amount = schedule.estimated_amount_cents || 0;
     const notes = schedule.notes || '';
     const frequency = schedule.frequency;
 
@@ -60,7 +60,7 @@ export const projectPaydays = (
           date: exception?.override_date || dateStr,
           original_date: dateStr,
           name: schedule.name,
-          amountCents: exception?.override_amountCents ?? amount,
+          amount_cents: exception?.override_amount_cents ?? amount,
           notes: exception?.note || notes,
           type: 'pay_schedule',
           is_override: !!exception
@@ -124,7 +124,7 @@ export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: Payday
     sortedPaydays.forEach((payday, idx) => {
         const nextPayday = sortedPaydays[idx + 1];
         const items = liabilities.filter(item => {
-            const date = item.dueDate || item.next_billing_date || item.next_payment_date || item.transactionDate;
+            const date = item.due_date || item.next_billing_date || item.next_payment_date || item.transaction_date;
             if (!date) return false;
             
             const isAtOrAfterPayday = date >= payday.date;
@@ -135,7 +135,7 @@ export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: Payday
         cycles.push({
             payday,
             items,
-            total_cents: items.reduce((acc, curr) => acc + (curr.amountCents || curr.installment_amountCents || 0), 0)
+            total_cents: items.reduce((acc, curr) => acc + (curr.amount_cents || curr.installment_amount_cents || 0), 0)
         });
     });
 

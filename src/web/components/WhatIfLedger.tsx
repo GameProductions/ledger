@@ -7,13 +7,13 @@ const WhatIfLedger: React.FC = () => {
   const [disabledSubs, setDisabledSubs] = useState<string[]>([])
   
   const originalTotal = useMemo(() => {
-    return subs?.reduce((acc: number, sub: any) => acc + sub.amountCents, 0) || 0
+    return subs?.reduce((acc: number, sub: any) => acc + sub.amount_cents, 0) || 0
   }, [subs])
 
   const projectedTotal = useMemo(() => {
     return subs?.reduce((acc: number, sub: any) => {
       if (disabledSubs.includes(sub.id)) return acc
-      return acc + sub.amountCents
+      return acc + sub.amount_cents
     }, 0) || 0
   }, [subs, disabledSubs])
 
@@ -27,7 +27,7 @@ const WhatIfLedger: React.FC = () => {
       </p>
       
       <div style={{ display: 'grid', gap: '0.8rem' }}>
-        {subs?.map((sub: any) => (
+                {Array.isArray(subs) && (subs as any[]).map((sub: any) => (
           <label key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.5rem', background: disabledSubs.includes(sub.id) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', borderRadius: '0.4rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input 
@@ -43,7 +43,7 @@ const WhatIfLedger: React.FC = () => {
               />
               <span style={{ textDecoration: disabledSubs.includes(sub.id) ? 'line-through' : 'none' }}>{sub.name}</span>
             </div>
-            <Price amountCents={sub.amountCents} className="font-bold" />
+            <Price amount_cents={sub.amount_cents} className="font-bold" />
           </label>
         ))}
       </div>

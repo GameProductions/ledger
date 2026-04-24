@@ -12,7 +12,7 @@ import { ShieldCheck, Terminal } from 'lucide-react'
 const PreferencesPage: React.FC = () => {
   const { token, householdId } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
-  const settings = JSON.parse(profile?.settingsJson || '{}')
+  const settings = JSON.parse(profile?.settings_json || '{}')
 
   const updateSettings = async (newSettings: any) => {
     if (!token) return
@@ -24,7 +24,7 @@ const PreferencesPage: React.FC = () => {
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
     })
     window.location.reload()
   }

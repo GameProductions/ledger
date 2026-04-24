@@ -67,7 +67,7 @@ export const InstallmentsList: React.FC = () => {
                     const remainingPayments = inst.remaining_installments;
                     const paidPayments = totalPayments - remainingPayments;
                     const progressPercent = (paidPayments / totalPayments) * 100;
-                    const paidAmountCents = paidPayments * inst.installment_amountCents;
+                    const paidAmountCents = paidPayments * inst.installment_amount_cents;
 
                     return (
                         <div key={inst.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-indigo-500/30 overflow-hidden">
@@ -75,7 +75,7 @@ export const InstallmentsList: React.FC = () => {
                                 <div className="absolute top-0 right-0 bg-indigo-500/10 border-b border-l border-indigo-500/20 px-3 py-1 rounded-bl-xl">
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
                                         <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                                        Rate Change: <Price amountCents={inst.upcoming_amountCents} /> on {inst.upcoming_effective_date}
+                                        Rate Change: <Price amount_cents={inst.upcoming_amount_cents} /> on {inst.upcoming_effective_date}
                                     </div>
                                 </div>
                             )}
@@ -92,7 +92,7 @@ export const InstallmentsList: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <Price amountCents={inst.installment_amountCents} className="text-xl font-black tracking-tighter" />
+                                    <Price amount_cents={inst.installment_amount_cents} className="text-xl font-black tracking-tighter" />
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-white/30 mt-0.5">Per {inst.frequency}</div>
                                 </div>
                             </div>
@@ -102,8 +102,8 @@ export const InstallmentsList: React.FC = () => {
                                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
                                     <span className="text-white/40">Total Progress</span>
                                     <div className="flex gap-2">
-                                        <span className="text-white/40 italic">Paid <Price amountCents={paidAmountCents} /></span>
-                                        <span className="text-white">Of <Price amountCents={inst.total_amountCents} /></span>
+                                        <span className="text-white/40 italic">Paid <Price amount_cents={paidAmountCents} /></span>
+                                        <span className="text-white">Of <Price amount_cents={inst.total_amount_cents} /></span>
                                     </div>
                                 </div>
                                 <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
@@ -162,7 +162,7 @@ export const InstallmentsList: React.FC = () => {
                                                             }`}>
                                                                 {split.status}
                                                             </span>
-                                                            <Price amountCents={split.calculated_amountCents} className="text-xs font-bold tracking-widest" />
+                                                            <Price amount_cents={split.calculated_amount_cents} className="text-xs font-bold tracking-widest" />
                                                         </div>
                                                     </div>
                                                 ))}
@@ -202,7 +202,7 @@ export const InstallmentsList: React.FC = () => {
                                     <LiabilitySplitter 
                                         targetId={inst.id} 
                                         targetType="installment" 
-                                        totalAmountCents={inst.installment_amountCents} 
+                                        total_amount_cents={inst.installment_amount_cents} 
                                         onComplete={() => {
                                             setOpenSplitterId(null);
                                             mutate();

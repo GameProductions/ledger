@@ -93,12 +93,12 @@ const InvestmentPortfolioPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            <div className="card p-8 bg-black/40 border-glass-border">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Net Worth Contribution</p>
-              <Price amountCents={totalValue} className="text-4xl font-black italic tracking-tighter" />
+              <Price amount_cents={totalValue} className="text-4xl font-black italic tracking-tighter" />
            </div>
            <div className="card p-8 bg-black/40 border-glass-border">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Total Unrealized Gain</p>
               <div className="flex items-center gap-3">
-                <Price amountCents={totalGain} className={`text-4xl font-black italic tracking-tighter ${totalGain >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
+                <Price amount_cents={totalGain} className={`text-4xl font-black italic tracking-tighter ${totalGain >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
                 {totalGain !== 0 && (
                   <div className={`p-1 rounded-full ${totalGain > 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                     <TrendingUp size={16} className={totalGain < 0 ? 'rotate-180' : ''} />
@@ -222,7 +222,7 @@ const InvestmentPortfolioPage: React.FC = () => {
                 <div className="space-y-4">
                    <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-widest text-secondary/40">Market Value</span>
-                      <Price amountCents={inv.current_valuation_cents} className="text-2xl font-black italic text-white" />
+                      <Price amount_cents={inv.current_valuation_cents} className="text-2xl font-black italic text-white" />
                    </div>
                    
                    <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
@@ -244,7 +244,7 @@ const InvestmentPortfolioPage: React.FC = () => {
                        </div>
                        <div className="text-right">
                          <p className="text-[8px] font-black uppercase tracking-widest text-secondary opacity-40 mb-1">Cost Basis</p>
-                         <Price amountCents={inv.cost_basis_cents} className="text-sm font-bold opacity-60" />
+                         <Price amount_cents={inv.cost_basis_cents} className="text-sm font-bold opacity-60" />
                        </div>
                    </div>
                 </div>

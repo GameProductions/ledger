@@ -9,11 +9,11 @@ import { getApiUrl } from '../utils/api';
 interface LiabilitySplitterProps {
     targetId: string;
     targetType: 'bill' | 'subscription' | 'installment';
-    totalAmountCents: number;
+    total_amount_cents: number;
     onComplete?: () => void;
 }
 
-export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, targetType, totalAmountCents, onComplete }) => {
+export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, targetType, total_amount_cents, onComplete }) => {
     const { token, user } = useAuth();
     const { showToast } = useToast();
     const { data: household } = useApi('/api/user/households/current');
@@ -28,12 +28,12 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
     const calculatedCents = (userId: string) => {
         const val = assignments[userId] || 0;
         if (splitMode === 'fixed') return Math.round(val * 100);
-        return Math.round((val / 100) * totalAmountCents);
+        return Math.round((val / 100) * total_amount_cents);
     };
 
     const totalCalculatedCents = Object.keys(assignments).reduce((acc, uid) => acc + calculatedCents(uid), 0);
-    const unassignedCents = Math.max(0, totalAmountCents - totalCalculatedCents);
-    const isValid = splitMode === 'percentage' ? totalAssignedValue === 100 : totalCalculatedCents === totalAmountCents;
+    const unassignedCents = Math.max(0, total_amount_cents - totalCalculatedCents);
+    const isValid = splitMode === 'percentage' ? totalAssignedValue === 100 : totalCalculatedCents === total_amount_cents;
 
     const handleSave = async () => {
         if (!isValid) return;
@@ -96,9 +96,9 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
                     <div key={member.id} className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 text-sm font-bold">
                             <span className="w-8 h-8 rounded-full bg-white/10 flex flex-col items-center justify-center uppercase text-xs text-primary/60">
-                                {member.user?.name?.charAt(0) || '?'}
+                                {member.user?.display_name?.charAt(0) || '?'}
                             </span>
-                            {member.user?.name} {member.user?.id === user?.id && <span className="text-[9px] text-white/30 uppercase tracking-widest ml-1">(You)</span>}
+                            {member.user?.display_name} {member.user?.id === user?.id && <span className="text-[9px] text-white/30 uppercase tracking-widest ml-1">(You)</span>}
                         </div>
                         <div className="flex items-center gap-2">
                             <input 
@@ -123,7 +123,7 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
 
             <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
                 <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Unassigned Balance</span>
-                <Price amountCents={unassignedCents} className={`font-black tracking-tighter ${unassignedCents === 0 ? 'text-primary' : 'text-red-500'}`} />
+                <Price amount_cents={unassignedCents} className={`font-black tracking-tighter ${unassignedCents === 0 ? 'text-primary' : 'text-red-500'}`} />
             </div>
 
             <label className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl cursor-pointer hover:bg-primary/10 transition-colors">

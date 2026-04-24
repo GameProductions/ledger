@@ -19,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isDev = import.meta.env.DEV;
   const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null))
-  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","displayName":"Administrator","email":"admin@example.com"}' : 'null')))
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","display_name":"Administrator","email":"admin@example.com"}' : 'null')))
   const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_householdId') || (isDev ? 'household-abc' : null))
   const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_globalRole') || 'user')
   const [privacyMode, setPrivacyMode] = useState<boolean>(localStorage.getItem('ledger_privacy_mode') === 'true')
@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (res.ok) {
             const envelope = await res.json()
             if (envelope.success && envelope.data) {
-              const { globalRole: role, isImpersonating: imp } = envelope.data
+              const { global_role: role, is_impersonating: imp } = envelope.data
               setGlobalRole(role)
               setIsImpersonating(imp)
               localStorage.setItem('ledger_globalRole', role)
@@ -60,17 +60,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (window as any)._ledger_is_logging_out = false
     setToken(newToken)
     setUser(newUser)
-    setGlobalRole(newUser.globalRole || 'user')
+    setGlobalRole(newUser.global_role || 'user')
     localStorage.setItem('ledger_token', newToken)
     localStorage.setItem('ledger_user', JSON.stringify(newUser))
-    localStorage.setItem('ledger_globalRole', newUser.globalRole || 'user')
+    localStorage.setItem('ledger_globalRole', newUser.global_role || 'user')
     
     // Clear impersonation on fresh login
     setIsImpersonating(false)
     localStorage.removeItem('ledger_impersonation_active')
 
     // FORENSIC PRIORITY: Prioritize the householdId from the profile if available
-    const hId = newUser.householdId || 'ledger-main-001'
+    const hId = newUser.household_id || 'ledger-main-001'
     setHouseholdId(hId)
     localStorage.setItem('ledger_householdId', hId)
   }, [])

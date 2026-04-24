@@ -13,10 +13,10 @@ const AdminProcessors: React.FC = () => {
   
   const [newItem, setNewItem] = useState({
     name: '',
-    websiteUrl: '',
-    brandingUrl: '',
-    supportUrl: '',
-    subscriptionIdNotes: ''
+    website_url: '',
+    branding_url: '',
+    support_url: '',
+    subscription_id_notes: ''
   });
 
   const fetchProcessors = async () => {
@@ -62,7 +62,7 @@ const AdminProcessors: React.FC = () => {
       showToast(editingId ? 'Processor updated' : 'New processor added', 'success');
       setShowAdd(false);
       setEditingId(null);
-      setNewItem({ name: '', websiteUrl: '', brandingUrl: '', supportUrl: '', subscriptionIdNotes: '' });
+      setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
       fetchProcessors();
     } else {
       const err = await res.json();
@@ -74,10 +74,10 @@ const AdminProcessors: React.FC = () => {
     setEditingId(processor.id);
     setNewItem({
       name: processor.name,
-      websiteUrl: processor.websiteUrl || '',
-      brandingUrl: processor.brandingUrl || '',
-      supportUrl: processor.supportUrl || '',
-      subscriptionIdNotes: processor.subscriptionIdNotes || ''
+      website_url: processor.website_url || processor.websiteUrl || '',
+      branding_url: processor.branding_url || processor.brandingUrl || '',
+      support_url: processor.support_url || processor.supportUrl || '',
+      subscription_id_notes: processor.subscription_id_notes || processor.subscriptionIdNotes || ''
     });
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -116,7 +116,7 @@ const AdminProcessors: React.FC = () => {
           onClick={() => {
             if (showAdd) {
                 setEditingId(null);
-                setNewItem({ name: '', websiteUrl: '', brandingUrl: '', supportUrl: '', subscriptionIdNotes: '' });
+                setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
             }
             setShowAdd(!showAdd);
           }}
@@ -147,43 +147,43 @@ const AdminProcessors: React.FC = () => {
                   required
                 />
               </div>
-              <div>
+               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
                 <input 
                   type="url" 
-                  value={newItem.websiteUrl} 
-                  onChange={(e) => setNewItem({ ...newItem, websiteUrl: e.target.value })}
+                  value={newItem.website_url} 
+                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
-              <div>
+               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
                 <input 
                   type="url" 
-                  value={newItem.brandingUrl} 
-                  onChange={(e) => setNewItem({ ...newItem, brandingUrl: e.target.value })}
+                  value={newItem.branding_url} 
+                  onChange={(e) => setNewItem({ ...newItem, branding_url: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
             </div>
             <div className="space-y-6">
-              <div>
+               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support URL</label>
                 <input 
                   type="url" 
-                  value={newItem.supportUrl} 
-                  onChange={(e) => setNewItem({ ...newItem, supportUrl: e.target.value })}
+                  value={newItem.support_url} 
+                  onChange={(e) => setNewItem({ ...newItem, support_url: e.target.value })}
                   placeholder="https://support.stripe.com"
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
-              <div>
+               <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
                 <textarea 
-                  value={newItem.subscriptionIdNotes} 
-                  onChange={(e) => setNewItem({ ...newItem, subscriptionIdNotes: e.target.value })}
+                  value={newItem.subscription_id_notes} 
+                  onChange={(e) => setNewItem({ ...newItem, subscription_id_notes: e.target.value })}
                   placeholder="e.g. Look for keys starting with 'sub_' in the metadata."
                   rows={3}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"

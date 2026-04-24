@@ -142,7 +142,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             <ChevronRight size={14} className="text-orange-500" />
             Pending Tracked Expenses ({tracked.length})
             <span className="ml-2 px-2 py-0.5 bg-orange-500/10 rounded-full text-orange-400 border border-orange-500/10">
-              {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amountCents ?? item.amount_cents ?? 0), 0))}
+              {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amount_cents ?? 0), 0))}
             </span>
           </h4>
           <button 
@@ -164,7 +164,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                 Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
                   const item = tracked.find((t: any) => t.id === id)
-                  return sum + (item?.amountCents ?? item?.amount_cents ?? 0)
+                  return sum + (item?.amount_cents ?? 0)
                 }, 0))}
               </div>
               <div className="flex items-center gap-1.5">
@@ -246,9 +246,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
                     <div className="flex items-center gap-3 mt-1">
                       <div className="text-[10px] uppercase tracking-widest text-secondary font-black flex items-center gap-1">
-                        <Calendar size={10} /> {new Date(item.createdAt).toLocaleDateString()}
+                        <Calendar size={10} /> {new Date(item.created_at).toLocaleDateString()}
                       </div>
-                      {item.attentionRequired && (
+                      {item.attention_required && (
                         <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
                           <Tag size={10} /> Needs Attention
                         </div>
@@ -259,9 +259,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <Price amountCents={item.amountCents ?? item.amount_cents} className="text-lg font-black text-orange-200" />
+                    <Price amount_cents={item.amount_cents} className="text-lg font-black text-orange-200" />
                     <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
-                      Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? i.amount_cents ?? 0), 0))}
+                      Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amount_cents ?? 0), 0))}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -270,7 +270,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         setEditingId(item.id)
                         setEditForm({
                           description: item.description,
-                          amount_cents: item.amountCents,
+                          amount_cents: item.amount_cents,
                           notes: item.notes
                         })
                       }}

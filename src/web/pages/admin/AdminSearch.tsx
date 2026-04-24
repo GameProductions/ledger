@@ -58,11 +58,11 @@ const AdminSearch: React.FC = () => {
                          <p className="font-bold">{tx.description}</p>
                          <span className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase font-black">{tx.household_name}</span>
                        </div>
-                       <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter">{tx.id} • {tx.transactionDate}</p>
+                       <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter">{tx.id} • {tx.transaction_date}</p>
                     </div>
                     <div className="text-right">
-                       <Price amountCents={tx.amountCents} className="font-black text-lg" />
-                       <p className="text-[10px] text-gray-600 uppercase font-black">{tx.reconciliationStatus}</p>
+                       <Price amount_cents={tx.amount_cents} className="font-black text-lg" />
+                       <p className="text-[10px] text-gray-600 uppercase font-black">{tx.reconciliation_status}</p>
                     </div>
                   </div>
                 ))}
@@ -78,7 +78,7 @@ const AdminSearch: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(results.users || []).map((u: any) => (
                   <div key={u.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.08] transition-all group">
-                    <p className="font-bold text-lg mb-1 group-hover:text-emerald-400 transition-colors">{u.displayName || 'Anonymous'}</p>
+                    <p className="font-bold text-lg mb-1 group-hover:text-emerald-400 transition-colors">{u.display_name || 'Anonymous'}</p>
                     <p className="text-sm text-gray-500 font-mono mb-4">{u.email}</p>
                     <div className="flex gap-2">
                        <a href={`#/admin/users?id=${u.id}`} className="px-3 py-1 bg-white/5 rounded-full text-xs font-bold uppercase hover:bg-emerald-500 hover:text-black transition-all">View User Profile</a>

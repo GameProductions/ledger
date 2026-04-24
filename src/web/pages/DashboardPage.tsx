@@ -122,9 +122,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
-    if (user?.settingsJson) {
+    if (user?.settings_json) {
        try {
-         const parsed = JSON.parse(user.settingsJson)
+         const parsed = JSON.parse(user.settings_json)
          setSettings(parsed)
          
          if (parsed.tabConfig && Array.isArray(parsed.tabConfig)) {
@@ -174,7 +174,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
     });
     showToast('Layout settings saved');
   };
@@ -274,14 +274,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         payload = {
             name: data.name,
             frequency: data.frequency,
-            estimated_amount_cents: data.estimatedAmountCents,
-            next_pay_date: data.nextPayDate,
+            estimated_amount_cents: data.estimated_amount_cents,
+            next_pay_date: data.next_pay_date,
             notes: data.notes
         }
     } else if (data.type === 'bill') {
         payload = {
             name: data.name,
-            amount_cents: data.amountCents,
+            amount_cents: data.amount_cents,
             due_date: data.dueDate,
             status: data.status,
             notes: data.notes,
@@ -291,7 +291,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     } else {
         payload = {
             description: data.description,
-            amount_cents: data.amountCents,
+            amount_cents: data.amount_cents,
             transaction_date: data.date,
             status: 'none'
         }
@@ -391,7 +391,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
               </div>
               <div className="safe-to-spend-container">
-                <Price amountCents={analysis?.safeToSpendCents || analysis?.safetyNumberCents || 0} />
+                <Price amount_cents={analysis?.safe_to_spend_cents || analysis?.safety_number_cents || 0} />
               </div>
               <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
             </section>
@@ -403,7 +403,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
               </div>
               <div className="text-3xl font-black text-white mb-2">
-                <Price amountCents={Array.isArray(forecast) ? (forecast.at(-1)?.balanceCents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
+                <Price amount_cents={Array.isArray(forecast) ? (forecast.at(-1)?.balance_cents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
               <div className="flex items-center gap-2 mb-4">
                  <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
@@ -415,7 +415,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     key={i} 
                     className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"
                     style={{ width: '16.66%', opacity: 0.3 + (i * 0.1) }}
-                    title={`${p.date}: $${(p.balanceCents/100).toFixed(0)}`}
+                    title={`${p.date}: $${(p.balance_cents/100).toFixed(0)}`}
                   />
                 ))}
               </div>
@@ -490,13 +490,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           )}
                         </div>
                         <div className="text-xs text-secondary uppercase font-bold opacity-60 flex items-center gap-2">
-                           {tx.transactionDate}
+                           {tx.transaction_date}
                            {tx.confirmationNumber && <span className="text-slate-500 pr-2 border-r border-white/10">#{tx.confirmationNumber}</span>}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
-                      <Price amountCents={tx.amountCents} className="text-lg font-black tracking-tighter" />
+                      <Price amount_cents={tx.amount_cents} className="text-lg font-black tracking-tighter" />
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => setLinkingTx(tx)}
@@ -544,7 +544,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       const descInput = document.getElementById('qe-desc') as HTMLInputElement
                       const amountInput = document.getElementById('qe-amount') as HTMLInputElement
                       if (descInput) descInput.value = tpl.name
-                      if (amountInput) amountInput.value = (tpl.amountCents / 100).toFixed(2)
+                      if (amountInput) amountInput.value = (tpl.amount_cents / 100).toFixed(2)
                     }}
                     className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
                   >
@@ -600,7 +600,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   </div>
                 </div>
                 <div className="text-3xl font-black text-primary mb-1">
-                  <Price amountCents={budgetsData?.unallocatedBalanceCents || 0} />
+                  <Price amount_cents={budgetsData?.unallocated_balance_cents || 0} />
                 </div>
                 <div className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
                 
@@ -615,20 +615,20 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                                 <p className="text-xs text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
                              </div>
                           </div>
-                          <div className={`text-xl font-black tracking-tighter ${((b.envelopeBalanceCents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
-                             <Price amountCents={b.envelopeBalanceCents || 0} />
+                          <div className={`text-xl font-black tracking-tighter ${((b.envelope_balance_cents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
+                             <Price amount_cents={b.envelope_balance_cents || 0} />
                           </div>
                        </div>
                        
                        <div className="space-y-2">
                           <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
                              <span className="text-secondary opacity-60">Activity</span>
-                             <span className="text-white opacity-80"><Price amountCents={b.spendCents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthlyBudgetCents || 0} /></span></span>
+                             <span className="text-white opacity-80"><Price amount_cents={b.spend_cents || 0} /> <span className="hide-on-narrow">/ <Price amount_cents={b.monthly_budget_cents || 0} /></span></span>
                           </div>
                           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                              <div 
-                               className={`h-full transition-all duration-700 ${((b.spendCents || 0) > (b.monthlyBudgetCents || 0)) ? 'bg-red-500' : 'bg-primary'}`}
-                               style={{ width: `${Math.min(100, Math.max(0, ((b.spendCents || 0) / (b.monthlyBudgetCents || 1)) * 100))}%` }}
+                               className={`h-full transition-all duration-700 ${((b.spend_cents || 0) > (b.monthly_budget_cents || 0)) ? 'bg-red-500' : 'bg-primary'}`}
+                               style={{ width: `${Math.min(100, Math.max(0, ((b.spend_cents || 0) / (b.monthly_budget_cents || 1)) * 100))}%` }}
                              />
                           </div>
                        </div>
@@ -759,8 +759,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
                   onClick={() => {
                     // Reset to saved state on cancel
-                    if (user?.settingsJson) {
-                      const parsed = JSON.parse(user.settingsJson);
+                    if (user?.settings_json) {
+                      const parsed = JSON.parse(user.settings_json);
                       if (parsed.tabConfig) setTabConfig(parsed.tabConfig);
                       if (parsed.dashboardLayout) setLayout(parsed.dashboardLayout);
                     }
@@ -876,7 +876,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
             <div className="h-4 w-px bg-glass-border" />
             <span className="text-lg sm:text-xl font-black tracking-tighter">
-              <Price amountCents={(Array.isArray(transactions) ? transactions : []).filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + (t.amountCents || 0), 0)} />
+              <Price amount_cents={(Array.isArray(transactions) ? transactions : []).filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + (t.amount_cents || 0), 0)} />
             </span>
           </div>
           <button 
@@ -894,7 +894,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="text-xl font-black m-0">Match: {linkingTx.description}</h3>
-                <Price amountCents={linkingTx.amountCents} className="text-2xl font-black tracking-tighter text-primary" />
+                <Price amount_cents={linkingTx.amount_cents} className="text-2xl font-black tracking-tighter text-primary" />
               </div>
               <button onClick={() => setLinkingTx(null)} className="text-2xl opacity-50 hover:opacity-100 transition-opacity">×</button>
             </div>
@@ -929,10 +929,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           <span className="text-sm">✨</span>
                           <div>
                             <p className="font-bold text-sm">{t.description}</p>
-                            <p className="text-xs uppercase font-black text-primary opacity-60">{t.type} • {t.confidence} confidence</p>
                           </div>
                         </div>
-                        <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amountCents) / 100).toFixed(2)}</span>
+                        <span className="font-black tracking-tighter text-lg">${(Math.abs(t.amount_cents) / 100).toFixed(2)}</span>
                       </div>
                     ))}
                   {(!smartSuggestions || !smartSuggestions.find((s: any) => s.source.id === linkingTx.id)?.candidates?.length) && (
@@ -965,11 +964,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     >
                       <div>
                         <div className="font-bold group-hover:text-primary transition-colors">{t.description}</div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{t.transactionDate}</div>
+                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{t.transaction_date}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-black tracking-tighter text-lg">${(t.amountCents / 100).toFixed(2)}</div>
-                        {Math.abs(t.amountCents) === Math.abs(linkingTx.amountCents) && (
+                        <div className="font-black tracking-tighter text-lg">${(t.amount_cents / 100).toFixed(2)}</div>
+                        {Math.abs(t.amount_cents) === Math.abs(linkingTx.amount_cents) && (
                           <span className="text-[10px] text-primary font-black uppercase">Exact Match</span>
                         )}
                       </div>
@@ -1019,7 +1018,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     value: b.id,
                     label: b.name,
                     icon: <span className="text-sm">{b.icon}</span>,
-                    metadata: { subtext: `$${((b.envelopeBalanceCents || 0)/100).toFixed(2)}` }
+                    metadata: { subtext: `$${((b.envelope_balance_cents || 0)/100).toFixed(2)}` }
                   })) : []}
                   value={fundCategoryId}
                   onChange={(val) => setFundCategoryId(val)}

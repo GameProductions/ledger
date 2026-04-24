@@ -17,7 +17,7 @@ const SavingsBuckets: React.FC = () => {
     await fetch(`${API_URL}/api/financials/buckets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
-      body: JSON.stringify({ name, targetCents })
+      body: JSON.stringify({ name, target_cents: targetCents })
     })
     setIsAdding(false)
     setName('')
@@ -41,7 +41,7 @@ const SavingsBuckets: React.FC = () => {
                 <div style={{ width: `${Math.min(100, percent)}%`, height: '100%', background: 'var(--primary)' }}></div>
               </div>
               <div className="text-xs text-secondary font-medium">
-                Goal: <Price amountCents={b.target_cents} options={{ minimumFractionDigits: 0 }} />
+                Goal: <Price amount_cents={b.target_cents} options={{ minimumFractionDigits: 0 }} />
               </div>
             </div>
           );

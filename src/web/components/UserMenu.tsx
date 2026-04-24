@@ -17,7 +17,7 @@ const UserMenu: React.FC<{
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'
-  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = sanitizeImageUrl(profile?.avatar_url) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isAdminPortal ? [
     { icon: LayoutDashboard, label: 'Super Admin Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
@@ -58,7 +58,7 @@ const UserMenu: React.FC<{
         </div>
         <div className="flex flex-col items-start ml-1 leading-none text-left">
           <Masked>
-            <span className="text-sm font-bold text-white">{(profile?.displayName || user?.displayName || 'User')}</span>
+            <span className="text-sm font-bold text-white">{(profile?.display_name || user?.displayName || 'User')}</span>
           </Masked>
           {isAdminPortal ? (
             <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">SUPER ADMIN</span>
@@ -125,7 +125,7 @@ const UserMenu: React.FC<{
                   </button>
                 ))}
 
-                {!isAdminPortal && (globalRole === 'super_admin' || profile?.globalRole === 'super_admin') && (
+                {!isAdminPortal && (globalRole === 'super_admin' || profile?.global_role === 'super_admin') && (
                   <button 
                     onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"

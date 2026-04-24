@@ -72,7 +72,7 @@ const UserDetailsModal: React.FC<{
       await fetch(`${apiUrl}/api/admin/users/${userId}/password/reset`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: manualPass, isTemporary: isTemp })
+        body: JSON.stringify({ new_password: manualPass, is_temporary: isTemp })
       });
       showToast('Password reset successfully', 'success');
       setManualPass('');
@@ -144,7 +144,7 @@ const UserDetailsModal: React.FC<{
             </div>
             <div>
               <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details?.profile?.displayName || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
+                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details?.profile?.display_name || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
                 <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                    {details?.profile?.status || 'Unknown'}
                 </span>
@@ -418,9 +418,9 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     username: '',
     email: '',
     password: '',
-    displayName: '',
-    globalRole: 'user',
-    forcePasswordChange: true
+    display_name: '',
+    global_role: 'user',
+    force_password_change: true
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -502,8 +502,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                     type="text"
                     placeholder="e.g. John Wick"
                     className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-sm font-bold focus:border-emerald-500/50 outline-none transition-all"
-                    value={formData.displayName}
-                    onChange={e => setFormData({ ...formData, displayName: e.target.value })}
+                    value={formData.display_name}
+                    onChange={e => setFormData({ ...formData, display_name: e.target.value })}
                   />
                 </div>
               </div>
@@ -549,8 +549,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                  </div>
                  <select 
                    className="bg-black border border-white/10 p-2 rounded-lg text-xs font-black uppercase text-emerald-500 outline-none"
-                   value={formData.globalRole}
-                   onChange={e => setFormData({ ...formData, globalRole: e.target.value })}
+                   value={formData.global_role}
+                   onChange={e => setFormData({ ...formData, global_role: e.target.value })}
                  >
                    <option value="user">USER</option>
                    <option value="super_admin">SUPER_ADMIN</option>
@@ -560,8 +560,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
               <div className="flex items-center gap-3 ml-1">
                 <input 
                   type="checkbox" 
-                  checked={formData.forcePasswordChange}
-                  onChange={e => setFormData({ ...formData, forcePasswordChange: e.target.checked })}
+                  checked={formData.force_password_change}
+                  onChange={e => setFormData({ ...formData, force_password_change: e.target.checked })}
                   className="accent-emerald-500"
                 />
                 <label className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer">Require Password Change on First Login</label>
@@ -636,10 +636,16 @@ const AdminUsers: React.FC = () => {
   const handleUpdate = async (id: string, updates: any) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
+    
+    // Map camelCase to snake_case for backend compatibility
+    const payload: any = {};
+    if (updates.globalRole) payload.global_role = updates.globalRole;
+    if (updates.status) payload.status = updates.status;
+    
     await fetch(`${apiUrl}/api/admin/users/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(payload)
     });
     setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
     setActiveMenu(null);
@@ -676,7 +682,7 @@ const AdminUsers: React.FC = () => {
       const res = await fetch(`${apiUrl}/api/admin/users/merge`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId: mergeSource, targetId: mergeTarget })
+        body: JSON.stringify({ source_id: mergeSource, target_id: mergeTarget })
       });
       if (res.ok) {
         showToast('Accounts successfully merged', 'success');
@@ -695,7 +701,7 @@ const AdminUsers: React.FC = () => {
 
   const filteredUsers = users.filter(u => 
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -756,7 +762,7 @@ const AdminUsers: React.FC = () => {
                       alt="Avatar"
                     />
                     <div>
-                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.displayName || u.username || u.email || 'System User'}</div>
+                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.display_name || u.username || u.email || 'System User'}</div>
                       <div className="text-xs text-slate-500 font-mono tracking-tighter">{u.email}</div>
                     </div>
                   </div>
@@ -905,7 +911,7 @@ const AdminUsers: React.FC = () => {
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {users.filter(u => 
                 u.id !== mergeSource && 
-                (u.displayName?.toLowerCase().includes(mergeSearchTerm.toLowerCase()) || 
+                (u.display_name?.toLowerCase().includes(mergeSearchTerm.toLowerCase()) || 
                  u.email?.toLowerCase().includes(mergeSearchTerm.toLowerCase()))
               ).map(u => (
                 <div 
@@ -916,7 +922,7 @@ const AdminUsers: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <img src={u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} className="w-8 h-8 rounded-lg" />
                     <div>
-                      <p className="text-sm font-black uppercase text-white tracking-tight">{u.displayName || u.username}</p>
+                      <p className="text-sm font-black uppercase text-white tracking-tight">{u.display_name || u.username}</p>
                       <p className="text-[10px] font-mono text-slate-500">{u.email}</p>
                     </div>
                   </div>
@@ -941,7 +947,7 @@ const AdminUsers: React.FC = () => {
           }
         >
           <div className="space-y-4">
-            <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.displayName || userToDelete?.username}</strong>?</p>
+            <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.display_name || userToDelete?.username}</strong>?</p>
             <p className="text-red-500 text-xs font-black uppercase tracking-widest">CRITICAL ACTION: This will remove all associated data and credentials. This cannot be undone.</p>
           </div>
         </Modal>
@@ -983,15 +989,15 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
       });
       const data = await res.json();
       
-      if (data.token && data.impersonationContext) {
-        const { householdId, profile, globalRole } = data.impersonationContext;
-        onShowToast(`User access active: Accessing as ${profile.displayName}`, 'success');
+      if (data.token && data.impersonation_context) {
+        const { household_id, profile, globalRole } = data.impersonation_context;
+        onShowToast(`User access active: Accessing as ${profile.display_name}`, 'success');
         
         // Persona Synchronization
         localStorage.setItem('ledger_token', data.token);
         localStorage.setItem('ledger_user', JSON.stringify(profile));
         localStorage.setItem('ledger_globalRole', globalRole || 'user');
-        localStorage.setItem('ledger_householdId', householdId);
+        localStorage.setItem('ledger_householdId', household_id);
         localStorage.setItem('ledger_impersonation_active', 'true');
         localStorage.setItem('ledger_privacy_mode', privacyMirror ? 'true' : 'false');
         
@@ -1032,7 +1038,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
             <Monitor size={24} />
           </div>
           <div>
-            <p className="text-sm font-black uppercase text-white tracking-widest">{target.displayName || target.username}</p>
+            <p className="text-sm font-black uppercase text-white tracking-widest">{target.display_name || target.username}</p>
             <p className="text-[10px] font-mono text-purple-400">{target.email}</p>
           </div>
         </div>

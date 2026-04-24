@@ -13,7 +13,7 @@ import {
 } from '../schemas'
 import { EmailService } from '../services/email.service'
 import { hashPassword } from '../auth-utils'
-import { logAudit, encrypt } from '../utils'
+import { logAudit, encrypt, toSnake } from '../utils'
 import { CURRENT_VERSION } from '../constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
@@ -45,16 +45,16 @@ admin.get('/stats', async (c) => {
 admin.get('/config', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
-  const { configValue } = c.req.valid('json')
+  const { config_value } = c.req.valid('json')
   const db = getDb(c.env)
   
-  await db.update(systemConfig).set({ configValue, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
-  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { configValue })
+  await db.update(systemConfig).set({ configValue: config_value, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
+  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
   if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
   return c.json({ success: true })
 })
@@ -63,7 +63,7 @@ admin.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (
 admin.get('/features', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
@@ -87,21 +87,21 @@ admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), asyn
 admin.get('/records', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemRegistry).orderBy(systemRegistry.itemType, systemRegistry.name)
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  const metadata = data.metadataJson || {}
+  const metadata = data.metadata_json || {}
   const db = getDb(c.env)
   
   await db.insert(systemRegistry).values({
     id,
-    itemType: data.itemType,
+    itemType: data.item_type,
     name: data.name,
-    logoUrl: data.logoUrl || null,
-    websiteUrl: data.websiteUrl || null,
+    logoUrl: data.logo_url || null,
+    websiteUrl: data.website_url || null,
     metadataJson: JSON.stringify(metadata)
   })
   
@@ -129,7 +129,7 @@ admin.get('/users', async (c) => {
     createdAt: users.createdAt,
     lastActiveAt: users.lastActiveAt
   }).from(users).orderBy(desc(users.createdAt))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c) => {
@@ -139,7 +139,7 @@ admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c)
   }
 }), async (c) => {
   const data = c.req.valid('json')
-  const { username, email, password, displayName, globalRole, forcePasswordChange } = data
+  const { username, email, password, display_name, global_role, force_password_change } = data
   const db = getDb(c.env)
   
   const existing = await db.select({ id: users.id }).from(users).where(or(eq(users.username, username), eq(users.email, email))).limit(1).then(res => res[0])
@@ -153,13 +153,13 @@ admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c)
     username,
     email,
     passwordHash,
-    displayName,
-    globalRole,
+    displayName: display_name,
+    globalRole: global_role,
     status: 'active',
-    forcePasswordChange: forcePasswordChange ? 1 : 0
+    forcePasswordChange: force_password_change ? 1 : 0
   })
   
-  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, globalRole })
+  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, global_role })
   
   const emailService = new EmailService(c.env)
   try {
@@ -179,19 +179,19 @@ admin.get('/audit', async (c) => {
     SELECT 
       a.id, 
       a.action, 
-      a.table_name as targetType, 
-      a.record_id as targetId, 
-      a.new_values_json as detailsJson, 
-      a.created_at as createdAt,
-      u_actor.display_name as actorName,
-      u_target.display_name as targetName
+      a.table_name as target_type, 
+      a.record_id as target_id, 
+      a.new_values_json as details_json, 
+      a.created_at as created_at,
+      u_actor.display_name as actor_name,
+      u_target.display_name as target_name
     FROM audit_logs a
     LEFT JOIN users u_actor ON a.actor_id = u_actor.id
     LEFT JOIN users u_target ON a.record_id = u_target.id AND a.table_name = 'users'
     ORDER BY a.created_at DESC 
     LIMIT 200
   `).all()
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.get('/audit/system', async (c) => {
@@ -203,7 +203,7 @@ admin.get('/audit/system', async (c) => {
     detailsJson: systemAuditLogs.detailsJson,
     createdAt: systemAuditLogs.createdAt
   }).from(systemAuditLogs).orderBy(desc(systemAuditLogs.createdAt)).limit(100)
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 // Global Search
@@ -231,7 +231,7 @@ admin.get('/search', async (c) => {
 admin.get('/networks', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(billingProcessors).orderBy(billingProcessors.name)
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
@@ -242,10 +242,10 @@ admin.post('/networks', zValidator('json', BillingProcessorSchema), async (c) =>
   await db.insert(billingProcessors).values({
     id,
     name: data.name,
-    websiteUrl: data.websiteUrl,
-    brandingUrl: data.brandingUrl,
-    supportUrl: data.supportUrl,
-    subscriptionIdNotes: data.subscriptionIdNotes
+    websiteUrl: data.website_url,
+    brandingUrl: data.branding_url,
+    supportUrl: data.support_url,
+    subscriptionIdNotes: data.subscription_id_notes
   })
   await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
   return c.json({ success: true, id })
@@ -258,10 +258,10 @@ admin.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()
   
   const updates: any = { updatedAt: sql`CURRENT_TIMESTAMP` }
   if (data.name) updates.name = data.name
-  if (data.websiteUrl) updates.websiteUrl = data.websiteUrl
-  if (data.brandingUrl) updates.brandingUrl = data.brandingUrl
-  if (data.supportUrl) updates.supportUrl = data.supportUrl
-  if (data.subscriptionIdNotes) updates.subscriptionIdNotes = data.subscriptionIdNotes
+  if (data.website_url) updates.websiteUrl = data.website_url
+  if (data.branding_url) updates.brandingUrl = data.branding_url
+  if (data.support_url) updates.supportUrl = data.support_url
+  if (data.subscription_id_notes) updates.subscriptionIdNotes = data.subscription_id_notes
 
   if (Object.keys(updates).length > 1) {
     await db.update(billingProcessors).set(updates).where(eq(billingProcessors.id, id))
@@ -299,7 +299,7 @@ admin.get('/providers', async (c) => {
     LEFT JOIN billing_processors bp ON sp.billing_processor_id = bp.id 
     ORDER BY sp.name ASC
   `).all()
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.post('/providers', zValidator('json', ProviderSchema), async (c) => {
@@ -307,7 +307,7 @@ admin.post('/providers', zValidator('json', ProviderSchema), async (c) => {
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   // We use db.run to satisfy fields missed in static export or simply generic structure
-  await db.run(sql`INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (${id}, ${data.name}, ${data.websiteUrl || null}, ${data.brandingUrl || null}, ${data.billingProcessorId}, ${data.is3rdPartyCapable ? 1 : 0})`)
+  await db.run(sql`INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (${id}, ${data.name}, ${data.website_url || null}, ${data.branding_url || null}, ${data.billing_processor_id}, ${data.is_3rd_party_capable ? 1 : 0})`)
   await logAudit(c, 'service_providers', id, 'admin_create', null, data)
   return c.json({ success: true, id })
 })
@@ -316,12 +316,12 @@ admin.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), asyn
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const db = getDb(c.env)
-  const { name, websiteUrl, brandingUrl, billingProcessorId, is3rdPartyCapable } = data
+  const { name, website_url, branding_url, billing_processor_id, is_3rd_party_capable } = data
   try {
     await db.run(sql`
        UPDATE service_providers SET 
-       name = COALESCE(${name}, name), url = COALESCE(${websiteUrl}, url), icon_url = COALESCE(${brandingUrl}, icon_url), 
-       billing_processor_id = COALESCE(${billingProcessorId}, billing_processor_id), is_3rd_party_capable = COALESCE(${is3rdPartyCapable !== undefined ? (is3rdPartyCapable ? 1 : 0) : null}, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
+       name = COALESCE(${name}, name), url = COALESCE(${website_url}, url), icon_url = COALESCE(${branding_url}, icon_url), 
+       billing_processor_id = COALESCE(${billing_processor_id}, billing_processor_id), is_3rd_party_capable = COALESCE(${is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null}, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
        WHERE id = ${id}
     `)
     await logAudit(c, 'service_providers', id, 'admin_update', null, data)
@@ -343,19 +343,19 @@ admin.delete('/providers/:id', async (c) => {
 admin.get('/walkthroughs', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemWalkthroughs).orderBy(desc(systemWalkthroughs.createdAt))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.post('/walkthroughs', zValidator('json', z.object({
   version: z.string(),
   title: z.string(),
-  contentMd: z.string()
+  content_md: z.string()
 })), async (c) => {
-  const { version, title, contentMd } = c.req.valid('json')
+  const { version, title, content_md } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(systemWalkthroughs).values({
-    id, version, title, contentMd
+    id, version, title, contentMd: content_md
   })
   await logAudit(c, 'system_walkthroughs', id, 'SYNC_WALKTHROUGH', {}, { version, title })
   return c.json({ success: true, id })
@@ -367,28 +367,28 @@ admin.get('/users/management', async (c) => {
   const results = await db.select({
     id: users.id, email: users.email, username: users.username, globalRole: users.globalRole, status: users.status, createdAt: users.createdAt, lastActiveAt: users.lastActiveAt
   }).from(users).orderBy(desc(users.createdAt))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.patch('/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
   const { userId } = c.req.param()
-  const { globalRole, status, displayName, email } = c.req.valid('json')
+  const { global_role, status, display_name, email } = c.req.valid('json')
   const db = getDb(c.env)
   
   const old = await db.select({ globalRole: users.globalRole, status: users.status, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
   if (!old) throw new HTTPException(404, { message: 'User not found' })
 
   const updates: any = {}
-  if (globalRole) updates.globalRole = globalRole
+  if (global_role) updates.globalRole = global_role
   if (status) updates.status = status
-  if (displayName) updates.displayName = displayName
+  if (display_name) updates.displayName = display_name
   if (email) updates.email = email
 
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
   }
     
-  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { globalRole, status, displayName, email })
+  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status, display_name, email })
   return c.json({ success: true })
 })
 
@@ -409,7 +409,7 @@ admin.get('/users/:userId/details', async (c) => {
   const userPasskeys = await db.select({ id: passkeys.id, name: passkeys.name, aaguid: passkeys.aaguid, createdAt: passkeys.createdAt }).from(passkeys).where(eq(passkeys.userId, userId))
   
   const history = await db.run(sql`
-    SELECT action, target, created_at as createdAt, details_json 
+    SELECT action, target, created_at as created_at, details_json 
     FROM admin_audit_logs 
     WHERE user_id = ${userId} OR (target = 'users' AND target_id = ${userId})
     ORDER BY created_at DESC LIMIT 15
@@ -436,16 +436,16 @@ admin.get('/users/:userId/details', async (c) => {
 
 // Super Admin Overrides
 admin.post('/users/:userId/password/reset', zValidator('json', z.object({
-  newPassword: z.string().min(8),
-  isTemporary: z.boolean().optional().default(true)
+  new_password: z.string().min(8),
+  is_temporary: z.boolean().optional().default(true)
 })), async (c) => {
   const { userId } = c.req.param()
-  const { newPassword, isTemporary } = c.req.valid('json')
+  const { new_password, is_temporary } = c.req.valid('json')
   const db = getDb(c.env)
-  const passwordHash = await hashPassword(newPassword)
-  await db.update(users).set({ passwordHash, forcePasswordChange: isTemporary ? 1 : 0 }).where(eq(users.id, userId))
+  const passwordHash = await hashPassword(new_password)
+  await db.update(users).set({ passwordHash, forcePasswordChange: is_temporary ? 1 : 0 }).where(eq(users.id, userId))
     
-  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { isTemporary })
+  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { is_temporary })
   return c.json({ success: true })
 })
 
@@ -472,20 +472,42 @@ admin.delete('/users/:userId/passkeys/:id', async (c) => {
 admin.get('/connections', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(externalConnections).orderBy(desc(externalConnections.createdAt))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
+})
+
+admin.post('/connections', zValidator('json', z.object({
+  household_id: z.string().min(1),
+  provider: z.string().min(1),
+  access_token: z.string().min(1),
+  status: z.string().optional().default('active')
+})), async (c) => {
+  const { household_id, provider, access_token, status } = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  
+  await db.insert(externalConnections).values({
+    id,
+    householdId: household_id,
+    provider,
+    accessToken: access_token,
+    status
+  })
+  
+  await logAudit(c, 'connections', id, 'ADMIN_ADD_CONNECTION', {}, { provider, household_id })
+  return c.json({ success: true, id })
 })
 
 // Household Management (Super Admin Mode)
 admin.get('/households', async (c) => {
   // Complex aggregation better ran natively
   const { results } = await c.env.DB.prepare(`
-    SELECT h.*, count(uh.user_id) as memberCount 
+    SELECT h.*, count(uh.user_id) as member_count 
     FROM households h 
     LEFT JOIN user_households uh ON h.id = uh.household_id 
     GROUP BY h.id 
     ORDER BY h.name ASC
   `).all()
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
@@ -517,47 +539,47 @@ admin.delete('/households/:id', async (c) => {
 
 // System Operation: Account Merge
 admin.post('/users/merge', zValidator('json', z.object({
-  sourceId: z.string().uuid(),
-  targetId: z.string().uuid()
+  source_id: z.string().uuid(),
+  target_id: z.string().uuid()
 })), async (c) => {
-  const { sourceId, targetId } = c.req.valid('json')
-  if (sourceId === targetId) throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
+  const { source_id, target_id } = c.req.valid('json')
+  if (source_id === target_id) throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
 
   const db = getDb(c.env)
   // Identity Verification
-  const source = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, sourceId)).limit(1).then(res => res[0])
-  const target = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, targetId)).limit(1).then(res => res[0])
+  const source = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, source_id)).limit(1).then(res => res[0])
+  const target = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, target_id)).limit(1).then(res => res[0])
   
   if (!source || !target) throw new HTTPException(404, { message: 'Merge Failed: Source or Target record missing.' })
 
   // Data Merge
   await db.batch([
-    db.run(sql`INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ${targetId} as user_id, household_id FROM user_households WHERE user_id = ${sourceId}`),
-    db.delete(userHouseholds).where(eq(userHouseholds.userId, sourceId)),
+    db.run(sql`INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ${target_id} as user_id, household_id FROM user_households WHERE user_id = ${source_id}`),
+    db.delete(userHouseholds).where(eq(userHouseholds.userId, source_id)),
     
     // Transfer IP
-    db.update(transactions).set({ ownerId: targetId }).where(eq(transactions.ownerId, sourceId)),
-    db.update(subscriptions).set({ ownerId: targetId }).where(eq(subscriptions.ownerId, sourceId)),
+    db.update(transactions).set({ ownerId: target_id }).where(eq(transactions.ownerId, source_id)),
+    db.update(subscriptions).set({ ownerId: target_id }).where(eq(subscriptions.ownerId, source_id)),
     
     // Migrate Channels
-    db.update(userPaymentMethods).set({ userId: targetId }).where(eq(userPaymentMethods.userId, sourceId)),
-    db.update(userLinkedAccounts).set({ userId: targetId }).where(eq(userLinkedAccounts.userId, sourceId)),
-    db.update(passkeys).set({ userId: targetId }).where(eq(passkeys.userId, sourceId)),
-    db.update(userIdentities).set({ userId: targetId }).where(eq(userIdentities.userId, sourceId)),
+    db.update(userPaymentMethods).set({ userId: target_id }).where(eq(userPaymentMethods.userId, source_id)),
+    db.update(userLinkedAccounts).set({ userId: target_id }).where(eq(userLinkedAccounts.userId, source_id)),
+    db.update(passkeys).set({ userId: target_id }).where(eq(passkeys.userId, source_id)),
+    db.update(userIdentities).set({ userId: target_id }).where(eq(userIdentities.userId, source_id)),
     
     // Shared Balances
-    db.update(sharedBalances).set({ fromUserId: targetId }).where(eq(sharedBalances.fromUserId, sourceId)),
-    db.update(sharedBalances).set({ toUserId: targetId }).where(eq(sharedBalances.toUserId, sourceId)),
+    db.update(sharedBalances).set({ fromUserId: target_id }).where(eq(sharedBalances.fromUserId, source_id)),
+    db.update(sharedBalances).set({ toUserId: target_id }).where(eq(sharedBalances.toUserId, source_id)),
     
     // Audit History
-    db.run(sql`UPDATE admin_audit_logs SET user_id = ${targetId} WHERE user_id = ${sourceId}`),
+    db.run(sql`UPDATE admin_audit_logs SET user_id = ${target_id} WHERE user_id = ${source_id}`),
 
     // Purge
-    db.delete(users).where(eq(users.id, sourceId))
+    db.delete(users).where(eq(users.id, source_id))
   ])
 
-  await logAudit(c, 'users', targetId, 'ADMIN_USER_MERGE', 
-    { merged_source_id: sourceId, source_email: source.email }, 
+  await logAudit(c, 'users', target_id, 'ADMIN_USER_MERGE', 
+    { merged_source_id: source_id, source_email: source.email }, 
     { source_name: source.displayName, action: 'MERGE_COMPLETE' }
   )
   
@@ -568,27 +590,27 @@ admin.post('/users/merge', zValidator('json', z.object({
 admin.get('/announcements', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemAnnouncements).orderBy(desc(systemAnnouncements.createdAt))
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: toSnake(results) || [] })
 })
 
 admin.post('/announcements', zValidator('json', z.object({
   title: z.string().min(1),
-  contentMd: z.string().min(1),
+  content_md: z.string().min(1),
   priority: z.enum(['info', 'warning', 'critical']).default('info'),
-  expiresInHours: z.number().optional()
+  expires_in_hours: z.number().optional()
 })), async (c) => {
-  const { title, contentMd, priority, expiresInHours } = c.req.valid('json')
+  const { title, content_md, priority, expires_in_hours } = c.req.valid('json')
   const id = crypto.randomUUID()
   const actorId = c.get('userId') as string
   const db = getDb(c.env)
   
   let expiresAt = null
-  if (expiresInHours) {
-    expiresAt = new Date(Date.now() + expiresInHours * 3600000).toISOString()
+  if (expires_in_hours) {
+    expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
   }
 
   await db.insert(systemAnnouncements).values({
-    id, title, contentMd, priority, actorId, expiresAt
+    id, title, contentMd: content_md, priority, actorId, expiresAt
   })
 
   await logAudit(c, 'system_announcements', id, 'BROADCAST_CREATED', {}, { title, priority })
@@ -597,19 +619,19 @@ admin.post('/announcements', zValidator('json', z.object({
 
 admin.patch('/announcements/:id', zValidator('json', z.object({
   title: z.string().optional(),
-  contentMd: z.string().optional(),
+  content_md: z.string().optional(),
   priority: z.string().optional(),
-  isActive: z.boolean().optional()
+  is_active: z.boolean().optional()
 })), async (c) => {
   const id = c.req.param('id')
-  const { title, contentMd, priority, isActive } = c.req.valid('json')
+  const { title, content_md, priority, is_active } = c.req.valid('json')
   const db = getDb(c.env)
   
   const updates: any = {}
   if (title) updates.title = title
-  if (contentMd) updates.contentMd = contentMd
+  if (content_md) updates.contentMd = content_md
   if (priority) updates.priority = priority
-  if (isActive !== undefined) updates.isActive = isActive ? 1 : 0
+  if (is_active !== undefined) updates.isActive = is_active ? 1 : 0
   
   await db.update(systemAnnouncements).set(updates).where(eq(systemAnnouncements.id, id))
   return c.json({ success: true })

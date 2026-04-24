@@ -36,7 +36,7 @@ export const TransactionLedger: React.FC = () => {
     if (!transactions) return;
     const checkSuggestions = async () => {
       for (const tx of transactions) {
-        if (!tx.categoryId && !suggestions[tx.id]) {
+        if (!tx.category_id && !suggestions[tx.id]) {
           try {
             const apiUrl = getApiUrl();
             const res = await fetch(`${apiUrl}/api/financials/transactions/infer`, {
@@ -64,7 +64,7 @@ export const TransactionLedger: React.FC = () => {
     if (!transactions) return 0
     return transactions
       .filter((t: any) => selectedIds.includes(t.id))
-      .reduce((sum: number, t: any) => sum + (t.amountCents || 0), 0)
+      .reduce((sum: number, t: any) => sum + (t.amount_cents || 0), 0)
   }, [selectedIds, transactions])
 
   const toggleSort = (field: string) => {
@@ -173,28 +173,28 @@ export const TransactionLedger: React.FC = () => {
           </thead>
           <tbody>
             {!transactions ? <tr><td colSpan={6} className="text-center py-8">Loading ledger...</td></tr> : 
-              transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accountedFor : true).map((tx: any) => (
+              transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attention_required && !tx.accounted_for : true).map((tx: any) => (
               <React.Fragment key={tx.id}>
                 <tr className={`border-b border-white/5 hover:bg-white/5 transition-colors ${selectedIds.includes(tx.id) ? 'bg-primary/5' : ''}`}>
                   <td className="py-2 pl-2">
                     <input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelect(tx.id)} />
                   </td>
-                  <td className="py-2 opacity-80 whitespace-nowrap">{tx.transactionDate}</td>
+                  <td className="py-2 opacity-80 whitespace-nowrap">{tx.transaction_date}</td>
                   <td className="py-2 font-medium flex items-center gap-2">
                     {tx.description}
-                    {tx.attentionRequired && !tx.accountedFor && (
+                    {tx.attention_required && !tx.accounted_for && (
                        <Flag size={14} className="text-orange-500" />
                     )}
                   </td>
                   <td className="py-2">
-                    {tx.categoryId ? (
+                    {tx.category_id ? (
                       <span className="px-2 py-0.5 bg-white/10 rounded-full text-xs opacity-80">
-                        {categories?.find((c:any) => c.id === tx.categoryId)?.name || 'Unknown'}
+                        {categories?.find((c:any) => c.id === tx.category_id)?.name || 'Unknown'}
                       </span>
                     ) : suggestions[tx.id] ? (
                       <div className="flex items-center gap-2">
                          <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-xs flex items-center gap-1">
-                           ✨ {categories?.find((c:any) => c.id === suggestions[tx.id].categoryId)?.name || 'Suggested'}
+                           ✨ {categories?.find((c:any) => c.id === suggestions[tx.id].category_id)?.name || 'Suggested'}
                          </span>
                          <button 
                            onClick={() => {/* Mock confirm & remember */ mutateTx()}}
@@ -207,8 +207,8 @@ export const TransactionLedger: React.FC = () => {
                       <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-full text-xs">Uncategorized</span>
                     )}
                   </td>
-                  <td className={`py-2 text-right font-bold ${tx.amountCents > 0 ? 'text-emerald-400' : 'text-white'}`}>
-                    <Price amountCents={Math.abs(tx.amountCents)} />
+                  <td className={`py-2 text-right font-bold ${tx.amount_cents > 0 ? 'text-emerald-400' : 'text-white'}`}>
+                    <Price amount_cents={Math.abs(tx.amount_cents)} />
                   </td>
                   <td className="py-2 pr-2 text-right">
                     <button onClick={() => setExpandedId(expandedId === tx.id ? null : tx.id)} className="p-1 hover:bg-white/10 rounded">
@@ -236,7 +236,7 @@ export const TransactionLedger: React.FC = () => {
                           <p className="mb-1 uppercase tracking-wider font-bold opacity-50">Audit History</p>
                           <ul className="space-y-1">
                             <li>Created: {tx.created_at || 'N/A'}</li>
-                            <li>Status: {tx.reconciliationStatus}</li>
+                            <li>Status: {tx.reconciliation_status}</li>
                             {tx.owner_id && <li>Owner ID: {tx.owner_id}</li>}
                           </ul>
                             {tx.notes && (
@@ -247,13 +247,13 @@ export const TransactionLedger: React.FC = () => {
                           </div>
                       </div>
 
-                      {tx.attentionRequired && !tx.accountedFor && (
+                      {tx.attention_required && !tx.accounted_for && (
                         <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                            <div className="flex items-center justify-between">
                               <div className="space-y-1">
                                 <h4 className="text-orange-400 font-bold uppercase tracking-widest text-xs flex items-center gap-1"><Flag size={12} /> Attention Required</h4>
-                                {tx.needsBalanceTransfer && <p className="text-sm">🔄 Balance Transfer timing: <span className="text-white font-bold">{tx.transferTiming === 'same_day' ? 'Same Day' : 'Future'}</span></p>}
-                                {tx.isBorrowed && <p className="text-sm">💸 Borrowed Funds Source: <span className="text-white font-bold">{tx.borrowSource || 'Not specified'}</span></p>}
+                                {tx.needs_balance_transfer && <p className="text-sm">🔄 Balance Transfer timing: <span className="text-white font-bold">{tx.transfer_timing === 'same_day' ? 'Same Day' : 'Future'}</span></p>}
+                                {tx.is_borrowed && <p className="text-sm">💸 Borrowed Funds Source: <span className="text-white font-bold">{tx.borrow_source || 'Not specified'}</span></p>}
                               </div>
                               <button 
                                 onClick={() => resolveAttention(tx.id)}
@@ -285,7 +285,7 @@ export const TransactionLedger: React.FC = () => {
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-widest opacity-60">Selection Sum ({selectedIds.length} items)</span>
               <span className={`text-xl font-bold ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                <Price amountCents={selectionSumCents} />
+                <Price amount_cents={selectionSumCents} />
               </span>
             </div>
             <div className="w-px h-8 bg-white/20"></div>
@@ -327,7 +327,7 @@ export const TransactionLedger: React.FC = () => {
       <Modal isOpen={!!activeSplitTx} onClose={() => setActiveSplitTx(null)} title="Split Transaction">
         {activeSplitTx && (
           <div className="space-y-4">
-             <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amountCents={activeSplitTx.amountCents} /></span></p>
+             <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amount_cents={activeSplitTx.amount_cents} /></span></p>
              <div className="grid grid-cols-2 gap-4">
                 <div>
                    <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 1 Amount</label>
@@ -349,7 +349,7 @@ export const TransactionLedger: React.FC = () => {
              <p className="text-secondary text-sm mb-6">Select a parent transfer or bill to link this transaction to. This allows the system to accurately track multi-payment scenarios.</p>
              <select className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white mb-6">
                 <option value="">-- Select Parent Transaction --</option>
-                {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
+                {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amount_cents/100})</option>)}
              </select>
              <button onClick={() => { setActiveLinkTx(null); mutateTx(); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
           </div>

@@ -683,8 +683,20 @@ export const supportIssues = sqliteTable('support_issues', {
   priority: text('priority').default('medium'),
   status: text('status').default('open'),
   githubIssueUrl: text('github_issue_url'),
+  githubIssueNumber: integer('github_issue_number'),
+  githubIssueId: integer('github_issue_id'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const supportComments = sqliteTable('support_comments', {
+  id: text('id').primaryKey(),
+  issueId: text('issue_id').notNull().references(() => supportIssues.id),
+  userId: text('user_id'), // Local user or null for GitHub sync
+  authorName: text('author_name'), // e.g. "github-user"
+  body: text('body').notNull(),
+  githubCommentId: integer('github_comment_id'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const userOnboarding = sqliteTable('user_onboarding', {

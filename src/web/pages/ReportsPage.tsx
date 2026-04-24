@@ -161,7 +161,7 @@ const ReportsPage: React.FC = () => {
              <div className="relative z-10">
                 <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50 mb-1">Aggregate Net Worth</div>
                 <div className="text-3xl font-black text-white">
-                  <Price amountCents={netWorth.current_net_worth_cents} options={{ minimumFractionDigits: 0 }} />
+                  <Price amount_cents={netWorth.current_net_worth_cents} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-sm font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+4.2%</span>

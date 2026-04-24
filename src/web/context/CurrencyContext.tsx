@@ -23,7 +23,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const currency = settings.currency || globalConfig?.PLATFORM_DEFAULT_CURRENCY || 'USD'
 
   const formatPrice = (cents: number, options?: Intl.NumberFormatOptions) => {
-    const amount = cents / 100
+    const safeCents = (typeof cents === 'number' && !isNaN(cents)) ? cents : 0
+    const amount = safeCents / 100
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,

@@ -232,7 +232,7 @@ export const TrackedExpenseList: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-6">
-                  <Price cents={item.amountCents} className="text-lg font-black text-orange-200" />
+                  <Price amountCents={item.amountCents ?? item.amount_cents} className="text-lg font-black text-orange-200" />
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={() => {

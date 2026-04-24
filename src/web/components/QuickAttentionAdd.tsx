@@ -24,6 +24,10 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!amount || isNaN(parseFloat(amount))) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
 
     await fetch(`${getApiUrl()}/api/tracked-expenses`, {

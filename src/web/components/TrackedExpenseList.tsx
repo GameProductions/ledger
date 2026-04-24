@@ -360,7 +360,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
           >
             <Send size={18} />
-            Commit to Ledger
+            Move to Ledger
           </button>
         </div>
       </Modal>

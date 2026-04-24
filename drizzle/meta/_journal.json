@@ -85,6 +85,13 @@
       "when": 1776251155386,
       "tag": "0011_add_attention_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1777037936871,
+      "tag": "0012_sturdy_agent_brand",
+      "breakpoints": true
     }
   ]
 }

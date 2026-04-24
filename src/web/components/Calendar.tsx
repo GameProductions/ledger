@@ -85,14 +85,10 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const datesToRender = useMemo(() => {
     try {
-        if (resolvedRange.isMonthMode) {
-            const firstDay = resolvedRange.start.getDay();
-            const daysInMonth = eachDayOfInterval({ start: resolvedRange.start, end: resolvedRange.end });
-            const padding = Array.from({ length: firstDay }, (_, i) => addDays(resolvedRange.start, -(firstDay - i)));
-            return [...padding.map(d => ({ date: d, isPadding: true })), ...daysInMonth.map(d => ({ date: d, isPadding: false }))];
-        } else {
-            return eachDayOfInterval({ start: resolvedRange.start, end: resolvedRange.end }).map(d => ({ date: d, isPadding: false }));
-        }
+        const firstDay = resolvedRange.start.getDay();
+        const daysInRange = eachDayOfInterval({ start: resolvedRange.start, end: resolvedRange.end });
+        const padding = Array.from({ length: firstDay }, (_, i) => addDays(resolvedRange.start, -(firstDay - i)));
+        return [...padding.map(d => ({ date: d, isPadding: true })), ...daysInRange.map(d => ({ date: d, isPadding: false }))];
     } catch(e) {
         return [];
     }

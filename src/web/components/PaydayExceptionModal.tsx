@@ -53,7 +53,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                 pay_schedule_id: payday.pay_schedule_id,
                 original_date: payday.original_date,
                 override_date: overrideDate || null,
-                override_amountCents: overrideAmountCents || null,
+                override_amount_cents: overrideAmountCents || null,
                 note: note || null
             })
         });

@@ -23,7 +23,7 @@ const TransferForm: React.FC = () => {
       body: JSON.stringify({
         from_account_id: from,
         to_account_id: to,
-        amountCents: Math.round(parseFloat(amount) * 100),
+        amount_cents: Math.round(parseFloat(amount) * 100),
         description: 'Internal Transfer'
       })
     })

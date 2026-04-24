@@ -203,7 +203,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ amountCents: parseFloat(depositAmount) * 100 })
+      body: JSON.stringify({ amount_cents: parseFloat(depositAmount) * 100 })
     })
     mutateBudgets()
     setShowDepositModal(false)
@@ -222,7 +222,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       },
       body: JSON.stringify({ 
         categoryId: fundCategoryId,
-        amountCents: parseFloat(fundAmount) * 100 
+        amount_cents: parseFloat(fundAmount) * 100 
       })
     })
     mutateBudgets()
@@ -273,26 +273,26 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (data.type === 'pay_schedule') {
         payload = {
             name: data.name,
-            estimatedAmountCents: data.estimatedAmountCents,
-            nextPayDate: data.nextPayDate,
             frequency: data.frequency,
+            estimated_amount_cents: data.estimatedAmountCents,
+            next_pay_date: data.nextPayDate,
             notes: data.notes
         }
     } else if (data.type === 'bill') {
         payload = {
             name: data.name,
-            amountCents: data.amountCents,
-            dueDate: data.dueDate,
+            amount_cents: data.amountCents,
+            due_date: data.dueDate,
             status: data.status,
             notes: data.notes,
-            isRecurring: data.isRecurring,
+            is_recurring: data.isRecurring,
             frequency: data.frequency
         }
     } else {
         payload = {
             description: data.description,
-            amountCents: data.amountCents,
-            transactionDate: data.date,
+            amount_cents: data.amountCents,
+            transaction_date: data.date,
             status: 'none'
         }
     }
@@ -568,8 +568,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       },
                       body: JSON.stringify({ 
                         description: descInput.value, 
-                        amountCents: Math.round(parseFloat(amountInput.value) * 100), 
-                        transactionDate: new Date().toISOString().split('T')[0], 
+                        amount_cents: Math.round(parseFloat(amountInput.value) * 100), 
+                        transaction_date: new Date().toISOString().split('T')[0], 
                         status: 'none' 
                       })
                   });

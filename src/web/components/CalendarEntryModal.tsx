@@ -40,8 +40,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type,
         name: description,
-        estimated_amountCents: Math.round(parseFloat(amount) * 100),
-        nextPayDate: currentDate,
+        estimated_amount_cents: Math.round(parseFloat(amount) * 100),
+        next_pay_date: currentDate,
         frequency,
         semi_monthly_day_1: frequency === 'semi-monthly' ? semiMonthlyDay1 : null,
         semi_monthly_day_2: frequency === 'semi-monthly' ? semiMonthlyDay2 : null,
@@ -52,11 +52,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type: 'bill',
         name: description,
-        amountCents: Math.round(parseFloat(amount) * 100),
-        dueDate: currentDate,
+        amount_cents: Math.round(parseFloat(amount) * 100),
+        due_date: currentDate,
         status: status,
         notes: notes,
-        isRecurring: isRecurring,
+        is_recurring: isRecurring,
         frequency: isRecurring ? 'monthly' : null
       });
     } else {
@@ -64,10 +64,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type: 'charge',
         description,
-        amountCents: Math.round(parseFloat(amount) * 100),
-        date: currentDate,
+        amount_cents: Math.round(parseFloat(amount) * 100),
+        transaction_date: currentDate,
         status,
-        confirmationNumber: confirmationNumber
+        confirmation_number: confirmationNumber
       });
     }
   };

@@ -16,7 +16,7 @@ interface PayScheduleModalProps {
 export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onClose, onUpdate, schedule }) => {
     const { token, householdId } = useAuth();
     const { showToast } = useToast();
-    const { data: household } = useApi('/api/households/current');
+    const { data: household } = useApi('/api/user/households/current');
     const [loading, setLoading] = React.useState(false);
 
     // Form State
@@ -34,14 +34,14 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
     React.useEffect(() => {
         if (schedule) {
             setName(schedule.name);
-            setAmountCents(schedule.estimated_amountCents || 0);
+            setAmountCents(schedule.estimated_amount_cents || 0);
             setFrequency(schedule.frequency);
-            setNextPayDate(schedule.nextPayDate);
+            setNextPayDate(schedule.next_pay_date);
             setNotes(schedule.notes || '');
             setD1(schedule.semi_monthly_day_1 || 1);
             setD2(schedule.semi_monthly_day_2 || 15);
             setUserId(schedule.user_id || '');
-            setUpcomingAmountCents(schedule.upcoming_amountCents || 0);
+            setUpcomingAmountCents(schedule.upcoming_amount_cents || 0);
             setUpcomingEffectiveDate(schedule.upcoming_effective_date || '');
         }
     }, [schedule]);
@@ -53,13 +53,13 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
         const payload = {
             name,
             frequency,
-            estimated_amountCents: amountCents,
-            nextPayDate: nextPayDate,
+            estimated_amount_cents: amountCents,
+            next_pay_date: nextPayDate,
             notes,
             semi_monthly_day_1: frequency === 'semi-monthly' ? d1 : null,
             semi_monthly_day_2: frequency === 'semi-monthly' ? d2 : null,
             user_id: userId || null,
-            upcoming_amountCents: upcomingAmountCents || null,
+            upcoming_amount_cents: upcomingAmountCents || null,
             upcoming_effective_date: upcomingEffectiveDate || null
         };
 

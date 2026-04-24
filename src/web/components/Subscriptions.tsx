@@ -72,13 +72,13 @@ const Subscriptions: React.FC = () => {
             },
             body: JSON.stringify({
               name: formData.get('name'),
-              amountCents: Math.round(parseFloat(formData.get('amount') as string) * 100),
+              amount_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
               billing_cycle: formData.get('cycle'),
               next_billing_date: formData.get('date'),
               trial_end_date: formData.get('trial_date') || null,
               is_trial: !!formData.get('trial_date'),
               provider_account_id: formData.get('linked_account') || null,
-              upcoming_amountCents: formData.get('upcoming_amount') ? Math.round(parseFloat(formData.get('upcoming_amount') as string) * 100) : null,
+              upcoming_amount_cents: formData.get('upcoming_amount') ? Math.round(parseFloat(formData.get('upcoming_amount') as string) * 100) : null,
               upcoming_effective_date: formData.get('upcoming_date') || null
             })
           }).then(() => {

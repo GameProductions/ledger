@@ -273,8 +273,13 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     return c.json({ success: true, id })
   } catch (error: any) {
     if (error instanceof HTTPException) throw error;
-    console.error(`[DIAGNOSTIC_FAILURE] POST /api/financials/transactions:`, error);
-    return c.json({ error: 'Internal Server Error', details: error.message }, 500)
+    console.error(`[CRITICAL_FAILURE] POST /api/financials/transactions:`, {
+      message: error.message,
+      stack: error.stack,
+      data: data,
+      householdId: householdId
+    });
+    return c.json({ success: false, error: 'Internal Server Error', details: error.message }, 500)
   }
 })
 

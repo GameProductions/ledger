@@ -44,7 +44,7 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
             assigned_user_id: uid,
             split_type: splitMode,
             split_value: assignments[uid],
-            calculated_amountCents: calculatedCents(uid),
+            calculated_amount_cents: calculatedCents(uid),
             status: 'pending',
             is_master_ledger_public: isMasterPublic
         }));

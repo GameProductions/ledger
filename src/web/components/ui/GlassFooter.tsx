@@ -24,7 +24,7 @@ export const GlassFooter: React.FC = () => {
                 <div className="w-px h-3 bg-white/10"></div>
                 <span className="text-[11px] font-bold uppercase tracking-widest text-secondary">v{import.meta.env.VITE_APP_VERSION || '1.0.0'}</span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-500/60">Live Evaluation of Daily /n Gains & Expense Records</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-500/60">Live Evaluation of Daily Gains & Expense Records</p>
             </div>
           </div>
           

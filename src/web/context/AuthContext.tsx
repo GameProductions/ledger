@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react'
+import { getApiUrl } from '../utils/api'
 
 interface AuthContextType {
   user: any
@@ -29,7 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       const verifySession = async () => {
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/verify`, {
+          const apiUrl = getApiUrl()
+          const res = await fetch(`${apiUrl}/api/auth/verify`, {
             headers: { 'Authorization': `Bearer ${token}` }
           })
           if (res.ok) {
@@ -67,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsImpersonating(false)
     localStorage.removeItem('ledger_impersonation_active')
 
+    // FORENSIC PRIORITY: Prioritize the householdId from the profile if available
     const hId = newUser.householdId || 'ledger-main-001'
     setHouseholdId(hId)
     localStorage.setItem('ledger_householdId', hId)

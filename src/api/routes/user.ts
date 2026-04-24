@@ -39,24 +39,35 @@ user.get('/profile', async (c) => {
   const db = getDb(c.env)
   const results = await db.select({
     id: users.id,
-    email: users.email,
     username: users.username,
+    email: users.email,
     displayName: users.displayName,
-    avatarUrl: users.avatarUrl,
     globalRole: users.globalRole,
     status: users.status,
+    avatarUrl: users.avatarUrl,
     settingsJson: users.settingsJson,
     totpEnabled: users.totpEnabled,
+    forcePasswordChange: users.forcePasswordChange,
     createdAt: users.createdAt
   }).from(users).where(eq(users.id, userId as string))
   
   if (!results || results.length === 0) {
     return c.json({ success: false, error: 'User not found' }, 404)
   }
+
+  const userData = results[0] as any;
+  
+  // Fetch primary household context
+  const [userHh] = await db.select({ householdId: userHouseholds.householdId })
+    .from(userHouseholds)
+    .where(eq(userHouseholds.userId, userId as string))
+    .limit(1)
+  
+  userData.householdId = userHh?.householdId || null;
   
   return c.json({
     success: true,
-    data: UserOutputSchema.parse(results[0])
+    data: UserOutputSchema.parse(userData)
   })
 })
 

@@ -20,7 +20,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [profile?.settingsJson])
 
-  const currency = settings.currency || globalConfig?.config?.PLATFORM_DEFAULT_CURRENCY || 'USD'
+  const currency = settings.currency || globalConfig?.PLATFORM_DEFAULT_CURRENCY || 'USD'
 
   const formatPrice = (cents: number, options?: Intl.NumberFormatOptions) => {
     const amount = cents / 100

@@ -8,6 +8,7 @@ import { Fingerprint, RefreshCw } from 'lucide-react'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Modal } from '../../components/ui/Modal'
 import { PasswordChecklist } from '../../components/PasswordChecklist'
+import { getApiUrl } from '../../utils/api'
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth()
@@ -31,14 +32,14 @@ const LoginPage: React.FC = () => {
     const token = params.get('token');
     const reset = params.get('reset_token');
     
-    if (token) handleTokenLogin(token);
+    if (token) handleOAuthCallback(token);
     if (reset) setResetToken(reset);
   }, []);
 
-  const handleTokenLogin = async (token: string) => {
+  const handleOAuthCallback = async (token: string) => {
     setLoading(true);
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/api/user/profile`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
@@ -78,7 +79,7 @@ const LoginPage: React.FC = () => {
 
     setLoading(true)
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

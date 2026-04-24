@@ -319,5 +319,6 @@ export const UserOutputSchema = z.object({
   settingsJson: z.string().nullable().optional(),
   totpEnabled: z.number().nullable().optional(),
   forcePasswordChange: z.union([z.boolean(), z.number()]).nullable().optional(),
-  createdAt: z.string().nullable().optional()
+  createdAt: z.string().nullable().optional(),
+  householdId: z.string().nullable().optional()
 })

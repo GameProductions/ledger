@@ -223,7 +223,7 @@ app.get('/api/config', async (c) => {
   
   const cache = c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE;
   if (cache) c.executionCtx.waitUntil(cache.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
-  return c.json(result)
+  return c.json({ success: true, data: result })
 })
 
 app.get('/api/theme/broadcast', async (c) => {

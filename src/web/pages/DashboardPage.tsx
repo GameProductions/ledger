@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../context/AuthContext'
+import { getApiUrl } from '../utils/api'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import Subscriptions from '../components/Subscriptions'
@@ -72,7 +73,8 @@ const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
 
 
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
-  const { user, token, householdId } = useAuth()
+  const { user, token, householdId, logout } = useAuth()
+  const apiUrl = getApiUrl();
   const { data: _accounts = [] } = useApi('/api/financials/accounts')
   const { data: transactions = [], mutate: mutateTx } = useApi('/api/financials/transactions')
   const { data: subscriptions = [], mutate: mutateSubs } = useApi('/api/planning/subscriptions')
@@ -140,7 +142,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     setLayout(newLayout);
     const newSettings = { ..._settings, dashboardLayout: newLayout };
     setSettings(newSettings);
-    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+    await fetch(`${apiUrl}/api/user/profile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -173,7 +175,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }, [paySchedules, payExceptions]);
 
   const handleDeposit = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/deposit`, {
+    await fetch(`${apiUrl}/api/planning/budget/deposit`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -190,7 +192,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const handleFund = async () => {
     if (!fundCategoryId) return
-    await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/fund`, {
+    await fetch(`${apiUrl}/api/planning/budget/fund`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -213,7 +215,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const confirmRollover = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/planning/budget/rollover`, {
+    await fetch(`${apiUrl}/api/planning/budget/rollover`, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -226,7 +228,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const toggleReconcile = async (txId: string, current: boolean) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${txId}/reconcile`, {
+    await fetch(`${apiUrl}/api/financials/transactions/${txId}/reconcile`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -274,7 +276,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         }
     }
 
-    await fetch(`${import.meta.env.VITE_API_URL}${url}`, {
+    await fetch(`${apiUrl}${url}`, {
       method,
       headers: { 
         'Content-Type': 'application/json',
@@ -303,7 +305,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     const { id, type } = deletePending
     const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
     
-    await fetch(`${import.meta.env.VITE_API_URL}${endpoint}/${id}`, {
+    await fetch(`${apiUrl}${endpoint}/${id}`, {
       method: 'DELETE',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -536,7 +538,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 const amountInput = document.getElementById('qe-amount') as HTMLInputElement;
                 if(!descInput.value || !amountInput.value) return;
                 try {
-                    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
+                    await fetch(`${apiUrl}/api/financials/transactions`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -628,7 +630,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <h3 className="text-lg font-bold mb-6">Financial Health</h3>
               <HealthScore score={analysis?.healthScore || 0} />
               <button 
-                onClick={() => window.open(`${import.meta.env.VITE_API_URL}/api/data/history/summary`, '_blank')}
+                onClick={() => window.open(`${apiUrl}/api/data/history/summary`, '_blank')}
                 className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-xs font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
               >
                 📥 Download Statement Summary
@@ -840,7 +842,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       <div 
                         key={`suggest-${t.id}`}
                         onClick={async () => {
-                          await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/link`, {
+                          await fetch(`${apiUrl}/api/financials/transactions/${linkingTx.id}/link`, {
                             method: 'POST',
                             headers: { 
                               'Content-Type': 'application/json',
@@ -878,7 +880,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     <div 
                       key={t.id} 
                       onClick={async () => {
-                        await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/link`, {
+                        await fetch(`${apiUrl}/api/financials/transactions/${linkingTx.id}/link`, {
                           method: 'POST',
                           headers: { 
                             'Content-Type': 'application/json',
@@ -912,7 +914,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             {linkingTx.reconciliationStatus === 'reconciled' && (
               <button 
                 onClick={async () => {
-                  await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${linkingTx.id}/unlink`, {
+                  await fetch(`${apiUrl}/api/financials/transactions/${linkingTx.id}/unlink`, {
                     method: 'POST',
                     headers: { 
                       'Content-Type': 'application/json',

@@ -1,8 +1,8 @@
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { getApiUrl } from '../utils/api';
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+const API_URL = getApiUrl();
 
 export const useApi = <T = any>(path: string, options: { refreshInterval?: number } = {}) => {
   const { token, logout, householdId } = useAuth()

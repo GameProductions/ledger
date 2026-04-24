@@ -11,6 +11,7 @@ import { IdentityHead } from './components/foundation/common/IdentityHead'
 import { OnboardingTour } from './components/foundation/help/OnboardingTour'
 import { HelpCenter as FoundationHelp } from './components/foundation/help/HelpCenter'
 import { UserManager } from './components/foundation/admin/UserManager'
+import { getApiUrl } from './utils/api'
 import logo from './assets/logo.svg'
 
 // Lazy load pages for better performance
@@ -70,7 +71,8 @@ const AppContent: React.FC = () => {
     const fetchWithRetry = async (attempt: number = 1): Promise<void> => {
       setRetryAttempt(attempt > 1 ? attempt : 0)
       try {
-        const res = await fetch('/api/config')
+        const apiUrl = getApiUrl()
+        const res = await fetch(`${apiUrl}/api/config`)
         
         if (res.status === 503) {
           setIsMaintenance(true)

@@ -148,8 +148,11 @@ const InvestmentPortfolioPage: React.FC = () => {
                 type="number"
                 step="0.0001"
                 required
-                value={newInv.quantity}
-                onChange={e => setNewInv({...newInv, quantity: parseFloat(e.target.value)})}
+                value={newInv.quantity || ''}
+                onChange={e => {
+                  const val = parseFloat(e.target.value);
+                  setNewInv({...newInv, quantity: isNaN(val) ? 0 : val});
+                }}
                 className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all"
               />
             </div>
@@ -158,8 +161,11 @@ const InvestmentPortfolioPage: React.FC = () => {
                <input 
                   type="number"
                   required
-                  value={newInv.cost_basis_cents}
-                  onChange={e => setNewInv({...newInv, cost_basis_cents: parseInt(e.target.value)})}
+                  value={newInv.cost_basis_cents || ''}
+                  onChange={e => {
+                    const val = parseInt(e.target.value);
+                    setNewInv({...newInv, cost_basis_cents: isNaN(val) ? 0 : val});
+                  }}
                   className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all"
                 />
             </div>
@@ -168,8 +174,11 @@ const InvestmentPortfolioPage: React.FC = () => {
                <input 
                   type="number"
                   required
-                  value={newInv.current_valuation_cents}
-                  onChange={e => setNewInv({...newInv, current_valuation_cents: parseInt(e.target.value)})}
+                  value={newInv.current_valuation_cents || ''}
+                  onChange={e => {
+                    const val = parseInt(e.target.value);
+                    setNewInv({...newInv, current_valuation_cents: isNaN(val) ? 0 : val});
+                  }}
                   className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all"
                 />
             </div>
@@ -182,7 +191,7 @@ const InvestmentPortfolioPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            {investments && investments.length > 0 ? investments.map((inv: any) => {
              const gain = inv.current_valuation_cents - inv.cost_basis_cents;
-             const gainPct = (gain / inv.cost_basis_cents) * 100;
+             const gainPct = inv.cost_basis_cents > 0 ? (gain / inv.cost_basis_cents) * 100 : 0;
              
              const getIcon = (type: string) => {
                if (type === 'Stock') return <LineChart size={20} className="text-secondary" />;

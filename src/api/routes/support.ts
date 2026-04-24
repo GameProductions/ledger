@@ -19,7 +19,7 @@ support.get('/issues', async (c) => {
     .where(eq(supportIssues.userId, userId))
     .orderBy(desc(supportIssues.createdAt))
     
-  return c.json(results)
+  return c.json({ success: true, data: results })
 })
 
 const SupportIssueSchema = z.object({

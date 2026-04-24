@@ -29,20 +29,23 @@ const SavingsBuckets: React.FC = () => {
     <section className="card">
       <h3 style={{ marginBottom: '1.5rem' }}>📥 Virtual Savings Buckets</h3>
       <div style={{ display: 'grid', gap: '1rem' }}>
-        {Array.isArray(buckets) && buckets.map((b: any) => (
-          <div key={b.id}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
-              <span>{b.name}</span>
-              <span>{Math.round((b.current_cents / b.target_cents) * 100)}%</span>
+        {Array.isArray(buckets) && buckets.map((b: any) => {
+          const percent = b.target_cents > 0 ? Math.round((b.current_cents / b.target_cents) * 100) : 0;
+          return (
+            <div key={b.id}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
+                <span>{b.name}</span>
+                <span>{percent}%</span>
+              </div>
+              <div style={{ width: '100%', height: '8px', background: 'var(--bg-dark)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(100, percent)}%`, height: '100%', background: 'var(--primary)' }}></div>
+              </div>
+              <div className="text-xs text-secondary font-medium">
+                Goal: <Price amountCents={b.target_cents} options={{ minimumFractionDigits: 0 }} />
+              </div>
             </div>
-            <div style={{ width: '100%', height: '8px', background: 'var(--bg-dark)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: `${(b.current_cents / b.target_cents) * 100}%`, height: '100%', background: 'var(--primary)' }}></div>
-            </div>
-            <div className="text-xs text-secondary font-medium">
-              Goal: <Price amountCents={b.target_cents} options={{ minimumFractionDigits: 0 }} />
-            </div>
-          </div>
-        )) || <p style={{ color: 'var(--text-secondary)' }}>No buckets yet.</p>}
+          );
+        }) || <p style={{ color: 'var(--text-secondary)' }}>No buckets yet.</p>}
         {isAdding ? (
           <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl mt-2 border border-white/10">
             <input type="text" placeholder="Bucket Name" value={name} onChange={e => setName(e.target.value)} className="bg-black/50 text-white text-sm px-3 py-2 rounded-lg border-none" />

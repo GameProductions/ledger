@@ -16,12 +16,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" 
         onClick={onClose}
       />
       
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg bg-deep-slate-80 border border-glass-border rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div className="relative w-full max-w-lg bg-slate-900/95 backdrop-blur-xl border border-glass-border rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
         <div className="flex items-center justify-between p-6 border-b border-glass-border">
           <h3 className="text-xl font-black tracking-tight">{title}</h3>
           <button 

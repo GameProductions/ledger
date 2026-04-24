@@ -228,6 +228,58 @@ user.get('/households', async (c) => {
   })
 })
 
+user.get('/households/current', async (c) => {
+  const userId = c.get('userId')
+  const householdId = c.req.header('x-household-id')
+  const db = getDb(c.env)
+  
+  if (!householdId) {
+    return c.json({ success: false, error: 'No household context' }, 400)
+  }
+
+  const household = await db.select({
+    id: households.id,
+    name: households.name,
+    currency: households.currency,
+    countryCode: households.countryCode,
+    unallocatedBalanceCents: households.unallocatedBalanceCents
+  }).from(households).where(eq(households.id, householdId)).get()
+
+  if (!household) {
+    return c.json({ success: false, error: 'Household not found' }, 404)
+  }
+
+  const members = await db.select({
+    id: users.id,
+    email: users.email,
+    displayName: users.displayName,
+    avatarUrl: users.avatarUrl,
+    role: userHouseholds.role
+  }).from(users)
+    .innerJoin(userHouseholds, eq(users.id, userHouseholds.userId))
+    .where(eq(userHouseholds.householdId, householdId))
+    .all()
+
+  // Transform to match frontend expectations: { user: { id, displayName, ... }, role }
+  const formattedMembers = members.map(m => ({
+    user: {
+      id: m.id,
+      email: m.email,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl
+    },
+    role: m.role
+  }))
+
+  return c.json({
+    success: true,
+    data: {
+      ...household,
+      members: formattedMembers
+    }
+  })
+})
+
 user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Household creation validation failed:`, result.error.errors);

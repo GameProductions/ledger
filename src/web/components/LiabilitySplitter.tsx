@@ -16,7 +16,7 @@ interface LiabilitySplitterProps {
 export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, targetType, totalAmountCents, onComplete }) => {
     const { token, user } = useAuth();
     const { showToast } = useToast();
-    const { data: household } = useApi('/api/admin/households/current');
+    const { data: household } = useApi('/api/user/households/current');
     
     const [splitMode, setSplitMode] = useState<'percentage' | 'fixed'>('percentage');
     const [assignments, setAssignments] = useState<Record<string, number>>({});

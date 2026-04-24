@@ -170,8 +170,8 @@ const DataCenterPage: React.FC = () => {
                             <h4 className="text-2xl font-black italic uppercase tracking-tighter">{scanResult.name}</h4>
                             <p className="text-sm text-slate-400 mt-1 line-clamp-1">{scanResult.description || 'Verified provider metadata detected.'}</p>
                             <div className="flex gap-4 mt-6">
-                               <button className="px-6 py-2 bg-emerald-500 text-black font-black uppercase text-[10px] rounded-lg hover:bg-emerald-400 transition-all">Import to {importScope === 'household' ? 'Shared List' : 'Private Hub'}</button>
-                               <button onClick={() => setScanResult(null)} className="px-6 py-2 bg-white/5 text-white font-black uppercase text-[10px] rounded-lg hover:bg-white/10 transition-all">Discard</button>
+                                <button className="px-6 py-2 bg-emerald-500 text-black font-bold uppercase text-xs rounded-lg hover:bg-emerald-400 transition-all">Import to {importScope === 'household' ? 'Shared List' : 'Private Hub'}</button>
+                                <button onClick={() => setScanResult(null)} className="px-6 py-2 bg-white/5 text-white font-bold uppercase text-xs rounded-lg hover:bg-white/10 transition-all">Discard</button>
                             </div>
                          </div>
                       </div>
@@ -209,7 +209,7 @@ const DataCenterPage: React.FC = () => {
                     >
                       <div>
                         <p className="font-bold text-sm tracking-tight">{item.name}</p>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Format: {item.format}</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Format: {item.format}</p>
                       </div>
                       <Download size={16} className="text-slate-600" />
                     </button>

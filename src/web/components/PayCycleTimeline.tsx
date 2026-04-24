@@ -19,7 +19,7 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
           <Wallet size={14} className="text-primary" /> Smart Pay Cycle Timeline
         </h3>
-        <span className="text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
+        <span className="text-xs font-black uppercase tracking-widest bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
           Beta Analysis
         </span>
       </div>
@@ -47,14 +47,14 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                        {cycle.payday.is_override && (
                          <span className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-md">
                            <Shield size={10} className="text-indigo-400" />
-                           <span className="text-[8px] font-black uppercase tracking-widest text-indigo-400">Personal Override</span>
+                           <span className="text-[11px] font-black uppercase tracking-widest text-indigo-400">Personal Override</span>
                          </span>
                        )}
                     </div>
                   </div>
                   <div className="text-right">
                     <Price amountCents={cycle.payday.amountCents} className="text-2xl font-black tracking-tighter text-white" />
-                    <div className="text-[10px] font-black uppercase tracking-widest text-white/30">Estimated Deposit</div>
+                    <div className="text-xs font-black uppercase tracking-widest text-white/30">Estimated Deposit</div>
                   </div>
                 </div>
 
@@ -74,8 +74,8 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                       <div className="flex items-center gap-3">
                         <div className={`w-1.5 h-1.5 rounded-full ${item.next_payment_date ? 'bg-indigo-500' : item.dueDate ? 'bg-amber-500' : 'bg-primary'}`} />
                         <div>
-                          <div className="text-[11px] font-bold text-white group-hover:text-primary transition-colors">{item.name || item.description}</div>
-                          <div className="text-[9px] font-black uppercase tracking-widest text-white/30 truncate max-w-[120px]">
+                          <div className="text-xs font-bold text-white group-hover:text-primary transition-colors">{item.name || item.description}</div>
+                          <div className="text-[11px] font-black uppercase tracking-widest text-white/30 truncate max-w-[120px]">
                             {item.dueDate || item.next_billing_date || item.next_payment_date}
                           </div>
                         </div>
@@ -83,7 +83,7 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                       <Price amountCents={item.amountCents || item.installment_amountCents} className="text-xs font-black tracking-widest" />
                     </div>
                   )) : (
-                    <div className="col-span-full py-4 text-center border border-dashed border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/20">
+                    <div className="col-span-full py-4 text-center border border-dashed border-white/5 rounded-xl text-xs font-black uppercase tracking-widest text-white/20">
                       No liabilities detected in this cycle
                     </div>
                   )}
@@ -93,14 +93,14 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                 <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-2xl">
                   <div className="flex items-center gap-2">
                     <ArrowRight size={14} className="text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.1em] text-white/60">Disposable Balance</span>
+                    <span className="text-xs font-black uppercase tracking-[0.1em] text-white/60">Disposable Balance</span>
                   </div>
                   <div className="flex flex-col items-end">
                     <Price 
                         amountCents={remainderCents} 
                         className={`text-lg font-black tracking-tighter ${remainderCents < 0 ? 'text-red-500' : 'text-primary'}`} 
                     />
-                    <div className="text-[9px] font-black uppercase tracking-widest opacity-40 italic">After Liabilities</div>
+                    <div className="text-[11px] font-black uppercase tracking-widest opacity-40 italic">After Liabilities</div>
                   </div>
                 </div>
               </div>

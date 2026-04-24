@@ -85,7 +85,7 @@ const LandingPage: React.FC = () => {
             <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
               <GithubIcon size={16} /> GitHub
             </a>
-            <a href="#/login" className="px-6 py-2.5 bg-primary rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+            <a href="#/login" className="px-6 py-2.5 bg-primary rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all">
               Sign In
             </a>
           </div>
@@ -107,7 +107,7 @@ const LandingPage: React.FC = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
             </div>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
               Financial Data Ownership. <br/>
@@ -157,7 +157,7 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic uppercase">Identity & Backup Connection</h2>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Trusted services for secure status check</p>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Trusted services for secure status check</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 items-center justify-items-center mb-32">
@@ -170,7 +170,7 @@ const LandingPage: React.FC = () => {
                     className="h-16 w-16 object-contain"
                   />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 group-hover:text-primary transition-colors">{int.name}</span>
+                <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 group-hover:text-primary transition-colors">{int.name}</span>
               </div>
             ))}
           </div>
@@ -202,7 +202,7 @@ const LandingPage: React.FC = () => {
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-24">
           <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Status</h2>
-          <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px]">Complete feature audit of the service engine</p>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Complete feature audit of the service engine</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -210,7 +210,7 @@ const LandingPage: React.FC = () => {
             <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl text-center group hover:bg-white/[0.05] transition-all">
                <div className="mb-4 flex justify-center">{f.icon}</div>
                <div className="text-xs font-black uppercase tracking-widest mb-2">{f.name}</div>
-               <div className="text-[10px] text-slate-500 font-bold leading-tight">{f.desc}</div>
+               <div className="text-xs text-slate-500 font-bold leading-tight">{f.desc}</div>
             </div>
           ))}
         </div>
@@ -220,7 +220,7 @@ const LandingPage: React.FC = () => {
       <section className="py-40 px-6 max-w-7xl mx-auto border-t border-white/5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-8">Hardened Security Design</div>
+            <div className="text-xs font-black uppercase tracking-[0.5em] text-primary mb-8">Hardened Security Design</div>
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-12 italic leading-[0.9]">Encrypted. <br/> Resilient. <br/> Private.</h2>
             <p className="text-slate-400 font-medium mb-12 leading-relaxed opacity-80">
               LEDGER utilizes military-grade AES-256-GCM encryption for all client-side state. Your session is protected by FIDO2/WebAuthn biometrics and secure OAuth isolation.
@@ -228,15 +228,15 @@ const LandingPage: React.FC = () => {
             <div className="flex gap-10">
                <div>
                   <div className="text-3xl font-black italic mb-1">256</div>
-                  <div className="text-[10px] uppercase font-black tracking-widest text-slate-500">AES Bit-Depth</div>
+                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">AES Bit-Depth</div>
                </div>
                <div>
                   <div className="text-3xl font-black italic mb-1">0%</div>
-                  <div className="text-[10px] uppercase font-black tracking-widest text-slate-500">Centralized Storage</div>
+                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Centralized Storage</div>
                </div>
                <div>
                   <div className="text-3xl font-black italic mb-1">100%</div>
-                  <div className="text-[10px] uppercase font-black tracking-widest text-slate-500">Self-Hostable</div>
+                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Self-Hostable</div>
                </div>
             </div>
           </div>
@@ -254,7 +254,7 @@ const LandingPage: React.FC = () => {
 
       {/* Footer is provided by GlobalLayout */}
       <footer className="py-10 border-t border-white/5 opacity-40 text-center">
-        <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">
+        <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest hover:text-primary transition-colors">
           <GithubIcon size={12} /> Service Repository
         </a>
       </footer>

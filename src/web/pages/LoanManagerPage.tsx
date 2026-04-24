@@ -118,7 +118,7 @@ const LoanManagerPage: React.FC = () => {
         {isAdding && (
           <form onSubmit={handleCreateLoan} className="card p-8 bg-deep/40 backdrop-blur-3xl border-amber-500/20 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-4 duration-500">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Borrower Name</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Borrower Name</label>
               <div className="relative">
                 <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary opacity-40" />
                 <input 
@@ -131,7 +131,7 @@ const LoanManagerPage: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Contact Details</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Contact Details</label>
               <div className="relative">
                 <Phone size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary opacity-40" />
                 <input 
@@ -143,7 +143,7 @@ const LoanManagerPage: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Principal Amount</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Principal Amount</label>
               <div className="relative">
                 <BadgeDollarSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary opacity-40" />
                 <input 
@@ -157,7 +157,7 @@ const LoanManagerPage: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Interest Rate (APY %)</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Interest Rate (APY %)</label>
                <input 
                   type="number"
                   step="0.01"
@@ -167,7 +167,7 @@ const LoanManagerPage: React.FC = () => {
                 />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Term (Months)</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Term (Months)</label>
                <input 
                   type="number"
                   value={newLoan.termMonths}
@@ -190,7 +190,7 @@ const LoanManagerPage: React.FC = () => {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h3 className="text-xl font-bold text-white">{loan.borrowerName}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">{loan.borrowerContact || 'No contact provided'}</p>
+                    <p className="text-xs font-bold uppercase tracking-widest opacity-40">{loan.borrowerContact || 'No contact provided'}</p>
                   </div>
                   <button onClick={() => handleDeleteLoan(loan.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
                     <Trash2 size={16} />
@@ -199,16 +199,16 @@ const LoanManagerPage: React.FC = () => {
 
                 <div className="space-y-4 mb-8">
                    <div className="flex justify-between items-end border-b border-white/5 pb-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Outstanding</span>
+                      <span className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">Outstanding</span>
                       <Price amountCents={loan.remainingBalanceCents} className="text-2xl font-black italic text-white" />
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[8px] font-black uppercase tracking-[0.3em] text-secondary mb-1">Original</p>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-secondary mb-1">Original</p>
                         <Price amountCents={loan.total_amountCents} className="text-sm font-bold opacity-60" />
                       </div>
                       <div className="text-right">
-                        <p className="text-[8px] font-black uppercase tracking-[0.3em] text-secondary mb-1">Interest</p>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-secondary mb-1">Interest</p>
                         <p className="text-sm font-bold text-emerald-500">{loan.interestRateApy}% APY</p>
                       </div>
                    </div>
@@ -217,7 +217,7 @@ const LoanManagerPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleLogPayment(loan.id)}
-                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
                   >
                     <Receipt size={14} /> Log Payment
                   </button>

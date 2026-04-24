@@ -55,7 +55,7 @@ const SettingsPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('')
   const [changingPass, setChangingPass] = useState(false)
 
-  // Initialization
+  // Setup
   useEffect(() => {
     if (profile) {
       setName(profile.displayName || profile.displayName || '')

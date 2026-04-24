@@ -155,7 +155,7 @@ const AdminGuide: React.FC = () => {
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Cred_02</div>
                   <h4 className="text-sm font-bold text-white uppercase">Temp Baseline</h4>
-                  <p className="text-sm text-slate-500 leading-relaxed">Temporary credentials force a mandatory rotation upon session initialization.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Temporary credentials force a mandatory rotation upon starting a session.</p>
                </div>
                <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3">
                   <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Asset_03</div>

@@ -9,7 +9,7 @@ import { useState, useCallback, useEffect } from 'react';
  * @returns [currentTab, setTab]
  */
 export function useTabState<T extends string>(defaultTab: T, paramName: string = 'tab'): [T, (tab: T) => void] {
-  // Initialize state from URL params
+  // Set up state from URL params
   const [activeTab, setActiveTab] = useState<T>(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);

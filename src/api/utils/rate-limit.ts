@@ -89,7 +89,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
         try {
           await kv.put(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
         } catch (e) {
-          console.warn(`[Titan Guard] Failed to initialize rate limit in KV:`, e);
+          console.warn(`[Rate Limit] Failed to set up rate limit in KV:`, e);
         }
       }
     } catch (error) {

@@ -70,8 +70,8 @@ class DurableObjectNamespaceShim {
   }
 }
 
-// --- INITIALIZE DB ---
-console.log(`[Node] Initializing database at ${DB_PATH}...`)
+// --- SET UP DATABASE ---
+console.log(`[Node] Setting up database at ${DB_PATH}...`)
 
 // Check if tables exist by checking for 'users'
 const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'").get()

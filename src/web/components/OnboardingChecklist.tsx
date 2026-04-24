@@ -6,7 +6,7 @@ import { useOnboarding } from '../context/OnboardingContext'
 const checklistItems = [
   { id: 'welcome', label: 'Welcome Tour' },
   { id: 'security', label: 'Security Setup' },
-  { id: 'vault', label: 'Vault Initialization' },
+  { id: 'vault', label: 'Vault Setup' },
   { id: 'accounts', label: 'Add First Account' }
 ]
 

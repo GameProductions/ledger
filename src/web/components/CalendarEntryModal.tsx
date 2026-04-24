@@ -327,7 +327,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20 hover:scale-[1.02]' : type === 'charge' ? 'bg-emerald-500 text-black shadow-emerald-500/20 hover:scale-[1.02]' : 'bg-amber-500 text-black shadow-amber-500/20 hover:scale-[1.02]'}`}
              >
                <CheckCircle2 size={18} />
-               {initialData ? 'Commit Update' : 'Initialize Ledger'}
+               {initialData ? 'Save Changes' : 'Create Entry'}
              </button>
           </div>
         </form>

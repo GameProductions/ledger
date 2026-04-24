@@ -24,7 +24,7 @@ const steps = [
   },
   {
     id: 'vault',
-    title: 'Initialize Vault',
+    title: 'Set Up Vault',
     content: 'Secure your PII with end-to-end encryption.',
     target: '#vault-init-button'
   },

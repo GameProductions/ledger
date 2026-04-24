@@ -46,7 +46,7 @@ const LoginPage: React.FC = () => {
       });
       
       if (!res.ok) {
-        showToast('Session initialization failed: Invalid profile response', 'error');
+        showToast('Failed to start session: Invalid profile response', 'error');
         return;
       }
       

@@ -43,7 +43,7 @@ const CloudHub: React.FC<CloudHubProps> = ({ onFileSelect }) => {
 
   const handleConnect = (id: string) => {
     setConnecting(id);
-    // Simulate OAuth / Picker initialization
+    // Simulate OAuth / Picker setup
     setTimeout(() => {
       setConnecting(null);
       setActiveProvider(id);

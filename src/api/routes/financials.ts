@@ -200,6 +200,11 @@ financials.post('/transactions/infer', zValidator('json', z.object({
 financials.post('/transactions', zValidator('json', TransactionSchema, (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Transaction creation validation failed:`, result.error.errors);
+    return c.json({ 
+      success: false, 
+      error: 'Invalid transaction data', 
+      details: result.error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+    }, 400);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
@@ -231,16 +236,16 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     const insertTx = db.insert(transactions).values({
       id,
       householdId,
-      accountId: data.account_id || 'default-account', 
-      categoryId: data.category_id || null,
+      accountId: (data.account_id && data.account_id.trim() !== '') ? data.account_id : null, 
+      categoryId: (data.category_id && data.category_id.trim() !== '') ? data.category_id : null,
       description: data.description,
       amountCents: data.amount_cents,
       transactionDate: date,
-      notes: data.notes || null,
-      rawDescription: data.raw_description || null,
-      parentId: data.parent_id || null,
-      providerId: data.provider_id || null,
-      billId: data.bill_id || null,
+      notes: (data.notes && data.notes.trim() !== '') ? data.notes : null,
+      rawDescription: (data.raw_description && data.raw_description.trim() !== '') ? data.raw_description : null,
+      parentId: (data.parent_id && data.parent_id.trim() !== '') ? data.parent_id : null,
+      providerId: (data.provider_id && data.provider_id.trim() !== '') ? data.provider_id : null,
+      billId: (data.bill_id && data.bill_id.trim() !== '') ? data.bill_id : null,
       attentionRequired: data.attention_required,
       needsBalanceTransfer: data.needs_balance_transfer,
       transferTiming: data.transfer_timing || null,

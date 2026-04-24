@@ -74,11 +74,11 @@ app.use('/api/*', cors({
   maxAge: 600,
 }))
 
-// Traffic Governance Protocols (Titan Guard v6.1)
+// Traffic Management
 app.use('*', async (c, next) => {
   const path = c.req.path
   
-  // 1. Maintenance Mode Check (Hierarchical Protocol)
+  // 1. Maintenance Status Check
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true'
   let isSoftLocked = false
   let isGlobalLocked = false
@@ -100,7 +100,7 @@ app.use('*', async (c, next) => {
       if (dbConfig?.configValue === 'true') isSoftLocked = true
     }
 
-    // --- LEVEL 3: Global Fleet Lock Check (Foundation Command Center) ---
+    // --- LEVEL 3: Global Status Check ---
     // Cache the global status for 60 seconds to avoid DDOSing Foundation
     const globalStatusCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('global:maintenance')
     if (globalStatusCache === 'true') {
@@ -122,7 +122,7 @@ app.use('*', async (c, next) => {
       }
     }
 
-    // --- LEVEL 2.5: Remote Individual Lock (Foundation Project Switch) ---
+    // --- LEVEL 2.5: Project Status Check ---
     const remoteIndividualCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger')
     if (remoteIndividualCache === 'true') {
       isGlobalLocked = true;
@@ -140,14 +140,14 @@ app.use('*', async (c, next) => {
     return c.json({ 
       error: 'System Under Maintenance', 
       code: 'MAINTENANCE_ACTIVE',
-      message: 'The Ledger platform is currently undergoing scheduled security maintenance. Normal services will resume shortly.'
+      message: 'Ledger is currently down for maintenance. We\'ll be back soon!'
     }, 503)
   }
 
   await next()
 })
 
-// Adaptive Fleet Shield
+// Rate Limiting
 app.use('/api/auth/*', ipRateLimit('AUTH'))
 app.use('/api/*', ipRateLimit('API'))
 
@@ -210,7 +210,7 @@ app.use('/api/*', async (c, next) => {
 app.use('/api/admin/*', adminMiddleware)
 app.post('/api/theme/broadcast', authMiddleware)
 
-// 4. Route Mounting (Targeted Protocols)
+// 4. System Routes
 app.route('/api/auth', authRoutes)
 app.route('/api/auth', webauthnRoutes)
 app.route('/api/financials', financialsRoutes)
@@ -275,7 +275,7 @@ app.post('/api/theme/broadcast', async (c) => {
   
   if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('THEME_BROADCAST'))
   
-  // Mandatory Titan Guard Telemetry
+  // Activity Logging
   c.executionCtx.waitUntil(logAudit(c, 'system_config', 'broadcast_theme_id', 'UPDATE_THEME_BROADCAST', prevState, { themeId }));
   
   return c.json({ success: true })

@@ -1,9 +1,9 @@
 import { MiddlewareHandler } from 'hono';
 
 /**
- * 🛡️ Titan Guard v2.0 (Adaptive Collective Defense)
- * Unified rate-limiting middleware for the GameProductions fleet.
- * Uses shared KV (TITAN_GUARD_CACHE) for global IP reputation and 1-click unblock support.
+ * Rate Limiting Middleware
+ * Unified request management for the application fleet.
+ * Uses shared KV for global IP reputation and unblock support.
  */
 
 export type RateLimitTier = 'API' | 'AUTH' | 'STRICT';
@@ -73,9 +73,8 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
           }
 
           return c.json({ 
-            error: 'Shield Active', 
-            message: 'Security threshold exceeded. Please try again later.',
-            security_v: 'Titan Guard v6.1'
+            error: 'Please slow down', 
+            message: 'You are making too many requests. Please wait a moment and try again.'
           }, 429);
         } else {
           // Increment

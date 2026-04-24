@@ -206,67 +206,71 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
   const data = c.req.valid('json')
   const db = getDb(c.env)
 
-  // God Mode Enforcement: Check if accounts/categories are required
-  const config = await db.select({ configValue: systemConfig.configValue })
-    .from(systemConfig)
-    .where(eq(systemConfig.configKey, 'REQUIRE_TRANSACTION_CONTEXT'))
-    .limit(1)
-    .then(res => res[0]);
+  try {
+    // God Mode Enforcement: Check if accounts/categories are required
+    const config = await db.select({ configValue: systemConfig.configValue })
+      .from(systemConfig)
+      .where(eq(systemConfig.configKey, 'REQUIRE_TRANSACTION_CONTEXT'))
+      .limit(1)
+      .then(res => res[0]);
 
-  const isRequired = config?.configValue === 'true';
+    const isRequired = config?.configValue === 'true';
 
-  if (isRequired) {
-    if (!data.account_id) {
-      throw new HTTPException(400, { message: 'Account ID is required for transactions (Policy: REQUIRE_TRANSACTION_CONTEXT)' })
+    if (isRequired) {
+      if (!data.account_id) {
+        throw new HTTPException(400, { message: 'Please select an account for this transaction.' })
+      }
+      if (!data.category_id) {
+        throw new HTTPException(400, { message: 'Please select a category for this transaction.' })
+      }
     }
-    if (!data.category_id) {
-      throw new HTTPException(400, { message: 'Category ID is required for transactions (Policy: REQUIRE_TRANSACTION_CONTEXT)' })
-    }
-  }
-  
-  const id = crypto.randomUUID()
-  const date = data.transaction_date || new Date().toISOString().split('T')[0]
-  
-  // To replace DB.batch for transactions AND category deduction, we logically perform both. 
-  // Native Cloudflare D1 via Drizzle can use batch()
-  const insertTx = db.insert(transactions).values({
-    id,
-    householdId,
-    accountId: data.account_id || 'default-account', // Fallback if policy disabled
-    categoryId: data.category_id || null,
-    description: data.description,
-    amountCents: data.amount_cents,
-    transactionDate: date,
-    notes: data.notes || null,
-    rawDescription: data.raw_description || null,
-    parentId: data.parent_id || null,
-    providerId: data.provider_id || null,
-    billId: data.bill_id || null,
-    attentionRequired: data.attention_required,
-    needsBalanceTransfer: data.needs_balance_transfer,
-    transferTiming: data.transfer_timing || null,
-    isBorrowed: data.is_borrowed,
-    borrowSource: data.borrow_source || null,
-    accountedFor: data.accounted_for,
-  })
-
-  if (data.category_id) {
-    const updateCat = db.update(categories)
-      .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amount_cents}` })
-      .where(and(eq(categories.id, data.category_id), eq(categories.householdId, householdId)))
     
-    await db.batch([insertTx, updateCat])
-  } else {
-    await insertTx
+    const id = crypto.randomUUID()
+    const date = data.transaction_date || new Date().toISOString().split('T')[0]
+    
+    const insertTx = db.insert(transactions).values({
+      id,
+      householdId,
+      accountId: data.account_id || 'default-account', 
+      categoryId: data.category_id || null,
+      description: data.description,
+      amountCents: data.amount_cents,
+      transactionDate: date,
+      notes: data.notes || null,
+      rawDescription: data.raw_description || null,
+      parentId: data.parent_id || null,
+      providerId: data.provider_id || null,
+      billId: data.bill_id || null,
+      attentionRequired: data.attention_required,
+      needsBalanceTransfer: data.needs_balance_transfer,
+      transferTiming: data.transfer_timing || null,
+      isBorrowed: data.is_borrowed,
+      borrowSource: data.borrow_source || null,
+      accountedFor: data.accounted_for,
+    })
+
+    if (data.category_id) {
+      const updateCat = db.update(categories)
+        .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amount_cents}` })
+        .where(and(eq(categories.id, data.category_id), eq(categories.householdId, householdId)))
+      
+      await db.batch([insertTx, updateCat])
+    } else {
+      await insertTx
+    }
+    
+    await logAudit(c, 'transactions', id, 'CREATE', null, { 
+      amount: data.amount_cents, 
+      account_id: data.account_id, 
+      category_id: data.category_id 
+    })
+    
+    return c.json({ success: true, id })
+  } catch (error: any) {
+    if (error instanceof HTTPException) throw error;
+    console.error(`[DIAGNOSTIC_FAILURE] POST /api/financials/transactions:`, error);
+    return c.json({ error: 'Internal Server Error', details: error.message }, 500)
   }
-  
-  await logAudit(c, 'transactions', id, 'CREATE', null, { 
-    amount: data.amount_cents, 
-    account_id: data.account_id, 
-    category_id: data.category_id 
-  })
-  
-  return c.json({ success: true, id })
 })
 
 // Transaction Export

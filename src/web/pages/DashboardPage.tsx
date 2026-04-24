@@ -453,19 +453,19 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <div className="font-bold flex items-center gap-3">
                           {tx.description}
                           {tx.status === 'paid' && (
-                            <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase font-black border border-emerald-500/20">Paid</span>
+                            <span className="text-xs font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase border border-emerald-500/20">Paid</span>
                           )}
                           {tx.status === 'pending' && (
-                            <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase font-black border border-amber-500/20">Pending</span>
+                            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase border border-amber-500/20">Pending</span>
                           )}
                           {tx.status === 'scheduled' && (
-                            <span className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase font-black border border-blue-500/20">Scheduled</span>
+                            <span className="text-xs font-bold bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase border border-blue-500/20">Scheduled</span>
                           )}
                           {(tx.status === 'unpaid' || !tx.status) && (
-                            <span className="text-[10px] bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase font-black border border-red-500/20">Unpaid</span>
+                            <span className="text-xs font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase border border-red-500/20">Unpaid</span>
                           )}
                           {tx.reconciliationStatus === 'reconciled' && (
-                            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">Cleared</span>
+                            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Cleared</span>
                           )}
                         </div>
                         <div className="text-xs text-secondary uppercase font-bold opacity-60 flex items-center gap-2">
@@ -486,7 +486,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         </button>
                         <button 
                           onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
-                          className={`px-3 py-2 text-[12px] font-black uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
+                          className={`px-3 py-2 text-xs font-bold uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
                         >
                           {tx.status === 'reconciled' ? '✓' : 'Match'}
                         </button>
@@ -525,7 +525,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       if (descInput) descInput.value = tpl.name
                       if (amountInput) amountInput.value = (tpl.amountCents / 100).toFixed(2)
                     }}
-                    className="text-[12px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all font-bold"
+                    className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
                   >
                     {tpl.name}
                   </button>
@@ -573,9 +573,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                   <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={handleRollover} className="text-[10px] font-black uppercase tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
-                    <button onClick={() => setShowDepositModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
-                    <button onClick={() => setShowFundModal(true)} className="text-[10px] font-black uppercase tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
+                    <button onClick={handleRollover} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
+                    <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
+                    <button onClick={() => setShowFundModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
                   </div>
                 </div>
                 <div className="text-3xl font-black text-primary mb-1">
@@ -591,7 +591,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">{b.icon}</div>
                              <div>
                                 <h4 className="font-bold text-sm leading-none">{b.name}</h4>
-                                <p className="text-[10px] text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
+                                <p className="text-xs text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
                              </div>
                           </div>
                           <div className={`text-xl font-black tracking-tighter ${((b.envelopeBalanceCents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
@@ -600,7 +600,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                        </div>
                        
                        <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                          <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
                              <span className="text-secondary opacity-60">Activity</span>
                              <span className="text-white opacity-80"><Price amountCents={b.spendCents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthlyBudgetCents || 0} /></span></span>
                           </div>
@@ -653,7 +653,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="flex justify-between items-center bg-deep sticky top-0 pb-4 z-10 border-b border-white/5">
               <div>
                   <h3 className="text-xl font-black uppercase tracking-tighter italic m-0">Customize Layout</h3>
-                  <p className="text-[10px] text-secondary font-bold uppercase tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
+                  <p className="text-xs text-secondary font-bold uppercase tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
               </div>
               <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2">✕</button>
           </div>
@@ -696,13 +696,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           
           <div className="pt-6 border-t border-white/5 flex gap-4 sticky bottom-0 bg-deep pt-4">
               <button 
-                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
                   onClick={() => setIsCustomizing(false)}
               >
                   Cancel
               </button>
               <button 
-                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all transition-all"
+                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all transition-all"
                   onClick={() => { saveLayout(layout); setIsCustomizing(false); }}
               >
                   Save Global Layout
@@ -778,7 +778,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         </div>
         <button 
           onClick={() => setIsCustomizing(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ml-4 whitespace-nowrap"
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ml-4 whitespace-nowrap"
         >
           <Settings2 size={14} className="text-secondary hover:text-white" /> Customize View
         </button>

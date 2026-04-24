@@ -188,7 +188,7 @@ const LandingPage: React.FC = () => {
                  <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80 mb-6">
                    Run the entire LEDGER ecosystem on your own hardware. Available as containerized distributions on Docker Hub for total control over your financial stack.
                  </p>
-                 <a href="https://hub.docker.com/r/morenicano/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors">
+                 <a href="https://hub.docker.com/r/morenicano/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-colors">
                    View Docker Hub <ArrowRight size={12} />
                  </a>
                </div>

@@ -129,8 +129,8 @@ const DataCenterPage: React.FC = () => {
                          { name: 'OneDrive', color: 'hover:bg-sky-500/10 hover:border-sky-500/30' }
                        ].map(p => (
                          <button key={p.name} className={`p-6 rounded-3xl bg-white/5 border border-white/5 transition-all group ${p.color}`}>
-                            <div className="aspect-square w-full rounded-2xl bg-black/40 mb-3 flex items-center justify-center font-black text-[10px] uppercase group-hover:scale-105 transition-all">{p.name.split(' ')[0]}</div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Connect</p>
+                            <div className="aspect-square w-full rounded-2xl bg-black/40 mb-3 flex items-center justify-center font-bold text-xs uppercase group-hover:scale-105 transition-all">{p.name.split(' ')[0]}</div>
+                            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Connect</p>
                          </button>
                        ))}
                     </div>

@@ -3,6 +3,7 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 import { HandCoins, Plus, Trash2, Calendar, User, Phone, BadgeDollarSign, Receipt } from 'lucide-react';
 import { Price } from '../components/Price';
 
@@ -30,7 +31,7 @@ const LoanManagerPage: React.FC = () => {
   const handleCreateLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/p2p/loans`, {
+      const res = await fetch(`${getApiUrl()}/api/planning/p2p/loans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +53,7 @@ const LoanManagerPage: React.FC = () => {
   const handleDeleteLoan = async (id: string) => {
     if (!confirm('Permanently delete this loan and all associated payment records?')) return;
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/planning/p2p/loans/${id}`, {
+      await fetch(`${getApiUrl()}/api/planning/p2p/loans/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -73,7 +74,7 @@ const LoanManagerPage: React.FC = () => {
     const email = prompt('Enter recipient email for receipt (optional):') || '';
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/p2p/loans/${loanId}/payments`, {
+      const res = await fetch(`${getApiUrl()}/api/planning/p2p/loans/${loanId}/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

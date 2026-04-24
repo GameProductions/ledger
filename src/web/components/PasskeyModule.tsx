@@ -5,9 +5,9 @@ import { Shield, Key, Fingerprint, Trash2, Plus, RefreshCw, AlertTriangle } from
 import { startRegistration } from '@simplewebauthn/browser';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
+import { getApiUrl } from '../utils/api';
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+const API_URL = getApiUrl();
 
 
 interface Passkey {

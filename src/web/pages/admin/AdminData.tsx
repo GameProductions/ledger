@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
+import { getApiUrl } from '../../utils/api';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { useToast } from '../../context/ToastContext';
 import { Plus, Trash2, Zap, Building2, Search, ShieldAlert, ExternalLink } from 'lucide-react';
@@ -21,7 +22,7 @@ const AdminData: React.FC = () => {
   const fetchItems = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/records`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -41,7 +42,7 @@ const AdminData: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     
     // Ensure metadata_json is a valid object if empty
     const submissionData = {
@@ -70,7 +71,7 @@ const AdminData: React.FC = () => {
     if (!confirm('Are you sure you want to remove this item from the system?')) return;
     
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/admin/records/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import ImportReview from '../components/ImportReview';
 import { PrivacySettings } from '../components/PrivacySettings';
+import { getApiUrl } from '../utils/api';
 import { 
   Cloud, 
   Upload, 
@@ -14,8 +15,7 @@ import {
   Download
 } from 'lucide-react';
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+const API_URL = getApiUrl();
 
 const DataCenterPage: React.FC = () => {
   const [importScope, setImportScope] = useState<'household' | 'private'>('household');

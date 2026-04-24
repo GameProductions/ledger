@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
+import { getApiUrl } from '../utils/api';
 
 const SnapshotViewer: React.FC = () => {
   const [snapshot, setSnapshot] = useState<any>(null);
@@ -10,7 +11,7 @@ const SnapshotViewer: React.FC = () => {
     const fetchSnapshot = async () => {
       const id = window.location.hash.split('/').pop();
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/public/snapshots/${id}`);
+        const res = await fetch(`${getApiUrl()}/api/public/snapshots/${id}`);
         if (!res.ok) throw new Error('Snapshot not found or expired');
         const data = await res.json();
         setSnapshot(data);

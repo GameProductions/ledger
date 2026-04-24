@@ -4,6 +4,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { getApiUrl } from '../utils/api';
 
 interface ArchivedItem {
   id: string;
@@ -21,7 +22,7 @@ export function ArchivalVault() {
 
   const restoreEntity = async (type: string, id: string) => {
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+      const apiUrl = getApiUrl().replace(/\/$/, '');
       const res = await fetch(`${apiUrl}/api/user/households/restore/${type}/${id}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }

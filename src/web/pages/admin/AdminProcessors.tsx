@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink, ShieldAlert } from 'lucide-react';
+import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 
 const AdminProcessors: React.FC = () => {
@@ -21,7 +22,7 @@ const AdminProcessors: React.FC = () => {
   const fetchProcessors = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/networks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -43,7 +44,7 @@ const AdminProcessors: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     
     const url = editingId 
       ? `${apiUrl}/api/admin/networks/${editingId}`
@@ -86,7 +87,7 @@ const AdminProcessors: React.FC = () => {
     if (!confirm('Warning: Are you sure you want to delete this processor? This action will be logged.')) return;
     
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/admin/networks/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }

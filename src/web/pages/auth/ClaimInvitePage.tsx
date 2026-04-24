@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { getApiUrl } from '../../utils/api'
 
 const ClaimInvitePage: React.FC = () => {
   const { showToast } = useToast()
@@ -20,7 +21,7 @@ const ClaimInvitePage: React.FC = () => {
     }
     setLoading(true)
     try {
-      const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+      const apiUrl = getApiUrl().replace(/\/$/, '')
       const res = await fetch(`${apiUrl}/api/auth/admin/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

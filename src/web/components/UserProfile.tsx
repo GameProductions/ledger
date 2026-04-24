@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
+import { getApiUrl } from '../utils/api'
 
 const UserProfile: React.FC = () => {
   const { data: profile } = useApi('/api/user/profile')
@@ -11,7 +12,7 @@ const UserProfile: React.FC = () => {
   }, [profile])
 
   const handleUpdate = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+    await fetch(`${getApiUrl()}/api/user/profile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
+import { getApiUrl } from '../utils/api'
 
 interface OnboardingContextType {
   completedSteps: string[]
@@ -24,7 +25,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [updates, setUpdates] = useState<any[]>([])
   const [currentVersion, setCurrentVersion] = useState('latest')
 
-  const API_URL = import.meta.env.VITE_API_URL || '/api'
+  const apiUrl = getApiUrl()
 
   useEffect(() => {
     if (token) {
@@ -36,7 +37,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const fetchOnboardingStatus = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/user/onboarding`, {
+      const res = await fetch(`${apiUrl}/api/user/onboarding`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (res.ok) {
@@ -62,7 +63,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const completeStep = async (step: string, isLast?: boolean, version?: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/user/onboarding/step`, {
+      const res = await fetch(`${apiUrl}/api/user/onboarding/step`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

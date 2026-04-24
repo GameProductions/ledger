@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { CreditCard, Shield, Plus, Trash2, Link, Mail, Calendar, ExternalLink, Globe, Zap, Settings, ArrowLeft } from 'lucide-react';
 import { SearchableSelect } from '../components/ui/SearchableSelect';
 import { MainLayout } from '../components/layout/MainLayout';
+import { getApiUrl } from '../utils/api';
 
 const PaymentCentralPage: React.FC = () => {
   const { token, householdId } = useAuth();
@@ -38,7 +39,7 @@ const PaymentCentralPage: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const headers = { 'Authorization': `Bearer ${token}`, 'x-household-id': householdId || '' };
       
       const [methodsRes, accountsRes, providersRes, subsRes] = await Promise.all([
@@ -72,7 +73,7 @@ const PaymentCentralPage: React.FC = () => {
 
   const handleAddMethod = async (e: React.FormEvent) => {
     e.preventDefault();
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/user/payment-methods`, {
       method: 'POST',
       headers: { 
@@ -95,7 +96,7 @@ const PaymentCentralPage: React.FC = () => {
 
   const handleLinkAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/user/linked-accounts`, {
       method: 'POST',
       headers: { 

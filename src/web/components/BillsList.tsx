@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 import { Trash2, AlertCircle, Calendar as CalendarIcon, ExternalLink, ShieldCheck, Share2 } from 'lucide-react';
 import { LiabilitySplitter } from './LiabilitySplitter';
 import { Price } from './Price';
@@ -18,7 +19,7 @@ export const BillsList: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         if (!token) return;
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
 
         const res = await fetch(`${apiUrl}/api/planning/bills/${id}`, {
             method: 'DELETE',
@@ -36,7 +37,7 @@ export const BillsList: React.FC = () => {
 
     const handleStatusUpdate = async (id: string, newStatus: string) => {
         if (!token) return;
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
 
         const res = await fetch(`${apiUrl}/api/planning/bills/${id}`, {
             method: 'PATCH',
@@ -56,7 +57,7 @@ export const BillsList: React.FC = () => {
 
     const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
         if (!token) return;
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/splits/bill/${targetId}/public`, {
+        const res = await fetch(`${getApiUrl()}/api/planning/splits/bill/${targetId}/public`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',

@@ -8,9 +8,9 @@ import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { formatHumanError } from '../utils/error-handler';
+import { getApiUrl } from '../utils/api';
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+const API_URL = getApiUrl();
 
 const HouseholdRegistry: React.FC = () => {
   const { data: profile } = useApi('/api/user/profile');

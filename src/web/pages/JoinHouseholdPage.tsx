@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { Button } from '../components/ui/Button'
+import { getApiUrl } from '../utils/api'
 import { Shield, Home, ArrowRight, CheckCircle2, XCircle } from 'lucide-react'
 
 const JoinHouseholdPage: React.FC = () => {
@@ -24,8 +25,7 @@ const JoinHouseholdPage: React.FC = () => {
     setLoading(true)
     setStatus('loading')
     try {
-      const apiUrl = import.meta.env.VITE_API_URL
-      const res = await fetch(`${apiUrl}/api/user/households/join`, {
+      const res = await fetch(`${getApiUrl()}/api/user/households/join`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${userToken}`,

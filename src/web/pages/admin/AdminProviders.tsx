@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { Building2, Globe, Plus, Trash2, Edit2, Zap, Server, ShieldAlert } from 'lucide-react';
+import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 
@@ -26,7 +27,7 @@ const AdminProviders: React.FC = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       
       const [provRes, procRes] = await Promise.all([
         fetch(`${apiUrl}/api/admin/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
@@ -52,7 +53,7 @@ const AdminProviders: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     
     const url = editingId 
       ? `${apiUrl}/api/admin/providers/${editingId}`
@@ -98,7 +99,7 @@ const AdminProviders: React.FC = () => {
     if (!confirm('Warning: Are you sure you want to delete this provider? This will remove all associated records.')) return;
     
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/admin/providers/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }

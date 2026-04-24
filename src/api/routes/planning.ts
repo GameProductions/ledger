@@ -625,10 +625,13 @@ planning.get('/bills/upcoming', async (c) => {
   const schedules = await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId))
   
   return c.json({
-    subscriptions: subs.map(toSnake),
-    installments: installments.map(toSnake),
-    pay_schedules: schedules.map(toSnake),
-    total_upcoming_cents: [...subs, ...installments].reduce((acc, curr: any) => acc + (curr.amountCents || curr.installmentAmountCents || 0), 0)
+    success: true,
+    data: {
+      subscriptions: subs.map(toSnake),
+      installments: installments.map(toSnake),
+      pay_schedules: schedules.map(toSnake),
+      total_upcoming_cents: [...subs, ...installments].reduce((acc, curr: any) => acc + (curr.amountCents || curr.installmentAmountCents || 0), 0)
+    }
   })
 })
 
@@ -656,8 +659,11 @@ planning.get('/budgets', async (c) => {
   })
   
   return c.json({
-    unallocated_balance_cents: household?.unallocatedBalanceCents || 0,
-    budgets
+    success: true,
+    data: {
+      unallocated_balance_cents: household?.unallocatedBalanceCents || 0,
+      budgets
+    }
   })
 })
 

@@ -18,9 +18,9 @@ import { TotpModule } from '../components/TotpModule'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { formatHumanError } from '../utils/error-handler'
 import { sanitizeImageUrl } from '../utils/security'
+import { getApiUrl } from '../utils/api'
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+const API_URL = getApiUrl();
 
 
 const SettingsPage: React.FC = () => {
@@ -468,7 +468,7 @@ const SettingsPage: React.FC = () => {
                               ) : (
                                 <button 
                                   onClick={() => {
-                                    const baseApi = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+                                    const baseApi = getApiUrl().replace(/\/$/, '');
                                     window.location.href = `${baseApi}/api/auth/login/${provider.id}?auth_token=${token}`;
                                   }}
                                   className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs transition-all"

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
+import { getApiUrl } from '../utils/api';
 
 interface ImportReviewProps {
   onImportComplete: () => void;
@@ -148,7 +149,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     if (reviewItems.length === 0) return;
     setCommitting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/data/import/confirm`, {
+      const res = await fetch(`${getApiUrl()}/api/data/import/confirm`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -419,14 +419,15 @@ const Calendar: React.FC<CalendarProps> = ({
                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary mb-4 flex items-center gap-2">
                     <ArrowRight size={12} className="text-emerald-500" /> Rolling Windows
                 </h4>
-                <div className="grid grid-cols-3 gap-2">
-                    {[7, 30, 90].map(v => (
+                <div className="grid grid-cols-4 gap-2">
+                    {[7, 14, 30, 90].map(v => (
                         <button 
                             key={v}
                             onClick={() => { setRangeType('relative'); setRangeValue(v); setIsRangeModalOpen(false); }}
-                            className={`p-3 rounded-xl border transition-all text-center ${rangeType === 'relative' && rangeValue === v ? 'bg-emerald-500/10 border-emerald-500/50 text-white' : 'bg-white/5 border-white/5 text-secondary hover:bg-white/10'}`}
+                            className={`p-4 rounded-xl border transition-all text-center ${rangeType === 'relative' && rangeValue === v ? 'bg-emerald-500/10 border-emerald-500/50 text-white' : 'bg-white/5 border-white/5 text-secondary hover:bg-white/10'}`}
                         >
-                            <div className="text-xs font-black uppercase">{v}D</div>
+                            <div className="text-xs font-black uppercase">{v} Days</div>
+                            <div className="text-[10px] opacity-60"></div>
                         </button>
                     ))}
                 </div>

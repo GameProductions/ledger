@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Masked } from '../../components/ui/Masked';
 import { useToast } from '../../context/ToastContext';
+import { getApiUrl } from '../../utils/api';
 
 // --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ 
@@ -41,7 +42,7 @@ const UserDetailsModal: React.FC<{
   const fetchDetails = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/users/${userId}/details`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -67,7 +68,7 @@ const UserDetailsModal: React.FC<{
     setResetting(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       await fetch(`${apiUrl}/api/admin/users/${userId}/password/reset`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -85,7 +86,7 @@ const UserDetailsModal: React.FC<{
     if (!editingPk) return;
     const { id, newName } = editingPk;
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     try {
       await fetch(`${apiUrl}/api/admin/users/${userId}/passkeys/${id}`, {
         method: 'PATCH',
@@ -102,7 +103,7 @@ const UserDetailsModal: React.FC<{
   const handleAdminRemovePasskey = async () => {
     if (!removingPk) return;
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     try {
       await fetch(`${apiUrl}/api/admin/users/${userId}/passkeys/${removingPk.id}`, {
         method: 'DELETE',
@@ -439,7 +440,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     setError('');
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/users/setup`, {
         method: 'POST',
         headers: { 
@@ -611,7 +612,7 @@ const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/users/management`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -634,7 +635,7 @@ const AdminUsers: React.FC = () => {
 
   const handleUpdate = async (id: string, updates: any) => {
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     await fetch(`${apiUrl}/api/admin/users/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -649,7 +650,7 @@ const AdminUsers: React.FC = () => {
     setDeletingUser(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -671,7 +672,7 @@ const AdminUsers: React.FC = () => {
     setMerging(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/users/merge`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -975,7 +976,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
     setImpersonating(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/users/${target.id}/impersonate`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }

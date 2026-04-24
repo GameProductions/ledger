@@ -4,6 +4,7 @@ import { useApi } from '../../hooks/useApi';
 import { useToast } from '../../context/ToastContext';
 import { Megaphone, Ticket, Plus, Trash2, Send, Clock, ShieldCheck, Mail } from 'lucide-react';
 import AdminPortal from './AdminPortal';
+import { getApiUrl } from '../../utils/api';
 
 export const AdminBroadcast: React.FC = () => {
   const { token } = useAuth();
@@ -17,7 +18,7 @@ export const AdminBroadcast: React.FC = () => {
   const createAnnouncement = async () => {
     if (!newAnnouncement.title || !newAnnouncement.contentMd) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/announcements`, {
+      const res = await fetch(`${getApiUrl()}/api/admin/announcements`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -38,7 +39,7 @@ export const AdminBroadcast: React.FC = () => {
 
   const deleteAnnouncement = async (id: string) => {
     if (!confirm('Permanent delete?')) return;
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/announcements/${id}`, {
+    const res = await fetch(`${getApiUrl()}/api/admin/announcements/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -50,7 +51,7 @@ export const AdminBroadcast: React.FC = () => {
 
   const createInvite = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/invitations`, {
+      const res = await fetch(`${getApiUrl()}/api/admin/invitations`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -70,7 +71,7 @@ export const AdminBroadcast: React.FC = () => {
   };
 
   const deleteInvite = async (tokenStr: string) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/invitations/${tokenStr}`, {
+    const res = await fetch(`${getApiUrl()}/api/admin/invitations/${tokenStr}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

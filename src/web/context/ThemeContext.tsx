@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { getApiUrl } from '../utils/api';
 
 export interface ThemeColors {
   primary: string;
@@ -109,7 +110,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const fetchBroadcast = async () => {
       try {
-        const res = await fetch(`/api/theme/broadcast`);
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}/api/theme/broadcast`);
         const data = await res.json();
         if (data.themeId) setBroadcastThemeId(data.themeId);
       } catch (e) {}
@@ -131,7 +133,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (token && user && !broadcastThemeId) {
        const currentSettings = JSON.parse(user.settingsJson || '{}');
        if (currentSettings.theme !== activeThemeId) {
-          fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+          const apiUrl = getApiUrl();
+          fetch(`${apiUrl}/api/user/profile`, {
             method: 'PATCH',
             headers: { 
               'Content-Type': 'application/json',

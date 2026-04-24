@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Briefcase, Plus, Trash2, LineChart, TrendingUp, Landmark, Coins, Diamond } from 'lucide-react';
 import { Price } from '../components/Price';
+import { getApiUrl } from '../utils/api';
 
 const InvestmentPortfolioPage: React.FC = () => {
   const { token, householdId } = useAuth();
@@ -24,7 +25,7 @@ const InvestmentPortfolioPage: React.FC = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financials/investments`, {
+      const res = await fetch(`${getApiUrl()}/api/financials/investments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +47,7 @@ const InvestmentPortfolioPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('Remove this asset from your portfolio?')) return;
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/financials/investments/${id}`, {
+      await fetch(`${getApiUrl()}/api/financials/investments/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

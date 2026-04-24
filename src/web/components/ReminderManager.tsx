@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { getApiUrl } from '../utils/api'
 import { Bell, Trash2, X } from 'lucide-react'
 
 interface ReminderManagerProps {
@@ -25,7 +26,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
-    const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+    const apiUrl = getApiUrl().replace(/\/$/, '')
 
     const res = await fetch(`${apiUrl}/api/planning/reminders`, {
       method: 'POST',
@@ -57,7 +58,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
 
   const handleDelete = async (id: string) => {
     if (!token) return
-    const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+    const apiUrl = getApiUrl().replace(/\/$/, '')
 
     const res = await fetch(`${apiUrl}/api/planning/reminders/${id}`, {
       method: 'DELETE',

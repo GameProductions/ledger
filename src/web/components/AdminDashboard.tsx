@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
+import { getApiUrl } from '../utils/api'
 
 const AdminDashboard: React.FC = () => {
   const { data: users = [], loading: loadingUsers, mutate: mutateUsers } = useApi('/api/admin/users')
@@ -15,7 +16,7 @@ const AdminDashboard: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('')
 
   const handleUpdateUser = async (userId: string, updates: any) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}`, {
+    await fetch(`${getApiUrl()}/api/admin/users/${userId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -37,7 +38,7 @@ const AdminDashboard: React.FC = () => {
       status: 'active'
     }
 
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/connections`, {
+    await fetch(`${getApiUrl()}/api/admin/connections`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -196,7 +197,7 @@ const AdminDashboard: React.FC = () => {
             <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
             <Button variant="primary" onClick={() => {
               if (confirmDeleteId) {
-                fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${confirmDeleteId}`, {
+                fetch(`${getApiUrl()}/api/admin/users/${confirmDeleteId}`, {
                   method: 'DELETE',
                   headers: { 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` }
                 }).then(() => {
@@ -221,7 +222,7 @@ const AdminDashboard: React.FC = () => {
             <Button variant="secondary" onClick={() => setInviteModalOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={() => {
                 if (!inviteEmail) return;
-                fetch(`${import.meta.env.VITE_API_URL}/api/admin/admin/users/invite`, {
+                fetch(`${getApiUrl()}/api/admin/admin/users/invite`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
                   body: JSON.stringify({ email: inviteEmail })

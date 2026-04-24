@@ -25,7 +25,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       path === '/api/auth/passkeys/login-verify' ||
       path === '/api/auth/password/reset-request' ||
       path === '/api/auth/password/reset' ||
-      path === '/api/auth/admin/claim'
+      path === '/api/auth/admin/claim' ||
+      path === '/api/theme/broadcast'
     ) {
       return await next()
     }

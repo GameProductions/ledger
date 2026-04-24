@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
+import { getApiUrl } from '../utils/api'
 import { Link, Bell, ShieldCheck, Share2 } from 'lucide-react'
 
 import { Price } from './Price'
@@ -19,7 +20,7 @@ const Subscriptions: React.FC = () => {
 
   const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
     if (!token) return;
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/splits/subscription/${targetId}/public`, {
+    const res = await fetch(`${getApiUrl()}/api/planning/splits/subscription/${targetId}/public`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ const Subscriptions: React.FC = () => {
         <form style={{ marginBottom: '1.5rem', display: 'grid', gap: '0.8rem' }} className="p-4 rounded-xl bg-white/2 border border-white/5" onSubmit={(e) => {
           e.preventDefault()
           const formData = new FormData(e.currentTarget)
-          const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '')
+          const apiUrl = getApiUrl().replace(/\/$/, '')
           fetch(`${apiUrl}/api/planning/subscriptions`, {
             method: 'POST',
             headers: { 

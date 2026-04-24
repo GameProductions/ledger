@@ -4,6 +4,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 
 interface Session {
   id: string;
@@ -23,7 +24,7 @@ export function SecurityDashboard() {
   const fetchSessions = async () => {
     if (!token) return;
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+      const apiUrl = (getApiUrl() || '').replace(/\/$/, '');
       const res = await fetch(`${apiUrl}/api/user/sessions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -43,7 +44,7 @@ export function SecurityDashboard() {
 
   const revokeSession = async (id: string) => {
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+      const apiUrl = (getApiUrl() || '').replace(/\/$/, '');
       const res = await fetch(`${apiUrl}/api/user/sessions/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

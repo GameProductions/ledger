@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
+import { getApiUrl } from '../utils/api'
 
 const TransferForm: React.FC = () => {
   const { data: accounts } = useApi('/api/financials/accounts')
@@ -12,7 +13,7 @@ const TransferForm: React.FC = () => {
     e.preventDefault()
     setLoading(true)
     
-    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transfers`, {
+    await fetch(`${getApiUrl()}/api/financials/transfers`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json', 

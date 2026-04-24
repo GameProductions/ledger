@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
 import { Calendar, DollarSign, Wallet, Shield, Info, Tag, Users } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
+import { getApiUrl } from '../utils/api';
 
 interface PayScheduleModalProps {
     isOpen: boolean;
@@ -62,7 +63,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
             upcoming_effective_date: upcomingEffectiveDate || null
         };
 
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
         const method = schedule ? 'PATCH' : 'POST';
         const url = schedule ? `${apiUrl}/api/planning/pay-schedules/${schedule.id}` : `${apiUrl}/api/planning/pay-schedules`;
 

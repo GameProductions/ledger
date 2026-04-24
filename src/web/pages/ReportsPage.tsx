@@ -5,6 +5,7 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 
 interface CategorySpend {
   name: string;
@@ -36,7 +37,7 @@ const ReportsPage: React.FC = () => {
     const fetchData = async () => {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
-        const apiUrl = import.meta.env.VITE_API_URL;
+        const apiUrl = getApiUrl();
 
         const [spendRes, nwRes, reportsRes] = await Promise.all([
           fetch(`${apiUrl}/api/interop/analytics/category-spending?timeframe=30d`, { headers }),
@@ -68,7 +69,8 @@ const ReportsPage: React.FC = () => {
 
   const shareSnapshot = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/interop/reports`, {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/interop/reports`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -95,7 +97,8 @@ const ReportsPage: React.FC = () => {
 
   const generateSnapshot = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/interop/reports/snapshot`, {
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/interop/reports/snapshot`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -106,7 +109,8 @@ const ReportsPage: React.FC = () => {
       if (res.ok) {
         showToast('Financial snapshot generated successfully', 'success');
         // Reload reports
-        const reportsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/interop/reports`, {
+        const apiUrl = getApiUrl();
+        const reportsRes = await fetch(`${apiUrl}/api/interop/reports`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (reportsRes.ok) setReports(await reportsRes.json());
@@ -117,7 +121,8 @@ const ReportsPage: React.FC = () => {
   };
 
   const exportCSV = () => {
-    window.open(`${import.meta.env.VITE_API_URL}/api/transactions/export/csv?auth_token=${token}`, '_blank');
+    const apiUrl = getApiUrl();
+    window.open(`${apiUrl}/api/transactions/export/csv?auth_token=${token}`, '_blank');
   };
 
   return (

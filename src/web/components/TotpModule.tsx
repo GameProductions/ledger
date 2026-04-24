@@ -6,9 +6,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
+import { getApiUrl } from '../utils/api';
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const API_URL = rawApiUrl === 'undefined' || !rawApiUrl ? '' : rawApiUrl;
+const API_URL = getApiUrl();
 
 export const TotpModule = () => {
   const { token } = useAuth();

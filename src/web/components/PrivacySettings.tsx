@@ -4,6 +4,7 @@ import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { BookLock } from 'lucide-react';
+import { getApiUrl } from '../utils/api';
 
 export const PrivacySettings: React.FC = () => {
   const { token, user } = useAuth();
@@ -16,7 +17,7 @@ export const PrivacySettings: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/export/full`, {
+      const res = await fetch(`${getApiUrl()}/api/financials/transactions/export/full`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const blob = await res.blob();
@@ -39,7 +40,7 @@ export const PrivacySettings: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/privacy/shred`, {
+      const res = await fetch(`${getApiUrl()}/api/privacy/shred`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

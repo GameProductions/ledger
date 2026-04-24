@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import { Flag, ShieldAlert, ArrowRightLeft, HandCoins } from 'lucide-react'
+import { getApiUrl } from '../utils/api'
 
 interface QuickAttentionAddProps {
   onAdded: () => void;
@@ -24,7 +25,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     e.preventDefault()
     setLoading(true)
 
-    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions`, {
+    await fetch(`${getApiUrl()}/api/financials/transactions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

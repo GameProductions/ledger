@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Users, Percent, DollarSign, CheckCircle2 } from 'lucide-react';
 import { Price } from './Price';
+import { getApiUrl } from '../utils/api';
 
 interface LiabilitySplitterProps {
     targetId: string;
@@ -49,7 +50,7 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
         }));
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/splits`, {
+            const res = await fetch(`${getApiUrl()}/api/planning/splits`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

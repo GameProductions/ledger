@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { getApiUrl } from '../utils/api'
 
 const AICoach: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -17,7 +18,7 @@ const AICoach: React.FC = () => {
     setLoading(true)
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/interop/coach/ask/ask`, {
+      const res = await fetch(`${getApiUrl()}/api/interop/coach/ask/ask`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

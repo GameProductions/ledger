@@ -46,28 +46,53 @@ const toSnake = (obj: any) => {
 financials.get('/categories', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = await db.select().from(categories).where(eq(categories.householdId, householdId))
-  return c.json({ 
-    success: true, 
-    data: results.map(row => CategoryOutputSchema.parse(row)) 
-  })
+  try {
+    const results = await db.select().from(categories).where(eq(categories.householdId, householdId))
+    return c.json({ 
+      success: true, 
+      data: results.map(row => {
+        try {
+          return CategoryOutputSchema.parse(row)
+        } catch (e: any) {
+          console.error(`[DIAGNOSTIC_FAILURE] Category validation failed for row ${row.id}:`, e.errors || e.message);
+          throw e;
+        }
+      }) 
+    })
+  } catch (err: any) {
+    console.error(`[CRITICAL_FAILURE] Failed to fetch categories for household ${householdId}:`, err.message);
+    throw new HTTPException(500, { message: 'Internal Server Error fetching categories' })
+  }
 })
 
 // Accounts
 financials.get('/accounts', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = await db.select({
-    id: accounts.id,
-    name: accounts.name,
-    type: accounts.type,
-    balanceCents: accounts.balanceCents, // Use camelCase directly
-    currency: accounts.currency
-  }).from(accounts).where(eq(accounts.householdId, householdId))
-  return c.json({ 
-    success: true, 
-    data: results.map(row => AccountOutputSchema.parse(row)) 
-  })
+  try {
+    const results = await db.select({
+      id: accounts.id,
+      name: accounts.name,
+      type: accounts.type,
+      balanceCents: accounts.balanceCents,
+      currency: accounts.currency
+    }).from(accounts).where(eq(accounts.householdId, householdId))
+    
+    return c.json({ 
+      success: true, 
+      data: results.map(row => {
+        try {
+          return AccountOutputSchema.parse(row)
+        } catch (e: any) {
+          console.error(`[DIAGNOSTIC_FAILURE] Account validation failed for row ${row.id}:`, e.errors || e.message);
+          throw e;
+        }
+      }) 
+    })
+  } catch (err: any) {
+    console.error(`[CRITICAL_FAILURE] Failed to fetch accounts for household ${householdId}:`, err.message);
+    throw new HTTPException(500, { message: 'Internal Server Error fetching accounts' })
+  }
 })
 
 // Credit Cards
@@ -81,7 +106,11 @@ financials.get('/credit-cards', async (c) => {
   })
 })
 
-financials.post('/credit-cards', zValidator('json', CreditCardSchema), async (c) => {
+financials.post('/credit-cards', zValidator('json', CreditCardSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Credit card creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
@@ -123,27 +152,43 @@ financials.get('/transactions', async (c) => {
   const orderByCol = sortBy === 'amount' ? transactions.amountCents : transactions.transactionDate
   const orderFunc = sortDir === 'asc' ? asc : desc
 
-  const results = await db.select().from(transactions).where(
-    and(
-      eq(transactions.householdId, householdId),
-      categoryId ? eq(transactions.categoryId, categoryId) : undefined,
-      accountId ? eq(transactions.accountId, accountId) : undefined,
-      startDate ? gte(transactions.transactionDate, startDate) : undefined,
-      endDate ? lte(transactions.transactionDate, endDate) : undefined,
-      q ? like(transactions.description, `%${q}%`) : undefined
-    )
-  ).orderBy(orderFunc(orderByCol)).limit(limit || 50).offset(offset || 0)
+  try {
+    const results = await db.select().from(transactions).where(
+      and(
+        eq(transactions.householdId, householdId),
+        categoryId ? eq(transactions.categoryId, categoryId) : undefined,
+        accountId ? eq(transactions.accountId, accountId) : undefined,
+        startDate ? gte(transactions.transactionDate, startDate) : undefined,
+        endDate ? lte(transactions.transactionDate, endDate) : undefined,
+        q ? like(transactions.description, `%${q}%`) : undefined
+      )
+    ).orderBy(orderFunc(orderByCol)).limit(limit || 50).offset(offset || 0)
 
-  return c.json({ 
-    success: true, 
-    data: results.map(row => TransactionOutputSchema.parse(row)),
-    meta: { limit, offset }
-  })
+    return c.json({ 
+      success: true, 
+      data: results.map(row => {
+        try {
+          return TransactionOutputSchema.parse(row)
+        } catch (e: any) {
+          console.error(`[DIAGNOSTIC_FAILURE] Transaction validation failed for row ${row.id}:`, e.errors || e.message);
+          throw e;
+        }
+      }),
+      meta: { limit, offset }
+    })
+  } catch (err: any) {
+    console.error(`[CRITICAL_FAILURE] Failed to fetch transactions for household ${householdId}:`, err.message);
+    throw new HTTPException(500, { message: 'Internal Server Error fetching transactions' })
+  }
 })
 
 financials.post('/transactions/infer', zValidator('json', z.object({
   raw_description: z.string()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction inference validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const { raw_description } = c.req.valid('json')
   const db = getDb(c.env)
@@ -152,7 +197,11 @@ financials.post('/transactions/infer', zValidator('json', z.object({
   return c.json({ suggestions })
 })
 
-financials.post('/transactions', zValidator('json', TransactionSchema), async (c) => {
+financials.post('/transactions', zValidator('json', TransactionSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const data = c.req.valid('json')
   const db = getDb(c.env)
@@ -281,7 +330,11 @@ financials.get('/transactions/:id/timeline', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
-financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema), async (c) => {
+financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Timeline entry validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const id = c.req.param('id')
   const householdId = c.get('householdId')
   const { type, content } = c.req.valid('json')
@@ -351,7 +404,11 @@ financials.patch('/transactions/:id/reconcile', async (c) => {
 financials.patch('/transactions/bulk-reconcile', zValidator('json', z.object({
   transaction_ids: z.array(z.string()),
   reconciled: z.boolean()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Bulk reconcile validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const { transaction_ids, reconciled } = c.req.valid('json')
   const db = getDb(c.env)
@@ -381,7 +438,11 @@ financials.post('/transactions/:id/split', zValidator('json', z.object({
     category_id: z.string().optional().nullable(),
     description: z.string()
   }))
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction split validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const id = c.req.param('id')
   const householdId = c.get('householdId')
   const { splits } = c.req.valid('json')
@@ -461,7 +522,11 @@ financials.post('/transactions/:id/unlink', async (c) => {
   return c.json({ success: true })
 })
 
-financials.patch('/transactions/:id', zValidator('json', TransactionSchema.partial()), async (c) => {
+financials.patch('/transactions/:id', zValidator('json', TransactionSchema.partial(), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const id = c.req.param('id')
   const householdId = c.get('householdId')
   const data = c.req.valid('json')
@@ -536,7 +601,11 @@ financials.post('/transactions/import/confirm', zValidator('json', z.object({
   mapping: z.record(z.string(), z.string()),
   data: z.array(z.record(z.string(), z.any())),
   accountId: z.string()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Import confirmation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const { mapping, data, accountId } = c.req.valid('json')
   const db = getDb(c.env)
@@ -615,7 +684,11 @@ financials.get('/transactions/:id/receipt', async (c) => {
 })
 
 // Transfers
-financials.post('/transfers', zValidator('json', TransferSchema), async (c) => {
+financials.post('/transfers', zValidator('json', TransferSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Transfer creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const { from_account_id, to_account_id, amount_cents, description } = c.req.valid('json')
   const db = getDb(c.env)
@@ -654,7 +727,11 @@ financials.post('/transfers', zValidator('json', TransferSchema), async (c) => {
 })
 
 // Buckets
-financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), targetCents: z.number().int().min(100) })), async (c) => {
+financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), targetCents: z.number().int().min(100) }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Bucket creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const { name, targetCents } = c.req.valid('json')
   const db = getDb(c.env)
@@ -678,7 +755,11 @@ financials.get('/buckets', async (c) => {
 
 
 // Phase 4 Transfers
-financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Subscription transfer validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id')
   const { newOwnerId } = c.req.valid('json')
@@ -697,7 +778,11 @@ financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ ne
   return c.json({ success: true })
 })
 
-financials.patch('/transactions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+financials.patch('/transactions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction transfer validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id')
   const { newOwnerId } = c.req.valid('json')
@@ -732,7 +817,11 @@ financials.post('/investments', zValidator('json', z.object({
   current_valuation_cents: z.number(),
   currency: z.string().default('USD'),
   institution_id: z.string().optional()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Investment creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const householdId = c.get('householdId')
   const data = c.req.valid('json')
   const id = crypto.randomUUID()

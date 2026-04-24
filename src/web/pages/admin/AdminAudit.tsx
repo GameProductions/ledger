@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
+import { getApiUrl } from '../../utils/api';
 
 const AdminAudit: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -9,7 +10,7 @@ const AdminAudit: React.FC = () => {
     const fetchAudit = async () => {
       try {
         const token = localStorage.getItem('ledger_token');
-        const apiUrl = import.meta.env.VITE_API_URL;
+        const apiUrl = getApiUrl();
         const res = await fetch(`${apiUrl}/api/admin/audit`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useAuth } from '../context/AuthContext'
+import { getApiUrl } from '../utils/api'
 import { useApi } from '../hooks/useApi'
 import { ArrowLeft, Palette, Layout } from 'lucide-react'
 import ThemeSwitcher from '../components/ThemeSwitcher'
@@ -15,7 +16,8 @@ const PreferencesPage: React.FC = () => {
 
   const updateSettings = async (newSettings: any) => {
     if (!token) return
-    await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+    const apiUrl = getApiUrl()
+    await fetch(`${apiUrl}/api/user/profile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',

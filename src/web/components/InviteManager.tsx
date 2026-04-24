@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { getApiUrl } from '../utils/api'
 
 const InviteManager: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -9,7 +10,8 @@ const InviteManager: React.FC = () => {
   const generateInvite = async () => {
     if (!token) return
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/user/households/invite`, {
+    const apiUrl = getApiUrl()
+    const res = await fetch(`${apiUrl}/api/user/households/invite`, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,

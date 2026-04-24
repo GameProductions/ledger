@@ -4,6 +4,7 @@ import AdminPortal from './AdminPortal';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { useToast } from '../../context/ToastContext';
+import { getApiUrl } from '../../utils/api';
 import { AnimatePresence } from 'framer-motion';
 
 const AdminDashboard: React.FC = () => {
@@ -21,7 +22,7 @@ const AdminDashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('ledger_token');
-        const apiUrl = import.meta.env.VITE_API_URL;
+        const apiUrl = getApiUrl();
         const [statsRes, logsRes, configRes] = await Promise.all([
           fetch(`${apiUrl}/api/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`${apiUrl}/api/admin/audit/system`, { headers: { 'Authorization': `Bearer ${token}` } }),
@@ -52,7 +53,7 @@ const AdminDashboard: React.FC = () => {
     setLoadingMaintenance(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/maintenance`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -75,7 +76,7 @@ const AdminDashboard: React.FC = () => {
     setSending(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/announcements`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

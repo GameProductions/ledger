@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X } from 'lucide-react';
+import { getApiUrl } from '../../utils/api';
 import { motion } from 'framer-motion';
 
 const AdminHouseholds: React.FC = () => {
@@ -13,7 +14,7 @@ const AdminHouseholds: React.FC = () => {
   const fetchHouseholds = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/households`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -36,7 +37,7 @@ const AdminHouseholds: React.FC = () => {
     if (!newName) return;
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       await fetch(`${apiUrl}/api/admin/households/${id}`, {
         method: 'PATCH',
         headers: { 
@@ -57,7 +58,7 @@ const AdminHouseholds: React.FC = () => {
     if (!confirm('Warning: Are you sure you want to delete this household? This will remove all memberships and associated financial records.')) return;
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       await fetch(`${apiUrl}/api/admin/households/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

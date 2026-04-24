@@ -37,41 +37,55 @@ user.get('/me', (c) => {
 user.get('/profile', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
-  const results = await db.select({
-    id: users.id,
-    username: users.username,
-    email: users.email,
-    displayName: users.displayName,
-    globalRole: users.globalRole,
-    status: users.status,
-    avatarUrl: users.avatarUrl,
-    settingsJson: users.settingsJson,
-    totpEnabled: users.totpEnabled,
-    forcePasswordChange: users.forcePasswordChange,
-    createdAt: users.createdAt
-  }).from(users).where(eq(users.id, userId as string))
-  
-  if (!results || results.length === 0) {
-    return c.json({ success: false, error: 'User not found' }, 404)
-  }
+  try {
+    const results = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      displayName: users.displayName,
+      globalRole: users.globalRole,
+      status: users.status,
+      avatarUrl: users.avatarUrl,
+      settingsJson: users.settingsJson,
+      totpEnabled: users.totpEnabled,
+      forcePasswordChange: users.forcePasswordChange,
+      createdAt: users.createdAt
+    }).from(users).where(eq(users.id, userId as string))
+    
+    if (!results || results.length === 0) {
+      return c.json({ success: false, error: 'User not found' }, 404)
+    }
 
-  const userData = results[0] as any;
-  
-  // Fetch primary household context
-  const [userHh] = await db.select({ householdId: userHouseholds.householdId })
-    .from(userHouseholds)
-    .where(eq(userHouseholds.userId, userId as string))
-    .limit(1)
-  
-  userData.householdId = userHh?.householdId || null;
-  
-  return c.json({
-    success: true,
-    data: UserOutputSchema.parse(userData)
-  })
+    const userData = results[0] as any;
+    
+    // Fetch primary household context
+    const [userHh] = await db.select({ householdId: userHouseholds.householdId })
+      .from(userHouseholds)
+      .where(eq(userHouseholds.userId, userId as string))
+      .limit(1)
+    
+    userData.householdId = userHh?.householdId || null;
+    
+    try {
+      return c.json({
+        success: true,
+        data: UserOutputSchema.parse(userData)
+      })
+    } catch (e: any) {
+      console.error(`[DIAGNOSTIC_FAILURE] User profile validation failed for ${userId}:`, e.errors || e.message);
+      throw e;
+    }
+  } catch (err: any) {
+    console.error(`[CRITICAL_FAILURE] Failed to fetch profile for user ${userId}:`, err.message);
+    throw new HTTPException(500, { message: 'Internal Server Error fetching profile' })
+  }
 })
 
-user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
+user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Profile update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const data = c.req.valid('json')
   const db = getDb(c.env)
@@ -110,7 +124,11 @@ user.patch('/profile', zValidator('json', ProfileSchema), async (c) => {
   return c.json({ success: true, message: 'Profile updated' })
 })
 
-user.post('/profile/sync', zValidator('json', z.object({ provider: z.string(), identityId: z.string() })), async (c) => {
+user.post('/profile/sync', zValidator('json', z.object({ provider: z.string(), identityId: z.string() }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Profile sync validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { provider, identityId } = c.req.valid('json')
   const db = getDb(c.env)
@@ -156,7 +174,11 @@ user.post('/onboarding/step', zValidator('json', z.object({
   step: z.string(),
   isLast: z.boolean().optional(),
   version: z.string().optional()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Onboarding step validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { step, isLast, version } = c.req.valid('json')
   const db = getDb(c.env)
@@ -206,7 +228,11 @@ user.get('/households', async (c) => {
   })
 })
 
-user.post('/households', zValidator('json', CreateHouseholdSchema), async (c) => {
+user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { name, currency } = c.req.valid('json')
   const id = `h-${crypto.randomUUID().slice(0, 8)}`
@@ -221,7 +247,11 @@ user.post('/households', zValidator('json', CreateHouseholdSchema), async (c) =>
   return c.json({ success: true, id, name }, 201)
 })
 
-user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional()), async (c) => {
+user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household invite validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.req.header('x-household-id')
   const body = c.req.valid('json')
@@ -264,7 +294,11 @@ user.post('/households/invite', zValidator('json', z.object({ email: z.string().
   return c.json({ success: true, url: `#/households/join?token=${id}` })
 })
 
-user.post('/households/join', zValidator('json', JoinHouseholdSchema), async (c) => {
+user.post('/households/join', zValidator('json', JoinHouseholdSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household join validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { token } = c.req.valid('json')
   const db = getDb(c.env)
@@ -290,7 +324,11 @@ user.post('/households/join', zValidator('json', JoinHouseholdSchema), async (c)
   return c.json({ success: true, householdId: invite.householdId })
 })
 
-user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema), async (c) => {
+user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const { id } = c.req.param()
   const { name } = c.req.valid('json')
   const globalRole = c.get('globalRole') as string
@@ -321,7 +359,11 @@ user.get('/preferences', async (c) => {
   return c.json(results.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {}))
 })
 
-user.patch('/preferences', zValidator('json', z.record(z.string(), z.string())), async (c) => {
+user.patch('/preferences', zValidator('json', z.record(z.string(), z.string()), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Preferences update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const prefs = c.req.valid('json')
   const db = getDb(c.env)
@@ -354,7 +396,11 @@ user.patch('/notifications', zValidator('json', z.array(z.object({
   event: z.string(),
   enabled: z.boolean(),
   offset_days: z.number().optional()
-}))), async (c) => {
+})), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Notifications update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const settings = c.req.valid('json')
   const db = getDb(c.env)
@@ -379,7 +425,11 @@ user.get('/payment-methods', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
-user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema), async (c) => {
+user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Payment method creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') || null
   const data = c.req.valid('json')
@@ -450,7 +500,11 @@ user.post('/providers/link', zValidator('json', z.object({
   accountReference: z.string().optional(),
   customLabel: z.string().optional(),
   metadata: z.string().optional()
-})), async (c) => {
+}), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Provider link validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { serviceProviderId, accountReference, customLabel, metadata } = c.req.valid('json')
   const id = crypto.randomUUID()
@@ -475,7 +529,11 @@ user.get('/linked-accounts', async (c) => {
   })
 })
 
-user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema), async (c) => {
+user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Linked account creation validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') as string
   const data = c.req.valid('json')
@@ -522,7 +580,11 @@ user.get('/totps', async (c) => {
   })
 })
 
-user.patch('/totps/:id', zValidator('json', z.object({ name: z.string() })), async (c) => {
+user.patch('/totps/:id', zValidator('json', z.object({ name: z.string() }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] TOTP update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { id } = c.req.param()
   const { name } = c.req.valid('json')
@@ -624,7 +686,11 @@ user.delete('/households/:id/invites/:inviteId', async (c) => {
   return c.json({ success: true })
 })
 
-user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ role: z.enum(['observer', 'member', 'admin', 'owner']) })), async (c) => {
+user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ role: z.enum(['observer', 'member', 'admin', 'owner']) }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Member role update validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { id, memberId } = c.req.param()
   const { role } = c.req.valid('json')
@@ -638,7 +704,11 @@ user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ ro
   return c.json({ success: true })
 })
 
-user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transferToUserId: z.string().optional() }).optional()), async (c) => {
+user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transferToUserId: z.string().optional() }).optional(), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Member ejection validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const { id, memberId } = c.req.param()
   const db = getDb(c.env)
@@ -700,7 +770,11 @@ user.post('/households/restore/:entityType/:entityId', async (c) => {
 })
 
 
-user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household transfer validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id')
   const { newOwnerId } = c.req.valid('json')
@@ -721,7 +795,11 @@ user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId:
   return c.json({ success: true })
 })
 
-user.patch('/providers/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() })), async (c) => {
+user.patch('/providers/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Provider transfer validation failed:`, result.error.errors);
+  }
+}), async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id')
   const { newOwnerId } = c.req.valid('json')

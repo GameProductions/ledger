@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 import { Trash2, AlertCircle, Share2, ShieldCheck, Layers, CreditCard } from 'lucide-react';
 import { LiabilitySplitter } from './LiabilitySplitter';
 import { Price } from './Price';
@@ -17,7 +18,7 @@ export const InstallmentsList: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         if (!token) return;
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
 
         const res = await fetch(`${apiUrl}/api/planning/installment-plans/${id}`, {
             method: 'DELETE',
@@ -35,7 +36,7 @@ export const InstallmentsList: React.FC = () => {
 
     const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
         if (!token) return;
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/planning/splits/installment/${targetId}/public`, {
+        const res = await fetch(`${getApiUrl()}/api/planning/splits/installment/${targetId}/public`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',

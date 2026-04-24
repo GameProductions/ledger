@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
+import { getApiUrl } from '../utils/api';
 import { Calendar, DollarSign, MessageSquare, Trash2, Shield, Info } from 'lucide-react';
 import { Price } from './Price';
 
@@ -41,7 +42,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
         if (!token) return;
         setLoading(true);
 
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
         const res = await fetch(`${apiUrl}/api/planning/pay-exceptions`, {
             method: 'POST',
             headers: {
@@ -71,7 +72,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
         if (!payday.id || !token) return;
         setLoading(true);
 
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
         const res = await fetch(`${apiUrl}/api/planning/pay-exceptions/${payday.id}`, {
             method: 'DELETE',
             headers: {

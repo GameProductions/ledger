@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
+import { getApiUrl } from '../../utils/api';
 
 const AdminConfig: React.FC = () => {
   const [configs, setConfigs] = useState<any[]>([]);
@@ -10,7 +11,7 @@ const AdminConfig: React.FC = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('ledger_token');
-        const apiUrl = import.meta.env.VITE_API_URL;
+        const apiUrl = getApiUrl();
         const [configRes, featureRes] = await Promise.all([
           fetch(`${apiUrl}/api/admin/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
           fetch(`${apiUrl}/api/admin/features`, { headers: { 'Authorization': `Bearer ${token}` } })
@@ -32,7 +33,7 @@ const AdminConfig: React.FC = () => {
 
   const handleUpdateConfig = async (id: string, value: string) => {
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     await fetch(`${apiUrl}/api/admin/config/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -43,7 +44,7 @@ const AdminConfig: React.FC = () => {
 
   const handleToggleFeature = async (id: string, enabled: boolean) => {
     const token = localStorage.getItem('ledger_token');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = getApiUrl();
     await fetch(`${apiUrl}/api/admin/features/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { getApiUrl } from '../utils/api'
 import { useApi } from '../hooks/useApi'
 import { Price } from './Price'
 import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag } from 'lucide-react'
@@ -37,7 +38,8 @@ export const TransactionLedger: React.FC = () => {
       for (const tx of transactions) {
         if (!tx.categoryId && !suggestions[tx.id]) {
           try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/infer`, {
+            const apiUrl = getApiUrl();
+            const res = await fetch(`${apiUrl}/api/financials/transactions/infer`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -87,7 +89,8 @@ export const TransactionLedger: React.FC = () => {
   }
 
   const resolveAttention = async (id: string) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/${id}`, {
+    const apiUrl = getApiUrl();
+    await fetch(`${apiUrl}/api/financials/transactions/${id}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -100,7 +103,8 @@ export const TransactionLedger: React.FC = () => {
   }
 
   const bulkReconcile = async (reconciled: boolean) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/financials/transactions/bulk-reconcile`, {
+    const apiUrl = getApiUrl();
+    await fetch(`${apiUrl}/api/financials/transactions/bulk-reconcile`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

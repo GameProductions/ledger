@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { jsPDF } from 'jspdf';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 
 interface ExportOptions {
   format: 'csv' | 'xlsx' | 'pdf';
@@ -88,7 +89,7 @@ export const useExport = () => {
     } else if (format === 'gsheets' as any) {
       // Proxy through backend for security
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/financials/transactions/export/gsheets`, {
+        const res = await fetch(`${getApiUrl().replace(/\/$/, '')}/api/financials/transactions/export/gsheets`, {
           method: 'POST',
           headers: { 
             'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,

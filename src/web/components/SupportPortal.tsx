@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Send, MessageSquare, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Price } from './Price';
+import { getApiUrl } from '../utils/api';
 
 const GithubIcon = ({ size = 20, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -30,7 +31,7 @@ const SupportPortal: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/support/issues`, {
+      const res = await fetch(`${getApiUrl()}/api/support/issues`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

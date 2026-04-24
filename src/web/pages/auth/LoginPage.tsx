@@ -197,7 +197,7 @@ const LoginPage: React.FC = () => {
 
   const handleRequestReset = async () => {
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+      const apiUrl = getApiUrl()
       await fetch(`${apiUrl}/api/auth/password/reset-request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,7 +212,7 @@ const LoginPage: React.FC = () => {
 
   const handleResetPassword = async () => {
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+      const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/api/auth/password/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -321,7 +321,7 @@ const LoginPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => {
-                const baseApi = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+                const baseApi = getApiUrl().replace(/\/$/, '');
                 window.location.href = `${baseApi}/api/auth/login/google`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"
@@ -331,7 +331,7 @@ const LoginPage: React.FC = () => {
             </button>
             <button 
               onClick={() => {
-                const baseApi = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+                const baseApi = getApiUrl().replace(/\/$/, '');
                 window.location.href = `${baseApi}/api/auth/login/discord`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"

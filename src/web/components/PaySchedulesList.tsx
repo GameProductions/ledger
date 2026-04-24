@@ -2,6 +2,7 @@ import React from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { getApiUrl } from '../utils/api';
 import { Price } from './Price';
 import { Wallet, Plus, Edit3, Trash2, Calendar, User, TrendingUp } from 'lucide-react';
 import { PayScheduleModal } from './PayScheduleModal';
@@ -16,7 +17,7 @@ export const PaySchedulesList: React.FC = () => {
     const handleDelete = async (id: string) => {
         if (!token || !window.confirm('Remove this income source?')) return;
         
-        const apiUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+        const apiUrl = getApiUrl().replace(/\/$/, '');
         const res = await fetch(`${apiUrl}/api/planning/pay-schedules/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }

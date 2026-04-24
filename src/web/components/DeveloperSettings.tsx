@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
+import { getApiUrl } from '../utils/api'
 
 const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -16,7 +17,8 @@ const DeveloperSettings: React.FC = () => {
   const createToken = async () => {
     const name = await showPrompt('Name for this token?')
     if (!name) return
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/data/tools/tokens`, {
+    const apiUrl = getApiUrl()
+    const res = await fetch(`${apiUrl}/api/data/tools/tokens`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -34,7 +36,8 @@ const DeveloperSettings: React.FC = () => {
     const newName = await showPrompt('New name for this token?', currentName)
     if (!newName || newName === currentName) return
     
-    await fetch(`${import.meta.env.VITE_API_URL}/api/data/tools/tokens/${id}`, {
+    const apiUrl = getApiUrl()
+    await fetch(`${apiUrl}/api/data/tools/tokens/${id}`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -50,7 +53,8 @@ const DeveloperSettings: React.FC = () => {
   const deleteToken = async (id: string) => {
     if (!confirm('Are you sure you want to delete this token? It will stop working immediately.')) return
     
-    await fetch(`${import.meta.env.VITE_API_URL}/api/data/tools/tokens/${id}`, {
+    const apiUrl = getApiUrl()
+    await fetch(`${apiUrl}/api/data/tools/tokens/${id}`, {
       method: 'DELETE',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -63,7 +67,8 @@ const DeveloperSettings: React.FC = () => {
 
   const addWebhook = async () => {
     if (!webhookUrl) return
-    await fetch(`${import.meta.env.VITE_API_URL}/api/interop/developer/webhooks`, {
+    const apiUrl = getApiUrl()
+    await fetch(`${apiUrl}/api/interop/developer/webhooks`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -79,7 +84,8 @@ const DeveloperSettings: React.FC = () => {
 
   const deleteWebhook = async (id: string) => {
     if (!confirm('Are you sure you want to delete this webhook?')) return
-    await fetch(`${import.meta.env.VITE_API_URL}/api/interop/developer/webhooks/${id}`, {
+    const apiUrl = getApiUrl()
+    await fetch(`${apiUrl}/api/interop/developer/webhooks/${id}`, {
       method: 'DELETE',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -91,8 +97,9 @@ const DeveloperSettings: React.FC = () => {
   }
 
   const exportData = async () => {
+    const apiUrl = getApiUrl()
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/export`, {
+      const res = await fetch(`${apiUrl}/api/backup/export`, {
         headers: { 'Authorization': `Bearer ${token}`, 'x-household-id': householdId || '' }
       })
       const data = await res.json()
@@ -116,7 +123,8 @@ const DeveloperSettings: React.FC = () => {
       const text = await restoreFile.text()
       const body = JSON.parse(text)
       
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/backup/restore`, {
+      const apiUrl = getApiUrl()
+      const res = await fetch(`${apiUrl}/api/backup/restore`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -138,8 +146,9 @@ const DeveloperSettings: React.FC = () => {
   }
 
   const createBackupSchedule = async () => {
+    const apiUrl = getApiUrl()
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/planning/schedules`, {
+      await fetch(`${apiUrl}/api/planning/schedules`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

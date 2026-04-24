@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AdminPortal from './AdminPortal';
 import { Price } from '../../components/Price';
+import { getApiUrl } from '../../utils/api';
 
 const AdminSearch: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -13,7 +14,7 @@ const AdminSearch: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('ledger_token');
-      const apiUrl = import.meta.env.VITE_API_URL;
+      const apiUrl = getApiUrl();
       const res = await fetch(`${apiUrl}/api/admin/search/global?q=${encodeURIComponent(query)}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });

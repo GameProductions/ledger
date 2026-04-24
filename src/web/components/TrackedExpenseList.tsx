@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { useCurrency } from '../context/CurrencyContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
@@ -14,6 +15,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: tracked = [], mutate } = useApi('/api/tracked-expenses')
   const { data: accounts = [] } = useApi('/api/financials/accounts')
   const { data: categories = [] } = useApi('/api/financials/categories')
+  const { symbol } = useCurrency()
 
   React.useEffect(() => {
     if (refreshTrigger) mutate()
@@ -135,6 +137,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-200/60 flex items-center gap-2">
             <ChevronRight size={14} className="text-orange-500" />
             Pending Tracked Expenses ({tracked.length})
+            <span className="ml-2 px-2 py-0.5 bg-orange-500/10 rounded-full text-orange-400 border border-orange-500/10">
+              {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amountCents ?? item.amount_cents ?? 0), 0))}
+            </span>
           </h4>
           <button 
             onClick={toggleSelectAll}
@@ -152,6 +157,12 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               exit={{ opacity: 0, y: -10 }}
               className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3"
             >
+              <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
+                Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
+                  const item = tracked.find((t: any) => t.id === id)
+                  return sum + (item?.amountCents ?? item?.amount_cents ?? 0)
+                }, 0))}
+              </div>
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setIsBulkEditOpen(true)}
@@ -202,12 +213,15 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                   </div>
                   <div>
                     <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
-                    <input 
-                      type="number" step="0.01"
-                      value={(editForm?.amount_cents || 0) / 100} 
-                      onChange={e => setEditForm({...editForm, amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
-                      className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
+                      <input 
+                        type="number" step="0.01"
+                        value={(editForm?.amount_cents || 0) / 100} 
+                        onChange={e => setEditForm({...editForm, amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -240,7 +254,12 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 </div>
                 
                 <div className="flex items-center gap-6">
-                  <Price amountCents={item.amountCents ?? item.amount_cents} className="text-lg font-black text-orange-200" />
+                  <div className="text-right">
+                    <Price amountCents={item.amountCents ?? item.amount_cents} className="text-lg font-black text-orange-200" />
+                    <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
+                      Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? i.amount_cents ?? 0), 0))}
+                    </div>
+                  </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button 
                       onClick={() => {
@@ -354,12 +373,15 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 block">New Amount (Optional)</label>
-              <input 
-                type="number" step="0.01" 
-                placeholder="0.00"
-                onChange={e => setBulkUpdates({...bulkUpdates, amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
-                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-sm">{symbol}</span>
+                <input 
+                  type="number" step="0.01" 
+                  placeholder="0.00"
+                  onChange={e => setBulkUpdates({...bulkUpdates, amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-3 pl-8 text-sm text-white focus:border-orange-500/50 outline-none"
+                />
+              </div>
             </div>
 
             <div>

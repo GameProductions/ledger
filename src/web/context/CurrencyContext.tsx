@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi'
 
 interface CurrencyContextType {
   currency: string
+  symbol: string
   formatPrice: (cents: number, options?: Intl.NumberFormatOptions) => string
 }
 
@@ -22,6 +23,17 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const currency = settings.currency || globalConfig?.PLATFORM_DEFAULT_CURRENCY || 'USD'
 
+  const symbol = useMemo(() => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency,
+      }).formatToParts(0).find(p => p.type === 'currency')?.value || '$'
+    } catch {
+      return '$'
+    }
+  }, [currency])
+
   const formatPrice = (cents: number, options?: Intl.NumberFormatOptions) => {
     const safeCents = (typeof cents === 'number' && !isNaN(cents)) ? cents : 0
     const amount = safeCents / 100
@@ -35,7 +47,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   return (
-    <CurrencyContext.Provider value={{ currency, formatPrice }}>
+    <CurrencyContext.Provider value={{ currency, symbol, formatPrice }}>
       {children}
     </CurrencyContext.Provider>
   )

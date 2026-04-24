@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApi } from '../hooks/useApi'
+import { useCurrency } from '../context/CurrencyContext'
 import { Flag, ShieldAlert, ArrowRightLeft, HandCoins } from 'lucide-react'
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
@@ -11,6 +12,7 @@ interface QuickAttentionAddProps {
 
 export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded }) => {
   const { data: categories = [] } = useApi('/api/financials/categories')
+  const { symbol } = useCurrency()
 
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -75,11 +77,14 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Amount</label>
-            <input 
-              type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-              placeholder="0.00" required 
-              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-sm">{symbol}</span>
+              <input 
+                type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
+                placeholder="0.00" required 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+              />
+            </div>
           </div>
           <div className="md:col-span-2">
             <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Description</label>

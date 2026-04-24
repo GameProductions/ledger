@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Github, Cpu, Globe } from 'lucide-react';
+import { ShieldCheck, Code, Cpu, Globe } from 'lucide-react';
 
 export const GlassFooter: React.FC = () => {
   return (
@@ -51,7 +51,7 @@ export const GlassFooter: React.FC = () => {
 
           <div className="flex items-center gap-4 pt-4 md:pt-0 md:border-l md:border-white/5 md:pl-8">
             <a href="https://github.com/GameProductions" target="_blank" rel="noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all hover:-translate-y-1">
-              <Github size={18} className="text-white" />
+              <Code size={18} className="text-white" />
             </a>
             <a href="https://gpnet.dev" target="_blank" rel="noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all hover:-translate-y-1">
               <Globe size={18} className="text-white" />

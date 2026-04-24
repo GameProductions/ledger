@@ -15,7 +15,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: tracked = [], mutate } = useApi('/api/tracked-expenses')
   const { data: accounts = [] } = useApi('/api/financials/accounts')
   const { data: categories = [] } = useApi('/api/financials/categories')
-  const { symbol } = useCurrency()
+  const { symbol, formatPrice } = useCurrency()
 
   React.useEffect(() => {
     if (refreshTrigger) mutate()

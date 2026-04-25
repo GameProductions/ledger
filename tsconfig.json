@@ -25,6 +25,6 @@
       "vite/client"
     ]
   },
-  "include": ["app", "apps", "server.ts"],
+  "include": ["apps", "db", "packages"],
   "exclude": ["node_modules", "dist"]
 }

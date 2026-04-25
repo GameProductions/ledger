@@ -125,46 +125,39 @@ This document serves as the absolute source of truth for all projects within the
 
 
 ## 9. Standard Directory Structure 
-All projects MUST adhere to this directory layout:
+All projects MUST adhere to this unified monorepo-style layout to ensure scalability and cross-stack integrity:
 
-### Core Orchestration (Root)
-- `server.ts`: The unified Hono entry point (Router/Orchestrator).
-- `wrangler.jsonc`: The Cloudflare configuration source of truth.
-- `drizzle.config.ts`: Mandatory Cloudflare D1 mapping for Drizzle ORM.
-- `archive/`: Fail-safe storage for deprecated databases, raw SQL migrations, and structural legacy files.
-- `types/`: Global TypeScript definitions and bindings.
+### 1. Application Interface Layers (`apps/`)
+- **`apps/web/`**: The primary React/Vite PWA (Frontend UI).
+- **`apps/api/`**: The Hono/Cloudflare Workers API (Backend Orchestrator).
+- **`apps/bot/`**: Dedicated interface logic for Discord, Twitch, or GroupMe integrations.
+- **Entry Point**: The root `wrangler.jsonc` MUST point to `apps/api/server.ts` as the main entry point.
 
-### Database Logic (`src/api/db/`)
-- `src/api/db/schema.ts`: Centralized Drizzle schema definitions.
-- `src/api/db/index.ts`: The primary D1 database client initializer.
+### 2. Shared Logic & Types (`packages/`)
+- **`packages/shared/`**: The absolute source of truth for Zod schemas, TypeScript interfaces, and shared utility functions. This directory MUST be used for any logic shared between `web` and `api` to prevent out-of-sync state.
 
-### Application Logic (`app/`)
-- `app/routes/`: Route entry points for UI pages.
-- `app/layouts/`: Page-level frames (e.g., `RootLayout`, `GodModeLayout`).
-- `app/components/`: Project-specific UI components.
-- `app/hooks/`: Custom React hooks.
-- `app/context/`: React Context providers.
-- `app/services/`: Client-side logic for external APIs, SSO, and WebAuthn.
-- `app/styles/`: Global CSS and HSL design tokens.
-- `app/utils/`: Shared frontend utility functions.
+### 3. Core Data & Infrastructure (`db/`)
+- **`db/schema.ts`**: The centralized Drizzle ORM definition file.
+- **`db/migrations/`**: Managed SQL migration files.
+- **`drizzle.config.ts`**: Located at the root, mapping to the `db/` directory.
 
-### Bot Logic (`apps/bot/`)
-- `apps/bot/commands/`: Discord/Slack command handlers.
-- `apps/bot/events/`: Discord/Slack event listeners.
-- `apps/bot/middleware/`: Bot-specific security and validation.
-- `apps/bot/routes/`: Hono routes for bot webhooks/APIs.
-- `apps/bot/utils/`: Bot helpers (embeds, filters).
+### 4. Application Logic (inside `apps/web/` or `apps/api/`)
+- **`routes/`**: Entry points for UI pages or API endpoints.
+- **`layouts/`**: (Web) Page-level frames (e.g., `RootLayout`, `GodModeLayout`).
+- **`components/`**: UI components.
+- **`hooks/`**: Custom React hooks.
+- **`context/`**: React Context providers.
+- **`services/`**: Client-side logic for external APIs and WebAuthn.
+- **`utils/`**: Utility functions specific to that application layer.
 
-### Standardized Public Directory (`public/`)
-- `public/`: Root level for `manifest.json`, `favicon.ico`, `robots.txt`.
-- `public/brand/`: App Logo, App Icon, and Banners.
-- `public/legal/`: `privacy.md`, `terms.md`, `security.md`.
-- `public/well-known/`: Platform verification files.
+### 5. Standardized Public Directory (`public/`)
+- **`public/brand/`**: App Logo, App Icon, and Banners.
+- **`public/legal/`**: `privacy.md`, `terms.md`, `security.md`.
+- **`public/well-known/`**: Platform verification files.
 
-### Operations
-- `app/telemetry/`: Standardized audit trail and diagnostic logic.
-- `scripts/`: CI/CD, migration, and maintenance utilities.
-- `src/components/foundation/`: READ-ONLY organizational components.
+### 6. Operations & Maintenance
+- **`scripts/`**: CI/CD, migration, and maintenance utilities.
+- **`archive/`**: Fail-safe storage for deprecated databases and structural legacy files.
 
 
 ## 10. Tone & Branding
@@ -209,6 +202,11 @@ All projects MUST adhere to this directory layout:
 - **Rule 13.7 (PWA Offline First)**: Implement `sw.js` offline caching logic for primary static assets to ensure absolute network independence and instant WebUI visual resolution upon disconnected state.
 - **Rule 13.8 (E2E Validation)**: Advanced projects must configure robust end-to-end user-flow validations simulating human navigation via the `Playwright` engine.
 - **Rule 13.9 (Error Sanitization - Stable.0)**: API handlers MUST implement production-aware error catching. In `production`, sensitive identifiers, raw database errors, and internal configuration keys must be stripped from the response body and replaced with generic error messages (e.g., "An internal error occurred") to prevent information disclosure.
+- **Rule 13.10 (Shared KV Partitioning)**: To prevent crosstalk in shared KV namespaces (e.g., `TITAN_GUARD_CACHE`), all project-specific keys MUST be prefixed with the unique identifier derived from the `APP_NAME` environment variable. Standard patterns: `tg:bot:${APP_NAME}:...` for service state, and `tg:config:${APP_NAME}:...` for service-specific overrides. Global keys (e.g., `tg:block:${ip}`) must be used exclusively for cross-platform forensic data.
+- **Rule 13.11 (Non-blocking I/O & CPU Integrity)**: All non-essential operations (e.g., audit logging, telemetry, cache warming) MUST be orchestrated via `c.executionCtx.waitUntil()`. This prevents secondary background logic from consuming the primary request's CPU quota and ensures minimum response latency.
+- **Rule 13.12 (Cold Storage & R2 Offloading)**: High-volume datasets or large metadata blobs (historical logs, detailed transaction data, media) MUST be migrated to Cloudflare R2 (Cold Storage) via a dedicated `ArchiveService`. The D1 database MUST remain lean, reserved exclusively for frequently accessed relational data.
+- **Rule 13.13 (Heavy Task Orchestration - Queues)**: Any operation with a projected CPU duration exceeding 10ms or involving bulk data mutations MUST be offloaded to Cloudflare Queues. The API worker MUST only act as a thin ingress, pushing task payloads into the queue for asynchronous processing to prevent Error 1102 (CPU Limit Exceeded).
+
 ## 14. Destructive SQL & Migration Law 
 - **Archive Before Action**: Any destructive change (table drop, column removal, type change) MUST be preceded by an archival step. Rename the existing table to `[original_name]_archive_[timestamp]`.
 - **Rebuild with Compliance**: Reconstruct the table using the new, compliant structure explicitly defined in `schema.ts`.
@@ -216,6 +214,7 @@ All projects MUST adhere to this directory layout:
 - **Rule Enforcement**: Apply all organizational rules (e.g., encryption, normalization, strict typing) during migration to make the data compliant with the new structure.
 - **Auto-Generation**: For new required fields that didn't exist in the legacy data (e.g., `severity`, `actorId` hashes), use appropriate defaults or generated values if the field usually provides them.
 - **Human Verification**: If a required field cannot be reasonably auto-populated or generated, STOP and verify options with the user.
+
 - **1:1 Validation**: Always perform a 1:1 row count verification between the archive and the new table. Report the final result and any discrepancies to the user.
 - **Legacy Purging**: Once a migration is confirmed by the user as successful, the archive table may be dropped to maintain database hygiene.
 ## 15. AI Agent & Assistant Protocol 

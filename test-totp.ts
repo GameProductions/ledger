@@ -3,7 +3,7 @@ if (!globalThis.crypto) {
   globalThis.crypto = webcrypto as any;
 }
 
-import { verifyTOTP, generateTOTPSecret, generateTOTPToken } from './src/api/auth-utils';
+import { verifyTOTP, generateTOTPSecret, generateTOTPToken } from './apps/api/auth-utils';
 
 async function test() {
   const secret = await generateTOTPSecret();

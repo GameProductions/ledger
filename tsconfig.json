@@ -16,13 +16,15 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["./src/web/*"],
-      "~/*": ["./src/api/*"]
+      "@/*": ["./apps/web/*"],
+      "~/*": ["./apps/api/*"],
+      "#/*": ["./db/*"],
+      "@shared/*": ["./packages/shared/*"]
     },
     "types": [
       "vite/client"
     ]
   },
-  "include": ["src", "server.ts"],
+  "include": ["app", "apps", "server.ts"],
   "exclude": ["node_modules", "dist"]
 }

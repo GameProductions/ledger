@@ -245,10 +245,10 @@ const SettingsPage: React.FC = () => {
             <div>
               <h1 className="text-4xl font-black tracking-tighter italic flex items-center gap-4">
                 <Settings className="text-primary" size={36} />
-                Identity & Platform Settings
+                User Settings
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">User Configuration Center</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">User Configuration</span>
               </div>
             </div>
           </div>
@@ -257,7 +257,7 @@ const SettingsPage: React.FC = () => {
         {/* 1. Centered Horizontal Identity Card */}
         <div className="card p-8 flex flex-col md:flex-row items-center justify-center mx-auto w-fit text-center md:text-left space-y-6 md:space-y-0 md:space-x-12 overflow-visible reveal mb-8">
           <div className="relative group shrink-0">
-            <div className="absolute -inset-6 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+            <div className="relative -inset-6 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
             <div className="relative">
               <img 
                 src={sanitizeImageUrl(avatar) || avatarUrl} 

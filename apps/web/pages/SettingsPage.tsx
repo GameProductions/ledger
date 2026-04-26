@@ -363,49 +363,57 @@ const SettingsPage: React.FC = () => {
           {/* TAB: SECURITY */}
           {activeTab === 'security' && (
             <div className="space-y-12 reveal">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="card p-8 space-y-6 border-l-4 border-blue-500/50">
-                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500">
-                      <Lock size={16} />
-                    </div>
-                    <h3 className="font-bold tracking-tight">Set Password</h3>
-                 </div>
-                 
-                 <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Input 
-                          label="New Password"
-                          type="password" 
-                          value={newPassword}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
-                          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                            if (e.key === 'Enter' && newPassword.length >= 8) handleUpdatePassword()
-                          }}
-                          autoComplete="new-password"
-                          showReveal
-                          className="bg-white/5 border-white/5 font-mono text-sm"
-                          placeholder="••••••••••••"
-                      />
-                    </div>
-                    
-                    {newPassword && <PasswordChecklist password={newPassword} />}
+              {/* NEW: Horizontal Password Section */}
+              <div className="card p-8 border-l-4 border-blue-500/50 reveal">
+                 <div className="flex flex-col lg:flex-row gap-12">
+                   {/* Left Side: Controls */}
+                   <div className="flex-1 space-y-6">
+                      <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500">
+                           <Lock size={16} />
+                         </div>
+                         <h3 className="font-bold tracking-tight">Security Credentials</h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                         <div className="space-y-2">
+                           <Input 
+                               label="Update Master Password"
+                               type="password" 
+                               value={newPassword}
+                               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
+                               onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                 if (e.key === 'Enter' && newPassword.length >= 8) handleUpdatePassword()
+                               }}
+                               autoComplete="new-password"
+                               showReveal
+                               className="bg-white/5 border-white/5 font-mono text-sm"
+                               placeholder="••••••••••••"
+                           />
+                         </div>
+                         
+                         <button 
+                           onClick={handleUpdatePassword}
+                           disabled={changingPass || newPassword.length < 8}
+                           className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black uppercase tracking-[0.2em] text-xs py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                         >
+                           {changingPass ? 'Updating...' : 'Update Password'}
+                         </button>
+                      </div>
+                   </div>
 
-                    <button 
-                      onClick={handleUpdatePassword}
-                      disabled={changingPass || newPassword.length < 8}
-                      className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black uppercase tracking-[0.2em] text-xs py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
-                    >
-                      {changingPass ? 'Updating...' : 'Update Password'}
-                    </button>
+                   {/* Right Side: Requirements */}
+                   <div className="lg:w-80 shrink-0">
+                      <PasswordChecklist password={newPassword} />
+                   </div>
                  </div>
               </div>
 
-              <div>
+              {/* Grid for other security modules */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <PasskeyModule />
                 <TotpModule />
               </div>
-            </div>
             <SecurityDashboard />
             </div>
           )}

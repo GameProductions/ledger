@@ -265,7 +265,9 @@ const SettingsPage: React.FC = () => {
                 className="w-32 h-32 rounded-full border-4 border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] group-hover:border-primary transition-all duration-500 relative z-10"
               />
               {/* Account Status Overlay */}
-              <div className={`absolute bottom-1 right-1 w-8 h-8 rounded-full border-4 border-[#0a0a0a] z-20 flex items-center justify-center shadow-xl transition-transform duration-500 group-hover:scale-110 ${
+              <div 
+                title={`Account Status: ${profile?.status ? (profile.status.charAt(0).toUpperCase() + profile.status.slice(1)) : 'Verified'}`}
+                className={`absolute bottom-1 right-1 w-8 h-8 rounded-full border-4 border-[#0a0a0a] z-20 flex items-center justify-center shadow-xl transition-transform duration-500 cursor-help group-hover:scale-110 ${
                 profile?.status === 'active' || profile?.status === 'verified' || !profile?.status
                   ? 'bg-emerald-500 text-white' 
                   : 'bg-amber-500 text-white'

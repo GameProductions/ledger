@@ -1,5 +1,5 @@
-export const FLEET_VERSION = 'v3.32.14'
-export const CURRENT_VERSION = '3.32.14'
+export const FLEET_VERSION = 'v3.32.15'
+export const CURRENT_VERSION = '3.32.15'
 export const APP_NAME = 'Ledger'
 export const SYSTEM_OWNER = 'GameProductions'
 

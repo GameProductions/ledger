@@ -27,9 +27,12 @@ app.use("*", secureHeaders({
   contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://cdn.simpleicons.org", "https://flaticons.net", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://cache.agilebits.com", "https://*.glosonproductions.com", "https://*.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://static.cloudflareinsights.com"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com", "http://localhost:*", "http://127.0.0.1:*", "https://cloudflareinsights.com"]
+      scriptSrc: ["'self'", "https://static.cloudflareinsights.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com", "http://localhost:*", "http://127.0.0.1:*", "https://cloudflareinsights.com"],
+      frameAncestors: ["'self'", "https://*.gpnet.dev", "http://localhost:*"],
+      upgradeInsecureRequests: [],
     }
 }));
 

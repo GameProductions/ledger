@@ -77,10 +77,10 @@ const UserMenu: React.FC<{
           <>
             <div className="fixed inset-0 z-[-1]" onClick={() => setIsOpen(false)} />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -20 }}
-              className="absolute top-full right-0 mt-3 w-64 card overflow-hidden p-2 shadow-2xl z-[2001]"
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              className="!absolute top-full right-0 mt-3 w-64 card overflow-hidden p-2 shadow-2xl z-[2001]"
               style={{ background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--primary)' }}
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">

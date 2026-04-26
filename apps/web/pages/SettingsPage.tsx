@@ -363,7 +363,6 @@ const SettingsPage: React.FC = () => {
           {/* TAB: SECURITY */}
           {activeTab === 'security' && (
             <div className="space-y-12 reveal">
-              <SecurityDashboard />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="card p-8 space-y-6 border-l-4 border-blue-500/50">
                  <div className="flex items-center gap-3">
@@ -407,6 +406,7 @@ const SettingsPage: React.FC = () => {
                 <TotpModule />
               </div>
             </div>
+            <SecurityDashboard />
             </div>
           )}
 

@@ -617,13 +617,64 @@ auth.get('/callback/onedrive', async (c) => {
 })
 
 // --- WEBAUTHN / PASSKEYS ---
-auth.post('/passkeys/register-options', async (c) => {
+
+// Compatibility Aliases for Frontend Submodule
+auth.get('/webauthn/passkeys', async (c) => {
   const userId = c.get('userId')
-  const authService = new AuthService(c.env)
+  const db = getDb(c.env)
+  const results = await db.select({
+    id: passkeys.id,
+    name: passkeys.name,
+    aaguid: passkeys.aaguid,
+    createdAt: passkeys.createdAt,
+    counter: passkeys.counter,
+    lastUsedAt: passkeys.lastUsedAt
+  }).from(passkeys).where(eq(passkeys.userId, userId))
+  
+  return c.json({
+    success: true,
+    passkeys: results // Frontend expects { passkeys: [...] }
+  })
+})
+
+auth.put('/webauthn/passkeys/:id', zValidator('json', z.object({ name: z.string() })), async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  const { name } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  await db.update(passkeys).set({ name }).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
+  return c.json({ success: true })
+})
+
+auth.delete('/webauthn/passkeys/:id', async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  const db = getDb(c.env)
+  
+  await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
+  return c.json({ success: true })
+})
+
+// Registration Aliases
+auth.post('/webauthn/generate-registration', async (c) => {
+  return await handleRegisterOptions(c)
+})
+
+auth.post('/webauthn/verify-registration', async (c) => {
+  return await handleRegisterVerify(c)
+})
+
+// --- SHARED HANDLERS ---
+
+async function handleRegisterOptions(c: any) {
+  const userId = c.get('userId')
   const db = getDb(c.env)
   const userResult = await db.select({ email: users.email, username: users.username }).from(users).where(eq(users.id, userId)).limit(1)
   const user = userResult[0]
   
+  if (!user) throw new HTTPException(404, { message: 'User not found' })
+
   const passkeysResult = await db.select({ credentialId: passkeys.credentialId, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId))
   
   const options = await generateRegistrationOptions({
@@ -648,18 +699,15 @@ auth.post('/passkeys/register-options', async (c) => {
     secure: true,
     httpOnly: true,
     sameSite: 'None',
-    maxAge: 300,
+    maxAge: 300
   })
 
-  return c.json({ success: true, data: options })
-})
+  return c.json(options)
+}
 
-auth.post('/passkeys/register-verify', zValidator('json', z.object({
-  attestation: z.any(),
-  name: z.string().optional()
-})), async (c) => {
+async function handleRegisterVerify(c: any) {
   const userId = c.get('userId')
-  const { attestation, name } = c.req.valid('json')
+  const body = await c.req.json()
   const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
 
   if (!expectedChallenge) {
@@ -667,54 +715,63 @@ auth.post('/passkeys/register-verify', zValidator('json', z.object({
   }
 
   const verification = await verifyRegistrationResponse({
-    response: attestation,
+    response: body,
     expectedChallenge,
     expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
     expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
   })
 
-  if (!verification.verified || ! (verification.registrationInfo as any)) {
-    throw new HTTPException(400, { message: 'WebAuthn verification failed' })
-  }
-
-  const { credentialPublicKey, credentialId, counter } =  (verification.registrationInfo as any)
-  const id = crypto.randomUUID()
-  const db = getDb(c.env)
-  
-  await db.insert(passkeys).values({
-    id: id,
-    userId: userId,
-    publicKey: Buffer.from(credentialPublicKey).toString('base64'),
-    credentialId: Buffer.from(credentialId).toString('base64'),
-    name: name || 'New Passkey',
-    aaguid: (verification.registrationInfo as any).aaguid || 'unknown',
-    counter: counter,
-    transports: JSON.stringify(attestation.response.transports || [])
-  })
+  if (verification.verified && verification.registrationInfo) {
+    const { credentialPublicKey, credentialID, counter } = verification.registrationInfo
+    const db = getDb(c.env)
+    const id = crypto.randomUUID()
     
-  await logAudit(c, 'passkeys', id, 'REGISTER', null, { name })
-  
-  // Trigger Security Alert
-  const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
-  const user = userResult[0]
-  if (user?.email) {
-    try {
-      await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Biometric Passkey Enrolled')
-    } catch (e) {
-      console.error('[Sentinel] Failed to send security alert:', e)
+    await db.insert(passkeys).values({
+      id,
+      userId,
+      name: `Passkey ${new Date().toLocaleDateString()}`,
+      credentialId: Buffer.from(credentialID).toString('base64'),
+      publicKey: Buffer.from(credentialPublicKey).toString('base64'),
+      counter,
+      aaguid: verification.registrationInfo.aaguid || null,
+      transports: JSON.stringify(body.response.transports || [])
+    })
+
+    await logAudit(c, 'passkeys', id, 'REGISTER', null, { name: `Passkey ${new Date().toLocaleDateString()}` })
+
+    // Trigger Security Alert
+    const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
+    const user = userResult[0]
+    if (user?.email) {
+      try {
+        await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Biometric Passkey Enrolled')
+      } catch (e) {
+        console.error('[Sentinel] Failed to send security alert:', e)
+      }
     }
+
+    return c.json({ verified: true, id })
   }
 
-  return c.json({ success: true, id })
+  return c.json({ verified: false }, 400)
+}
+
+// Original Routes
+auth.post('/passkeys/register-options', async (c) => {
+  return await handleRegisterOptions(c)
+})
+
+auth.post('/passkeys/register-verify', async (c) => {
+  return await handleRegisterVerify(c)
 })
 
 auth.patch('/passkeys/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
   const { name } = c.req.valid('json')
-  const authService = new AuthService(c.env)
+  const db = getDb(c.env)
   
-  await authService.updatePasskeyName(id, userId, name)
+  await db.update(passkeys).set({ name }).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
   await logAudit(c, 'passkeys', id, 'RENAME', null, { name })
   return c.json({ success: true })
 })
@@ -722,10 +779,20 @@ auth.patch('/passkeys/:id', zValidator('json', z.object({ name: z.string().min(1
 auth.delete('/passkeys/:id', async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
-  const authService = new AuthService(c.env)
+  const db = getDb(c.env)
   
-  await authService.removePasskey(id, userId)
-  await logAudit(c, 'passkeys', id, 'REMOVE', null, null)
+  await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
+  await logAudit(c, 'passkeys', id, 'DELETE')
+  return c.json({ success: true })
+})
+
+auth.delete('/passkeys/:id', async (c) => {
+  const userId = c.get('userId')
+  const { id } = c.req.param()
+  const db = getDb(c.env)
+  
+  await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
+  await logAudit(c, 'passkeys', id, 'DELETE')
   return c.json({ success: true })
 })
 

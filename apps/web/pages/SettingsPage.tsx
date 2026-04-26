@@ -258,11 +258,21 @@ const SettingsPage: React.FC = () => {
         <div className="card p-8 flex flex-col md:flex-row items-center justify-center md:justify-start text-center md:text-left space-y-6 md:space-y-0 md:space-x-12 overflow-hidden reveal mb-8">
           <div className="relative group shrink-0">
             <div className="absolute -inset-6 bg-gradient-to-tr from-primary/20 to-blue-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
-            <img 
-              src={sanitizeImageUrl(avatar) || avatarUrl} 
-              alt="Profile" 
-              className="w-32 h-32 rounded-full border-4 border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] group-hover:border-primary transition-all duration-500 relative z-10"
-            />
+            <div className="relative">
+              <img 
+                src={sanitizeImageUrl(avatar) || avatarUrl} 
+                alt="Profile" 
+                className="w-32 h-32 rounded-full border-4 border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] group-hover:border-primary transition-all duration-500 relative z-10"
+              />
+              {/* Account Status Overlay */}
+              <div className={`absolute bottom-1 right-1 w-8 h-8 rounded-full border-4 border-[#0a0a0a] z-20 flex items-center justify-center shadow-xl transition-transform duration-500 group-hover:scale-110 ${
+                profile?.status === 'active' || profile?.status === 'verified' || !profile?.status
+                  ? 'bg-emerald-500 text-white' 
+                  : 'bg-amber-500 text-white'
+              }`}>
+                <ShieldCheck size={14} strokeWidth={3} />
+              </div>
+            </div>
           </div>
           
           <div className="space-y-4 group min-w-[250px]">
@@ -327,10 +337,6 @@ const SettingsPage: React.FC = () => {
                <span className="text-primary font-black uppercase tracking-widest text-sm">
                  {profile?.global_role === 'super_admin' ? 'Super Admin' : (profile?.global_role || 'Standard User')}
                </span>
-             </div>
-             <div className="flex flex-col mt-4">
-                <span className="text-secondary opacity-40 italic text-[10px] font-black uppercase tracking-[0.2em] mb-1">Account Status</span>
-                <span className="text-emerald-400 font-bold text-sm tracking-widest uppercase">Verified</span>
              </div>
           </div>
         </div>

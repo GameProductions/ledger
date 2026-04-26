@@ -17,7 +17,7 @@ import { EmailService } from '../services/email.service'
 import { Buffer } from 'node:buffer'
 import { getDb } from '#/index'
 import { users, passkeys, sessions } from '#/schema'
-import { eq, or } from 'drizzle-orm'
+import { eq, or, and } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 

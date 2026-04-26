@@ -32,7 +32,7 @@ export const StepUpModal: React.FC<StepUpModalProps> = ({ isOpen, onClose, onSuc
       if (!optionsEnvelope.success) throw new Error(optionsEnvelope.error || 'Failed to get auth options');
 
       // 2. Start WebAuthn Authentication
-      const assertion = await startAuthentication(optionsEnvelope.data);
+      const assertion = await startAuthentication({ optionsJSON: optionsEnvelope.data });
 
       // 3. Verify Assertion
       const verifyRes = await fetch(`${API_URL}/api/auth/passkeys/step-up-verify`, {

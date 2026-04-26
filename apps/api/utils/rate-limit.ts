@@ -24,8 +24,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
 
     const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '127.0.0.1';
 
-    // 0. Global Block Enforcement (Fleet-wide Shield) - TEMPORARILY DISABLED FOR RECOVERY
-    /*
+    // 0. Global Block Enforcement (Fleet-wide Shield)
     const isBlocked = await kv.get(`tg:block:${ip}`);
     if (isBlocked) {
       return c.json({ 
@@ -34,7 +33,6 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
         security_v: 'Titan Guard v6.1'
       }, 429);
     }
-    */
 
     const botName = (c.env as any).APP_NAME || 'ledger';
     

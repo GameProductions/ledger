@@ -858,17 +858,24 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
 
   // Update counters and session verification timestamp
   const now = new Date().toISOString()
+  const newCounter = verification.authenticationInfo?.newCounter ?? passkey.counter
+  
+  if (!sessionId) {
+    console.error('[Step-Up] Critical: Missing Session ID in context during verification')
+    throw new HTTPException(500, { message: 'Session ID missing' })
+  }
+
   await db.batch([
     db.update(passkeys).set({ 
-      counter: verification.authenticationInfo.newCounter,
+      counter: newCounter,
       lastUsedAt: now 
     }).where(eq(passkeys.id, passkey.id)),
     db.update(sessions).set({ 
       passkeyVerifiedAt: now 
-    }).where(eq(sessions.id, sessionId!))
+    }).where(eq(sessions.id, sessionId))
   ])
 
-  await logAudit(c, 'sessions', sessionId!, 'STEP_UP_VERIFIED', null, { passkeyId: passkey.id })
+  await logAudit(c, 'sessions', sessionId, 'STEP_UP_VERIFIED', null, { passkeyId: passkey.id })
   
   return c.json({ success: true })
 })

@@ -14,7 +14,7 @@ import {
   EnvelopeSchema
 } from '@shared/schemas'
 import { logAudit, toSnake } from '../utils'
-import { CURRENT_VERSION, VERSION_UPDATES } from '../constants'
+import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
 import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '#/schema'

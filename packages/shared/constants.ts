@@ -1,4 +1,5 @@
 export const FLEET_VERSION = '2026.4.25-alpha'
+export const CURRENT_VERSION = '3.32.0'
 export const APP_NAME = 'Ledger'
 export const SYSTEM_OWNER = 'GameProductions'
 

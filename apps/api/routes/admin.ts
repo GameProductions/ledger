@@ -14,7 +14,7 @@ import {
 import { EmailService } from '../services/email.service'
 import { hashPassword } from '../auth-utils'
 import { logAudit, encrypt, toSnake } from '../utils'
-import { CURRENT_VERSION } from '../constants'
+import { CURRENT_VERSION } from '@shared/constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
 import { getDb } from '#/index'

@@ -12,16 +12,19 @@ interface PasswordChecklistProps {
 
 export const PasswordChecklist: React.FC<PasswordChecklistProps> = ({ password }) => {
   const requirements: Requirement[] = [
-    { label: 'At least 8 characters', test: (p) => p.length >= 8 },
-    { label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
-    { label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
-    { label: 'One number', test: (p) => /[0-9]/.test(p) },
-    { label: 'One special character', test: (p) => /[^A-Za-z0-9]/.test(p) },
+    { label: 'Minimum 8 characters', test: (p) => p.length >= 8 },
+    { label: 'At least one uppercase letter', test: (p) => /[A-Z]/.test(p) },
+    { label: 'At least one lowercase letter', test: (p) => /[a-z]/.test(p) },
+    { label: 'At least one number', test: (p) => /[0-9]/.test(p) },
+    { label: 'At least one special character', test: (p) => /[^A-Za-z0-9]/.test(p) },
   ];
 
   return (
     <div className="space-y-2 p-6 bg-white/5 border border-white/5 rounded-2xl reveal">
-      <div className="text-xs font-black uppercase tracking-[0.2em] text-secondary mb-4">Security Standards</div>
+      <div className="flex flex-col gap-1 mb-4">
+        <div className="text-xs font-black uppercase tracking-[0.2em] text-secondary">Security Standards</div>
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">All special characters are accepted</div>
+      </div>
       <div className="grid grid-cols-1 gap-3">
         {requirements.map((req, i) => {
           const met = req.test(password);

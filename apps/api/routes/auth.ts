@@ -810,33 +810,47 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   }
 
   const db = getDb(c.env)
+  
+  // Normalize assertion ID (browser sends base64url)
+  const normalizedId = assertion.id.replace(/-/g, '+').replace(/_/g, '/')
+  const paddedId = normalizedId.padEnd(normalizedId.length + (4 - normalizedId.length % 4) % 4, '=')
+
   const passkeyResult = await db.select()
     .from(passkeys)
     .where(and(
       eq(passkeys.userId, userId),
       or(
         eq(passkeys.credentialId, assertion.id),
-        eq(passkeys.credentialId, Buffer.from(assertion.id, 'base64').toString('base64'))
+        eq(passkeys.credentialId, paddedId)
       )
     ))
     .limit(1)
   
   const passkey = passkeyResult[0]
-  if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
+  if (!passkey) {
+    console.error('[Step-Up] Passkey not found for user:', userId, 'id:', assertion.id)
+    throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
+  }
 
-  const verification = await verifyAuthenticationResponse({
-    response: assertion,
-    expectedChallenge,
-    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
-    requireUserVerification: true,
-    credential: {
-      id: passkey.credentialId,
-      publicKey: Buffer.from(passkey.publicKey, 'base64'),
-      counter: passkey.counter,
-      transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
-    } as any
-  })
+  let verification
+  try {
+    verification = await verifyAuthenticationResponse({
+      response: assertion,
+      expectedChallenge,
+      expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+      expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
+      requireUserVerification: true,
+      credential: {
+        id: passkey.credentialId,
+        publicKey: Buffer.from(passkey.publicKey, 'base64'),
+        counter: passkey.counter,
+        transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
+      } as any
+    })
+  } catch (err: any) {
+    console.error('[Step-Up] Verification Exception:', err)
+    throw new HTTPException(401, { message: `Verification failed: ${err.message}` })
+  }
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Step-Up verification failed' })

@@ -299,6 +299,13 @@ const SettingsPage: React.FC = () => {
               </h2>
             )}
             
+            {/* Account Role Badge */}
+            <div className="flex justify-center md:justify-start">
+              <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.15em] text-primary shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                {profile?.global_role === 'super_admin' ? 'Super Admin' : (profile?.global_role || 'Standard User')}
+              </div>
+            </div>
+            
             {isEditingUsername ? (
               <input 
                 autoFocus
@@ -333,14 +340,6 @@ const SettingsPage: React.FC = () => {
             )}
           </div>
           
-          <div className="w-full md:w-auto flex-1 md:border-l border-t md:border-t-0 border-white/5 pt-6 md:pt-0 md:pl-12 flex flex-col justify-center space-y-4 text-left">
-             <div className="flex flex-col">
-               <span className="text-secondary opacity-40 italic text-[10px] font-black uppercase tracking-[0.2em] mb-1">Account Role</span>
-               <span className="text-primary font-black uppercase tracking-widest text-sm">
-                 {profile?.global_role === 'super_admin' ? 'Super Admin' : (profile?.global_role || 'Standard User')}
-               </span>
-             </div>
-          </div>
         </div>
 
         {/* 2. Tabs Navigation */}

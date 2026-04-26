@@ -200,7 +200,7 @@ app.use('/api/*', async (c, next) => {
   const path = c.req.path
   const method = c.req.method
 
-  const publicPaths = ['/api/theme/broadcast', '/api/health']
+  const publicPaths = ['/api/theme/broadcast', '/api/health', '/api/config']
   const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS')
   
   if (isPublicApi) return await next()

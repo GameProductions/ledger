@@ -1,5 +1,5 @@
 export const FLEET_VERSION = '2026.4.25-alpha'
-export const CURRENT_VERSION = '3.32.0'
+export const CURRENT_VERSION = '3.32.3'
 export const APP_NAME = 'Ledger'
 export const SYSTEM_OWNER = 'GameProductions'
 
@@ -48,6 +48,7 @@ export const AUTH_EXCLUSIONS = [
   '/api/auth/password/reset',
   '/api/auth/admin/claim',
   '/api/theme/broadcast',
+  '/api/config',
   '/.well-known/microsoft-identity-association.json',
   '/favicon.ico',
   '/favicon.png',

@@ -9,9 +9,9 @@ import { MiddlewareHandler } from 'hono';
 export type RateLimitTier = 'API' | 'AUTH' | 'STRICT';
 
 const DEFAULT_POLICIES: Record<RateLimitTier, { limit: number; window: number }> = {
-  API: { limit: 100, window: 60 },        // 100 req / 60s
-  AUTH: { limit: 10, window: 600 },      // 10 req / 10m
-  STRICT: { limit: 3, window: 1800 }     // 3 req / 30m
+  API: { limit: 1000, window: 60 },       // 1000 req / 60s
+  AUTH: { limit: 500, window: 600 },      // 500 req / 10m
+  STRICT: { limit: 10, window: 1800 }     // 10 req / 30m
 };
 
 export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {

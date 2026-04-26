@@ -148,9 +148,22 @@ app.use('*', async (c, next) => {
   await next()
 })
 
-// Rate Limiting
-app.use('/api/auth/*', ipRateLimit('AUTH'))
-app.use('/api/*', ipRateLimit('API'))
+// Rate Limiting (Exempting Public Bootstrap Endpoints)
+app.use('/api/*', async (c, next) => {
+  const path = c.req.path
+  const method = c.req.method
+  const publicPaths = ['/api/theme/broadcast', '/api/health', '/api/config']
+  
+  if (publicPaths.includes(path) || path.startsWith('/api/discord') || method === 'OPTIONS') {
+    return await next()
+  }
+
+  if (path.startsWith('/api/auth')) {
+    return ipRateLimit('AUTH')(c, next)
+  }
+  
+  return ipRateLimit('API')(c, next)
+})
 
 // 2. Health & System Information
 app.get('/ping', (c) => c.text('PONG - LEDGER IS LIVE'))

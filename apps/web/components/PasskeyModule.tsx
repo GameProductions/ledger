@@ -79,7 +79,7 @@ export const PasskeyModule = () => {
       const data = await res.json() as any;
       setPasskeys(data.passkeys || []);
     } catch (err) {
-      showToast('System Interruption: Could not retrieve passkeys from secure enclave.', 'error');
+      showToast('System Interruption: Could not retrieve passkeys from security module.', 'error');
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export const PasskeyModule = () => {
   };
 
   const deletePasskey = async (id: string) => {
-    const confirmed = await showConfirm('Are you strictly sure you want to revoke this biometric signature? If this is your last passkey, you will trigger a hard 403 lock out on next authentication until manually bypassed by Discord!', 'Revoke Biometric Signature');
+    const confirmed = await showConfirm('Are you strictly sure you want to revoke this security key? If this is your last passkey, you will trigger a hard 403 lock out on next authentication until manually bypassed by Discord!', 'Revoke Security Key');
     if (!confirmed) return;
     
     try {
@@ -117,7 +117,7 @@ export const PasskeyModule = () => {
       if (!res.ok) throw new Error('Failed to revoke passkey');
       
       setPasskeys(p => p.filter(k => k.id !== id));
-      showToast('Revocation Successful: The selected biometric signature has been burned.', 'success');
+      showToast('Revocation Successful: The selected security key has been burned.', 'success');
     } catch (err) {
       showToast('Revocation Failed: Failed to burn the signature. Database may be constrained.', 'error');
     }
@@ -159,7 +159,7 @@ export const PasskeyModule = () => {
         throw new Error(errMsg);
       }
 
-      showToast('Enclave Updated: Successfully attached new hardware signature to your God Mode identity.', 'success');
+      showToast('Security Updated: Successfully attached new hardware signature to your God Mode identity.', 'success');
       fetchPasskeys(); // Refresh the list
     } catch (err: any) {
       console.error(err);

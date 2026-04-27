@@ -16,9 +16,9 @@ type AuditEntry = {
 };
 
 /**
- * Foundation Audit Trail (Stable)
+ * Activity History (Stable)
  * Standardized history view.
- * Visualizes the 'history' JSON column for audit-compliant data tracking.
+ * Visualizes the 'history' JSON column for activity tracking.
  */
 export const AuditTrail = ({ entries }: { entries: AuditEntry[] }) => {
   const [filter, setFilter] = useState('');

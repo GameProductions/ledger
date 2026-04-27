@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Shield, User, Key, Trash2, Mail, CheckCircle, XCircle } from 'lucide-react';
 
 /**
- * Foundation User Management Engine (Stable)
+ * User Management (Stable)
  * Standardized interface for user management, role assignments, and activity history.
  */
 export const UserManager = (props: any) => {

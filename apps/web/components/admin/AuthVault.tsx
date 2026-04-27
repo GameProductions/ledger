@@ -38,7 +38,7 @@ export const AuthVault: React.FC = () => {
   const handleRegisterPasskey = async () => {
     setRegistering(true);
     try {
-      showToast('Requesting hardware challenge from secure enclave...', 'info');
+      showToast('Requesting hardware challenge from security module...', 'info');
 
       const genResp = await fetch('/api/admin/webauthn/generate-registration', { method: 'POST' });
       if (!genResp.ok) {
@@ -64,7 +64,7 @@ export const AuthVault: React.FC = () => {
         throw new Error((data as any).error || 'Registration verification failed');
       }
     } catch (e: any) {
-      showToast(`Authentication Failure: ${e.message || 'Hardware handshake failed.'}`, 'error');
+      showToast(`Authentication Failure: ${e.message || 'Security key connection failed.'}`, 'error');
     } finally {
       setRegistering(false);
     }
@@ -116,7 +116,7 @@ export const AuthVault: React.FC = () => {
             <span>🛡️</span> Authentication Vault
           </h2>
           <p className="text-white/60 text-sm font-medium leading-relaxed">
-            Manage hardware-backed biometric signatures for administrative access.
+            Manage hardware-backed security keys for administrative access.
           </p>
         </div>
         <div className="text-[10px] font-mono text-white/30 uppercase tracking-widest">

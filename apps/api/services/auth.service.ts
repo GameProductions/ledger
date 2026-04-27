@@ -93,7 +93,7 @@ export class AuthService {
 
     const payload: any = {
       sub: userId,
-      sid: sid, // Forensic Session Tracker
+      sid: sid, // Session Tracker
       householdId: targetHouseholdId,
       globalRole: user?.globalRole || 'user',
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,

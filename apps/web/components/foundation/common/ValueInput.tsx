@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -6,11 +6,11 @@
 import React, { useState } from 'react';
 
 /**
- * Foundation Value Input (Stable)
+ * Foundation Value Input 
  * Standardized, high-fidelity UI component for currency and price inputs.
  * Enforces cent-perfect math and precision handling for all organization apps.
  */
-export const ValueInput = ({ value, label, currency = 'USD', onChange }) => {
+export const ValueInput = ({ value, label, currency = 'USD', onChange }: { value?: string | number, label: string, currency?: string, onChange: (val: number) => void }) => {
   const [inputValue, setInputValue] = useState(value?.toString() || '0.00');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

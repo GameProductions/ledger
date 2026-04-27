@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -12,7 +12,7 @@ type OGMetadata = {
 };
 
 /**
- * Foundation OG Meta Tag Editor (Stable)
+ * Foundation OG Meta Tag Editor 
  * Admin-only UI for overriding app-sharing metadata.
  * Part of the God Mode Branding suite.
  */

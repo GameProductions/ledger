@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -20,7 +20,7 @@ type OGMetadata = {
 };
 
 /**
- * Foundation Identity Head (Stable)
+ * Foundation Identity Head 
  * Centralized component for dynamic branding assets.
  * Enforces use of the specific app logo for Favicons, OG Tags, and Shortcuts.
  */

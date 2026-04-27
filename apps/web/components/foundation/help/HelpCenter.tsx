@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -13,17 +13,17 @@ type HelpItem = {
 };
 
 /**
- * Foundation Help Center
+ * Foundation Help Center 
  * Searchable, categorized help system.
  * Ported setup guides for YouTube, Twitch, Plaid, etc.
  */
-export const HelpCenter = ({ items = [] }: any) => {
+export const HelpCenter = ({ items }: { items: HelpItem[] }) => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
 
-  const categories = ['all', ...new Set(items.map((i) => i.category))];
+  const categories = ['all', ...new Set(items.map((i: HelpItem) => i.category))];
 
-  const filteredItems = items.filter((i) => {
+  const filteredItems = items.filter((i: HelpItem) => {
     const matchesSearch = i.title.toLowerCase().includes(search.toLowerCase()) || i.content.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = category === 'all' || i.category === category;
     return matchesSearch && matchesCategory;
@@ -31,6 +31,8 @@ export const HelpCenter = ({ items = [] }: any) => {
 
   return (
     <div className="gp-help-center">
+      
+
       <div className="help-content scrollable-list">
         {filteredItems.map((item) => (
           <div key={item.id} className="help-card">

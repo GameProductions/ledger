@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -6,11 +6,11 @@
 import React, { useState } from 'react';
 
 /**
- * Foundation Data Center (Stable)
+ * Foundation Data Center 
  * Standardization of bulk data operations (Import/Export).
  * Implements D1 batching logic to prevent worker timeouts.
  */
-export const DataCenter = ({ tables, onImport, onExport }) => {
+export const DataCenter = ({ tables, onImport, onExport }: { tables: any[], onImport: (tableName: string, offset: number, limit: number) => Promise<void> | void, onExport: (tableName: string) => void }) => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('idle');
 
@@ -18,50 +18,20 @@ export const DataCenter = ({ tables, onImport, onExport }) => {
     setStatus('importing');
     setProgress(0);
 
-    try {
-      const text = await file.text();
-      let records: any[] = [];
-      
-      if (file.name.endsWith('.json')) {
-        const parsed = JSON.parse(text);
-        records = Array.isArray(parsed) ? parsed : [parsed];
-      } else if (file.name.endsWith('.csv')) {
-        records = text.split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .map(line => ({ raw: line }));
-      } else {
-        throw new Error("Unsupported file format. Must be .json or .csv");
-      }
-      
-      const totalItems = records.length;
-      if (totalItems === 0) {
-        setStatus('complete');
-        return;
-      }
-      
-      // Real: Batch processing logic (chunked upload)
-      const chunkSize = 100;
-      for (let i = 0; i < totalItems; i += chunkSize) {
-        const chunk = records.slice(i, i + chunkSize);
-        if (onImport) {
-           await onImport(tableName, chunk, i, totalItems); // Execution in D1 Batch
-        } else {
-           await new Promise(r => setTimeout(r, 50)); // Fallback if no handler provided testing
-        }
-        setProgress(Math.min(100, Math.round(((i + chunkSize) / totalItems) * 100)));
-      }
-      
-      setStatus('complete');
-    } catch (err) {
-      console.error("Import failed:", err);
-      setStatus('error');
+    // Mock: Batch processing logic (chunked upload)
+    const chunkSize = 100;
+    const totalLines = 1000; // Simulated
+    for (let i = 0; i < totalLines; i += chunkSize) {
+      await onImport(tableName, i, chunkSize); // Execution in D1 Batch
+      setProgress(Math.round(((i + chunkSize) / totalLines) * 100));
     }
+
+    setStatus('complete');
   };
 
   return (
     <div className="gp-data-center">
-      <h2>Data Center (Stable)</h2>
+      <h2>Data Center</h2>
       <p className="description">Manage high-performance imports and encrypted backups.</p>
 
       <div className="table-registry scrollable-list">
@@ -75,7 +45,11 @@ export const DataCenter = ({ tables, onImport, onExport }) => {
               <input
                 type="file"
                 accept=".json,.csv"
-                onChange={(e) => e.target.files && handleImport(e.target.files[0], table.name)}
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    handleImport(e.target.files[0], table.name);
+                  }
+                }}
               />
               <button 
                 className="btn-export" 

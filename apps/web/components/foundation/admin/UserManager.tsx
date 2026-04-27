@@ -1,13 +1,13 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 import React, { useState } from 'react';
 import { Shield, User, Key, Trash2, Mail, CheckCircle, XCircle } from 'lucide-react';
 
 /**
  * User Management (Stable)
- * Standardized interface for user management, role assignments, and activity history.
+ * Standardized interface for administrative user control, role assignments, and security auditing.
  */
-export const UserManager = (props: any) => {
+export const UserManager = (props: { users?: any[], onUpdate: (id: string, data: any) => void, onDelete: (id: string) => void }) => {
   const { users = [], onUpdate, onDelete } = props;
   const [filter, setFilter] = useState('');
 
@@ -24,7 +24,7 @@ export const UserManager = (props: any) => {
             <Shield className="w-6 h-6 text-cyan-400" />
             User Management
           </h2>
-          <p className="text-slate-500 text-sm mt-1">Manage organizational access and user accounts.</p>
+          <p className="text-slate-500 text-sm mt-1">Manage user access and profiles.</p>
         </div>
         
         <div className="relative">
@@ -42,7 +42,7 @@ export const UserManager = (props: any) => {
         <table className="w-full text-left">
           <thead>
             <tr className="bg-slate-900/50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-              <th className="px-8 py-4">Identity</th>
+              <th className="px-8 py-4">User</th>
               <th className="px-8 py-4">Status</th>
               <th className="px-8 py-4">Roles</th>
               <th className="px-8 py-4">Last Activity</th>
@@ -81,7 +81,7 @@ export const UserManager = (props: any) => {
                 </td>
                 <td className="px-8 py-5">
                   <div className="flex flex-wrap gap-2">
-                    {(user.roles || []).map(role => (
+                    {(user.roles || []).map((role: string) => (
                       <span key={role} className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded text-[9px] font-bold uppercase tracking-wider">
                         {role}
                       </span>
@@ -103,7 +103,7 @@ export const UserManager = (props: any) => {
                     <button 
                       onClick={() => onDelete(user.id)}
                       className="p-2 hover:bg-slate-800 rounded-lg text-red-400/50 hover:text-red-400 transition-colors"
-                      title="Delete Account"
+                      title="Delete User"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

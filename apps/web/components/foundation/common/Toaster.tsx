@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -7,7 +7,7 @@ import React from 'react';
 import { Toaster as Sonner } from 'sonner';
 
 /**
- * Foundation Toaster (Stable)
+ * Foundation Toaster 
  * Standardized notification engine based on 'sonner'.
  * Supports soft-force and hard-force theme colors via CSS variables.
  */

@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /** @jsxImportSource react */
 
 
@@ -16,8 +16,8 @@ type AuditEntry = {
 };
 
 /**
- * Activity History (Stable)
- * Standardized history view.
+ * Activity History 
+ * Standardized activity history view.
  * Visualizes the 'history' JSON column for activity tracking.
  */
 export const AuditTrail = ({ entries }: { entries: AuditEntry[] }) => {
@@ -31,7 +31,7 @@ export const AuditTrail = ({ entries }: { entries: AuditEntry[] }) => {
   return (
     <div className="gp-audit-trail">
       <div className="audit-header">
-        <h3>Detailed Activity History</h3>
+        <h3>Security Activity Log</h3>
         <input 
           type="text" 
           placeholder="Filter by action or user..." 

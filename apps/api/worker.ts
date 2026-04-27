@@ -26,11 +26,23 @@ app.use("*", logger());
 app.use("*", secureHeaders({
   contentSecurityPolicy: {
       defaultSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https://cdn-icons-png.flaticon.com", "https://cdn.simpleicons.org", "https://flaticons.net", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://cache.agilebits.com", "https://*.glosonproductions.com", "https://*.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com"],
+      imgSrc: [
+        "'self'", "data:", "blob:", 
+        "https://*.gpnet.dev", "https://*.glosonproductions.com",
+        "https://*.discordapp.com", "https://*.discord.com", "https://discord.com",
+        "https://www.gstatic.com", "https://cdn.simpleicons.org", "https://flaticons.net",
+        "https://api.dicebear.com", "https://ui-avatars.com", "https://api.qrserver.com",
+        "https://images.unsplash.com", "https://*.giphy.com",
+        "https://c.1password.com", "https://cache.agilebits.com", "https://raw.githubusercontent.com"
+      ],
       scriptSrc: ["'self'", "https://static.cloudflareinsights.com", "'sha256-jlsMk0YHlcRfVk3Qperx5kMvCH97KaEu4osmzX3GsuY='", "'sha256-InQKS/0eWsccv2yFQ9tVKWenXws5ak8p0SLxqqKNed0='", "'sha256-9tbxlnzuoYHl6nDKBrkpHQZjk2kwrfoB57fwKSlBVHo='", "'sha256-qp6fscPNSiydJYTWMlSfg2ogAnWVn9f9I+H0CmcQLqw='", "'sha256-vrHPKVKcxIEXKNW4BQWtXOBmAO9lizieLqgxnpOUnR0='", "'sha256-jCG/QZuBRzyJnHALam5ztm7E6KrhaE2M/a403o84fW0='", "'sha256-Cjkx713rgFgZqOqM8V2wzvCavph8V9ngzkc3SO3NuRo='"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com", "http://localhost:*", "http://127.0.0.1:*", "https://cloudflareinsights.com"],
+      connectSrc: [
+        "'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com",
+        "https://discord.com", "https://*.discord.com", "https://canary.discord.com",
+        "https://cloudflareinsights.com", "https://static.cloudflareinsights.com"
+      ],
       frameAncestors: ["'self'", "https://*.gpnet.dev", "http://localhost:*"],
       upgradeInsecureRequests: [],
     }

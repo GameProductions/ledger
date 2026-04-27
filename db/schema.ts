@@ -338,7 +338,7 @@ export const sessions = sqliteTable('sessions', {
   userIdx: index('idx_sessions_user').on(table.userId),
 }));
 
-export const totps = sqliteTable('totps', {
+export const totpCredentials = sqliteTable('totp_credentials', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   secret: text('secret').notNull(),
@@ -346,7 +346,7 @@ export const totps = sqliteTable('totps', {
   lastUsedAt: text('last_used_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  userIdx: index('idx_totps_user').on(table.userId),
+  userIdx: index('idx_totp_credentials_user').on(table.userId),
 }));
 
 export const passkeys = sqliteTable('passkeys', {

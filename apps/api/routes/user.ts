@@ -17,7 +17,7 @@ import { logAudit, toSnake } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
-import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totps } from '#/schema'
+import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totpCredentials } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -708,17 +708,17 @@ user.get('/totps', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)
   const results = await db.select({
-    id: totps.id,
-    name: totps.name,
-    createdAt: totps.createdAt
-  }).from(totps).where(eq(totps.userId, userId))
+    id: totpCredentials.id,
+    name: totpCredentials.name,
+    createdAt: totpCredentials.createdAt
+  }).from(totpCredentials).where(eq(totpCredentials.userId, userId))
   return c.json({
     success: true,
     data: toSnake(results)
   })
 })
 
-user.patch('/totps/:id', zValidator('json', z.object({ name: z.string() }), (result, c) => {
+user.patch('/totpCredentials/:id', zValidator('json', z.object({ name: z.string() }), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] TOTP update validation failed:`, result.error.errors);
   }
@@ -728,21 +728,21 @@ user.patch('/totps/:id', zValidator('json', z.object({ name: z.string() }), (res
   const { name } = c.req.valid('json')
   const db = getDb(c.env)
   
-  await db.update(totps).set({ name }).where(and(eq(totps.id, id), eq(totps.userId, userId)))
-  await logAudit(c, 'totps', id, 'UPDATE', null, { name })
+  await db.update(totpCredentials).set({ name }).where(and(eq(totpCredentials.id, id), eq(totpCredentials.userId, userId)))
+  await logAudit(c, 'totpCredentials', id, 'UPDATE', null, { name })
   return c.json({ success: true })
 })
 
-user.delete('/totps/:id', async (c) => {
+user.delete('/totpCredentials/:id', async (c) => {
   const userId = c.get('userId') as string
   const { id } = c.req.param()
   const db = getDb(c.env)
   
-  await db.delete(totps).where(and(eq(totps.id, id), eq(totps.userId, userId)))
-  await logAudit(c, 'totps', id, 'DELETE')
+  await db.delete(totpCredentials).where(and(eq(totpCredentials.id, id), eq(totpCredentials.userId, userId)))
+  await logAudit(c, 'totpCredentials', id, 'DELETE')
   
   // Re-check count to turn off totpEnabled if 0 remaining
-  const remaining = await db.select({ count: sql`count(*)` }).from(totps).where(eq(totps.userId, userId)).then(res => res[0].count as number)
+  const remaining = await db.select({ count: sql`count(*)` }).from(totpCredentials).where(eq(totpCredentials.userId, userId)).then(res => res[0].count as number)
   if (remaining === 0) {
     await db.update(users).set({ totpEnabled: 0 }).where(eq(users.id, userId))
   }

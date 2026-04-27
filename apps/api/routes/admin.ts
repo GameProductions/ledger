@@ -25,7 +25,7 @@ import {
   externalConnections, userIdentities, userLinkedAccounts, transactions, 
   subscriptions, userPaymentMethods, sharedBalances, systemAnnouncements, 
   auditLogs, paySchedules, householdInvites, accounts, linkedProviders, 
-  adminInvitations, totps, webhooks, categories, bills, installmentPlans, 
+  adminInvitations, totpCredentials, webhooks, categories, bills, installmentPlans, 
   creditCards as creditCardsTable 
 } from '#/schema'
 import { eq, or, and, sql, desc, count, like } from 'drizzle-orm'
@@ -703,12 +703,12 @@ admin.post('/maintenance/migrate-secrets', async (c) => {
   const secretKey = c.env.ENCRYPTION_KEY || c.env.JWT_SECRET
 
   // 1. TOTPs
-  const allTotps = await db.select({ id: totps.id, secret: totps.secret }).from(totps)
+  const allTotps = await db.select({ id: totpCredentials.id, secret: totpCredentials.secret }).from(totpCredentials)
   const totpUpdates = []
   for (const t of allTotps) {
     if (t.secret && !t.secret.includes('.')) {
       const encrypted = await encrypt(t.secret, secretKey)
-      totpUpdates.push(db.update(totps).set({ secret: encrypted }).where(eq(totps.id, t.id)))
+      totpUpdates.push(db.update(totpCredentials).set({ secret: encrypted }).where(eq(totpCredentials.id, t.id)))
       migratedCount++
     }
   }

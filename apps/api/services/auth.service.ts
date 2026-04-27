@@ -4,7 +4,7 @@ import { Bindings } from '../types'
 import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
 import { EmailService } from './email.service'
 import { getDb } from '#/index'
-import { users, userIdentities, passwordResets, passkeys, adminInvitations, totps, userHouseholds } from '#/schema'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations, totpCredentials, userHouseholds } from '#/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
 import { encrypt, decrypt } from '../utils'
 
@@ -53,7 +53,7 @@ export class AuthService {
     if (user.totpEnabled) {
       if (!totpCode) return { requires2FA: true }
       const db = getDb(this.env)
-      const userTotps = await db.select({ secret: totps.secret }).from(totps).where(eq(totps.userId, user.id))
+      const userTotps = await db.select({ secret: totpCredentials.secret }).from(totpCredentials).where(eq(totpCredentials.userId, user.id))
       
       let isValid = false
       for (const t of userTotps) {
@@ -233,7 +233,7 @@ export class AuthService {
     const isValid = await verifyTOTP(secret, code)
     if (isValid) {
       const encryptedSecret = await encrypt(secret, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET)
-      await db.insert(totps).values({
+      await db.insert(totpCredentials).values({
         id: crypto.randomUUID(),
         userId,
         secret: encryptedSecret,

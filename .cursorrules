@@ -222,3 +222,38 @@ All projects MUST adhere to this unified monorepo-style layout to ensure scalabi
 - **Tone & Jargon**: The assistant must maintain a professional and premium tone. **God Mode** is the only allowed themed jargon.
 - **Migration & Verifiability**: During database migrations (Rule 14), the agent MUST explicitly perform a 1:1 row count verification between the archive and new table. The agent MUST report the exact results and any anomalies to the user before requesting final decommission approval.
 - **Operational Consistency**: Maintain English as the sole operational language for all internal and external communication.
+
+## 16. Standardized Identity Schema
+To ensure fleet-wide interoperability and unified identity management, all projects MUST adhere to the "Gold Standard" schema for users, social identities, and multi-factor authentication.
+
+### 16.1 Users Table (`users`)
+- `id`: `text('id').primaryKey()`
+- `email`: `text('email').unique()`
+- `username`: `text('username').unique()`
+- `displayName`: `text('display_name')`
+- `avatarUrl`: `text('avatar_url')` (Standardized from legacy `avatar`)
+- `globalRole`: `text('global_role').default('user')` (Standardized from legacy `role`)
+- `status`: `text('status').default('active')`
+- `lastActiveAt`: `text('last_active_at')`
+- `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`
+
+### 16.2 User Identities Table (`user_identities`)
+- `id`: `text('id').primaryKey()`
+- `userId`: `text('user_id').references(() => users.id)`
+- `provider`: `text('provider')` (`discord`, `google`, `dropbox`, `onedrive`)
+- `providerUserId`: `text('provider_user_id')`
+- `email`: `text('email')`
+- `name`: `text('name')`
+- `avatarUrl`: `text('avatar_url')`
+- `accessToken`: `text('access_token')`
+- `refreshToken`: `text('refresh_token')`
+- `tokenExpiresAt`: `text('token_expires_at')`
+
+### 16.3 TOTP Credentials Table (`totp_credentials`)
+Replaces legacy `totp_secret` and `totp_enabled` columns in the `users` table.
+- `id`: `text('id').primaryKey()`
+- `userId`: `text('user_id').references(() => users.id)`
+- `name`: `text('name').default('Authenticator App')`
+- `secret`: `text('secret')`
+- `verified`: `integer('verified').default(0)`
+- `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`

@@ -49,6 +49,8 @@ user.get('/profile', async (c) => {
       settingsJson: users.settingsJson,
       totpEnabled: users.totpEnabled,
       forcePasswordChange: users.forcePasswordChange,
+      locale: users.locale,
+      theme: users.theme,
       createdAt: users.createdAt
     }).from(users).where(eq(users.id, userId as string))
     
@@ -115,6 +117,8 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   }
   
   if (data.avatar_url !== undefined) updates.avatarUrl = data.avatar_url || null
+  if (data.locale !== undefined) updates.locale = data.locale || 'en'
+  if (data.theme !== undefined) updates.theme = data.theme || 'system'
   
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))

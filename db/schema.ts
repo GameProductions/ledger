@@ -26,6 +26,11 @@ export const users = sqliteTable('users', {
   settingsJson: text('settings_json'),
   lastViewedVersion: text('last_viewed_version'),
   forcePasswordChange: integer('force_password_change').default(0),
+  failedLoginAttempts: integer('failed_login_attempts').default(0),
+  lockoutUntil: text('lockout_until'),
+  backupCodesJson: text('backup_codes_json').default('[]'),
+  locale: text('locale').default('en'),
+  theme: text('theme').default('system'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   passkeyVerifiedAt: text('passkey_verified_at'),
 });

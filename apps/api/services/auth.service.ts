@@ -26,15 +26,55 @@ export class AuthService {
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
+    // --- LOCKOUT CHECK (Titan Guard v2.1) ---
+    if (user.lockoutUntil) {
+      const lockoutDate = new Date(user.lockoutUntil);
+      if (lockoutDate > new Date()) {
+        const remainingMinutes = Math.ceil((lockoutDate.getTime() - Date.now()) / (1000 * 60));
+        console.warn(`[Auth] Account locked for ${identifier}. Remaining: ${remainingMinutes}m`);
+        throw new HTTPException(403, { 
+          message: `Account is temporarily locked due to multiple failed attempts. Please try again in ${remainingMinutes} minutes.` 
+        });
+      }
+    }
+
     if (!user.passwordHash) {
       console.warn('[Auth] Attempted password login on social-only account:', identifier)
       throw new HTTPException(401, { message: 'Account linked via social provider. Please use Discord or Google login.' })
     }
     
     const isMatch = await verifyPassword(password, user.passwordHash)
+    
     if (!isMatch) { 
       console.warn('[Auth] Password mismatch for:', identifier)
-      throw new HTTPException(401, { message: 'Invalid credentials' })
+      
+      // Increment failed attempts
+      const newAttempts = (user.failedLoginAttempts || 0) + 1;
+      const updateData: any = { failedLoginAttempts: newAttempts };
+      
+      if (newAttempts >= 5) {
+        const lockoutMinutes = 30;
+        const lockoutUntil = new Date(Date.now() + lockoutMinutes * 60 * 1000).toISOString();
+        updateData.lockoutUntil = lockoutUntil;
+        console.error(`[Auth] Triggering lockout for ${identifier} (Attempts: ${newAttempts})`);
+      }
+      
+      await db.update(users).set(updateData).where(eq(users.id, user.id));
+      
+      const remaining = 5 - newAttempts;
+      throw new HTTPException(401, { 
+        message: remaining > 0 
+          ? `Invalid credentials. ${remaining} attempts remaining before account lockout.` 
+          : 'Account has been locked for 30 minutes due to too many failed attempts.' 
+      })
+    }
+
+    // --- RESET LOCKOUT ON SUCCESS ---
+    if (user.failedLoginAttempts !== 0 || user.lockoutUntil) {
+      await db.update(users).set({ 
+        failedLoginAttempts: 0, 
+        lockoutUntil: null 
+      }).where(eq(users.id, user.id));
     }
 
     // --- RE-HASH ON LOGIN (v3.11.3 Security Hardening) ---
@@ -373,6 +413,45 @@ export class AuthService {
     } else {
       await db.delete(passkeys).where(and(eq(passkeys.id, passkeyId), eq(passkeys.userId, userId)))
     }
+    return true
+  }
+
+  // --- BACKUP CODES (Titan Guard v2.1) ---
+  async generateBackupCodes(userId: string) {
+    const db = getDb(this.env)
+    const codes = Array.from({ length: 10 }, () => 
+      Math.random().toString(36).substring(2, 10).toUpperCase()
+    )
+    
+    const codesJson = JSON.stringify(codes)
+    await db.update(users).set({ backupCodesJson: codesJson }).where(eq(users.id, userId))
+    
+    return codes
+  }
+
+  async verifyBackupCode(userId: string, code: string) {
+    const db = getDb(this.env)
+    const result = await db.select({ backupCodesJson: users.backupCodesJson }).from(users).where(eq(users.id, userId)).limit(1)
+    const user = result[0]
+    
+    if (!user || !user.backupCodesJson) return false
+    
+    const codes = JSON.parse(user.backupCodesJson) as string[]
+    const index = codes.indexOf(code.toUpperCase())
+    
+    if (index !== -1) {
+      codes.splice(index, 1)
+      await db.update(users).set({ backupCodesJson: JSON.stringify(codes) }).where(eq(users.id, userId))
+      return true
+    }
+    
+    return false
+  }
+
+  // --- PERSONALIZATION ---
+  async updatePreferences(userId: string, preferences: { locale?: string, theme?: string }) {
+    const db = getDb(this.env)
+    await db.update(users).set(preferences).where(eq(users.id, userId))
     return true
   }
 }

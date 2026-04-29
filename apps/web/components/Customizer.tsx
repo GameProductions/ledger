@@ -72,10 +72,10 @@ const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
                 {['default', 'glass', 'minimal'].map(style => (
                   <button 
                     key={style}
-                    onClick={() => onUpdate({ ...settings, ui_style: style })}
+                    onClick={() => onUpdate({ ...settings, uiStyle: style })}
                     style={{ 
                       flex: 1, padding: '0.4rem', fontSize: '0.7rem', 
-                      background: settings.ui_style === style ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                      background: settings.uiStyle === style ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
                       border: '1px solid var(--glass-border)', borderRadius: '0.4rem'
                     }}
                   >

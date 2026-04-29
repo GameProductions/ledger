@@ -27,7 +27,7 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
       <div className="relative space-y-8 pl-4 border-l border-dashed border-white/10 ml-2">
         {cycles.map((cycle, idx) => {
           const isCurrent = isAfter(parseISO(cycle.payday.date), now) || idx === 0;
-          const remainderCents = (cycle.payday.amount_cents || 0) - cycle.total_cents;
+          const remainderCents = (cycle.payday.amountCents || 0) - cycle.totalCents;
           
           return (
             <div key={cycle.payday.date + cycle.payday.name} className="relative">
@@ -44,7 +44,7 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                     </div>
                     <div className="flex items-center gap-2">
                        <h4 className="text-lg font-black italic tracking-tighter uppercase">{cycle.payday.name}</h4>
-                       {cycle.payday.is_override && (
+                       {cycle.payday.isOverride && (
                          <span className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-md">
                            <Shield size={10} className="text-indigo-400" />
                            <span className="text-[11px] font-black uppercase tracking-widest text-indigo-400">Personal Override</span>
@@ -53,7 +53,7 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                     </div>
                   </div>
                   <div className="text-right">
-                    <Price amount_cents={cycle.payday.amount_cents} className="text-2xl font-black tracking-tighter text-white" />
+                    <Price amountCents={cycle.payday.amountCents} className="text-2xl font-black tracking-tighter text-white" />
                     <div className="text-xs font-black uppercase tracking-widest text-white/30">Estimated Deposit</div>
                   </div>
                 </div>
@@ -72,15 +72,15 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                   {cycle.items.length > 0 ? cycle.items.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 group hover:bg-white/[0.05] transition-all">
                       <div className="flex items-center gap-3">
-                        <div className={`w-1.5 h-1.5 rounded-full ${item.next_payment_date ? 'bg-indigo-500' : item.dueDate ? 'bg-amber-500' : 'bg-primary'}`} />
+                        <div className={`w-1.5 h-1.5 rounded-full ${item.nextPayDate ? 'bg-indigo-500' : item.dueDate ? 'bg-amber-500' : 'bg-primary'}`} />
                         <div>
                           <div className="text-xs font-bold text-white group-hover:text-primary transition-colors">{item.name || item.description}</div>
                           <div className="text-[11px] font-black uppercase tracking-widest text-white/30 truncate max-w-[120px]">
-                            {item.due_date || item.next_billing_date || item.next_payment_date}
+                            {item.dueDate || item.nextBillingDate || item.nextPayDate}
                           </div>
                         </div>
                       </div>
-                      <Price amount_cents={item.amount_cents || item.installment_amount_cents} className="text-xs font-black tracking-widest" />
+                      <Price amountCents={item.amountCents || item.installmentAmountCents} className="text-xs font-black tracking-widest" />
                     </div>
                   )) : (
                     <div className="col-span-full py-4 text-center border border-dashed border-white/5 rounded-xl text-xs font-black uppercase tracking-widest text-white/20">
@@ -97,7 +97,7 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
                   </div>
                   <div className="flex flex-col items-end">
                     <Price 
-                        amount_cents={remainderCents} 
+                        amountCents={remainderCents} 
                         className={`text-lg font-black tracking-tighter ${remainderCents < 0 ? 'text-red-500' : 'text-primary'}`} 
                     />
                     <div className="text-[11px] font-black uppercase tracking-widest opacity-40 italic">After Liabilities</div>

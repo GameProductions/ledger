@@ -13,12 +13,13 @@ import {
   UserOutputSchema,
   EnvelopeSchema
 } from '@shared/schemas'
-import { logAudit, toSnake } from '../utils'
+import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
 import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totpCredentials } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
+import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -46,11 +47,11 @@ user.get('/profile', async (c) => {
       globalRole: users.globalRole,
       status: users.status,
       avatarUrl: users.avatarUrl,
-      settingsJson: users.settingsJson,
       totpEnabled: users.totpEnabled,
       forcePasswordChange: users.forcePasswordChange,
       locale: users.locale,
-      theme: users.theme,
+      themePreference: users.themePreference,
+      timezone: users.timezone,
       createdAt: users.createdAt
     }).from(users).where(eq(users.id, userId as string))
     
@@ -71,10 +72,10 @@ user.get('/profile', async (c) => {
     try {
       return c.json({
         success: true,
-        data: UserOutputSchema.parse(toSnake(userData))
+        data: UserOutputSchema.parse(userData)
       })
     } catch (e: any) {
-      console.error(`[DIAGNOSTIC_FAILURE] User profile validation failed for ${userId}:`, e.errors || e.message);
+      console.error(`[DIAGNOSTIC_FAILURE] User profile validation failed for ${userId}:`, e.issues || e.message);
       throw e;
     }
   } catch (err: any) {
@@ -85,7 +86,7 @@ user.get('/profile', async (c) => {
 
 user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Profile update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Profile update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -93,8 +94,9 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   const db = getDb(c.env)
   
   const updates: any = {}
-  if (data.display_name) updates.displayName = data.display_name
-  if (data.settings_json) updates.settingsJson = data.settings_json
+  if (data.displayName) updates.displayName = data.displayName
+  if (data.themePreference) updates.themePreference = data.themePreference
+  if (data.timezone) updates.timezone = data.timezone
   
   if (data.email !== undefined) {
     if (data.email) {
@@ -116,9 +118,9 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
     updates.username = data.username || null;
   }
   
-  if (data.avatar_url !== undefined) updates.avatarUrl = data.avatar_url || null
+  if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl || null
   if (data.locale !== undefined) updates.locale = data.locale || 'en'
-  if (data.theme !== undefined) updates.theme = data.theme || 'system'
+  if (data.themePreference !== undefined) updates.themePreference = data.themePreference || 'system'
   
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
@@ -130,7 +132,7 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
 
 user.post('/profile/sync', zValidator('json', z.object({ provider: z.string(), identityId: z.string() }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Profile sync validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Profile sync validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -158,8 +160,8 @@ user.get('/onboarding', async (c) => {
   const completedNodes = await db.select({ stepId: userOnboarding.stepId }).from(userOnboarding).where(and(eq(userOnboarding.userId, userId), eq(userOnboarding.status, 'completed')))
   const completedSteps = completedNodes.map(r => r.stepId)
   
-  const userResult = await db.select({ lastViewedVersion: users.lastViewedVersion }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
-  const lastVersion = userResult?.lastViewedVersion || 'Stable'
+  const userResult = await db.select({ lastSeenVersion: users.lastSeenVersion }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
+  const lastVersion = userResult?.lastSeenVersion || 'Stable'
   
   const recentUpdates = VERSION_UPDATES.filter(v => v.version > lastVersion)
   
@@ -180,7 +182,7 @@ user.post('/onboarding/step', zValidator('json', z.object({
   version: z.string().optional()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Onboarding step validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Onboarding step validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -198,7 +200,7 @@ user.post('/onboarding/step', zValidator('json', z.object({
   })
   
   if (version) {
-    await db.update(users).set({ lastViewedVersion: version }).where(eq(users.id, userId))
+    await db.update(users).set({ lastSeenVersion: version }).where(eq(users.id, userId))
   }
   
   const completedNodes = await db.select({ stepId: userOnboarding.stepId }).from(userOnboarding).where(and(eq(userOnboarding.userId, userId), eq(userOnboarding.status, 'completed')))
@@ -206,8 +208,8 @@ user.post('/onboarding/step', zValidator('json', z.object({
 
   return c.json({
     success: true,
-    completed_steps: completedSteps,
-    is_completed: isLast || completedSteps.length >= 4
+    completedSteps: completedSteps,
+    isCompleted: isLast || completedSteps.length >= 4
   })
 })
 
@@ -228,7 +230,7 @@ user.get('/households', async (c) => {
   
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
@@ -277,16 +279,16 @@ user.get('/households/current', async (c) => {
 
   return c.json({
     success: true,
-    data: toSnake({
+    data: {
       ...household,
       members: formattedMembers
-    })
+    }
   })
 })
 
 user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Household creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Household creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -305,7 +307,7 @@ user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) =
 
 user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Household invite validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Household invite validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -345,14 +347,14 @@ user.post('/households/invite', zValidator('json', z.object({ email: z.string().
     }
   }
 
-  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, { token: id, target_email: body?.email })
+  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, { token: id, targetEmail: body?.email })
   
   return c.json({ success: true, url: `#/households/join?token=${id}` })
 })
 
 user.post('/households/join', zValidator('json', JoinHouseholdSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Household join validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Household join validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -382,7 +384,7 @@ user.post('/households/join', zValidator('json', JoinHouseholdSchema, (result, c
 
 user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Household update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Household update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const { id } = c.req.param()
@@ -412,12 +414,12 @@ user.get('/preferences', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)
   const results = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId))
-  return c.json(toSnake(results.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {})))
+  return c.json(results.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {}))
 })
 
 user.patch('/preferences', zValidator('json', z.record(z.string(), z.string()), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Preferences update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Preferences update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -443,7 +445,7 @@ user.get('/notifications', async (c) => {
   const results = await db.select().from(notificationSettings).where(eq(notificationSettings.userId, userId))
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
@@ -451,10 +453,10 @@ user.patch('/notifications', zValidator('json', z.array(z.object({
   type: z.string(),
   event: z.string(),
   enabled: z.boolean(),
-  offset_days: z.number().optional()
+  offsetDays: z.number().optional()
 })), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Notifications update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Notifications update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -463,10 +465,10 @@ user.patch('/notifications', zValidator('json', z.array(z.object({
 
   for (const s of settings) {
     await db.insert(notificationSettings)
-      .values({ userId, type: s.type, event: s.event, enabled: s.enabled, offsetDays: s.offset_days || 3 })
+      .values({ userId, type: s.type, event: s.event, enabled: s.enabled, offsetDays: s.offsetDays || 3 })
       .onConflictDoUpdate({
          target: [notificationSettings.userId, notificationSettings.type, notificationSettings.event],
-         set: { enabled: s.enabled, offsetDays: s.offset_days || 3 }
+         set: { enabled: s.enabled, offsetDays: s.offsetDays || 3 }
       });
   }
   return c.json({ success: true })
@@ -483,7 +485,7 @@ user.get('/payment-methods', async (c) => {
 
 user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Payment method creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Payment method creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -498,8 +500,8 @@ user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema, (resul
     householdId,
     name: data.name,
     type: data.type,
-    lastFour: data.last_four || null,
-    brandingUrl: data.branding_url || null,
+    lastFour: data.lastFour || null,
+    brandingUrl: data.brandingUrl || null,
     status: 'active'
   })
   
@@ -509,7 +511,7 @@ user.post('/payment-methods', zValidator('json', UserPaymentMethodSchema, (resul
 
 user.patch('/payment-methods/:id', zValidator('json', UserPaymentMethodSchema.partial(), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Payment method update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Payment method update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -520,8 +522,8 @@ user.patch('/payment-methods/:id', zValidator('json', UserPaymentMethodSchema.pa
   const updates: any = {}
   if (data.name !== undefined) updates.name = data.name
   if (data.type !== undefined) updates.type = data.type
-  if (data.last_four !== undefined) updates.lastFour = data.last_four
-  if (data.branding_url !== undefined) updates.brandingUrl = data.branding_url
+  if (data.lastFour !== undefined) updates.lastFour = data.lastFour
+  if (data.brandingUrl !== undefined) updates.brandingUrl = data.brandingUrl
   
   if (Object.keys(updates).length > 0) {
     await db.update(userPaymentMethods).set(updates).where(and(eq(userPaymentMethods.id, id), eq(userPaymentMethods.userId, userId)))
@@ -543,7 +545,7 @@ user.delete('/payment-methods/:id', async (c) => {
 user.get('/service-providers', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(serviceProviders)
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 user.get('/identities', async (c) => {
@@ -560,16 +562,16 @@ user.get('/identities', async (c) => {
   }).from(userIdentities).where(eq(userIdentities.userId, userId))
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
-user.delete('/identities/:id', async (c) => {
+user.delete('/identities/:id', stepUpMiddleware, async (c) => {
   const userId = c.get('userId') as string
   const { id } = c.req.param()
   const db = getDb(c.env)
   await db.delete(userIdentities).where(and(eq(userIdentities.id, id), eq(userIdentities.userId, userId)))
-  await logAudit(c, 'user_identities', id, 'DELETE')
+  await logAudit(c, 'userIdentities', id, 'DELETE')
   return c.json({ success: true })
 })
 
@@ -577,14 +579,14 @@ user.get('/providers', async (c) => {
   // Use raw sql for complex joins unmapped perfectly in generated schema
   const db = getDb(c.env)
   const userId = c.get('userId') as string
-  const results = await db.run(sql`SELECT lp.*, sp.name as provider_name, sp.icon_url as icon_url FROM linked_providers lp JOIN service_providers sp ON lp.service_provider_id = sp.id WHERE lp.user_id = ${userId}`)
+  const results = await db.run(sql`SELECT lp.*, sp.name as providerName, sp.iconUrl as iconUrl FROM linkedProviders lp JOIN serviceProviders sp ON lp.serviceProviderId = sp.id WHERE lp.userId = ${userId}`)
   // D1 run result logic vs .all(): if mapped D1 driver is used, better to wrap in query
   // Fallback to strict DB.prepare for unmapped complex joins
   const dbRes = await c.env.DB.prepare(
-    `SELECT lp.*, sp.name as provider_name, sp.icon_url 
-     FROM linked_providers lp
-     JOIN service_providers sp ON lp.service_provider_id = sp.id
-     WHERE lp.user_id = ?`
+    `SELECT lp.*, sp.name as providerName, sp.iconUrl as iconUrl 
+     FROM linkedProviders lp
+     JOIN serviceProviders sp ON lp.serviceProviderId = sp.id
+     WHERE lp.userId = ?`
   ).bind(userId).all()
   return c.json({
     success: true,
@@ -593,21 +595,21 @@ user.get('/providers', async (c) => {
 })
 
 user.post('/providers/link', zValidator('json', z.object({
-  service_provider_id: z.string(),
-  account_reference: z.string().optional(),
-  custom_label: z.string().optional(),
+  serviceProviderId: z.string(),
+  accountReference: z.string().optional(),
+  customLabel: z.string().optional(),
   metadata: z.string().optional()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Provider link validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Provider link validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
-  const { service_provider_id, account_reference, custom_label, metadata } = c.req.valid('json')
+  const { serviceProviderId, accountReference, customLabel, metadata } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(linkedProviders).values({
-    id, userId, serviceProviderId: service_provider_id, accountReference: account_reference, customLabel: custom_label, metadata
+    id, userId, serviceProviderId: serviceProviderId, accountReference: accountReference, customLabel: customLabel, metadata
   })
   return c.json({ success: true, id })
 })
@@ -615,10 +617,10 @@ user.post('/providers/link', zValidator('json', z.object({
 user.get('/linked-accounts', async (c) => {
   const userId = c.get('userId') as string
   const dbRes = await c.env.DB.prepare(`
-    SELECT la.*, sp.name as provider_name, sp.visibility as provider_branding, 'N/A' as payment_method_name 
-    FROM linked_providers la 
-    JOIN service_providers sp ON la.service_provider_id = sp.id 
-    WHERE la.user_id = ?
+    SELECT la.*, sp.name as providerName, sp.visibility as providerBranding, 'N/A' as paymentMethodName 
+    FROM linkedProviders la 
+    JOIN serviceProviders sp ON la.serviceProviderId = sp.id 
+    WHERE la.userId = ?
   `).bind(userId).all()
   return c.json({
     success: true,
@@ -628,7 +630,7 @@ user.get('/linked-accounts', async (c) => {
 
 user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Linked account creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Linked account creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -641,18 +643,18 @@ user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema, (resul
     id,
     userId,
     householdId,
-    providerId: data.provider_id,
-    paymentMethodId: data.payment_method_id || null,
-    emailAttached: data.email_attached || null,
-    membershipStartDate: data.membership_start_date || null,
-    membershipEndDate: data.membership_end_date || null,
-    subscriptionId: data.subscription_id || null,
+    providerId: data.providerId,
+    paymentMethodId: data.paymentMethodId || null,
+    emailAttached: data.emailAttached || null,
+    membershipStartDate: data.membershipStartDate || null,
+    membershipEndDate: data.membershipEndDate || null,
+    subscriptionId: data.subscriptionId || null,
     notes: data.notes || null,
     status: data.status || 'active'
   })
   
-  if (data.subscription_id) {
-    await db.update(subscriptions).set({ accountId: id }).where(and(eq(subscriptions.id, data.subscription_id), eq(subscriptions.householdId, householdId)))
+  if (data.subscriptionId) {
+    await db.update(subscriptions).set({ accountId: id }).where(and(eq(subscriptions.id, data.subscriptionId), eq(subscriptions.householdId, householdId)))
   }
 
   return c.json({ success: true, id })
@@ -660,7 +662,7 @@ user.post('/linked-accounts', zValidator('json', UserLinkedAccountSchema, (resul
 
 user.patch('/linked-accounts/:id', zValidator('json', UserLinkedAccountSchema.partial(), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Linked account update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Linked account update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -669,12 +671,12 @@ user.patch('/linked-accounts/:id', zValidator('json', UserLinkedAccountSchema.pa
   const db = getDb(c.env)
   
   const updates: any = {}
-  if (data.email_attached !== undefined) updates.emailAttached = data.email_attached
+  if (data.emailAttached !== undefined) updates.emailAttached = data.emailAttached
   if (data.notes !== undefined) updates.notes = data.notes
   if (data.status !== undefined) updates.status = data.status
-  if (data.membership_start_date !== undefined) updates.membershipStartDate = data.membership_start_date
-  if (data.membership_end_date !== undefined) updates.membershipEndDate = data.membership_end_date
-  if (data.payment_method_id !== undefined) updates.paymentMethodId = data.payment_method_id
+  if (data.membershipStartDate !== undefined) updates.membershipStartDate = data.membershipStartDate
+  if (data.membershipEndDate !== undefined) updates.membershipEndDate = data.membershipEndDate
+  if (data.paymentMethodId !== undefined) updates.paymentMethodId = data.paymentMethodId
   
   if (Object.keys(updates).length > 0) {
     await db.update(userLinkedAccounts).set(updates).where(and(eq(userLinkedAccounts.id, id), eq(userLinkedAccounts.userId, userId)))
@@ -704,7 +706,7 @@ user.get('/passkeys', async (c) => {
   }).from(passkeys).where(eq(passkeys.userId, userId))
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
@@ -718,13 +720,13 @@ user.get('/totps', async (c) => {
   }).from(totpCredentials).where(eq(totpCredentials.userId, userId))
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
 user.patch('/totpCredentials/:id', zValidator('json', z.object({ name: z.string() }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] TOTP update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] TOTP update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -737,7 +739,7 @@ user.patch('/totpCredentials/:id', zValidator('json', z.object({ name: z.string(
   return c.json({ success: true })
 })
 
-user.delete('/totpCredentials/:id', async (c) => {
+user.delete('/totpCredentials/:id', stepUpMiddleware, async (c) => {
   const userId = c.get('userId') as string
   const { id } = c.req.param()
   const db = getDb(c.env)
@@ -764,7 +766,7 @@ user.get('/sessions', async (c) => {
   const results = await db.select().from(sessions).where(eq(sessions.userId, userId)).orderBy(desc(sessions.lastActiveAt))
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
@@ -790,7 +792,7 @@ user.delete('/sessions', async (c) => {
     )
   )
   
-  await logAudit(c, 'sessions', 'bulk', 'REVOKE_ALL_OTHERS', null, { kept_session: sessionId })
+  await logAudit(c, 'sessions', 'bulk', 'REVOKE_ALL_OTHERS', null, { keptSession: sessionId })
   return c.json({ success: true })
 })
 
@@ -817,7 +819,7 @@ user.get('/households/:id/members', async (c) => {
   
   return c.json({
     success: true,
-    data: toSnake(members)
+    data: members
   })
 })
 
@@ -828,7 +830,7 @@ user.get('/households/:id/invites', async (c) => {
   const results = await db.select().from(householdInvites).where(and(eq(householdInvites.householdId, id), eq(householdInvites.status, 'pending')))
   return c.json({
     success: true,
-    data: toSnake(results)
+    data: results
   })
 })
 
@@ -847,7 +849,7 @@ user.delete('/households/:id/invites/:inviteId', async (c) => {
 
 user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ role: z.enum(['observer', 'member', 'admin', 'owner']) }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Member role update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Member role update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -863,9 +865,9 @@ user.patch('/households/:id/members/:memberId', zValidator('json', z.object({ ro
   return c.json({ success: true })
 })
 
-user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transfer_to_user_id: z.string().optional() }).optional(), (result, c) => {
+user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ transferToUserId: z.string().optional() }).optional(), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Member ejection validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Member ejection validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -883,11 +885,11 @@ user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ t
   
   if (orphanedBills) {
     const data = c.req.valid('json')
-    if (!data?.transfer_to_user_id) {
+    if (!data?.transferToUserId) {
        return c.json({ error: 'Ghost-Bill Lock: User owns active bills.', requiresTransfer: true }, 400)
     } else {
-       await db.update(subscriptions).set({ ownerId: data.transfer_to_user_id }).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId)))
-       await logAudit(c, 'households', id, 'OWNERSHIP_TRANSFERRED', null, { from: memberId, to: data.transfer_to_user_id, type: 'subscriptions_batch' })
+       await db.update(subscriptions).set({ ownerId: data.transferToUserId }).where(and(eq(subscriptions.householdId, id), eq(subscriptions.ownerId, memberId)))
+       await logAudit(c, 'households', id, 'OWNERSHIP_TRANSFERRED', null, { from: memberId, to: data.transferToUserId, type: 'subscriptions_batch' })
     }
   }
 
@@ -896,7 +898,7 @@ user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ t
   return c.json({ success: true })
 })
 
-user.delete('/households/:id', async (c) => {
+user.delete('/households/:id', stepUpMiddleware, async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id')
   const db = getDb(c.env)
@@ -929,9 +931,9 @@ user.post('/households/restore/:entityType/:entityId', async (c) => {
 })
 
 
-user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
+user.patch('/households/:id/transfer', stepUpMiddleware, zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Household transfer validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Household transfer validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -956,7 +958,7 @@ user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId:
 
 user.patch('/providers/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Provider transfer validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Provider transfer validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string

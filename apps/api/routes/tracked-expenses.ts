@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../types'
 import { TrackedExpenseSchema, TransactionSchema } from '@shared/schemas'
 import { getDb } from '#/index'
-import { toSnake } from '../utils'
 import { trackedExpenses, transactions, categories, systemAuditLogs } from '#/schema'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 
@@ -21,7 +20,7 @@ trackedExpensesRouter.get('/', async (c) => {
         eq(trackedExpenses.householdId, householdId),
         eq(trackedExpenses.status, 'pending')
       ))
-    return c.json({ success: true, data: toSnake(results) })
+    return c.json({ success: true, data: results })
   } catch (error: any) {
     console.error(`[TRACKED_EXPENSES_FETCH_FAILURE]`, error)
     return c.json({ error: 'Failed to fetch tracked expenses' }, 500)
@@ -39,14 +38,14 @@ trackedExpensesRouter.post('/', zValidator('json', TrackedExpenseSchema), async 
     await db.insert(trackedExpenses).values({
       id,
       householdId,
-      amountCents: data.amount_cents,
+      amountCents: data.amountCents,
       description: data.description,
       notes: data.notes || null,
-      attentionRequired: data.attention_required,
-      needsBalanceTransfer: data.needs_balance_transfer,
-      transferTiming: data.transfer_timing || null,
-      isBorrowed: data.is_borrowed,
-      borrowSource: data.borrow_source || null,
+      attentionRequired: data.attentionRequired,
+      needsBalanceTransfer: data.needsBalanceTransfer,
+      transferTiming: data.transferTiming || null,
+      isBorrowed: data.isBorrowed,
+      borrowSource: data.borrowSource || null,
       status: 'pending'
     })
     
@@ -68,14 +67,14 @@ trackedExpensesRouter.patch('/bulk', zValidator('json', z.object({
   
   try {
     const mappedUpdates: any = {}
-    if (updates.amount_cents !== undefined) mappedUpdates.amountCents = updates.amount_cents
+    if (updates.amountCents !== undefined) mappedUpdates.amountCents = updates.amountCents
     if (updates.description !== undefined) mappedUpdates.description = updates.description
     if (updates.notes !== undefined) mappedUpdates.notes = updates.notes
-    if (updates.attention_required !== undefined) mappedUpdates.attentionRequired = updates.attention_required
-    if (updates.needs_balance_transfer !== undefined) mappedUpdates.needsBalanceTransfer = updates.needs_balance_transfer
-    if (updates.transfer_timing !== undefined) mappedUpdates.transferTiming = updates.transfer_timing
-    if (updates.is_borrowed !== undefined) mappedUpdates.isBorrowed = updates.is_borrowed
-    if (updates.borrow_source !== undefined) mappedUpdates.borrowSource = updates.borrow_source
+    if (updates.attentionRequired !== undefined) mappedUpdates.attentionRequired = updates.attentionRequired
+    if (updates.needsBalanceTransfer !== undefined) mappedUpdates.needsBalanceTransfer = updates.needsBalanceTransfer
+    if (updates.transferTiming !== undefined) mappedUpdates.transferTiming = updates.transferTiming
+    if (updates.isBorrowed !== undefined) mappedUpdates.isBorrowed = updates.isBorrowed
+    if (updates.borrowSource !== undefined) mappedUpdates.borrowSource = updates.borrowSource
 
     if (Object.keys(mappedUpdates).length === 0) return c.json({ success: true, data: null })
 
@@ -96,10 +95,10 @@ trackedExpensesRouter.patch('/bulk', zValidator('json', z.object({
 // Promote to transaction
 trackedExpensesRouter.post('/promote', zValidator('json', z.object({
   ids: z.array(z.string()),
-  transaction_details: TransactionSchema.partial()
+  transactionDetails: TransactionSchema.partial()
 })), async (c) => {
   const householdId = c.get('householdId')
-  const { ids, transaction_details } = c.req.valid('json')
+  const { ids, transactionDetails } = c.req.valid('json')
   const db = getDb(c.env)
   
   try {
@@ -117,18 +116,18 @@ trackedExpensesRouter.post('/promote', zValidator('json', z.object({
       return db.insert(transactions).values({
         id: txId,
         householdId,
-        accountId: transaction_details.account_id || 'default-account',
-        categoryId: transaction_details.category_id || null,
+        accountId: transactionDetails.accountId || 'default-account',
+        categoryId: transactionDetails.categoryId || null,
         amountCents: item.amountCents,
         description: item.description,
-        transactionDate: transaction_details.transaction_date || new Date().toISOString().split('T')[0],
+        transactionDate: transactionDetails.transactionDate || new Date().toISOString().split('T')[0],
         notes: item.notes,
         attentionRequired: item.attentionRequired,
         needsBalanceTransfer: item.needsBalanceTransfer,
         transferTiming: item.transferTiming,
         isBorrowed: item.isBorrowed,
         borrowSource: item.borrowSource,
-        status: transaction_details.status || 'pending'
+        status: transactionDetails.status || 'pending'
       })
     })
     
@@ -140,31 +139,30 @@ trackedExpensesRouter.post('/promote', zValidator('json', z.object({
       ))
       
     const categoryUpdates = []
-    if (transaction_details.category_id) {
+    if (transactionDetails.categoryId) {
       const totalAmount = items.reduce((sum, item) => sum + item.amountCents, 0)
       categoryUpdates.push(
         db.update(categories)
-          .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${totalAmount}` })
-          .where(and(eq(categories.id, transaction_details.category_id), eq(categories.householdId, householdId)))
+          .set({ envelopeBalanceCents: sql`envelopeBalanceCents - ${totalAmount}` })
+          .where(and(eq(categories.id, transactionDetails.categoryId), eq(categories.householdId, householdId)))
       )
     }
       
     const auditLog = db.insert(systemAuditLogs).values({
       id: crypto.randomUUID(),
-      householdId,
       userId: 'system',
       action: 'EXPENSE_PROMOTE',
       target: 'transactions',
       detailsJson: JSON.stringify({
         itemCount: items.length,
         itemIds: ids,
-        accountId: transaction_details.account_id,
-        categoryId: transaction_details.category_id,
+        accountId: transactionDetails.accountId,
+        categoryId: transactionDetails.categoryId,
         totalAmountCents: items.reduce((sum, item) => sum + item.amountCents, 0)
       })
     })
 
-    await db.batch([...promoTxs, updateTracked, ...categoryUpdates, auditLog])
+    await db.batch([...promoTxs, updateTracked, ...categoryUpdates, auditLog] as any)
     
     return c.json({ success: true, data: null })
   } catch (error: any) {

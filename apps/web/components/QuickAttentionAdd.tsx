@@ -42,9 +42,9 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
       },
       body: JSON.stringify({
         description,
-        amount_cents: Math.round(parseFloat(amount) * 100),
-        category_id: categoryId || undefined,
-        attention_required: attentionRequired,
+        amountCents: Math.round(parseFloat(amount) * 100),
+        categoryId: categoryId || undefined,
+        attentionRequired: attentionRequired,
         needs_balance_transfer: needsBalanceTransfer,
         transfer_timing: needsBalanceTransfer ? transferTiming : null,
         is_borrowed: isBorrowed,

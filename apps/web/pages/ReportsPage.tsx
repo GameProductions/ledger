@@ -10,7 +10,7 @@ import { getApiUrl } from '../utils/api';
 interface CategorySpend {
   name: string;
   color: string;
-  total_cents: number;
+  totalCents: number;
 }
 
 interface NetWorthHistory {
@@ -23,7 +23,7 @@ interface Report {
   type: string;
   period_start: string;
   period_end: string;
-  created_at: string;
+  createdAt: string;
 }
 
 const ReportsPage: React.FC = () => {
@@ -65,7 +65,7 @@ const ReportsPage: React.FC = () => {
     if (token) fetchData();
   }, [token, showToast]);
 
-  const totalSpend = categorySpending.reduce((sum, c) => sum + c.total_cents, 0);
+  const totalSpend = categorySpending.reduce((sum, c) => sum + c.totalCents, 0);
 
   const shareSnapshot = async () => {
     try {
@@ -81,7 +81,7 @@ const ReportsPage: React.FC = () => {
           data: (categorySpending || []).map(c => ({ 
             date: new Date().toLocaleDateString(), 
             description: c.name, 
-            amount: (c.total_cents / 100).toFixed(2) 
+            amount: (c.totalCents / 100).toFixed(2) 
           })),
           expiresInDays: 7
         })
@@ -161,7 +161,7 @@ const ReportsPage: React.FC = () => {
              <div className="relative z-10">
                 <div className="text-xs uppercase tracking-widest text-secondary font-bold opacity-50 mb-1">Aggregate Net Worth</div>
                 <div className="text-3xl font-black text-white">
-                  <Price amount_cents={netWorth.current_net_worth_cents} options={{ minimumFractionDigits: 0 }} />
+                  <Price amountCents={netWorth.current_net_worth_cents} options={{ minimumFractionDigits: 0 }} />
                 </div>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-sm font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">+4.2%</span>
@@ -197,8 +197,8 @@ const ReportsPage: React.FC = () => {
             <div className="relative aspect-square flex items-center justify-center">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                 {(categorySpending || []).map((cat, i) => {
-                  const percent = (cat.total_cents / totalSpend) * 100;
-                  const offset = categorySpending.slice(0, i).reduce((sum, c) => sum + (c.total_cents / totalSpend) * 100, 0);
+                  const percent = (cat.totalCents / totalSpend) * 100;
+                  const offset = categorySpending.slice(0, i).reduce((sum, c) => sum + (c.totalCents / totalSpend) * 100, 0);
                   return (
                     <circle
                       key={i}
@@ -226,7 +226,7 @@ const ReportsPage: React.FC = () => {
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                     <span className="text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity">{cat.name}</span>
                   </div>
-                  <span className="text-sm font-black tracking-tight">${(cat.total_cents/100).toLocaleString()}</span>
+                  <span className="text-sm font-black tracking-tight">${(cat.totalCents/100).toLocaleString()}</span>
                 </div>
               ))}
             </div>

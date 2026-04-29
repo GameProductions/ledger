@@ -5,42 +5,42 @@ export type FrequencyType = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearl
 
 export interface Schedule {
   id: string;
-  start_date: string;
-  end_date?: string;
-  total_installments?: number;
-  frequency_type: FrequencyType;
-  frequency_interval: number;
-  day_of_month?: number;
-  days_of_week?: string; // Comma-separated '0-6'
+  startDate: string;
+  endDate?: string;
+  totalInstallments?: number;
+  frequencyType: FrequencyType;
+  frequencyInterval: number;
+  dayOfMonth?: number;
+  daysOfWeek?: string; // Comma-separated '0-6'
   timezone: string;
-  last_run_at?: string;
-  next_run_at: string;
-  executed_count?: number; 
+  lastRunAt?: string;
+  nextRunAt: string;
+  executedCount?: number; 
 }
 
 export class SchedulingService {
   /**
    * Calculates the next UTC occurrence timestamp for a given schedule.
-   * Returns null if the schedule has reached its terminal state (end_date or total_installments).
+   * Returns null if the schedule has reached its terminal state (endDate or totalInstallments).
    */
   static calculateNextOccurrence(schedule: Schedule, fromDate: Date = new Date(), currentExecutionCount: number = 0): Date | null {
     const tz = schedule.timezone || 'UTC';
     
     // 1. Terminal Check: Installments
-    if (schedule.total_installments && currentExecutionCount >= schedule.total_installments) {
+    if (schedule.totalInstallments && currentExecutionCount >= schedule.totalInstallments) {
       return null;
     }
 
     // 2. Determine the "Base Date" for calculation.
-    const baseDateUtc = schedule.last_run_at ? parseISO(schedule.last_run_at) : parseISO(schedule.start_date);
+    const baseDateUtc = schedule.lastRunAt ? parseISO(schedule.lastRunAt) : parseISO(schedule.startDate);
     let localDate = toZonedTime(baseDateUtc, tz);
 
     // 3. Perform the arithmetic based on frequency
-    const interval = schedule.frequency_interval || 1;
+    const interval = schedule.frequencyInterval || 1;
     let nextLocalDate = localDate;
 
     const increment = (date: Date): Date => {
-      switch (schedule.frequency_type) {
+      switch (schedule.frequencyType) {
         case 'daily':
           return addDays(date, interval);
         case 'weekly':
@@ -49,8 +49,8 @@ export class SchedulingService {
           return addDays(date, 14 * interval);
         case 'monthly':
           let nextMonth = addMonths(date, interval);
-          if (schedule.day_of_month) {
-            nextMonth = setDate(nextMonth, Math.min(schedule.day_of_month, 28));
+          if (schedule.dayOfMonth) {
+            nextMonth = setDate(nextMonth, Math.min(schedule.dayOfMonth, 28));
           }
           return nextMonth;
         case 'yearly':
@@ -81,7 +81,7 @@ export class SchedulingService {
 
 
     // 5. Terminal Check: End Date
-    if (schedule.end_date && nextUtc > parseISO(schedule.end_date)) {
+    if (schedule.endDate && nextUtc > parseISO(schedule.endDate)) {
       return null;
     }
 
@@ -92,7 +92,7 @@ export class SchedulingService {
    * Checks if a schedule should be executed now.
    */
   static shouldExecute(schedule: Schedule & { status: string }, now: Date = new Date()): boolean {
-    const nextRun = parseISO(schedule.next_run_at);
+    const nextRun = parseISO(schedule.nextRunAt);
     return nextRun <= now && schedule.status === 'active';
   }
 }

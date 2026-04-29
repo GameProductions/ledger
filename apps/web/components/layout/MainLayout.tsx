@@ -8,9 +8,11 @@ interface MainLayoutProps {
   children: React.ReactNode;
   view?: 'list' | 'calendar';
   setView?: (v: 'list' | 'calendar') => void;
+  title?: string;
+  subtitle?: string;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ children, view, setView, title, subtitle }) => {
   const { theme } = useTheme();
   const isLuxury = theme.layoutVariant === 'luxury';
   const isBusiness = theme.layoutVariant === 'business';

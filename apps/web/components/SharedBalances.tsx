@@ -9,25 +9,25 @@ import { Button } from './ui/Button'
 
 interface SharedBalance {
   id: string
-  from_user_id: string
-  to_user_id: string
-  amount_cents: number
-  transaction_id: string | null
-  from_display_name: string
-  to_display_name: string
-  from_avatar_url: string | null
-  to_avatar_url: string | null
-  transaction_description: string | null
+  fromUserId: string
+  toUserId: string
+  amountCents: number
+  transactionId: string | null
+  fromDisplayName: string
+  toDisplayName: string
+  fromAvatarUrl: string | null
+  toAvatarUrl: string | null
+  transactionDescription: string | null
 }
 
 interface BalanceSummary {
-  from_user_id: string
-  to_user_id: string
-  net_cents: number
-  from_name: string
-  to_name: string
-  from_avatar: string | null
-  to_avatar: string | null
+  fromUserId: string
+  toUserId: string
+  netCents: number
+  fromName: string
+  toName: string
+  fromAvatar: string | null
+  toAvatar: string | null
 }
 
 export default function SharedBalances() {
@@ -38,11 +38,11 @@ export default function SharedBalances() {
   const { data: members = [] } = useApi(householdId ? `/api/user/households/${householdId}/members` : null)
   
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newIOU, setNewIOU] = useState({ to_user_id: '', amount: '', description: '' })
+  const [newIOU, setNewIOU] = useState({ toUserId: '', amount: '', description: '' })
   const [adding, setAdding] = useState(false)
 
   const createIOU = async () => {
-    if (!newIOU.to_user_id || !newIOU.amount) return
+    if (!newIOU.toUserId || !newIOU.amount) return
     setAdding(true)
     try {
       const apiUrl = getApiUrl()
@@ -54,15 +54,15 @@ export default function SharedBalances() {
           'x-household-id': householdId || ''
         },
         body: JSON.stringify({
-          to_user_id: newIOU.to_user_id,
-          amount_cents: Math.round(parseFloat(newIOU.amount) * 100),
+          toUserId: newIOU.toUserId,
+          amountCents: Math.round(parseFloat(newIOU.amount) * 100),
           description: newIOU.description || undefined
         })
       })
       if (res.ok) {
         showToast('IOU recorded', 'success')
         setShowAddModal(false)
-        setNewIOU({ to_user_id: '', amount: '', description: '' })
+        setNewIOU({ toUserId: '', amount: '', description: '' })
         mutateBalances()
         mutateSummary()
       } else {
@@ -107,7 +107,7 @@ export default function SharedBalances() {
           'Authorization': `Bearer ${token}`,
           'x-household-id': householdId || ''
         },
-        body: JSON.stringify({ with_user_id: withUserId })
+        body: JSON.stringify({ withUserId: withUserId })
       })
       if (res.ok) {
         showToast('All settled!', 'success')
@@ -149,17 +149,17 @@ export default function SharedBalances() {
           <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Net Balances</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {summaryList.map((s: BalanceSummary, idx: number) => {
-              const isOwed = s.from_user_id === user?.id
+              const isOwed = s.fromUserId === user?.id
               return (
                 <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-violet-500/20 transition-all">
                   <div className="flex items-center gap-3">
                     <div className="flex -space-x-2">
-                      <img src={s.from_avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.from_user_id}`} className="w-8 h-8 rounded-lg border-2 border-black" />
-                      <img src={s.to_avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.to_user_id}`} className="w-8 h-8 rounded-lg border-2 border-black" />
+                      <img src={s.fromAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.fromUserId}`} className="w-8 h-8 rounded-lg border-2 border-black" />
+                      <img src={s.toAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.toUserId}`} className="w-8 h-8 rounded-lg border-2 border-black" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">
-                        {s.from_name} → {s.to_name}
+                        {s.fromName} → {s.toName}
                       </p>
                       <p className={`text-xs font-black uppercase tracking-widest ${isOwed ? 'text-red-400' : 'text-emerald-400'}`}>
                         {isOwed ? 'You owe' : 'Owes you'}
@@ -168,10 +168,10 @@ export default function SharedBalances() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`text-lg font-black ${isOwed ? 'text-red-400' : 'text-emerald-400'}`}>
-                      ${(Math.abs(s.net_cents) / 100).toFixed(2)}
+                      ${(Math.abs(s.netCents) / 100).toFixed(2)}
                     </span>
                     <button
-                      onClick={() => settleWith(isOwed ? s.to_user_id : s.from_user_id)}
+                      onClick={() => settleWith(isOwed ? s.toUserId : s.fromUserId)}
                       className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
                       title="Settle Up"
                     >
@@ -200,23 +200,23 @@ export default function SharedBalances() {
               <div key={b.id} className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-white/10 transition-all group">
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    <img src={b.from_avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${b.from_user_id}`} className="w-7 h-7 rounded-lg border-2 border-black" />
-                    <img src={b.to_avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${b.to_user_id}`} className="w-7 h-7 rounded-lg border-2 border-black" />
+                    <img src={b.fromAvatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${b.fromUserId}`} className="w-7 h-7 rounded-lg border-2 border-black" />
+                    <img src={b.toAvatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${b.toUserId}`} className="w-7 h-7 rounded-lg border-2 border-black" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">
-                      {b.from_display_name} → {b.to_display_name}
+                      {b.fromDisplayName} → {b.toDisplayName}
                     </p>
-                    {b.transaction_description && (
+                    {b.transactionDescription && (
                       <p className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]">
-                        {b.transaction_description}
+                        {b.transactionDescription}
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-black text-violet-400">
-                    ${(b.amount_cents / 100).toFixed(2)}
+                    ${(b.amountCents / 100).toFixed(2)}
                   </span>
                   <button
                     onClick={() => deleteBalance(b.id)}
@@ -239,7 +239,7 @@ export default function SharedBalances() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={createIOU} disabled={adding || !newIOU.to_user_id || !newIOU.amount}>
+            <Button variant="primary" onClick={createIOU} disabled={adding || !newIOU.toUserId || !newIOU.amount}>
               {adding ? 'Recording...' : 'Record IOU'}
             </Button>
           </>
@@ -249,13 +249,13 @@ export default function SharedBalances() {
           <div>
             <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Who do you owe?</label>
             <select
-              value={newIOU.to_user_id}
-              onChange={(e) => setNewIOU({ ...newIOU, to_user_id: e.target.value })}
+              value={newIOU.toUserId}
+              onChange={(e) => setNewIOU({ ...newIOU, toUserId: e.target.value })}
               className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm font-bold outline-none focus:border-violet-500/50 transition-all"
             >
               <option value="">Select a member...</option>
               {otherMembers.map((m: any) => (
-                <option key={m.id} value={m.id}>{m.display_name || m.email}</option>
+                <option key={m.id} value={m.id}>{m.displayName || m.email}</option>
               ))}
             </select>
           </div>

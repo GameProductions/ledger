@@ -4,7 +4,6 @@
 
 
 import React, { useEffect } from 'react';
-// @ts-expect-error - driver.js types are missing
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 

@@ -34,7 +34,7 @@ const SnapshotViewer: React.FC = () => {
           <div>
             <div className="text-xs font-black uppercase tracking-widest text-emerald-500 mb-2">Read-Only Snapshot</div>
             <h1 className="text-4xl font-black italic tracking-tighter text-white">{snapshot.name}</h1>
-            <p className="text-secondary text-sm uppercase tracking-widest font-bold mt-2">Captured on {new Date(snapshot.created_at).toLocaleString()}</p>
+            <p className="text-secondary text-sm uppercase tracking-widest font-bold mt-2">Captured on {new Date(snapshot.createdAt).toLocaleString()}</p>
           </div>
         </header>
 

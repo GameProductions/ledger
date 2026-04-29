@@ -8,11 +8,11 @@ import { getApiUrl } from '../utils/api';
 
 interface Session {
   id: string;
-  device_name: string;
+  deviceName: string;
   os: string;
   browser: string;
-  ip_address: string;
-  last_active_at: string;
+  ipAddress: string;
+  lastActiveAt: string;
 }
 
 export function SecurityDashboard() {
@@ -110,10 +110,10 @@ export function SecurityDashboard() {
                   </div>
                   <div>
                     <h3 className="text-slate-200 font-semibold flex items-center gap-2">
-                      {s.device_name} ({s.browser})
+                      {s.deviceName} ({s.browser})
                       {idx === 0 && <span className="px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider bg-emerald-500/20 text-emerald-400">Current</span>}
                     </h3>
-                    <p className="text-sm text-gray-400">IP: {s.ip_address} • Last Active: {new Date(s.last_active_at).toLocaleString()}</p>
+                    <p className="text-sm text-gray-400">IP: {s.ipAddress} • Last Active: {new Date(s.lastActiveAt).toLocaleString()}</p>
                   </div>
                 </div>
                 {idx !== 0 && (

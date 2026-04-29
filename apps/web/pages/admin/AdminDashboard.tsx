@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
+import { useAuth } from '../../context/AuthContext';
 
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';

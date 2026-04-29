@@ -222,9 +222,9 @@ const DataManagerPage: React.FC = () => {
               { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Groceries' },
               { key: 'icon', label: 'Icon', type: 'text', placeholder: '🛒' },
               { key: 'color', label: 'Color', type: 'text', placeholder: '#4ade80' },
-              { key: 'monthly_budget_cents', label: 'Monthly Budget', type: 'cents', placeholder: '500.00' },
-              { key: 'rollover_enabled', label: 'Rollover Unused Budget', type: 'boolean' },
-              { key: 'emergency_fund', label: 'Emergency Fund', type: 'boolean' },
+              { key: 'monthlyBudgetCents', label: 'Monthly Budget', type: 'cents', placeholder: '500.00' },
+              { key: 'rolloverEnabled', label: 'Rollover Unused Budget', type: 'boolean' },
+              { key: 'emergencyFund', label: 'Emergency Fund', type: 'boolean' },
             ]}
             displayFn={(cat: any) => (
               <div className="flex items-center gap-3">
@@ -234,8 +234,8 @@ const DataManagerPage: React.FC = () => {
                 <div>
                   <div className="font-bold text-sm">{cat.name}</div>
                   <div className="text-[10px] text-white/40 font-medium">
-                    Budget: <Price amount_cents={cat.envelope_balance_cents || cat.monthly_budget_cents || 0} />
-                    {cat.rollover_enabled ? ' · Rollover' : ''}
+                    Budget: <Price amountCents={cat.envelopeBalanceCents || cat.monthlyBudgetCents || 0} />
+                    {cat.rolloverEnabled ? ' · Rollover' : ''}
                   </div>
                 </div>
               </div>
@@ -270,7 +270,7 @@ const DataManagerPage: React.FC = () => {
                     {acc.status === 'closed' && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Closed</span>}
                   </div>
                   <div className="text-[10px] text-white/40 font-medium">
-                    <Price amount_cents={acc.balance_cents} /> · {acc.type} · {acc.currency || 'USD'}
+                    <Price amountCents={acc.balance_cents} /> · {acc.type} · {acc.currency || 'USD'}
                   </div>
                 </div>
               </div>
@@ -285,17 +285,17 @@ const DataManagerPage: React.FC = () => {
             icon={<CreditCard size={18} />}
             apiPath="/api/financials/credit-cards"
             fields={[
-              { key: 'account_id', label: 'Account ID', type: 'text' },
+              { key: 'accountId', label: 'Account ID', type: 'text' },
               { key: 'credit_limit_cents', label: 'Credit Limit', type: 'cents', placeholder: '5000.00' },
-              { key: 'interest_rate_apy', label: 'Interest Rate APY (%)', type: 'number', placeholder: '24.99' },
-              { key: 'statement_closing_day', label: 'Statement Closing Day', type: 'number', placeholder: '15' },
-              { key: 'payment_due_day', label: 'Payment Due Day', type: 'number', placeholder: '5' },
+              { key: 'interestRateApy', label: 'Interest Rate APY (%)', type: 'number', placeholder: '24.99' },
+              { key: 'statementClosingDay', label: 'Statement Closing Day', type: 'number', placeholder: '15' },
+              { key: 'paymentDueDay', label: 'Payment Due Day', type: 'number', placeholder: '5' },
             ]}
             displayFn={(card: any) => (
               <div>
-                <div className="font-bold text-sm">Credit Card · {card.account_id?.slice(0, 12)}...</div>
+                <div className="font-bold text-sm">Credit Card · {card.accountId?.slice(0, 12)}...</div>
                 <div className="text-[10px] text-white/40 font-medium">
-                  Limit: <Price amount_cents={card.credit_limit_cents} /> · Statement Day: {card.statement_closing_day} · Due Day: {card.payment_due_day}
+                  Limit: <Price amountCents={card.credit_limit_cents} /> · Statement Day: {card.statementClosingDay} · Due Day: {card.paymentDueDay}
                 </div>
               </div>
             )}
@@ -317,7 +317,7 @@ const DataManagerPage: React.FC = () => {
                 { value: 'apple_pay', label: 'Apple Pay' }, { value: 'google_pay', label: 'Google Pay' },
                 { value: 'other', label: 'Other' }
               ]},
-              { key: 'last_four', label: 'Last 4 Digits', type: 'text', placeholder: '1234' },
+              { key: 'lastFour', label: 'Last 4 Digits', type: 'text', placeholder: '1234' },
             ]}
             displayFn={(pm: any) => (
               <div className="flex items-center gap-3">
@@ -326,7 +326,7 @@ const DataManagerPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="font-bold text-sm">{pm.name || pm.type}</div>
-                  <div className="text-[10px] text-white/40 font-medium">{pm.type}{pm.last_four ? ` · ****${pm.last_four}` : ''}</div>
+                  <div className="text-[10px] text-white/40 font-medium">{pm.type}{pm.lastFour ? ` · ****${pm.lastFour}` : ''}</div>
                 </div>
               </div>
             )}
@@ -341,8 +341,8 @@ const DataManagerPage: React.FC = () => {
             apiPath="/api/user/linked-accounts"
             scope="user"
             fields={[
-              { key: 'provider_id', label: 'Provider ID', type: 'text' },
-              { key: 'email_attached', label: 'Email', type: 'text', placeholder: 'account@email.com' },
+              { key: 'providerId', label: 'Provider ID', type: 'text' },
+              { key: 'emailAttached', label: 'Email', type: 'text', placeholder: 'account@email.com' },
               { key: 'status', label: 'Status', type: 'select', options: [
                 { value: 'active', label: 'Active' }, { value: 'cancelled', label: 'Cancelled' },
                 { value: 'expired', label: 'Expired' }, { value: 'pending', label: 'Pending' }
@@ -355,9 +355,9 @@ const DataManagerPage: React.FC = () => {
                   <Link2 size={14} />
                 </div>
                 <div>
-                  <div className="font-bold text-sm">{la.provider_name || la.custom_label || 'Linked Account'}</div>
+                  <div className="font-bold text-sm">{la.providerName || la.custom_label || 'Linked Account'}</div>
                   <div className="text-[10px] text-white/40 font-medium">
-                    {la.email_attached || 'No email'} · <span className={la.status === 'active' ? 'text-emerald-400' : 'text-amber-400'}>{la.status || 'unknown'}</span>
+                    {la.emailAttached || 'No email'} · <span className={la.status === 'active' ? 'text-emerald-400' : 'text-amber-400'}>{la.status || 'unknown'}</span>
                   </div>
                 </div>
               </div>
@@ -373,16 +373,16 @@ const DataManagerPage: React.FC = () => {
             apiPath="/api/financials/pairing-rules"
             fields={[
               { key: 'pattern', label: 'Pattern (match description)', type: 'text', placeholder: 'e.g. AMAZON*' },
-              { key: 'target_provider_id', label: 'Target Provider ID', type: 'text', placeholder: 'Provider UUID (optional)' },
-              { key: 'target_category_id', label: 'Target Category ID', type: 'text', placeholder: 'Category UUID (optional)' },
+              { key: 'target_providerId', label: 'Target Provider ID', type: 'text', placeholder: 'Provider UUID (optional)' },
+              { key: 'target_categoryId', label: 'Target Category ID', type: 'text', placeholder: 'Category UUID (optional)' },
               { key: 'auto_confirm', label: 'Auto Confirm', type: 'boolean' },
             ]}
             displayFn={(rule: any) => (
               <div>
                 <div className="font-bold text-sm font-mono">{rule.pattern}</div>
                 <div className="text-[10px] text-white/40 font-medium">
-                  {rule.target_provider_id ? `Provider: ${rule.target_provider_id.slice(0, 8)}...` : ''}
-                  {rule.target_category_id ? ` · Category: ${rule.target_category_id.slice(0, 8)}...` : ''}
+                  {rule.target_providerId ? `Provider: ${rule.target_providerId.slice(0, 8)}...` : ''}
+                  {rule.target_categoryId ? ` · Category: ${rule.target_categoryId.slice(0, 8)}...` : ''}
                   {rule.auto_confirm ? ' · Auto-confirm' : ''}
                 </div>
               </div>
@@ -398,16 +398,16 @@ const DataManagerPage: React.FC = () => {
             apiPath="/api/planning/installment-plans"
             fields={[
               { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Furniture Payment' },
-              { key: 'total_amount_cents', label: 'Total Amount', type: 'cents', placeholder: '2400.00' },
-              { key: 'installment_amount_cents', label: 'Per Installment', type: 'cents', placeholder: '200.00' },
-              { key: 'total_installments', label: 'Total Installments', type: 'number', placeholder: '12' },
+              { key: 'totalAmountCents', label: 'Total Amount', type: 'cents', placeholder: '2400.00' },
+              { key: 'installmentAmountCents', label: 'Per Installment', type: 'cents', placeholder: '200.00' },
+              { key: 'totalInstallments', label: 'Total Installments', type: 'number', placeholder: '12' },
               { key: 'frequency', label: 'Frequency', type: 'select', options: [
                 { value: 'weekly', label: 'Weekly' }, { value: 'biweekly', label: 'Biweekly' },
                 { value: 'monthly', label: 'Monthly' }, { value: 'quarterly', label: 'Quarterly' },
                 { value: 'yearly', label: 'Yearly' }
               ]},
-              { key: 'next_payment_date', label: 'Next Payment Date', type: 'date' },
-              { key: 'payment_mode', label: 'Payment Mode', type: 'select', options: [
+              { key: 'nextPayDate', label: 'Next Payment Date', type: 'date' },
+              { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: [
                 { value: 'manual', label: 'Manual' }, { value: 'autopay', label: 'Autopay' }
               ]},
             ]}
@@ -415,7 +415,7 @@ const DataManagerPage: React.FC = () => {
               <div>
                 <div className="font-bold text-sm">{plan.name}</div>
                 <div className="text-[10px] text-white/40 font-medium">
-                  <Price amount_cents={plan.installment_amount_cents} />/installment · {plan.remaining_installments}/{plan.total_installments} remaining · {plan.frequency} · Next: {plan.next_payment_date}
+                  <Price amountCents={plan.installmentAmountCents} />/installment · {plan.remainingInstallments}/{plan.totalInstallments} remaining · {plan.frequency} · Next: {plan.nextPayDate}
                 </div>
               </div>
             )}

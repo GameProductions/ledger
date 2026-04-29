@@ -43,17 +43,17 @@ const AdminAudit: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-black uppercase tracking-widest text-cyan-400">{log.action}</span>
-                <span className="text-xs text-gray-500 font-mono tracking-tighter">{new Date(log.createdAt || log.created_at).toLocaleString()}</span>
+                <span className="text-xs text-gray-500 font-mono tracking-tighter">{new Date(log.createdAt).toLocaleString()}</span>
               </div>
               <p className="text-sm text-gray-300 font-medium">
-                Admin: <span className="text-emerald-400">{log.actorName || log.actor_name || 'System'}</span> 
+                Admin: <span className="text-emerald-400">{log.actorName || 'System'}</span> 
                 {' ● '} 
-                Target: <span className="text-white">{log.target_name || log.target_type || 'Unknown'}</span> 
-                ID: <span className="opacity-40 font-mono text-xs">{log.target_id || log.id}</span>
+                Target: <span className="text-white">{log.targetName || log.targetType || 'Unknown'}</span> 
+                ID: <span className="opacity-40 font-mono text-xs">{log.targetId || log.id}</span>
               </p>
-              {(log.detailsJson || log.details_json) && (
+              {log.detailsJson && (
                 <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5 font-mono text-xs text-gray-500 overflow-x-auto">
-                  {JSON.stringify(typeof (log.detailsJson || log.details_json) === 'string' ? JSON.parse(log.detailsJson || log.details_json) : (log.detailsJson || log.details_json), null, 2)}
+                  {JSON.stringify(typeof log.detailsJson === 'string' ? JSON.parse(log.detailsJson) : log.detailsJson, null, 2)}
                 </div>
               )}
             </div>

@@ -243,10 +243,20 @@ app.get('/api/config', async (c) => {
   const cached = await c.env.TITAN_GUARD_CACHE?.get('API_CONFIG', 'json')
   if (cached) return c.json(cached)
 
+  // --- System Configuration (Titan Guard v6.1 Filtered) ---
+  const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
   const db = getDb(c.env)
-  const configs = await db.select({ configKey: systemConfig.configKey, configValue: systemConfig.configValue }).from(systemConfig);
-  const result = configs.reduce((acc: Record<string, string>, curr: { configKey: string | null; configValue: string | null }) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {})
-  
+  const config = await db.select().from(systemConfig);
+  const publicConfig = config
+    .filter(c => PUBLIC_CONFIG_KEYS.includes(c.configKey as string))
+    .reduce((acc, curr) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {});
+
+  const result = {
+    ...publicConfig,
+    environment: c.env.ENVIRONMENT || 'production',
+    discordClientId: c.env.DISCORD_CLIENT_ID
+  }
+
   const cache = c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE;
   if (cache) c.executionCtx.waitUntil(cache.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
   return c.json({ success: true, data: result })

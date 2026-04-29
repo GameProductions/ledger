@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Fingerprint, RefreshCw } from 'lucide-react'
+import { Fingerprint, RefreshCw, Check } from 'lucide-react'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Modal } from '../../components/ui/Modal'
 import { PasswordChecklist } from '../../components/PasswordChecklist'
@@ -18,6 +18,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('')
   const [totpCode, setTotpCode] = useState('')
   const [mfaRequired, setMfaRequired] = useState(false)
+  const [persistent, setPersistent] = useState(true)
   const [loading, setLoading] = useState(false)
   
   // Recovery State
@@ -83,7 +84,12 @@ const LoginPage: React.FC = () => {
       const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, totpCode: totpCode || undefined })
+        body: JSON.stringify({ 
+          username, 
+          password, 
+          totpCode: totpCode || undefined,
+          persistent 
+        })
       })
       
       if (!res.ok) {
@@ -136,7 +142,7 @@ const LoginPage: React.FC = () => {
                const cred = new (window as any).PasswordCredential({
                  id: username,
                  password: password,
-                 name: profile.display_name
+                 name: profile.displayName
                });
                navigator.credentials.store(cred);
              } catch (e) {
@@ -151,6 +157,33 @@ const LoginPage: React.FC = () => {
       showToast('Network error during login.', 'error')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleTokenLogin = async (token: string) => {
+    try {
+      const apiUrl = getApiUrl()
+      const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      })
+
+      if (!profileRes.ok) {
+        showToast('Login sequence failed: Profile retrieval error', 'error');
+        return;
+      }
+
+      const profileEnvelope = await profileRes.json()
+      if (!profileEnvelope.success || !profileEnvelope.data) {
+        showToast('Security Identity Error: Missing profile data', 'error');
+        return;
+      }
+      
+      const profile = profileEnvelope.data;
+      login(token, profile)
+      window.location.hash = '#/'
+    } catch (e) {
+      showToast('Network error during profile sync.', 'error')
     }
   }
 
@@ -277,7 +310,13 @@ const LoginPage: React.FC = () => {
                     showReveal={true}
                     className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono tracking-widest text-lg"
                   />
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center px-1">
+                   <div className="flex items-center gap-3 group cursor-pointer select-none" onClick={() => setPersistent(!persistent)}>
+                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${persistent ? 'bg-primary border-primary' : 'bg-transparent border-white/20 group-hover:border-white/40'}`}>
+                       {persistent && <Check size={14} className="text-black font-black" strokeWidth={4} />}
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-secondary group-hover:text-white transition-colors">Keep me signed in</span>
+                   </div>
                    <button 
                     type="button"
                     onClick={() => setIsForgotModalOpen(true)}
@@ -322,7 +361,7 @@ const LoginPage: React.FC = () => {
             <button 
               onClick={() => {
                 const baseApi = getApiUrl().replace(/\/$/, '');
-                window.location.href = `${baseApi}/api/auth/login/google`;
+                window.location.href = `${baseApi}/api/auth/login/google?persistent=${persistent}`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"
             >
@@ -332,7 +371,7 @@ const LoginPage: React.FC = () => {
             <button 
               onClick={() => {
                 const baseApi = getApiUrl().replace(/\/$/, '');
-                window.location.href = `${baseApi}/api/auth/login/discord`;
+                window.location.href = `${baseApi}/api/auth/login/discord?persistent=${persistent}`;
               }}
               className="flex items-center justify-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-sm"
             >

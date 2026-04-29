@@ -21,7 +21,8 @@ export const logAudit = (
       
       const db = drizzle(c.env.DB);
       const user = c.var?.user;
-      const actorId = user?.id || c.get('userId') || c.get('user_id') || 'unauthenticated';
+      const actorId = user?.id || c.get('userId') || 'unauthenticated';
+      const householdId = c.get('householdId') || 'system';
       
       // Tier 1 Telemetry Extraction
       const ipAddress = c.req.header('cf-connecting-ip') || 
@@ -33,6 +34,7 @@ export const logAudit = (
       const pseudoIp = c.req.header('cf-pseudo-ipv4') || undefined;
 
       await db.insert(auditLogs).values({
+        householdId,
         actorId,
         ipAddress,
         userAgent,

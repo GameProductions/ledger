@@ -20,6 +20,9 @@ const SupportPortal: React.FC = () => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: 'General',
     priority: 'medium'
   });
 
@@ -200,7 +203,7 @@ const SupportPortal: React.FC = () => {
                     <div className="flex items-center gap-3 text-[10px] uppercase font-black tracking-widest opacity-40">
                       <span className="text-primary">{selectedIssue.category}</span>
                       <span className="text-secondary">•</span>
-                      <span>{new Date(selectedIssue.created_at).toLocaleString()}</span>
+                      <span>{new Date(selectedIssue.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
                   <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${selectedIssue.status === 'open' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
@@ -221,10 +224,10 @@ const SupportPortal: React.FC = () => {
                   <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {comments && comments.length > 0 ? (
                       comments.map((comment: any) => (
-                        <div key={comment.id} className={`p-4 rounded-xl border ${comment.user_id ? 'bg-primary/5 border-primary/20' : 'bg-white/5 border-glass-border'}`}>
+                        <div key={comment.id} className={`p-4 rounded-xl border ${comment.userId ? 'bg-primary/5 border-primary/20' : 'bg-white/5 border-glass-border'}`}>
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{comment.author_name}</span>
-                            <span className="text-[10px] opacity-40">{new Date(comment.created_at).toLocaleDateString()}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{comment.authorName}</span>
+                            <span className="text-[10px] opacity-40">{new Date(comment.createdAt).toLocaleDateString()}</span>
                           </div>
                           <p className="text-sm">{comment.body}</p>
                         </div>
@@ -286,11 +289,11 @@ const SupportPortal: React.FC = () => {
                   <div className="flex items-center gap-3 text-[10px] uppercase font-black tracking-widest opacity-40 mb-3">
                     <span className="text-primary">{issue.category}</span>
                     <span className="text-secondary">•</span>
-                    <span>{new Date(issue.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
                   </div>
-                  {issue.github_issue_url && (
+                  {issue.githubIssueUrl && (
                     <a 
-                      href={issue.github_issue_url} 
+                      href={issue.githubIssueUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20"

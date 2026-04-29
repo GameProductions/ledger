@@ -9,7 +9,7 @@ interface SchedulingPickerProps {
     frequency_interval: number;
     day_of_month?: number;
     days_of_week?: string;
-    total_installments?: number;
+    totalInstallments?: number;
   };
   onChange: (value: any) => void;
 }
@@ -122,24 +122,24 @@ const SchedulingPicker: React.FC<SchedulingPickerProps> = ({ value, onChange }) 
         <label className="flex items-center gap-3 cursor-pointer group">
           <input 
             type="checkbox" 
-            checked={!!value.total_installments} 
-            onChange={(e) => updateField('total_installments', e.target.checked ? 12 : undefined)}
+            checked={!!value.totalInstallments} 
+            onChange={(e) => updateField('totalInstallments', e.target.checked ? 12 : undefined)}
             className="hidden"
           />
-          <div className={`w-10 h-6 rounded-full transition-all relative ${value.total_installments ? 'bg-primary' : 'bg-white/10'}`}>
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${value.total_installments ? 'right-1' : 'left-1'}`} />
+          <div className={`w-10 h-6 rounded-full transition-all relative ${value.totalInstallments ? 'bg-primary' : 'bg-white/10'}`}>
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${value.totalInstallments ? 'right-1' : 'left-1'}`} />
           </div>
           <span className="text-sm font-bold text-secondary group-hover:text-white transition-colors">Terminate after fixed number of occurrences</span>
         </label>
 
-        {value.total_installments && (
+        {value.totalInstallments && (
            <div className="mt-4 animate-in zoom-in-95 duration-200">
              <input
                 type="number"
                 min="1"
                 placeholder="Number of installments (e.g. 12)"
-                value={value.total_installments}
-                onChange={(e) => updateField('total_installments', parseInt(e.target.value) || 1)}
+                value={value.totalInstallments}
+                onChange={(e) => updateField('totalInstallments', parseInt(e.target.value) || 1)}
                 className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-sm font-bold focus:outline-none focus:border-primary transition-all"
               />
            </div>

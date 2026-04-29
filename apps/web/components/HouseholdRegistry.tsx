@@ -277,13 +277,13 @@ const HouseholdRegistry: React.FC = () => {
                  <div key={m.id} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between group hover:border-emerald-500/20 transition-all">
                     <div className="flex items-center gap-3">
                        <img 
-                         src={m.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.id}`} 
+                         src={m.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.id}`} 
                          className="w-10 h-10 rounded-xl border border-white/10" 
-                         alt={m.display_name} 
+                         alt={m.displayName} 
                        />
                        <div>
                           <div className="flex items-center gap-2">
-                             <p className="text-sm font-black uppercase tracking-tight">{m.display_name || 'System User'}</p>
+                             <p className="text-sm font-black uppercase tracking-tight">{m.displayName || 'System User'}</p>
                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest ${
                                m.role === 'owner' ? 'bg-emerald-500 text-black' :
                                m.role === 'admin' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :

@@ -164,7 +164,7 @@ const DataCenterPage: React.FC = () => {
                     {scanResult && (
                       <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10 animate-in slide-in-from-top-4 duration-500 flex gap-8 items-center">
                          <div className="w-24 h-24 rounded-3xl bg-black/40 border border-white/5 overflow-hidden flex items-center justify-center">
-                            {scanResult.logo_url ? <img src={scanResult.logo_url} alt="" className="w-full h-full object-contain p-4" /> : <Globe size={32} className="text-slate-700" />}
+                            {scanResult.logoUrl ? <img src={scanResult.logoUrl} alt="" className="w-full h-full object-contain p-4" /> : <Globe size={32} className="text-slate-700" />}
                          </div>
                          <div className="flex-1">
                             <h4 className="text-2xl font-black italic uppercase tracking-tighter">{scanResult.name}</h4>

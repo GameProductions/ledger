@@ -19,7 +19,7 @@ interop.post('/coach/ask/ask', zValidator('json', z.object({
   const db = getDb(c.env)
 
   // Fetch some context for the coach
-  const totalSpend = await db.select({ total: sql`sum(amount_cents)` })
+  const totalSpend = await db.select({ total: sql`sum(amountCents)` })
     .from(transactions)
     .where(eq(transactions.householdId, householdId))
     .then(res => res[0]?.total || 0)
@@ -69,17 +69,17 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
 interop.patch('/developer/webhooks/:id', zValidator('json', z.object({
   url: z.string().url().optional(),
   events: z.array(z.string()).optional(),
-  is_active: z.boolean().optional()
+  isActive: z.boolean().optional()
 })), async (c) => {
   const householdId = c.get('householdId')
   const id = c.req.param('id')
-  const { url, events, is_active } = c.req.valid('json')
+  const { url, events, isActive } = c.req.valid('json')
   const db = getDb(c.env)
   
   const updates: any = {}
   if (url) updates.url = url
   if (events) updates.eventList = JSON.stringify(events)
-  if (is_active !== undefined) updates.isActive = is_active
+  if (isActive !== undefined) updates.isActive = isActive
   
   await db.update(webhooks).set(updates).where(and(eq(webhooks.id, id), eq(webhooks.householdId, householdId)))
   return c.json({ success: true })

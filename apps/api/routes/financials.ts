@@ -17,7 +17,7 @@ import {
   TransactionPairingRuleSchema
 } from '@shared/schemas'
 import { dispatchWebhook } from '../services/webhook-service'
-import { logAudit, toSnake, apiError } from '../utils'
+import { logAudit, apiError } from '../utils'
 import { getDb } from '#/index'
 import { 
   categories,
@@ -48,9 +48,9 @@ financials.get('/categories', async (c) => {
       success: true, 
       data: results.map(row => {
         try {
-          return CategoryOutputSchema.parse(toSnake(row))
+          return CategoryOutputSchema.parse(row)
         } catch (e: any) {
-          console.error(`[DIAGNOSTIC_FAILURE] Category validation failed for row ${row.id}:`, e.errors || e.message);
+          console.error(`[DIAGNOSTIC_FAILURE] Category validation failed for row ${row.id}:`, e.issues || e.message);
           throw e;
         }
       }) 
@@ -68,8 +68,8 @@ financials.post('/categories', zValidator('json', CategorySchema), async (c) => 
   const db = getDb(c.env)
   await db.insert(categories).values({
     id, householdId, name: data.name, icon: data.icon || null, color: data.color || null,
-    monthlyBudgetCents: data.monthly_budget_cents || 0, rolloverEnabled: data.rollover_enabled || false,
-    emergencyFund: data.emergency_fund || false
+    monthlyBudgetCents: data.monthlyBudgetCents || 0, rolloverEnabled: data.rolloverEnabled || false,
+    emergencyFund: data.emergencyFund || false
   })
   await logAudit(c, 'categories', id, 'CREATE', null, data)
   return c.json({ success: true, id })
@@ -84,9 +84,9 @@ financials.patch('/categories/:id', zValidator('json', CategorySchema.partial())
   if (data.name !== undefined) updates.name = data.name
   if (data.icon !== undefined) updates.icon = data.icon
   if (data.color !== undefined) updates.color = data.color
-  if (data.monthly_budget_cents !== undefined) updates.monthlyBudgetCents = data.monthly_budget_cents
-  if (data.rollover_enabled !== undefined) updates.rolloverEnabled = data.rollover_enabled
-  if (data.emergency_fund !== undefined) updates.emergencyFund = data.emergency_fund
+  if (data.monthlyBudgetCents !== undefined) updates.monthlyBudgetCents = data.monthlyBudgetCents
+  if (data.rolloverEnabled !== undefined) updates.rolloverEnabled = data.rolloverEnabled
+  if (data.emergencyFund !== undefined) updates.emergencyFund = data.emergencyFund
   if (Object.keys(updates).length > 0) {
     await db.update(categories).set(updates).where(and(eq(categories.id, id), eq(categories.householdId, householdId)))
     await logAudit(c, 'categories', id, 'UPDATE', null, data)
@@ -122,9 +122,9 @@ financials.get('/accounts', async (c) => {
       success: true, 
       data: results.map(row => {
         try {
-          return AccountOutputSchema.parse(toSnake(row))
+          return AccountOutputSchema.parse(row)
         } catch (e: any) {
-          console.error(`[DIAGNOSTIC_FAILURE] Account validation failed for row ${row.id}:`, e.errors || e.message);
+          console.error(`[DIAGNOSTIC_FAILURE] Account validation failed for row ${row.id}:`, e.issues || e.message);
           throw e;
         }
       }) 
@@ -142,7 +142,7 @@ financials.post('/accounts', zValidator('json', AccountSchema), async (c) => {
   const db = getDb(c.env)
   await db.insert(accounts).values({
     id, householdId, name: data.name, type: data.type,
-    balanceCents: data.balance_cents || 0, currency: data.currency || 'USD',
+    balanceCents: data.balanceCents || 0, currency: data.currency || 'USD',
     status: data.status || 'active'
   })
   await logAudit(c, 'accounts', id, 'CREATE', null, data)
@@ -157,7 +157,7 @@ financials.patch('/accounts/:id', zValidator('json', AccountSchema.partial()), a
   const updates: any = {}
   if (data.name !== undefined) updates.name = data.name
   if (data.type !== undefined) updates.type = data.type
-  if (data.balance_cents !== undefined) updates.balanceCents = data.balance_cents
+  if (data.balanceCents !== undefined) updates.balanceCents = data.balanceCents
   if (data.currency !== undefined) updates.currency = data.currency
   if (data.status !== undefined) updates.status = data.status
   if (Object.keys(updates).length > 0) {
@@ -184,13 +184,13 @@ financials.get('/credit-cards', async (c) => {
   const results = await db.select().from(creditCards).where(eq(creditCards.householdId, householdId))
   return c.json({ 
     success: true, 
-    data: toSnake(results)
+    data: results
   })
 })
 
 financials.post('/credit-cards', zValidator('json', CreditCardSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Credit card creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Credit card creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
@@ -200,15 +200,15 @@ financials.post('/credit-cards', zValidator('json', CreditCardSchema, (result, c
   await db.insert(creditCards).values({
     id,
     householdId,
-    accountId: data.account_id,
-    creditLimitCents: data.credit_limit_cents,
-    interestRateApy: data.interest_rate_apy || 0,
-    statementClosingDay: data.statement_closing_day,
-    paymentDueDay: data.payment_due_day,
+    accountId: data.accountId,
+    creditLimitCents: data.creditLimitCents,
+    interestRateApy: data.interestRateApy || 0,
+    statementClosingDay: data.statementClosingDay,
+    paymentDueDay: data.paymentDueDay,
   })
   await logAudit(c, 'credit_cards', id, 'CREATE', null, { 
-    account_id: data.account_id, 
-    credit_limit: data.credit_limit_cents 
+    accountId: data.accountId, 
+    creditLimit: data.creditLimitCents 
   })
   return c.json({ success: true, id })
 })
@@ -219,11 +219,11 @@ financials.patch('/credit-cards/:id', zValidator('json', CreditCardSchema.partia
   const data = c.req.valid('json')
   const db = getDb(c.env)
   const updates: any = {}
-  if (data.account_id !== undefined) updates.accountId = data.account_id
-  if (data.credit_limit_cents !== undefined) updates.creditLimitCents = data.credit_limit_cents
-  if (data.interest_rate_apy !== undefined) updates.interestRateApy = data.interest_rate_apy
-  if (data.statement_closing_day !== undefined) updates.statementClosingDay = data.statement_closing_day
-  if (data.payment_due_day !== undefined) updates.paymentDueDay = data.payment_due_day
+  if (data.accountId !== undefined) updates.accountId = data.accountId
+  if (data.creditLimitCents !== undefined) updates.creditLimitCents = data.creditLimitCents
+  if (data.interestRateApy !== undefined) updates.interestRateApy = data.interestRateApy
+  if (data.statementClosingDay !== undefined) updates.statementClosingDay = data.statementClosingDay
+  if (data.paymentDueDay !== undefined) updates.paymentDueDay = data.paymentDueDay
   if (Object.keys(updates).length > 0) {
     await db.update(creditCards).set(updates).where(and(eq(creditCards.id, id), eq(creditCards.householdId, householdId)))
     await logAudit(c, 'credit_cards', id, 'UPDATE', null, data)
@@ -245,7 +245,7 @@ financials.get('/pairing-rules', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(transactionPairingRules).where(eq(transactionPairingRules.householdId, householdId))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/pairing-rules', zValidator('json', TransactionPairingRuleSchema), async (c) => {
@@ -255,9 +255,9 @@ financials.post('/pairing-rules', zValidator('json', TransactionPairingRuleSchem
   const db = getDb(c.env)
   await db.insert(transactionPairingRules).values({
     id, householdId, pattern: data.pattern,
-    targetProviderId: data.target_provider_id || null,
-    targetCategoryId: data.target_category_id || null,
-    autoConfirm: data.auto_confirm || false
+    targetProviderId: data.targetProviderId || null,
+    targetCategoryId: data.targetCategoryId || null,
+    autoConfirm: data.autoConfirm || false
   })
   await logAudit(c, 'pairing_rules', id, 'CREATE', null, data)
   return c.json({ success: true, id })
@@ -270,9 +270,9 @@ financials.patch('/pairing-rules/:id', zValidator('json', TransactionPairingRule
   const db = getDb(c.env)
   const updates: any = {}
   if (data.pattern !== undefined) updates.pattern = data.pattern
-  if (data.target_provider_id !== undefined) updates.targetProviderId = data.target_provider_id
-  if (data.target_category_id !== undefined) updates.targetCategoryId = data.target_category_id
-  if (data.auto_confirm !== undefined) updates.autoConfirm = data.auto_confirm
+  if (data.targetProviderId !== undefined) updates.targetProviderId = data.targetProviderId
+  if (data.targetCategoryId !== undefined) updates.targetCategoryId = data.targetCategoryId
+  if (data.autoConfirm !== undefined) updates.autoConfirm = data.autoConfirm
   if (Object.keys(updates).length > 0) {
     await db.update(transactionPairingRules).set(updates).where(and(eq(transactionPairingRules.id, id), eq(transactionPairingRules.householdId, householdId)))
     await logAudit(c, 'pairing_rules', id, 'UPDATE', null, data)
@@ -297,13 +297,13 @@ financials.get('/transactions', async (c) => {
     offset: c.req.query('offset')
   })
   
-  const categoryId = c.req.query('category_id')
-  const accountId = c.req.query('account_id')
+  const categoryId = c.req.query('categoryId')
+  const accountId = c.req.query('accountId')
   const q = c.req.query('q')
-  const sortBy = c.req.query('sort_by') || 'date' 
-  const sortDir = c.req.query('sort_dir') || 'desc'
-  const startDate = c.req.query('start_date')
-  const endDate = c.req.query('end_date')
+  const sortBy = c.req.query('sortBy') || 'date' 
+  const sortDir = c.req.query('sortDir') || 'desc'
+  const startDate = c.req.query('startDate')
+  const endDate = c.req.query('endDate')
 
   const db = getDb(c.env)
 
@@ -326,9 +326,9 @@ financials.get('/transactions', async (c) => {
       success: true, 
       data: results.map(row => {
         try {
-          return TransactionOutputSchema.parse(toSnake(row))
+          return TransactionOutputSchema.parse(row)
         } catch (e: any) {
-          console.error(`[DIAGNOSTIC_FAILURE] Transaction validation failed for row ${row.id}:`, e.errors || e.message);
+          console.error(`[DIAGNOSTIC_FAILURE] Transaction validation failed for row ${row.id}:`, e.issues || e.message);
           throw e;
         }
       }),
@@ -341,27 +341,27 @@ financials.get('/transactions', async (c) => {
 })
 
 financials.post('/transactions/infer', zValidator('json', z.object({
-  raw_description: z.string()
+  rawDescription: z.string()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transaction inference validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction inference validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
-  const { raw_description } = c.req.valid('json')
+  const { rawDescription } = c.req.valid('json')
   const db = getDb(c.env)
   
-  const suggestions = await inferTransactionDetails(db, householdId, raw_description)
+  const suggestions = await inferTransactionDetails(db, householdId, rawDescription)
   return c.json({ suggestions })
 })
 
 financials.post('/transactions', zValidator('json', TransactionSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transaction creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction creation validation failed:`, result.error.issues);
     return c.json({ 
       success: false, 
       error: 'Invalid transaction data', 
-      details: result.error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+      details: result.error.issues.map(e => ({ field: e.path.join('.'), message: e.message }))
     }, 400);
   }
 }), async (c) => {
@@ -380,42 +380,42 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     const isRequired = config?.configValue === 'true';
 
     if (isRequired) {
-      if (!data.account_id) {
+      if (!data.accountId) {
         throw new HTTPException(400, { message: 'Please select an account for this transaction.' })
       }
-      if (!data.category_id) {
+      if (!data.categoryId) {
         throw new HTTPException(400, { message: 'Please select a category for this transaction.' })
       }
     }
     
     const id = crypto.randomUUID()
-    const date = data.transaction_date || new Date().toISOString().split('T')[0]
+    const date = data.transactionDate || new Date().toISOString().split('T')[0]
     
     const insertTx = db.insert(transactions).values({
       id,
       householdId,
-      accountId: (data.account_id && data.account_id.trim() !== '') ? data.account_id : null, 
-      categoryId: (data.category_id && data.category_id.trim() !== '') ? data.category_id : null,
+      accountId: data.accountId as string, 
+      categoryId: (data.categoryId && data.categoryId.trim() !== '') ? data.categoryId : null,
       description: data.description,
-      amountCents: data.amount_cents,
+      amountCents: data.amountCents,
       transactionDate: date,
       notes: (data.notes && data.notes.trim() !== '') ? data.notes : null,
-      rawDescription: (data.raw_description && data.raw_description.trim() !== '') ? data.raw_description : null,
-      parentId: (data.parent_id && data.parent_id.trim() !== '') ? data.parent_id : null,
-      providerId: (data.provider_id && data.provider_id.trim() !== '') ? data.provider_id : null,
-      billId: (data.bill_id && data.bill_id.trim() !== '') ? data.bill_id : null,
-      attentionRequired: data.attention_required,
-      needsBalanceTransfer: data.needs_balance_transfer,
-      transferTiming: data.transfer_timing || null,
-      isBorrowed: data.is_borrowed,
-      borrowSource: data.borrow_source || null,
-      accountedFor: data.accounted_for,
+      rawDescription: (data.rawDescription && data.rawDescription.trim() !== '') ? data.rawDescription : null,
+      parentId: (data.parentId && data.parentId.trim() !== '') ? data.parentId : null,
+      providerId: (data.providerId && data.providerId.trim() !== '') ? data.providerId : null,
+      billId: (data.billId && data.billId.trim() !== '') ? data.billId : null,
+      attentionRequired: data.attentionRequired,
+      needsBalanceTransfer: data.needsBalanceTransfer,
+      transferTiming: data.transferTiming || null,
+      isBorrowed: data.isBorrowed,
+      borrowSource: data.borrowSource || null,
+      accountedFor: data.accountedFor,
     })
 
-    if (data.category_id) {
+    if (data.categoryId) {
       const updateCat = db.update(categories)
-        .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amount_cents}` })
-        .where(and(eq(categories.id, data.category_id), eq(categories.householdId, householdId)))
+        .set({ envelopeBalanceCents: sql`envelopeBalanceCents - ${data.amountCents}` })
+        .where(and(eq(categories.id, data.categoryId), eq(categories.householdId, householdId)))
       
       await db.batch([insertTx, updateCat])
     } else {
@@ -423,9 +423,9 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     }
     
     await logAudit(c, 'transactions', id, 'CREATE', null, { 
-      amount: data.amount_cents, 
-      account_id: data.account_id, 
-      category_id: data.category_id 
+      amount: data.amountCents, 
+      accountId: data.accountId, 
+      categoryId: data.categoryId 
     })
     
     return c.json({ success: true, id })
@@ -463,14 +463,12 @@ financials.get('/transactions/export', async (c) => {
   .leftJoin(accounts, eq(transactions.accountId, accounts.id))
   .where(eq(transactions.householdId, householdId))
 
-  const snakeResults = results.map(row => toSnake(row))
-
   if (format === 'csv') {
-    if (snakeResults.length === 0) return c.text('')
-    const headers = Object.keys(snakeResults[0])
+    if (results.length === 0) return c.text('')
+    const headers = Object.keys(results[0])
     const csv = [
       headers.join(','),
-      ...snakeResults.map(row => headers.map(h => JSON.stringify(row[h as keyof typeof row] ?? '')).join(','))
+      ...results.map(row => headers.map(h => JSON.stringify(row[h as keyof typeof row] ?? '')).join(','))
     ].join('\n')
     
     return new Response(csv, {
@@ -481,7 +479,7 @@ financials.get('/transactions/export', async (c) => {
     })
   }
 
-  return c.json({ success: true, data: snakeResults })
+  return c.json({ success: true, data: results })
 })
 
 financials.get('/transactions/:id/timeline', async (c) => {
@@ -499,12 +497,12 @@ financials.get('/transactions/:id/timeline', async (c) => {
   const results = await db.select().from(transactionTimeline)
     .where(eq(transactionTimeline.transactionId, id))
     .orderBy(desc(transactionTimeline.createdAt))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Timeline entry validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Timeline entry validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const id = c.req.param('id')
@@ -548,12 +546,12 @@ financials.get('/transactions/suggest-links', async (c) => {
   // Actually db.all(sql`...`) works in Drizzle! Wait, Drizzle instance doesn't have `.all()` exposed that easily unless it's a D1 `session.all()`.
   // I will just use `c.env.DB.prepare(...).all()` here because Drizzle ORM doesn't easily map this specific self-join with julianday without messy raw sql wrappers.
   const { results } = await c.env.DB.prepare(`
-    SELECT t1.id as original_id, t2.id as suggested_id, t1.description, t2.description as suggested_description, t1.amount_cents as amount_cents
+    SELECT t1.id as originalId, t2.id as suggestedId, t1.description, t2.description as suggestedDescription, t1.amountCents as amountCents
     FROM transactions t1
-    JOIN transactions t2 ON t1.household_id = t2.household_id 
-      AND t1.amount_cents = -t2.amount_cents
-      AND ABS(julianday(t1.transaction_date) - julianday(t2.transaction_date)) <= 7
-    WHERE t1.household_id = ? AND t1.id < t2.id
+    JOIN transactions t2 ON t1.householdId = t2.householdId 
+      AND t1.amountCents = -t2.amountCents
+      AND ABS(julianday(t1.transactionDate) - julianday(t2.transactionDate)) <= 7
+    WHERE t1.householdId = ? AND t1.id < t2.id
     LIMIT 5
   `).bind(householdId).all()
   return c.json({ success: true, data: results || [] })
@@ -574,30 +572,30 @@ financials.patch('/transactions/:id/reconcile', async (c) => {
 })
 
 financials.patch('/transactions/bulk-reconcile', zValidator('json', z.object({
-  transaction_ids: z.array(z.string()),
+  transactionIds: z.array(z.string()),
   reconciled: z.boolean()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Bulk reconcile validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Bulk reconcile validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
-  const { transaction_ids, reconciled } = c.req.valid('json')
+  const { transactionIds, reconciled } = c.req.valid('json')
   const db = getDb(c.env)
   
-  if (transaction_ids.length === 0) return c.json({ success: true })
+  if (transactionIds.length === 0) return c.json({ success: true })
 
   // D1 / SQLite IN clause limits, chunking just in case
   const chunkSize = 50;
-  for (let i = 0; i < transaction_ids.length; i += chunkSize) {
-    const chunk = transaction_ids.slice(i, i + chunkSize);
+  for (let i = 0; i < transactionIds.length; i += chunkSize) {
+    const chunk = transactionIds.slice(i, i + chunkSize);
     await db.update(transactions)
       .set({ reconciliationStatus: reconciled ? 'reconciled' : 'unreconciled' })
       .where(and(eq(transactions.householdId, householdId), inArray(transactions.id, chunk)))
   }
   
   await logAudit(c, 'transactions', 'batch_reconcile', 'UPDATE', null, { 
-    count: transaction_ids.length, 
+    count: transactionIds.length, 
     reconciled 
   })
   
@@ -606,13 +604,13 @@ financials.patch('/transactions/bulk-reconcile', zValidator('json', z.object({
 
 financials.post('/transactions/:id/split', zValidator('json', z.object({
   splits: z.array(z.object({
-    amount_cents: z.number().int(),
-    category_id: z.string().optional().nullable(),
+    amountCents: z.number().int(),
+    categoryId: z.string().optional().nullable(),
     description: z.string()
   }))
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transaction split validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction split validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const id = c.req.param('id')
@@ -623,7 +621,7 @@ financials.post('/transactions/:id/split', zValidator('json', z.object({
   const original = await db.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.householdId, householdId))).limit(1).then(res => res[0])
   if (!original) throw new HTTPException(404, { message: 'Transaction not found' })
 
-  const totalSplitAmount = splits.reduce((sum, split) => sum + split.amount_cents, 0)
+  const totalSplitAmount = splits.reduce((sum, split) => sum + split.amountCents, 0)
   if (Math.abs(totalSplitAmount) !== Math.abs(original.amountCents)) {
     throw new HTTPException(400, { message: 'Split amounts must equal original transaction amount' })
   }
@@ -633,9 +631,9 @@ financials.post('/transactions/:id/split', zValidator('json', z.object({
       id: crypto.randomUUID(),
       householdId,
       accountId: original.accountId,
-      categoryId: split.category_id || null,
+      categoryId: split.categoryId || null,
       description: split.description,
-      amountCents: split.amount_cents,
+      amountCents: split.amountCents,
       transactionDate: original.transactionDate,
       parentId: id, // Link to original
       status: original.status,
@@ -649,7 +647,7 @@ financials.post('/transactions/:id/split', zValidator('json', z.object({
 
   await db.batch([...inserts, markParent] as any)
 
-  await logAudit(c, 'transactions', id, 'SPLIT', null, { split_count: splits.length })
+  await logAudit(c, 'transactions', id, 'SPLIT', null, { splitCount: splits.length })
 
   return c.json({ success: true })
 })
@@ -670,7 +668,7 @@ financials.post('/transactions/:id/link', async (c) => {
     
   await db.batch([b1, b2])
   
-  await logAudit(c, 'transactions', id, 'LINK', null, { target_id: targetId })
+  await logAudit(c, 'transactions', id, 'LINK', null, { targetId })
   
   return c.json({ success: true })
 })
@@ -689,14 +687,14 @@ financials.post('/transactions/:id/unlink', async (c) => {
     const b1 = db.update(transactions).set({ linkedTransactionId: null, reconciliationStatus: 'unreconciled' }).where(eq(transactions.id, id))
     const b2 = db.update(transactions).set({ linkedTransactionId: null, reconciliationStatus: 'unreconciled' }).where(eq(transactions.id, targetId))
     await db.batch([b1, b2])
-    await logAudit(c, 'transactions', id, 'UNLINK', null, { target_id: targetId })
+    await logAudit(c, 'transactions', id, 'UNLINK', null, { targetId })
   }
   return c.json({ success: true })
 })
 
 financials.patch('/transactions/:id', zValidator('json', TransactionSchema.partial(), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transaction update validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction update validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const id = c.req.param('id')
@@ -705,20 +703,20 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   
   const updates: any = {}
   
-  if (data.account_id !== undefined) updates.accountId = data.account_id
-  if (data.category_id !== undefined) updates.categoryId = data.category_id
-  if (data.owner_id !== undefined) updates.ownerId = data.owner_id
+  if (data.accountId !== undefined) updates.accountId = data.accountId
+  if (data.categoryId !== undefined) updates.categoryId = data.categoryId
+  if (data.ownerId !== undefined) updates.ownerId = data.ownerId
   if (data.status !== undefined) updates.status = data.status
-  if (data.confirmation_number !== undefined) updates.confirmationNumber = data.confirmation_number
+  if (data.confirmationNumber !== undefined) updates.confirmationNumber = data.confirmationNumber
   if (data.description !== undefined) updates.description = data.description
-  if (data.amount_cents !== undefined) updates.amountCents = data.amount_cents
-  if (data.transaction_date !== undefined) updates.transactionDate = data.transaction_date
-  if (data.attention_required !== undefined) updates.attentionRequired = data.attention_required
-  if (data.needs_balance_transfer !== undefined) updates.needsBalanceTransfer = data.needs_balance_transfer
-  if (data.transfer_timing !== undefined) updates.transferTiming = data.transfer_timing
-  if (data.is_borrowed !== undefined) updates.isBorrowed = data.is_borrowed
-  if (data.borrow_source !== undefined) updates.borrowSource = data.borrow_source
-  if (data.accounted_for !== undefined) updates.accountedFor = data.accounted_for
+  if (data.amountCents !== undefined) updates.amountCents = data.amountCents
+  if (data.transactionDate !== undefined) updates.transactionDate = data.transactionDate
+  if (data.attentionRequired !== undefined) updates.attentionRequired = data.attentionRequired
+  if (data.needsBalanceTransfer !== undefined) updates.needsBalanceTransfer = data.needsBalanceTransfer
+  if (data.transferTiming !== undefined) updates.transferTiming = data.transferTiming
+  if (data.isBorrowed !== undefined) updates.isBorrowed = data.isBorrowed
+  if (data.borrowSource !== undefined) updates.borrowSource = data.borrowSource
+  if (data.accountedFor !== undefined) updates.accountedFor = data.accountedFor
   
   if (Object.keys(updates).length > 0) {
     const db = getDb(c.env)
@@ -778,7 +776,7 @@ financials.post('/transactions/import/confirm', zValidator('json', z.object({
   accountId: z.string()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Import confirmation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Import confirmation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
@@ -811,7 +809,7 @@ financials.post('/transactions/import/confirm', zValidator('json', z.object({
   
   await logAudit(c, 'transactions', 'batch_import', 'IMPORT', null, { 
     count: inserts.length, 
-    account_id: accountId 
+    accountId: accountId 
   })
   
   return c.json({ success: true, count: inserts.length })
@@ -861,61 +859,61 @@ financials.get('/transactions/:id/receipt', async (c) => {
 // Transfers
 financials.post('/transfers', zValidator('json', TransferSchema, (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transfer creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Transfer creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
-  const { from_account_id, to_account_id, amount_cents, description } = c.req.valid('json')
+  const { fromAccountId, toAccountId, amountCents, description } = c.req.valid('json')
   const db = getDb(c.env)
   
   const verify = await db.select({ id: accounts.id })
-    .from(accounts).where(and(eq(accounts.householdId, householdId), inArray(accounts.id, [from_account_id, to_account_id])))
+    .from(accounts).where(and(eq(accounts.householdId, householdId), inArray(accounts.id, [fromAccountId, toAccountId])))
     
   if (verify.length < 2) throw new HTTPException(403, { message: 'One or more accounts unauthorized' })
 
   const id = crypto.randomUUID()
   
-  const u1 = db.update(accounts).set({ balanceCents: sql`balance_cents - \${amount_cents}` }).where(and(eq(accounts.id, from_account_id), eq(accounts.householdId, householdId)))
-  const u2 = db.update(accounts).set({ balanceCents: sql`balance_cents + \${amount_cents}` }).where(and(eq(accounts.id, to_account_id), eq(accounts.householdId, householdId)))
+  const u1 = db.update(accounts).set({ balanceCents: sql`balanceCents - ${amountCents}` }).where(and(eq(accounts.id, fromAccountId), eq(accounts.householdId, householdId)))
+  const u2 = db.update(accounts).set({ balanceCents: sql`balanceCents + ${amountCents}` }).where(and(eq(accounts.id, toAccountId), eq(accounts.householdId, householdId)))
   
   await db.batch([u1, u2])
   
-  c.executionCtx.waitUntil(dispatchWebhook(c, 'transfer.created', { id, from_account_id, to_account_id, amount_cents }, householdId))
+  c.executionCtx.waitUntil(dispatchWebhook(c, 'transfer.created', { id, fromAccountId, toAccountId, amountCents }, householdId))
 
   if (c.env.DISCORD_WEBHOOK_URL) {
     await fetch(c.env.DISCORD_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: `➡️ **New Transfer logged!**\\n**Desc:** \${description}\\n**Amount:** $\${(amount_cents / 100).toFixed(2)}\\n**From:** \${from_account_id}\\n**To:** \${to_account_id}`
+        content: `➡️ **New Transfer logged!**\n**Desc:** ${description}\n**Amount:** $${(amountCents / 100).toFixed(2)}\n**From:** ${fromAccountId}\n**To:** ${toAccountId}`
       })
     }).catch(err => console.error('Discord Webhook failed', err))
   }
   
   await logAudit(c, 'transfers', id, 'CREATE', null, { 
-    from: from_account_id, 
-    to: to_account_id, 
-    amount: amount_cents 
+    from: fromAccountId, 
+    to: toAccountId, 
+    amount: amountCents 
   })
   
   return c.json({ success: true, id })
 })
 
 // Buckets
-financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), target_cents: z.number().int().min(100) }), (result, c) => {
+financials.post('/buckets', zValidator('json', z.object({ name: z.string().min(1), targetCents: z.number().int().min(100) }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Bucket creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Bucket creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
-  const { name, target_cents } = c.req.valid('json')
+  const { name, targetCents } = c.req.valid('json')
   const db = getDb(c.env)
   const id = `buck-${crypto.randomUUID()}`
   await db.insert(savingsBuckets).values({
     id,
     householdId,
     name,
-    targetCents: target_cents,
+    targetCents: targetCents,
     currentCents: 0
   })
   return c.json({ success: true, id })
@@ -925,14 +923,14 @@ financials.get('/buckets', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   const results = await db.select().from(savingsBuckets).where(eq(savingsBuckets.householdId, householdId))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 
 // Phase 4 Transfers
 financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Subscription transfer validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Subscription transfer validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -955,7 +953,7 @@ financials.patch('/subscriptions/:id/transfer', zValidator('json', z.object({ ne
 
 financials.patch('/transactions/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transaction transfer validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Transaction transfer validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
@@ -986,15 +984,15 @@ financials.get('/investments', async (c) => {
 
 financials.post('/investments', zValidator('json', z.object({
   name: z.string().min(1),
-  asset_type: z.string(),
+  assetType: z.string(),
   quantity: z.number().default(1),
-  cost_basis_cents: z.number(),
-  current_valuation_cents: z.number(),
+  costBasisCents: z.number(),
+  currentValuationCents: z.number(),
   currency: z.string().default('USD'),
-  institution_id: z.string().optional()
+  institutionId: z.string().optional()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Investment creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Investment creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
@@ -1006,12 +1004,12 @@ financials.post('/investments', zValidator('json', z.object({
     id,
     householdId,
     name: data.name,
-    assetType: data.asset_type,
+    assetType: data.assetType,
     quantity: data.quantity,
-    costBasisCents: data.cost_basis_cents,
-    valueCents: data.current_valuation_cents,
+    costBasisCents: data.costBasisCents,
+    valueCents: data.currentValuationCents,
     currency: data.currency,
-    institutionId: data.institution_id || null
+    institutionId: data.institutionId || null
   })
   
   await logAudit(c, 'investment_holdings', id, 'CREATE', null, data)
@@ -1034,14 +1032,14 @@ financials.get('/shared-balances', async (c) => {
   
   const results = await c.env.DB.prepare(`
     SELECT sb.*, 
-      u1.display_name as from_display_name, u1.avatar_url as from_avatar_url,
-      u2.display_name as to_display_name, u2.avatar_url as to_avatar_url,
-      t.description as transaction_description
-    FROM shared_balances sb
-    LEFT JOIN users u1 ON sb.from_user_id = u1.id
-    LEFT JOIN users u2 ON sb.to_user_id = u2.id
-    LEFT JOIN transactions t ON sb.transaction_id = t.id
-    WHERE sb.household_id = ?
+      u1.displayName as fromDisplayName, u1.avatarUrl as fromAvatarUrl,
+      u2.displayName as toDisplayName, u2.avatarUrl as toAvatarUrl,
+      t.description as transactionDescription
+    FROM sharedBalances sb
+    LEFT JOIN users u1 ON sb.fromUserId = u1.id
+    LEFT JOIN users u2 ON sb.toUserId = u2.id
+    LEFT JOIN transactions t ON sb.transactionId = t.id
+    WHERE sb.householdId = ?
     ORDER BY sb.rowid DESC
   `).bind(householdId).all()
   
@@ -1054,34 +1052,34 @@ financials.get('/shared-balances/summary', async (c) => {
   // Net balances between all pairs of users
   const results = await c.env.DB.prepare(`
     SELECT 
-      from_user_id, to_user_id,
-      SUM(amount_cents) as net_cents,
-      u1.display_name as from_name, u1.avatar_url as from_avatar,
-      u2.display_name as to_name, u2.avatar_url as to_avatar
-    FROM shared_balances sb
-    LEFT JOIN users u1 ON sb.from_user_id = u1.id
-    LEFT JOIN users u2 ON sb.to_user_id = u2.id
-    WHERE sb.household_id = ?
-    GROUP BY from_user_id, to_user_id
-    HAVING SUM(amount_cents) != 0
+      fromUserId, toUserId,
+      SUM(amountCents) as netCents,
+      u1.displayName as fromName, u1.avatarUrl as fromAvatar,
+      u2.displayName as toName, u2.avatarUrl as toAvatar
+    FROM sharedBalances sb
+    LEFT JOIN users u1 ON sb.fromUserId = u1.id
+    LEFT JOIN users u2 ON sb.toUserId = u2.id
+    WHERE sb.householdId = ?
+    GROUP BY fromUserId, toUserId
+    HAVING SUM(amountCents) != 0
   `).bind(householdId).all()
   
   return c.json({ success: true, data: results.results || [] })
 })
 
 financials.post('/shared-balances', zValidator('json', z.object({
-  to_user_id: z.string(),
-  amount_cents: z.number().int().min(1),
-  transaction_id: z.string().optional(),
+  toUserId: z.string(),
+  amountCents: z.number().int().min(1),
+  transactionId: z.string().optional(),
   description: z.string().optional()
 }), (result, c) => {
   if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Shared balance creation validation failed:`, result.error.errors);
+    console.error(`[DIAGNOSTIC_FAILURE] Shared balance creation validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const householdId = c.get('householdId')
   const userId = c.get('userId') as string
-  const { to_user_id, amount_cents, transaction_id } = c.req.valid('json')
+  const { toUserId, amountCents, transactionId } = c.req.valid('json')
   const db = getDb(c.env)
   const id = crypto.randomUUID()
   
@@ -1089,12 +1087,12 @@ financials.post('/shared-balances', zValidator('json', z.object({
     id,
     householdId,
     fromUserId: userId,
-    toUserId: to_user_id,
-    amountCents: amount_cents,
-    transactionId: transaction_id || null
+    toUserId: toUserId,
+    amountCents: amountCents,
+    transactionId: transactionId || null
   })
   
-  await logAudit(c, 'shared_balances', id, 'CREATE', null, { from: userId, to: to_user_id, amount: amount_cents })
+  await logAudit(c, 'shared_balances', id, 'CREATE', null, { from: userId, to: toUserId, amount: amountCents })
   return c.json({ success: true, id })
 })
 
@@ -1102,26 +1100,26 @@ financials.delete('/shared-balances/:id', async (c) => {
   const householdId = c.get('householdId')
   const id = c.req.param('id')
   
-  await c.env.DB.prepare(`DELETE FROM shared_balances WHERE id = ? AND household_id = ?`).bind(id, householdId).run()
+  await c.env.DB.prepare(`DELETE FROM sharedBalances WHERE id = ? AND householdId = ?`).bind(id, householdId).run()
   await logAudit(c, 'shared_balances', id, 'DELETE')
   return c.json({ success: true })
 })
 
 // Settle all debts between two users
 financials.post('/shared-balances/settle', zValidator('json', z.object({
-  with_user_id: z.string()
+  withUserId: z.string()
 })), async (c) => {
   const householdId = c.get('householdId')
   const userId = c.get('userId') as string
-  const { with_user_id } = c.req.valid('json')
+  const { withUserId } = c.req.valid('json')
   
   await c.env.DB.prepare(`
-    DELETE FROM shared_balances 
-    WHERE household_id = ? 
-    AND ((from_user_id = ? AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = ?))
-  `).bind(householdId, userId, with_user_id, with_user_id, userId).run()
+    DELETE FROM sharedBalances 
+    WHERE householdId = ? 
+    AND ((fromUserId = ? AND toUserId = ?) OR (fromUserId = ? AND toUserId = ?))
+  `).bind(householdId, userId, withUserId, withUserId, userId).run()
   
-  await logAudit(c, 'shared_balances', 'settle', 'SETTLE', null, { user1: userId, user2: with_user_id })
+  await logAudit(c, 'shared_balances', 'settle', 'SETTLE', null, { user1: userId, user2: withUserId })
   return c.json({ success: true })
 })
 

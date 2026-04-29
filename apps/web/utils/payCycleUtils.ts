@@ -2,14 +2,14 @@ import { addWeeks, addDays, getDaysInMonth, setDate, isAfter, isBefore, startOfM
 
 export interface PaydayInstance {
   id?: string;
-  pay_schedule_id: string;
+  payScheduleId: string;
   date: string;
-  original_date: string;
+  originalDate: string;
   name: string;
-  amount_cents: number;
+  amountCents: number;
   notes?: string;
   type: 'pay_schedule';
-  is_override?: boolean;
+  isOverride?: boolean;
 }
 
 export const projectPaydays = (
@@ -23,10 +23,10 @@ export const projectPaydays = (
   const safeExceptions = Array.isArray(exceptions) ? exceptions : [];
 
   schedules.forEach(schedule => {
-    if (!schedule.next_pay_date) return;
+    if (!schedule.nextPayDate) return;
     
-    let current = parseISO(schedule.next_pay_date);
-    const amount = schedule.estimated_amount_cents || 0;
+    let current = parseISO(schedule.nextPayDate);
+    const amount = schedule.estimatedAmountCents || 0;
     const notes = schedule.notes || '';
     const frequency = schedule.frequency;
 
@@ -52,18 +52,18 @@ export const projectPaydays = (
     while (isBefore(current, viewEnd) && iteration < maxIterations) {
       if (!isBefore(current, viewStart)) {
         const dateStr = format(current, 'yyyy-MM-dd');
-        const exception = safeExceptions.find(ex => ex.pay_schedule_id === schedule.id && ex.original_date === dateStr);
+        const exception = safeExceptions.find(ex => ex.payScheduleId === schedule.id && ex.originalDate === dateStr);
         
         instances.push({
           id: exception?.id,
-          pay_schedule_id: schedule.id,
-          date: exception?.override_date || dateStr,
-          original_date: dateStr,
+          payScheduleId: schedule.id,
+          date: exception?.overrideDate || dateStr,
+          originalDate: dateStr,
           name: schedule.name,
-          amount_cents: exception?.override_amount_cents ?? amount,
+          amountCents: exception?.overrideAmountCents ?? amount,
           notes: exception?.note || notes,
           type: 'pay_schedule',
-          is_override: !!exception
+          isOverride: !!exception
         });
       }
 
@@ -89,8 +89,8 @@ export const projectPaydays = (
       }
       else if (frequency === 'semi-monthly') {
           // Handle semi-monthly logic
-          const d1 = schedule.semi_monthly_day_1 || 1;
-          const d2 = schedule.semi_monthly_day_2 || 15;
+          const d1 = schedule.semiMonthlyDay1 || 1;
+          const d2 = schedule.semiMonthlyDay2 || 15;
           
           if (current.getDate() === d1) {
               current = setDate(current, d2);
@@ -119,12 +119,12 @@ export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: Payday
     const safeLiabilities = Array.isArray(liabilities) ? liabilities : [];
     const safePaydays = Array.isArray(paydays) ? paydays : [];
     const sortedPaydays = [...safePaydays].sort((a, b) => a.date.localeCompare(b.date));
-    const cycles: { payday: PaydayInstance, items: any[], total_cents: number }[] = [];
+    const cycles: { payday: PaydayInstance, items: any[], totalCents: number }[] = [];
 
     sortedPaydays.forEach((payday, idx) => {
         const nextPayday = sortedPaydays[idx + 1];
         const items = liabilities.filter(item => {
-            const date = item.due_date || item.next_billing_date || item.next_payment_date || item.transaction_date;
+            const date = item.dueDate || item.nextBillingDate || item.nextPaymentDate || item.transactionDate;
             if (!date) return false;
             
             const isAtOrAfterPayday = date >= payday.date;
@@ -135,7 +135,7 @@ export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: Payday
         cycles.push({
             payday,
             items,
-            total_cents: items.reduce((acc, curr) => acc + (curr.amount_cents || curr.installment_amount_cents || 0), 0)
+            totalCents: items.reduce((acc, curr) => acc + (curr.amountCents || curr.installmentAmountCents || 0), 0)
         });
     });
 
@@ -150,7 +150,7 @@ export const getPayPeriodRange = (
 ) => {
   const safePaydays = Array.isArray(paydays) ? paydays : [];
   const schedulePaydays = [...safePaydays]
-    .filter(p => !scheduleId || p.pay_schedule_id === scheduleId)
+    .filter(p => !scheduleId || p.payScheduleId === scheduleId)
     .sort((a, b) => a.date.localeCompare(b.date));
 
   if (schedulePaydays.length < 2) return null;

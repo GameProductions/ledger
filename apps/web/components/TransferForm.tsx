@@ -21,9 +21,9 @@ const TransferForm: React.FC = () => {
         'x-household-id': localStorage.getItem('ledger_householdId') || ''
       },
       body: JSON.stringify({
-        from_account_id: from,
-        to_account_id: to,
-        amount_cents: Math.round(parseFloat(amount) * 100),
+        fromAccountId: from,
+        toAccountId: to,
+        amountCents: Math.round(parseFloat(amount) * 100),
         description: 'Internal Transfer'
       })
     })

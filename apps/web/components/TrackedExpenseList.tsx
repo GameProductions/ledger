@@ -26,9 +26,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isMoveToLedgerOpen, setIsMoveToLedgerOpen] = useState(false)
   const [ledgerDetails, setLedgerDetails] = useState({
-    account_id: '',
-    category_id: '',
-    transaction_date: new Date().toISOString().split('T')[0],
+    accountId: '',
+    categoryId: '',
+    transactionDate: new Date().toISOString().split('T')[0],
     status: 'paid'
   })
 
@@ -82,7 +82,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       },
       body: JSON.stringify({
         ids: selectedIds,
-        transaction_details: ledgerDetails
+        transactionDetails: ledgerDetails
       })
     })
     if (res.ok) {
@@ -142,7 +142,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             <ChevronRight size={14} className="text-orange-500" />
             Pending Tracked Expenses ({tracked.length})
             <span className="ml-2 px-2 py-0.5 bg-orange-500/10 rounded-full text-orange-400 border border-orange-500/10">
-              {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amount_cents ?? 0), 0))}
+              {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amountCents ?? 0), 0))}
             </span>
           </h4>
           <button 
@@ -164,7 +164,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                 Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
                   const item = tracked.find((t: any) => t.id === id)
-                  return sum + (item?.amount_cents ?? 0)
+                  return sum + (item?.amountCents ?? 0)
                 }, 0))}
               </div>
               <div className="flex items-center gap-1.5">
@@ -221,8 +221,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
                       <input 
                         type="number" step="0.01"
-                        value={(editForm?.amount_cents || 0) / 100} 
-                        onChange={e => setEditForm({...editForm, amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
+                        value={(editForm?.amountCents || 0) / 100} 
+                        onChange={e => setEditForm({...editForm, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
                         className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
                       />
                     </div>
@@ -246,9 +246,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
                     <div className="flex items-center gap-3 mt-1">
                       <div className="text-[10px] uppercase tracking-widest text-secondary font-black flex items-center gap-1">
-                        <Calendar size={10} /> {new Date(item.created_at).toLocaleDateString()}
+                        <Calendar size={10} /> {new Date(item.createdAt).toLocaleDateString()}
                       </div>
-                      {item.attention_required && (
+                      {item.attentionRequired && (
                         <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
                           <Tag size={10} /> Needs Attention
                         </div>
@@ -259,9 +259,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 
                 <div className="flex items-center gap-6">
                   <div className="text-right">
-                    <Price amount_cents={item.amount_cents} className="text-lg font-black text-orange-200" />
+                    <Price amountCents={item.amountCents} className="text-lg font-black text-orange-200" />
                     <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
-                      Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amount_cents ?? 0), 0))}
+                      Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -270,7 +270,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         setEditingId(item.id)
                         setEditForm({
                           description: item.description,
-                          amount_cents: item.amount_cents,
+                          amountCents: item.amountCents,
                           notes: item.notes
                         })
                       }}
@@ -305,8 +305,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <CreditCard size={14} className="text-orange-500" /> Select Account
               </label>
               <select 
-                value={ledgerDetails.account_id}
-                onChange={e => setLedgerDetails({...ledgerDetails, account_id: e.target.value})}
+                value={ledgerDetails.accountId}
+                onChange={e => setLedgerDetails({...ledgerDetails, accountId: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none appearance-none"
               >
                 <option value="">Choose Account...</option>
@@ -318,8 +318,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <Tag size={14} className="text-orange-500" /> Select Category
               </label>
               <select 
-                value={ledgerDetails.category_id}
-                onChange={e => setLedgerDetails({...ledgerDetails, category_id: e.target.value})}
+                value={ledgerDetails.categoryId}
+                onChange={e => setLedgerDetails({...ledgerDetails, categoryId: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none appearance-none"
               >
                 <option value="">Choose Category...</option>
@@ -335,8 +335,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               </label>
               <input 
                 type="date"
-                value={ledgerDetails.transaction_date}
-                onChange={e => setLedgerDetails({...ledgerDetails, transaction_date: e.target.value})}
+                value={ledgerDetails.transactionDate}
+                onChange={e => setLedgerDetails({...ledgerDetails, transactionDate: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none"
               />
             </div>
@@ -360,7 +360,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
 
           <button 
             onClick={handleMoveToLedger}
-            disabled={!ledgerDetails.account_id}
+            disabled={!ledgerDetails.accountId}
             className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
           >
             <Send size={18} />
@@ -382,7 +382,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <input 
                   type="number" step="0.01" 
                   placeholder="0.00"
-                  onChange={e => setBulkUpdates({...bulkUpdates, amount_cents: Math.round(parseFloat(e.target.value) * 100)})}
+                  onChange={e => setBulkUpdates({...bulkUpdates, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
                   className="w-full bg-black/60 border border-white/10 rounded-xl p-3 pl-8 text-sm text-white focus:border-orange-500/50 outline-none"
                 />
               </div>

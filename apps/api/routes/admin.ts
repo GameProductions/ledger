@@ -13,7 +13,7 @@ import {
 } from '@shared/schemas'
 import { EmailService } from '../services/email.service'
 import { hashPassword } from '../auth-utils'
-import { logAudit, encrypt, toSnake } from '../utils'
+import { logAudit, encrypt } from '../utils'
 import { CURRENT_VERSION } from '@shared/constants'
 import { AuthService } from '../services/auth.service'
 import { HTTPException } from 'hono/http-exception'
@@ -36,7 +36,7 @@ const admin = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 admin.get('/stats', async (c) => {
   const db = getDb(c.env)
   const userCount = await db.select({ count: count() }).from(users).then(res => res[0].count)
-  const activeToday = await db.select({ count: count() }).from(users).where(sql`last_active_at > date("now", "-1 day")`).then(res => res[0].count)
+  const activeToday = await db.select({ count: count() }).from(users).where(sql`lastActiveAt > date("now", "-1 day")`).then(res => res[0].count)
   const householdCount = await db.select({ count: count() }).from(households).then(res => res[0].count)
   
   return c.json({
@@ -54,16 +54,16 @@ admin.get('/stats', async (c) => {
 admin.get('/config', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
-
 admin.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
-  const { config_value } = c.req.valid('json')
+  const { configValue } = c.req.valid('json')
   const db = getDb(c.env)
   
-  await db.update(systemConfig).set({ configValue: config_value, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
-  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { config_value })
+  await db.update(systemConfig).set({ configValue, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
+  
+  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { configValue })
   if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
   return c.json({ success: true })
 })
@@ -72,7 +72,7 @@ admin.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (
 admin.get('/features', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
@@ -86,7 +86,7 @@ admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), asyn
   }).where(eq(systemFeatureFlags.id, id))
   
   // Note: we're omitting targetUserIds since it's missing in some schema versions, raw SQL could patch it:
-  await db.run(sql`UPDATE system_feature_flags SET target_user_ids = ${targetUserIds} WHERE id = ${id}`);
+  await db.run(sql`UPDATE systemFeatureFlags SET targetUserIds = ${targetUserIds} WHERE id = ${id}`);
   
   await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabledGlobally })
   return c.json({ success: true })
@@ -96,21 +96,21 @@ admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), asyn
 admin.get('/records', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemRegistry).orderBy(systemRegistry.itemType, systemRegistry.name)
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
-  const metadata = data.metadata_json || {}
+  const metadata = data.metadataJson || {}
   const db = getDb(c.env)
   
   await db.insert(systemRegistry).values({
     id,
-    itemType: data.item_type,
+    itemType: data.itemType,
     name: data.name,
-    logoUrl: data.logo_url || null,
-    websiteUrl: data.website_url || null,
+    logoUrl: data.logoUrl || null,
+    websiteUrl: data.websiteUrl || null,
     metadataJson: JSON.stringify(metadata)
   })
   
@@ -138,7 +138,7 @@ admin.get('/users', async (c) => {
     createdAt: users.createdAt,
     lastActiveAt: users.lastActiveAt
   }).from(users).orderBy(desc(users.createdAt))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c) => {
@@ -148,12 +148,12 @@ admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c)
   }
 }), async (c) => {
   const data = c.req.valid('json')
-  const { username, email, password, display_name, global_role, force_password_change } = data
+  const { username, email, password, displayName, globalRole, forcePasswordChange } = data
   const db = getDb(c.env)
   
   const existing = await db.select({ id: users.id }).from(users).where(or(eq(users.username, username), eq(users.email, email))).limit(1).then(res => res[0])
   if (existing) throw new HTTPException(400, { message: 'Username or email already exists' })
-
+ 
   const userId = crypto.randomUUID()
   const passwordHash = await hashPassword(password)
   
@@ -162,13 +162,13 @@ admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c)
     username,
     email,
     passwordHash,
-    displayName: display_name,
-    globalRole: global_role,
+    displayName,
+    globalRole,
     status: 'active',
-    forcePasswordChange: force_password_change ? 1 : 0
+    forcePasswordChange: forcePasswordChange ? 1 : 0
   })
   
-  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, global_role })
+  await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, globalRole })
   
   const emailService = new EmailService(c.env)
   try {
@@ -176,7 +176,7 @@ admin.post('/users/setup', zValidator('json', CreateUserAdminSchema, (result, c)
   } catch (err) {
     console.error('[Admin] Failed to send setup email:', err)
   }
-
+ 
   return c.json({ success: true, id: userId })
 })
 
@@ -188,19 +188,19 @@ admin.get('/audit', async (c) => {
     SELECT 
       a.id, 
       a.action, 
-      a.table_name as target_type, 
-      a.record_id as target_id, 
-      a.new_values_json as details_json, 
-      a.created_at as created_at,
-      u_actor.display_name as actor_name,
-      u_target.display_name as target_name
-    FROM audit_logs a
-    LEFT JOIN users u_actor ON a.actor_id = u_actor.id
-    LEFT JOIN users u_target ON a.record_id = u_target.id AND a.table_name = 'users'
-    ORDER BY a.created_at DESC 
+      a.tableName as targetType, 
+      a.recordId as targetId, 
+      a.newValuesJson as detailsJson, 
+      a.createdAt as createdAt,
+      u_actor.displayName as actorName,
+      u_target.displayName as targetName
+    FROM auditLogs a
+    LEFT JOIN users u_actor ON a.actorId = u_actor.id
+    LEFT JOIN users u_target ON a.recordId = u_target.id AND a.tableName = 'users'
+    ORDER BY a.createdAt DESC 
     LIMIT 200
   `).all()
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.get('/audit/system', async (c) => {
@@ -212,7 +212,7 @@ admin.get('/audit/system', async (c) => {
     detailsJson: systemAuditLogs.detailsJson,
     createdAt: systemAuditLogs.createdAt
   }).from(systemAuditLogs).orderBy(desc(systemAuditLogs.createdAt)).limit(100)
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 // Global Search
@@ -240,7 +240,7 @@ admin.get('/search', async (c) => {
 admin.get('/networks', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(billingProcessors).orderBy(billingProcessors.name)
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
@@ -251,10 +251,10 @@ admin.post('/networks', zValidator('json', BillingProcessorSchema), async (c) =>
   await db.insert(billingProcessors).values({
     id,
     name: data.name,
-    websiteUrl: data.website_url,
-    brandingUrl: data.branding_url,
-    supportUrl: data.support_url,
-    subscriptionIdNotes: data.subscription_id_notes
+    websiteUrl: data.websiteUrl,
+    brandingUrl: data.brandingUrl,
+    supportUrl: data.supportUrl,
+    subscriptionIdNotes: data.subscriptionIdNotes
   })
   await logAudit(c, 'billing_processors', id, 'admin_create', null, data)
   return c.json({ success: true, id })
@@ -267,10 +267,10 @@ admin.patch('/networks/:id', zValidator('json', BillingProcessorSchema.partial()
   
   const updates: any = { updatedAt: sql`CURRENT_TIMESTAMP` }
   if (data.name) updates.name = data.name
-  if (data.website_url) updates.websiteUrl = data.website_url
-  if (data.branding_url) updates.brandingUrl = data.branding_url
-  if (data.support_url) updates.supportUrl = data.support_url
-  if (data.subscription_id_notes) updates.subscriptionIdNotes = data.subscription_id_notes
+  if (data.websiteUrl) updates.websiteUrl = data.websiteUrl
+  if (data.brandingUrl) updates.brandingUrl = data.brandingUrl
+  if (data.supportUrl) updates.supportUrl = data.supportUrl
+  if (data.subscriptionIdNotes) updates.subscriptionIdNotes = data.subscriptionIdNotes
 
   if (Object.keys(updates).length > 1) {
     await db.update(billingProcessors).set(updates).where(eq(billingProcessors.id, id))
@@ -300,15 +300,15 @@ admin.get('/providers', async (c) => {
       sp.id, 
       sp.name, 
       sp.url as websiteUrl, 
-      sp.icon_url as brandingUrl, 
-      sp.billing_processor_id as billingProcessorId, 
-      sp.is_3rd_party_capable as is3rdPartyCapable,
+      sp.iconUrl as brandingUrl, 
+      sp.billingProcessorId as billingProcessorId, 
+      sp.is3rdPartyCapable as is3rdPartyCapable,
       bp.name as billingProcessorName 
-    FROM service_providers sp 
-    LEFT JOIN billing_processors bp ON sp.billing_processor_id = bp.id 
+    FROM serviceProviders sp 
+    LEFT JOIN billingProcessors bp ON sp.billingProcessorId = bp.id 
     ORDER BY sp.name ASC
   `).all()
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/providers', zValidator('json', ProviderSchema), async (c) => {
@@ -316,7 +316,7 @@ admin.post('/providers', zValidator('json', ProviderSchema), async (c) => {
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   // We use db.run to satisfy fields missed in static export or simply generic structure
-  await db.run(sql`INSERT INTO service_providers (id, name, url, icon_url, billing_processor_id, is_3rd_party_capable) VALUES (${id}, ${data.name}, ${data.website_url || null}, ${data.branding_url || null}, ${data.billing_processor_id}, ${data.is_3rd_party_capable ? 1 : 0})`)
+  await db.run(sql`INSERT INTO serviceProviders (id, name, url, iconUrl, billingProcessorId, is3rdPartyCapable) VALUES (${id}, ${data.name}, ${data.websiteUrl || null}, ${data.brandingUrl || null}, ${data.billingProcessorId}, ${data.is3rdPartyCapable ? 1 : 0})`)
   await logAudit(c, 'service_providers', id, 'admin_create', null, data)
   return c.json({ success: true, id })
 })
@@ -325,12 +325,12 @@ admin.patch('/providers/:id', zValidator('json', ProviderSchema.partial()), asyn
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const db = getDb(c.env)
-  const { name, website_url, branding_url, billing_processor_id, is_3rd_party_capable } = data
+  const { name, websiteUrl, brandingUrl, billingProcessorId, is3rdPartyCapable } = data
   try {
     await db.run(sql`
-       UPDATE service_providers SET 
-       name = COALESCE(${name}, name), url = COALESCE(${website_url}, url), icon_url = COALESCE(${branding_url}, icon_url), 
-       billing_processor_id = COALESCE(${billing_processor_id}, billing_processor_id), is_3rd_party_capable = COALESCE(${is_3rd_party_capable !== undefined ? (is_3rd_party_capable ? 1 : 0) : null}, is_3rd_party_capable), updated_at = CURRENT_TIMESTAMP
+       UPDATE serviceProviders SET 
+       name = COALESCE(${name}, name), url = COALESCE(${websiteUrl}, url), iconUrl = COALESCE(${brandingUrl}, iconUrl), 
+       billingProcessorId = COALESCE(${billingProcessorId}, billingProcessorId), is3rdPartyCapable = COALESCE(${is3rdPartyCapable !== undefined ? (is3rdPartyCapable ? 1 : 0) : null}, is3rdPartyCapable), updatedAt = CURRENT_TIMESTAMP
        WHERE id = ${id}
     `)
     await logAudit(c, 'service_providers', id, 'admin_update', null, data)
@@ -352,19 +352,19 @@ admin.delete('/providers/:id', async (c) => {
 admin.get('/walkthroughs', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemWalkthroughs).orderBy(desc(systemWalkthroughs.createdAt))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/walkthroughs', zValidator('json', z.object({
   version: z.string(),
   title: z.string(),
-  content_md: z.string()
+  contentMd: z.string()
 })), async (c) => {
-  const { version, title, content_md } = c.req.valid('json')
+  const { version, title, contentMd } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(systemWalkthroughs).values({
-    id, version, title, contentMd: content_md
+    id, version, title, contentMd: contentMd
   })
   await logAudit(c, 'system_walkthroughs', id, 'SYNC_WALKTHROUGH', {}, { version, title })
   return c.json({ success: true, id })
@@ -376,28 +376,28 @@ admin.get('/users/management', async (c) => {
   const results = await db.select({
     id: users.id, email: users.email, username: users.username, globalRole: users.globalRole, status: users.status, createdAt: users.createdAt, lastActiveAt: users.lastActiveAt
   }).from(users).orderBy(desc(users.createdAt))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.patch('/users/:userId', zValidator('json', UpdateUserAdminSchema), async (c) => {
   const { userId } = c.req.param()
-  const { global_role, status, display_name, email } = c.req.valid('json')
+  const { globalRole, status, displayName, email } = c.req.valid('json')
   const db = getDb(c.env)
   
   const old = await db.select({ globalRole: users.globalRole, status: users.status, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
   if (!old) throw new HTTPException(404, { message: 'User not found' })
 
   const updates: any = {}
-  if (global_role) updates.globalRole = global_role
+  if (globalRole) updates.globalRole = globalRole
   if (status) updates.status = status
-  if (display_name) updates.displayName = display_name
+  if (displayName) updates.displayName = displayName
   if (email) updates.email = email
 
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
   }
     
-  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { global_role, status, display_name, email })
+  await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, { globalRole, status, displayName, email })
   return c.json({ success: true })
 })
 
@@ -413,15 +413,15 @@ admin.get('/users/:userId/details', async (c) => {
   
   if (!userFields) throw new HTTPException(404, { message: 'User not found' })
 
-  const connections = await db.run(sql`SELECT id, provider, status, created_at as createdAt FROM external_connections WHERE household_id IN (SELECT household_id FROM user_households WHERE user_id = ${userId})`).then(res => res.results)
+  const connections = await db.run(sql`SELECT id, provider, status, createdAt FROM externalConnections WHERE householdId IN (SELECT householdId FROM userHouseholds WHERE userId = ${userId})`).then(res => res.results)
   const socialLinks = await db.select({ id: userIdentities.id, provider: userIdentities.provider, providerId: userIdentities.providerUserId, createdAt: userIdentities.createdAt }).from(userIdentities).where(eq(userIdentities.userId, userId))
   const userPasskeys = await db.select({ id: passkeys.id, name: passkeys.name, aaguid: passkeys.aaguid, createdAt: passkeys.createdAt }).from(passkeys).where(eq(passkeys.userId, userId))
   
   const history = await db.run(sql`
-    SELECT action, target, created_at as created_at, details_json 
-    FROM admin_audit_logs 
-    WHERE user_id = ${userId} OR (target = 'users' AND target_id = ${userId})
-    ORDER BY created_at DESC LIMIT 15
+    SELECT action, target, createdAt as createdAt, detailsJson 
+    FROM adminAuditLogs 
+    WHERE userId = ${userId} OR (target = 'users' AND targetId = ${userId})
+    ORDER BY createdAt DESC LIMIT 15
   `).then(res => res.results)
 
   return c.json({
@@ -445,16 +445,16 @@ admin.get('/users/:userId/details', async (c) => {
 
 // Super Admin Overrides
 admin.post('/users/:userId/password/reset', zValidator('json', z.object({
-  new_password: z.string().min(8),
-  is_temporary: z.boolean().optional().default(true)
+  newPassword: z.string().min(8),
+  isTemporary: z.boolean().optional().default(true)
 })), async (c) => {
   const { userId } = c.req.param()
-  const { new_password, is_temporary } = c.req.valid('json')
+  const { newPassword, isTemporary } = c.req.valid('json')
   const db = getDb(c.env)
-  const passwordHash = await hashPassword(new_password)
-  await db.update(users).set({ passwordHash, forcePasswordChange: is_temporary ? 1 : 0 }).where(eq(users.id, userId))
+  const passwordHash = await hashPassword(newPassword)
+  await db.update(users).set({ passwordHash, forcePasswordChange: isTemporary ? 1 : 0 }).where(eq(users.id, userId))
     
-  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { is_temporary })
+  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', {}, { isTemporary })
   return c.json({ success: true })
 })
 
@@ -481,28 +481,28 @@ admin.delete('/users/:userId/passkeys/:id', async (c) => {
 admin.get('/connections', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(externalConnections).orderBy(desc(externalConnections.createdAt))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/connections', zValidator('json', z.object({
-  household_id: z.string().min(1),
+  householdId: z.string().min(1),
   provider: z.string().min(1),
-  access_token: z.string().min(1),
+  accessToken: z.string().min(1),
   status: z.string().optional().default('active')
 })), async (c) => {
-  const { household_id, provider, access_token, status } = c.req.valid('json')
+  const { householdId, provider, accessToken, status } = c.req.valid('json')
   const db = getDb(c.env)
   const id = crypto.randomUUID()
   
   await db.insert(externalConnections).values({
     id,
-    householdId: household_id,
+    householdId: householdId,
     provider,
-    accessToken: access_token,
+    accessToken: accessToken,
     status
   })
   
-  await logAudit(c, 'connections', id, 'ADMIN_ADD_CONNECTION', {}, { provider, household_id })
+  await logAudit(c, 'connections', id, 'ADMIN_ADD_CONNECTION', {}, { provider, householdId })
   return c.json({ success: true, id })
 })
 
@@ -510,13 +510,13 @@ admin.post('/connections', zValidator('json', z.object({
 admin.get('/households', async (c) => {
   // Complex aggregation better ran natively
   const { results } = await c.env.DB.prepare(`
-    SELECT h.*, count(uh.user_id) as member_count 
+    SELECT h.*, count(uh.userId) as memberCount 
     FROM households h 
-    LEFT JOIN user_households uh ON h.id = uh.household_id 
+    LEFT JOIN userHouseholds uh ON h.id = uh.householdId 
     GROUP BY h.id 
     ORDER BY h.name ASC
   `).all()
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.patch('/households/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
@@ -548,48 +548,48 @@ admin.delete('/households/:id', async (c) => {
 
 // System Operation: Account Merge
 admin.post('/users/merge', zValidator('json', z.object({
-  source_id: z.string().uuid(),
-  target_id: z.string().uuid()
+  sourceId: z.string().uuid(),
+  targetId: z.string().uuid()
 })), async (c) => {
-  const { source_id, target_id } = c.req.valid('json')
-  if (source_id === target_id) throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
+  const { sourceId, targetId } = c.req.valid('json')
+  if (sourceId === targetId) throw new HTTPException(400, { message: 'Self-merge rejected. Source and Target must differ.' })
 
   const db = getDb(c.env)
   // Identity Verification
-  const source = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, source_id)).limit(1).then(res => res[0])
-  const target = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, target_id)).limit(1).then(res => res[0])
+  const source = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, sourceId)).limit(1).then(res => res[0])
+  const target = await db.select({ id: users.id, displayName: users.displayName, email: users.email }).from(users).where(eq(users.id, targetId)).limit(1).then(res => res[0])
   
   if (!source || !target) throw new HTTPException(404, { message: 'Merge Failed: Source or Target record missing.' })
 
   // Data Merge
   await db.batch([
-    db.run(sql`INSERT OR IGNORE INTO user_households (user_id, household_id) SELECT ${target_id} as user_id, household_id FROM user_households WHERE user_id = ${source_id}`),
-    db.delete(userHouseholds).where(eq(userHouseholds.userId, source_id)),
+    db.run(sql`INSERT OR IGNORE INTO userHouseholds (userId, householdId) SELECT ${targetId} as userId, householdId FROM userHouseholds WHERE userId = ${sourceId}`),
+    db.delete(userHouseholds).where(eq(userHouseholds.userId, sourceId)),
     
     // Transfer IP
-    db.update(transactions).set({ ownerId: target_id }).where(eq(transactions.ownerId, source_id)),
-    db.update(subscriptions).set({ ownerId: target_id }).where(eq(subscriptions.ownerId, source_id)),
+    db.update(transactions).set({ ownerId: targetId }).where(eq(transactions.ownerId, sourceId)),
+    db.update(subscriptions).set({ ownerId: targetId }).where(eq(subscriptions.ownerId, sourceId)),
     
     // Migrate Channels
-    db.update(userPaymentMethods).set({ userId: target_id }).where(eq(userPaymentMethods.userId, source_id)),
-    db.update(userLinkedAccounts).set({ userId: target_id }).where(eq(userLinkedAccounts.userId, source_id)),
-    db.update(passkeys).set({ userId: target_id }).where(eq(passkeys.userId, source_id)),
-    db.update(userIdentities).set({ userId: target_id }).where(eq(userIdentities.userId, source_id)),
+    db.update(userPaymentMethods).set({ userId: targetId }).where(eq(userPaymentMethods.userId, sourceId)),
+    db.update(userLinkedAccounts).set({ userId: targetId }).where(eq(userLinkedAccounts.userId, sourceId)),
+    db.update(passkeys).set({ userId: targetId }).where(eq(passkeys.userId, sourceId)),
+    db.update(userIdentities).set({ userId: targetId }).where(eq(userIdentities.userId, sourceId)),
     
     // Shared Balances
-    db.update(sharedBalances).set({ fromUserId: target_id }).where(eq(sharedBalances.fromUserId, source_id)),
-    db.update(sharedBalances).set({ toUserId: target_id }).where(eq(sharedBalances.toUserId, source_id)),
+    db.update(sharedBalances).set({ fromUserId: targetId }).where(eq(sharedBalances.fromUserId, sourceId)),
+    db.update(sharedBalances).set({ toUserId: targetId }).where(eq(sharedBalances.toUserId, sourceId)),
     
     // Audit History
-    db.run(sql`UPDATE admin_audit_logs SET user_id = ${target_id} WHERE user_id = ${source_id}`),
+    db.run(sql`UPDATE adminAuditLogs SET userId = ${targetId} WHERE userId = ${sourceId}`),
 
     // Purge
-    db.delete(users).where(eq(users.id, source_id))
+    db.delete(users).where(eq(users.id, sourceId))
   ])
 
-  await logAudit(c, 'users', target_id, 'ADMIN_USER_MERGE', 
-    { merged_source_id: source_id, source_email: source.email }, 
-    { source_name: source.displayName, action: 'MERGE_COMPLETE' }
+  await logAudit(c, 'users', targetId, 'ADMIN_USER_MERGE', 
+    { mergedSourceId: sourceId, sourceEmail: source.email }, 
+    { sourceName: source.displayName, action: 'MERGE_COMPLETE' }
   )
   
   return c.json({ success: true })
@@ -599,27 +599,27 @@ admin.post('/users/merge', zValidator('json', z.object({
 admin.get('/announcements', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemAnnouncements).orderBy(desc(systemAnnouncements.createdAt))
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 admin.post('/announcements', zValidator('json', z.object({
   title: z.string().min(1),
-  content_md: z.string().min(1),
+  contentMd: z.string().min(1),
   priority: z.enum(['info', 'warning', 'critical']).default('info'),
-  expires_in_hours: z.number().optional()
+  expiresInHours: z.number().optional()
 })), async (c) => {
-  const { title, content_md, priority, expires_in_hours } = c.req.valid('json')
+  const { title, contentMd, priority, expiresInHours } = c.req.valid('json')
   const id = crypto.randomUUID()
   const actorId = c.get('userId') as string
   const db = getDb(c.env)
   
   let expiresAt = null
-  if (expires_in_hours) {
-    expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
+  if (expiresInHours) {
+    expiresAt = new Date(Date.now() + expiresInHours * 3600000).toISOString()
   }
 
   await db.insert(systemAnnouncements).values({
-    id, title, contentMd: content_md, priority, actorId, expiresAt
+    id, title, contentMd: contentMd, priority, actorId, expiresAt
   })
 
   await logAudit(c, 'system_announcements', id, 'BROADCAST_CREATED', {}, { title, priority })
@@ -628,19 +628,19 @@ admin.post('/announcements', zValidator('json', z.object({
 
 admin.patch('/announcements/:id', zValidator('json', z.object({
   title: z.string().optional(),
-  content_md: z.string().optional(),
+  contentMd: z.string().optional(),
   priority: z.string().optional(),
-  is_active: z.boolean().optional()
+  isActive: z.boolean().optional()
 })), async (c) => {
   const id = c.req.param('id')
-  const { title, content_md, priority, is_active } = c.req.valid('json')
+  const { title, contentMd, priority, isActive } = c.req.valid('json')
   const db = getDb(c.env)
   
   const updates: any = {}
   if (title) updates.title = title
-  if (content_md) updates.contentMd = content_md
+  if (contentMd) updates.contentMd = contentMd
   if (priority) updates.priority = priority
-  if (is_active !== undefined) updates.isActive = is_active ? 1 : 0
+  if (isActive !== undefined) updates.isActive = isActive ? 1 : 0
   
   await db.update(systemAnnouncements).set(updates).where(eq(systemAnnouncements.id, id))
   return c.json({ success: true })
@@ -662,14 +662,15 @@ admin.get('/invitations', async (c) => {
 
 admin.post('/invitations', zValidator('json', z.object({
   role: z.enum(['super_admin', 'operator']).default('super_admin'),
-  expires_in_hours: z.number().default(24)
+  expiresInHours: z.number().default(24)
 })), async (c) => {
-  const { role, expires_in_hours } = c.req.valid('json')
+  const { role, expiresInHours } = c.req.valid('json')
   const token = 'admin_inv_' + crypto.randomUUID().replace(/-/g, '')
-  const expiresAt = new Date(Date.now() + expires_in_hours * 3600000).toISOString()
+  const expiresAt = new Date(Date.now() + expiresInHours * 3600000).toISOString()
   const db = getDb(c.env)
   
   await db.insert(adminInvitations).values({
+    id: crypto.randomUUID(),
     token,
     role,
     expiresAt,
@@ -770,7 +771,7 @@ admin.post('/maintenance/migrate-secrets', async (c) => {
     await db.batch(allQueries.slice(i, i + chunkSize) as any)
   }
 
-  await logAudit(c, 'system_config', 'MIGRATION', 'ENCRYPT_SECRETS', null, { migrated_count: migratedCount })
+  await logAudit(c, 'system_config', 'MIGRATION', 'ENCRYPT_SECRETS', null, { migratedCount: migratedCount })
   return c.json({ success: true, count: migratedCount })
 })
 
@@ -791,10 +792,10 @@ admin.post('/users/:userId/impersonate', async (c) => {
     const token = await authService.generateToken(userId, targetHouseholdId, adminId)
     
     await logAudit(c, 'users', userId, 'ADMIN_IMPERSONATE_START', 
-      { actor_id: adminId }, 
+      { actorId: adminId }, 
       { 
-        target_name: target.displayName,
-        target_household_id: targetHouseholdId,
+        targetName: target.displayName,
+        targetHouseholdId: targetHouseholdId,
         action: 'SUPPORT_ACCESS_STARTED'
       }
     )
@@ -820,121 +821,121 @@ admin.post('/maintenance/self-heal', async (c) => {
     const db = c.env.DB;
     await db.batch([
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS system_config (
+        CREATE TABLE IF NOT EXISTS systemConfig (
           id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))),
-          config_key TEXT NOT NULL UNIQUE,
-          config_value TEXT,
-          value_type TEXT DEFAULT 'string',
+          configKey TEXT NOT NULL UNIQUE,
+          configValue TEXT,
+          valueType TEXT DEFAULT 'string',
           description TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS system_feature_flags (
+        CREATE TABLE IF NOT EXISTS systemFeatureFlags (
           id TEXT PRIMARY KEY,
-          feature_key TEXT NOT NULL UNIQUE,
-          enabled_globally INTEGER DEFAULT 0,
-          target_user_ids TEXT,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          featureKey TEXT NOT NULL UNIQUE,
+          enabledGlobally INTEGER DEFAULT 0,
+          targetUserIds TEXT,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS system_registry (
+        CREATE TABLE IF NOT EXISTS systemRegistry (
           id TEXT PRIMARY KEY,
-          item_type TEXT NOT NULL,
+          itemType TEXT NOT NULL,
           name TEXT NOT NULL,
-          logo_url TEXT,
-          website_url TEXT,
-          metadata_json TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          logoUrl TEXT,
+          websiteUrl TEXT,
+          metadataJson TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS billing_processors (
+        CREATE TABLE IF NOT EXISTS billingProcessors (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
-          website_url TEXT,
-          branding_url TEXT,
-          support_url TEXT,
-          subscription_id_notes TEXT,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          websiteUrl TEXT,
+          brandingUrl TEXT,
+          supportUrl TEXT,
+          subscriptionIdNotes TEXT,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS system_announcements (
+        CREATE TABLE IF NOT EXISTS systemAnnouncements (
           id TEXT PRIMARY KEY,
           title TEXT NOT NULL,
-          content_md TEXT NOT NULL,
+          contentMd TEXT NOT NULL,
           priority TEXT DEFAULT 'info',
-          is_active INTEGER DEFAULT 1,
-          expires_at DATETIME,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          isActive INTEGER DEFAULT 1,
+          expiresAt DATETIME,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS system_walkthroughs (
+        CREATE TABLE IF NOT EXISTS systemWalkthroughs (
           id TEXT PRIMARY KEY,
           version TEXT NOT NULL,
           title TEXT NOT NULL,
-          content_md TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          contentMd TEXT NOT NULL,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS pcc_audit_logs (
+        CREATE TABLE IF NOT EXISTS adminAuditLogs (
           id TEXT PRIMARY KEY,
-          user_id TEXT NOT NULL,
+          userId TEXT NOT NULL,
           action TEXT NOT NULL,
           target TEXT NOT NULL,
-          target_id TEXT,
-          details_json TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (user_id) REFERENCES users(id)
+          targetId TEXT,
+          detailsJson TEXT,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (userId) REFERENCES users(id)
         );
       `),
       db.prepare(`
-        INSERT INTO system_config (id, config_key, config_value, value_type)
+        INSERT INTO systemConfig (id, configKey, configValue, valueType)
         SELECT 'sys-rc-' || lower(hex(randomblob(4))), 'REQUIRE_TRANSACTION_CONTEXT', 'true', 'boolean'
-        WHERE NOT EXISTS (SELECT 1 FROM system_config WHERE config_key = 'REQUIRE_TRANSACTION_CONTEXT');
+        WHERE NOT EXISTS (SELECT 1 FROM systemConfig WHERE configKey = 'REQUIRE_TRANSACTION_CONTEXT');
       `),
       db.prepare(`
         CREATE TABLE IF NOT EXISTS bills (
           id TEXT PRIMARY KEY,
-          household_id TEXT NOT NULL REFERENCES households(id),
+          householdId TEXT NOT NULL REFERENCES households(id),
           name TEXT NOT NULL,
-          amount_cents INTEGER NOT NULL,
-          due_date TEXT NOT NULL,
+          amountCents INTEGER NOT NULL,
+          dueDate TEXT NOT NULL,
           status TEXT DEFAULT 'unpaid',
           notes TEXT,
-          is_recurring INTEGER DEFAULT 0,
+          isRecurring INTEGER DEFAULT 0,
           frequency TEXT,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `),
       db.prepare(`
-        INSERT OR IGNORE INTO bills (id, household_id, name, amount_cents, due_date, status, is_recurring, frequency)
-        SELECT id, household_id, name, amount_cents, COALESCE(next_billing_date, DATE('now')), 'pending', 1, billing_cycle
+        INSERT OR IGNORE INTO bills (id, householdId, name, amountCents, dueDate, status, isRecurring, frequency)
+        SELECT id, householdId, name, amountCents, COALESCE(nextBillingDate, DATE('now')), 'pending', 1, billingCycle
         FROM subscriptions
         WHERE id NOT IN (SELECT id FROM bills);
       `),
       db.prepare(`
-        CREATE TABLE IF NOT EXISTS liability_splits (
+        CREATE TABLE IF NOT EXISTS liabilitySplits (
           id TEXT PRIMARY KEY,
-          household_id TEXT NOT NULL REFERENCES households(id),
-          target_id TEXT NOT NULL,
-          target_type TEXT NOT NULL,
-          originator_user_id TEXT NOT NULL REFERENCES users(id),
-          assigned_user_id TEXT NOT NULL REFERENCES users(id),
-          split_type TEXT NOT NULL,
-          split_value INTEGER NOT NULL,
-          calculated_amount_cents INTEGER NOT NULL,
-          override_date TEXT,
-          override_frequency TEXT,
+          householdId TEXT NOT NULL REFERENCES households(id),
+          targetId TEXT NOT NULL,
+          targetType TEXT NOT NULL,
+          originatorUserId TEXT NOT NULL REFERENCES users(id),
+          assignedUserId TEXT NOT NULL REFERENCES users(id),
+          splitType TEXT NOT NULL,
+          splitValue INTEGER NOT NULL,
+          calculatedAmountCents INTEGER NOT NULL,
+          overrideDate TEXT,
+          overrideFrequency TEXT,
           status TEXT DEFAULT 'pending',
-          is_master_ledger_public INTEGER DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          isMasterLedgerPublic INTEGER DEFAULT 0,
+          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `)
     ]);
@@ -955,8 +956,8 @@ admin.post('/maintenance/self-heal', async (c) => {
 // List any household's categories/accounts/etc
 admin.get('/entities/:type', async (c) => {
   const type = c.req.param('type')
-  const householdId = c.req.query('household_id')
-  const userId = c.req.query('user_id')
+  const householdId = c.req.query('householdId')
+  const userId = c.req.query('userId')
   const db = getDb(c.env)
 
   let results: any[] = []
@@ -1011,7 +1012,7 @@ admin.get('/entities/:type', async (c) => {
       throw new HTTPException(400, { message: `Unknown entity type: ${type}` })
   }
 
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 // God-mode update any entity
@@ -1120,7 +1121,7 @@ admin.delete('/entities/:type/:id', async (c) => {
     action: `GOD_MODE_DELETE_${type.toUpperCase().replace(/-/g, '_')}`,
     target: id,
     targetId: id,
-    detailsJson: JSON.stringify({ deleted_at: new Date().toISOString() })
+    detailsJson: JSON.stringify({ deletedAt: new Date().toISOString() })
   })
 
   return c.json({ success: true })
@@ -1135,7 +1136,7 @@ admin.get('/entities/audit/report', async (c) => {
     .orderBy(desc(systemAdminAuditLogs.createdAt))
     .limit(limit)
   
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 export default admin

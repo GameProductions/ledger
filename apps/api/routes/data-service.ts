@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings, Variables } from '../types'
-import { logAudit, toSnake } from '../utils'
+import { logAudit, apiError } from '../utils'
 import { getDb } from '#/index'
 import {
   transactions,
@@ -43,12 +43,12 @@ data.get('/analysis/summary', async (c) => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
   const db = getDb(c.env)
   
-  const incomeResult = await db.select({ total: sql<number>`SUM(amount_cents)` })
+  const incomeResult = await db.select({ total: sql<number>`SUM(amountCents)` })
     .from(transactions)
     .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
     .limit(1)
   
-  const expenseResult = await db.select({ total: sql<number>`SUM(ABS(amount_cents))` })
+  const expenseResult = await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
     .from(transactions)
     .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
     .limit(1)
@@ -59,7 +59,7 @@ data.get('/analysis/summary', async (c) => {
   const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
   
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const recentExpenseResult = await db.select({ total: sql<number>`SUM(ABS(amount_cents))` })
+  const recentExpenseResult = await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
     .from(transactions)
     .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
     .limit(1)
@@ -69,12 +69,12 @@ data.get('/analysis/summary', async (c) => {
     return c.json({
     success: true,
     data: {
-      health_score: 85,
-      monthly_income: totalIncome,
-      monthly_expense: totalExpense,
-      savings_rate: Math.round(savingsRate),
-      daily_burn_rate: Math.round(burnRate),
-      safety_number_cents: (savings * 6)
+      healthScore: 85,
+      monthlyIncome: totalIncome,
+      monthlyExpense: totalExpense,
+      savingsRate: Math.round(savingsRate),
+      dailyBurnRate: Math.round(burnRate),
+      safetyNumberCents: (savings * 6)
     }
   })
 })
@@ -92,7 +92,7 @@ data.get('/analysis/category-spending', async (c) => {
   const results = await db.select({
     name: categories.name,
     color: categories.color,
-    total_cents: sql<number>`SUM(ABS(${transactions.amountCents}))`
+    totalCents: sql<number>`SUM(ABS(${transactions.amountCents}))`
   })
   .from(transactions)
   .innerJoin(categories, eq(transactions.categoryId, categories.id))
@@ -100,7 +100,7 @@ data.get('/analysis/category-spending', async (c) => {
   .groupBy(categories.id)
   .orderBy(desc(sql`SUM(ABS(${transactions.amountCents}))`))
 
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 data.get('/analysis/net-worth', async (c) => {
@@ -118,13 +118,13 @@ data.get('/analysis/net-worth', async (c) => {
 
   const history = (snapshots || []).map((s: any) => ({
     date: s.createdAt.split('T')[0],
-    value: JSON.parse(s.dataJson).net_worth_cents
+    value: JSON.parse(s.dataJson).netWorthCents || JSON.parse(s.dataJson).net_worth_cents
   })).reverse()
 
   return c.json({
     success: true,
     data: {
-      current_net_worth_cents: netWorthCents,
+      currentNetWorthCents: netWorthCents,
       history
     }
   })
@@ -151,12 +151,12 @@ data.get('/analysis/forecast', async (c) => {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const db = getDb(c.env)
   
-  const incomeResult = await db.select({ total: sql<number>`SUM(amount_cents)` })
+  const incomeResult = await db.select({ total: sql<number>`SUM(amountCents)` })
     .from(transactions)
     .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
     .limit(1)
     
-  const expenseResult = await db.select({ total: sql<number>`SUM(ABS(amount_cents))` })
+  const expenseResult = await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
     .from(transactions)
     .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
     .limit(1)
@@ -171,7 +171,7 @@ data.get('/analysis/forecast', async (c) => {
     return { date, balanceCents: Math.round(projectedBalance) }
   })
 
-  return c.json({ success: true, data: toSnake(forecast) || [] })
+  return c.json({ success: true, data: forecast || [] })
 })
 
 // Universal Scraper
@@ -208,9 +208,9 @@ data.post('/scrape', zValidator('json', z.object({
       data: {
         name: title.split('|')[0].trim(),
         description,
-        website_url: url,
-        logo_url: absoluteLogo,
-        is_spreadsheet: isSpreadsheet,
+        websiteUrl: url,
+        logoUrl: absoluteLogo,
+        isSpreadsheet: isSpreadsheet,
         type
       }
     })
@@ -229,7 +229,7 @@ data.post('/import/confirm', zValidator('json', z.object({
     date: z.string(),
     category: z.string().optional(),
     notes: z.string().optional(),
-    owner_id: z.string().optional()
+    ownerId: z.string().optional()
   }))
 })), async (c) => {
   const userId = c.get('userId')
@@ -241,8 +241,8 @@ data.post('/import/confirm', zValidator('json', z.object({
   if (type === 'transactions') {
     const db = getDb(c.env)
     // Audit Phase 4: Identity Guarding
-    // Verify that all owner_ids in the import belong to the current household
-    const distinctOwners = [...new Set(items.map(i => i.owner_id).filter(Boolean))] as string[]
+    // Verify that all ownerIds in the import belong to the current household
+    const distinctOwners = [...new Set(items.map(i => i.ownerId).filter(Boolean))] as string[]
     
     let authorizedOwners: string[] = []
     if (distinctOwners.length > 0) {
@@ -260,7 +260,7 @@ data.post('/import/confirm', zValidator('json', z.object({
       amountCents: Math.round(item.amount * 100),
       transactionDate: item.date,
       notes: item.notes || null,
-      ownerId: (item.owner_id && authorizedOwners.includes(item.owner_id)) ? item.owner_id : userId
+      ownerId: (item.ownerId && authorizedOwners.includes(item.ownerId)) ? item.ownerId : userId
     }))
     
     // Chunk inserts due to D1 limits (100 rows per batch recommended)
@@ -301,7 +301,7 @@ data.get('/providers', async (c) => {
   }
   
   const results = await db.select().from(serviceProviders).where(and(...filters))
-  return c.json({ success: true, data: (results || []).map(toSnake) })
+  return c.json({ success: true, data: results || [] })
 })
 
 // History (f.k.a. Reports)
@@ -311,12 +311,12 @@ data.get('/history', async (c) => {
   const results = await db.select({
     id: reports.id,
     type: reports.type,
-    period_start: reports.periodStart,
-    period_end: reports.periodEnd,
-    created_at: reports.createdAt
+    periodStart: reports.periodStart,
+    periodEnd: reports.periodEnd,
+    createdAt: reports.createdAt
   }).from(reports).where(eq(reports.householdId, householdId)).orderBy(desc(reports.createdAt))
   
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 data.post('/history/lock', async (c) => {
@@ -361,10 +361,10 @@ data.get('/tools/tokens', async (c) => {
   const results = await db.select({
     id: personalAccessTokens.id,
     name: personalAccessTokens.name,
-    created_at: personalAccessTokens.createdAt
+    createdAt: personalAccessTokens.createdAt
   }).from(personalAccessTokens).where(eq(personalAccessTokens.householdId, householdId))
   
-  return c.json({ success: true, data: toSnake(results) || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 data.patch('/tools/tokens/:id', zValidator('json', z.object({ name: z.string().min(1).max(100) })), async (c) => {

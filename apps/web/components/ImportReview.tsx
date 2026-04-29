@@ -66,8 +66,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         date: r.date || new Date().toISOString().split('T')[0],
         category: r.category || 'Uncategorized',
         notes: r.notes || '',
-        owner_id: r.owner_id || null,
-        owner_name: r.owner_name || ''
+        ownerId: r.ownerId || null,
+        ownerName: r.ownerName || ''
       })));
       setAnalyzing(false);
     };
@@ -103,7 +103,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           date: rowData.date instanceof Date ? rowData.date.toISOString().split('T')[0] : rowData.date,
           category: rowData.category,
           notes: rowData.notes,
-          owner_name: rowData.person || rowData.user || rowData.employee || ''
+          ownerName: rowData.person || rowData.user || rowData.employee || ''
         });
       });
       finalizeData(rows);
@@ -118,8 +118,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           date: r.date || r.Date || new Date().toISOString().split('T')[0],
           category: r.category || r.Category,
           notes: r.notes || r.Notes || '',
-          owner_id: r.owner_id || null,
-          owner_name: r.owner_name || ''
+          ownerId: r.ownerId || null,
+          ownerName: r.ownerName || ''
         })));
       } catch (e) {
         showToast('Invalid JSON file', 'error');
@@ -174,7 +174,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
   const handleMapUser = (rowIndex: number, userId: string) => {
     const updated = [...reviewItems];
-    updated[rowIndex].owner_id = userId;
+    updated[rowIndex].ownerId = userId;
     setReviewItems(updated);
   };
 
@@ -286,13 +286,13 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                         <td className="px-8 py-6 text-center">
                            <div className="relative inline-block group/owner">
                               <select 
-                                value={item.owner_id || ''}
+                                value={item.ownerId || ''}
                                 onChange={(e) => handleMapUser(idx, e.target.value)}
                                 className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest outline-none focus:border-emerald-500/50 appearance-none min-w-[120px]"
                               >
-                                <option value="">Auto ({item.owner_name || 'Generic'})</option>
+                                <option value="">Auto ({item.ownerName || 'Generic'})</option>
                                 {members?.map((m: any) => (
-                                  <option key={m.id} value={m.id}>{m.display_name}</option>
+                                  <option key={m.id} value={m.id}>{m.displayName}</option>
                                 ))}
                               </select>
                            </div>

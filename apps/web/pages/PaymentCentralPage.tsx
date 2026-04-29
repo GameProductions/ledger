@@ -22,12 +22,12 @@ const PaymentCentralPage: React.FC = () => {
   const [newMethod, setNewMethod] = useState({
     name: '',
     type: 'credit_card',
-    last_four: '',
-    branding_url: ''
+    lastFour: '',
+    brandingUrl: ''
   });
   
   const [newAccount, setNewAccount] = useState({
-    provider_id: '',
+    providerId: '',
     paymentMethodId: '',
     emailAttached: '',
     membershipStartDate: '',
@@ -86,7 +86,7 @@ const PaymentCentralPage: React.FC = () => {
     if (res.ok) {
       showToast('Payment method added!', 'success');
       setShowAddMethod(false);
-      setNewMethod({ name: '', type: 'credit_card', last_four: '', branding_url: '' });
+      setNewMethod({ name: '', type: 'credit_card', lastFour: '', brandingUrl: '' });
       fetchData();
     } else {
       const err = await res.json();
@@ -100,12 +100,12 @@ const PaymentCentralPage: React.FC = () => {
     
     // Map camelCase state to snake_case payload
     const payload = {
-      provider_id: newAccount.provider_id,
-      payment_method_id: newAccount.paymentMethodId || null,
-      email_attached: newAccount.emailAttached || null,
-      membership_start_date: newAccount.membershipStartDate || null,
-      membership_end_date: newAccount.membershipEndDate || null,
-      subscription_id: newAccount.subscriptionId || null,
+      providerId: newAccount.providerId,
+      paymentMethodId: newAccount.paymentMethodId || null,
+      emailAttached: newAccount.emailAttached || null,
+      membershipStartDate: newAccount.membershipStartDate || null,
+      membershipEndDate: newAccount.membershipEndDate || null,
+      subscriptionId: newAccount.subscriptionId || null,
       notes: newAccount.notes || '',
       status: newAccount.status
     };
@@ -122,7 +122,7 @@ const PaymentCentralPage: React.FC = () => {
     if (res.ok) {
       showToast('Account linked successfully!', 'success');
       setShowLinkAccount(false);
-      setNewAccount({ provider_id: '', paymentMethodId: '', emailAttached: '', membershipStartDate: '', membershipEndDate: '', subscriptionId: '', notes: '', status: 'active' });
+      setNewAccount({ providerId: '', paymentMethodId: '', emailAttached: '', membershipStartDate: '', membershipEndDate: '', subscriptionId: '', notes: '', status: 'active' });
       fetchData();
     } else {
       const err = await res.json();
@@ -211,8 +211,8 @@ const PaymentCentralPage: React.FC = () => {
                         <input 
                           type="text" 
                           maxLength={4}
-                          value={newMethod.last_four} 
-                          onChange={(e) => setNewMethod({ ...newMethod, last_four: e.target.value })}
+                          value={newMethod.lastFour} 
+                          onChange={(e) => setNewMethod({ ...newMethod, lastFour: e.target.value })}
                           placeholder="1234"
                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm"
                         />
@@ -234,10 +234,10 @@ const PaymentCentralPage: React.FC = () => {
                         options={(providers || []).map(p => ({ 
                           value: p.id, 
                           label: p.name, 
-                          icon: p.icon_url ? <img src={p.icon_url} className="w-5 h-5" alt="" /> : null
+                          icon: p.iconUrl ? <img src={p.iconUrl} className="w-5 h-5" alt="" /> : null
                         }))}
-                        value={newAccount.provider_id}
-                        onChange={(val) => setNewAccount({ ...newAccount, provider_id: val })}
+                        value={newAccount.providerId}
+                        onChange={(val) => setNewAccount({ ...newAccount, providerId: val })}
                         placeholder="Choose Provider..."
                       />
                     </div>
@@ -271,7 +271,7 @@ const PaymentCentralPage: React.FC = () => {
                           options={(subscriptions || []).map(s => ({ 
                             value: s.id, 
                             label: s.name, 
-                            metadata: { subtext: `$${((s.amount_cents || 0)/100).toFixed(2)}` }
+                            metadata: { subtext: `$${((s.amountCents || 0)/100).toFixed(2)}` }
                           }))}
                           value={newAccount.subscriptionId}
                           onChange={(val) => setNewAccount({ ...newAccount, subscriptionId: val })}
@@ -317,7 +317,7 @@ const PaymentCentralPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm tracking-tight">{method.name}</p>
-                      <p className="text-xs uppercase font-black text-slate-500 tracking-widest">{(method.type || '').replace('_', ' ')} {method.last_four && `**** ${method.last_four}`}</p>
+                      <p className="text-xs uppercase font-black text-slate-500 tracking-widest">{(method.type || '').replace('_', ' ')} {method.lastFour && `**** ${method.lastFour}`}</p>
                     </div>
                     <button className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
                  </div>
@@ -353,13 +353,13 @@ const PaymentCentralPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <h4 className="text-xl font-black tracking-tighter uppercase italic">{account.provider_name}</h4>
+                    <h4 className="text-xl font-black tracking-tighter uppercase italic">{account.providerName}</h4>
                     
                     <div className="mt-6 space-y-4">
-                      {account.email_attached && (
+                      {account.emailAttached && (
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
                           <Mail size={14} className="text-amber-500/60" />
-                          <span>{account.email_attached}</span>
+                          <span>{account.emailAttached}</span>
                         </div>
                       )}
                       {account.payment_method_name && (
@@ -368,10 +368,10 @@ const PaymentCentralPage: React.FC = () => {
                           <span>Charged to: <span className="text-white">{account.payment_method_name}</span></span>
                         </div>
                       )}
-                      {(account.membership_start_date || account.membership_end_date) && (
+                      {(account.membershipStartDate || account.membershipEndDate) && (
                         <div className="flex items-center gap-3 text-sm font-medium text-slate-400">
                           <Calendar size={14} className="text-purple-500/60" />
-                          <span>Period: {account.membership_start_date || 'N/A'} — {account.membership_end_date || 'Active'}</span>
+                          <span>Period: {account.membershipStartDate || 'N/A'} — {account.membershipEndDate || 'Active'}</span>
                         </div>
                       )}
                     </div>
@@ -383,7 +383,7 @@ const PaymentCentralPage: React.FC = () => {
                            <span className={`w-1.5 h-1.5 rounded-full ${account.status === 'active' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span> {account.status}
                         </p>
                       </div>
-                      {account.subscription_id && (
+                      {account.subscriptionId && (
                          <div className="text-right">
                             <p className="text-[10px] font-black text-slate-600 uppercase">Linked Subscription</p>
                             <p className="text-xs font-black text-blue-400 uppercase italic">{account.subscription_name || 'Linked'}</p>

@@ -14,7 +14,7 @@ interface Passkey {
   id: string;
   name: string | null;
   aaguid: string | null;
-  created_at: string;
+  createdAt: string;
   counter: number;
   backedUp?: boolean | number;
   lastUsedAt?: string | null;
@@ -268,7 +268,7 @@ export const PasskeyModule = () => {
                                    <span>•</span>
                                    <span>Uses: {pk.counter}</span>
                                    <span>•</span>
-                                   <span>Added: {new Date(pk.created_at).toLocaleDateString()}</span>
+                                   <span>Added: {new Date(pk.createdAt).toLocaleDateString()}</span>
                                    {pk.lastUsedAt && (
                                      <>
                                        <span>•</span>

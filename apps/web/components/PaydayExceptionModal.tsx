@@ -9,11 +9,11 @@ import { Price } from './Price';
 interface PaydayExceptionModalProps {
     payday: {
         id?: string;
-        pay_schedule_id: string;
+        payScheduleId: string;
         date: string;
-        original_date: string;
+        originalDate: string;
         name: string;
-        amount_cents: number;
+        amountCents: number;
         notes?: string;
         is_override?: boolean;
     };
@@ -29,12 +29,12 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
 
     // Form State
     const [note, setNote] = React.useState(payday.notes || '');
-    const [overrideAmountCents, setOverrideAmountCents] = React.useState<number | null>(payday.is_override ? payday.amount_cents : null);
+    const [overrideAmountCents, setOverrideAmountCents] = React.useState<number | null>(payday.is_override ? payday.amountCents : null);
     const [overrideDate, setOverrideDate] = React.useState<string | null>(payday.is_override ? payday.date : null);
 
     React.useEffect(() => {
         setNote(payday.notes || '');
-        setOverrideAmountCents(payday.is_override ? payday.amount_cents : null);
+        setOverrideAmountCents(payday.is_override ? payday.amountCents : null);
         setOverrideDate(payday.is_override ? payday.date : null);
     }, [payday]);
 
@@ -50,10 +50,10 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                pay_schedule_id: payday.pay_schedule_id,
-                original_date: payday.original_date,
-                override_date: overrideDate || null,
-                override_amount_cents: overrideAmountCents || null,
+                payScheduleId: payday.payScheduleId,
+                originalDate: payday.originalDate,
+                overrideDate: overrideDate || null,
+                overrideAmountCents: overrideAmountCents || null,
                 note: note || null
             })
         });
@@ -101,11 +101,11 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/5 p-3 rounded-xl border border-white/10">
                         <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Projected Date</div>
-                        <div className="text-sm font-bold text-white/80">{payday.original_date}</div>
+                        <div className="text-sm font-bold text-white/80">{payday.originalDate}</div>
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/10">
                         <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Projected Amount</div>
-                        <Price amount_cents={payday.amount_cents} className="text-sm font-bold" />
+                        <Price amountCents={payday.amountCents} className="text-sm font-bold" />
                     </div>
                 </div>
 

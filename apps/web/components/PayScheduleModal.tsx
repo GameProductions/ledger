@@ -21,28 +21,28 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
     // Form State
     const [name, setName] = React.useState(schedule?.name || '');
-    const [amountCents, setAmountCents] = React.useState(schedule?.estimated_amount_cents || 0);
+    const [amountCents, setAmountCents] = React.useState(schedule?.estimatedAmountCents || 0);
     const [frequency, setFrequency] = React.useState(schedule?.frequency || 'biweekly');
-    const [nextPayDate, setNextPayDate] = React.useState(schedule?.next_pay_date || new Date().toISOString().split('T')[0]);
+    const [nextPayDate, setNextPayDate] = React.useState(schedule?.nextPayDate || new Date().toISOString().split('T')[0]);
     const [notes, setNotes] = React.useState(schedule?.notes || '');
-    const [d1, setD1] = React.useState(schedule?.semi_monthly_day_1 || 1);
-    const [d2, setD2] = React.useState(schedule?.semi_monthly_day_2 || 15);
-    const [userId, setUserId] = React.useState(schedule?.user_id || '');
-    const [upcomingAmountCents, setUpcomingAmountCents] = React.useState(schedule?.upcoming_amount_cents || 0);
-    const [upcomingEffectiveDate, setUpcomingEffectiveDate] = React.useState(schedule?.upcoming_effective_date || '');
+    const [d1, setD1] = React.useState(schedule?.semiMonthlyDay1 || 1);
+    const [d2, setD2] = React.useState(schedule?.semiMonthlyDay2 || 15);
+    const [userId, setUserId] = React.useState(schedule?.userId || '');
+    const [upcomingAmountCents, setUpcomingAmountCents] = React.useState(schedule?.upcomingAmountCents || 0);
+    const [upcomingEffectiveDate, setUpcomingEffectiveDate] = React.useState(schedule?.upcomingEffectiveDate || '');
 
     React.useEffect(() => {
         if (schedule) {
             setName(schedule.name);
-            setAmountCents(schedule.estimated_amount_cents || 0);
+            setAmountCents(schedule.estimatedAmountCents || 0);
             setFrequency(schedule.frequency);
-            setNextPayDate(schedule.next_pay_date);
+            setNextPayDate(schedule.nextPayDate);
             setNotes(schedule.notes || '');
-            setD1(schedule.semi_monthly_day_1 || 1);
-            setD2(schedule.semi_monthly_day_2 || 15);
-            setUserId(schedule.user_id || '');
-            setUpcomingAmountCents(schedule.upcoming_amount_cents || 0);
-            setUpcomingEffectiveDate(schedule.upcoming_effective_date || '');
+            setD1(schedule.semiMonthlyDay1 || 1);
+            setD2(schedule.semiMonthlyDay2 || 15);
+            setUserId(schedule.userId || '');
+            setUpcomingAmountCents(schedule.upcomingAmountCents || 0);
+            setUpcomingEffectiveDate(schedule.upcomingEffectiveDate || '');
         }
     }, [schedule]);
 
@@ -53,14 +53,14 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
         const payload = {
             name,
             frequency,
-            estimated_amount_cents: amountCents,
-            next_pay_date: nextPayDate,
+            estimatedAmountCents: amountCents,
+            nextPayDate: nextPayDate,
             notes,
-            semi_monthly_day_1: frequency === 'semi-monthly' ? d1 : null,
-            semi_monthly_day_2: frequency === 'semi-monthly' ? d2 : null,
-            user_id: userId || null,
-            upcoming_amount_cents: upcomingAmountCents || null,
-            upcoming_effective_date: upcomingEffectiveDate || null
+            semiMonthlyDay1: frequency === 'semi-monthly' ? d1 : null,
+            semiMonthlyDay2: frequency === 'semi-monthly' ? d2 : null,
+            userId: userId || null,
+            upcomingAmountCents: upcomingAmountCents || null,
+            upcomingEffectiveDate: upcomingEffectiveDate || null
         };
 
         const apiUrl = getApiUrl().replace(/\/$/, '');
@@ -186,7 +186,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                     >
                         <option value="">Household (Generic)</option>
                         {household?.members?.map((m: any) => (
-                            <option key={m.user.id} value={m.user.id}>{m.user.display_name || m.user.username}</option>
+                            <option key={m.user.id} value={m.user.id}>{m.user.displayName || m.user.username}</option>
                         ))}
                     </select>
                 </div>

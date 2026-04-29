@@ -42,7 +42,7 @@ export const InstallmentsList: React.FC = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ is_public: isPublic })
+            body: JSON.stringify({ isPublic: isPublic })
         });
 
         if (res.ok) {
@@ -63,19 +63,19 @@ export const InstallmentsList: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-3">
                 {installments?.length > 0 ? installments.map((inst: any) => {
-                    const totalPayments = inst.total_installments;
-                    const remainingPayments = inst.remaining_installments;
+                    const totalPayments = inst.totalInstallments;
+                    const remainingPayments = inst.remainingInstallments;
                     const paidPayments = totalPayments - remainingPayments;
                     const progressPercent = (paidPayments / totalPayments) * 100;
-                    const paidAmountCents = paidPayments * inst.installment_amount_cents;
+                    const paidAmountCents = paidPayments * inst.installmentAmountCents;
 
                     return (
                         <div key={inst.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-indigo-500/30 overflow-hidden">
-                            {inst.upcoming_effective_date && (
+                            {inst.upcomingEffectiveDate && (
                                 <div className="absolute top-0 right-0 bg-indigo-500/10 border-b border-l border-indigo-500/20 px-3 py-1 rounded-bl-xl">
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
                                         <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                                        Rate Change: <Price amount_cents={inst.upcoming_amount_cents} /> on {inst.upcoming_effective_date}
+                                        Rate Change: <Price amountCents={inst.upcomingAmountCents} /> on {inst.upcomingEffectiveDate}
                                     </div>
                                 </div>
                             )}
@@ -87,12 +87,12 @@ export const InstallmentsList: React.FC = () => {
                                             {paidPayments} OF {totalPayments} PAID
                                         </span>
                                         <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
-                                            Next: {inst.next_payment_date}
+                                            Next: {inst.nextPayDate}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <Price amount_cents={inst.installment_amount_cents} className="text-xl font-black tracking-tighter" />
+                                    <Price amountCents={inst.installmentAmountCents} className="text-xl font-black tracking-tighter" />
                                     <div className="text-[11px] font-bold uppercase tracking-widest text-white/30 mt-0.5">Per {inst.frequency}</div>
                                 </div>
                             </div>
@@ -102,8 +102,8 @@ export const InstallmentsList: React.FC = () => {
                                 <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
                                     <span className="text-white/40">Total Progress</span>
                                     <div className="flex gap-2">
-                                        <span className="text-white/40 italic">Paid <Price amount_cents={paidAmountCents} /></span>
-                                        <span className="text-white">Of <Price amount_cents={inst.total_amount_cents} /></span>
+                                        <span className="text-white/40 italic">Paid <Price amountCents={paidAmountCents} /></span>
+                                        <span className="text-white">Of <Price amountCents={inst.totalAmountCents} /></span>
                                     </div>
                                 </div>
                                 <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
@@ -114,7 +114,7 @@ export const InstallmentsList: React.FC = () => {
                                 </div>
                             </div>
 
-                            {inst.is_split_portion && (
+                            {inst.isSplitPortion && (
                                 <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 mb-4">
                                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-400">
                                         <Share2 size={12} /> Assigned Split Portion
@@ -123,7 +123,7 @@ export const InstallmentsList: React.FC = () => {
                             )}
 
                             {/* Premium Internal Tracking for Originators */}
-                            {inst.is_split_originator && inst.splits && (
+                            {inst.isSplitOriginator && inst.splits && (
                                 <div className="mb-4">
                                     <button 
                                         onClick={() => setOpenTrackerId(openTrackerId === inst.id ? null : inst.id)}
@@ -143,7 +143,7 @@ export const InstallmentsList: React.FC = () => {
                                                     <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
                                                         <input 
                                                             type="checkbox" 
-                                                            checked={inst.splits?.[0]?.is_master_ledger_public || false} 
+                                                            checked={inst.splits?.[0]?.isMasterLedgerPublic || false} 
                                                             onChange={(e) => handleTogglePublic(inst.id, e.target.checked)}
                                                             className="sr-only peer" 
                                                         />
@@ -153,7 +153,7 @@ export const InstallmentsList: React.FC = () => {
                                                 {inst.splits.map((split: any) => (
                                                     <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] flex items-center justify-center font-bold">{split.assigned_user_id.substring(0, 2)}</span>
+                                                            <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
                                                             <span className="text-xs font-bold uppercase tracking-widest text-white/60">Portion</span>
                                                         </div>
                                                         <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export const InstallmentsList: React.FC = () => {
                                                             }`}>
                                                                 {split.status}
                                                             </span>
-                                                            <Price amount_cents={split.calculated_amount_cents} className="text-xs font-bold tracking-widest" />
+                                                            <Price amountCents={split.calculatedAmountCents} className="text-xs font-bold tracking-widest" />
                                                         </div>
                                                     </div>
                                                 ))}
@@ -180,7 +180,7 @@ export const InstallmentsList: React.FC = () => {
                                     >
                                         Payment Logic Pending
                                     </button>
-                                    {!inst.is_split_originator && !inst.is_split_portion && (
+                                    {!inst.isSplitOriginator && !inst.isSplitPortion && (
                                         <button 
                                             onClick={() => setOpenSplitterId(openSplitterId === inst.id ? null : inst.id)}
                                             className="text-xs font-bold uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-2 rounded-xl hover:bg-indigo-500/20 transition-all flex items-center gap-2"
@@ -202,7 +202,7 @@ export const InstallmentsList: React.FC = () => {
                                     <LiabilitySplitter 
                                         targetId={inst.id} 
                                         targetType="installment" 
-                                        total_amount_cents={inst.installment_amount_cents} 
+                                        totalAmountCents={inst.installmentAmountCents} 
                                         onComplete={() => {
                                             setOpenSplitterId(null);
                                             mutate();

@@ -26,7 +26,7 @@ const Subscriptions: React.FC = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ is_public: isPublic })
+        body: JSON.stringify({ isPublic: isPublic })
     });
 
     if (res.ok) {
@@ -72,14 +72,14 @@ const Subscriptions: React.FC = () => {
             },
             body: JSON.stringify({
               name: formData.get('name'),
-              amount_cents: Math.round(parseFloat(formData.get('amount') as string) * 100),
-              billing_cycle: formData.get('cycle'),
-              next_billing_date: formData.get('date'),
-              trial_end_date: formData.get('trial_date') || null,
-              is_trial: !!formData.get('trial_date'),
-              provider_account_id: formData.get('linked_account') || null,
-              upcoming_amount_cents: formData.get('upcoming_amount') ? Math.round(parseFloat(formData.get('upcoming_amount') as string) * 100) : null,
-              upcoming_effective_date: formData.get('upcoming_date') || null
+              amountCents: Math.round(parseFloat(formData.get('amount') as string) * 100),
+              billingCycle: formData.get('cycle'),
+              nextBillingDate: formData.get('date'),
+              trialEndDate: formData.get('trialDate') || null,
+              isTrial: !!formData.get('trialDate'),
+              providerAccountId: formData.get('linkedAccount') || null,
+              upcomingAmountCents: formData.get('upcomingAmount') ? Math.round(parseFloat(formData.get('upcomingAmount') as string) * 100) : null,
+              upcomingEffectiveDate: formData.get('upcomingDate') || null
             })
           }).then(() => {
             showToast('Subscription added!', 'success')
@@ -93,8 +93,8 @@ const Subscriptions: React.FC = () => {
                <SearchableSelect 
                   options={linkedAccounts?.map((acc: any) => ({
                     value: acc.id,
-                    label: acc.provider_name,
-                    metadata: { email: acc.email_attached }
+                    label: acc.providerName,
+                    metadata: { email: acc.emailAttached }
                   })) || []}
                   value="" 
                   onChange={(val) => {
@@ -103,7 +103,7 @@ const Subscriptions: React.FC = () => {
                   }}
                   placeholder="Link Account..."
                />
-               <input type="hidden" name="linked_account" id="hidden-linked-account" />
+               <input type="hidden" name="linkedAccount" id="hidden-linked-account" />
              </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -120,7 +120,7 @@ const Subscriptions: React.FC = () => {
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>Trial Ends (Optional)</label>
-              <input name="trial_date" type="date" style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+              <input name="trialDate" type="date" style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
             </div>
           </div>
 
@@ -129,11 +129,11 @@ const Subscriptions: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Upcoming Amount</label>
-                <input name="upcoming_amount" type="number" step="0.01" placeholder="0.00" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+                <input name="upcomingAmount" type="number" step="0.01" placeholder="0.00" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
               </div>
               <div>
                 <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Effective Date</label>
-                <input name="upcoming_date" type="date" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+                <input name="upcomingDate" type="date" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
               </div>
             </div>
           </div>
@@ -145,11 +145,11 @@ const Subscriptions: React.FC = () => {
       <div style={{ display: 'grid', gap: '1rem' }}>
         {subs?.map((sub: any) => (
           <div key={sub.id} className="relative bg-white/[0.03] rounded-xl border border-white/5 p-4 space-y-4 overflow-hidden">
-            {sub.upcoming_effective_date && (
+            {sub.upcomingEffectiveDate && (
                <div className="absolute top-0 right-0 bg-primary/20 border-b border-l border-primary/20 px-3 py-1 rounded-bl-xl">
                  <div className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-                   Rate Change: <Price amount_cents={sub.upcoming_amount_cents} /> on {sub.upcoming_effective_date}
+                   Rate Change: <Price amountCents={sub.upcomingAmountCents} /> on {sub.upcomingEffectiveDate}
                  </div>
                </div>
             )}
@@ -158,15 +158,15 @@ const Subscriptions: React.FC = () => {
               <div>
                 <div style={{ fontWeight: '800', display: 'flex', gap: '0.5rem', alignItems: 'center' }} className="text-sm tracking-tight">
                   {sub.name}
-                  {sub.is_trial ? (
+                  {sub.isTrial ? (
                     <span style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem', background: 'var(--secondary)', color: 'black', borderRadius: '0.25rem', fontWeight: '900' }}>TRIAL</span>
                   ) : null}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }} className="mt-0.5 font-medium opacity-60">
-                  {sub.is_trial ? `Trial Ends: ${sub.trial_end_date}` : `Due: ${sub.next_billing_date}`}
+                  {sub.isTrial ? `Trial Ends: ${sub.trialEndDate}` : `Due: ${sub.nextBillingDate}`}
                 </div>
                 <div className="flex gap-2 mt-2">
-                  {sub.provider_account_id && (
+                  {sub.providerAccountId && (
                     <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
                       <Link size={10} /> Account Linked
                     </div>
@@ -174,7 +174,7 @@ const Subscriptions: React.FC = () => {
                   <button onClick={() => setReminderTarget({ id: sub.id, name: sub.name })} className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-primary transition-colors">
                     <Bell size={10} /> Alerts
                   </button>
-                  {!sub.is_split_originator && !sub.is_split_portion && (
+                  {!sub.isSplitOriginator && !sub.isSplitPortion && (
                       <button onClick={() => setOpenSplitterId(openSplitterId === sub.id ? null : sub.id)} className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-emerald-500 transition-colors">
                         <Share2 size={10} /> Split
                       </button>
@@ -182,19 +182,19 @@ const Subscriptions: React.FC = () => {
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <Price amount_cents={sub.amount_cents} className="font-black tracking-tighter text-lg" />
-                <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billing_cycle}</div>
+                <Price amountCents={sub.amountCents} className="font-black tracking-tighter text-lg" />
+                <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billingCycle}</div>
               </div>
             </div>
 
-            {sub.is_split_portion && (
+            {sub.isSplitPortion && (
                 <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80 bg-white/5 border border-white/10 rounded-lg p-2 w-fit">
                     <Share2 size={12} /> Assigned Split Portion
                 </div>
             )}
 
             {/* Premium Internal Tracking for Originators */}
-            {sub.is_split_originator && sub.splits && (
+            {sub.isSplitOriginator && sub.splits && (
                 <div>
                     <button 
                         onClick={() => setOpenTrackerId(openTrackerId === sub.id ? null : sub.id)}
@@ -214,7 +214,7 @@ const Subscriptions: React.FC = () => {
                                     <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
                                         <input 
                                             type="checkbox" 
-                                            checked={sub.splits?.[0]?.is_master_ledger_public || false} 
+                                            checked={sub.splits?.[0]?.isMasterLedgerPublic || false} 
                                             onChange={(e) => handleTogglePublic(sub.id, e.target.checked)}
                                             className="sr-only peer" 
                                         />
@@ -224,7 +224,7 @@ const Subscriptions: React.FC = () => {
                                 {sub.splits.map((split: any) => (
                                     <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
                                         <div className="flex items-center gap-2">
-                                            <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assigned_user_id.substring(0, 2)}</span>
+                                            <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Portion</span>
                                         </div>
                                         <div className="flex items-center gap-3">
@@ -233,7 +233,7 @@ const Subscriptions: React.FC = () => {
                                             }`}>
                                                 {split.status}
                                             </span>
-                                            <Price amount_cents={split.calculated_amount_cents} className="text-[11px] font-black tracking-widest" />
+                                            <Price amountCents={split.calculatedAmountCents} className="text-[11px] font-black tracking-widest" />
                                         </div>
                                     </div>
                                 ))}
@@ -248,7 +248,7 @@ const Subscriptions: React.FC = () => {
                     <LiabilitySplitter 
                         targetId={sub.id} 
                         targetType="subscription" 
-                        total_amount_cents={sub.amount_cents} 
+                        totalAmountCents={sub.amountCents} 
                         onComplete={() => {
                             setOpenSplitterId(null);
                             mutate();

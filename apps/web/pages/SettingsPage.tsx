@@ -40,7 +40,7 @@ const SettingsPage: React.FC = () => {
   
   // UI Display Settings State
   const [timezone, setTimezone] = useState('UTC')
-  const settingsJson = JSON.parse(profile?.settings_json || '{}')
+  const settingsJson = JSON.parse(profile?.settingsJson || '{}')
 
   // Modals / Edit Trackers
   const [isEditingAlias, setIsEditingAlias] = useState(false)
@@ -58,15 +58,15 @@ const SettingsPage: React.FC = () => {
   // Setup
   useEffect(() => {
     if (profile) {
-      setName(profile.display_name || '')
+      setName(profile.displayName || '')
       setUsername(profile.username || '')
       setEmail(profile.email || '')
-      setAvatar(profile.avatar_url || '')
+      setAvatar(profile.avatarUrl || '')
       setTimezone(profile.timezone || 'UTC')
     }
   }, [profile])
 
-  const avatarUrl = sanitizeImageUrl(profile?.avatar_url) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   // -------------- HANDLERS --------------
 
@@ -82,10 +82,10 @@ const SettingsPage: React.FC = () => {
           'x-household-id': localStorage.getItem('ledger_householdId') || ''
         },
         body: JSON.stringify({ 
-          display_name: name,
+          displayName: name,
           username: username,
           email: email,
-          avatar_url: avatar || null,
+          avatarUrl: avatar || null,
           timezone: timezone
         })
       })
@@ -112,7 +112,7 @@ const SettingsPage: React.FC = () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     })
     window.location.reload()
   }
@@ -138,7 +138,7 @@ const SettingsPage: React.FC = () => {
             const cred = new (window as any).PasswordCredential({
               id: profile?.email || user?.email || '',
               password: newPassword,
-              name: profile?.display_name || user?.display_name
+              name: profile?.displayName || user?.displayName
             });
             navigator.credentials.store(cred);
           } catch (e) {
@@ -218,7 +218,7 @@ const SettingsPage: React.FC = () => {
   }
 
   const setUiStyle = (style: string) => {
-    updateSettingsJson({ ...settingsJson, ui_style: style })
+    updateSettingsJson({ ...settingsJson, uiStyle: style })
   }
 
   const widgets = [
@@ -302,7 +302,7 @@ const SettingsPage: React.FC = () => {
             {/* Account Role Badge */}
             <div className="flex justify-center md:justify-start">
               <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.15em] text-primary shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                {profile?.global_role === 'super_admin' ? 'Super Admin' : (profile?.global_role || 'Standard User')}
+                {profile?.globalRole === 'super_admin' ? 'Super Admin' : (profile?.globalRole || 'Standard User')}
               </div>
             </div>
             
@@ -523,7 +523,7 @@ const SettingsPage: React.FC = () => {
                       <button 
                         key={style}
                         onClick={() => setUiStyle(style)}
-                        className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settingsJson.ui_style === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                        className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settingsJson.uiStyle === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                       >
                         {style}
                       </button>
@@ -623,7 +623,7 @@ const SettingsPage: React.FC = () => {
                                 <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Active Account</p>
                               </div>
                           </div>
-                          <Price amount_cents={acc.balance_cents} className="text-lg font-black tracking-tighter" />
+                          <Price amountCents={acc.balanceCents} className="text-lg font-black tracking-tighter" />
                         </div>
                     )) : (
                         <div className="col-span-full p-10 border-2 border-dashed border-white/5 rounded-3xl text-center opacity-30 grayscale italic">

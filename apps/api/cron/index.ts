@@ -5,15 +5,6 @@ import { getDb } from '#/index'
 import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills } from '#/schema'
 import { eq, sql, lte, and } from 'drizzle-orm'
 
-const toSnake = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  const res: any = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    res[snakeKey] = obj[key];
-  }
-  return res;
-}
 
 type SyncResult = {
   success: boolean
@@ -24,17 +15,17 @@ type SyncResult = {
 
 const providerSyncHandlers: Record<string, (env: Bindings, connection: any, token: string) => Promise<void>> = {
   plaid: async (env, conn, _token) => {
-    console.log(`[Sync] Plaid sync for household ${conn.household_id}`)
+    console.log(`[Sync] Plaid sync for household ${conn.householdId}`)
     const db = getDb(env);
     const accountsData = [
-      { id: `plaid-${conn.household_id}-checking`, name: 'Plaid Checking', balance: 524050, type: 'depository' },
-      { id: `plaid-${conn.household_id}-savings`, name: 'Plaid Savings', balance: 1250000, type: 'depository' },
-      { id: `plaid-${conn.household_id}-credit`, name: 'Plaid Platinum Card', balance: 45000, type: 'credit' }
+      { id: `plaid-${conn.householdId}-checking`, name: 'Plaid Checking', balance: 524050, type: 'depository' },
+      { id: `plaid-${conn.householdId}-savings`, name: 'Plaid Savings', balance: 1250000, type: 'depository' },
+      { id: `plaid-${conn.householdId}-credit`, name: 'Plaid Platinum Card', balance: 45000, type: 'credit' }
     ]
     for (const acc of accountsData) {
       await db.insert(accounts).values({
         id: acc.id,
-        householdId: conn.household_id,
+        householdId: conn.householdId,
         name: acc.name,
         type: acc.type,
         balanceCents: acc.balance
@@ -44,7 +35,7 @@ const providerSyncHandlers: Record<string, (env: Bindings, connection: any, toke
         const ccId = `cc-${acc.id}`
         await db.insert(creditCards).values({
           id: ccId,
-          householdId: conn.household_id,
+          householdId: conn.householdId,
           accountId: acc.id,
           creditLimitCents: 1000000
         }).onConflictDoNothing()
@@ -52,16 +43,16 @@ const providerSyncHandlers: Record<string, (env: Bindings, connection: any, toke
     }
   },
   akoya: async (env, conn, _token) => {
-    console.log(`[Sync] Akoya sync for household ${conn.household_id}`)
+    console.log(`[Sync] Akoya sync for household ${conn.householdId}`)
     const db = getDb(env);
     const holdings = [
-      { id: `akoya-${conn.household_id}-h1`, name: 'Vanguard Total Stock Market', qty: 120.5, val: 3200000 },
-      { id: `akoya-${conn.household_id}-h2`, name: 'Bitcoin (via Coinbase)', qty: 0.45, val: 2800000 }
+      { id: `akoya-${conn.householdId}-h1`, name: 'Vanguard Total Stock Market', qty: 120.5, val: 3200000 },
+      { id: `akoya-${conn.householdId}-h2`, name: 'Bitcoin (via Coinbase)', qty: 0.45, val: 2800000 }
     ]
     for (const h of holdings) {
       await db.insert(investmentHoldings).values({
         id: h.id,
-        householdId: conn.household_id,
+        householdId: conn.householdId,
         accountId: 'retirement-acc-1',
         name: h.name,
         quantity: h.qty,
@@ -70,15 +61,15 @@ const providerSyncHandlers: Record<string, (env: Bindings, connection: any, toke
     }
   },
   method: async (env, conn, _token) => {
-    console.log(`[Sync] Method FI sync for household ${conn.household_id}`)
+    console.log(`[Sync] Method FI sync for household ${conn.householdId}`)
     const db = getDb(env);
     const installments = [
-      { id: `method-${conn.household_id}-i1`, name: 'Affirm: Apple Store', total: 120000, monthly: 10000, remaining: 8, freq: 'monthly' }
+      { id: `method-${conn.householdId}-i1`, name: 'Affirm: Apple Store', total: 120000, monthly: 10000, remaining: 8, freq: 'monthly' }
     ]
     for (const inst of installments) {
       await db.insert(installmentPlans).values({
         id: inst.id,
-        householdId: conn.household_id,
+        householdId: conn.householdId,
         name: inst.name,
         totalAmountCents: inst.total,
         installmentAmountCents: inst.monthly,
@@ -90,15 +81,15 @@ const providerSyncHandlers: Record<string, (env: Bindings, connection: any, toke
     }
   },
   privacy: async (env, conn, _token) => {
-    console.log(`[Sync] Privacy.com sync for household ${conn.household_id}`)
+    console.log(`[Sync] Privacy.com sync for household ${conn.householdId}`)
     const db = getDb(env);
     const cards = [
-      { id: `privacy-${conn.household_id}-c1`, last4: '1234', host: 'Netflix', limit: 2000, state: 'OPEN' }
+      { id: `privacy-${conn.householdId}-c1`, last4: '1234', host: 'Netflix', limit: 2000, state: 'OPEN' }
     ]
     for (const card of cards) {
       await db.insert(privacyCards).values({
         id: card.id,
-        householdId: conn.household_id,
+        householdId: conn.householdId,
         connectionId: conn.id,
         last4: card.last4,
         hostname: card.host,
@@ -125,7 +116,7 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
 
       const handler = providerSyncHandlers[conn.provider]
       if (handler) {
-        await handler(env, toSnake(conn), token)
+        await handler(env, conn, token)
         await db.update(externalConnections).set({ lastSyncAt: sql`CURRENT_TIMESTAMP` }).where(eq(externalConnections.id, conn.id))
         
         await db.insert(systemAuditLogs).values({
@@ -199,18 +190,18 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
           const isRollover = category.rolloverEnabled === true;
 
           if (isRollover) {
-            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents - ${monthlyBudget}` }).where(eq(households.id, schedule.householdId)));
-            queries.push(db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${monthlyBudget}`, rolloverCents: currentEnvelope }).where(eq(categories.id, schedule.targetId)));
+            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocatedBalanceCents - ${monthlyBudget}` }).where(eq(households.id, schedule.householdId)));
+            queries.push(db.update(categories).set({ envelopeBalanceCents: sql`envelopeBalanceCents + ${monthlyBudget}`, rolloverCents: currentEnvelope }).where(eq(categories.id, schedule.targetId)));
           } else {
             const surplus = currentEnvelope;
             const adjustment = monthlyBudget - surplus;
-            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents - ${adjustment}` }).where(eq(households.id, schedule.householdId)));
+            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocatedBalanceCents - ${adjustment}` }).where(eq(households.id, schedule.householdId)));
             queries.push(db.update(categories).set({ envelopeBalanceCents: monthlyBudget, rolloverCents: 0 }).where(eq(categories.id, schedule.targetId)));
           }
         }
       }
       
-      const nextOccurrence = SchedulingService.calculateNextOccurrence(toSnake(schedule), now, currentCount);
+      const nextOccurrence = SchedulingService.calculateNextOccurrence(schedule as any, now, currentCount);
       if (nextOccurrence) {
         queries.push(db.update(schedules).set({
             lastRunAt: nowIso,

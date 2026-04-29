@@ -235,7 +235,7 @@ auth.get('/callback/discord', async (c) => {
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'discord', socialProfile, socialTokens)
-    await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'discord', userId: sessionUserId })
+    await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'discord', userId: sessionUserId })
   } else {
     // LOGIN MODE
     finalUserId = await authService.findOrCreateSocialUser('discord', socialProfile, socialTokens)
@@ -411,7 +411,7 @@ auth.get('/callback/google', async (c) => {
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'google', socialProfile, socialTokens)
-    await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'google', userId: sessionUserId })
+    await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'google', userId: sessionUserId })
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE
@@ -500,9 +500,9 @@ auth.get('/callback/dropbox', async (c) => {
   const profile = await userRes.json() as any
   
   const socialProfile = {
-    id: profile.account_id,
+    id: profile.accountId,
     email: profile.email,
-    name: profile.name.display_name,
+    name: profile.name.displayName,
     avatar: profile.profile_photo_url
   }
 
@@ -515,7 +515,7 @@ auth.get('/callback/dropbox', async (c) => {
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'dropbox', socialProfile, socialTokens)
-    await logAudit(c, 'user_identities', profile.account_id, 'LINK', null, { provider: 'dropbox', userId: sessionUserId })
+    await logAudit(c, 'userIdentities', profile.accountId, 'LINK', null, { provider: 'dropbox', userId: sessionUserId })
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE
@@ -616,7 +616,7 @@ auth.get('/callback/onedrive', async (c) => {
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'onedrive', socialProfile, socialTokens)
-    await logAudit(c, 'user_identities', profile.id, 'LINK', null, { provider: 'onedrive', userId: sessionUserId })
+    await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'onedrive', userId: sessionUserId })
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE
@@ -733,7 +733,8 @@ async function handleRegisterVerify(c: any) {
   })
 
   if (verification.verified && verification.registrationInfo) {
-    const { credentialPublicKey, credentialID, counter } = verification.registrationInfo
+    const { credential } = verification.registrationInfo
+    const { id: credentialId, publicKey: credentialPublicKey, counter } = credential
     const db = getDb(c.env)
     const id = crypto.randomUUID()
     
@@ -741,7 +742,7 @@ async function handleRegisterVerify(c: any) {
       id,
       userId,
       name: `Passkey ${new Date().toLocaleDateString()}`,
-      credentialId: Buffer.from(credentialID).toString('base64'),
+      credentialId: Buffer.from(credentialId).toString('base64'),
       publicKey: Buffer.from(credentialPublicKey).toString('base64'),
       counter,
       aaguid: verification.registrationInfo.aaguid || null,

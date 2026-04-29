@@ -122,7 +122,7 @@ export const openApiSpec = {
         properties: {
           id: { type: 'string' },
           name: { type: 'string' },
-          household_id: { type: 'string' }
+          householdId: { type: 'string' }
         }
       },
       Transaction: {
@@ -130,20 +130,20 @@ export const openApiSpec = {
         properties: {
           id: { type: 'string' },
           description: { type: 'string' },
-          amount_cents: { type: 'integer' },
+          amountCents: { type: 'integer' },
           transaction_date: { type: 'string', format: 'date' },
-          account_id: { type: 'string' },
-          category_id: { type: 'string' }
+          accountId: { type: 'string' },
+          categoryId: { type: 'string' }
         }
       },
       TransactionCreate: {
         type: 'object',
-        required: ['description', 'amount_cents', 'account_id', 'category_id'],
+        required: ['description', 'amountCents', 'accountId', 'categoryId'],
         properties: {
           description: { type: 'string' },
-          amount_cents: { type: 'integer' },
-          account_id: { type: 'string' },
-          category_id: { type: 'string' },
+          amountCents: { type: 'integer' },
+          accountId: { type: 'string' },
+          categoryId: { type: 'string' },
           transaction_date: { type: 'string', format: 'date' }
         }
       }

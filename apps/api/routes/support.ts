@@ -7,7 +7,6 @@ import { getDb } from '#/index'
 import { supportIssues, supportComments } from '#/schema'
 import { eq, desc, and } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
-import { toSnake } from '../utils'
 
 const support = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -20,7 +19,7 @@ support.get('/issues', async (c) => {
     .where(eq(supportIssues.userId, userId))
     .orderBy(desc(supportIssues.createdAt))
     
-  return c.json({ success: true, data: toSnake(results) })
+  return c.json({ success: true, data: results })
 })
 
 support.get('/issues/:id/comments', async (c) => {
@@ -32,7 +31,7 @@ support.get('/issues/:id/comments', async (c) => {
     .where(eq(supportComments.issueId, id))
     .orderBy(desc(supportComments.createdAt))
     
-  return c.json({ success: true, data: toSnake(results) })
+  return c.json({ success: true, data: results })
 })
 
 support.post('/issues/:id/comments', zValidator('json', z.object({
@@ -100,40 +99,9 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
   const db = getDb(c.env)
   
   try {
-    // 2. Self-Healing Table Structure
-    await db.run(sql`
-      CREATE TABLE IF NOT EXISTS support_issues (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        category TEXT,
-        priority TEXT DEFAULT 'medium',
-        status TEXT DEFAULT 'open',
-        github_issue_url TEXT,
-        github_issue_number INTEGER,
-        github_issue_id INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
-
-    await db.run(sql`
-      CREATE TABLE IF NOT EXISTS support_comments (
-        id TEXT PRIMARY KEY,
-        issue_id TEXT NOT NULL,
-        user_id TEXT,
-        author_name TEXT,
-        body TEXT NOT NULL,
-        github_comment_id INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (issue_id) REFERENCES support_issues(id)
-      )
-    `)
-
     const id = crypto.randomUUID()
     
-    // 3. Persistent Storage
+    // 2. Persistent Storage
     await db.insert(supportIssues).values({
       id,
       userId,
@@ -143,7 +111,7 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
       priority
     })
 
-    // 4. GitHub Integration (Sanitized)
+    // 3. GitHub Integration (Sanitized)
     let githubUrl = null
     if (c.env.GITHUB_TOKEN && c.env.GITHUB_REPO) {
       try {
@@ -198,7 +166,7 @@ ${JSON.stringify(metadata || {}, null, 2)}
     return c.json({ 
       success: true, 
       id, 
-      github_issue_url: githubUrl 
+      githubIssueUrl: githubUrl 
     }, 201)
 
   } catch (err: any) {

@@ -164,6 +164,7 @@ export class AuthService {
         await db.insert(users).values({
           id: userId,
           email: profile.email,
+          username: profile.email || userId,
           displayName: profile.name || `${provider} User`,
           avatarUrl: profile.avatar || null,
         })
@@ -295,6 +296,7 @@ export class AuthService {
     expiresAt.setHours(expiresAt.getHours() + 24)
 
     await db.insert(adminInvitations).values({
+      id: crypto.randomUUID(),
       token: token,
       role: role,
       expiresAt: expiresAt.toISOString(),

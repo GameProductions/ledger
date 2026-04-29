@@ -9,16 +9,6 @@ import { logAudit } from '../utils'
 
 const remindersApi = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-const toSnake = (obj: any) => {
-  if (!obj || typeof obj !== 'object') return obj;
-  const res: any = {};
-  for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    res[snakeKey] = obj[key];
-  }
-  return res;
-}
-
 remindersApi.get('/:targetType/:targetId', async (c) => {
   const householdId = c.get('householdId')
   const { targetType, targetId } = c.req.param()
@@ -31,16 +21,16 @@ remindersApi.get('/:targetType/:targetId', async (c) => {
       eq(reminders.targetId, targetId)
     ))
 
-  return c.json(results.map(toSnake))
+  return c.json(results)
 })
 
 remindersApi.post('/', zValidator('json', z.object({
-  target_id: z.string(),
-  target_type: z.string(),
-  delivery_type: z.string(),
-  delivery_target: z.string().optional().nullable(),
-  frequency_days: z.number().int().min(0),
-  time_of_day: z.string().optional().nullable(),
+  targetId: z.string(),
+  targetType: z.string(),
+  deliveryType: z.string(),
+  deliveryTarget: z.string().optional().nullable(),
+  frequencyDays: z.number().int().min(0),
+  timeOfDay: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
 })), async (c) => {
   const householdId = c.get('householdId')
@@ -53,12 +43,12 @@ remindersApi.post('/', zValidator('json', z.object({
     id,
     householdId,
     userId,
-    targetId: data.target_id,
-    targetType: data.target_type,
-    deliveryType: data.delivery_type,
-    deliveryTarget: data.delivery_target || null,
-    frequencyDays: data.frequency_days,
-    timeOfDay: data.time_of_day || '09:00',
+    targetId: data.targetId,
+    targetType: data.targetType,
+    deliveryType: data.deliveryType,
+    deliveryTarget: data.deliveryTarget || null,
+    frequencyDays: data.frequencyDays,
+    timeOfDay: data.timeOfDay || '09:00',
     note: data.note || null,
   })
 
@@ -67,12 +57,12 @@ remindersApi.post('/', zValidator('json', z.object({
 })
 
 remindersApi.patch('/:id', zValidator('json', z.object({
-  delivery_type: z.string().optional(),
-  delivery_target: z.string().optional().nullable(),
-  frequency_days: z.number().int().min(0).optional(),
-  time_of_day: z.string().optional().nullable(),
+  deliveryType: z.string().optional(),
+  deliveryTarget: z.string().optional().nullable(),
+  frequencyDays: z.number().int().min(0).optional(),
+  timeOfDay: z.string().optional().nullable(),
   note: z.string().optional().nullable(),
-  is_active: z.boolean().optional(),
+  isActive: z.boolean().optional(),
 })), async (c) => {
   const householdId = c.get('householdId')
   const userId = c.get('userId')
@@ -90,16 +80,16 @@ remindersApi.patch('/:id', zValidator('json', z.object({
   if (!old) return c.json({ error: 'Not found' }, 404)
 
   const updates: any = {}
-  if (data.delivery_type !== undefined) updates.deliveryType = data.delivery_type
-  if (data.delivery_target !== undefined) updates.deliveryTarget = data.delivery_target
-  if (data.frequency_days !== undefined) updates.frequencyDays = data.frequency_days
-  if (data.time_of_day !== undefined) updates.timeOfDay = data.time_of_day
+  if (data.deliveryType !== undefined) updates.deliveryType = data.deliveryType
+  if (data.deliveryTarget !== undefined) updates.deliveryTarget = data.deliveryTarget
+  if (data.frequencyDays !== undefined) updates.frequencyDays = data.frequencyDays
+  if (data.timeOfDay !== undefined) updates.timeOfDay = data.timeOfDay
   if (data.note !== undefined) updates.note = data.note
-  if (data.is_active !== undefined) updates.isActive = data.is_active
+  if (data.isActive !== undefined) updates.isActive = data.isActive
 
   if (Object.keys(updates).length > 0) {
     await db.update(reminders).set(updates).where(eq(reminders.id, id))
-    await logAudit(c, 'reminders', id, 'update', toSnake(old), data)
+    await logAudit(c, 'reminders', id, 'update', old, data)
   }
 
   return c.json({ success: true })
@@ -120,7 +110,7 @@ remindersApi.delete('/:id', async (c) => {
   if (!oldResult[0]) return c.json({ error: 'Not found' }, 404)
 
   await db.delete(reminders).where(eq(reminders.id, id))
-  await logAudit(c, 'reminders', id, 'delete', toSnake(oldResult[0]), null)
+  await logAudit(c, 'reminders', id, 'delete', oldResult[0], null)
   return c.json({ success: true })
 })
 

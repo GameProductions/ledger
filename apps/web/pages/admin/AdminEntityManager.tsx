@@ -49,9 +49,9 @@ const AdminEntityManager: React.FC = () => {
   // Build query
   const activeMeta = ENTITY_TYPES.find(e => e.key === activeType)!
   const qs = activeMeta.scope === 'household' && householdFilter
-    ? `?household_id=${householdFilter}`
+    ? `?householdId=${householdFilter}`
     : activeMeta.scope === 'user' && userFilter
-    ? `?user_id=${userFilter}`
+    ? `?userId=${userFilter}`
     : ''
 
   const { data: items = [], loading, mutate } = useApi(`/api/admin/entities/${activeType}${qs}`)
@@ -117,9 +117,9 @@ const AdminEntityManager: React.FC = () => {
                 <div key={log.id} className="flex items-center justify-between text-xs p-2 bg-white/[0.03] rounded-lg border border-white/5">
                   <div>
                     <span className="font-mono text-emerald-400">{log.action}</span>
-                    <span className="text-white/30 ml-2">→ {log.target_id?.slice(0, 12)}...</span>
+                    <span className="text-white/30 ml-2">→ {log.targetId?.slice(0, 12)}...</span>
                   </div>
-                  <span className="text-white/20">{log.created_at ? new Date(log.created_at).toLocaleString() : ''}</span>
+                  <span className="text-white/20">{log.createdAt ? new Date(log.createdAt).toLocaleString() : ''}</span>
                 </div>
               ))}
             </div>
@@ -198,7 +198,7 @@ const AdminEntityManager: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-bold truncate">{item.name || item.pattern || item.id}</div>
                       <div className="text-[10px] text-white/30 font-mono truncate">
-                        {item.id} {item.household_id ? `· HH: ${item.household_id.slice(0, 10)}` : ''} {item.user_id ? `· User: ${item.user_id.slice(0, 10)}` : ''}
+                        {item.id} {item.householdId ? `· HH: ${item.householdId.slice(0, 10)}` : ''} {item.userId ? `· User: ${item.userId.slice(0, 10)}` : ''}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

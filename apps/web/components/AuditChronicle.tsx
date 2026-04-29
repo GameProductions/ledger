@@ -12,13 +12,13 @@ const AuditChronicle: React.FC = () => {
           <div key={log.id} style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--primary)', position: 'relative' }}>
             <div style={{ position: 'absolute', left: '-5px', top: '0', width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%' }}></div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              {new Date(log.created_at).toLocaleString()} • {log.actor_name || log.actor_id || 'System'}
+              {new Date(log.createdAt).toLocaleString()} • {log.actorName || log.actorId || 'System'}
             </div>
             <div style={{ fontSize: '0.9rem', fontWeight: 'bold', margin: '0.2rem 0' }}>
-              {log?.action?.toUpperCase() || ''} {log?.target_type?.replace(/s$/, '') || 'Unknown Node'}
+              {log?.action?.toUpperCase() || ''} {log?.targetType?.replace(/s$/, '') || 'Unknown Node'}
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-              Record: {log?.target_id?.substring(0, 8) || 'N/A'}...
+              Record: {log?.targetId?.substring(0, 8) || 'N/A'}...
             </div>
           </div>
         )) || <p style={{ color: 'var(--text-secondary)' }}>No history found.</p>}

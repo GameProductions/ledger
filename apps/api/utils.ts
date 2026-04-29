@@ -29,7 +29,7 @@ export const logAudit = async (
   
   const finalNewValues = newValues ? { ...newValues } : {}
   if (impersonatorId) {
-    (finalNewValues as any)._impersonator_id = impersonatorId
+    (finalNewValues as any).impersonatorId = impersonatorId
   }
 
   const db = getDb(c.env)
@@ -113,16 +113,6 @@ export const hashToken = async (token: string) => {
     .join('')
 }
 
-export const toSnake = (obj: any): any => {
-  if (!obj || typeof obj !== 'object' || obj instanceof Date) return obj;
-  if (Array.isArray(obj)) return obj.map(toSnake);
-  
-  return Object.keys(obj).reduce((acc: any, key) => {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    acc[snakeKey] = toSnake(obj[key]);
-    return acc;
-  }, {});
-}
 
 export const apiError = (
   c: Context, 
@@ -143,7 +133,7 @@ export const apiError = (
   }
 
   // PRODUCTION MASKING: Don't leak raw internal error objects to clients
-  const sanitizedDetails = isDev ? details : (status >= 500 ? { trace_id: traceId, note: 'Detailed logs available in management portal.' } : details)
+  const sanitizedDetails = isDev ? details : (status >= 500 ? { traceId: traceId, note: 'Detailed logs available in management portal.' } : details)
 
   return c.json({
     success: false,
@@ -151,6 +141,6 @@ export const apiError = (
     code,
     message: isDev ? message : (status >= 500 ? 'An internal system error occurred.' : message),
     details: sanitizedDetails,
-    trace_id: traceId
+    traceId: traceId
   }, status as any)
 }

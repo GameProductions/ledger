@@ -9,7 +9,7 @@ interface Walkthrough {
   version: string;
   title: string;
   contentMd: string;
-  created_at: string;
+  createdAt: string;
 }
 
 const AdminGuide: React.FC = () => {
@@ -100,7 +100,7 @@ const AdminGuide: React.FC = () => {
                           <span className="text-xs font-mono text-emerald-500 tracking-tighter">{w.version}</span>
                           <span className="text-xs text-slate-500 flex items-center gap-1">
                             <Calendar size={10} />
-                            {new Date(w.created_at).toLocaleDateString()}
+                            {new Date(w.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                         <h4 className="text-lg font-black text-white uppercase italic group-hover:text-emerald-400 transition-colors">

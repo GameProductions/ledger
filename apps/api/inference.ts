@@ -12,8 +12,8 @@ export const inferTransactionDetails = async (db: ReturnType<typeof getDb>, hous
     if (rawDescription.toLowerCase().includes(rule.pattern.toLowerCase())) {
       return {
         matched_rule_id: rule.id,
-        category_id: rule.targetCategoryId,
-        provider_id: rule.targetProviderId,
+        categoryId: rule.targetCategoryId,
+        providerId: rule.targetProviderId,
         auto_confirm: rule.autoConfirm
       }
     }
@@ -58,8 +58,8 @@ export const inferTransactionDetails = async (db: ReturnType<typeof getDb>, hous
     if (maxCatCount > 2 || maxProvCount > 2) {
       return {
         matched_rule_id: null,
-        category_id: topCategory,
-        provider_id: topProvider,
+        categoryId: topCategory,
+        providerId: topProvider,
         auto_confirm: false
       }
     }

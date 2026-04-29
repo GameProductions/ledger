@@ -6,7 +6,7 @@ interface PasskeyRecord {
   id: string;
   name: string | null;
   aaguid: string | null;
-  created_at: string;
+  createdAt: string;
   counter: number;
 }
 
@@ -160,7 +160,7 @@ export const AuthVault: React.FC = () => {
                         {pk.name || 'Unnamed Key'}
                       </div>
                       <div className="text-[10px] text-white/40 font-mono uppercase tracking-[0.2em]">
-                        {formatDate(pk.created_at)} · Counter: {pk.counter}
+                        {formatDate(pk.createdAt)} · Counter: {pk.counter}
                       </div>
                     </>
                   )}

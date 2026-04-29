@@ -18,18 +18,18 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 }) => {
   const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
-  const [amount, setAmount] = useState(initialData?.amount_cents ? (initialData.amount_cents / 100).toString() : initialData?.estimated_amount_cents ? (initialData.estimated_amount_cents / 100).toString() : '');
-  const [currentDate, setCurrentDate] = useState(initialData?.transaction_date || initialData?.next_billing_date || initialData?.next_pay_date || date?.toISOString().split('T')[0] || '');
+  const [amount, setAmount] = useState(initialData?.amountCents ? (initialData.amountCents / 100).toString() : initialData?.estimatedAmountCents ? (initialData.estimatedAmountCents / 100).toString() : '');
+  const [currentDate, setCurrentDate] = useState(initialData?.transactionDate || initialData?.nextBillingDate || initialData?.nextPayDate || date?.toISOString().split('T')[0] || '');
   const [status, setStatus] = useState(initialData?.status || 'unpaid');
-  const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmation_number || '');
+  const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmationNumber || '');
   const [frequency, setFrequency] = useState(initialData?.frequency || 'biweekly');
-  const [semiMonthlyDay1, setSemiMonthlyDay1] = useState(initialData?.semi_monthly_day_1 || 1);
-  const [semiMonthlyDay2, setSemiMonthlyDay2] = useState(initialData?.semi_monthly_day_2 || 15);
-  const [isRecurring, setIsRecurring] = useState(initialData?.is_recurring || false);
+  const [semiMonthlyDay1, setSemiMonthlyDay1] = useState(initialData?.semiMonthlyDay1 || 1);
+  const [semiMonthlyDay2, setSemiMonthlyDay2] = useState(initialData?.semiMonthlyDay2 || 15);
+  const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring || false);
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [showTimeline, setShowTimeline] = useState(false);
-  const [upcomingAmount, setUpcomingAmount] = useState(initialData?.upcoming_amount_cents ? (initialData.upcoming_amount_cents / 100).toString() : '');
-  const [upcomingDate, setUpcomingDate] = useState(initialData?.upcoming_effective_date || '');
+  const [upcomingAmount, setUpcomingAmount] = useState(initialData?.upcomingAmountCents ? (initialData.upcomingAmountCents / 100).toString() : '');
+  const [upcomingDate, setUpcomingDate] = useState(initialData?.upcomingEffectiveDate || '');
   
   if (!isOpen) return null;
 
@@ -40,11 +40,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type,
         name: description,
-        estimated_amount_cents: Math.round(parseFloat(amount) * 100),
-        next_pay_date: currentDate,
+        estimatedAmountCents: Math.round(parseFloat(amount) * 100),
+        nextPayDate: currentDate,
         frequency,
-        semi_monthly_day_1: frequency === 'semi-monthly' ? semiMonthlyDay1 : null,
-        semi_monthly_day_2: frequency === 'semi-monthly' ? semiMonthlyDay2 : null,
+        semiMonthlyDay1: frequency === 'semi-monthly' ? semiMonthlyDay1 : null,
+        semiMonthlyDay2: frequency === 'semi-monthly' ? semiMonthlyDay2 : null,
         notes
       });
     } else if (type === 'bill') {
@@ -52,11 +52,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type: 'bill',
         name: description,
-        amount_cents: Math.round(parseFloat(amount) * 100),
-        due_date: currentDate,
+        amountCents: Math.round(parseFloat(amount) * 100),
+        dueDate: currentDate,
         status: status,
         notes: notes,
-        is_recurring: isRecurring,
+        isRecurring: isRecurring,
         frequency: isRecurring ? 'monthly' : null
       });
     } else {
@@ -64,10 +64,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type: 'charge',
         description,
-        amount_cents: Math.round(parseFloat(amount) * 100),
-        transaction_date: currentDate,
+        amountCents: Math.round(parseFloat(amount) * 100),
+        transactionDate: currentDate,
         status,
-        confirmation_number: confirmationNumber
+        confirmationNumber: confirmationNumber
       });
     }
   };

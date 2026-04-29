@@ -15,13 +15,13 @@ const AdminProviders: React.FC = () => {
 
   const [newItem, setNewItem] = useState({
     name: '',
-    billing_processor_id: '',
-    website_url: '',
-    branding_url: '',
-    logo_url: '',
+    billingProcessorId: '',
+    websiteUrl: '',
+    brandingUrl: '',
+    logoUrl: '',
     support_email: '',
     privacy_policy_url: '',
-    is_3rd_party_capable: false
+    is3rdPartyCapable: false
   });
 
   const fetchData = async () => {
@@ -71,7 +71,7 @@ const AdminProviders: React.FC = () => {
       showToast(editingId ? 'Provider updated' : 'New provider added', 'success');
       setShowAdd(false);
       setEditingId(null);
-      setNewItem({ name: '', billing_processor_id: '', website_url: '', branding_url: '', logo_url: '', support_email: '', privacy_policy_url: '', is_3rd_party_capable: false });
+      setNewItem({ name: '', billingProcessorId: '', websiteUrl: '', brandingUrl: '', logoUrl: '', support_email: '', privacy_policy_url: '', is3rdPartyCapable: false });
       fetchData();
     } else {
       const err = await res.json();
@@ -83,13 +83,13 @@ const AdminProviders: React.FC = () => {
     setEditingId(provider.id);
     setNewItem({
       name: provider.name,
-      billing_processor_id: provider.billing_processor_id || provider.billingProcessorId || '',
-      website_url: provider.website_url || provider.websiteUrl || '',
-      branding_url: provider.branding_url || provider.brandingUrl || '',
-      logo_url: provider.logo_url || provider.logoUrl || provider.branding_url || provider.brandingUrl || '',
+      billingProcessorId: provider.billingProcessorId || provider.billingProcessorId || '',
+      websiteUrl: provider.websiteUrl || provider.websiteUrl || '',
+      brandingUrl: provider.brandingUrl || provider.brandingUrl || '',
+      logoUrl: provider.logoUrl || provider.logoUrl || provider.brandingUrl || provider.brandingUrl || '',
       support_email: provider.support_email || provider.supportEmail || '',
       privacy_policy_url: provider.privacy_policy_url || provider.privacyPolicyUrl || '',
-      is_3rd_party_capable: !!(provider.is_3rd_party_capable || provider.is3rdPartyCapable)
+      is3rdPartyCapable: !!(provider.is3rdPartyCapable || provider.is3rdPartyCapable)
     });
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -128,7 +128,7 @@ const AdminProviders: React.FC = () => {
           onClick={() => {
             if (showAdd) {
                 setEditingId(null);
-                setNewItem({ name: '', billing_processor_id: '', website_url: '', branding_url: '', logo_url: '', support_email: '', privacy_policy_url: '', is_3rd_party_capable: false });
+                setNewItem({ name: '', billingProcessorId: '', websiteUrl: '', brandingUrl: '', logoUrl: '', support_email: '', privacy_policy_url: '', is3rdPartyCapable: false });
             }
             setShowAdd(!showAdd);
           }}
@@ -165,10 +165,10 @@ const AdminProviders: React.FC = () => {
                    options={(processors || []).map(proc => ({ 
                      value: proc.id, 
                      label: proc.name,
-                     icon: (proc.branding_url || proc.brandingUrl) ? <img src={proc.branding_url || proc.brandingUrl} className="w-5 h-5" alt="" /> : null
+                     icon: (proc.brandingUrl || proc.brandingUrl) ? <img src={proc.brandingUrl || proc.brandingUrl} className="w-5 h-5" alt="" /> : null
                    }))}
-                   value={newItem.billing_processor_id}
-                   onChange={(val) => setNewItem({ ...newItem, billing_processor_id: val })}
+                   value={newItem.billingProcessorId}
+                   onChange={(val) => setNewItem({ ...newItem, billingProcessorId: val })}
                    placeholder="Select Processor..."
                 />
               </div>
@@ -177,8 +177,8 @@ const AdminProviders: React.FC = () => {
                     <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo URL</label>
                     <input 
                       type="url" 
-                      value={newItem.logo_url} 
-                      onChange={(e) => setNewItem({ ...newItem, logo_url: e.target.value, branding_url: e.target.value })}
+                      value={newItem.logoUrl} 
+                      onChange={(e) => setNewItem({ ...newItem, logoUrl: e.target.value, brandingUrl: e.target.value })}
                       placeholder="https://..."
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                     />
@@ -186,12 +186,12 @@ const AdminProviders: React.FC = () => {
                    <div className="flex items-center gap-3 pt-6">
                     <input 
                       type="checkbox" 
-                      id="is_3rd_party_capable"
-                      checked={newItem.is_3rd_party_capable} 
-                      onChange={(e) => setNewItem({ ...newItem, is_3rd_party_capable: e.target.checked })}
+                      id="is3rdPartyCapable"
+                      checked={newItem.is3rdPartyCapable} 
+                      onChange={(e) => setNewItem({ ...newItem, is3rdPartyCapable: e.target.checked })}
                       className="w-5 h-5 rounded bg-black/40 border border-white/10 text-emerald-500 accent-emerald-500"
                     />
-                    <label htmlFor="is_3rd_party_capable" className="text-xs font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
+                    <label htmlFor="is3rdPartyCapable" className="text-xs font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
                   </div>
               </div>
             </div>
@@ -200,8 +200,8 @@ const AdminProviders: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Website</label>
                 <input 
                   type="url" 
-                  value={newItem.website_url} 
-                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
+                  value={newItem.websiteUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, websiteUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />

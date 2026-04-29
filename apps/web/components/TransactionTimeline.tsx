@@ -9,7 +9,7 @@ interface TimelineEntry {
   transaction_id: string;
   type: 'note' | 'confirmation' | 'status_change';
   content: string;
-  created_at: string;
+  createdAt: string;
 }
 
 interface TransactionTimelineProps {
@@ -140,7 +140,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
                       {entry.type.replace('_', ' ')}
                     </span>
                     <span className="text-[10px] font-bold text-slate-600 tabular-nums">
-                      {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
                     </span>
                  </div>
                  <div className="bg-white/2 rounded-2xl p-4 border border-white/5 group-hover:border-white/10 transition-colors">
@@ -149,7 +149,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
                     </p>
                  </div>
                  <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest pl-1">
-                   {format(new Date(entry.created_at), 'MMMM d, yyyy • h:mm a')}
+                   {format(new Date(entry.createdAt), 'MMMM d, yyyy • h:mm a')}
                  </span>
               </div>
             </div>

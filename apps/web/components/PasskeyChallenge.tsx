@@ -8,7 +8,7 @@ interface PasskeyChallengeProps {
   children?: React.ReactNode;
 }
 
-export function PasskeyChallenge({ onSuccess, appName, children }: PasskeyChallengeProps) {
+export default function PasskeyChallenge({ onSuccess, appName, children }: PasskeyChallengeProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'auth' | 'register'>('auth');

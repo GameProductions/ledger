@@ -32,9 +32,9 @@ const AdminDashboard: React.FC = () => {
     e.preventDefault()
     const formData = new FormData(e.target as HTMLFormElement)
     const data = {
-      household_id: formData.get('household_id'),
+      householdId: formData.get('householdId'),
       provider: formData.get('provider'),
-      access_token: formData.get('access_token'),
+      accessToken: formData.get('access_token'),
       status: 'active'
     }
 
@@ -84,24 +84,24 @@ const AdminDashboard: React.FC = () => {
                   {Array.isArray(users) && users.map((u: any) => (
                     <tr key={u.id} className="slide-up" style={{ borderBottom: '1px solid var(--glass-border)' }}>
                       <td style={{ padding: '1rem 0' }}>
-                        <div style={{ fontWeight: '600' }}>{u.display_name || 'Anonymous'}</div>
+                        <div style={{ fontWeight: '600' }}>{u.displayName || 'Anonymous'}</div>
                         <div style={{ fontSize: '0.8rem' }}>{u.email}</div>
                       </td>
-                      <td>{u.global_role}</td>
+                      <td>{u.globalRole}</td>
                       <td>{u.status}</td>
                       <td>
                         <div className="flex gap-2">
                           <select 
                             style={{ background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', color: 'white', padding: '0.2rem' }}
-                            onChange={(e) => handleUpdateUser(u.id, { global_role: e.target.value, status: u.status })}
-                            value={u.global_role}
+                            onChange={(e) => handleUpdateUser(u.id, { globalRole: e.target.value, status: u.status })}
+                            value={u.globalRole}
                           >
                             <option value="user">User</option>
                             <option value="super_admin">Super Admin</option>
                           </select>
                           <button 
                             style={{ background: u.status === 'suspended' ? 'var(--primary)' : 'rgba(239, 68, 68, 0.2)', color: u.status === 'suspended' ? 'white' : '#ef4444' }}
-                            onClick={() => handleUpdateUser(u.id, { global_role: u.global_role, status: u.status === 'active' ? 'suspended' : 'active' })}
+                            onClick={() => handleUpdateUser(u.id, { globalRole: u.globalRole, status: u.status === 'active' ? 'suspended' : 'active' })}
                           >
                             {u.status === 'active' ? 'Suspend' : 'Activate'}
                           </button>
@@ -132,11 +132,11 @@ const AdminDashboard: React.FC = () => {
                     <div key={c.id} className="slide-up" style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: '700' }}>{c.provider}</div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>Household: {c.household_id}</div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>Household: {c.householdId}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ color: 'var(--primary)' }}>{c.status}</div>
-                        <div style={{ fontSize: '0.7rem' }}>Last Sync: {c.last_sync_at || 'Never'}</div>
+                        <div style={{ fontSize: '0.7rem' }}>Last Sync: {c.lastSyncAt || 'Never'}</div>
                       </div>
                     </div>
                   ))}
@@ -147,7 +147,7 @@ const AdminDashboard: React.FC = () => {
             <section className="card reveal" style={{ animationDelay: '0.2s' }}>
               <h3>Secure Token Entry</h3>
               <form onSubmit={handleUpdateConnection} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                <input name="household_id" placeholder="Household ID" required style={{ background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', padding: '0.8rem', color: 'white', borderRadius: '0.5rem' }} />
+                <input name="householdId" placeholder="Household ID" required style={{ background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', padding: '0.8rem', color: 'white', borderRadius: '0.5rem' }} />
                 <select name="provider" required style={{ background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', padding: '0.8rem', color: 'white', borderRadius: '0.5rem' }}>
                   <option value="plaid">Plaid</option>
                   <option value="method">Method FI</option>
@@ -172,13 +172,13 @@ const AdminDashboard: React.FC = () => {
                   <div key={log.id} className="slide-up" style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontWeight: '700', color: 'var(--secondary)' }}>{log.action}</span>
-                      <span style={{ opacity: 0.5 }}>{log.created_at}</span>
+                      <span style={{ opacity: 0.5 }}>{log.createdAt}</span>
                     </div>
                     <div style={{ marginTop: '0.3rem' }}>
                       <span style={{ opacity: 0.7 }}>Target:</span> {log.target}
                     </div>
                     <div style={{ fontSize: '0.7rem', opacity: 0.4, marginTop: '0.2rem' }}>
-                      Actor: {log.user_id}
+                      Actor: {log.userId}
                     </div>
                   </div>
                 ))}

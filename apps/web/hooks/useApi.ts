@@ -4,7 +4,7 @@ import { getApiUrl } from '../utils/api';
 
 const API_URL = getApiUrl();
 
-export const useApi = <T = any>(path: string, options: { refreshInterval?: number } = {}) => {
+export const useApi = <T = any>(path: string | null, options: { refreshInterval?: number } = {}) => {
   const { token, logout, householdId, triggerStepUp } = useAuth()
   const [data, setData] = useState<T | undefined>(undefined)
   const [loading, setLoading] = useState(true)
@@ -14,7 +14,7 @@ export const useApi = <T = any>(path: string, options: { refreshInterval?: numbe
   const abortControllerRef = useRef<AbortController | null>(null)
 
   const fetcher = useCallback(async () => {
-    if (!token) return
+    if (!token || !path) return
     
     // Cancel any existing request for this hook instance
     if (abortControllerRef.current) {

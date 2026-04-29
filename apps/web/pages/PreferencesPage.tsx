@@ -12,7 +12,7 @@ import { ShieldCheck, Terminal } from 'lucide-react'
 const PreferencesPage: React.FC = () => {
   const { token, householdId } = useAuth()
   const { data: profile } = useApi('/api/user/profile')
-  const settings = JSON.parse(profile?.settings_json || '{}')
+  const settings = JSON.parse(profile?.settingsJson || '{}')
 
   const updateSettings = async (newSettings: any) => {
     if (!token) return
@@ -24,7 +24,7 @@ const PreferencesPage: React.FC = () => {
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ settings_json: JSON.stringify(newSettings) })
+      body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     })
     window.location.reload()
   }
@@ -42,7 +42,7 @@ const PreferencesPage: React.FC = () => {
   }
 
   const setUiStyle = (style: string) => {
-    updateSettings({ ...settings, ui_style: style })
+    updateSettings({ ...settings, uiStyle: style })
   }
 
   const widgets = [
@@ -94,7 +94,7 @@ const PreferencesPage: React.FC = () => {
                   <button 
                     key={style}
                     onClick={() => setUiStyle(style)}
-                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settings.ui_style === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settings.uiStyle === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                   >
                     {style}
                   </button>

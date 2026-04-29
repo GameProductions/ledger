@@ -12,11 +12,11 @@ const AdminData: React.FC = () => {
   const { showToast, showConfirm } = useToast();
   
   const [newItem, setNewItem] = useState({ 
-    item_type: 'processor', 
+    itemType: 'processor', 
     name: '', 
-    logo_url: '', 
-    website_url: '',
-    metadata_json: {} 
+    logoUrl: '', 
+    websiteUrl: '',
+    metadataJson: {} 
   });
 
   const fetchItems = async () => {
@@ -44,10 +44,10 @@ const AdminData: React.FC = () => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
     
-    // Ensure metadata_json is a valid object if empty
+    // Ensure metadataJson is a valid object if empty
     const submissionData = {
       ...newItem,
-      metadata_json: newItem.metadata_json || {}
+      metadataJson: newItem.metadataJson || {}
     };
 
     const res = await fetch(`${apiUrl}/api/admin/records`, {
@@ -59,7 +59,7 @@ const AdminData: React.FC = () => {
     if (res.ok) {
       showToast('System item added successfully', 'success');
       setShowAdd(false);
-      setNewItem({ item_type: 'processor', name: '', website_url: '', logo_url: '', metadata_json: {} });
+      setNewItem({ itemType: 'processor', name: '', websiteUrl: '', logoUrl: '', metadataJson: {} });
       fetchItems();
     } else {
       const err = await res.json();
@@ -121,8 +121,8 @@ const AdminData: React.FC = () => {
                      { value: 'provider', label: 'Service Provider' },
                      { value: 'merchant', label: 'Merchant / Entity' }
                    ]}
-                   value={newItem.item_type}
-                   onChange={(val) => setNewItem({ ...newItem, item_type: val as any })}
+                   value={newItem.itemType}
+                   onChange={(val) => setNewItem({ ...newItem, itemType: val as any })}
                    placeholder="Select Type..."
                 />
               </div>
@@ -143,8 +143,8 @@ const AdminData: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Website (Optional)</label>
                 <input 
                   type="url" 
-                  value={newItem.website_url} 
-                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
+                  value={newItem.websiteUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, websiteUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
                 />
@@ -153,8 +153,8 @@ const AdminData: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo Asset URL</label>
                 <input 
                   type="url" 
-                  value={newItem.logo_url} 
-                  onChange={(e) => setNewItem({ ...newItem, logo_url: e.target.value })}
+                  value={newItem.logoUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, logoUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-primary transition-all outline-none"
                 />
@@ -170,12 +170,12 @@ const AdminData: React.FC = () => {
           <div key={item.id} className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 flex items-center justify-between group hover:border-primary/20 transition-all shadow-lg bg-gradient-to-br from-white/2 to-transparent">
             <div className="flex items-center gap-5">
                <div className="w-16 h-16 rounded-2xl bg-black/40 flex items-center justify-center border border-white/5 text-primary shadow-inner">
-                  {item.item_type === 'processor' ? <Zap size={24} /> : item.item_type === 'provider' ? <Building2 size={24} /> : <Search size={24} />}
+                  {item.itemType === 'processor' ? <Zap size={24} /> : item.itemType === 'provider' ? <Building2 size={24} /> : <Search size={24} />}
                </div>
                <div>
                   <h3 className="font-black text-xl tracking-tighter italic uppercase">{item.name}</h3>
                   <div className="flex items-center gap-2 mt-2">
-                     <span className="text-[12px] font-black uppercase text-slate-500 tracking-[0.2em]">{item.item_type}</span>
+                     <span className="text-[12px] font-black uppercase text-slate-500 tracking-[0.2em]">{item.itemType}</span>
                      <span className="w-1 h-1 rounded-full bg-white/10"></span>
                      <span className="text-[12px] font-black uppercase text-emerald-500/60 tracking-widest italic flex items-center gap-1.5 opacity-60">Verified <ExternalLink size={8} /></span>
                   </div>

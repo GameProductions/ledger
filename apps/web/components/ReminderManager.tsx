@@ -36,11 +36,11 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
         'x-household-id': householdId || ''
       },
       body: JSON.stringify({
-        target_id: targetId,
-        target_type: targetType,
-        delivery_type: deliveryType,
-        delivery_target: deliveryTarget,
-        frequency_days: Number(frequencyDays),
+        targetId: targetId,
+        targetType: targetType,
+        deliveryType: deliveryType,
+        deliveryTarget: deliveryTarget,
+        frequencyDays: Number(frequencyDays),
         note: note
       })
     })
@@ -98,9 +98,9 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
                 <div key={r.id} className="bg-white/5 border border-white/10 rounded-xl p-3 flex justify-between items-center">
                   <div>
                     <div className="text-xs font-bold font-mono text-primary flex items-center gap-1.5">
-                      {r.delivery_type === 'discord_dm' ? 'Discord DM' : 'Discord Webhook'}
+                      {r.deliveryType === 'discord_dm' ? 'Discord DM' : 'Discord Webhook'}
                       <span className="text-[9px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm tracking-widest uppercase">
-                        {r.frequency_days} Days Prior
+                        {r.frequencyDays} Days Prior
                       </span>
                     </div>
                     {r.note && <div className="text-[11px] text-white/60 mt-1">{r.note}</div>}

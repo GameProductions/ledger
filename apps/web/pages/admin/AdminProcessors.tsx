@@ -13,10 +13,10 @@ const AdminProcessors: React.FC = () => {
   
   const [newItem, setNewItem] = useState({
     name: '',
-    website_url: '',
-    branding_url: '',
+    websiteUrl: '',
+    brandingUrl: '',
     support_url: '',
-    subscription_id_notes: ''
+    subscriptionId_notes: ''
   });
 
   const fetchProcessors = async () => {
@@ -62,7 +62,7 @@ const AdminProcessors: React.FC = () => {
       showToast(editingId ? 'Processor updated' : 'New processor added', 'success');
       setShowAdd(false);
       setEditingId(null);
-      setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
+      setNewItem({ name: '', websiteUrl: '', brandingUrl: '', support_url: '', subscriptionId_notes: '' });
       fetchProcessors();
     } else {
       const err = await res.json();
@@ -74,10 +74,10 @@ const AdminProcessors: React.FC = () => {
     setEditingId(processor.id);
     setNewItem({
       name: processor.name,
-      website_url: processor.website_url || processor.websiteUrl || '',
-      branding_url: processor.branding_url || processor.brandingUrl || '',
+      websiteUrl: processor.websiteUrl || processor.websiteUrl || '',
+      brandingUrl: processor.brandingUrl || processor.brandingUrl || '',
       support_url: processor.support_url || processor.supportUrl || '',
-      subscription_id_notes: processor.subscription_id_notes || processor.subscriptionIdNotes || ''
+      subscriptionId_notes: processor.subscriptionId_notes || processor.subscriptionIdNotes || ''
     });
     setShowAdd(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -116,7 +116,7 @@ const AdminProcessors: React.FC = () => {
           onClick={() => {
             if (showAdd) {
                 setEditingId(null);
-                setNewItem({ name: '', website_url: '', branding_url: '', support_url: '', subscription_id_notes: '' });
+                setNewItem({ name: '', websiteUrl: '', brandingUrl: '', support_url: '', subscriptionId_notes: '' });
             }
             setShowAdd(!showAdd);
           }}
@@ -151,8 +151,8 @@ const AdminProcessors: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
                 <input 
                   type="url" 
-                  value={newItem.website_url} 
-                  onChange={(e) => setNewItem({ ...newItem, website_url: e.target.value })}
+                  value={newItem.websiteUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, websiteUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
@@ -161,8 +161,8 @@ const AdminProcessors: React.FC = () => {
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
                 <input 
                   type="url" 
-                  value={newItem.branding_url} 
-                  onChange={(e) => setNewItem({ ...newItem, branding_url: e.target.value })}
+                  value={newItem.brandingUrl} 
+                  onChange={(e) => setNewItem({ ...newItem, brandingUrl: e.target.value })}
                   placeholder="https://..."
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
@@ -182,8 +182,8 @@ const AdminProcessors: React.FC = () => {
                <div>
                 <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
                 <textarea 
-                  value={newItem.subscription_id_notes} 
-                  onChange={(e) => setNewItem({ ...newItem, subscription_id_notes: e.target.value })}
+                  value={newItem.subscriptionId_notes} 
+                  onChange={(e) => setNewItem({ ...newItem, subscriptionId_notes: e.target.value })}
                   placeholder="e.g. Look for keys starting with 'sub_' in the metadata."
                   rows={3}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"

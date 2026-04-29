@@ -15,9 +15,9 @@ const InvestmentPortfolioPage: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [newInv, setNewInv] = useState({
     name: '',
-    asset_type: 'Stock',
+    assetType: 'Stock',
     quantity: 1,
-    cost_basis_cents: 0,
+    costBasisCents: 0,
     current_valuation_cents: 0,
     currency: 'USD'
   });
@@ -63,7 +63,7 @@ const InvestmentPortfolioPage: React.FC = () => {
   };
 
   const totalValue = investments?.reduce((acc: number, curr: any) => acc + curr.current_valuation_cents, 0) || 0;
-  const totalCost = investments?.reduce((acc: number, curr: any) => acc + curr.cost_basis_cents, 0) || 0;
+  const totalCost = investments?.reduce((acc: number, curr: any) => acc + curr.costBasisCents, 0) || 0;
   const totalGain = totalValue - totalCost;
 
   return (
@@ -93,12 +93,12 @@ const InvestmentPortfolioPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            <div className="card p-8 bg-black/40 border-glass-border">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Net Worth Contribution</p>
-              <Price amount_cents={totalValue} className="text-4xl font-black italic tracking-tighter" />
+              <Price amountCents={totalValue} className="text-4xl font-black italic tracking-tighter" />
            </div>
            <div className="card p-8 bg-black/40 border-glass-border">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-secondary mb-2">Total Unrealized Gain</p>
               <div className="flex items-center gap-3">
-                <Price amount_cents={totalGain} className={`text-4xl font-black italic tracking-tighter ${totalGain >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
+                <Price amountCents={totalGain} className={`text-4xl font-black italic tracking-tighter ${totalGain >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
                 {totalGain !== 0 && (
                   <div className={`p-1 rounded-full ${totalGain > 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                     <TrendingUp size={16} className={totalGain < 0 ? 'rotate-180' : ''} />
@@ -130,8 +130,8 @@ const InvestmentPortfolioPage: React.FC = () => {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Classification</label>
               <select 
-                value={newInv.asset_type}
-                onChange={e => setNewInv({...newInv, asset_type: e.target.value})}
+                value={newInv.assetType}
+                onChange={e => setNewInv({...newInv, assetType: e.target.value})}
                 className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all appearance-none outline-none"
               >
                 <option value="Stock">Stock / Equities</option>
@@ -161,10 +161,10 @@ const InvestmentPortfolioPage: React.FC = () => {
                <input 
                   type="number"
                   required
-                  value={newInv.cost_basis_cents || ''}
+                  value={newInv.costBasisCents || ''}
                   onChange={e => {
                     const val = parseInt(e.target.value);
-                    setNewInv({...newInv, cost_basis_cents: isNaN(val) ? 0 : val});
+                    setNewInv({...newInv, costBasisCents: isNaN(val) ? 0 : val});
                   }}
                   className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all"
                 />
@@ -190,8 +190,8 @@ const InvestmentPortfolioPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
            {investments && investments.length > 0 ? investments.map((inv: any) => {
-             const gain = inv.current_valuation_cents - inv.cost_basis_cents;
-             const gainPct = inv.cost_basis_cents > 0 ? (gain / inv.cost_basis_cents) * 100 : 0;
+             const gain = inv.current_valuation_cents - inv.costBasisCents;
+             const gainPct = inv.costBasisCents > 0 ? (gain / inv.costBasisCents) * 100 : 0;
              
              const getIcon = (type: string) => {
                if (type === 'Stock') return <LineChart size={20} className="text-secondary" />;
@@ -202,16 +202,16 @@ const InvestmentPortfolioPage: React.FC = () => {
 
              return (
               <div key={inv.id} className="card p-6 bg-deep/40 border-glass-border hover:border-emerald-500/30 transition-all group overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-4 opacity-5 text-4xl group-hover:scale-110 transition-transform">{getIcon(inv.asset_type)}</div>
+                <div className="absolute top-0 right-0 p-4 opacity-5 text-4xl group-hover:scale-110 transition-transform">{getIcon(inv.assetType)}</div>
                 
                 <div className="flex justify-between items-start mb-6">
                    <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        {getIcon(inv.asset_type)}
+                        {getIcon(inv.assetType)}
                       </div>
                       <div>
                         <h4 className="font-bold text-white">{inv.name}</h4>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">{inv.asset_type}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">{inv.assetType}</p>
                       </div>
                    </div>
                    <button onClick={() => handleDelete(inv.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
@@ -222,7 +222,7 @@ const InvestmentPortfolioPage: React.FC = () => {
                 <div className="space-y-4">
                    <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-widest text-secondary/40">Market Value</span>
-                      <Price amount_cents={inv.current_valuation_cents} className="text-2xl font-black italic text-white" />
+                      <Price amountCents={inv.current_valuation_cents} className="text-2xl font-black italic text-white" />
                    </div>
                    
                    <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
@@ -244,7 +244,7 @@ const InvestmentPortfolioPage: React.FC = () => {
                        </div>
                        <div className="text-right">
                          <p className="text-[8px] font-black uppercase tracking-widest text-secondary opacity-40 mb-1">Cost Basis</p>
-                         <Price amount_cents={inv.cost_basis_cents} className="text-sm font-bold opacity-60" />
+                         <Price amountCents={inv.costBasisCents} className="text-sm font-bold opacity-60" />
                        </div>
                    </div>
                 </div>

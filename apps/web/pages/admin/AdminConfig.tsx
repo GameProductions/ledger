@@ -37,9 +37,9 @@ const AdminConfig: React.FC = () => {
     await fetch(`${apiUrl}/api/admin/config/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config_value: value })
+      body: JSON.stringify({ configValue: value })
     });
-    setConfigs(prev => prev.map(c => c.id === id ? { ...c, configValue: value, config_value: value } : c));
+    setConfigs(prev => prev.map(c => c.id === id ? { ...c, configValue: value } : c));
   };
 
   const handleToggleFeature = async (id: string, enabled: boolean) => {
@@ -48,9 +48,9 @@ const AdminConfig: React.FC = () => {
     await fetch(`${apiUrl}/api/admin/features/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled_globally: enabled })
+      body: JSON.stringify({ enabledGlobally: enabled })
     });
-    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabledGlobally: enabled ? 1 : 0, enabled_globally: enabled ? 1 : 0 } : f));
+    setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabledGlobally: enabled ? 1 : 0 } : f));
   };
 
   if (loading) return <AdminPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></AdminPortal>;
@@ -68,13 +68,13 @@ const AdminConfig: React.FC = () => {
             {(configs || []).map(cfg => (
               <div key={cfg.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
                 <div className="mb-4">
-                  <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.configKey || cfg.config_key}</p>
+                  <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.configKey || cfg.configKey}</p>
                   <p className="text-sm text-gray-500">{cfg.description || 'No description provided.'}</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <input 
                     type="text" 
-                    value={cfg.configValue ?? cfg.config_value ?? ''} 
+                    value={cfg.configValue ?? cfg.configValue ?? ''} 
                     onChange={(e) => handleUpdateConfig(cfg.id, e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
                   />
@@ -95,20 +95,20 @@ const AdminConfig: React.FC = () => {
             {(features || []).map(feat => (
               <div key={feat.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabledGlobally || feat.enabled_globally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabledGlobally || feat.enabledGlobally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>
                     🚀
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
                       className="sr-only peer"
-                      checked={!!(feat.enabledGlobally || feat.enabled_globally)}
+                      checked={!!(feat.enabledGlobally || feat.enabledGlobally)}
                       onChange={(e) => handleToggleFeature(feat.id, e.target.checked)}
                     />
                     <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 cursor-pointer"></div>
                   </label>
                 </div>
-                <h4 className="font-bold text-sm mb-1">{feat.featureKey || feat.feature_key}</h4>
+                <h4 className="font-bold text-sm mb-1">{feat.featureKey || feat.featureKey}</h4>
                 <p className="text-sm text-gray-500 line-clamp-2">{feat.description}</p>
               </div>
             ))}

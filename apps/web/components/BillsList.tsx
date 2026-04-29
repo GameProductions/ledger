@@ -63,7 +63,7 @@ export const BillsList: React.FC = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ is_public: isPublic })
+            body: JSON.stringify({ isPublic: isPublic })
         });
 
         if (res.ok) {
@@ -85,11 +85,11 @@ export const BillsList: React.FC = () => {
             <div className="grid grid-cols-1 gap-3">
                 {bills?.length > 0 ? bills.map((bill: any) => (
                     <div key={bill.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-amber-500/30 overflow-hidden">
-                        {bill.upcoming_effective_date && (
+                        {bill.upcomingEffectiveDate && (
                             <div className="absolute top-0 right-0 bg-amber-500/10 border-b border-l border-amber-500/20 px-3 py-1 rounded-bl-xl">
                                 <div className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
                                     <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                                    Planned Adjustment: <Price amount_cents={bill.upcoming_amount_cents} /> on {bill.upcoming_effective_date}
+                                    Planned Adjustment: <Price amountCents={bill.upcomingAmountCents} /> on {bill.upcomingEffectiveDate}
                                 </div>
                             </div>
                         )}
@@ -105,21 +105,21 @@ export const BillsList: React.FC = () => {
                                         {bill.status}
                                     </span>
                                     <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                                        Due: {bill.due_date}
+                                        Due: {bill.dueDate}
                                     </span>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <Price amount_cents={bill.amount_cents} className="text-xl font-black tracking-tighter" />
-                                {bill.is_recurring && (
+                                <Price amountCents={bill.amountCents} className="text-xl font-black tracking-tighter" />
+                                {bill.isRecurring && (
                                     <div className="text-[9px] font-black uppercase tracking-widest text-primary/60 mt-0.5">Recurring Monthly</div>
                                 )}
                             </div>
                         </div>
 
-                        {(bill.notes || bill.is_split_portion) && (
+                        {(bill.notes || bill.isSplitPortion) && (
                             <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 to-transparent border border-white/10 rounded-xl p-3 mb-4 flex flex-col gap-2">
-                                {bill.is_split_portion && (
+                                {bill.isSplitPortion && (
                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
                                         <Share2 size={12} /> Assigned Split Portion
                                     </div>
@@ -133,7 +133,7 @@ export const BillsList: React.FC = () => {
                         )}
 
                         {/* Premium Internal Tracking for Originators */}
-                        {bill.is_split_originator && bill.splits && (
+                        {bill.isSplitOriginator && bill.splits && (
                             <div className="mb-4">
                                 <button 
                                     onClick={() => setOpenTrackerId(openTrackerId === bill.id ? null : bill.id)}
@@ -153,7 +153,7 @@ export const BillsList: React.FC = () => {
                                                 <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
                                                     <input 
                                                         type="checkbox" 
-                                                        checked={bill.splits?.[0]?.is_master_ledger_public || false} 
+                                                        checked={bill.splits?.[0]?.isMasterLedgerPublic || false} 
                                                         onChange={(e) => handleTogglePublic(bill.id, e.target.checked)}
                                                         className="sr-only peer" 
                                                     />
@@ -163,7 +163,7 @@ export const BillsList: React.FC = () => {
                                             {bill.splits.map((split: any) => (
                                                 <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assigned_user_id.substring(0, 2)}</span>
+                                                        <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
                                                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Portion</span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export const BillsList: React.FC = () => {
                                                         }`}>
                                                             {split.status}
                                                         </span>
-                                                        <Price amount_cents={split.calculated_amount_cents} className="text-[11px] font-black tracking-widest" />
+                                                        <Price amountCents={split.calculatedAmountCents} className="text-[11px] font-black tracking-widest" />
                                                     </div>
                                                 </div>
                                             ))}
@@ -192,7 +192,7 @@ export const BillsList: React.FC = () => {
                                         >
                                             Mark Paid
                                         </button>
-                                        {!bill.is_split_originator && !bill.is_split_portion && (
+                                        {!bill.isSplitOriginator && !bill.isSplitPortion && (
                                             <button 
                                                 onClick={() => setOpenSplitterId(openSplitterId === bill.id ? null : bill.id)}
                                                 className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all"
@@ -224,7 +224,7 @@ export const BillsList: React.FC = () => {
                                 <LiabilitySplitter 
                                     targetId={bill.id} 
                                     targetType="bill" 
-                                    total_amount_cents={bill.amount_cents} 
+                                    totalAmountCents={bill.amountCents} 
                                     onComplete={() => {
                                         setOpenSplitterId(null);
                                         mutate();

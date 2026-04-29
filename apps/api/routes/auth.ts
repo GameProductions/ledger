@@ -35,7 +35,7 @@ auth.get('/verify', (c) => {
 })
 
 
-async function createSessionTracker(c: any, userId: string) {
+async function createSessionTracker(c: any, userId: string, passkeyVerified: boolean = false, isPersistent: boolean = false) {
   const db = getDb(c.env)
   const sessionId = `sess-${crypto.randomUUID()}`
   const userAgent = c.req.header('User-Agent') || 'Unknown'
@@ -47,6 +47,8 @@ async function createSessionTracker(c: any, userId: string) {
   const browser = browserM ? browserM[0] : 'Unknown'
   const os = osM ? osM[0] : 'Unknown'
   
+  const expirationHours = isPersistent ? 30 * 24 : 24
+
   await db.insert(sessions).values({
     id: sessionId,
     userId,
@@ -54,8 +56,10 @@ async function createSessionTracker(c: any, userId: string) {
     os,
     browser,
     ipAddress: cfIp,
+    isPersistent: isPersistent ? 1 : 0,
+    passkeyVerifiedAt: passkeyVerified ? new Date().toISOString() : null,
     lastActiveAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    expiresAt: new Date(Date.now() + expirationHours * 60 * 60 * 1000).toISOString()
   })
   
   return sessionId
@@ -68,7 +72,8 @@ async function createSessionTracker(c: any, userId: string) {
 auth.post('/login', zValidator('json', z.object({
   username: z.string().min(1),
   password: z.string().min(1),
-  totpCode: z.string().optional()
+  totpCode: z.string().optional(),
+  persistent: z.boolean().optional()
 }), (result, c) => {
   if (!result.success) {
     console.error('[Login Validation Failed]', {
@@ -79,7 +84,7 @@ auth.post('/login', zValidator('json', z.object({
     return c.json({ success: false, error: result.error }, 400)
   }
 }), async (c) => {
-  const { username, password, totpCode } = c.req.valid('json')
+  const { username, password, totpCode, persistent } = c.req.valid('json')
   const authService = new AuthService(c.env)
   
   try {
@@ -90,7 +95,7 @@ auth.post('/login', zValidator('json', z.object({
       return c.json({ success: true, data: { requires2FA: true } }, 202)
     }
 
-    const sessionId = await createSessionTracker(c, user.id)
+    const sessionId = await createSessionTracker(c, user.id, false, !!persistent)
     const token = await authService.generateToken(user.id, sessionId)
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
@@ -151,9 +156,10 @@ auth.get('/login/discord', async (c) => {
     }
   }
 
+  const persistent = c.req.query('persistent') === 'true'
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
-  const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin })).toString('base64')
+  const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin, persistent })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -180,9 +186,11 @@ auth.get('/callback/discord', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   let isLinkedRoleMetadataUpdate = false
+  let isPersistent = false
   try {
     const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
+    isPersistent = !!decoded.persistent
     if (decoded.linkedRoles) isLinkedRoleMetadataUpdate = true
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -275,7 +283,7 @@ auth.get('/callback/discord', async (c) => {
   if (sessionUserId) {
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
-    const sessionId = await createSessionTracker(c, finalUserId!)
+    const sessionId = await createSessionTracker(c, finalUserId!, false, isPersistent)
     const token = await authService.generateToken(finalUserId!, sessionId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
@@ -330,9 +338,10 @@ auth.get('/login/google', async (c) => {
     }
   }
 
+  const persistent = c.req.query('persistent') === 'true'
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/google`
-  const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin })).toString('base64')
+  const state = Buffer.from(JSON.stringify({ challenge, userId, targetOrigin, persistent })).toString('base64')
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -358,9 +367,11 @@ auth.get('/callback/google', async (c) => {
 
   // Parse state for session context
   let sessionUserId: string | null = null
+  let isPersistent = false
   try {
     const decoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'))
     sessionUserId = decoded.userId
+    isPersistent = !!decoded.persistent
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
   }
@@ -405,7 +416,7 @@ auth.get('/callback/google', async (c) => {
   } else {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens)
-    const sessionId = await createSessionTracker(c, userId)
+    const sessionId = await createSessionTracker(c, userId, false, isPersistent)
     const token = await authService.generateToken(userId, sessionId)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
@@ -814,8 +825,11 @@ auth.post('/passkeys/login-options', async (c) => {
   return c.json({ success: true, data: options })
 })
 
-auth.post('/passkeys/login-verify', async (c) => {
-  const { assertion } = await c.req.json()
+auth.post('/passkeys/login-verify', zValidator('json', z.object({
+  assertion: z.any(),
+  persistent: z.boolean().optional()
+})), async (c) => {
+  const { assertion, persistent } = c.req.valid('json')
   const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
 
   if (!expectedChallenge) {
@@ -857,7 +871,7 @@ auth.post('/passkeys/login-verify', async (c) => {
   await db.update(passkeys).set({ counter: verification.authenticationInfo.newCounter }).where(eq(passkeys.id, passkey.id))
 
   const authService = new AuthService(c.env)
-  const sessionId = await createSessionTracker(c, passkey.userId)
+  const sessionId = await createSessionTracker(c, passkey.userId, true, !!persistent)
   const token = await authService.generateToken(passkey.userId, sessionId)
   await logAudit(c, 'users', passkey.userId, 'login', null, { strategy: 'passkey' })
   

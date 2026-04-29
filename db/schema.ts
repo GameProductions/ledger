@@ -338,6 +338,7 @@ export const sessions = sqliteTable('sessions', {
   ipAddress: text('ip_address'),
   lastActiveAt: text('last_active_at'),
   expiresAt: text('expires_at').notNull(),
+  isPersistent: integer('is_persistent').default(0),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   userIdx: index('idx_sessions_user').on(table.userId),

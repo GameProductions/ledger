@@ -257,3 +257,15 @@ Replaces legacy `totp_secret` and `totp_enabled` columns in the `users` table.
 - `secret`: `text('secret')`
 - `verified`: `integer('verified').default(0)`
 - `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`
+
+### 16.7 Session Persistence & Lifecycle
+- **Persistence Toggle**: All login flows MUST support an optional `persistent` flag.
+- **Session Duration**: 24 hours (Default) vs 30 days (Persistent).
+- **Database Schema**: The `sessions` table MUST include an `isPersistent` column.
+
+## 17. User Management & Role Hierarchy
+- **Promotion Cap**: Users cannot assign roles higher than their own.
+- **Role Order**: `user` < `moderator` < `host` < `admin` < `super_admin`.
+
+## 18. Session Persistence & Lifecycle
+- **Implementation**: Follow the GP Standard for session lifecycles and persistence flags.

@@ -18,6 +18,7 @@
     "paths": {
       "@/*": ["./apps/web/*"],
       "~/*": ["./apps/api/*"],
+      "#": ["./db/index"],
       "#/*": ["./db/*"],
       "@shared/*": ["./packages/shared/*"]
     },

@@ -811,5 +811,27 @@ export const linkedProviders = sqliteTable('linkedProviders', {
   userIdx: index('idx_linked_providers_user').on(table.userId),
   providerIdx: index('idx_linked_providers_provider').on(table.serviceProviderId),
 }));
+export const vault = sqliteTable('vault', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  secretType: text('secretType').notNull(), // 'OAUTH_ACCESS', 'OAUTH_REFRESH', 'TOTP_SECRET', 'RECOVERY_CODE', 'API_KEY', 'WEBHOOK_URL'
+  keyIdentifier: text('keyIdentifier'), // e.g. 'discord', 'google', or a specific webhook/credential ID
+  encryptedData: text('encryptedData').notNull(),
+  iv: text('iv').notNull(),
+  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  lastAccessedAt: text('lastAccessedAt'),
+}, (table) => ({
+  userIdx: index('idx_vault_user_id').on(table.userId),
+  typeIdx: index('idx_vault_type').on(table.secretType),
+  uniqueSecret: uniqueIndex('idx_vault_unique_secret').on(table.userId, table.secretType, table.keyIdentifier),
+}));
 
-
+export const backupCodes = sqliteTable('backupCodes', {
+  id: text('id').primaryKey(),
+  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  codeHash: text('codeHash').notNull(),
+  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  usedAt: text('usedAt'),
+}, (table) => ({
+  userIdx: index('idx_backup_codes_user').on(table.userId),
+}));

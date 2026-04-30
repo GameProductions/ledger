@@ -1,0 +1,38 @@
+[
+  {
+    "results": [
+      {
+        "id": "97c452ee-c5f7-4f44-a69c-4262dea7a370",
+        "user_id": "536db205-5fbb-4fa3-963f-04497753e223",
+        "provider": "discord",
+        "provider_user_id": "447814058465296396",
+        "email": "discord@gameproductions.net",
+        "name": "morenicano",
+        "avatar_url": "https://cdn.discordapp.com/avatars/447814058465296396/1440137d1076454840612ce358f56972.png",
+        "access_token": "MTQ4NTM5NTYzNjkxNTI3Mzg5MA.891AWrnXpAPjf2avho4UCD1IFldjH9",
+        "refresh_token": "c1bBqJVNacv9KChyrrS5bLhcFlEDDW",
+        "token_expires_at": "2026-04-16T20:18:40.769Z",
+        "created_at": "2026-04-06 21:23:08",
+        "updated_at": "2026-04-09T20:18:40.769Z"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "EWR",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.1977
+      },
+      "duration": 0.1977,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 675840,
+      "rows_read": 1,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

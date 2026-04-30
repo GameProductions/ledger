@@ -16,6 +16,7 @@ import { hashPassword } from '../auth-utils'
 import { logAudit, encrypt } from '../utils'
 import { CURRENT_VERSION } from '@shared/constants'
 import { AuthService } from '../services/auth.service'
+import { VaultService } from '../utils/vault.service'
 import { HTTPException } from 'hono/http-exception'
 import { getDb } from '#/index'
 import { 
@@ -430,10 +431,13 @@ admin.get('/users/:userId/details', async (c) => {
   const { userId } = c.req.param()
   const db = getDb(c.env)
   
+  const vaultService = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  const hasMfa = await vaultService.getSecret(userId, 'TOTP_SECRET', null)
+  
   const userFields = await db.select({
     id: users.id, email: users.email, username: users.username, displayName: users.displayName, avatarUrl: users.avatarUrl,
     globalRole: users.globalRole, status: users.status, createdAt: users.createdAt, lastActiveAt: users.lastActiveAt,
-    totpSecret: users.totpSecret, forcePasswordChange: users.forcePasswordChange
+    forcePasswordChange: users.forcePasswordChange
   }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
   
   if (!userFields) throw new HTTPException(404, { message: 'User not found' })
@@ -454,10 +458,10 @@ admin.get('/users/:userId/details', async (c) => {
     data: {
       profile: {
         ...userFields,
-        has2fa: userFields.totpSecret ? 1 : 0
+        has2fa: hasMfa ? 1 : 0
       },
       security: {
-        mfaEnabled: !!userFields.totpSecret,
+        mfaEnabled: !!hasMfa,
         passkeys: userPasskeys,
         forcePasswordChange: !!userFields.forcePasswordChange
       },
@@ -722,83 +726,113 @@ admin.post('/maintenance', zValidator('json', z.object({ enabled: z.boolean() })
   return c.json({ success: true })
 })
 
-// Database Migration Operations
-admin.post('/maintenance/migrate-secrets', async (c) => {
+// Database Migration Operations: VAULT MIGRATION
+admin.post('/maintenance/vault-migration', async (c) => {
   const db = getDb(c.env)
+  const vaultService = new VaultService(db, c.env.ENCRYPTION_KEY)
   let migratedCount = 0
-  const secretKey = c.env.ENCRYPTION_KEY || c.env.JWT_SECRET
 
-  // 1. TOTPs
-  const allTotps = await db.select({ id: totpCredentials.id, secret: totpCredentials.secret }).from(totpCredentials)
-  const totpUpdates = []
+  // 1. TOTPs (from totpCredentials table to vault)
+  const allTotps = await db.select({ id: totpCredentials.id, userId: totpCredentials.userId, secret: totpCredentials.secret }).from(totpCredentials)
   for (const t of allTotps) {
-    if (t.secret && !t.secret.includes('.')) {
-      const encrypted = await encrypt(t.secret, secretKey)
-      totpUpdates.push(db.update(totpCredentials).set({ secret: encrypted }).where(eq(totpCredentials.id, t.id)))
+    if (t.secret && t.secret !== '[VAULTED]') {
+      await vaultService.setSecret(t.userId, 'TOTP_SECRET', t.id, t.secret)
+      await offloadToFoundation(c, 'ledger', 'totp_secret_cred', t.id, t.secret)
+      await db.update(totpCredentials).set({ secret: '[VAULTED]' }).where(eq(totpCredentials.id, t.id))
       migratedCount++
     }
   }
 
-  // 2. User Identities (OAuth tokens)
+  // 2. User Identities (OAuth tokens to vault)
   const allIdentities = await db.select({ 
     id: userIdentities.id, 
+    userId: userIdentities.userId,
     accessToken: userIdentities.accessToken, 
     refreshToken: userIdentities.refreshToken 
   }).from(userIdentities)
   
-  const identityUpdates = []
   for (const idty of allIdentities) {
-    let needsUpdate = false
-    const updates: any = {}
-    
-    if (idty.accessToken && !idty.accessToken.includes('.')) {
-      updates.accessToken = await encrypt(idty.accessToken, secretKey)
-      needsUpdate = true
-    }
-    
-    if (idty.refreshToken && !idty.refreshToken.includes('.')) {
-      updates.refreshToken = await encrypt(idty.refreshToken, secretKey)
-      needsUpdate = true
-    }
-    
-    if (needsUpdate) {
-      identityUpdates.push(db.update(userIdentities).set(updates).where(eq(userIdentities.id, idty.id)))
+    if (idty.accessToken && idty.accessToken !== '[VAULTED]') {
+      await vaultService.setSecret(idty.userId, 'OAUTH_ACCESS', idty.id, idty.accessToken)
+      await offloadToFoundation(c, 'ledger', 'oauth_access', idty.id, idty.accessToken)
+      if (idty.refreshToken) {
+        await vaultService.setSecret(idty.userId, 'OAUTH_REFRESH', idty.id, idty.refreshToken)
+        await offloadToFoundation(c, 'ledger', 'oauth_refresh', idty.id, idty.refreshToken)
+      }
+      await db.update(userIdentities).set({ 
+        accessToken: '[VAULTED]', 
+        refreshToken: idty.refreshToken ? '[VAULTED]' : null 
+      }).where(eq(userIdentities.id, idty.id))
       migratedCount++
     }
   }
 
-  // 3. Webhooks
-  const allWebhooks = await db.select({ id: webhooks.id, secret: webhooks.secret }).from(webhooks)
-  const webhookUpdates = []
+  // 3. Webhooks (from webhooks table to vault)
+  const allWebhooks = await db.select({ id: webhooks.id, householdId: webhooks.householdId, secret: webhooks.secret }).from(webhooks)
   for (const w of allWebhooks) {
-    if (w.secret && !w.secret.includes('.')) {
-      const encrypted = await encrypt(w.secret, secretKey)
-      webhookUpdates.push(db.update(webhooks).set({ secret: encrypted }).where(eq(webhooks.id, w.id)))
+    if (w.secret && w.secret !== '[VAULTED]') {
+      const ownerRes = await db.select({ userId: userHouseholds.userId }).from(userHouseholds).where(and(eq(userHouseholds.householdId, w.householdId), eq(userHouseholds.role, 'owner'))).limit(1)
+      const userId = ownerRes[0]?.userId || 'system'
+      
+      await vaultService.setSecret(userId, 'WEBHOOK_SECRET', w.id, w.secret)
+      await offloadToFoundation(c, 'ledger', 'webhook_secret', w.id, w.secret)
+      await db.update(webhooks).set({ secret: '[VAULTED]' }).where(eq(webhooks.id, w.id))
       migratedCount++
     }
   }
 
-  // 4. External Connections
-  const allExternal = await db.select({ id: externalConnections.id, accessToken: externalConnections.accessToken }).from(externalConnections)
-  const externalUpdates = []
+  // 4. External Connections (to vault)
+  const allExternal = await db.select({ id: externalConnections.id, householdId: externalConnections.householdId, accessToken: externalConnections.accessToken }).from(externalConnections)
   for (const ex of allExternal) {
-    if (ex.accessToken && !ex.accessToken.includes('.')) {
-      const encrypted = await encrypt(ex.accessToken, secretKey)
-      externalUpdates.push(db.update(externalConnections).set({ accessToken: encrypted }).where(eq(externalConnections.id, ex.id)))
+    if (ex.accessToken && ex.accessToken !== '[VAULTED]') {
+      const ownerRes = await db.select({ userId: userHouseholds.userId }).from(userHouseholds).where(and(eq(userHouseholds.householdId, ex.householdId), eq(userHouseholds.role, 'owner'))).limit(1)
+      const userId = ownerRes[0]?.userId || 'system'
+
+      await vaultService.setSecret(userId, 'EXTERNAL_CONNECTION_TOKEN', ex.id, ex.accessToken)
+      await offloadToFoundation(c, 'ledger', 'ext_conn_access', ex.id, ex.accessToken)
+      await db.update(externalConnections).set({ accessToken: '[VAULTED]' }).where(eq(externalConnections.id, ex.id))
       migratedCount++
     }
   }
 
-  // Batch execution
-  const allQueries = [...totpUpdates, ...identityUpdates, ...webhookUpdates, ...externalUpdates]
-  const chunkSize = 50
-  for (let i = 0; i < allQueries.length; i += chunkSize) {
-    await db.batch(allQueries.slice(i, i + chunkSize) as any)
+  // 5. Legacy User TOTP
+  const legacyUsers = await db.select({ id: users.id, totpSecret: users.totpSecret }).from(users).where(isNotNull(users.totpSecret))
+  for (const u of legacyUsers) {
+      if (u.totpSecret && u.totpSecret !== '[VAULTED]') {
+          await vaultService.setSecret(u.id, 'TOTP_SECRET', 'primary', u.totpSecret)
+          await offloadToFoundation(c, 'ledger', 'totp_secret', u.id, u.totpSecret)
+          await db.update(users).set({ totpSecret: '[VAULTED]' }).where(eq(users.id, u.id))
+          migratedCount++
+      }
   }
 
-  await logAudit(c, 'system_config', 'MIGRATION', 'ENCRYPT_SECRETS', null, { migratedCount: migratedCount })
+  await logAudit(c, 'system_config', 'VAULT_MIGRATION', 'MIGRATE_TO_VAULT', null, { migratedCount })
   return c.json({ success: true, count: migratedCount })
 })
+
+async function offloadToFoundation(c: any, source: string, category: string, recordId: string, plaintext: string) {
+  const foundationUrl = c.env.FOUNDATION_URL || 'https://foundation.gpnet.dev';
+  const url = `${foundationUrl}/api/admin/security/deletion-queue`;
+  
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Service-Token': c.env.SHARED_SERVICE_SECRET
+      },
+      body: JSON.stringify({
+        sourceSystem: source,
+        category,
+        recordId,
+        plaintext,
+        actorId: 'migration-task'
+      })
+    });
+  } catch (e) {
+    console.error(`[Offload] Failed to offload ${category} for ${recordId}:`, e);
+  }
+}
 
 // User Support Access (Impersonation)
 admin.post('/users/:userId/impersonate', async (c) => {
@@ -1163,6 +1197,85 @@ admin.get('/entities/audit/report', async (c) => {
   
   return c.json({ success: true, data: results || [] })
 })
+
+// 🏛️ Maintenance: Vault Migration & Deletion Queue Offloading
+admin.post('/maintenance/vault-migration', async (c) => {
+  const db = getDb(c.env)
+  const vaultService = new VaultService(db, c.env.ENCRYPTION_KEY)
+  const results = { enqueued: 0, migrated: 0 }
+
+  try {
+    // 1. Migrate User TOTP Secrets
+    const allUsers = await db.select().from(users)
+    for (const user of allUsers) {
+      if (user.totpSecret && user.totpSecret !== '[VAULTED]') {
+        await vaultService.setSecret(user.id, 'TOTP_SECRET', 'primary', user.totpSecret)
+        await offloadToFoundation(c, 'ledger', 'totp_secret', user.id, user.totpSecret)
+        results.migrated++
+        results.enqueued++
+      }
+    }
+
+    // 2. Migrate User Identities
+    const allIdentities = await db.select().from(userIdentities)
+    for (const ident of allIdentities) {
+      if (ident.accessToken && ident.accessToken !== '[VAULTED]' && ident.accessToken !== '[ENCRYPTED]') {
+        await vaultService.setSecret(ident.userId, 'OAUTH_ACCESS', ident.provider, ident.accessToken)
+        await offloadToFoundation(c, 'ledger', 'oauth_access', ident.id, ident.accessToken)
+        results.migrated++
+      }
+      if (ident.refreshToken && ident.refreshToken !== '[VAULTED]' && ident.refreshToken !== '[ENCRYPTED]') {
+        await vaultService.setSecret(ident.userId, 'OAUTH_REFRESH', ident.provider, ident.refreshToken)
+        await offloadToFoundation(c, 'ledger', 'oauth_refresh', ident.id, ident.refreshToken)
+        results.migrated++
+      }
+    }
+    
+    // 3. Migrate Webhooks
+    const allWebhooks = await db.select().from(webhooks)
+    for (const wh of allWebhooks) {
+        if (wh.secret && wh.secret !== '[VAULTED]') {
+            await vaultService.setSecret('system', 'WEBHOOK_SECRET', wh.id, wh.secret)
+            await offloadToFoundation(c, 'ledger', 'webhook_secret', wh.id, wh.secret)
+            results.migrated++
+        }
+    }
+
+    // 4. Redact Columns
+    await db.update(users).set({ totpSecret: '[VAULTED]' }).run()
+    await db.update(userIdentities).set({ accessToken: '[VAULTED]', refreshToken: '[VAULTED]' }).run()
+    await db.update(webhooks).set({ secret: '[VAULTED]' }).run()
+
+    return c.json({ success: true, results })
+  } catch (err: any) {
+    console.error('[Vault Migration] Failed:', err)
+    return c.json({ success: false, error: err.message }, 500)
+  }
+})
+
+async function offloadToFoundation(c: any, source: string, category: string, recordId: string, plaintext: string) {
+  const foundationUrl = c.env.FOUNDATION_URL || 'https://foundation.gameproductions.bot'
+  const url = `${foundationUrl}/api/admin/security/deletion-queue`
+  
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Service-Token': c.env.SHARED_SERVICE_SECRET
+      },
+      body: JSON.stringify({
+        sourceSystem: source,
+        category,
+        recordId,
+        plaintext,
+        actorId: 'migration-task'
+      })
+    })
+  } catch (e) {
+    console.error(`[Offload] Failed to offload ${category} for ${recordId}:`, e)
+  }
+}
 
 export default admin
 

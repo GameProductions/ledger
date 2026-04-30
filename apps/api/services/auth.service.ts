@@ -4,9 +4,9 @@ import { Bindings } from '../types'
 import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
 import { EmailService } from './email.service'
 import { getDb } from '#/index'
-import { users, userIdentities, passwordResets, passkeys, adminInvitations, totpCredentials, userHouseholds } from '#/schema'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations, totpCredentials, userHouseholds, backupCodes } from '#/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
-import { encrypt, decrypt } from '../utils'
+import { VaultService } from '../utils/vault.service'
 
 export class AuthService {
   constructor(private env: Bindings) {}
@@ -86,6 +86,34 @@ export class AuthService {
     }
 
     console.log('[Auth] Login successful for:', user.username)
+
+    // --- AUTOMATIC BACKUP CODE MIGRATION (Titan Guard v6.1) ---
+    if (user.backupCodesJson && user.backupCodesJson !== '[]') {
+      try {
+        const codes = JSON.parse(user.backupCodesJson) as string[];
+        if (codes.length > 0) {
+          console.log(`[Auth] Migrating ${codes.length} backup codes for user ${user.id}...`);
+          const queries = codes.map(code => {
+            const id = crypto.randomUUID();
+            return (async () => {
+              const codeHash = await hashPassword(code.toUpperCase());
+              return db.insert(backupCodes).values({
+                id,
+                userId: user.id,
+                codeHash
+              });
+            })();
+          });
+          
+          await Promise.all(queries);
+          await db.update(users).set({ backupCodesJson: '[]' }).where(eq(users.id, user.id));
+          console.log(`[Auth] Backup codes migrated successfully for ${user.id}`);
+        }
+      } catch (e: any) {
+        console.error(`[Auth] Failed to migrate backup codes for ${user.id}:`, e.message);
+      }
+    }
+
     return user
   }
 
@@ -93,18 +121,31 @@ export class AuthService {
     if (user.totpEnabled) {
       if (!totpCode) return { requires2FA: true }
       const db = getDb(this.env)
-      const userTotps = await db.select({ secret: totpCredentials.secret }).from(totpCredentials).where(eq(totpCredentials.userId, user.id))
+      const userTotps = await db.select({ 
+        id: totpCredentials.id, 
+        secret: totpCredentials.secret 
+      }).from(totpCredentials).where(eq(totpCredentials.userId, user.id))
+      
+      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
       
       let isValid = false
       for (const t of userTotps) {
-        let decryptedSecret = t.secret
-        if (t.secret.includes('.')) {
-          const attempt = await decrypt(t.secret, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET)
-          if (attempt !== 'DECRYPTION_FAILED') decryptedSecret = attempt
-        }
+        let secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', t.id)
         
-        if (await verifyTOTP(decryptedSecret, totpCode)) {
+        // Migration Fallback: If no secret found with the credential ID, check for a legacy global secret (null/empty identifier)
+        if (!secret) {
+          console.log(`[Auth] No secret found for TOTP ${t.id}, attempting legacy fallback for user ${user.id}`)
+          secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', null)
+        }
+
+        const effectiveSecret = secret || t.secret
+        if (effectiveSecret && await verifyTOTP(effectiveSecret, totpCode)) {
           isValid = true
+          
+          await db.update(totpCredentials).set({
+            lastUsedAt: new Date().toISOString()
+          }).where(eq(totpCredentials.id, t.id))
+          
           break
         }
       }
@@ -170,12 +211,10 @@ export class AuthService {
         })
       }
       
+      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
       
-      const accessTokenEnc = tokens?.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-      const refreshTokenEnc = tokens?.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-
       await db.insert(userIdentities).values({
         id: identityId,
         userId: userId,
@@ -184,25 +223,39 @@ export class AuthService {
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: accessTokenEnc,
-        refreshToken: refreshTokenEnc,
+        accessToken: null, // Moved to vault
+        refreshToken: null, // Moved to vault
         tokenExpiresAt: expiresAt,
       })
+
+      if (tokens) {
+        if (tokens.access_token) {
+          await vaultService.setSecret(userId, 'OAUTH_ACCESS', provider, tokens.access_token)
+        }
+        if (tokens.refresh_token) {
+          await vaultService.setSecret(userId, 'OAUTH_REFRESH', provider, tokens.refresh_token)
+        }
+      }
     } else if (tokens) {
+      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
       const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
       
-      const accessTokenEnc = tokens.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-      const refreshTokenEnc = tokens.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-
       await db.update(userIdentities).set({
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: accessTokenEnc,
-        refreshToken: refreshTokenEnc,
+        accessToken: null, // Moved to vault
+        refreshToken: null, // Moved to vault
         tokenExpiresAt: expiresAt,
         updatedAt: new Date().toISOString()
       }).where(and(eq(userIdentities.provider, provider), eq(userIdentities.providerUserId, profile.id)))
+
+      if (tokens.access_token) {
+        await vaultService.setSecret(userId, 'OAUTH_ACCESS', provider, tokens.access_token);
+      }
+      if (tokens.refresh_token) {
+        await vaultService.setSecret(userId, 'OAUTH_REFRESH', provider, tokens.refresh_token);
+      }
     }
 
     return userId
@@ -222,12 +275,10 @@ export class AuthService {
     }
 
     if (!existing) {
+      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
       const identityId = crypto.randomUUID()
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
       
-      const accessTokenEnc = tokens?.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-      const refreshTokenEnc = tokens?.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-
       await db.insert(userIdentities).values({
         id: identityId,
         userId: userId,
@@ -236,22 +287,29 @@ export class AuthService {
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: accessTokenEnc,
-        refreshToken: refreshTokenEnc,
+        accessToken: tokens?.access_token ? '[ENCRYPTED]' : null,
+        refreshToken: tokens?.refresh_token ? '[ENCRYPTED]' : null,
         tokenExpiresAt: expiresAt,
       })
+
+      if (tokens) {
+        if (tokens.access_token) {
+          await vaultService.setSecret(userId, 'OAUTH_ACCESS', provider, tokens.access_token);
+        }
+        if (tokens.refresh_token) {
+          await vaultService.setSecret(userId, 'OAUTH_REFRESH', provider, tokens.refresh_token);
+        }
+      }
     } else {
+      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
       const expiresAt = tokens?.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
       
-      const accessTokenEnc = tokens?.access_token ? await encrypt(tokens.access_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-      const refreshTokenEnc = tokens?.refresh_token ? await encrypt(tokens.refresh_token, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET) : null
-
       await db.update(userIdentities).set({
         email: profile.email ?? null,
         name: profile.name ?? null,
         avatarUrl: profile.avatar ?? null,
-        accessToken: accessTokenEnc,
-        refreshToken: refreshTokenEnc,
+        accessToken: tokens?.access_token ? '[ENCRYPTED]' : null,
+        refreshToken: tokens?.refresh_token ? '[ENCRYPTED]' : null,
         tokenExpiresAt: expiresAt,
         updatedAt: new Date().toISOString()
       }).where(and(
@@ -259,6 +317,15 @@ export class AuthService {
         eq(userIdentities.providerUserId, profile.id), 
         eq(userIdentities.userId, userId)
       ))
+
+      if (tokens) {
+        if (tokens.access_token) {
+          await vaultService.setSecret(userId, 'OAUTH_ACCESS', provider, tokens.access_token);
+        }
+        if (tokens.refresh_token) {
+          await vaultService.setSecret(userId, 'OAUTH_REFRESH', provider, tokens.refresh_token);
+        }
+      }
     }
 
     return userId
@@ -273,13 +340,21 @@ export class AuthService {
     const db = getDb(this.env)
     const isValid = await verifyTOTP(secret, code)
     if (isValid) {
-      const encryptedSecret = await encrypt(secret, this.env.ENCRYPTION_KEY || this.env.JWT_SECRET)
+      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
+      const totpId = crypto.randomUUID()
       await db.insert(totpCredentials).values({
-        id: crypto.randomUUID(),
+        id: totpId,
         userId,
-        secret: encryptedSecret,
-        name
+        secret: '[VAULTED]',
+        name,
+        verified: 1
       })
+      
+      await vaultService.setSecret(userId, 'TOTP_SECRET', totpId, secret)
+      
+      // Generate initial backup codes
+      await this.generateBackupCodes(userId)
+
       await db.update(users).set({ totpEnabled: 1 }).where(eq(users.id, userId))
       return true
     }
@@ -418,33 +493,52 @@ export class AuthService {
     return true
   }
 
-  // --- BACKUP CODES (Titan Guard v2.1) ---
+  // --- BACKUP CODES (Titan Guard v6.1 - Gold Standard) ---
   async generateBackupCodes(userId: string) {
     const db = getDb(this.env)
-    const codes = Array.from({ length: 10 }, () => 
+    
+    // 1. Clear existing codes
+    await db.delete(backupCodes).where(eq(backupCodes.userId, userId))
+    
+    // 2. Generate 10 new codes
+    const newCodes = Array.from({ length: 10 }, () => 
       Math.random().toString(36).substring(2, 10).toUpperCase()
     )
     
-    const codesJson = JSON.stringify(codes)
-    await db.update(users).set({ backupCodesJson: codesJson }).where(eq(users.id, userId))
+    // 3. Hash and save
+    const insertPromises = newCodes.map(async (code) => {
+      const codeHash = await hashPassword(code)
+      return db.insert(backupCodes).values({
+        id: crypto.randomUUID(),
+        userId,
+        codeHash,
+      })
+    })
     
-    return codes
+    await Promise.all(insertPromises)
+    
+    // 4. Ensure legacy field is cleared
+    await db.update(users).set({ backupCodesJson: '[]' }).where(eq(users.id, userId))
+    
+    return newCodes
   }
 
   async verifyBackupCode(userId: string, code: string) {
     const db = getDb(this.env)
-    const result = await db.select({ backupCodesJson: users.backupCodesJson }).from(users).where(eq(users.id, userId)).limit(1)
-    const user = result[0]
+    const storedCodes = await db.select().from(backupCodes).where(eq(backupCodes.userId, userId))
     
-    if (!user || !user.backupCodesJson) return false
+    if (storedCodes.length === 0) return false
     
-    const codes = JSON.parse(user.backupCodesJson) as string[]
-    const index = codes.indexOf(code.toUpperCase())
+    const normalizedCode = code.toUpperCase()
     
-    if (index !== -1) {
-      codes.splice(index, 1)
-      await db.update(users).set({ backupCodesJson: JSON.stringify(codes) }).where(eq(users.id, userId))
-      return true
+    for (const stored of storedCodes) {
+      if (await verifyPassword(normalizedCode, stored.codeHash)) {
+        // Delete for maximum security
+        await db.delete(backupCodes).where(eq(backupCodes.id, stored.id))
+        
+        console.log(`[Auth] Backup code verified and consumed for user ${userId}`)
+        return true
+      }
     }
     
     return false

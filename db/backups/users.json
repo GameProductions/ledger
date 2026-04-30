@@ -1,0 +1,70 @@
+[
+  {
+    "results": [
+      {
+        "id": "536db205-5fbb-4fa3-963f-04497753e223",
+        "email": "ledger@gameproductions.net",
+        "display_name": "Devon",
+        "username": "morenicano",
+        "password_hash": "100000.g/AyBzjAGRUFK9sOF9dNwg==.1vnSQhEdu+8ie5l9+GFiNw81ZOYQPHdD3Lwu3ub4zhg=",
+        "avatar_url": "https://cdn.discordapp.com/avatars/447814058465296396/1440137d1076454840612ce358f56972.png",
+        "totp_secret": "EUSBEV7VDWNJYOEE5LYCY5X3A5OI3UNT",
+        "totp_enabled": 1,
+        "global_role": "super_admin",
+        "status": "active",
+        "last_active_at": "2026-04-26T17:54:37.244Z",
+        "settings_json": "{\"theme\":\"emerald\"}",
+        "last_viewed_version": "3.32.3",
+        "force_password_change": 0,
+        "created_at": "2026-04-06 21:23:08",
+        "passkey_verified_at": "2026-04-09 19:48:17",
+        "failed_login_attempts": 0,
+        "lockout_until": null,
+        "backup_codes_json": "[]",
+        "locale": "en",
+        "theme": "system"
+      },
+      {
+        "id": "admin_override_uuid_123",
+        "email": "admin@gameproductions.net",
+        "display_name": null,
+        "username": "admin",
+        "password_hash": "100000.NOBzJdmjqB7nOnhXZ+dG6A==.e0uhzV5atRJ6yFVZ7rRCKq1q+SSKvwQ7Wr9+OYhhPgs=",
+        "avatar_url": null,
+        "totp_secret": null,
+        "totp_enabled": 0,
+        "global_role": "super_admin",
+        "status": "active",
+        "last_active_at": "2026-04-07T00:23:51.504Z",
+        "settings_json": "{\"theme\":\"emerald\"}",
+        "last_viewed_version": "v3.19.11",
+        "force_password_change": 0,
+        "created_at": "2026-04-07 00:08:46",
+        "passkey_verified_at": null,
+        "failed_login_attempts": 0,
+        "lockout_until": null,
+        "backup_codes_json": "[]",
+        "locale": "en",
+        "theme": "system"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "EWR",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.2699
+      },
+      "duration": 0.2699,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 675840,
+      "rows_read": 2,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

@@ -139,13 +139,19 @@ backup.post('/cloud/:provider', async (c) => {
   const householdId = c.get('householdId')
   const provider = c.req.param('provider')
   const userId = c.get('userId')
+  const vaultService = new VaultService(c.env)
   
-  // 1. Fetch Cloud Tokens
-  const identity = await c.env.DB.prepare('SELECT accessToken, refreshToken FROM userIdentities WHERE userId = ? AND provider = ?')
+  // 1. Fetch Cloud Tokens from Vault
+  const identity = await c.env.DB.prepare('SELECT id FROM userIdentities WHERE userId = ? AND provider = ?')
     .bind(userId, provider).first() as any
     
   if (!identity) {
     throw new HTTPException(401, { message: `Identity for ${provider} not linked. Please connect your account in Settings.` })
+  }
+
+  const accessToken = await vaultService.getSecret(userId, 'OAUTH_ACCESS', identity.id)
+  if (!accessToken) {
+    throw new HTTPException(401, { message: `Secure access token for ${provider} not found in vault.` })
   }
 
   // 2. Generate the backup payload (Same as /export)
@@ -165,7 +171,7 @@ backup.post('/cloud/:provider', async (c) => {
       // Create/Update file in Google Drive
       const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${identity.accessToken}` },
+        headers: { 'Authorization': `Bearer ${accessToken}` },
         body: payload 
       })
       if (!uploadRes.ok) throw new Error(await uploadRes.text())
@@ -173,7 +179,7 @@ backup.post('/cloud/:provider', async (c) => {
       const uploadRes = await fetch('https://content.dropboxapi.com/2/files/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${identity.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Dropbox-API-Arg': JSON.stringify({ path: `/${filename}`, mode: 'overwrite' }),
           'Content-Type': 'application/octet-stream'
         },
@@ -184,7 +190,7 @@ backup.post('/cloud/:provider', async (c) => {
       const uploadRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${filename}:/content`, {
         method: 'PUT',
         headers: { 
-          'Authorization': `Bearer ${identity.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: payload

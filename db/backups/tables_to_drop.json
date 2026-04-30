@@ -1,0 +1,192 @@
+[
+  {
+    "results": [
+      {
+        "name": "accounts"
+      },
+      {
+        "name": "admin_invitations"
+      },
+      {
+        "name": "audit_logs_archive_20260413"
+      },
+      {
+        "name": "billing_processors"
+      },
+      {
+        "name": "categories"
+      },
+      {
+        "name": "credit_cards"
+      },
+      {
+        "name": "external_connections"
+      },
+      {
+        "name": "holidays"
+      },
+      {
+        "name": "household_invites"
+      },
+      {
+        "name": "households"
+      },
+      {
+        "name": "installment_plans"
+      },
+      {
+        "name": "linked_providers"
+      },
+      {
+        "name": "loan_payments"
+      },
+      {
+        "name": "notification_settings"
+      },
+      {
+        "name": "passkeys"
+      },
+      {
+        "name": "password_resets"
+      },
+      {
+        "name": "pay_schedules"
+      },
+      {
+        "name": "admin_audit_logs"
+      },
+      {
+        "name": "personal_access_tokens"
+      },
+      {
+        "name": "personal_loans"
+      },
+      {
+        "name": "privacy_cards"
+      },
+      {
+        "name": "reports"
+      },
+      {
+        "name": "savings_buckets"
+      },
+      {
+        "name": "schedule_history"
+      },
+      {
+        "name": "schedules"
+      },
+      {
+        "name": "service_providers"
+      },
+      {
+        "name": "shared_balances"
+      },
+      {
+        "name": "subscriptions"
+      },
+      {
+        "name": "support_issues"
+      },
+      {
+        "name": "system_announcements"
+      },
+      {
+        "name": "system_audit_logs"
+      },
+      {
+        "name": "system_feature_flags"
+      },
+      {
+        "name": "system_registry"
+      },
+      {
+        "name": "system_walkthroughs"
+      },
+      {
+        "name": "templates"
+      },
+      {
+        "name": "transaction_timeline"
+      },
+      {
+        "name": "transactions"
+      },
+      {
+        "name": "user_households"
+      },
+      {
+        "name": "user_identities"
+      },
+      {
+        "name": "user_linked_accounts"
+      },
+      {
+        "name": "user_onboarding"
+      },
+      {
+        "name": "user_payment_methods"
+      },
+      {
+        "name": "user_preferences"
+      },
+      {
+        "name": "users"
+      },
+      {
+        "name": "webhook_delivery_logs"
+      },
+      {
+        "name": "webhooks"
+      },
+      {
+        "name": "sessions"
+      },
+      {
+        "name": "totp_credentials"
+      },
+      {
+        "name": "reminders"
+      },
+      {
+        "name": "bills"
+      },
+      {
+        "name": "liability_splits"
+      },
+      {
+        "name": "pay_exceptions"
+      },
+      {
+        "name": "transaction_pairing_rules"
+      },
+      {
+        "name": "audit_logs"
+      },
+      {
+        "name": "tracked_expenses"
+      },
+      {
+        "name": "investment_holdings"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "ENAM",
+      "served_by_colo": "EWR",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.3318
+      },
+      "duration": 0.3318,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 663552,
+      "rows_read": 144,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]

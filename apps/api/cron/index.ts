@@ -2,8 +2,9 @@ import { Bindings } from '../types'
 import { SchedulingService } from '../services/scheduling.service'
 import { decrypt } from '../utils'
 import { getDb } from '#/index'
-import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills } from '#/schema'
+import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills, userHouseholds } from '#/schema'
 import { eq, sql, lte, and } from 'drizzle-orm'
+import { VaultService } from '../utils/vault.service'
 
 
 type SyncResult = {
@@ -102,6 +103,7 @@ const providerSyncHandlers: Record<string, (env: Bindings, connection: any, toke
 
 export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> => {
   const db = getDb(env);
+  const vaultService = new VaultService(db, env.ENCRYPTION_KEY || env.JWT_SECRET)
   const connections = await db.select().from(externalConnections).where(eq(externalConnections.status, 'active'));
 
   console.log(`[Sync] Found ${connections.length} active connections to sync.`)
@@ -109,9 +111,25 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
 
   for (const conn of connections) {
     try {
-      const token = await decrypt(conn.accessToken, env.ENCRYPTION_KEY || env.JWT_SECRET)
-      if (token === 'DECRYPTION_FAILED') {
-        throw new Error('Token decryption failed')
+      // 1. Resolve Vault Context (Household Owner)
+      const ownerRes = await db.select({ userId: userHouseholds.userId })
+        .from(userHouseholds)
+        .where(and(eq(userHouseholds.householdId, conn.householdId), eq(userHouseholds.role, 'owner')))
+        .limit(1)
+      const userId = ownerRes[0]?.userId || 'system'
+
+      // 2. Fetch Token from Vault
+      let token = await vaultService.getSecret(userId, 'EXTERNAL_CONNECTION_TOKEN', conn.id)
+      
+      // Fallback: Check if it's still in the legacy encrypted format in the table
+      if (!token && conn.accessToken && conn.accessToken !== '[ENCRYPTED]') {
+        console.log(`[Sync] Attempting legacy decryption for connection ${conn.id}`)
+        token = await decrypt(conn.accessToken, env.ENCRYPTION_KEY || env.JWT_SECRET)
+        if (token === 'DECRYPTION_FAILED') token = null
+      }
+
+      if (!token) {
+        throw new Error('Access token not found in vault or legacy decryption failed')
       }
 
       const handler = providerSyncHandlers[conn.provider]

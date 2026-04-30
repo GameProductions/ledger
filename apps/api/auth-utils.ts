@@ -2,7 +2,25 @@
  * LEDGER Auth Utilities
  * Implements TOTP (RFC 6238) and WebAuthn helpers using Web Crypto API.
  */
-import { Buffer } from 'node:buffer'
+
+// --- NATIVE BASE64 HELPERS (Buffer-free) ---
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 // --- BASE32 UTILS ---
 const B32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
@@ -136,6 +154,15 @@ export async function verifyWebAuthnRegistration(
 // --- PASSWORD HASHING (PBKDF2) ---
 const DEFAULT_ITERATIONS = 100000
 
+export async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(token)
+  const hash = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
   const salt = crypto.getRandomValues(new Uint8Array(16))
@@ -151,15 +178,15 @@ export async function hashPassword(password: string): Promise<string> {
   const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
   
   // Format: iterations.salt_base64.hash_base64
-  const saltBase64 = Buffer.from(salt).toString('base64')
-  const hashBase64 = Buffer.from(derivedBits).toString('base64')
+  const saltBase64 = uint8ArrayToBase64(salt)
+  const hashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits))
   return `${DEFAULT_ITERATIONS}.${saltBase64}.${hashBase64}`
 }
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
     const [iterations, saltBase64, expectedHashBase64] = storedHash.split('.')
-    const salt = new Uint8Array(Buffer.from(saltBase64, 'base64'))
+    const salt = base64ToUint8Array(saltBase64)
     
     const encoder = new TextEncoder()
     const keyMaterial = await crypto.subtle.importKey(
@@ -172,7 +199,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
       hash: 'SHA-256'
     }
     const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
-    const actualHashBase64 = Buffer.from(derivedBits).toString('base64')
+    const actualHashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits))
     
     const isMatched = timingSafeEqual(actualHashBase64, expectedHashBase64)
     if (!isMatched) console.warn('[Auth] Password hash mismatch')
@@ -184,6 +211,10 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 }
 
 function base64ToBuffer(base64: string): ArrayBuffer {
-  const buf = Buffer.from(base64.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
-  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  const binaryString = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
 }

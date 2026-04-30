@@ -53,26 +53,41 @@ admin.get('/stats', async (c) => {
 // System Configuration
 admin.get('/config', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
-  return c.json({ success: true, data: results || [] })
+  try {
+    const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
+    return c.json({ success: true, data: results || [] })
+  } catch (dbErr) {
+    console.error('[Admin Config] Database fetch failed:', dbErr)
+    return c.json({ success: false, error: 'Database configuration table missing or unreachable', data: [] })
+  }
 })
+
 admin.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async (c) => {
   const id = c.req.param('id')
   const { configValue } = c.req.valid('json')
   const db = getDb(c.env)
   
-  await db.update(systemConfig).set({ configValue, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
-  
-  await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { configValue })
-  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
-  return c.json({ success: true })
+  try {
+    await db.update(systemConfig).set({ configValue, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
+    
+    await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { configValue })
+    if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
+    return c.json({ success: true })
+  } catch (err) {
+    console.error('[Admin Config] Update failed:', err)
+    throw new HTTPException(500, { message: 'Failed to update configuration. Database table may be missing.' })
+  }
 })
 
-// Feature Flags
 admin.get('/features', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
-  return c.json({ success: true, data: results || [] })
+  try {
+    const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
+    return c.json({ success: true, data: results || [] })
+  } catch (err) {
+    console.error('[Admin Features] Fetch failed:', err)
+    return c.json({ success: false, error: 'Feature flags table missing', data: [] })
+  }
 })
 
 admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), async (c) => {
@@ -80,23 +95,33 @@ admin.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), asyn
   const { enabledGlobally, targetUserIds } = c.req.valid('json')
   const db = getDb(c.env)
   
-  await db.update(systemFeatureFlags).set({ 
-    enabledGlobally: enabledGlobally ? 1 : 0, 
-    updatedAt: sql`CURRENT_TIMESTAMP` 
-  }).where(eq(systemFeatureFlags.id, id))
-  
-  // Note: we're omitting targetUserIds since it's missing in some schema versions, raw SQL could patch it:
-  await db.run(sql`UPDATE systemFeatureFlags SET targetUserIds = ${targetUserIds} WHERE id = ${id}`);
-  
-  await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabledGlobally })
-  return c.json({ success: true })
+  try {
+    await db.update(systemFeatureFlags).set({ 
+      enabledGlobally: enabledGlobally ? 1 : 0, 
+      updatedAt: sql`CURRENT_TIMESTAMP` 
+    }).where(eq(systemFeatureFlags.id, id))
+    
+    // Note: we're omitting targetUserIds since it's missing in some schema versions, raw SQL could patch it:
+    await db.run(sql`UPDATE systemFeatureFlags SET targetUserIds = ${targetUserIds} WHERE id = ${id}`);
+    
+    await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabledGlobally })
+    return c.json({ success: true })
+  } catch (err) {
+    console.error('[Admin Features] Update failed:', err)
+    throw new HTTPException(500, { message: 'Failed to update feature. Database table may be missing.' })
+  }
 })
 
 // Master Record List (Registry)
 admin.get('/records', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemRegistry).orderBy(systemRegistry.itemType, systemRegistry.name)
-  return c.json({ success: true, data: results || [] })
+  try {
+    const results = await db.select().from(systemRegistry).orderBy(systemRegistry.itemType, systemRegistry.name)
+    return c.json({ success: true, data: results || [] })
+  } catch (err) {
+    console.error('[Admin Registry] Fetch failed:', err)
+    return c.json({ success: false, error: 'Registry table missing', data: [] })
+  }
 })
 
 admin.post('/records', zValidator('json', SystemRegistrySchema), async (c) => {

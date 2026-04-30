@@ -6,6 +6,8 @@ const AdminConfig: React.FC = () => {
   const [configs, setConfigs] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [healing, setHealing] = useState(false);
+  const [healResult, setHealResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,11 +55,71 @@ const AdminConfig: React.FC = () => {
     setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabledGlobally: enabled ? 1 : 0 } : f));
   };
 
+  const handleSelfHeal = async () => {
+    if (!window.confirm("Are you sure you want to run system self-healing? This will re-verify and create any missing system tables.")) return;
+    
+    setHealing(true);
+    setHealResult(null);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/admin/maintenance/self-heal`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setHealResult({ success: data.success, message: data.message || (data.success ? "System tables healed successfully." : "Heal failed.") });
+      
+      // Refresh config if successful
+      if (data.success) {
+        const configRes = await fetch(`${apiUrl}/api/admin/config`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const configData = await configRes.json();
+        setConfigs(configData.data || []);
+      }
+    } catch (err) {
+      setHealResult({ success: false, message: "Network error during self-heal." });
+    } finally {
+      setHealing(false);
+    }
+  };
+
   if (loading) return <AdminPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></AdminPortal>;
 
   return (
     <AdminPortal activePath="#/admin/config">
       <div className="space-y-12">
+        {/* Maintenance / Self-Heal */}
+        <section className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20 relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-xl">🛠️</div>
+              <div>
+                <h3 className="font-black uppercase italic tracking-tight text-amber-400">System Self-Healing</h3>
+                <p className="text-xs text-amber-500/60 font-bold uppercase tracking-widest">Maintenance Operations</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-400 mb-6 max-w-2xl">
+              If the platform is experiencing 500 errors or missing configuration keys, run self-healing to re-verify the database schema and restore missing system tables.
+            </p>
+            <button 
+              onClick={handleSelfHeal}
+              disabled={healing}
+              className={`px-8 py-3 rounded-2xl font-black uppercase tracking-tighter italic transition-all ${healing ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}
+            >
+              {healing ? "Healing System..." : "Run Self-Heal"}
+            </button>
+            
+            {healResult && (
+              <div className={`mt-6 p-4 rounded-xl text-sm font-bold ${healResult.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                {healResult.success ? "✅ " : "❌ "} {healResult.message}
+              </div>
+            )}
+          </div>
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none transform rotate-12">
+            <div className="text-8xl font-black italic tracking-tighter uppercase leading-none">REPAIR</div>
+          </div>
+        </section>
+
         {/* System Overrides */}
         <section>
           <div className="flex items-center justify-between mb-8">

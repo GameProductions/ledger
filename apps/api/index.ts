@@ -91,14 +91,19 @@ app.use('*', async (c, next) => {
       isSoftLocked = true;
     } else if (!configCache) {
       // If cache is empty, we must check DB to ensure we don't bypass on cache flush
-      const db = getDb(c.env)
-      const dbConfig = await db.select({ configValue: systemConfig.configValue })
-        .from(systemConfig)
-        .where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
-        .limit(1)
-        .then(res => res[0])
-      
-      if (dbConfig?.configValue === 'true') isSoftLocked = true
+      try {
+        const db = getDb(c.env)
+        const dbConfig = await db.select({ configValue: systemConfig.configValue })
+          .from(systemConfig)
+          .where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
+          .limit(1)
+          .then(res => res[0])
+        
+        if (dbConfig?.configValue === 'true') isSoftLocked = true
+      } catch (dbErr) {
+        console.error('[Maintenance Check] Database query failed (likely missing table):', dbErr)
+        // Fallback to Hard Lock or default to false to allow recovery via admin routes
+      }
     }
 
     // --- LEVEL 3: Global Status Check ---
@@ -238,6 +243,16 @@ app.route('/api/backup', backupRoutes)
 app.route('/api/support', supportRoutes)
 app.route('/api/discord', discordRoutes)
 
+// Helper to safely parse configuration values
+const safeJsonParse = (val: string | null) => {
+  if (!val) return null;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return val; // Return raw string if not valid JSON
+  }
+};
+
 // 5. System Configuration & Theme Handling
 app.get('/api/config', async (c) => {
   const cached = await c.env.TITAN_GUARD_CACHE?.get('API_CONFIG', 'json')
@@ -246,10 +261,20 @@ app.get('/api/config', async (c) => {
   // --- System Configuration (Titan Guard v6.1 Filtered) ---
   const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
   const db = getDb(c.env)
-  const config = await db.select().from(systemConfig);
-  const publicConfig = config
-    .filter(c => PUBLIC_CONFIG_KEYS.includes(c.configKey as string))
-    .reduce((acc, curr) => ({ ...acc, [curr.configKey as string]: curr.configValue ? JSON.parse(curr.configValue as string) : null }), {});
+  
+  let publicConfig = {};
+  try {
+    const config = await db.select().from(systemConfig);
+    publicConfig = config
+      .filter(conf => PUBLIC_CONFIG_KEYS.includes(conf.configKey as string))
+      .reduce((acc, curr) => ({ 
+        ...acc, 
+        [curr.configKey as string]: safeJsonParse(curr.configValue as string) 
+      }), {});
+  } catch (dbErr) {
+    console.error('[Config API] Database fetch failed:', dbErr);
+    // Return empty config or defaults to avoid crashing the frontend
+  }
 
   const result = {
     ...publicConfig,

@@ -121,6 +121,8 @@ export class AuthService {
     if (user.totpEnabled) {
       if (!totpCode) return { requires2FA: true }
       const db = getDb(this.env)
+      
+      // 1. Try TOTP Verification
       const userTotps = await db.select({ 
         id: totpCredentials.id, 
         secret: totpCredentials.secret 
@@ -132,13 +134,14 @@ export class AuthService {
       for (const t of userTotps) {
         let secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', t.id)
         
-        // Migration Fallback: If no secret found with the credential ID, check for a legacy global secret (null/empty identifier)
+        // Migration Fallback: If no secret found with the credential ID, check for a legacy global secret
         if (!secret) {
-          console.log(`[Auth] No secret found for TOTP ${t.id}, attempting legacy fallback for user ${user.id}`)
           secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', null)
         }
 
-        const effectiveSecret = secret || t.secret
+        // Hardening: Ensure we don't use the '[VAULTED]' placeholder as a real secret
+        const effectiveSecret = secret || (t.secret !== '[VAULTED]' ? t.secret : null)
+        
         if (effectiveSecret && await verifyTOTP(effectiveSecret, totpCode)) {
           isValid = true
           
@@ -150,7 +153,19 @@ export class AuthService {
         }
       }
       
-      if (!isValid) throw new HTTPException(401, { message: 'Invalid 2FA code' })
+      // 2. Backup Code Fallback (Titan Guard v6.1 Gold Standard)
+      if (!isValid && totpCode.length === 8) {
+        console.log(`[Auth] Attempting backup code verification for user ${user.id}`)
+        isValid = await this.verifyBackupCode(user.id, totpCode)
+        if (isValid) {
+          console.log(`[Auth] Backup code verified for user ${user.id}`)
+        }
+      }
+      
+      if (!isValid) {
+        console.warn(`[Auth] 2FA failed for user ${user.id} (Code: ${totpCode.substring(0, 2)}***)`)
+        throw new HTTPException(401, { message: 'Invalid 2FA code' })
+      }
     }
     return { requires2FA: false }
   }

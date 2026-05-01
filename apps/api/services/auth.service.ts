@@ -152,6 +152,33 @@ export class AuthService {
           break
         }
       }
+
+      // 1.5 Legacy Vault Fallback (For users migrated before totpCredentials table existed)
+      if (!isValid && userTotps.length === 0 && user.totpEnabled) {
+        console.log(`[Auth] Attempting legacy vault secret verification for user ${user.id}`)
+        let legacySecret = await vaultService.getSecret(user.id, 'TOTP_SECRET', 'primary')
+        if (!legacySecret) {
+          legacySecret = await vaultService.getSecret(user.id, 'TOTP_SECRET', null)
+        }
+        
+        if (legacySecret && await verifyTOTP(legacySecret, totpCode)) {
+          isValid = true
+          
+          // Auto-migrate to the new schema
+          const totpId = crypto.randomUUID()
+          await db.insert(totpCredentials).values({
+            id: totpId,
+            userId: user.id,
+            secret: '[VAULTED]',
+            name: 'Legacy Authenticator',
+            verified: 1,
+            lastUsedAt: new Date().toISOString()
+          })
+          
+          await vaultService.setSecret(user.id, 'TOTP_SECRET', totpId, legacySecret)
+          console.log(`[Auth] Auto-migrated legacy TOTP to standardized schema for user ${user.id}`)
+        }
+      }
       
       // 2. Backup Code Fallback (Titan Guard v6.1 Gold Standard)
       if (!isValid && totpCode.length === 8) {

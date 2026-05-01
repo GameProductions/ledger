@@ -73,6 +73,8 @@ jobs:
       - name: 🚀 Deploy to Cloudflare
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15
         with:
+          apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy --config wrangler.jsonc --minify
           secrets: |
             ENCRYPTION_KEY

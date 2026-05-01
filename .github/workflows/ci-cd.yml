@@ -71,7 +71,7 @@ jobs:
         run: npm run build
 
       - name: 🚀 Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@5f269ee58e8f3e14d11736bca66cf8eb8ea10004 # v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15
         with:
           command: deploy --config wrangler.jsonc --minify
           secrets: |

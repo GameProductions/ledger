@@ -188,15 +188,49 @@ export const TotpModule = () => {
                         )}
                         <div className="flex items-center flex-wrap gap-2 mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                           <span>Added: {new Date(t.createdAt).toLocaleDateString()}</span>
-                          {t.lastUsedAt && (
-                            <>
-                              <span>•</span>
-                              <span className="text-amber-400">Used: {new Date(t.lastUsedAt).toLocaleString()}</span>
-                              {t.lastUsedIp && <span>• <span className="text-slate-400">IP:</span> {t.lastUsedIp}</span>}
-                              {t.lastUsedV6 && <span>• <span className="text-slate-400">IPv6:</span> {t.lastUsedV6}</span>}
-                              {t.lastUsedLocation && <span>• <span className="text-emerald-400">{t.lastUsedLocation}</span></span>}
-                              {t.lastUsedUa && <span className="italic opacity-60">• {t.lastUsedUa.includes('Mac') ? 'Mac' : t.lastUsedUa.includes('Windows') ? 'Windows' : 'Mobile'}</span>}
-                            </>
+                           {t.lastUsedAt && (
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 p-2 bg-slate-900/30 rounded-lg text-[9px] font-bold uppercase tracking-wider">
+                              <div className="flex items-center gap-1 text-amber-500/70">
+                                <span>Last Used: {new Date(t.lastUsedAt).toLocaleString()}</span>
+                              </div>
+                              
+                              {(() => {
+                                const ips = [];
+                                const p = t as any;
+                                if (p.lastUsedIpV4) ips.push({ label: 'IPv4', value: p.lastUsedIpV4 });
+                                if (p.lastUsedIpV6) ips.push({ label: 'IPv6', value: p.lastUsedIpV6 });
+                                
+                                // Fallback to old field names if necessary
+                                if (ips.length === 0 && p.lastUsedIp) {
+                                  ips.push({ 
+                                    label: p.lastUsedIp.includes(':') ? 'IPv6' : 'IPv4', 
+                                    value: p.lastUsedIp 
+                                  });
+                                }
+                                if (ips.length === 1 && p.lastUsedV6) {
+                                  ips.push({ label: 'IPv6', value: p.lastUsedV6 });
+                                }
+                                
+                                return ips.map((ip, idx) => (
+                                  <div key={idx} className="flex items-center gap-1.5 text-slate-500">
+                                    <span className="text-slate-500 font-black">{ip.label}:</span>
+                                    <span className="font-mono">{ip.value}</span>
+                                  </div>
+                                ));
+                              })()}
+
+                              {t.lastUsedLocation && (
+                                <div className="flex items-center gap-1 text-emerald-500/60">
+                                  <span>{t.lastUsedLocation}</span>
+                                </div>
+                              )}
+
+                              {t.lastUsedUa && (
+                                <div className="flex items-center gap-1 text-slate-500/60 italic">
+                                  <span>{t.lastUsedUa.includes('Mac') ? 'Mac' : t.lastUsedUa.includes('Windows') ? 'Windows' : 'Mobile'}</span>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>

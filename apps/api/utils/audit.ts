@@ -27,13 +27,19 @@ export const logAudit = (
       const impersonatorId = c.get('impersonatorId');
       
       // Tier 1 Telemetry Extraction
-      const ipAddress = c.req.header('cf-connecting-ip') || 
+      const connectingIp = c.req.header('cf-connecting-ip') || 
                         c.req.header('x-forwarded-for') || 
                         c.req.header('x-real-ip') ||
                         '0.0.0.0';
+      const pseudoIp = c.req.header('cf-pseudo-ipv4');
       const userAgent = c.req.header('user-agent') || 'Unknown-UA';
       const cfRay = c.req.header('cf-ray') || 'Unknown-Ray';
       const cfIpCountry = c.req.header('cf-ipcountry') || 'Unknown';
+
+      // [FORENSIC-PARITY] Dual-Stack IP Detection
+      const isIPv6 = connectingIp.includes(':');
+      const ipV4 = isIPv6 ? (pseudoIp || null) : connectingIp;
+      const ipV6 = isIPv6 ? connectingIp : null;
 
       const finalNewValues = newValues ? { ...newValues } : {};
       if (impersonatorId) {
@@ -45,7 +51,9 @@ export const logAudit = (
       await db.insert(table).values({
         householdId,
         actorId,
-        ipAddress,
+        ipAddress: connectingIp,
+        ipV4,
+        ipV6,
         userAgent,
         action,
         severity: action.includes('CRITICAL') || action.includes('ADMIN') || action.includes('DELETE') ? 'CRITICAL' : 'INFO',
@@ -58,7 +66,8 @@ export const logAudit = (
           path: c.req.path,
           method: c.req.method,
           cfRay,
-          cfIpCountry
+          cfIpCountry,
+          pseudoIp
         }),
         cfRay
       } as any);

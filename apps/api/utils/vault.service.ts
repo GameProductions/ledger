@@ -2,15 +2,17 @@ import { eq, and } from 'drizzle-orm';
 import { vault } from '#/schema';
 import { encryptData, decryptData } from './security';
 
-export type SecretType = 
+export type SecretScope = 'system' | 'discord' | 'google' | 'internal' | 'webhook' | string;
+export type SecretKeyName = 
     | 'OAUTH_ACCESS' 
     | 'OAUTH_REFRESH' 
     | 'TOTP_SECRET' 
-    | 'RECOVERY_CODE' 
+    | 'RECOVERY_CODES' 
     | 'API_KEY' 
     | 'WEBHOOK_URL'
     | 'WEBHOOK_SECRET'
-    | 'EXTERNAL_CONNECTION_TOKEN';
+    | 'EXTERNAL_CONNECTION_TOKEN'
+    | string;
 
 export class VaultService {
     constructor(private db: any, private encryptionKey: string) {}
@@ -18,33 +20,35 @@ export class VaultService {
     /**
      * Stores a secret in the vault, encrypted at rest.
      */
-    async setSecret(userId: string, type: SecretType, identifier: string | null, plaintext: string) {
+    async setSecret(ownerId: string, keyName: SecretKeyName, scope: SecretScope, plaintext: string) {
         const full = await encryptData(plaintext, this.encryptionKey);
-        const [iv, encryptedData] = full.split(':');
+        const [iv, encryptedValue] = full.split(':');
         
         // Check if exists to update or insert
         const existing = await this.db.select().from(vault).where(
             and(
-                eq(vault.userId, userId),
-                eq(vault.secretType, type),
-                identifier ? eq(vault.keyIdentifier, identifier) : eq(vault.keyIdentifier, '')
+                eq(vault.ownerId, ownerId),
+                eq(vault.keyName, keyName),
+                eq(vault.scope, scope)
             )
         ).limit(1);
 
         if (existing.length > 0) {
             await this.db.update(vault).set({
-                encryptedData,
+                encryptedValue,
                 iv,
-                lastAccessedAt: new Date().toISOString()
+                version: (existing[0].version || 1) + 1,
+                updatedAt: new Date().toISOString()
             }).where(eq(vault.id, existing[0].id));
         } else {
             await this.db.insert(vault).values({
                 id: crypto.randomUUID(),
-                userId,
-                secretType: type,
-                keyIdentifier: identifier || '',
-                encryptedData,
-                iv
+                ownerId,
+                keyName,
+                scope,
+                encryptedValue,
+                iv,
+                version: 1
             });
         }
     }
@@ -52,12 +56,12 @@ export class VaultService {
     /**
      * Retrieves and decrypts a secret from the vault.
      */
-    async getSecret(userId: string, type: SecretType, identifier: string | null): Promise<string | null> {
+    async getSecret(ownerId: string, keyName: SecretKeyName, scope: SecretScope): Promise<string | null> {
         const result = await this.db.select().from(vault).where(
             and(
-                eq(vault.userId, userId),
-                eq(vault.secretType, type),
-                identifier ? eq(vault.keyIdentifier, identifier) : eq(vault.keyIdentifier, '')
+                eq(vault.ownerId, ownerId),
+                eq(vault.keyName, keyName),
+                eq(vault.scope, scope)
             )
         ).limit(1);
 
@@ -65,23 +69,18 @@ export class VaultService {
 
         const record = result[0];
         
-        // Update last accessed
-        await this.db.update(vault).set({
-            lastAccessedAt: new Date().toISOString()
-        }).where(eq(vault.id, record.id));
-
-        return await decryptData(`${record.iv}:${record.encryptedData}`, this.encryptionKey);
+        return await decryptData(`${record.iv}:${record.encryptedValue}`, this.encryptionKey);
     }
 
     /**
      * Deletes a secret from the vault.
      */
-    async deleteSecret(userId: string, type: SecretType, identifier: string | null) {
+    async deleteSecret(ownerId: string, keyName: SecretKeyName, scope: SecretScope) {
         await this.db.delete(vault).where(
             and(
-                eq(vault.userId, userId),
-                eq(vault.secretType, type),
-                identifier ? eq(vault.keyIdentifier, identifier) : eq(vault.keyIdentifier, '')
+                eq(vault.ownerId, ownerId),
+                eq(vault.keyName, keyName),
+                eq(vault.scope, scope)
             )
         );
     }

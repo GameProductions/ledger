@@ -274,14 +274,54 @@ export const PasskeyModule = () => {
                                    <span>•</span>
                                    <span>Added: {new Date(pk.createdAt).toLocaleDateString()}</span>
                                     {pk.lastUsedAt && (
-                                      <>
-                                        <span>•</span>
-                                        <span className="text-blue-400">Used: {new Date(pk.lastUsedAt).toLocaleString()}</span>
-                                        {pk.lastUsedIp && <span>• <span className="text-slate-400">IP:</span> {pk.lastUsedIp}</span>}
-                                        {pk.lastUsedV6 && <span>• <span className="text-slate-400">IPv6:</span> {pk.lastUsedV6}</span>}
-                                        {pk.lastUsedLocation && <span>• <span className="text-emerald-400">{pk.lastUsedLocation}</span></span>}
-                                        {pk.lastUsedUa && <span className="italic opacity-60">• {pk.lastUsedUa.includes('Mac') ? 'Mac' : pk.lastUsedUa.includes('Windows') ? 'Windows' : 'Mobile'}</span>}
-                                      </>
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 p-2 bg-slate-900/30 rounded-lg text-[9px] font-bold uppercase tracking-wider">
+                                        <div className="flex items-center gap-1 text-blue-500/70">
+                                          <span>Last Used: {new Date(pk.lastUsedAt).toLocaleString()}</span>
+                                        </div>
+                                        
+                                        {(() => {
+                                          const ips = [];
+                                          const p = pk as any;
+                                          if (p.lastUsedIpV4) ips.push({ label: 'IPv4', value: p.lastUsedIpV4 });
+                                          if (p.lastUsedIpV6) ips.push({ label: 'IPv6', value: p.lastUsedIpV6 });
+                                          
+                                          // Fallback to old field names if necessary
+                                          if (ips.length === 0 && p.lastUsedIp) {
+                                            ips.push({ 
+                                              label: p.lastUsedIp.includes(':') ? 'IPv6' : 'IPv4', 
+                                              value: p.lastUsedIp 
+                                            });
+                                          }
+                                          if (ips.length === 1 && p.lastUsedV6) {
+                                            ips.push({ label: 'IPv6', value: p.lastUsedV6 });
+                                          }
+                                          
+                                          return ips.map((ip, idx) => (
+                                            <div key={idx} className="flex items-center gap-1.5 text-slate-500">
+                                              <span className="text-slate-500 font-black">{ip.label}:</span>
+                                              <span className="font-mono">{ip.value}</span>
+                                            </div>
+                                          ));
+                                        })()}
+
+                                        {pk.lastUsedLocation && (
+                                          <div className="flex items-center gap-1 text-emerald-500/60">
+                                            <span>{pk.lastUsedLocation}</span>
+                                          </div>
+                                        )}
+
+                                        {pk.lastUsedUa && (
+                                          <div className="flex items-center gap-1 text-slate-500/60 italic">
+                                            <span>{pk.lastUsedUa.includes('Mac') ? 'Mac' : pk.lastUsedUa.includes('Windows') ? 'Windows' : 'Mobile'}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {pk.aaguid && (
+                                      <div className="mt-1 text-[8px] font-mono text-slate-700 uppercase tracking-tighter opacity-50 px-2">
+                                        AAGUID: {pk.aaguid}
+                                      </div>
                                     )}
                                 </div>
                              </div>

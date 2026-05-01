@@ -157,10 +157,27 @@ export function SecurityDashboard() {
                       <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-wider">Temporary</span>
                     )}
                   </div>
-                  <div className="flex flex-col gap-0.5">
+                   <div className="flex flex-col gap-0.5">
                     <p className="text-xs text-slate-500 font-medium">
-                      <span className="text-slate-400 font-bold uppercase tracking-tighter mr-1">IPv4:</span> {s.ipAddress}
-                      {s.ipV6 && <span className="ml-3"><span className="text-slate-400 font-bold uppercase tracking-tighter mr-1">IPv6:</span> {s.ipV6}</span>}
+                      {(() => {
+                        const ips = [];
+                        if (s.ipV4) ips.push({ label: 'IPv4', value: s.ipV4 });
+                        if (s.ipV6) ips.push({ label: 'IPv6', value: s.ipV6 });
+                        
+                        if (ips.length === 0 && s.ipAddress) {
+                          ips.push({ 
+                            label: s.ipAddress.includes(':') ? 'IPv6' : 'IPv4', 
+                            value: s.ipAddress 
+                          });
+                        }
+                        
+                        return ips.map((ip, idx) => (
+                          <span key={idx} className={idx > 0 ? 'ml-3' : ''}>
+                            <span className="text-slate-400 font-black uppercase tracking-tighter mr-1">{ip.label}:</span>
+                            <span className="font-mono">{ip.value}</span>
+                          </span>
+                        ));
+                      })()}
                     </p>
                     <p className="text-[11px] text-slate-600">Last Active: {new Date(s.lastActiveAt).toLocaleString()} • {s.location || 'Unknown Location'}</p>
                   </div>

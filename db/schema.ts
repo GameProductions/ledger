@@ -30,7 +30,7 @@ export const users = sqliteTable('users', {
   onboardingCompleted: integer('onboardingCompleted').default(0),
   failedLoginAttempts: integer('failedLoginAttempts').default(0),
   lockoutUntil: text('lockoutUntil'),
-  backupCodesJson: text('backupCodesJson').default('[]'),
+  backupCodesJson: text('backupCodesJson').default('[]'), // [LEGACY] Use 'vault' table
   passwordChangedAt: text('passwordChangedAt'),
   preferredMfaType: text('preferredMfaType'), // PASSKEY, TOTP, NONE
   createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
@@ -312,6 +312,8 @@ export const auditLogs = sqliteTable('auditLogs', {
   householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
   actorId: text('actorId').notNull(),
   ipAddress: text('ipAddress'),
+  ipV4: text('ipV4'),
+  ipV6: text('ipV6'),
   userAgent: text('userAgent'),
   action: text('action').notNull(),
   severity: text('severity').default('INFO'), // INFO, WARN, CRITICAL
@@ -340,6 +342,8 @@ export const sessions = sqliteTable('sessions', {
   challenge: text('challenge'),
   userAgent: text('userAgent'),
   ipAddress: text('ipAddress'),
+  ipV4: text('ipV4'),
+  ipV6: text('ipV6'),
   lastActiveAt: text('lastActiveAt').default(sql`CURRENT_TIMESTAMP`),
   deviceName: text('deviceName'),
   os: text('os'),
@@ -366,6 +370,8 @@ export const totpCredentials = sqliteTable('totpCredentials', {
   createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
   lastUsedAt: text('lastUsedAt'),
   lastUsedIp: text('lastUsedIp'),
+  lastUsedIpV4: text('lastUsedIpV4'),
+  lastUsedIpV6: text('lastUsedIpV6'),
   lastUsedLocation: text('lastUsedLocation'),
   lastUsedUa: text('lastUsedUa'),
 }, (table) => ({
@@ -388,6 +394,8 @@ export const passkeys = sqliteTable('passkeys', {
   providerName: text('providerName'),
   icon: text('icon'),
   lastUsedIp: text('lastUsedIp'),
+  lastUsedIpV4: text('lastUsedIpV4'),
+  lastUsedIpV6: text('lastUsedIpV6'),
   lastUsedLocation: text('lastUsedLocation'),
   lastUsedUa: text('lastUsedUa'),
 }, (table) => ({
@@ -813,17 +821,16 @@ export const linkedProviders = sqliteTable('linkedProviders', {
 }));
 export const vault = sqliteTable('vault', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  secretType: text('secretType').notNull(), // 'OAUTH_ACCESS', 'OAUTH_REFRESH', 'TOTP_SECRET', 'RECOVERY_CODE', 'API_KEY', 'WEBHOOK_URL'
-  keyIdentifier: text('keyIdentifier'), // e.g. 'discord', 'google', or a specific webhook/credential ID
-  encryptedData: text('encryptedData').notNull(),
+  ownerId: text('owner_id').notNull(),
+  keyName: text('key_name').notNull(),
+  scope: text('scope').notNull(),
+  encryptedValue: text('encrypted_value').notNull(),
   iv: text('iv').notNull(),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
-  lastAccessedAt: text('lastAccessedAt'),
+  version: integer('version').default(1),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  userIdx: index('idx_vault_user_id').on(table.userId),
-  typeIdx: index('idx_vault_type').on(table.secretType),
-  uniqueSecret: uniqueIndex('idx_vault_unique_secret').on(table.userId, table.secretType, table.keyIdentifier),
+  ownerKeyIdx: index('idx_vault_owner_key').on(table.ownerId, table.keyName, table.scope),
 }));
 
 export const backupCodes = sqliteTable('backupCodes', {

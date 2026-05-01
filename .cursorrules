@@ -287,10 +287,15 @@ To ensure absolute account integrity and forensic traceability, all identity sys
 - **Database Schema**: The `sessions` table MUST include an `isPersistent` column (`integer`).
 
 ### 16.8 UI/UX Forensic Parity & Reactive State
-- **IP Labeling**: UIs MUST explicitly label and display both IPv4 and IPv6 addresses when available. Never assume an address type.
-- **Metadata Visibility**: Security listings (Sessions, Passkeys, TOTP) MUST surface full forensic metadata including Location (City, Country), Browser/OS (parsed from UA), and Hardware Provider (mapped from AAGUID).
+- **IP Labeling**: UIs MUST explicitly label and display BOTH IPv4 and IPv6 addresses when available. Use standard "IPv4:" and "IPv6:" prefixes. Never label an IPv6 address as IPv4.
+- **Metadata Visibility**: Security listings (Sessions, Passkeys, TOTP) MUST surface full forensic metadata including:
+    - **Network**: IPv4 and IPv6 addresses with explicit labels.
+    - **Geographic**: Location (City, Country).
+    - **Device**: Browser/OS (parsed from UA).
+    - **Hardware**: Full AAGUID metadata and Hardware Provider name (mapped from AAGUID) for passkeys.
 - **Session Lifecycle UI**: Active session lists MUST include a "Current Session" badge and a "Persistence" indicator (Persistent vs Temporary), accompanied by a legend explaining these security states.
 - **Reactive CRUD**: All security management actions (Rename, Revoke, Enroll) MUST utilize optimistic UI updates or immediate state refreshes to reflect changes without requiring a full page reload.
+- **TOTP Enrollment**: Enrollment logic MUST generate and display 10 high-entropy recovery codes immediately upon successful binding, with a mandatory "Saved" verification and download option.
 
 ## 17. Centralized Secret Management (Titan Guard v6.1)
 - **Zero-GitHub-Secret Policy**: The use of GitHub Repository Secrets for application-level keys is strictly prohibited. The ONLY exception is `OP_SERVICE_ACCOUNT_TOKEN`, which is required for vault access.

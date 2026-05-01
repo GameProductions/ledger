@@ -274,9 +274,10 @@ To ensure absolute forensic traceability, the `sessions` table MUST include:
 ### 16.6 MFA & Session Hardening (Forensic Standard)
 To ensure absolute account integrity and forensic traceability, all identity systems MUST implement the following:
 - **Session Geolocation**: The `sessions` table MUST include granular geographic metadata: `city`, `country`, `region`, `continent`, `latitude`, `longitude`, and `cfIp`.
-- **MFA Usage Tracking**: Both `totp_credentials` and `passkeys` tables MUST track usage forensics: `lastUsedAt`, `lastUsedIp`, `lastUsedLocation`, and `lastUsedUa`.
-- **Recovery Logic**: TOTP enrollment MUST generate 10 high-entropy recovery codes stored as individual hashes in the `backup_codes` table.
-- **Biometric Metadata**: Passkey entries MUST include an `aaguid` field for hardware identification.
+- **Dual-Stack IP Tracking**: All security tables (`sessions`, `totp_credentials`, `passkeys`) MUST track both `ip_v4` and `ip_v6` addresses to ensure transparency across all network types.
+- **MFA Usage Tracking**: Both `totp_credentials` and `passkeys` tables MUST track usage forensics: `lastUsedAt`, `lastUsedIp`, `lastUsedIpV4`, `lastUsedIpV6`, `lastUsedLocation`, and `lastUsedUa`.
+- **Recovery Logic**: TOTP enrollment MUST generate 10 high-entropy recovery codes stored as individual hashes in the `backup_codes` table. These codes MUST be displayed to the user immediately upon successful enrollment with a secure download option.
+- **Biometric Metadata**: Passkey entries MUST include an `aaguid` field for hardware identification, mapped to a human-readable provider name in the UI.
 
 ### 16.7 Session Persistence & Lifecycle
 - **Persistence Toggle**: All login flows (Discord, Passkey, Password) MUST support an optional `persistent` flag (boolean).
@@ -284,6 +285,12 @@ To ensure absolute account integrity and forensic traceability, all identity sys
   - `Temporary` (Default): Expires in 24 hours.
   - `Persistent` (Stay Signed In): Expires in 30 days.
 - **Database Schema**: The `sessions` table MUST include an `isPersistent` column (`integer`).
+
+### 16.8 UI/UX Forensic Parity & Reactive State
+- **IP Labeling**: UIs MUST explicitly label and display both IPv4 and IPv6 addresses when available. Never assume an address type.
+- **Metadata Visibility**: Security listings (Sessions, Passkeys, TOTP) MUST surface full forensic metadata including Location (City, Country), Browser/OS (parsed from UA), and Hardware Provider (mapped from AAGUID).
+- **Session Lifecycle UI**: Active session lists MUST include a "Current Session" badge and a "Persistence" indicator (Persistent vs Temporary), accompanied by a legend explaining these security states.
+- **Reactive CRUD**: All security management actions (Rename, Revoke, Enroll) MUST utilize optimistic UI updates or immediate state refreshes to reflect changes without requiring a full page reload.
 
 ## 17. Centralized Secret Management (Titan Guard v6.1)
 - **Zero-GitHub-Secret Policy**: The use of GitHub Repository Secrets for application-level keys is strictly prohibited. The ONLY exception is `OP_SERVICE_ACCOUNT_TOKEN`, which is required for vault access.

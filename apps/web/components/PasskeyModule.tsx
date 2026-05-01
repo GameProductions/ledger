@@ -18,6 +18,10 @@ interface Passkey {
   counter: number;
   backedUp?: boolean | number;
   lastUsedAt?: string | null;
+  lastUsedIp?: string | null;
+  lastUsedV6?: string | null;
+  lastUsedLocation?: string | null;
+  lastUsedUa?: string | null;
 }
 
 const AAGUID_MAP: Record<string, string> = {
@@ -269,12 +273,16 @@ export const PasskeyModule = () => {
                                    <span>Uses: {pk.counter}</span>
                                    <span>•</span>
                                    <span>Added: {new Date(pk.createdAt).toLocaleDateString()}</span>
-                                   {pk.lastUsedAt && (
-                                     <>
-                                       <span>•</span>
-                                       <span className="text-blue-400">Used: {new Date(pk.lastUsedAt).toLocaleDateString()}</span>
-                                     </>
-                                   )}
+                                    {pk.lastUsedAt && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="text-blue-400">Used: {new Date(pk.lastUsedAt).toLocaleString()}</span>
+                                        {pk.lastUsedIp && <span>• <span className="text-slate-400">IP:</span> {pk.lastUsedIp}</span>}
+                                        {pk.lastUsedV6 && <span>• <span className="text-slate-400">IPv6:</span> {pk.lastUsedV6}</span>}
+                                        {pk.lastUsedLocation && <span>• <span className="text-emerald-400">{pk.lastUsedLocation}</span></span>}
+                                        {pk.lastUsedUa && <span className="italic opacity-60">• {pk.lastUsedUa.includes('Mac') ? 'Mac' : pk.lastUsedUa.includes('Windows') ? 'Windows' : 'Mobile'}</span>}
+                                      </>
+                                    )}
                                 </div>
                              </div>
                           </div>

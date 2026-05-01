@@ -21,6 +21,7 @@ export function SecurityDashboard() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokingAll, setRevokingAll] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
 
   const fetchSessions = async () => {
     if (!token) return;
@@ -95,27 +96,76 @@ export function SecurityDashboard() {
   return (
     <div className="space-y-6">
       <Card className="bg-[#121212] border-white/5" title="Active Device Sessions" subtitle="Manage and revoke unauthorized logins across your network.">
-          
-        
-          <div className="divide-y divide-white/5">
-            {(sessions || []).map((s: any, idx: number) => (
-              <div key={s.id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
-                    {s.os?.toLowerCase().includes('mac') || s.os?.toLowerCase().includes('windows') ? (
-                      <Monitor className="w-6 h-6 text-gray-400" />
+        <div className="px-5 pb-4 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Session</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowLegend(!showLegend)}
+            className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+          >
+            Security Legend
+          </button>
+        </div>
+
+        {showLegend && (
+          <div className="mx-5 mb-5 p-5 rounded-2xl bg-white/[0.02] border border-white/5 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider">Persistent</span>
+                <span className="text-xs font-bold text-slate-200">30 Day Multi-Device Session</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">Standard "Remember Me" session. Survives browser restarts and system reboots.</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-wider">Temporary</span>
+                <span className="text-xs font-bold text-slate-200">24 Hour Volatile Session</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">Single-use secure session. Automatically purged after 24 hours of inactivity.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="divide-y divide-white/5">
+          {(sessions || []).map((s: any, idx: number) => (
+            <div key={s.id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/5">
+                  {s.os?.toLowerCase().includes('mac') || s.os?.toLowerCase().includes('windows') ? (
+                    <Monitor className="w-6 h-6 text-gray-400" />
+                  ) : (
+                    <Smartphone className="w-6 h-6 text-gray-400" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-slate-200 font-bold">
+                      {s.deviceName} ({s.browser})
+                    </h3>
+                    {idx === 0 && (
+                      <span className="px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                        Current
+                      </span>
+                    )}
+                    {s.isPersistent ? (
+                      <span className="px-1.5 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider">Persistent</span>
                     ) : (
-                      <Smartphone className="w-6 h-6 text-gray-400" />
+                      <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-wider">Temporary</span>
                     )}
                   </div>
-                  <div>
-                    <h3 className="text-slate-200 font-semibold flex items-center gap-2">
-                      {s.deviceName} ({s.browser})
-                      {idx === 0 && <span className="px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider bg-emerald-500/20 text-emerald-400">Current</span>}
-                    </h3>
-                    <p className="text-sm text-gray-400">IP: {s.ipAddress} • Last Active: {new Date(s.lastActiveAt).toLocaleString()}</p>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xs text-slate-500 font-medium">
+                      <span className="text-slate-400 font-bold uppercase tracking-tighter mr-1">IPv4:</span> {s.ipAddress}
+                      {s.ipV6 && <span className="ml-3"><span className="text-slate-400 font-bold uppercase tracking-tighter mr-1">IPv6:</span> {s.ipV6}</span>}
+                    </p>
+                    <p className="text-[11px] text-slate-600">Last Active: {new Date(s.lastActiveAt).toLocaleString()} • {s.location || 'Unknown Location'}</p>
                   </div>
                 </div>
+              </div>
                 {idx !== 0 && (
                   <Button 
                     variant="glass" 

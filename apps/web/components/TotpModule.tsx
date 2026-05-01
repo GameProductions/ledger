@@ -25,6 +25,7 @@ export const TotpModule = () => {
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
 
   const beginSetup = async () => {
     setIsSettingUp(true);
@@ -70,12 +71,18 @@ export const TotpModule = () => {
       });
       
       if (!res.ok) throw new Error('Verification blocked: Code mismatch.');
+      const data = await res.json();
       
       showToast('Integrity Verified: Authenticator App successfully bound.', 'success');
-      await refreshTotps();
-      await refreshProfile();
-      setSetupData(null);
-      setVerificationCode('');
+      if (data.backupCodes) {
+        setRecoveryCodes(data.backupCodes);
+        setVerificationCode('');
+      } else {
+        await refreshTotps();
+        await refreshProfile();
+        setSetupData(null);
+        setVerificationCode('');
+      }
     } catch (err: any) {
       showToast(err.message || 'Verification Failed', 'error');
     } finally {
@@ -166,21 +173,33 @@ export const TotpModule = () => {
                        <Shield className="w-5 h-5 text-amber-500" />
                      </div>
                      <div>
-                       {editingId === t.id ? (
-                         <input 
-                           type="text" 
-                           value={editName}
-                           autoFocus
-                           className="bg-slate-900 border border-slate-700 focus:border-amber-500 rounded px-2 py-1 text-sm text-white font-bold outline-none w-48 transition-colors"
-                           onChange={(e) => setEditName(e.target.value)}
-                           onBlur={() => renameTotp(t.id)}
-                           onKeyDown={(e) => e.key === 'Enter' && renameTotp(t.id)}
-                         />
-                       ) : (
-                         <h4 className="text-sm font-bold text-slate-200">{t.name}</h4>
-                       )}
-                       <p className="text-xs text-slate-500 font-medium">Added on {new Date(t.createdAt).toLocaleDateString()}</p>
-                     </div>
+                        {editingId === t.id ? (
+                          <input 
+                            type="text" 
+                            value={editName}
+                            autoFocus
+                            className="bg-slate-900 border border-slate-700 focus:border-amber-500 rounded px-2 py-1 text-sm text-white font-bold outline-none w-48 transition-colors"
+                            onChange={(e) => setEditName(e.target.value)}
+                            onBlur={() => renameTotp(t.id)}
+                            onKeyDown={(e) => e.key === 'Enter' && renameTotp(t.id)}
+                          />
+                        ) : (
+                          <h4 className="text-sm font-bold text-slate-200">{t.name}</h4>
+                        )}
+                        <div className="flex items-center flex-wrap gap-2 mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                          <span>Added: {new Date(t.createdAt).toLocaleDateString()}</span>
+                          {t.lastUsedAt && (
+                            <>
+                              <span>•</span>
+                              <span className="text-amber-400">Used: {new Date(t.lastUsedAt).toLocaleString()}</span>
+                              {t.lastUsedIp && <span>• <span className="text-slate-400">IP:</span> {t.lastUsedIp}</span>}
+                              {t.lastUsedV6 && <span>• <span className="text-slate-400">IPv6:</span> {t.lastUsedV6}</span>}
+                              {t.lastUsedLocation && <span>• <span className="text-emerald-400">{t.lastUsedLocation}</span></span>}
+                              {t.lastUsedUa && <span className="italic opacity-60">• {t.lastUsedUa.includes('Mac') ? 'Mac' : t.lastUsedUa.includes('Windows') ? 'Windows' : 'Mobile'}</span>}
+                            </>
+                          )}
+                        </div>
+                      </div>
                    </div>
                    <div className="flex items-center gap-2">
                      <button 
@@ -292,6 +311,56 @@ export const TotpModule = () => {
                     </div>
                   </div>
                 </div>
+
+                {recoveryCodes && (
+                  <div className="mt-8 pt-8 border-t border-slate-800 animate-in fade-in zoom-in-95">
+                    <div className="text-center mb-6">
+                      <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-500/20">
+                        <Shield className="w-6 h-6 text-emerald-500" />
+                      </div>
+                      <h4 className="text-lg font-black text-white uppercase tracking-tight">Save Recovery Codes</h4>
+                      <p className="text-xs text-slate-500 font-medium max-w-xs mx-auto">
+                        If you lose your device, these codes are the <span className="text-emerald-400 font-bold">ONLY</span> way to regain access.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 p-4 bg-black/40 rounded-2xl border border-slate-800">
+                      {recoveryCodes.map((code, idx) => (
+                        <div key={idx} className="bg-slate-900/50 border border-slate-800/50 rounded-lg py-2 px-3 text-center">
+                          <code className="text-xs font-mono font-black text-white tracking-widest">{code}</code>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-6 flex gap-3">
+                      <button 
+                        onClick={() => {
+                          const blob = new Blob([recoveryCodes.join('\n')], { type: 'text/plain' });
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'iam-recovery-codes.txt';
+                          a.click();
+                        }}
+                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Download Codes
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          await refreshTotps();
+                          await refreshProfile();
+                          setSetupData(null);
+                          setRecoveryCodes(null);
+                        }}
+                        className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
+                      >
+                        I've Saved Them
+                      </button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
             

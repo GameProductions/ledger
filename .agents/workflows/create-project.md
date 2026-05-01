@@ -56,5 +56,39 @@ Follow these steps to initialize a new GameProductions bot/PWA project. All step
 - **Remote DB**: To test against production data, run `wrangler dev --remote`.
 - **Publishing**: Only run `wrangler deploy` after successful local verification and user confirmation.
 
-## 9. Globalization (Sync Foundation)
+## 9. GitHub Action: Auto-Assignment
+- Create `.github/workflows/auto-assign.yml` to automatically assign new Issues and PRs to `morenicano`.
+- Use the following template:
+  ```yaml
+  name: Auto Assign
+  on:
+    issues: { types: [opened, reopened] }
+    pull_request: { types: [opened, reopened] }
+  jobs:
+    assign:
+      runs-on: ubuntu-latest
+      permissions: { issues: write, pull-requests: write }
+      steps:
+        - name: Assign to morenicano
+          env: { GH_TOKEN: "${{ github.token }}" }
+          run: |
+            if [[ "${{ github.event_name }}" == "issues" ]]; then
+              gh issue edit ${{ github.event.issue.number }} --add-assignee morenicano
+            elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              gh pr edit ${{ github.event.pull_request.number }} --add-assignee morenicano
+            fi
+  ```
+
+## 10. 1Password Secret Management (Mandatory)
+- **Zero-GitHub-Secret Policy**: Never store secrets in GitHub Repository Secrets (except `OP_SERVICE_ACCOUNT_TOKEN`).
+- **Secret Creation**: All new secrets MUST be created in the `6wgu5yz5yphvacdimgc64ej65i` vault.
+- **Naming Convention**: Use `[Project Name] - [Service]` (e.g., `Food - Discord`).
+- **Tagging**: Every item MUST have the following tags:
+  - Project name (e.g., `Food`)
+  - Service provider (e.g., `Discord`, `Cloudflare`)
+  - `Bot`
+- **Workflow Integration**: Use the `1password/load-secrets-action` as the FIRST step in CI/CD after checkout.
+
+## 11. Globalization (Sync Foundation)
 - Run the `sync-foundation.sh` script to pull the latest `.cursorrules` and global workflows from the `foundation` repository.
+- Ensure all CI/CD workflows use immutable SHAs for actions and have explicit `permissions: contents: read`.

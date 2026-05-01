@@ -258,14 +258,44 @@ Replaces legacy `totp_secret` and `totp_enabled` columns in the `users` table.
 - `verified`: `integer('verified').default(0)`
 - `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`
 
+### 16.4 Backup Codes Table (`backup_codes`)
+Replaces legacy `backupCodesJson` blob on the `users` table.
+- `id`: `text('id').primaryKey()`
+- `userId`: `text('user_id').references(() => users.id)`
+- `codeHash`: `text('code_hash')` (Individual hashed entries using PBKDF2/Argon2)
+- `usedAt`: `text('used_at')`
+- `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`
+
+### 16.5 Geographic Session Tracking
+To ensure absolute forensic traceability, the `sessions` table MUST include:
+- `city`, `country`, `region`, `continent`, `latitude`, `longitude`, `cfIp`.
+- These must be populated from the Cloudflare `cf` metadata object on every login/verification.
+
+### 16.6 MFA & Session Hardening (Forensic Standard)
+To ensure absolute account integrity and forensic traceability, all identity systems MUST implement the following:
+- **Session Geolocation**: The `sessions` table MUST include granular geographic metadata: `city`, `country`, `region`, `continent`, `latitude`, `longitude`, and `cfIp`.
+- **MFA Usage Tracking**: Both `totp_credentials` and `passkeys` tables MUST track usage forensics: `lastUsedAt`, `lastUsedIp`, `lastUsedLocation`, and `lastUsedUa`.
+- **Recovery Logic**: TOTP enrollment MUST generate 10 high-entropy recovery codes stored as individual hashes in the `backup_codes` table.
+- **Biometric Metadata**: Passkey entries MUST include an `aaguid` field for hardware identification.
+
 ### 16.7 Session Persistence & Lifecycle
-- **Persistence Toggle**: All login flows MUST support an optional `persistent` flag.
-- **Session Duration**: 24 hours (Default) vs 30 days (Persistent).
-- **Database Schema**: The `sessions` table MUST include an `isPersistent` column.
+- **Persistence Toggle**: All login flows (Discord, Passkey, Password) MUST support an optional `persistent` flag (boolean).
+- **Session Duration**:
+  - `Temporary` (Default): Expires in 24 hours.
+  - `Persistent` (Stay Signed In): Expires in 30 days.
+- **Database Schema**: The `sessions` table MUST include an `isPersistent` column (`integer`).
 
-## 17. User Management & Role Hierarchy
-- **Promotion Cap**: Users cannot assign roles higher than their own.
-- **Role Order**: `user` < `moderator` < `host` < `admin` < `super_admin`.
-
-## 18. Session Persistence & Lifecycle
-- **Implementation**: Follow the GP Standard for session lifecycles and persistence flags.
+## 17. Centralized Secret Management (Titan Guard v6.1)
+- **Zero-GitHub-Secret Policy**: The use of GitHub Repository Secrets for application-level keys is strictly prohibited. The ONLY exception is `OP_SERVICE_ACCOUNT_TOKEN`, which is required for vault access.
+- **1Password Single Source of Truth**: All secrets (API keys, JWT secrets, database credentials) and sensitive metadata MUST be stored in the central 1Password vault (`6wgu5yz5yphvacdimgc64ej65i`).
+- **Item Categorization & Tagging**: Every 1Password item MUST adhere to the following metadata standard:
+  - **Title Pattern**: `[Project Name] - [Service]` (e.g., `GloBot - Discord`).
+  - **Mandatory Tags**:
+    - `[Project Name]` (e.g., `food`, `ledger`).
+    - `[Service Provider]` (e.g., `Discord`, `Cloudflare`, `Twitch`).
+    - `Bot` (for all bot-related integrations).
+  - **Detailed Notes**: Items must include detailed notes describing the purpose, associated project routes, and service provider links.
+- **Sensitive Metadata Storage**: Non-secret but sensitive infrastructure metadata (Application IDs, Public Keys, Client IDs) MUST be stored as **Secure Notes** in 1Password with the same tagging standard.
+- **Proactive Hardening**: 
+  - Any local `.env` files or hardcoded secrets discovered in the codebase MUST be immediately migrated to 1Password and purged from local storage.
+  - CI/CD workflows MUST use the `1password/load-secrets-action` as the authoritative mechanism for environment injection.

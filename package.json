@@ -67,6 +67,7 @@
     "@rolldown/binding-linux-x64-musl": "*"
   },
   "overrides": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "uuid": "^11.1.0"
   }
 }

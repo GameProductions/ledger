@@ -1253,29 +1253,6 @@ admin.post('/maintenance/vault-migration', async (c) => {
   }
 })
 
-async function offloadToFoundation(c: any, source: string, category: string, recordId: string, plaintext: string) {
-  const foundationUrl = c.env.FOUNDATION_URL || 'https://foundation.gameproductions.bot'
-  const url = `${foundationUrl}/api/admin/security/deletion-queue`
-  
-  try {
-    await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Service-Token': c.env.SHARED_SERVICE_SECRET
-      },
-      body: JSON.stringify({
-        sourceSystem: source,
-        category,
-        recordId,
-        plaintext,
-        actorId: 'migration-task'
-      })
-    })
-  } catch (e) {
-    console.error(`[Offload] Failed to offload ${category} for ${recordId}:`, e)
-  }
-}
 
 export default admin
 

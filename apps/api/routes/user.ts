@@ -17,7 +17,7 @@ import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
-import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totpCredentials } from '#/schema'
+import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totpCredentials, systemAnnouncements, auditLogs } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
 import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
@@ -758,6 +758,38 @@ user.delete('/totpCredentials/:id', stepUpMiddleware, async (c) => {
 
 export default user
 
+// Announcements & Social Broadcasts
+user.get('/announcements', async (c) => {
+  const db = getDb(c.env)
+  const results = await db.select().from(systemAnnouncements).orderBy(desc(systemAnnouncements.createdAt))
+  return c.json({ success: true, data: results || [] })
+})
+
+// Household-Level Audit Activity
+user.get('/audit', async (c) => {
+  const householdId = c.get('householdId')
+  if (!householdId) return c.json({ success: true, data: [] })
+
+  const { results } = await c.env.DB.prepare(`
+    SELECT 
+      a.id, 
+      a.action, 
+      a.tableName as targetType, 
+      a.recordId as targetId, 
+      a.newValuesJson as detailsJson, 
+      a.createdAt as createdAt,
+      u_actor.displayName as actorName,
+      u_target.displayName as targetName
+    FROM auditLogs a
+    LEFT JOIN users u_actor ON a.actorId = u_actor.id
+    LEFT JOIN users u_target ON a.recordId = u_target.id AND a.tableName = 'users'
+    WHERE a.householdId = ?
+    ORDER BY a.createdAt DESC 
+    LIMIT 100
+  `).bind(householdId).all()
+  
+  return c.json({ success: true, data: results || [] })
+})
 
 // Sessions
 user.get('/sessions', async (c) => {

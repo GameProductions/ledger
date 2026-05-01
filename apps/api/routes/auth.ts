@@ -690,7 +690,7 @@ async function handleRegisterOptions(c: any) {
   
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
-    rpID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
+    rpID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
     userID: new TextEncoder().encode(userId) as any,
     userName: user.username || user.email || 'unknown',
     attestationType: 'none',
@@ -700,8 +700,8 @@ async function handleRegisterOptions(c: any) {
       transports: pk.transports ? JSON.parse(pk.transports) : [],
     })),
     authenticatorSelection: {
-      residentKey: 'preferred',
-      userVerification: 'preferred',
+      residentKey: 'required',
+      userVerification: 'required',
     },
   })
 
@@ -729,7 +729,7 @@ async function handleRegisterVerify(c: any) {
     response: body,
     expectedChallenge,
     expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
+    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
   })
 
   if (verification.verified && verification.registrationInfo) {
@@ -854,7 +854,7 @@ auth.post('/passkeys/login-verify', zValidator('json', z.object({
     response: assertion,
     expectedChallenge,
     expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
+    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
     requireUserVerification: true,
     credential: {
       id: passkey.credentialId,
@@ -920,7 +920,7 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
       response: assertion,
       expectedChallenge,
       expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-      expectedRPID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
+      expectedRPID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
       requireUserVerification: true,
       credential: {
         id: passkey.credentialId,

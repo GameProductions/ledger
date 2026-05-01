@@ -93,7 +93,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const { data: insightsData } = useApi('/api/data/analysis/insights')
   const { data: forecast = [] } = useApi('/api/data/analysis/forecast')
   const { data: smartSuggestions = [] } = useApi('/api/financials/transactions/suggest-links')
-  const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/admin/announcements')
+  const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/user/announcements')
   const { data: installments = [], mutate: mutateInstallments } = useApi('/api/planning/installment-plans')
   const { data: payExceptions = [], mutate: mutateExceptions } = useApi('/api/planning/pay-exceptions')
   const [toast, setToast] = useState<string | null>(null)

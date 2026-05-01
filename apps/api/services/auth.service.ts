@@ -134,11 +134,6 @@ export class AuthService {
       for (const t of userTotps) {
         let secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', t.id)
         
-        // Migration Fallback: If no secret found with the credential ID, check for a legacy global secret
-        if (!secret) {
-          secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', null)
-        }
-
         // Hardening: Ensure we don't use the '[VAULTED]' placeholder as a real secret
         const effectiveSecret = secret || (t.secret !== '[VAULTED]' ? t.secret : null)
         
@@ -153,32 +148,6 @@ export class AuthService {
         }
       }
 
-      // 1.5 Legacy Vault Fallback (For users migrated before totpCredentials table existed)
-      if (!isValid && userTotps.length === 0 && user.totpEnabled) {
-        console.log(`[Auth] Attempting legacy vault secret verification for user ${user.id}`)
-        let legacySecret = await vaultService.getSecret(user.id, 'TOTP_SECRET', 'primary')
-        if (!legacySecret) {
-          legacySecret = await vaultService.getSecret(user.id, 'TOTP_SECRET', null)
-        }
-        
-        if (legacySecret && await verifyTOTP(legacySecret, totpCode)) {
-          isValid = true
-          
-          // Auto-migrate to the new schema
-          const totpId = crypto.randomUUID()
-          await db.insert(totpCredentials).values({
-            id: totpId,
-            userId: user.id,
-            secret: '[VAULTED]',
-            name: 'Legacy Authenticator',
-            verified: 1,
-            lastUsedAt: new Date().toISOString()
-          })
-          
-          await vaultService.setSecret(user.id, 'TOTP_SECRET', totpId, legacySecret)
-          console.log(`[Auth] Auto-migrated legacy TOTP to standardized schema for user ${user.id}`)
-        }
-      }
       
       // 2. Backup Code Fallback (Titan Guard v6.1 Gold Standard)
       if (!isValid && totpCode.length === 8) {

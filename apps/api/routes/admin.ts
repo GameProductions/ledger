@@ -29,7 +29,7 @@ import {
   adminInvitations, totpCredentials, webhooks, categories, bills, installmentPlans, 
   creditCards as creditCardsTable 
 } from '#/schema'
-import { eq, or, and, sql, desc, count, like } from 'drizzle-orm'
+import { eq, or, and, sql, desc, count, like, isNotNull } from 'drizzle-orm'
 
 const admin = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -726,6 +726,72 @@ admin.post('/maintenance', zValidator('json', z.object({ enabled: z.boolean() })
   return c.json({ success: true })
 })
 
+// 🏛️ Maintenance: Vault Migration & Audit
+adminRouter.get('/maintenance/vault-audit', async (c) => {
+  const db = getDB(c.env);
+  
+  const legacyUsers = await db.select({ count: drizzleCount() }).from(users).where(or(isNotNull(users.totpSecret), isNotNull(users.backupCodesJson))).then(res => res[0].count);
+  const legacyWebhooks = await db.select({ count: drizzleCount() }).from(webhooks).where(isNotNull(webhooks.url)).then(res => res[0].count);
+  
+  const vaultedRecords = await db.select({ count: drizzleCount() }).from(vault).then(res => res[0].count);
+
+  return c.json({
+    success: true,
+    legacy: {
+      users: legacyUsers,
+      webhooks: legacyWebhooks
+    },
+    vaulted: vaultedRecords
+  });
+});
+
+adminRouter.post('/maintenance/vault-migrate', async (c) => {
+  const db = getDB(c.env);
+  const vaultService = new VaultService(db, c.env.ENCRYPTION_KEY);
+  let migratedCount = 0;
+
+  try {
+    // 1. Users (TOTP & Backup Codes)
+    const legUsers = await db.select({ 
+      id: users.id, 
+      totpSecret: users.totpSecret, 
+      backupCodesJson: users.backupCodesJson 
+    }).from(users).where(or(isNotNull(users.totpSecret), isNotNull(users.backupCodesJson)));
+
+    for (const u of legUsers) {
+      if (u.totpSecret && u.totpSecret !== '[VAULTED]') {
+        await vaultService.setSecret(u.id, 'TOTP_SECRET', 'system', u.totpSecret);
+        await db.update(users).set({ totpSecret: '[VAULTED]' }).where(eq(users.id, u.id));
+        migratedCount++;
+      }
+      if (u.backupCodesJson && u.backupCodesJson !== '[VAULTED]' && u.backupCodesJson !== '[]') {
+        await vaultService.setSecret(u.id, 'RECOVERY_CODES', 'system', u.backupCodesJson);
+        await db.update(users).set({ backupCodesJson: '[VAULTED]' }).where(eq(users.id, u.id));
+        migratedCount++;
+      }
+    }
+
+    // 2. Webhooks
+    const legWebhooks = await db.select({ id: webhooks.id, url: webhooks.url }).from(webhooks).where(isNotNull(webhooks.url));
+    for (const w of legWebhooks) {
+      if (w.url && w.url !== '[VAULTED]') {
+        await vaultService.setSecret('SYSTEM_WEBHOOK', 'WEBHOOK_URL', w.id, w.url);
+        await db.update(webhooks).set({ url: '[VAULTED]' }).where(eq(webhooks.id, w.id));
+        migratedCount++;
+      }
+    }
+
+    return c.json({ 
+      success: true, 
+      count: migratedCount,
+      message: `Successfully migrated ${migratedCount} secrets to the encrypted vault.` 
+    });
+  } catch (err: any) {
+    console.error('[Vault Migration Error]', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
 // Database Migration Operations: VAULT MIGRATION
 admin.post('/maintenance/vault-migration', async (c) => {
   const db = getDb(c.env)
@@ -795,19 +861,12 @@ admin.post('/maintenance/vault-migration', async (c) => {
     }
   }
 
-  // 5. Legacy User TOTP
-  const legacyUsers = await db.select({ id: users.id, totpSecret: users.totpSecret }).from(users).where(isNotNull(users.totpSecret))
-  for (const u of legacyUsers) {
-      if (u.totpSecret && u.totpSecret !== '[VAULTED]') {
-          await vaultService.setSecret(u.id, 'TOTP_SECRET', 'primary', u.totpSecret)
-          await offloadToFoundation(c, 'ledger', 'totp_secret', u.id, u.totpSecret)
-          await db.update(users).set({ totpSecret: '[VAULTED]' }).where(eq(users.id, u.id))
-          migratedCount++
-      }
-  }
-
   await logAudit(c, 'system_config', 'VAULT_MIGRATION', 'MIGRATE_TO_VAULT', null, { migratedCount })
-  return c.json({ success: true, count: migratedCount })
+  return c.json({ 
+    success: true, 
+    count: migratedCount,
+    message: `Successfully migrated ${migratedCount} secrets to the encrypted vault.` 
+  })
 })
 
 async function offloadToFoundation(c: any, source: string, category: string, recordId: string, plaintext: string) {

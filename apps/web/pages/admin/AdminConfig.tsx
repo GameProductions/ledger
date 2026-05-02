@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
+import { InlineToast } from '../../components/ui/InlineToast';
 
 const AdminConfig: React.FC = () => {
   const { showConfirm } = useToast();
@@ -10,6 +11,7 @@ const AdminConfig: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [healing, setHealing] = useState(false);
   const [healResult, setHealResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [confirmHeal, setConfirmHeal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,8 +60,6 @@ const AdminConfig: React.FC = () => {
   };
 
   const handleSelfHeal = async () => {
-    const confirmed = await showConfirm("Are you sure you want to run system self-healing? This will re-verify and create any missing system tables.");
-    if (!confirmed) return;
     
     setHealing(true);
     setHealResult(null);
@@ -72,6 +72,7 @@ const AdminConfig: React.FC = () => {
       });
       const data = await res.json();
       setHealResult({ success: data.success, message: data.message || (data.success ? "System tables healed successfully." : "Heal failed.") });
+      setConfirmHeal(false);
       
       // Refresh config if successful
       if (data.success) {
@@ -104,13 +105,22 @@ const AdminConfig: React.FC = () => {
             <p className="text-sm text-gray-400 mb-6 max-w-2xl">
               If the platform is experiencing 500 errors or missing configuration keys, run self-healing to re-verify the database schema and restore missing system tables.
             </p>
-            <button 
-              onClick={handleSelfHeal}
-              disabled={healing}
-              className={`px-8 py-3 rounded-2xl font-black uppercase tracking-tighter italic transition-all ${healing ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}
-            >
-              {healing ? "Healing System..." : "Run Self-Heal"}
-            </button>
+            {confirmHeal ? (
+              <InlineToast 
+                message="Run system self-heal?" 
+                type="confirm" 
+                onConfirm={handleSelfHeal} 
+                onCancel={() => setConfirmHeal(false)} 
+              />
+            ) : (
+              <button 
+                onClick={() => setConfirmHeal(true)}
+                disabled={healing}
+                className={`px-8 py-3 rounded-2xl font-black uppercase tracking-tighter italic transition-all ${healing ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}
+              >
+                {healing ? "Healing System..." : "Run Self-Heal"}
+              </button>
+            )}
             
             {healResult && (
               <div className={`mt-6 p-4 rounded-xl text-sm font-bold ${healResult.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>

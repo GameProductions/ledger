@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { InlineToast } from './ui/InlineToast'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
@@ -6,13 +7,16 @@ import { getApiUrl } from '../utils/api'
 
 const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
-  const { showToast, showPrompt, showConfirm } = useToast()
+  const { showToast, showPrompt } = useToast()
   const { data: tokens = [], mutate: mutateTokens } = useApi('/api/data/tools/tokens')
   const { data: webhooksList, mutate: mutateWebhooks } = useApi('/api/interop/developer/webhooks')
   const [newToken, setNewToken] = useState<string | null>(null)
   const [webhookUrl, setWebhookUrl] = useState('')
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [scheduleData, setScheduleData] = useState({ frequency: 'weekly' })
+  const [confirmDeleteTokenId, setConfirmDeleteTokenId] = useState<string | null>(null)
+  const [confirmDeleteWebhookId, setConfirmDeleteWebhookId] = useState<string | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState(false)
 
   const createToken = async () => {
     const name = await showPrompt('Name for this token?')
@@ -51,9 +55,6 @@ const DeveloperSettings: React.FC = () => {
   }
 
   const deleteToken = async (id: string) => {
-    const confirmed = await showConfirm('Are you sure you want to delete this token? It will stop working immediately.', 'Delete Token')
-    if (!confirmed) return
-    
     const apiUrl = getApiUrl()
     await fetch(`${apiUrl}/api/data/tools/tokens/${id}`, {
       method: 'DELETE',
@@ -64,6 +65,7 @@ const DeveloperSettings: React.FC = () => {
     })
     mutateTokens()
     showToast('Token deleted', 'success')
+    setConfirmDeleteTokenId(null)
   }
 
   const addWebhook = async () => {
@@ -84,8 +86,6 @@ const DeveloperSettings: React.FC = () => {
   }
 
   const deleteWebhook = async (id: string) => {
-    const confirmed = await showConfirm('Are you sure you want to delete this webhook?', 'Delete Webhook')
-    if (!confirmed) return
     const apiUrl = getApiUrl()
     await fetch(`${apiUrl}/api/interop/developer/webhooks/${id}`, {
       method: 'DELETE',
@@ -96,6 +96,7 @@ const DeveloperSettings: React.FC = () => {
     })
     mutateWebhooks()
     showToast('Webhook deleted', 'success')
+    setConfirmDeleteWebhookId(null)
   }
 
   const exportData = async () => {
@@ -119,9 +120,7 @@ const DeveloperSettings: React.FC = () => {
 
   const handleRestore = async () => {
     if (!restoreFile) return
-    const confirmed = await showConfirm('WARNING: This will replace current records with matching IDs. Continue?', 'Data Restoration')
-    if (!confirmed) return
-
+    
     try {
       const text = await restoreFile.text()
       const body = JSON.parse(text)
@@ -140,6 +139,7 @@ const DeveloperSettings: React.FC = () => {
       if (res.ok) {
         showToast('System Restored Successfully', 'success')
         setRestoreFile(null)
+        setConfirmRestore(false)
       } else {
         throw new Error('Restore failed')
       }
@@ -186,19 +186,30 @@ const DeveloperSettings: React.FC = () => {
                   <strong style={{ color: 'var(--primary)' }}>{t.name}</strong>
                   <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>ID: {t.id.substring(0, 10)}...</div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    onClick={() => renameToken(t.id, t.name)}
-                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', opacity: 0.6 }}
-                  >
-                    Rename
-                  </button>
-                  <button 
-                    onClick={() => deleteToken(t.id)}
-                    style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', color: 'var(--red-500)', opacity: 0.6 }}
-                  >
-                    Delete
-                  </button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {confirmDeleteTokenId === t.id ? (
+                    <InlineToast 
+                      message="Delete?" 
+                      type="confirm" 
+                      onConfirm={() => deleteToken(t.id)} 
+                      onCancel={() => setConfirmDeleteTokenId(null)} 
+                    />
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => renameToken(t.id, t.name)}
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', opacity: 0.6 }}
+                      >
+                        Rename
+                      </button>
+                      <button 
+                        onClick={() => setConfirmDeleteTokenId(t.id)}
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', color: 'var(--red-500)', opacity: 0.6 }}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               </li>
             ))}
@@ -234,12 +245,23 @@ const DeveloperSettings: React.FC = () => {
                   <div className="truncate" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{w.url}</div>
                   <div style={{ fontSize: '0.6rem', opacity: 0.5 }}>Events: {w.eventList}</div>
                 </div>
-                <button 
-                  onClick={() => deleteWebhook(w.id)}
-                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', color: 'var(--red-500)', opacity: 0.6 }}
-                >
-                  Delete
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  {confirmDeleteWebhookId === w.id ? (
+                    <InlineToast 
+                      message="Delete webhook?" 
+                      type="confirm" 
+                      onConfirm={() => deleteWebhook(w.id)} 
+                      onCancel={() => setConfirmDeleteWebhookId(null)} 
+                    />
+                  ) : (
+                    <button 
+                      onClick={() => setConfirmDeleteWebhookId(w.id)}
+                      style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', color: 'var(--red-500)', opacity: 0.6 }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -266,10 +288,23 @@ const DeveloperSettings: React.FC = () => {
                 className="hidden" 
                 id="restore-upload"
               />
-              <label htmlFor="restore-upload" className="flex-1 p-3 bg-white/10 hover:bg-white/20 border border-glass-border rounded-xl cursor-pointer text-center text-xs transition-all">
-                {restoreFile ? restoreFile.name : 'Choose Backup File'}
-              </label>
-              <button disabled={!restoreFile} onClick={handleRestore} className="p-3 bg-red-500/20 text-red-400 border border-red-500/40 font-bold disabled:opacity-40">Restore</button>
+              {confirmRestore ? (
+                <div className="flex-1">
+                  <InlineToast 
+                    message="Overwrite all data?" 
+                    type="confirm" 
+                    onConfirm={handleRestore} 
+                    onCancel={() => setConfirmRestore(false)} 
+                  />
+                </div>
+              ) : (
+                <>
+                  <label htmlFor="restore-upload" className="flex-1 p-3 bg-white/10 hover:bg-white/20 border border-glass-border rounded-xl cursor-pointer text-center text-xs transition-all">
+                    {restoreFile ? restoreFile.name : 'Choose Backup File'}
+                  </label>
+                  <button disabled={!restoreFile} onClick={() => setConfirmRestore(true)} className="p-3 bg-red-500/20 text-red-400 border border-red-500/40 font-bold disabled:opacity-40">Restore</button>
+                </>
+              )}
             </div>
           </div>
 

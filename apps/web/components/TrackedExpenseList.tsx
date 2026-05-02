@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { InlineToast } from './ui/InlineToast'
 import { useCurrency } from '../context/CurrencyContext'
 import { useToast } from '../context/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -39,6 +40,10 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const [bulkUpdates, setBulkUpdates] = useState<any>({})
 
+  // Inline Confirmation State
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
   }
@@ -51,12 +56,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     }
   }
 
-  const { showToast, showConfirm } = useToast()
+  const { showToast } = useToast()
 
   const handleDelete = async (ids: string[]) => {
-    const confirmed = await showConfirm(`Are you sure you want to delete ${ids.length} item(s)?`, 'Delete Expenses')
-    if (!confirmed) return;
-    
     const res = await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
       method: 'DELETE',
       headers: {
@@ -69,6 +71,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     if (res.ok) {
       mutate()
       setSelectedIds([])
+      setConfirmDeleteId(null)
+      setConfirmBulkDelete(false)
     }
   }
 
@@ -182,13 +186,22 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 </button>
               </div>
               <div className="w-px h-4 bg-white/10 mx-1"></div>
-              <button 
-                onClick={() => handleDelete(selectedIds)}
-                className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                title="Delete Selected"
-              >
-                <Trash2 size={14} />
-              </button>
+              {confirmBulkDelete ? (
+                <InlineToast 
+                  message={`Delete ${selectedIds.length} items?`} 
+                  type="confirm" 
+                  onConfirm={() => handleDelete(selectedIds)} 
+                  onCancel={() => setConfirmBulkDelete(false)} 
+                />
+              ) : (
+                <button 
+                  onClick={() => setConfirmBulkDelete(true)}
+                  className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  title="Delete Selected"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -265,25 +278,36 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     </div>
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <button 
-                      onClick={() => {
-                        setEditingId(item.id)
-                        setEditForm({
-                          description: item.description,
-                          amountCents: item.amountCents,
-                          notes: item.notes
-                        })
-                      }}
-                      className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
-                    >
-                      <Edit3 size={14} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete([item.id])}
-                      className="p-2 hover:bg-red-500/10 rounded-xl transition-all text-secondary hover:text-red-400"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {confirmDeleteId === item.id ? (
+                      <InlineToast 
+                        message="Delete item?" 
+                        type="confirm" 
+                        onConfirm={() => handleDelete([item.id])} 
+                        onCancel={() => setConfirmDeleteId(null)} 
+                      />
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => {
+                            setEditingId(item.id)
+                            setEditForm({
+                              description: item.description,
+                              amountCents: item.amountCents,
+                              notes: item.notes
+                            })
+                          }}
+                          className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setConfirmDeleteId(item.id)}
+                          className="p-2 hover:bg-red-500/10 rounded-xl transition-all text-secondary hover:text-red-400"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

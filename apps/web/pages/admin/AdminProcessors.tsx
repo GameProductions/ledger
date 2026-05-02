@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink, ShieldAlert } from 'lucide-react';
+import { InlineToast } from '../../components/ui/InlineToast';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -10,6 +11,7 @@ const AdminProcessors: React.FC = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { showToast, showConfirm } = useToast();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   
   const [newItem, setNewItem] = useState({
     name: '',
@@ -84,9 +86,6 @@ const AdminProcessors: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = await showConfirm('Warning: Are you sure you want to delete this processor? This action will be logged.', 'Delete Processor');
-    if (!confirmed) return;
-    
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/admin/billing/networks/${id}`, {
@@ -96,6 +95,7 @@ const AdminProcessors: React.FC = () => {
 
     if (res.ok) {
       showToast('Processor deleted', 'success');
+      setConfirmDeleteId(null);
       fetchProcessors();
     } else {
       const err = await res.json();
@@ -207,12 +207,22 @@ const AdminProcessors: React.FC = () => {
                 >
                     <Edit2 size={16} />
                 </button>
-                <button 
-                  onClick={() => handleDelete(processor.id)}
-                  className="w-10 h-10 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/20 transition-all shadow-xl"
-                >
-                    <Trash2 size={16} />
-                </button>
+                
+                {confirmDeleteId === processor.id ? (
+                  <InlineToast 
+                    message="Delete processor?" 
+                    type="confirm" 
+                    onConfirm={() => handleDelete(processor.id)} 
+                    onCancel={() => setConfirmDeleteId(null)} 
+                  />
+                ) : (
+                  <button 
+                    onClick={() => setConfirmDeleteId(processor.id)}
+                    className="w-10 h-10 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/20 transition-all shadow-xl"
+                  >
+                      <Trash2 size={16} />
+                  </button>
+                )}
             </div>
             
             <div className="flex items-center gap-5 mb-8">

@@ -4,6 +4,8 @@ import { getApiUrl } from '../../utils/api';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { useToast } from '../../context/ToastContext';
 import { Plus, Trash2, Zap, Building2, Search, ShieldAlert, ExternalLink } from 'lucide-react';
+import { InlineToast } from '../../components/ui/InlineToast';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminData: React.FC = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -11,6 +13,7 @@ const AdminData: React.FC = () => {
   const [showAdd, setShowAdd] = useState(false);
   const { showToast, showConfirm } = useToast();
   const { secureFetch } = useAuth();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   
   const [newItem, setNewItem] = useState({ 
     itemType: 'processor', 
@@ -64,15 +67,13 @@ const AdminData: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = await showConfirm('Are you sure you want to remove this item from the system?', 'Remove Item');
-    if (!confirmed) return;
-    
     const res = await secureFetch(`/api/admin/system/registry/${id}`, {
       method: 'DELETE'
     });
 
     if (res.ok) {
       showToast('Item removed from system', 'success');
+      setConfirmDeleteId(null);
       fetchItems();
     } else {
       showToast('Delete Failed', 'error');
@@ -174,12 +175,21 @@ const AdminData: React.FC = () => {
                   </div>
                </div>
             </div>
-            <button 
-              onClick={() => handleDelete(item.id)}
-              className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-600 hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 shadow-xl"
-            >
-               <Trash2 size={16} />
-            </button>
+            {confirmDeleteId === item.id ? (
+              <InlineToast 
+                message="Delete entry?" 
+                type="confirm" 
+                onConfirm={() => handleDelete(item.id)} 
+                onCancel={() => setConfirmDeleteId(null)} 
+              />
+            ) : (
+              <button 
+                onClick={() => setConfirmDeleteId(item.id)}
+                className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-600 hover:text-red-500 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 shadow-xl"
+              >
+                 <Trash2 size={16} />
+              </button>
+            )}
           </div>
         ))}
         

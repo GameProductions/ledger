@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { InlineToast } from './ui/InlineToast'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { useApi } from '../hooks/useApi'
@@ -32,7 +33,7 @@ interface BalanceSummary {
 
 export default function SharedBalances() {
   const { token, user, householdId } = useAuth()
-  const { showToast, showConfirm } = useToast()
+  const { showToast } = useToast()
   const { data: balances = [], mutate: mutateBalances } = useApi('/api/financials/shared-balances')
   const { data: summary = [], mutate: mutateSummary } = useApi('/api/financials/shared-balances/summary')
   const { data: members = [] } = useApi(householdId ? `/api/user/households/${householdId}/members` : null)
@@ -40,6 +41,8 @@ export default function SharedBalances() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newIOU, setNewIOU] = useState({ toUserId: '', amount: '', description: '' })
   const [adding, setAdding] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmSettleUserId, setConfirmSettleUserId] = useState<string | null>(null)
 
   const createIOU = async () => {
     if (!newIOU.toUserId || !newIOU.amount) return
@@ -76,8 +79,6 @@ export default function SharedBalances() {
   }
 
   const deleteBalance = async (id: string) => {
-    const confirmed = await showConfirm('Delete this shared balance entry?', 'Delete IOU')
-    if (!confirmed) return
     try {
       const apiUrl = getApiUrl()
       await fetch(`${apiUrl}/api/financials/shared-balances/${id}`, {
@@ -88,6 +89,7 @@ export default function SharedBalances() {
         }
       })
       showToast('Entry deleted', 'success')
+      setConfirmDeleteId(null)
       mutateBalances()
       mutateSummary()
     } catch (err) {
@@ -96,8 +98,6 @@ export default function SharedBalances() {
   }
 
   const settleWith = async (withUserId: string) => {
-    const confirmed = await showConfirm('This will mark all debts between you and this person as settled.', 'Settle Up')
-    if (!confirmed) return
     try {
       const apiUrl = getApiUrl()
       const res = await fetch(`${apiUrl}/api/financials/shared-balances/settle`, {
@@ -111,6 +111,7 @@ export default function SharedBalances() {
       })
       if (res.ok) {
         showToast('All settled!', 'success')
+        setConfirmSettleUserId(null)
         mutateBalances()
         mutateSummary()
       }
@@ -170,13 +171,22 @@ export default function SharedBalances() {
                     <span className={`text-lg font-black ${isOwed ? 'text-red-400' : 'text-emerald-400'}`}>
                       ${(Math.abs(s.netCents) / 100).toFixed(2)}
                     </span>
-                    <button
-                      onClick={() => settleWith(isOwed ? s.toUserId : s.fromUserId)}
-                      className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
-                      title="Settle Up"
-                    >
-                      <Handshake className="w-4 h-4" />
-                    </button>
+                    {confirmSettleUserId === (isOwed ? s.toUserId : s.fromUserId) ? (
+                      <InlineToast 
+                        message="Settle up?" 
+                        type="confirm" 
+                        onConfirm={() => settleWith(isOwed ? s.toUserId : s.fromUserId)} 
+                        onCancel={() => setConfirmSettleUserId(null)} 
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setConfirmSettleUserId(isOwed ? s.toUserId : s.fromUserId)}
+                        className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                        title="Settle Up"
+                      >
+                        <Handshake className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -218,12 +228,21 @@ export default function SharedBalances() {
                   <span className="text-sm font-black text-violet-400">
                     ${(b.amountCents / 100).toFixed(2)}
                   </span>
-                  <button
-                    onClick={() => deleteBalance(b.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-500/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {confirmDeleteId === b.id ? (
+                    <InlineToast 
+                      message="Delete entry?" 
+                      type="confirm" 
+                      onConfirm={() => deleteBalance(b.id)} 
+                      onCancel={() => setConfirmDeleteId(null)} 
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(b.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-500/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

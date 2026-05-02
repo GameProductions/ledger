@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { InlineToast } from './ui/InlineToast';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -9,14 +10,14 @@ import { PayScheduleModal } from './PayScheduleModal';
 
 export const PaySchedulesList: React.FC = () => {
     const { token } = useAuth();
-    const { showToast, showConfirm } = useToast();
+    const { showToast } = useToast();
     const { data: schedules = [], mutate: mutateSchedules } = useApi('/api/planning/pay-schedules');
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
-    const [editingSchedule, setEditingSchedule] = React.useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingSchedule, setEditingSchedule] = useState<any>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     const handleDelete = async (id: string) => {
-        const confirmed = await showConfirm('Remove this income source?', 'Delete Source');
-        if (!token || !confirmed) return;
+        if (!token) return;
         
         const apiUrl = getApiUrl().replace(/\/$/, '');
         const res = await fetch(`${apiUrl}/api/planning/pay-schedules/${id}`, {
@@ -27,6 +28,7 @@ export const PaySchedulesList: React.FC = () => {
         if (res.ok) {
             showToast('Income source removed');
             mutateSchedules();
+            setConfirmDeleteId(null);
         }
     };
 
@@ -117,19 +119,30 @@ export const PaySchedulesList: React.FC = () => {
                                 <div className="text-[9px] font-black uppercase tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
                             </div>
                             
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                    onClick={() => { setEditingSchedule(s); setIsModalOpen(true); }}
-                                    className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
-                                >
-                                    <Edit3 size={14} />
-                                </button>
-                                <button 
-                                    onClick={() => handleDelete(s.id)}
-                                    className="p-2 hover:bg-red-500/20 rounded-lg text-white/40 hover:text-red-500 transition-all"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {confirmDeleteId === s.id ? (
+                                    <InlineToast 
+                                        message="Remove?" 
+                                        type="confirm" 
+                                        onConfirm={() => handleDelete(s.id)} 
+                                        onCancel={() => setConfirmDeleteId(null)} 
+                                    />
+                                ) : (
+                                    <>
+                                        <button 
+                                            onClick={() => { setEditingSchedule(s); setIsModalOpen(true); }}
+                                            className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
+                                        >
+                                            <Edit3 size={14} />
+                                        </button>
+                                        <button 
+                                            onClick={() => setConfirmDeleteId(s.id)}
+                                            className="p-2 hover:bg-red-500/20 rounded-lg text-white/40 hover:text-red-500 transition-all"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

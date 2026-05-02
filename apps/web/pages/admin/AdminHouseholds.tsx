@@ -4,6 +4,7 @@ import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X } from 'lucide
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
+import { InlineToast } from '../../components/ui/InlineToast';
 
 const AdminHouseholds: React.FC = () => {
   const { showConfirm } = useToast();
@@ -12,6 +13,7 @@ const AdminHouseholds: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchHouseholds = async () => {
     try {
@@ -57,8 +59,6 @@ const AdminHouseholds: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = await showConfirm('Warning: Are you sure you want to delete this household? This will remove all memberships and associated financial records.', 'Delete Household');
-    if (!confirmed) return;
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
@@ -67,6 +67,7 @@ const AdminHouseholds: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setHouseholds(prev => prev.filter(h => h.id !== id));
+      setConfirmDeleteId(null);
     } catch (err) {
       console.error('Deletion failed:', err);
     }
@@ -122,12 +123,22 @@ const AdminHouseholds: React.FC = () => {
                >
                  <Edit3 size={16} />
                </button>
-               <button 
-                 onClick={() => handleDelete(h.id)}
-                 className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-all text-slate-500"
-               >
-                 <Trash2 size={16} />
-               </button>
+               
+               {confirmDeleteId === h.id ? (
+                 <InlineToast 
+                   message="Delete household?" 
+                   type="confirm" 
+                   onConfirm={() => handleDelete(h.id)} 
+                   onCancel={() => setConfirmDeleteId(null)} 
+                 />
+               ) : (
+                 <button 
+                   onClick={() => setConfirmDeleteId(h.id)}
+                   className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-all text-slate-500"
+                 >
+                   <Trash2 size={16} />
+                 </button>
+               )}
             </div>
 
             <div className="flex items-center gap-4 mb-6">

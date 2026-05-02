@@ -22,35 +22,35 @@ describe('ReconciliationService', () => {
       limit: vi.fn().mockReturnThis(),
       batch: vi.fn().mockResolvedValue([]),
     }
-    mockEnv = { DB: {} }
+    mockEnv = { 
+      DB: {},
+      RULE_AGENT: {
+        idFromName: vi.fn().mockReturnValue('mock-rule-id'),
+        get: vi.fn().mockReturnValue({
+          applyRules: vi.fn().mockResolvedValue(undefined)
+        })
+      },
+      RECONCILIATION_AGENT: {
+        idFromName: vi.fn().mockReturnValue('mock-recon-id'),
+        get: vi.fn().mockReturnValue({
+          reconcile: vi.fn().mockResolvedValue({ proposalsGenerated: 0 })
+        })
+      }
+    }
     reconService = new ReconciliationService(mockDb, mockEnv)
   })
 
   describe('applyRules', () => {
-    it('should categorize transaction based on rule pattern', async () => {
+    it('should delegate to RuleAgent', async () => {
       const householdId = 'h-1'
-      const txId = 'tx-1'
-      const categoryId = 'cat-1'
+      const txIds = ['tx-1', 'tx-2']
       
-      mockDb.where.mockResolvedValueOnce([{ id: txId, description: 'Netflix Subscription', categoryId: null }])
-      mockDb.where.mockResolvedValueOnce([{ id: 'rule-1', pattern: 'netflix', targetCategoryId: categoryId, visibility: 'private' }])
+      const agent = mockEnv.RULE_AGENT.get('mock-rule-id')
       
-      await reconService.applyRules(householdId, [txId])
+      await reconService.applyRules(householdId, txIds)
       
-      expect(mockDb.update).toHaveBeenCalled()
-      expect(mockDb.set).toHaveBeenCalledWith(expect.objectContaining({ categoryId }))
-    })
-
-    it('should auto-confirm if rule says so', async () => {
-      const householdId = 'h-1'
-      const txId = 'tx-1'
-      
-      mockDb.where.mockResolvedValueOnce([{ id: txId, description: 'Rent Payment', categoryId: null }])
-      mockDb.where.mockResolvedValueOnce([{ id: 'rule-2', pattern: 'rent', autoConfirm: true, visibility: 'private' }])
-      
-      await reconService.applyRules(householdId, [txId])
-      
-      expect(mockDb.set).toHaveBeenCalledWith(expect.objectContaining({ reconciliationStatus: 'reconciled' }))
+      expect(mockEnv.RULE_AGENT.idFromName).toHaveBeenCalledWith(householdId)
+      expect(agent.applyRules).toHaveBeenCalledWith(householdId, txIds)
     })
   })
 

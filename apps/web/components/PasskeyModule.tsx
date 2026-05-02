@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { InlineToast } from './ui/InlineToast';
 
 // Hardware AAGUID to Branding Mapping
 const AAGUID_MAP: Record<string, { name: string; icon?: string }> = {
@@ -55,8 +56,9 @@ export const PasskeyModule = () => {
   const [registering, setRegistering] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { user, refreshProfile } = useAuth();
-  const { showToast, showConfirm, showPrompt } = useToast();
+  const { showToast, showPrompt } = useToast();
   const [inlineStatus, setInlineStatus] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const showInline = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setInlineStatus({ message, type });
@@ -119,17 +121,11 @@ export const PasskeyModule = () => {
   };
 
   const deletePasskey = async (id: string) => {
-    const confirmed = await showConfirm(
-      'Structural Revocation',
-      'This will permanently invalidate this hardware signature. Future access from this specific key will be denied. Continue?'
-    );
-    
-    if (!confirmed) return;
-
     try {
       const res = await fetch(`/api/auth/passkey/delete?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         showInline('Hardware signature revoked.', 'success');
+        setConfirmDeleteId(null);
         fetchPasskeys();
         refreshProfile();
       } else {
@@ -323,13 +319,22 @@ export const PasskeyModule = () => {
                              </div>
                           </div>
                           
-                          <button 
-                            onClick={() => deletePasskey(pk.id)}
-                            className="bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-xs font-black uppercase tracking-widest self-start md:self-auto"
-                          >
-                             <Trash2 className="w-3 h-3" />
-                             <span>Revoke</span>
-                          </button>
+                          {confirmDeleteId === pk.id ? (
+                            <InlineToast 
+                              message="Revoke key?" 
+                              type="confirm" 
+                              onConfirm={() => deletePasskey(pk.id)} 
+                              onCancel={() => setConfirmDeleteId(null)} 
+                            />
+                          ) : (
+                            <button 
+                              onClick={() => setConfirmDeleteId(pk.id)}
+                              className="bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-xs font-black uppercase tracking-widest self-start md:self-auto"
+                            >
+                               <Trash2 className="w-3 h-3" />
+                               <span>Revoke</span>
+                            </button>
+                          )}
                        </div>
                     ))}
                  </div>

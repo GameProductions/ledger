@@ -13,8 +13,10 @@ import {
   Cpu,
   ChevronDown,
   ChevronUp,
-  MapPin
+  MapPin,
+  X
 } from 'lucide-react';
+import { InlineToast } from './ui/InlineToast';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { QRCodeSVG } from 'qrcode.react';
@@ -48,8 +50,9 @@ export const TotpModule = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
   const { user, refreshProfile } = useAuth();
-  const { showToast, showConfirm, showPrompt } = useToast();
+  const { showToast, showPrompt } = useToast();
   const [inlineStatus, setInlineStatus] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const showInline = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setInlineStatus({ message, type });
@@ -128,17 +131,11 @@ export const TotpModule = () => {
   };
 
   const deleteTotp = async (id: string) => {
-    const confirmed = await showConfirm(
-      'Structural Revocation',
-      'This will permanently invalidate this TOTP secret. Future access from this specific device will be denied. Continue?'
-    );
-
-    if (!confirmed) return;
-
     try {
       const res = await fetch(`/api/auth/totp/delete?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         showInline('Authenticator secret revoked.', 'success');
+        setConfirmDeleteId(null);
         refreshTotps();
         refreshProfile();
       } else {
@@ -445,13 +442,22 @@ export const TotpModule = () => {
                              </div>
                           </div>
                           
-                          <button 
-                            onClick={() => deleteTotp(t.id)}
-                            className="bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-xs font-black uppercase tracking-widest self-start md:self-auto"
-                          >
-                             <Trash2 className="w-3 h-3" />
-                             <span>Revoke</span>
-                          </button>
+                          {confirmDeleteId === t.id ? (
+                            <InlineToast 
+                              message="Revoke secret?" 
+                              type="confirm" 
+                              onConfirm={() => deleteTotp(t.id)} 
+                              onCancel={() => setConfirmDeleteId(null)} 
+                            />
+                          ) : (
+                            <button 
+                              onClick={() => setConfirmDeleteId(t.id)}
+                              className="bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 text-rose-500 hover:text-white flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-xs font-black uppercase tracking-widest self-start md:self-auto"
+                            >
+                               <Trash2 className="w-3 h-3" />
+                               <span>Revoke</span>
+                            </button>
+                          )}
                        </div>
                     ))}
                  </div>

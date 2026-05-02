@@ -5,6 +5,7 @@ import { Button } from './ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
+import { InlineToast } from './ui/InlineToast';
 
 interface Session {
   id: string;
@@ -17,11 +18,13 @@ interface Session {
 
 export function SecurityDashboard() {
   const { token } = useAuth();
-  const { showToast, showConfirm } = useToast();
+  const { showToast } = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokingAll, setRevokingAll] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
+  const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
 
   const fetchSessions = async () => {
     if (!token) return;
@@ -55,6 +58,7 @@ export function SecurityDashboard() {
       if (res.ok) {
         setSessions(s => s.filter(x => x.id !== id));
         showToast('Session revoked successfully', 'success');
+        setConfirmRevokeId(null);
       } else {
         showToast('Failed to revoke session', 'error');
       }
@@ -64,11 +68,6 @@ export function SecurityDashboard() {
   };
 
   const revokeAllOtherSessions = async () => {
-    const confirmed = await showConfirm(
-      'This will immediately sign out all other devices. Your current session will remain active.',
-      'Revoke All Sessions'
-    );
-    if (!confirmed) return;
 
     setRevokingAll(true);
     try {
@@ -184,14 +183,25 @@ export function SecurityDashboard() {
                 </div>
               </div>
                 {idx !== 0 && (
-                  <Button 
-                    variant="glass" 
-                    size="sm" 
-                    onClick={() => revokeSession(s.id)}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Revoke
-                  </Button>
+                  <div className="flex items-center">
+                    {confirmRevokeId === s.id ? (
+                      <InlineToast 
+                        message="Revoke session?" 
+                        type="confirm" 
+                        onConfirm={() => revokeSession(s.id)} 
+                        onCancel={() => setConfirmRevokeId(null)} 
+                      />
+                    ) : (
+                      <Button 
+                        variant="glass" 
+                        size="sm" 
+                        onClick={() => setConfirmRevokeId(s.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Revoke
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
@@ -215,15 +225,24 @@ export function SecurityDashboard() {
                 <p className="text-xs text-red-500/60">Sign out from all other devices immediately. Only your current session will remain active.</p>
               </div>
             </div>
-            <Button
-              variant="glass"
-              size="sm"
-              onClick={revokeAllOtherSessions}
-              disabled={revokingAll}
-              className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 font-bold"
-            >
-              {revokingAll ? 'Revoking...' : `Revoke All (${sessions.length - 1})`}
-            </Button>
+            {confirmRevokeAll ? (
+              <InlineToast 
+                message="Revoke all other devices?" 
+                type="confirm" 
+                onConfirm={revokeAllOtherSessions} 
+                onCancel={() => setConfirmRevokeAll(false)} 
+              />
+            ) : (
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={() => setConfirmRevokeAll(true)}
+                disabled={revokingAll}
+                className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 font-bold"
+              >
+                {revokingAll ? 'Revoking...' : `Revoke All (${sessions.length - 1})`}
+              </Button>
+            )}
           </div>
         </div>
       )}

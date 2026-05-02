@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Megaphone, Ticket, Plus, Trash2, Send, Clock, ShieldCheck, Mail } from 'lucide-react';
 import AdminPortal from './AdminPortal';
 import { getApiUrl } from '../../utils/api';
+import { InlineToast } from '../../components/ui/InlineToast';
 
 export const AdminBroadcast: React.FC = () => {
   const { token } = useAuth();
@@ -14,6 +15,8 @@ export const AdminBroadcast: React.FC = () => {
   
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', contentMd: '', priority: 'info' });
   const [inviteRole, setInviteRole] = useState<'super_admin' | 'operator'>('super_admin');
+  const [confirmDeleteAnnouncementId, setConfirmDeleteAnnouncementId] = useState<string | null>(null);
+  const [confirmDeleteInviteToken, setConfirmDeleteInviteToken] = useState<string | null>(null);
 
   const createAnnouncement = async () => {
     if (!newAnnouncement.title || !newAnnouncement.contentMd) return;
@@ -38,14 +41,13 @@ export const AdminBroadcast: React.FC = () => {
   };
 
   const deleteAnnouncement = async (id: string) => {
-    const confirmed = await showConfirm('Are you sure you want to permanently delete this announcement?', 'Delete Announcement');
-    if (!confirmed) return;
     const res = await fetch(`${getApiUrl()}/api/admin/communications/announcements/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
     if (data.success) {
+      setConfirmDeleteAnnouncementId(null);
       mutateAnnouncements();
     }
   };
@@ -78,6 +80,7 @@ export const AdminBroadcast: React.FC = () => {
     });
     const data = await res.json();
     if (data.success) {
+      setConfirmDeleteInviteToken(null);
       mutateInvitations();
     }
   };
@@ -146,9 +149,18 @@ export const AdminBroadcast: React.FC = () => {
                       {a.priority} • {new Date(a.createdAt).toLocaleString()}
                     </div>
                   </div>
-                  <button onClick={() => deleteAnnouncement(a.id)} className="p-2 text-red-500/40 hover:text-red-500 transition-colors">
-                    <Trash2 size={16} />
-                  </button>
+                  {confirmDeleteAnnouncementId === a.id ? (
+                    <InlineToast 
+                      message="Delete message?" 
+                      type="confirm" 
+                      onConfirm={() => deleteAnnouncement(a.id)} 
+                      onCancel={() => setConfirmDeleteAnnouncementId(null)} 
+                    />
+                  ) : (
+                    <button onClick={() => setConfirmDeleteAnnouncementId(a.id)} className="p-2 text-red-500/40 hover:text-red-500 transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               )) : <p className="text-center text-xs text-secondary italic opacity-20">No active messages</p>}
             </div>
@@ -194,9 +206,18 @@ export const AdminBroadcast: React.FC = () => {
                       {i.role}
                     </div>
                   </div>
-                  <button onClick={() => deleteInvite(i.token)} className="p-2 text-red-500/40 hover:text-red-500 transition-colors">
-                    <Trash2 size={16} />
-                  </button>
+                  {confirmDeleteInviteToken === i.token ? (
+                    <InlineToast 
+                      message="Revoke invite?" 
+                      type="confirm" 
+                      onConfirm={() => deleteInvite(i.token)} 
+                      onCancel={() => setConfirmDeleteInviteToken(null)} 
+                    />
+                  ) : (
+                    <button onClick={() => setConfirmDeleteInviteToken(i.token)} className="p-2 text-red-500/40 hover:text-red-500 transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
               )) : <p className="text-center text-xs text-secondary italic opacity-20">No active invitations</p>}
             </div>

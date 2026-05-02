@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
 import { HandCoins, Plus, Trash2, Calendar, User, Phone, BadgeDollarSign, Receipt } from 'lucide-react';
 import { Price } from '../components/Price';
+import { InlineToast } from '../components/ui/InlineToast';
 
 const LoanManagerPage: React.FC = () => {
   const { token, householdId } = useAuth();
@@ -27,6 +28,7 @@ const LoanManagerPage: React.FC = () => {
     amountCents: 0,
     email: ''
   });
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleCreateLoan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +68,6 @@ const LoanManagerPage: React.FC = () => {
   };
 
   const handleDeleteLoan = async (id: string) => {
-    const confirmed = await showConfirm('Permanently delete this loan and all associated payment records?', 'Delete Loan');
-    if (!confirmed) return;
     try {
       await fetch(`${getApiUrl()}/api/planning/p2p/loans/${id}`, {
         method: 'DELETE',
@@ -77,6 +77,7 @@ const LoanManagerPage: React.FC = () => {
         }
       });
       showToast('Loan Deleted', 'success');
+      setConfirmDeleteId(null);
       mutate();
     } catch (err) {
       showToast('Deletion failed', 'error');
@@ -222,9 +223,18 @@ const LoanManagerPage: React.FC = () => {
                     <h3 className="text-xl font-bold text-white">{loan.borrowerName}</h3>
                     <p className="text-xs font-bold uppercase tracking-widest opacity-40">{loan.borrowerContact || 'No contact provided'}</p>
                   </div>
-                  <button onClick={() => handleDeleteLoan(loan.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
-                    <Trash2 size={16} />
-                  </button>
+                  {confirmDeleteId === loan.id ? (
+                    <InlineToast 
+                      message="Delete loan?" 
+                      type="confirm" 
+                      onConfirm={() => handleDeleteLoan(loan.id)} 
+                      onCancel={() => setConfirmDeleteId(null)} 
+                    />
+                  ) : (
+                    <button onClick={() => setConfirmDeleteId(loan.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
 
                 <div className="space-y-4 mb-8">

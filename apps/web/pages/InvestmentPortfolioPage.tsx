@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Briefcase, Plus, Trash2, LineChart, TrendingUp, Landmark, Coins, Diamond } from 'lucide-react';
+import { InlineToast } from '../components/ui/InlineToast';
 import { Price } from '../components/Price';
 import { getApiUrl } from '../utils/api';
 
@@ -11,6 +12,7 @@ const InvestmentPortfolioPage: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast, showConfirm } = useToast();
   const { data: investments = [], mutate } = useApi('/api/financials/investments');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   
   const [isAdding, setIsAdding] = useState(false);
   const [newInv, setNewInv] = useState({
@@ -45,8 +47,6 @@ const InvestmentPortfolioPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = await showConfirm('Remove this asset from your portfolio?', 'Remove Asset');
-    if (!confirmed) return;
     try {
       await fetch(`${getApiUrl()}/api/financials/investments/${id}`, {
         method: 'DELETE',
@@ -56,6 +56,7 @@ const InvestmentPortfolioPage: React.FC = () => {
         }
       });
       showToast('Asset Removed', 'success');
+      setConfirmDeleteId(null);
       mutate();
     } catch (err) {
       showToast('Deletion failed', 'error');
@@ -214,9 +215,18 @@ const InvestmentPortfolioPage: React.FC = () => {
                         <p className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-40">{inv.assetType}</p>
                       </div>
                    </div>
-                   <button onClick={() => handleDelete(inv.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
-                      <Trash2 size={16} />
-                   </button>
+                   {confirmDeleteId === inv.id ? (
+                      <InlineToast 
+                        message="Remove asset?" 
+                        type="confirm" 
+                        onConfirm={() => handleDelete(inv.id)} 
+                        onCancel={() => setConfirmDeleteId(null)} 
+                      />
+                   ) : (
+                      <button onClick={() => setConfirmDeleteId(inv.id)} className="p-2 text-red-500/20 hover:text-red-500 transition-colors">
+                         <Trash2 size={16} />
+                      </button>
+                   )}
                 </div>
 
                 <div className="space-y-4">

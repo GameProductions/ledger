@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import { useToast } from '../../context/ToastContext';
+import { InlineToast } from '../ui/InlineToast';
 
 interface PasskeyRecord {
   id: string;
@@ -11,12 +12,13 @@ interface PasskeyRecord {
 }
 
 export const AuthVault: React.FC = () => {
-  const { showToast, showConfirm } = useToast();
+  const { showToast } = useToast();
   const [passkeys, setPasskeys] = useState<PasskeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   const fetchPasskeys = useCallback(async () => {
     try {
@@ -88,12 +90,11 @@ export const AuthVault: React.FC = () => {
   };
 
   const handleRevoke = async (id: string, name: string | null) => {
-    const confirmed = await showConfirm(`Revoke passkey "${name || 'Unnamed'}"? This cannot be undone.`, 'Revoke Passkey');
-    if (!confirmed) return;
     try {
       const resp = await fetch(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' });
       if (resp.ok) {
         showToast(`Passkey "${name || 'Unnamed'}" revoked.`, 'success');
+        setConfirmRevokeId(null);
         await fetchPasskeys();
       }
     } catch {
@@ -167,18 +168,29 @@ export const AuthVault: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                <button
-                  onClick={() => { setEditingId(pk.id); setEditName(pk.name || ''); }}
-                  className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white hover:underline"
-                >
-                  Rename
-                </button>
-                <button 
-                  onClick={() => handleRevoke(pk.id, pk.name)}
-                  className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:underline"
-                >
-                  Revoke
-                </button>
+                {confirmRevokeId === pk.id ? (
+                  <InlineToast 
+                    message="Revoke key?" 
+                    type="confirm" 
+                    onConfirm={() => handleRevoke(pk.id, pk.name)} 
+                    onCancel={() => setConfirmRevokeId(null)} 
+                  />
+                ) : (
+                  <>
+                    <button
+                      onClick={() => { setEditingId(pk.id); setEditName(pk.name || ''); }}
+                      className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-white hover:underline"
+                    >
+                      Rename
+                    </button>
+                    <button 
+                      onClick={() => setConfirmRevokeId(pk.id)}
+                      className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:underline"
+                    >
+                      Revoke
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))

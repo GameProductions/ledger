@@ -12,7 +12,7 @@ export const PrivacySettings: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [shredMonths, setShredMonths] = useState(12);
   const [shredReason, setShredReason] = useState('');
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showShredConfirm, setShowShredConfirm] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -50,7 +50,7 @@ export const PrivacySettings: React.FC = () => {
       });
       if (res.ok) {
         showToast(`Successfully shredded data older than ${shredMonths} months`, 'success');
-        setShowConfirm(false);
+        setShowShredConfirm(false);
         setShredReason('');
       } else {
         throw new Error();
@@ -103,7 +103,7 @@ export const PrivacySettings: React.FC = () => {
             </div>
 
             <Button 
-              onClick={() => setShowConfirm(true)}
+              onClick={() => setShowShredConfirm(true)}
               className="w-full bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20"
             >
               Open Shredder
@@ -112,14 +112,14 @@ export const PrivacySettings: React.FC = () => {
         </div>
       </Card>
 
-      {showConfirm && (
+      {showShredConfirm && (
           <Card className="max-w-md w-full p-8 border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.2)]">
             <h3 className="text-2xl font-black text-red-500 mb-4">Confirm Shredding</h3>
             <p className="text-sm font-medium mb-6">Are you sure you want to delete all data older than **{shredMonths} months**? This cannot be undone.</p>
             
             <div className="space-y-4">
                <div>
-                  <label className="text-xs uppercase font-bold text-secondary opacity-50 ml-1">Reason for audit log</label>
+                  <label className="text-xs uppercase font-black tracking-widest text-secondary opacity-50 ml-1">Reason for audit log</label>
                   <input 
                     type="text"
                     value={shredReason}
@@ -130,7 +130,7 @@ export const PrivacySettings: React.FC = () => {
                </div>
                
                <div className="flex gap-3 pt-2">
-                 <Button onClick={() => setShowConfirm(false)} className="flex-1 bg-white/5 border-white/10">Cancel</Button>
+                 <Button onClick={() => setShowShredConfirm(false)} className="flex-1 bg-white/5 border-white/10">Cancel</Button>
                  <Button onClick={handleShred} className="flex-1 bg-red-600 hover:bg-red-700 text-white border-none">Shred Data</Button>
                </div>
             </div>

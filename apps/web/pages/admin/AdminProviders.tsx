@@ -4,6 +4,7 @@ import { Building2, Globe, Plus, Trash2, Edit2, Zap, Server, ShieldAlert } from 
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { InlineToast } from '../../components/ui/InlineToast';
 
 const AdminProviders: React.FC = () => {
   const [providers, setProviders] = useState<any[]>([]);
@@ -12,6 +13,7 @@ const AdminProviders: React.FC = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { showToast, showConfirm } = useToast();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [newItem, setNewItem] = useState({
     name: '',
@@ -96,9 +98,6 @@ const AdminProviders: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmed = await showConfirm('Warning: Are you sure you want to delete this provider? This will remove all associated records.', 'Delete Provider');
-    if (!confirmed) return;
-    
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/api/admin/billing/providers/${id}`, {
@@ -108,6 +107,7 @@ const AdminProviders: React.FC = () => {
 
     if (res.ok) {
       showToast('Provider deleted', 'success');
+      setConfirmDeleteId(null);
       fetchData();
     } else {
       const err = await res.json();
@@ -280,12 +280,22 @@ const AdminProviders: React.FC = () => {
                  >
                     <Edit2 size={18} />
                  </button>
-                 <button 
-                  onClick={() => handleDelete(provider.id)}
-                  className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-xl"
-                 >
-                    <Trash2 size={18} />
-                 </button>
+                 
+                 {confirmDeleteId === provider.id ? (
+                   <InlineToast 
+                     message="Delete provider?" 
+                     type="confirm" 
+                     onConfirm={() => handleDelete(provider.id)} 
+                     onCancel={() => setConfirmDeleteId(null)} 
+                   />
+                 ) : (
+                   <button 
+                    onClick={() => setConfirmDeleteId(provider.id)}
+                    className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-xl"
+                   >
+                      <Trash2 size={18} />
+                   </button>
+                 )}
                </div>
             </div>
           </div>

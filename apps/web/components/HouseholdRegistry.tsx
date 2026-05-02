@@ -9,6 +9,7 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { formatHumanError } from '../utils/error-handler';
 import { getApiUrl } from '../utils/api';
+import { InlineToast } from './ui/InlineToast';
 
 const API_URL = getApiUrl();
 
@@ -49,9 +50,8 @@ const HouseholdRegistry: React.FC = () => {
   
   // Member Management State
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
-  const [removingMember, setRemovingMember] = useState<string | null>(null);
-  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (currentHousehold?.name) {
@@ -109,8 +109,6 @@ const HouseholdRegistry: React.FC = () => {
   };
 
   const removeMember = async (memberId: string) => {
-    const confirmed = await showConfirm('Are you sure you want to remove this member?');
-    if (!confirmed) return;
     setRemovingMember(memberId);
     const token = localStorage.getItem('ledger_token');
     try {
@@ -120,6 +118,7 @@ const HouseholdRegistry: React.FC = () => {
       });
       if (res.ok) {
         showToast('Member removed', 'success');
+        setConfirmRemoveId(null);
         mutateMembers();
       } else {
         const err = await res.json();
@@ -309,14 +308,24 @@ const HouseholdRegistry: React.FC = () => {
                              <option value="admin">Admin</option>
                              <option value="observer">Observer</option>
                           </select>
-                          <button 
-                            onClick={() => removeMember(m.id)}
-                            disabled={removingMember === m.id}
-                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                            title="Remove from Household"
-                          >
-                             <UserMinus size={14} />
-                          </button>
+                          
+                          {confirmRemoveId === m.id ? (
+                            <InlineToast 
+                              message="Remove member?" 
+                              type="confirm" 
+                              onConfirm={() => removeMember(m.id)} 
+                              onCancel={() => setConfirmRemoveId(null)} 
+                            />
+                          ) : (
+                            <button 
+                              onClick={() => setConfirmRemoveId(m.id)}
+                              disabled={removingMember === m.id}
+                              className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                              title="Remove from Household"
+                            >
+                               <UserMinus size={14} />
+                            </button>
+                          )}
                        </div>
                     )}
                  </div>

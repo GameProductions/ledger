@@ -43,7 +43,7 @@ const UserDetailsModal: React.FC<{
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/${userId}/details`, {
+      const res = await fetch(`${apiUrl}/api/admin/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -441,7 +441,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/setup`, {
+      const res = await fetch(`${apiUrl}/api/admin/users`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -613,7 +613,7 @@ const AdminUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/management`, {
+      const res = await fetch(`${apiUrl}/api/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

@@ -43,17 +43,20 @@ describe('AuthService - verify2FA', () => {
     authService = new AuthService(mockEnv)
   })
 
-  it('should return requires2FA if totpEnabled but no code provided', async () => {
-    const user = { id: 'user-1', totpEnabled: 1 }
+  it('should return requires2FA if user has TOTP credentials but no code provided', async () => {
+    const user = { id: 'user-1' }
+    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
+    
     const result = await authService.verify2FA(user)
     expect(result).toEqual({ requires2FA: true })
   })
 
   it('should verify valid TOTP code', async () => {
-    const user = { id: 'user-1', totpEnabled: 1 }
+    const user = { id: 'user-1' }
     const totpCode = '123456'
     
-    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }])
+    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
+    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }]) // Fetch secrets
     mockGetSecret.mockResolvedValue('real-secret')
     vi.mocked(authUtils.verifyTOTP).mockResolvedValue(true)
 
@@ -63,10 +66,11 @@ describe('AuthService - verify2FA', () => {
   })
 
   it('should fallback to backup code if TOTP fails', async () => {
-    const user = { id: 'user-1', totpEnabled: 1 }
+    const user = { id: 'user-1' }
     const backupCode = 'ABCDEFGH' // 8 chars
     
-    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }])
+    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
+    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }]) // Fetch secrets
     mockGetSecret.mockResolvedValue(null)
     vi.mocked(authUtils.verifyTOTP).mockResolvedValue(false)
     
@@ -79,10 +83,11 @@ describe('AuthService - verify2FA', () => {
   })
 
   it('should throw 401 if both TOTP and backup code fail', async () => {
-    const user = { id: 'user-1', totpEnabled: 1 }
+    const user = { id: 'user-1' }
     const invalidCode = 'INVALID1'
     
-    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }])
+    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
+    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }]) // Fetch secrets
     mockGetSecret.mockResolvedValue(null)
     vi.mocked(authUtils.verifyTOTP).mockResolvedValue(false)
     

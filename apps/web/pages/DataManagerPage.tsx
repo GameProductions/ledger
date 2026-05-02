@@ -205,6 +205,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} /> },
   { key: 'pairing-rules', label: 'Pairing Rules', icon: <GitMerge size={16} /> },
   { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} /> },
+  { key: 'billers', label: 'Billers', icon: <Building2 size={16} /> },
 ]
 
 const DataManagerPage: React.FC = () => {
@@ -373,17 +374,54 @@ const DataManagerPage: React.FC = () => {
             apiPath="/api/financials/pairing-rules"
             fields={[
               { key: 'pattern', label: 'Pattern (match description)', type: 'text', placeholder: 'e.g. AMAZON*' },
-              { key: 'target_providerId', label: 'Target Provider ID', type: 'text', placeholder: 'Provider UUID (optional)' },
-              { key: 'target_categoryId', label: 'Target Category ID', type: 'text', placeholder: 'Category UUID (optional)' },
-              { key: 'auto_confirm', label: 'Auto Confirm', type: 'boolean' },
+              { key: 'targetProviderId', label: 'Target Provider ID', type: 'text', placeholder: 'Provider UUID (optional)' },
+              { key: 'targetCategoryId', label: 'Target Category ID', type: 'text', placeholder: 'Category UUID (optional)' },
+              { key: 'autoConfirm', label: 'Auto Confirm', type: 'boolean' },
+              { key: 'visibility', label: 'Visibility', type: 'select', options: [
+                { value: 'private', label: 'Private' },
+                { value: 'household', label: 'Household' },
+                { value: 'public', label: 'Public' }
+              ]},
+              { key: 'ruleType', label: 'Rule Type', type: 'select', options: [
+                { value: 'manual', label: 'Manual' },
+                { value: 'smart_biller', label: 'Smart Biller' },
+                { value: 'auto_learned', label: 'Auto Learned' }
+              ]}
             ]}
             displayFn={(rule: any) => (
               <div>
                 <div className="font-bold text-sm font-mono">{rule.pattern}</div>
                 <div className="text-[10px] text-white/40 font-medium">
-                  {rule.target_providerId ? `Provider: ${rule.target_providerId.slice(0, 8)}...` : ''}
-                  {rule.target_categoryId ? ` · Category: ${rule.target_categoryId.slice(0, 8)}...` : ''}
-                  {rule.auto_confirm ? ' · Auto-confirm' : ''}
+                  {rule.targetProviderId ? `Provider: ${rule.targetProviderId.slice(0, 8)}...` : ''}
+                  {rule.targetCategoryId ? ` · Category: ${rule.targetCategoryId.slice(0, 8)}...` : ''}
+                  {rule.autoConfirm ? ' · Auto-confirm' : ''}
+                  {rule.visibility ? ` · ${rule.visibility}` : ''}
+                </div>
+              </div>
+            )}
+          />
+        )
+
+      case 'billers':
+        return (
+          <EntityManager
+            title="Billers"
+            icon={<Building2 size={18} />}
+            apiPath="/api/financials/billers"
+            fields={[
+              { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Netflix' },
+              { key: 'logoUrl', label: 'Logo URL', type: 'text', placeholder: 'https://...' },
+              { key: 'website', label: 'Website', type: 'text', placeholder: 'https://...' },
+              { key: 'industry', label: 'Industry', type: 'text', placeholder: 'Streaming' },
+            ]}
+            displayFn={(biller: any) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                  {biller.logoUrl ? <img src={biller.logoUrl} className="w-full h-full object-cover" /> : <Building2 size={14} />}
+                </div>
+                <div>
+                  <div className="font-bold text-sm">{biller.name}</div>
+                  <div className="text-[10px] text-white/40 font-medium">{biller.industry || 'Unknown Industry'}</div>
                 </div>
               </div>
             )}

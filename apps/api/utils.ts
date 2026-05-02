@@ -1,7 +1,7 @@
 import { Context } from 'hono'
 import { Bindings, Variables } from './types'
 import { getDb } from '#/index'
-import { auditLogs, adminAuditLogs } from '#/schema'
+import { activityLogs } from '#/schema'
 import { encryptData, decryptData, hashToken as securityHashToken } from './utils/security'
 
 export { logAudit } from './utils/audit'
@@ -52,4 +52,21 @@ export const apiError = (
     details: sanitizedDetails,
     traceId: traceId
   }, status as any)
+}
+
+export const getRequestMetadata = (c: Context) => {
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || '0.0.0.0'
+  const city = c.req.header('CF-IPCity')
+  const country = c.req.header('CF-IPCountry')
+  const ua = c.req.header('User-Agent') || 'Unknown'
+  
+  const isV6 = ip.includes(':')
+  
+  return {
+    ip,
+    ipV4: isV6 ? null : ip,
+    ipV6: isV6 ? ip : null,
+    location: city && country ? `${city}, ${country}` : country || 'Unknown',
+    userAgent: ua
+  }
 }

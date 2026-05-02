@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ledger",
   "main": "apps/api/worker.ts",
-  "compatibility_date": "2025-01-01",
+  "compatibility_date": "2026-05-01",
   "compatibility_flags": ["nodejs_compat"],
   "alias": {
     "~": "./apps/api",
@@ -59,6 +59,18 @@
         "name": "VAULT",
         "class_name": "Vault"
       },
+      {
+        "name": "RECONCILIATION_AGENT",
+        "class_name": "ReconciliationAgent"
+      },
+      {
+        "name": "MATCH_AGENT",
+        "class_name": "MatchAgent"
+      },
+      {
+        "name": "RULE_AGENT",
+        "class_name": "RuleAgent"
+      }
     ]
   },
   "migrations": [
@@ -77,6 +89,14 @@
     {
       "tag": "v4-decommission-ratelimiter",
       "deleted_classes": ["RateLimiter"]
+    },
+    {
+      "tag": "v5-reconciliation-agent",
+      "new_sqlite_classes": ["ReconciliationAgent"]
+    },
+    {
+      "tag": "v6-sub-agents",
+      "new_sqlite_classes": ["MatchAgent", "RuleAgent"]
     }
   ],
   "triggers": {

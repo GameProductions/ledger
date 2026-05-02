@@ -399,6 +399,22 @@ const SettingsPage: React.FC = () => {
                            />
                          </div>
                          
+                         <div 
+                           className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-all group"
+                           onClick={() => {
+                             const current = settingsJson.staySignedIn ?? true;
+                             updateSettingsJson({ ...settingsJson, staySignedIn: !current });
+                           }}
+                         >
+                           <div className="space-y-0.5">
+                             <div className="text-xs font-black uppercase tracking-widest text-white group-hover:text-primary transition-colors">Stay Signed In</div>
+                             <div className="text-[10px] text-secondary font-bold uppercase tracking-tight opacity-60">Maintain persistent session across restarts</div>
+                           </div>
+                           <div className={`w-10 h-6 rounded-full transition-all relative ${settingsJson.staySignedIn !== false ? 'bg-primary' : 'bg-white/10'}`}>
+                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settingsJson.staySignedIn !== false ? 'right-1' : 'left-1'}`} />
+                           </div>
+                         </div>
+
                          <button 
                            onClick={handleUpdatePassword}
                            disabled={changingPass || newPassword.length < 8}

@@ -10,6 +10,7 @@ const AdminData: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const { showToast, showConfirm } = useToast();
+  const { secureFetch } = useAuth();
   
   const [newItem, setNewItem] = useState({ 
     itemType: 'processor', 
@@ -21,11 +22,7 @@ const AdminData: React.FC = () => {
 
   const fetchItems = async () => {
     try {
-      const token = localStorage.getItem('ledger_token');
-      const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/records`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await secureFetch(`/api/admin/system/registry`);
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -50,9 +47,8 @@ const AdminData: React.FC = () => {
       metadataJson: newItem.metadataJson || {}
     };
 
-    const res = await fetch(`${apiUrl}/api/admin/records`, {
+    const res = await secureFetch(`/api/admin/system/registry`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(submissionData)
     });
     
@@ -71,11 +67,8 @@ const AdminData: React.FC = () => {
     const confirmed = await showConfirm('Are you sure you want to remove this item from the system?', 'Remove Item');
     if (!confirmed) return;
     
-    const token = localStorage.getItem('ledger_token');
-    const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/admin/records/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+    const res = await secureFetch(`/api/admin/system/registry/${id}`, {
+      method: 'DELETE'
     });
 
     if (res.ok) {

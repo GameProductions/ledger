@@ -9,7 +9,7 @@ import {
 } from '@simplewebauthn/server'
 import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
-import { logAudit } from '../utils'
+import { logAudit, getRequestMetadata } from '../utils'
 import { uint8ArrayToBase64 } from '../auth-utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { verify as jwtVerify } from 'hono/jwt'
@@ -88,8 +88,9 @@ auth.post('/login', zValidator('json', z.object({
   const authService = new AuthService(c.env)
   
   try {
+    const metadata = getRequestMetadata(c)
     const user = await authService.validateCredentials(username, password)
-    const twoFactor = await authService.verify2FA(user, totpCode)
+    const twoFactor = await authService.verify2FA(user, totpCode, metadata)
     
     if (twoFactor.requires2FA) {
       return c.json({ success: true, data: { requires2FA: true } }, 202)
@@ -120,6 +121,7 @@ auth.post('/login', zValidator('json', z.object({
 auth.post('/totp/setup', async (c) => {
   const userId = c.get('userId')
   const authService = new AuthService(c.env)
+  const metadata = getRequestMetadata(c)
   const secret = await authService.setupTOTP(userId)
   const otpauth = `otpauth://totp/LEDGER:${userId}?secret=${secret}&issuer=LEDGER`
   return c.json({ success: true, data: { secret, qrUrl: otpauth } })
@@ -128,8 +130,9 @@ auth.post('/totp/setup', async (c) => {
 auth.post('/totp/verify', zValidator('json', z.object({ code: z.string(), secret: z.string(), name: z.string().optional() })), async (c) => {
   const userId = c.get('userId')
   const { code, secret, name } = c.req.valid('json')
+  const metadata = getRequestMetadata(c)
   const authService = new AuthService(c.env)
-  const success = await authService.verifyAndEnableTOTP(userId, code, secret, name || 'Authenticator App')
+  const success = await authService.verifyAndEnableTOTP(userId, code, secret, name || 'Authenticator App', metadata)
   return c.json({ success }, success ? 200 : 400)
 })
 
@@ -738,6 +741,7 @@ async function handleRegisterVerify(c: any) {
     const db = getDb(c.env)
     const id = crypto.randomUUID()
     
+    const metadata = getRequestMetadata(c)
     await db.insert(passkeys).values({
       id,
       userId,
@@ -746,7 +750,13 @@ async function handleRegisterVerify(c: any) {
       publicKey: uint8ArrayToBase64(new Uint8Array(credentialPublicKey)),
       counter,
       aaguid: verification.registrationInfo.aaguid || null,
-      transports: JSON.stringify(body.response.transports || [])
+      transports: JSON.stringify(body.response.transports || []),
+      lastUsedAt: new Date().toISOString(),
+      lastUsedIp: metadata.ip,
+      lastUsedIpV4: metadata.ipV4,
+      lastUsedIpV6: metadata.ipV6,
+      lastUsedLocation: metadata.location,
+      lastUsedUa: metadata.userAgent
     })
 
     await logAudit(c, 'passkeys', id, 'REGISTER', null, { name: `Passkey ${new Date().toLocaleDateString()}` })
@@ -868,8 +878,17 @@ auth.post('/passkeys/login-verify', zValidator('json', z.object({
     throw new HTTPException(401, { message: 'Authentication failed' })
   }
 
-  // Update counter
-  await db.update(passkeys).set({ counter: verification.authenticationInfo.newCounter }).where(eq(passkeys.id, passkey.id))
+  // Update counter and metadata
+  const metadata = getRequestMetadata(c)
+  await db.update(passkeys).set({ 
+    counter: verification.authenticationInfo.newCounter,
+    lastUsedAt: new Date().toISOString(),
+    lastUsedIp: metadata.ip,
+    lastUsedIpV4: metadata.ipV4,
+    lastUsedIpV6: metadata.ipV6,
+    lastUsedLocation: metadata.location,
+    lastUsedUa: metadata.userAgent
+  }).where(eq(passkeys.id, passkey.id))
 
   const authService = new AuthService(c.env)
   const sessionId = await createSessionTracker(c, passkey.userId, true, !!persistent)
@@ -947,10 +966,16 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
     throw new HTTPException(500, { message: 'Session ID missing' })
   }
 
+  const metadata = getRequestMetadata(c)
   await db.batch([
     db.update(passkeys).set({ 
       counter: newCounter,
-      lastUsedAt: now 
+      lastUsedAt: now,
+      lastUsedIp: metadata.ip,
+      lastUsedIpV4: metadata.ipV4,
+      lastUsedIpV6: metadata.ipV6,
+      lastUsedLocation: metadata.location,
+      lastUsedUa: metadata.userAgent
     }).where(eq(passkeys.id, passkey.id)),
     db.update(sessions).set({ 
       passkeyVerifiedAt: now 

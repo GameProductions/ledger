@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { getApiUrl } from '../../utils/api';
+import { useToast } from '../../context/ToastContext';
 
 const AdminConfig: React.FC = () => {
+  const { showConfirm } = useToast();
   const [configs, setConfigs] = useState<any[]>([]);
   const [features, setFeatures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,8 +17,8 @@ const AdminConfig: React.FC = () => {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = getApiUrl();
         const [configRes, featureRes] = await Promise.all([
-          fetch(`${apiUrl}/api/admin/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/admin/features`, { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/admin/system/features`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         const configData = await configRes.json();
@@ -36,7 +38,7 @@ const AdminConfig: React.FC = () => {
   const handleUpdateConfig = async (id: string, value: string) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
-    await fetch(`${apiUrl}/api/admin/config/${id}`, {
+    await fetch(`${apiUrl}/api/admin/system/config/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ configValue: value })
@@ -47,7 +49,7 @@ const AdminConfig: React.FC = () => {
   const handleToggleFeature = async (id: string, enabled: boolean) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
-    await fetch(`${apiUrl}/api/admin/features/${id}`, {
+    await fetch(`${apiUrl}/api/admin/system/features/${id}`, {
       method: 'PATCH',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabledGlobally: enabled })
@@ -56,14 +58,15 @@ const AdminConfig: React.FC = () => {
   };
 
   const handleSelfHeal = async () => {
-    if (!window.confirm("Are you sure you want to run system self-healing? This will re-verify and create any missing system tables.")) return;
+    const confirmed = await showConfirm("Are you sure you want to run system self-healing? This will re-verify and create any missing system tables.");
+    if (!confirmed) return;
     
     setHealing(true);
     setHealResult(null);
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/maintenance/self-heal`, {
+      const res = await fetch(`${apiUrl}/api/admin/system/self-heal`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -72,7 +75,7 @@ const AdminConfig: React.FC = () => {
       
       // Refresh config if successful
       if (data.success) {
-        const configRes = await fetch(`${apiUrl}/api/admin/config`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const configRes = await fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } });
         const configData = await configRes.json();
         setConfigs(configData.data || []);
       }
@@ -144,6 +147,29 @@ const AdminConfig: React.FC = () => {
                 </div>
               </div>
             ))}
+            
+            {/* Rule 231: Session Persistence Toggle */}
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
+              <div className="mb-4">
+                <p className="font-bold text-blue-400 mb-1 leading-none">GLOBAL_SESSION_PERSISTENCE</p>
+                <p className="text-sm text-gray-500">Default persistence behavior for all platform sessions.</p>
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <span className="text-xs text-gray-600 uppercase font-black">Boolean</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer"
+                    checked={configs.find(c => c.configKey === 'DEFAULT_STAY_SIGNED_IN')?.configValue === 'true'}
+                    onChange={(e) => {
+                      const cfg = configs.find(c => c.configKey === 'DEFAULT_STAY_SIGNED_IN');
+                      if (cfg) handleUpdateConfig(cfg.id, e.target.checked ? 'true' : 'false');
+                    }}
+                  />
+                  <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 cursor-pointer"></div>
+                </label>
+              </div>
+            </div>
           </div>
         </section>
 

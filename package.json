@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.32.1",
+  "version": "3.33.0",
   "scripts": {
     "dev": "wrangler dev",
     "build:web": "vite build",
@@ -11,9 +11,14 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
+    "@cloudflare/agents": "^0.0.16",
+    "@cloudflare/ai-chat": "^0.6.2",
     "@hono/zod-validator": "^0.7.6",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.0",
+    "agents": "^0.12.2",
+    "agents-sdk": "^1.0.0",
+    "ai": "^6.0.174",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
@@ -33,6 +38,7 @@
     "react-markdown": "^10.1.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
+    "workers-ai-provider": "^3.1.13",
     "zod": "^4.3.6"
   },
   "devDependencies": {

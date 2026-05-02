@@ -97,8 +97,11 @@ app.get('*', async (c) => {
   return serveStatic({ path: 'index.html', manifest })(c, async () => {});
 });
 
-// 5. Durable Object Exports (Required for Cloudflare Orchestration)
+// 5. Durable Object & Agent Exports (Required for Cloudflare Orchestration)
 export { HouseholdSession, Vault } from './durable-objects'
+export { ReconciliationAgent } from './agents/ReconciliationAgent'
+export { MatchAgent } from './agents/MatchAgent'
+export { RuleAgent } from './agents/RuleAgent'
 
 export default {
   fetch: app.fetch,

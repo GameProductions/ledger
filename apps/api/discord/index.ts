@@ -3,7 +3,7 @@ import { InteractionType, InteractionResponseType, verifyKey } from 'discord-int
 import { Bindings, Variables } from '../types'
 import { getLegacyExternalChartUrl } from '../services/chart-service'
 import { getDb } from '#/index'
-import { accounts, subscriptions, categories, auditLogs } from '#/schema'
+import { accounts, subscriptions, categories, activityLogs as auditLogs } from '#/schema'
 import { eq, lte, and, desc } from 'drizzle-orm'
 
 const discord = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -89,12 +89,12 @@ discord.post('/interactions', async (c) => {
     if (name === 'ledger-audit') {
       const results = await db.select({
         action: auditLogs.action,
-        tableName: auditLogs.targetType,
+        targetType: auditLogs.targetType,
         createdAt: auditLogs.createdAt
       }).from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(5);
       
       let content = "🔍 **Latest Audit Logs**:\n"
-      results.forEach(r => { content += `- ${r.createdAt}: **${r.action}** on \`${r.tableName}\`\n` })
+      results.forEach(r => { content += `- ${r.createdAt}: **${r.action}** on \`${r.targetType}\`\n` })
       return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
   }

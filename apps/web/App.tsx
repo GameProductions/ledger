@@ -49,6 +49,7 @@ const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
 const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
 const DataManagerPage = lazy(() => import('./pages/DataManagerPage'))
+const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
 const PasskeyChallenge = lazy(() => import('./components/PasskeyChallenge'))
 import { MaintenanceView } from './components/MaintenanceView'
 import { AlertTriangle, WifiOff, ExternalLink } from 'lucide-react'
@@ -223,6 +224,7 @@ const AppContent: React.FC = () => {
     if (path === '#/loans') return <LoanManagerPage />
     if (path === '#/investments') return <InvestmentPortfolioPage />
     if (path === '#/manage') return <DataManagerPage />
+    if (path === '#/reconcile') return <ReconciliationPage />
     if (path.startsWith('#/snapshot/')) return <SnapshotViewer />
     if (path === '#/backup') return <BackupHub />
     if (path === '#/help') return <HelpCenter />

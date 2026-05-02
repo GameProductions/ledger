@@ -11,16 +11,17 @@ import {
 
 const API = getApiUrl()
 
-async function adminApi(token: string, method: string, path: string, body?: any) {
-  const res = await fetch(`${API}${path}`, {
+// Helper for God Mode actions
+const adminRequest = async (secureFetch: any, method: string, path: string, body?: any) => {
+  const res = await secureFetch(path, {
     method,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined
   })
   return res.json()
 }
 
-type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules'
+type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules'
 
 const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; scope: 'household' | 'user' }[] = [
   { key: 'categories', label: 'Categories', icon: <Tag size={16} />, scope: 'household' },
@@ -30,12 +31,13 @@ const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; sco
   { key: 'bills', label: 'Bills', icon: <Banknote size={16} />, scope: 'household' },
   { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} />, scope: 'household' },
   { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} />, scope: 'household' },
+  { key: 'pairing-rules', label: 'Pairing Rules', icon: <Link2 size={16} />, scope: 'household' },
   { key: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} />, scope: 'user' },
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} />, scope: 'user' },
 ]
 
 const AdminEntityManager: React.FC = () => {
-  const { token } = useAuth()
+  const { secureFetch } = useAuth()
   const { showToast } = useToast()
   const [activeType, setActiveType] = useState<EntityType>('categories')
   const [householdFilter, setHouseholdFilter] = useState('')
@@ -68,7 +70,7 @@ const AdminEntityManager: React.FC = () => {
 
   const handleSave = async () => {
     if (!editing) return
-    await adminApi(token!, 'PATCH', `/api/admin/entities/${activeType}/${editing.id}`, editData)
+    await adminRequest(secureFetch, 'PATCH', `/api/admin/entities/${activeType}/${editing.id}`, editData)
     showToast('Record updated via God Mode', 'success')
     setEditing(null)
     setEditData({})
@@ -76,7 +78,7 @@ const AdminEntityManager: React.FC = () => {
   }
 
   const handleDelete = async (id: string) => {
-    await adminApi(token!, 'DELETE', `/api/admin/entities/${activeType}/${id}`)
+    await adminRequest(secureFetch, 'DELETE', `/api/admin/entities/${activeType}/${id}`)
     showToast('Record removed via God Mode', 'success')
     setDeleting(null)
     mutate()

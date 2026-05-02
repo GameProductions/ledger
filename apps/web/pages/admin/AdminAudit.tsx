@@ -37,28 +37,96 @@ const AdminAudit: React.FC = () => {
       </div>
 
       <div className="space-y-3">
-        {(logs || []).map(log => (
-          <div key={log.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex items-start gap-4">
-            <div className={`w-2 h-2 rounded-full mt-2 ${log.action === 'admin_update' || log.action === 'TOGGLE_FEATURE' ? 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]' : 'bg-cyan-500'}`} />
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-black uppercase tracking-widest text-cyan-400">{log.action}</span>
-                <span className="text-xs text-gray-500 font-mono tracking-tighter">{new Date(log.createdAt).toLocaleString()}</span>
-              </div>
-              <p className="text-sm text-gray-300 font-medium">
-                Admin: <span className="text-emerald-400">{log.actorName || 'System'}</span> 
-                {' ● '} 
-                Target: <span className="text-white">{log.targetName || log.targetType || 'Unknown'}</span> 
-                ID: <span className="opacity-40 font-mono text-xs">{log.targetId || log.id}</span>
-              </p>
-              {log.detailsJson && (
-                <div className="mt-3 p-3 rounded-xl bg-black/40 border border-white/5 font-mono text-xs text-gray-500 overflow-x-auto">
-                  {JSON.stringify(typeof log.detailsJson === 'string' ? JSON.parse(log.detailsJson) : log.detailsJson, null, 2)}
+        {(logs || []).map(log => {
+          const details = typeof log.detailsJson === 'string' ? JSON.parse(log.detailsJson) : (log.detailsJson || {});
+          
+          // Rule 235: Human Readable Descriptions
+          const renderDescription = () => {
+            switch(log.action) {
+              case 'TOGGLE_FEATURE':
+                return `Changed visibility of ${log.targetName || 'feature'} to ${details.enabled ? 'Enabled' : 'Disabled'}`;
+              case 'UPDATE_CONFIG':
+                return `Updated system configuration ${details.key} to value "${details.value}"`;
+              case 'PASSKEY_REGISTRATION':
+                return `Registered new biometric passkey: ${details.credentialName || 'Unnamed'}`;
+              case 'TOTP_ENABLED':
+                return `Activated multi-factor authentication (TOTP)`;
+              case 'HOUSEHOLD_INVITE':
+                return `Sent household invitation to ${details.email}`;
+              case 'ADMIN_LOGIN':
+                return `Administrative session established`;
+              case 'USER_LOGIN':
+                return `User session established`;
+              default:
+                return log.description || `Performed action: ${log.action}`;
+            }
+          };
+
+          return (
+            <div key={log.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all group reveal">
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/5 ${
+                  log.action.includes('LOGIN') ? 'bg-emerald-500/10 text-emerald-400' : 
+                  log.action.includes('ADMIN') ? 'bg-orange-500/10 text-orange-400' : 'bg-cyan-500/10 text-cyan-400'
+                }`}>
+                  {log.action.includes('LOGIN') ? '🔐' : log.action.includes('ADMIN') ? '⚡' : '📝'}
                 </div>
-              )}
+                
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary opacity-40">{log.action}</span>
+                    <span className="text-[10px] text-gray-500 font-mono tracking-tighter uppercase">{new Date(log.createdAt).toLocaleString()}</span>
+                  </div>
+                  
+                  <h4 className="text-sm font-bold text-white mb-1 leading-relaxed">
+                    {renderDescription()}
+                  </h4>
+                  
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Actor:</span>
+                      <span className="text-xs font-bold text-emerald-400">{log.actorName || 'System'}</span>
+                    </div>
+                    
+                    {/* Rule 234: Forensic Labeling Protocol */}
+                    <div className="flex items-center gap-3">
+                      {log.ipV4 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">IPv4:</span>
+                          <span className="text-xs font-mono text-secondary">{log.ipV4}</span>
+                        </div>
+                      )}
+                      {log.ipV6 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">IPv6:</span>
+                          <span className="text-xs font-mono text-secondary">{log.ipV6}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {log.location && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Location:</span>
+                        <span className="text-xs font-bold text-blue-400">{log.location}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Raw details toggle for advanced forensic debugging */}
+                  <details className="mt-4">
+                    <summary className="text-[9px] font-black uppercase tracking-widest text-slate-600 cursor-pointer hover:text-white transition-colors outline-none list-none flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                      View Raw Forensic Telemetry
+                    </summary>
+                    <div className="mt-3 p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[10px] text-gray-500 overflow-x-auto leading-relaxed shadow-inner">
+                      {JSON.stringify(details, null, 2)}
+                    </div>
+                  </details>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </AdminPortal>
   );

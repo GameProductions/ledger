@@ -2,7 +2,7 @@ import { Bindings } from '../types'
 import { SchedulingService } from '../services/scheduling.service'
 import { decrypt } from '../utils'
 import { getDb } from '#/index'
-import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, systemAuditLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills, userHouseholds } from '#/schema'
+import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, activityLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills, userHouseholds } from '#/schema'
 import { eq, sql, lte, and } from 'drizzle-orm'
 import { VaultService } from '../utils/vault.service'
 
@@ -137,11 +137,12 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
         await handler(env, conn, token)
         await db.update(externalConnections).set({ lastSyncAt: sql`CURRENT_TIMESTAMP` }).where(eq(externalConnections.id, conn.id))
         
-        await db.insert(systemAuditLogs).values({
+        await db.insert(activityLogs).values({
           id: crypto.randomUUID(),
-          userId: 'system',
+          actorId: 'system',
+          actorType: 'SYSTEM',
           action: 'SYNC_SUCCESS',
-          target: conn.provider,
+          targetType: conn.provider,
           detailsJson: JSON.stringify({ connectionId: conn.id, householdId: conn.householdId })
         })
 
@@ -151,11 +152,12 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
       }
     } catch (e: any) {
       console.error(`[Sync] Error syncing connection ${conn.id}:`, e)
-      await db.insert(systemAuditLogs).values({
+      await db.insert(activityLogs).values({
           id: crypto.randomUUID(),
-          userId: 'system',
+          actorId: 'system',
+          actorType: 'SYSTEM',
           action: 'SYNC_FAILURE',
-          target: conn.provider,
+          targetType: conn.provider,
           detailsJson: JSON.stringify({ connectionId: conn.id, error: e.message })
       })
 
@@ -424,11 +426,12 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
 
             await db.update(table as any).set(updates).where(eq((table as any).id, item.id));
 
-            await db.insert(systemAuditLogs).values({
+            await db.insert(activityLogs).values({
               id: crypto.randomUUID(),
-              userId: 'system',
+              actorId: 'system',
+              actorType: 'SYSTEM',
               action: 'RATE_AUTO_UPDATE',
-              target: (table as any).tableName,
+              targetType: (table as any).tableName,
               detailsJson: JSON.stringify({ 
                 id: item.id, 
                 oldAmount: item[amountField], 

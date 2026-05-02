@@ -29,7 +29,8 @@ import {
   bills,
   liabilitySplits,
   systemAnnouncements,
-  schedules
+  schedules,
+  activityLogs as auditLogs
 } from '#/schema'
 import remindersApi from './reminders'
 import { eq, and, desc, like, lte, sql } from 'drizzle-orm'

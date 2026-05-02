@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge } from 'lucide-react'
 import { Masked } from './ui/Masked'
 import { sanitizeImageUrl } from '../utils/security'
 
@@ -34,6 +34,7 @@ const UserMenu: React.FC<{
     { icon: Briefcase, label: 'Investments', hash: '#/investments', color: 'text-indigo-400' },
     { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },
     { icon: List, label: 'Data Manager', hash: '#/manage', color: 'text-cyan-400' },
+    { icon: GitMerge, label: 'Smart Reconciliation', hash: '#/reconcile', color: 'text-primary' },
     { icon: HelpCircle, label: 'Help & Guides', hash: '#/help', color: 'text-blue-400' },
     { icon: MessageSquare, label: 'High-Priority Support', hash: '#/help/support', color: 'text-primary' },
   ]

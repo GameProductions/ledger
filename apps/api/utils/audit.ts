@@ -1,16 +1,15 @@
 import { Context } from 'hono';
 import { getDb } from '#/index';
-import { auditLogs, adminAuditLogs } from '#/schema';
+import { activityLogs } from '#/schema';
 
 /**
  * Security Utility - Forensic Audit Utility (Zero-Latency)
- * Best-of-Breed Standardized for the GameProductions fleet.
- * Supports both standard and administrative audit trails.
+ * Consolidated Activity Logging for the Ledger platform.
  */
 export const logAudit = (
   c: Context<any>, 
   targetType: string, 
-  recordId: string | number | undefined | null, 
+  targetId: string | number | undefined | null, 
   action: string, 
   oldValues: any = {}, 
   newValues: any = {}, 
@@ -23,58 +22,45 @@ export const logAudit = (
       
       const db = getDb(c.env);
       const actorId = c.var?.userId || c.get('userId') || 'system';
-      const householdId = c.get('householdId') || 'ledger-main-001';
+      const householdId = c.get('householdId');
       const impersonatorId = c.get('impersonatorId');
       
-      // Tier 1 Telemetry Extraction
       const connectingIp = c.req.header('cf-connecting-ip') || 
                         c.req.header('x-forwarded-for') || 
                         c.req.header('x-real-ip') ||
                         '0.0.0.0';
-      const pseudoIp = c.req.header('cf-pseudo-ipv4');
       const userAgent = c.req.header('user-agent') || 'Unknown-UA';
       const cfRay = c.req.header('cf-ray') || 'Unknown-Ray';
       const cfIpCountry = c.req.header('cf-ipcountry') || 'Unknown';
 
-      // [FORENSIC-PARITY] Dual-Stack IP Detection
-      const isIPv6 = connectingIp.includes(':');
-      const ipV4 = isIPv6 ? (pseudoIp || null) : connectingIp;
-      const ipV6 = isIPv6 ? connectingIp : null;
+      const finalDetails = {
+        ...(metadata || {}),
+        path: c.req.path,
+        method: c.req.method,
+        cfRay,
+        cfIpCountry,
+        impersonatorId
+      };
 
-      const finalNewValues = newValues ? { ...newValues } : {};
-      if (impersonatorId) {
-        (finalNewValues as any).impersonatorId = impersonatorId;
-      }
-
-      const table = isAdmin ? adminAuditLogs : auditLogs;
-
-      await db.insert(table).values({
+      await db.insert(activityLogs).values({
         householdId,
         actorId,
-        ipAddress: connectingIp,
-        ipV4,
-        ipV6,
-        userAgent,
+        actorType: isAdmin ? 'ADMIN' : (actorId === 'system' ? 'SYSTEM' : 'USER'),
         action,
         severity: action.includes('CRITICAL') || action.includes('ADMIN') || action.includes('DELETE') ? 'CRITICAL' : 'INFO',
         targetType,
-        recordId: recordId ? String(recordId) : null,
+        targetId: targetId ? String(targetId) : null,
+        detailsJson: JSON.stringify(finalDetails),
         oldValuesJson: JSON.stringify(oldValues || {}),
-        newValuesJson: JSON.stringify(finalNewValues || {}),
-        metadataJson: JSON.stringify({
-          ...(metadata || {}),
-          path: c.req.path,
-          method: c.req.method,
-          cfRay,
-          cfIpCountry,
-          pseudoIp
-        }),
+        newValuesJson: JSON.stringify(newValues || {}),
+        ipAddress: connectingIp,
+        userAgent,
         cfRay
-      } as any);
+      });
 
-      console.log(`[TITAN_GUARD] ${isAdmin ? 'ADMIN_' : ''}Audit logged: ${action} on ${targetType}:${recordId} by ${actorId}`);
+      console.log(`[TITAN_GUARD] Activity logged: ${action} on ${targetType}:${targetId} by ${actorId}`);
     } catch (error) {
-      console.error('[TITAN_GUARD_ERROR] Failed to record audit log:', error);
+      console.error('[TITAN_GUARD_ERROR] Failed to record activity log:', error);
     }
   };
 

@@ -21,6 +21,14 @@ export default defineConfig({
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8790',
+        changeOrigin: true,
+      }
+    }
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

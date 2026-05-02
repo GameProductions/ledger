@@ -14,7 +14,8 @@ import {
   TransactionOutputSchema,
   CategorySchema,
   AccountSchema,
-  TransactionPairingRuleSchema
+  TransactionPairingRuleSchema,
+  BillerSchema
 } from '@shared/schemas'
 import { dispatchWebhook } from '../services/webhook-service'
 import { logAudit, apiError } from '../utils'
@@ -31,10 +32,14 @@ import {
   subscriptions,
   investmentHoldings,
   sharedBalances,
-  transactionPairingRules
+  transactionPairingRules,
+  trackedExpenses,
+  activityLogs
 } from '#/schema'
-import { eq, and, desc, asc, like, inArray, sql, gte, lte } from 'drizzle-orm'
+import { billers, reconciliationProposals } from '#/schema'
+import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or } from 'drizzle-orm'
 import { inferTransactionDetails } from '../inference'
+import { ReconciliationService } from '../services/reconciliation.service'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -244,20 +249,31 @@ financials.delete('/credit-cards/:id', async (c) => {
 financials.get('/pairing-rules', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = await db.select().from(transactionPairingRules).where(eq(transactionPairingRules.householdId, householdId))
+  const results = await db.select().from(transactionPairingRules).where(
+    or(
+      eq(transactionPairingRules.householdId, householdId),
+      eq(transactionPairingRules.visibility, 'public')
+    )
+  ).orderBy(desc(transactionPairingRules.createdAt))
   return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/pairing-rules', zValidator('json', TransactionPairingRuleSchema), async (c) => {
   const householdId = c.get('householdId')
+  const userId = c.get('userId') as string
   const data = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(transactionPairingRules).values({
-    id, householdId, pattern: data.pattern,
+    id, householdId, 
+    pattern: data.pattern,
     targetProviderId: data.targetProviderId || null,
     targetCategoryId: data.targetCategoryId || null,
-    autoConfirm: data.autoConfirm || false
+    autoConfirm: data.autoConfirm || false,
+    ownerId: userId,
+    visibility: data.visibility || 'private',
+    ruleType: data.ruleType || 'manual',
+    metadataJson: data.metadataJson || null
   })
   await logAudit(c, 'pairing_rules', id, 'CREATE', null, data)
   return c.json({ success: true, id })
@@ -268,15 +284,32 @@ financials.patch('/pairing-rules/:id', zValidator('json', TransactionPairingRule
   const id = c.req.param('id')
   const data = c.req.valid('json')
   const db = getDb(c.env)
-  const updates: any = {}
-  if (data.pattern !== undefined) updates.pattern = data.pattern
-  if (data.targetProviderId !== undefined) updates.targetProviderId = data.targetProviderId
-  if (data.targetCategoryId !== undefined) updates.targetCategoryId = data.targetCategoryId
-  if (data.autoConfirm !== undefined) updates.autoConfirm = data.autoConfirm
+  
+  const updates: any = { ...data }
+  // Ensure we don't accidentally update internal IDs
+  delete updates.id
+  delete updates.householdId
+  
   if (Object.keys(updates).length > 0) {
     await db.update(transactionPairingRules).set(updates).where(and(eq(transactionPairingRules.id, id), eq(transactionPairingRules.householdId, householdId)))
     await logAudit(c, 'pairing_rules', id, 'UPDATE', null, data)
   }
+  return c.json({ success: true })
+})
+
+financials.post('/pairing-rules/:id/share', zValidator('json', z.object({
+  visibility: z.enum(['private', 'household', 'public'])
+})), async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const { visibility } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  await db.update(transactionPairingRules)
+    .set({ visibility })
+    .where(and(eq(transactionPairingRules.id, id), eq(transactionPairingRules.householdId, householdId)))
+    
+  await logAudit(c, 'pairing_rules', id, 'SHARE', null, { visibility })
   return c.json({ success: true })
 })
 
@@ -410,6 +443,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
       isBorrowed: data.isBorrowed,
       borrowSource: data.borrowSource || null,
       accountedFor: data.accountedFor,
+      source: data.source || 'manual',
     })
 
     if (data.categoryId) {
@@ -421,6 +455,10 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     } else {
       await insertTx
     }
+    
+    // EXECUTE RULE ENGINE (Titan Guard Smart Billing)
+    const reconService = new ReconciliationService(db, c.env)
+    await reconService.applyRules(householdId, [id])
     
     await logAudit(c, 'transactions', id, 'CREATE', null, { 
       amount: data.amountCents, 
@@ -799,13 +837,16 @@ financials.post('/transactions/import/confirm', zValidator('json', z.object({
       transactionDate: date
     })
   })
-
-  // D1 batch limit is 100 max per call? Drizzle's db.batch can take array. Wait, if there are thousands of rows, batch will fail. Let's chunk it.
-  const chunkSize = 50;
-  for (let i = 0; i < inserts.length; i += chunkSize) {
-    const chunk = inserts.slice(i, i + chunkSize);
+  const CHUNK_SIZE = 50
+  for (let i = 0; i < inserts.length; i += CHUNK_SIZE) {
+    const chunk = inserts.slice(i, i + CHUNK_SIZE)
     await db.batch(chunk as any)
   }
+  
+  // EXECUTE RULE ENGINE (Titan Guard Smart Billing)
+  const txIds = inserts.map((ins: any) => ins.values.id)
+  const reconService = new ReconciliationService(db, c.env)
+  await reconService.applyRules(householdId, txIds)
   
   await logAudit(c, 'transactions', 'batch_import', 'IMPORT', null, { 
     count: inserts.length, 
@@ -1120,6 +1161,149 @@ financials.post('/shared-balances/settle', zValidator('json', z.object({
   `).bind(householdId, userId, withUserId, withUserId, userId).run()
   
   await logAudit(c, 'shared_balances', 'settle', 'SETTLE', null, { user1: userId, user2: withUserId })
+  return c.json({ success: true })
+})
+
+// 🏦 Billers CRUD
+financials.get('/billers', async (c) => {
+  const db = getDb(c.env)
+  const results = await db.select().from(billers).orderBy(asc(billers.name))
+  return c.json({ success: true, data: results })
+})
+
+financials.post('/billers', zValidator('json', BillerSchema), async (c) => {
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(billers).values({ id, ...data })
+  await logAudit(c, 'billers', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
+})
+
+financials.delete('/billers/:id', async (c) => {
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(billers).where(eq(billers.id, id))
+  await logAudit(c, 'billers', id, 'DELETE')
+  return c.json({ success: true })
+})
+
+// 🧩 Intelligent Reconciliation
+financials.get('/reconciliation/proposals', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  
+  const results = await c.env.DB.prepare(`
+    SELECT rp.*, 
+      t1.description as primaryDescription, t1.amountCents as primaryAmount, t1.transactionDate as primaryDate,
+      t2.description as suggestedDescription, t2.amountCents as suggestedAmount, t2.transactionDate as suggestedDate
+    FROM reconciliationProposals rp
+    JOIN transactions t1 ON rp.primaryTransactionId = t1.id
+    JOIN transactions t2 ON rp.suggestedTransactionId = t2.id
+    WHERE rp.householdId = ? AND rp.status = 'pending'
+    ORDER BY rp.confidenceScore DESC
+  `).bind(householdId).all()
+  
+  return c.json({ success: true, data: results.results || [] })
+})
+
+financials.post('/reconciliation/sync', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const reconService = new ReconciliationService(db, c.env)
+  const count = await reconService.generateProposals(householdId)
+  return c.json({ success: true, proposalsGenerated: count })
+})
+
+financials.post('/reconciliation/proposals/bulk-action', zValidator('json', z.object({
+  proposalIds: z.array(z.string()),
+  action: z.enum(['approve', 'reject'])
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { proposalIds, action } = c.req.valid('json')
+  const db = getDb(c.env)
+  const reconService = new ReconciliationService(db, c.env)
+  await reconService.handleBulkProposals(householdId, proposalIds, action)
+  return c.json({ success: true })
+})
+
+// --- Tracked Expenses (Moved from dedicated router) ---
+financials.get('/expenses/tracked', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(trackedExpenses).where(
+    and(
+      eq(trackedExpenses.householdId, householdId),
+      eq(trackedExpenses.status, 'pending')
+    )
+  )
+  return c.json({ success: true, data: results })
+})
+
+financials.post('/expenses/tracked', zValidator('json', z.object({
+  amountCents: z.number().int(),
+  description: z.string(),
+  notes: z.string().optional(),
+  attentionRequired: z.boolean().optional(),
+  needsBalanceTransfer: z.boolean().optional(),
+  transferTiming: z.string().optional(),
+  isBorrowed: z.boolean().optional(),
+  borrowSource: z.string().optional()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  
+  await db.insert(trackedExpenses).values({
+    id,
+    householdId,
+    ...data,
+    status: 'pending'
+  })
+  
+  return c.json({ success: true, id })
+})
+
+financials.post('/expenses/tracked/promote', zValidator('json', z.object({
+  ids: z.array(z.string()),
+  transactionDetails: TransactionSchema.partial()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { ids, transactionDetails } = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const items = await db.select().from(trackedExpenses).where(
+    and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids))
+  )
+  
+  if (items.length === 0) return c.json({ error: 'No items found' }, 404)
+  
+  const promoTxs = items.map(item => {
+    return db.insert(transactions).values({
+      id: crypto.randomUUID(),
+      householdId,
+      accountId: transactionDetails.accountId || 'default-account',
+      categoryId: transactionDetails.categoryId || null,
+      amountCents: item.amountCents,
+      description: item.description,
+      transactionDate: transactionDetails.transactionDate || new Date().toISOString().split('T')[0],
+      notes: item.notes,
+      attentionRequired: item.attentionRequired,
+      needsBalanceTransfer: item.needsBalanceTransfer,
+      transferTiming: item.transferTiming,
+      isBorrowed: item.isBorrowed,
+      borrowSource: item.borrowSource,
+      status: transactionDetails.status || 'pending'
+    })
+  })
+  
+  const updateTracked = db.update(trackedExpenses)
+    .set({ status: 'committed' })
+    .where(and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids)))
+    
+  await db.batch([...promoTxs, updateTracked] as any)
+  
   return c.json({ success: true })
 })
 

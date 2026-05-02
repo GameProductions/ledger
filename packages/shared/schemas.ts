@@ -44,6 +44,7 @@ export const TransactionSchema = z.object({
   isBorrowed: z.boolean().optional().default(false),
   borrowSource: z.string().optional().nullable(),
   accountedFor: z.boolean().optional().default(false),
+  source: z.string().optional().default('manual'),
 })
 
 export const TransactionOutputSchema = z.object({
@@ -70,6 +71,7 @@ export const TransactionOutputSchema = z.object({
   isBorrowed: z.boolean().nullable().optional(),
   borrowSource: z.string().nullable().optional(),
   accountedFor: z.boolean().nullable().optional(),
+  source: z.string().optional().default('manual'),
   updatedAt: z.string().optional(),
   createdAt: z.string().optional()
 })
@@ -78,7 +80,11 @@ export const TransactionPairingRuleSchema = z.object({
   pattern: z.string().min(1),
   targetProviderId: z.string().uuid().optional().nullable(),
   targetCategoryId: z.string().uuid().optional().nullable(),
-  autoConfirm: z.boolean().optional().default(false)
+  autoConfirm: z.boolean().optional().default(false),
+  ownerId: z.string().optional().nullable(),
+  visibility: z.enum(['private', 'household', 'public']).optional().default('private'),
+  ruleType: z.enum(['manual', 'smart_biller', 'auto_learned']).optional().default('manual'),
+  metadataJson: z.string().optional().nullable()
 })
 
 export const TimelineEntrySchema = z.object({
@@ -195,12 +201,29 @@ export const CreditCardSchema = z.object({
 })
 
 export const LoanSchema = z.object({
-  borrowerName: z.string().min(1),
-  borrowerContact: z.string().optional(),
-  totalAmountCents: z.number().int().positive(),
-  interestRateApy: z.number().optional(),
-  termMonths: z.number().int().positive().optional(),
-  originationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  name: z.string().min(1).max(200),
+  lender: z.string().optional().nullable(),
+  totalPrincipalCents: z.number().int().positive(),
+  remainingPrincipalCents: z.number().int().min(0),
+  interestRateApy: z.number().optional().nullable(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  status: z.enum(['active', 'closed', 'defaulted']).optional().default('active')
+})
+
+export const BillerSchema = z.object({
+  name: z.string().min(1).max(200),
+  logoUrl: z.string().url().optional().nullable(),
+  website: z.string().url().optional().nullable(),
+  industry: z.string().optional().nullable()
+})
+
+export const ReconciliationProposalSchema = z.object({
+  primaryTransactionId: z.string(),
+  suggestedTransactionId: z.string(),
+  confidenceScore: z.number().int().min(0).max(100),
+  matchReason: z.string().optional().nullable(),
+  status: z.enum(['pending', 'approved', 'rejected']).optional().default('pending')
 })
 
 // --- USER & HOUSEHOLD SCHEMAS ---

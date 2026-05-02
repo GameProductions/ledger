@@ -25,7 +25,6 @@ import interopRoutes from './routes/interop'
 import backupRoutes from './routes/backup'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
-import trackedExpensesRoutes from './routes/tracked-expenses'
 
 // Durable Objects Exports (Required for Cloudflare)
 export { HouseholdSession, Vault } from './durable-objects'
@@ -233,7 +232,6 @@ app.post('/api/theme/broadcast', authMiddleware)
 // 4. System Routes
 app.route('/api/auth', authRoutes)
 app.route('/api/financials', financialsRoutes)
-app.route('/api/tracked-expenses', trackedExpensesRoutes)
 app.route('/api/planning', planningRoutes)
 app.route('/api/user', userRoutes)
 app.route('/api/data', dataRoutes)

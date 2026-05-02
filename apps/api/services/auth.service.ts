@@ -87,38 +87,16 @@ export class AuthService {
 
     console.log('[Auth] Login successful for:', user.username)
 
-    // --- AUTOMATIC BACKUP CODE MIGRATION (Titan Guard v6.1) ---
-    if (user.backupCodesJson && user.backupCodesJson !== '[]') {
-      try {
-        const codes = JSON.parse(user.backupCodesJson) as string[];
-        if (codes.length > 0) {
-          console.log(`[Auth] Migrating ${codes.length} backup codes for user ${user.id}...`);
-          const queries = codes.map(code => {
-            const id = crypto.randomUUID();
-            return (async () => {
-              const codeHash = await hashPassword(code.toUpperCase());
-              return db.insert(backupCodes).values({
-                id,
-                userId: user.id,
-                codeHash
-              });
-            })();
-          });
-          
-          await Promise.all(queries);
-          await db.update(users).set({ backupCodesJson: '[]' }).where(eq(users.id, user.id));
-          console.log(`[Auth] Backup codes migrated successfully for ${user.id}`);
-        }
-      } catch (e: any) {
-        console.error(`[Auth] Failed to migrate backup codes for ${user.id}:`, e.message);
-      }
-    }
-
     return user
   }
 
-  async verify2FA(user: any, totpCode?: string) {
-    if (user.totpEnabled) {
+  async verify2FA(user: any, totpCode?: string, metadata?: any) {
+    const db = getDb(this.env)
+    
+    // Check if user has any TOTP credentials or passkeys (2FA enabled check)
+    const userTotpsCount = await db.select({ count: sql`count(*)` }).from(totpCredentials).where(eq(totpCredentials.userId, user.id)).then(res => Number(res[0].count))
+    
+    if (userTotpsCount > 0) {
       if (!totpCode) return { requires2FA: true }
       const db = getDb(this.env)
       
@@ -141,7 +119,12 @@ export class AuthService {
           isValid = true
           
           await db.update(totpCredentials).set({
-            lastUsedAt: new Date().toISOString()
+            lastUsedAt: new Date().toISOString(),
+            lastUsedIp: metadata?.ip,
+            lastUsedIpV4: metadata?.ipV4,
+            lastUsedIpV6: metadata?.ipV6,
+            lastUsedLocation: metadata?.location,
+            lastUsedUa: metadata?.userAgent
           }).where(eq(totpCredentials.id, t.id))
           
           break
@@ -347,7 +330,7 @@ export class AuthService {
     return secret
   }
 
-  async verifyAndEnableTOTP(userId: string, code: string, secret: string, name: string = 'Authenticator App') {
+  async verifyAndEnableTOTP(userId: string, code: string, secret: string, name: string = 'Authenticator App', metadata?: any) {
     const db = getDb(this.env)
     const isValid = await verifyTOTP(secret, code)
     if (isValid) {
@@ -358,15 +341,20 @@ export class AuthService {
         userId,
         secret: '[VAULTED]',
         name,
-        verified: 1
+        verified: 1,
+        lastUsedAt: new Date().toISOString(),
+        lastUsedIp: metadata?.ip,
+        lastUsedIpV4: metadata?.ipV4,
+        lastUsedIpV6: metadata?.ipV6,
+        lastUsedLocation: metadata?.location,
+        lastUsedUa: metadata?.userAgent
       })
       
       await vaultService.setSecret(userId, 'TOTP_SECRET', totpId, secret)
       
       // Generate initial backup codes
       await this.generateBackupCodes(userId)
-
-      await db.update(users).set({ totpEnabled: 1 }).where(eq(users.id, userId))
+      
       return true
     }
     return false

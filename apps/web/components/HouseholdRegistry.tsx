@@ -109,7 +109,8 @@ const HouseholdRegistry: React.FC = () => {
   };
 
   const removeMember = async (memberId: string) => {
-    if (!window.confirm('Are you sure you want to remove this member?')) return;
+    const confirmed = await showConfirm('Are you sure you want to remove this member?');
+    if (!confirmed) return;
     setRemovingMember(memberId);
     const token = localStorage.getItem('ledger_token');
     try {

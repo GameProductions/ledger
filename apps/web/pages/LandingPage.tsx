@@ -62,6 +62,8 @@ const LandingPage: React.FC = () => {
     { name: 'Docker Ready', icon: <Server className="text-blue-400" />, desc: 'Official containerized builds' },
     { name: 'Audit Timelines', icon: <Layers className="text-slate-400" />, desc: 'Historical integrity tracking' },
     { name: 'Cloud Sync', icon: <HardDrive className="text-cyan-400" />, desc: 'Google Drive, Dropbox, OneDrive' },
+    { name: '1Password Vault', icon: <Shield className="text-blue-400" />, desc: 'Biometric secret management' },
+    { name: 'Cloudflare Edge', icon: <Cloud className="text-orange-400" />, desc: 'Global high-performance delivery' },
     { name: 'Discord Identity', icon: <FileCode className="text-indigo-400" />, desc: 'Integrated identity service' }
   ]
 
@@ -69,6 +71,8 @@ const LandingPage: React.FC = () => {
     { name: 'Google Drive', logo: 'https://cdn.simpleicons.org/googledrive/white' },
     { name: 'Dropbox', logo: 'https://cdn.simpleicons.org/dropbox/white' },
     { name: 'OneDrive', logo: 'https://flaticons.net/icon.php?slug_category=brand-identity&slug_icon=onedrive&color=ffffff' },
+    { name: '1Password', logo: 'https://cdn.simpleicons.org/1password/white' },
+    { name: 'Cloudflare', logo: 'https://cdn.simpleicons.org/cloudflare/white' },
     { name: 'Docker', logo: 'https://cdn.simpleicons.org/docker/white' }
   ]
 

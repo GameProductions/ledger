@@ -23,7 +23,7 @@ const AdminProcessors: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/networks`, {
+      const res = await fetch(`${apiUrl}/api/admin/billing/networks`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -47,8 +47,8 @@ const AdminProcessors: React.FC = () => {
     const apiUrl = getApiUrl();
     
     const url = editingId 
-      ? `${apiUrl}/api/admin/networks/${editingId}`
-      : `${apiUrl}/api/admin/networks`;
+      ? `${apiUrl}/api/admin/billing/networks/${editingId}`
+      : `${apiUrl}/api/admin/billing/networks`;
     
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -89,7 +89,7 @@ const AdminProcessors: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/admin/networks/${id}`, {
+    const res = await fetch(`${apiUrl}/api/admin/billing/networks/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

@@ -35,6 +35,9 @@ export type Bindings = {
   MAINTENANCE_MODE?: string
   FOUNDATION_URL?: string
   SHARED_SERVICE_SECRET: string
+  RECONCILIATION_AGENT: any
+  MATCH_AGENT: any
+  RULE_AGENT: any
 }
 
 export type Variables = {

@@ -17,7 +17,13 @@ import { logAudit } from '../utils'
 import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
-import { users, userOnboarding, sessions, households, accounts, userHouseholds, householdInvites, userPreferences, notificationSettings, userPaymentMethods, serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, passkeys, subscriptions, totpCredentials, systemAnnouncements, auditLogs } from '#/schema'
+import { 
+  users, userOnboarding, sessions, households, accounts, userHouseholds, 
+  householdInvites, userPreferences, notificationSettings, userPaymentMethods, 
+  serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, 
+  passkeys, subscriptions, totpCredentials, systemAnnouncements, 
+  activityLogs as auditLogs 
+} from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
 import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
@@ -47,7 +53,6 @@ user.get('/profile', async (c) => {
       globalRole: users.globalRole,
       status: users.status,
       avatarUrl: users.avatarUrl,
-      totpEnabled: users.totpEnabled,
       forcePasswordChange: users.forcePasswordChange,
       locale: users.locale,
       themePreference: users.themePreference,
@@ -747,12 +752,6 @@ user.delete('/totpCredentials/:id', stepUpMiddleware, async (c) => {
   await db.delete(totpCredentials).where(and(eq(totpCredentials.id, id), eq(totpCredentials.userId, userId)))
   await logAudit(c, 'totpCredentials', id, 'DELETE')
   
-  // Re-check count to turn off totpEnabled if 0 remaining
-  const remaining = await db.select({ count: sql`count(*)` }).from(totpCredentials).where(eq(totpCredentials.userId, userId)).then(res => res[0].count as number)
-  if (remaining === 0) {
-    await db.update(users).set({ totpEnabled: 0 }).where(eq(users.id, userId))
-  }
-  
   return c.json({ success: true })
 })
 
@@ -774,15 +773,15 @@ user.get('/audit', async (c) => {
     SELECT 
       a.id, 
       a.action, 
-      a.tableName as targetType, 
-      a.recordId as targetId, 
-      a.newValuesJson as detailsJson, 
+      a.targetType, 
+      a.targetId, 
+      a.detailsJson, 
       a.createdAt as createdAt,
       u_actor.displayName as actorName,
       u_target.displayName as targetName
-    FROM auditLogs a
+    FROM activityLogs a
     LEFT JOIN users u_actor ON a.actorId = u_actor.id
-    LEFT JOIN users u_target ON a.recordId = u_target.id AND a.tableName = 'users'
+    LEFT JOIN users u_target ON a.targetId = u_target.id AND a.targetType = 'users'
     WHERE a.householdId = ?
     ORDER BY a.createdAt DESC 
     LIMIT 100

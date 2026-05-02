@@ -1,9 +1,14 @@
-# LEDGER v3.19.2 (Secure Edition)
-> **Secure Financial Platform** | Total Modernization
+# LEDGER v3.32.1 (Agentic Edition)
+> **Secure Financial Platform** | Agentic Reconciliation & Modular Architecture
 
-LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.19.2) introduces **Transaction Data Ownership** and **Support** tools.
+LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.32.1) introduces **Agentic Reconciliation** powered by the Cloudflare Agents SDK and a **Modular Database Architecture**.
 
 ## 🚀 Key Features
+
+### 🤖 Agentic Intelligence
+- **Reconciliation Agent**: Stateful background matching of transactions using Cloudflare Agents SDK and internal SQLite.
+- **Modular Schema**: High-performance domain-specific database architecture (Auth, Financials, Planning, Loans, System).
+- **Rule-Based Pairing**: Automated transaction categorization and linking based on historical patterns and shared visibility rules.
 
 ### 🛡️ Security & Activity Tracking
 - **Super Admin Access (Impersonation)**: Securely log in as users for support with a confirmation workflow and privacy masking.
@@ -66,7 +71,8 @@ LEDGER is the direct successor to the **CASH** platform, evolving through severa
 - **v3.11.x (Hardening Era)**: Transitioned authentication to Node.js `Buffer` logic for cross-environment Bit-Perfect Cryptographic Stability.
 - **v3.13.x (Mobility Era)**: Full Mobile-First refactor and PWA Asset Hardening.
 - **v3.15.x (Secure Era)**: Rebranded from "Territory" to **"Household Management"** and adopted Plain English terminology.
-- **v3.19.2 (Current)**: Implementation of the **Payment Intelligence** and Super Admin Impersonation.
+- **v3.19.2 (Secure Era)**: Implementation of the **Payment Intelligence** and Super Admin Impersonation.
+- **v3.32.1 (Agentic Era)**: Transitioned to **Modular Architecture** and introduced the **Cloudflare Agents SDK** for stateful reconciliation.
 
 ---
 © 2026 GameProductions. All Rights Reserved.

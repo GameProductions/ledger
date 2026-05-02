@@ -9,8 +9,8 @@ import { getApiUrl } from '../../utils/api';
 export const AdminBroadcast: React.FC = () => {
   const { token } = useAuth();
   const { showToast, showConfirm } = useToast();
-  const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/admin/announcements');
-  const { data: invitations = [], mutate: mutateInvitations } = useApi('/api/admin/invitations');
+  const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/admin/communications/announcements');
+  const { data: invitations = [], mutate: mutateInvitations } = useApi('/api/admin/communications/invitations');
   
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', contentMd: '', priority: 'info' });
   const [inviteRole, setInviteRole] = useState<'super_admin' | 'operator'>('super_admin');
@@ -18,7 +18,7 @@ export const AdminBroadcast: React.FC = () => {
   const createAnnouncement = async () => {
     if (!newAnnouncement.title || !newAnnouncement.contentMd) return;
     try {
-      const res = await fetch(`${getApiUrl()}/api/admin/announcements`, {
+      const res = await fetch(`${getApiUrl()}/api/admin/communications/announcements`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -40,7 +40,7 @@ export const AdminBroadcast: React.FC = () => {
   const deleteAnnouncement = async (id: string) => {
     const confirmed = await showConfirm('Are you sure you want to permanently delete this announcement?', 'Delete Announcement');
     if (!confirmed) return;
-    const res = await fetch(`${getApiUrl()}/api/admin/announcements/${id}`, {
+    const res = await fetch(`${getApiUrl()}/api/admin/communications/announcements/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -52,7 +52,7 @@ export const AdminBroadcast: React.FC = () => {
 
   const createInvite = async () => {
     try {
-      const res = await fetch(`${getApiUrl()}/api/admin/invitations`, {
+      const res = await fetch(`${getApiUrl()}/api/admin/communications/invitations`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -72,7 +72,7 @@ export const AdminBroadcast: React.FC = () => {
   };
 
   const deleteInvite = async (tokenStr: string) => {
-    const res = await fetch(`${getApiUrl()}/api/admin/invitations/${tokenStr}`, {
+    const res = await fetch(`${getApiUrl()}/api/admin/communications/invitations/${tokenStr}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

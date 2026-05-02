@@ -28,7 +28,7 @@ const AdminDashboard: React.FC = () => {
         const [statsRes, logsRes, configRes] = await Promise.all([
           secureFetch(`/api/admin/stats`),
           secureFetch(`/api/admin/audit/system`),
-          secureFetch(`/api/admin/config`)
+          secureFetch(`/api/admin/system/config`)
         ]);
         
         const statsData = await statsRes.json();
@@ -54,7 +54,7 @@ const AdminDashboard: React.FC = () => {
   const handleToggleMaintenance = async () => {
     setLoadingMaintenance(true);
     try {
-      const res = await secureFetch(`/api/admin/maintenance`, {
+      const res = await secureFetch(`/api/admin/system/maintenance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !maintenanceEnabled })
@@ -75,12 +75,12 @@ const AdminDashboard: React.FC = () => {
     if (!announcement.title || !announcement.content) return;
     setSending(true);
     try {
-      const res = await secureFetch(`/api/admin/announcements`, {
+      const res = await secureFetch(`/api/admin/communications/announcements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           title: announcement.title, 
-          content_md: announcement.content, 
+          contentMd: announcement.content, 
           priority: announcement.priority 
         })
       });
@@ -100,7 +100,7 @@ const AdminDashboard: React.FC = () => {
   const handleMigrateSecrets = async () => {
     setMigratingSecrets(true);
     try {
-      const res = await secureFetch(`/api/admin/maintenance/migrate-secrets`, {
+      const res = await secureFetch(`/api/admin/system/maintenance/migrate-secrets`, {
         method: 'POST'
       });
       const data = await res.json();

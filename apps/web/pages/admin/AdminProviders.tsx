@@ -30,8 +30,8 @@ const AdminProviders: React.FC = () => {
       const apiUrl = getApiUrl();
       
       const [provRes, procRes] = await Promise.all([
-        fetch(`${apiUrl}/api/admin/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${apiUrl}/api/admin/networks`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${apiUrl}/api/admin/billing/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/admin/billing/networks`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       
       const provData = await provRes.json();
@@ -56,8 +56,8 @@ const AdminProviders: React.FC = () => {
     const apiUrl = getApiUrl();
     
     const url = editingId 
-      ? `${apiUrl}/api/admin/providers/${editingId}`
-      : `${apiUrl}/api/admin/providers`;
+      ? `${apiUrl}/api/admin/billing/providers/${editingId}`
+      : `${apiUrl}/api/admin/billing/providers`;
     
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -101,7 +101,7 @@ const AdminProviders: React.FC = () => {
     
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/admin/providers/${id}`, {
+    const res = await fetch(`${apiUrl}/api/admin/billing/providers/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

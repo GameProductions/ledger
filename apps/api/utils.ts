@@ -36,21 +36,29 @@ export const apiError = (
 
   // FORENSIC LOGGING: Always log the full error details to the console/logs
   if (status >= 500) {
-    console.error(`[CRITICAL_ERROR] [${traceId}] ${code}: ${message}`, { error, details })
+    console.error(`[CRITICAL_ERROR] [${traceId}] ${code}: ${message}`, { 
+      error, 
+      details,
+      path: c.req.path,
+      method: c.req.method,
+      ip: c.req.header('CF-Connecting-IP')
+    })
   } else {
     console.warn(`[API_ERROR] [${traceId}] ${code}: ${message}`, { details })
   }
 
   // PRODUCTION MASKING: Don't leak raw internal error objects to clients
-  const sanitizedDetails = isDev ? details : (status >= 500 ? { traceId: traceId, note: 'Detailed logs available in management portal.' } : details)
+  // If it's a 500+, we show a generic message unless in DEV.
+  const finalMessage = isDev ? message : (status >= 500 ? 'An internal system error occurred. Our team has been notified.' : message)
+  const sanitizedDetails = isDev ? details : (status >= 500 ? { traceId } : details)
 
   return c.json({
     success: false,
-    error,
+    error: isDev ? error : (status >= 500 ? 'InternalServerError' : error),
     code,
-    message: isDev ? message : (status >= 500 ? 'An internal system error occurred.' : message),
+    message: finalMessage,
     details: sanitizedDetails,
-    traceId: traceId
+    traceId
   }, status as any)
 }
 

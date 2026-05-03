@@ -46,7 +46,7 @@ export const logAudit = (
         householdId,
         actorId,
         actorType: isAdmin ? 'ADMIN' : (actorId === 'system' ? 'SYSTEM' : 'USER'),
-        action,
+        action: action.toUpperCase(),
         severity: action.includes('CRITICAL') || action.includes('ADMIN') || action.includes('DELETE') ? 'CRITICAL' : 'INFO',
         targetType,
         targetId: targetId ? String(targetId) : null,
@@ -58,7 +58,9 @@ export const logAudit = (
         cfRay
       });
 
-      console.log(`[TITAN_GUARD] Activity logged: ${action} on ${targetType}:${targetId} by ${actorId}`);
+      // HUMAN-FIRST TERMINOLOGY: Use plain English for logs
+      const plainAction = action.toLowerCase().replace(/_/g, ' ');
+      console.log(`[SENTINEL] ${isAdmin ? 'Administrator' : 'User'} ${actorId} performed ${plainAction} on ${targetType} ${targetId || ''}`);
     } catch (error) {
       console.error('[TITAN_GUARD_ERROR] Failed to record activity log:', error);
     }

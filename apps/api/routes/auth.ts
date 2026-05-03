@@ -38,9 +38,9 @@ auth.get('/verify', (c) => {
 async function createSessionTracker(c: any, userId: string, passkeyVerified: boolean = false, isPersistent: boolean = false) {
   const db = getDb(c.env)
   const sessionId = `sess-${crypto.randomUUID()}`
-  const userAgent = c.req.header('User-Agent') || 'Unknown'
-  const cfIp = c.req.header('CF-Connecting-IP') || 'Unknown'
+  const meta = getRequestMetadata(c)
   
+  const userAgent = meta.userAgent
   const browserM = userAgent.match(/(firefox|msie|chrome|safari|trident|edge)/i)
   const osM = userAgent.match(/(mac os x|windows nt|linux|android|iphone|ipad)/i)
   
@@ -49,17 +49,36 @@ async function createSessionTracker(c: any, userId: string, passkeyVerified: boo
   
   const expirationHours = isPersistent ? 30 * 24 : 24
 
+  // FORENSIC AUDIT: Extract geolocation from headers if available (Cloudflare specific)
+  const city = c.req.header('cf-ipcity')
+  const country = c.req.header('cf-ipcountry')
+  const region = c.req.header('cf-region')
+  const continent = c.req.header('cf-continent')
+  const latitude = c.req.header('cf-iplatitude')
+  const longitude = c.req.header('cf-iplongitude')
+  const cfRay = c.req.header('cf-ray')
+
   await db.insert(sessions).values({
     id: sessionId,
     userId,
     deviceName: `${os} Device`,
     os,
     browser,
-    ipAddress: cfIp,
+    ipAddress: meta.ip,
+    ipV4: meta.ipV4,
+    ipV6: meta.ipV6,
     isPersistent: isPersistent ? 1 : 0,
     passkeyVerifiedAt: passkeyVerified ? new Date().toISOString() : null,
     lastActiveAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + expirationHours * 60 * 60 * 1000).toISOString()
+    expiresAt: new Date(Date.now() + expirationHours * 60 * 60 * 1000).toISOString(),
+    city,
+    country,
+    region,
+    continent,
+    latitude,
+    longitude,
+    cfRay,
+    cfIp: meta.ip
   })
   
   return sessionId
@@ -113,7 +132,15 @@ auth.post('/login', zValidator('json', z.object({
       }
     })
   } catch (e: any) {
-    throw new HTTPException(e.status || 401, { message: e.message || 'Unauthorized' })
+    if (e instanceof HTTPException) throw e
+    
+    // Check if it's a known auth failure from AuthService
+    if (e.message === 'Invalid credentials' || e.message?.includes('locked')) {
+      throw new HTTPException(e.status || 401, { message: e.message })
+    }
+
+    console.error('[CRITICAL_LOGIN_ERROR]', e)
+    throw new HTTPException(500, { message: 'A system error occurred during authentication. Please try again later.' })
   }
 })
 

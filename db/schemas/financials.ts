@@ -239,7 +239,7 @@ export const installmentPlans = sqliteTable('installmentPlans', {
   totalInstallments: integer('totalInstallments').notNull(),
   remainingInstallments: integer('remainingInstallments').notNull(),
   frequency: text('frequency').notNull(), 
-  nextPayDate: text('nextPayDate').notNull(),
+  nextPaymentDate: text('nextPaymentDate').notNull(),
   accountId: text('accountId').references(() => accounts.id, { onDelete: 'set null' }),
   paymentMode: text('paymentMode').default('manual'),
   status: text('status').default('active'),

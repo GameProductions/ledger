@@ -115,6 +115,7 @@ serve({
       JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-hush',
       ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '128a5f5152feecd29746e8c0e768393e',
       ENVIRONMENT: 'production',
+      WEB_URL: process.env.WEB_URL || 'http://localhost:8080',
       // Optional/Dummy for self-hosting if not provided
       RESEND_API_KEY: process.env.RESEND_API_KEY || '',
       DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || '',

@@ -39,7 +39,7 @@ ENV DATABASE_PATH=/data/ledger.db
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8787/ledger/ping || exit 1
 
-CMD ["npx", "tsx", "src/serve.ts"]
+CMD ["npx", "tsx", "serve.ts"]
 
 # --- PRODUCTION WEB ---
 FROM nginx:alpine AS web

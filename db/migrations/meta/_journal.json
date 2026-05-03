@@ -15,6 +15,34 @@
       "when": 1777546156469,
       "tag": "0001_fast_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777732470904,
+      "tag": "0002_v6_3_notification_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1777732601728,
+      "tag": "0003_v6_3_notification_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1777732636662,
+      "tag": "0004_v6_3_notification_engine_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1777732673299,
+      "tag": "0005_v6_3_notification_engine_final",
+      "breakpoints": true
     }
   ]
 }

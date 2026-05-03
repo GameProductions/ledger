@@ -1,9 +1,15 @@
-# LEDGER v3.32.1 (Agentic Edition)
-> **Secure Financial Platform** | Agentic Reconciliation & Modular Architecture
+# LEDGER v3.33.0 (Forensic Edition)
+> **Secure Financial Platform** | Forensic Integrity & Agentic Reconciliation
 
-LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.32.1) introduces **Agentic Reconciliation** powered by the Cloudflare Agents SDK and a **Modular Database Architecture**.
+LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.33.0) introduces **Titan Guard v6.1** compliance, **Forensic Telemetry**, and **Zero-Native UI** interaction patterns.
 
 ## 🚀 Key Features
+
+### 🛡️ Forensic Integrity (Titan Guard v6.1)
+- **Dual-Stack Network Forensics**: Full-stack transparency with labeled `IPv4` and `IPv6` chronology for every session and security event.
+- **Human-Readable Audit Logs**: Plain-English descriptions for all administrative and system actions, eradicating raw JSON jargon from the UI.
+- **Zero-Native Dialog System**: Complete eradication of browser-native alerts, confirms, and prompts in favor of a secure, promise-based toast utility.
+- **Session Persistence Control**: Granular "Stay Signed In" toggles for users and administrative overrides.
 
 ### 🤖 Agentic Intelligence
 - **Reconciliation Agent**: Stateful background matching of transactions using Cloudflare Agents SDK and internal SQLite.

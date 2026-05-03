@@ -101,6 +101,7 @@ This document serves as the absolute source of truth for all projects within the
     - Bottom Row (Standard): `{new Date().getFullYear()} GameProductions™. All rights reserved.`
     - Bottom Row (Gloson Production): `{new Date().getFullYear()} GameProductions™ | Gloson Production™. All rights reserved.`
 - **Notifications**: Dismissable toasts only. Do NOT use browser alerts.
+- **In-Line Confirmation Law**: Any field that supports in-line operations or actions requiring a confirmation step MUST display its confirmation toast in-line (directly within the component's context) to maintain focus and prevent UI jarring.
 - **What's New Modals**: All update/release notes modals MUST use a vertical, scrollable list (`.scrollable-list`). They must track the last version viewed by the user so that upon their next visit, they see an aggregated view of all versions and changes released since their last recorded view.
 
 ## 6. Local Development & Deployment

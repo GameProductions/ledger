@@ -519,13 +519,13 @@ auth.get('/callback/dropbox', async (c) => {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'dropbox', socialProfile, socialTokens)
     await logAudit(c, 'userIdentities', profile.accountId, 'LINK', null, { provider: 'dropbox', userId: sessionUserId })
-    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+    return c.redirect(`${c.env.WEB_URL || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')}/#/settings`)
   } else {
     // LOGIN MODE
     const userId = await authService.findOrCreateSocialUser('dropbox', socialProfile, socialTokens)
     const sessionId = await createSessionTracker(c, userId)
     const token = await authService.generateToken(userId, sessionId)
-    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
+    return c.redirect(`${c.env.WEB_URL || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')}/#/login?token=${token}`)
   }
 })
 
@@ -693,7 +693,7 @@ async function handleRegisterOptions(c: any) {
   
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
-    rpID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
+    rpID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
     userID: new TextEncoder().encode(userId) as any,
     userName: user.username || user.email || 'unknown',
     attestationType: 'none',
@@ -731,8 +731,8 @@ async function handleRegisterVerify(c: any) {
   const verification = await verifyRegistrationResponse({
     response: body,
     expectedChallenge,
-    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
+    expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
+    expectedRPID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
   })
 
   if (verification.verified && verification.registrationInfo) {

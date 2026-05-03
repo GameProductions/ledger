@@ -70,13 +70,15 @@ jobs:
           ONEDRIVE_CLIENT_ID: "op://6wgu5yz5yphvacdimgc64ej65i/OneDrive Integration/CLIENT_ID"
           ONEDRIVE_CLIENT_SECRET: "op://6wgu5yz5yphvacdimgc64ej65i/OneDrive Integration/CLIENT_SECRET"
           RESEND_API_KEY: "op://6wgu5yz5yphvacdimgc64ej65i/Resend Integration/API_KEY"
-          GITHUB_TOKEN: "op://6wgu5yz5yphvacdimgc64ej65i/GitHub Integration/credential"
 
       - name: 🏗️ Build Application UI
         run: npm run build
 
       - name: 🚀 Deploy to Cloudflare
         uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
         with:
           apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}

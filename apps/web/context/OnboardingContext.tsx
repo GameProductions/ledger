@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import { getApiUrl } from '../utils/api'
+import { CURRENT_VERSION } from '@shared/constants'
 
 interface OnboardingContextType {
   completedSteps: string[]
@@ -23,7 +24,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [activeStep, setActiveStep] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [updates, setUpdates] = useState<any[]>([])
-  const [currentVersion, setCurrentVersion] = useState('latest')
+  const [currentVersion, setCurrentVersion] = useState(CURRENT_VERSION)
 
   const apiUrl = getApiUrl()
 
@@ -47,9 +48,11 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setCompletedSteps(data.completedSteps || [])
           setIsCompleted(data.isCompleted || false)
           setUpdates(data.updates || [])
-          setCurrentVersion(data.currentVersion || 'latest')
+          setCurrentVersion(data.currentVersion || CURRENT_VERSION)
           
-          if ((data.updates?.length || 0) > 0 || (!data.isCompleted && Array.isArray(data.completedSteps) && data.completedSteps.length === 0)) {
+          if ((data.updates?.length || 0) > 0) {
+            setActiveStep('welcome')
+          } else if (!data.isCompleted && Array.isArray(data.completedSteps) && data.completedSteps.length === 0) {
             setActiveStep('welcome')
           }
         }

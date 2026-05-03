@@ -14,7 +14,6 @@ import { useTabState } from '../hooks/useTabState'
 import { SecurityDashboard } from '../components/SecurityDashboard'
 import { ArchivalVault } from '../components/ArchivalVault'
 import { PasskeyModule } from '../components/PasskeyModule'
-import { TotpModule } from '../components/TotpModule'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { formatHumanError } from '../utils/error-handler'
 import { sanitizeImageUrl } from '../utils/security'
@@ -435,7 +434,6 @@ const SettingsPage: React.FC = () => {
               {/* Grid for other security modules */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <PasskeyModule />
-                <TotpModule />
               </div>
             <SecurityDashboard />
             </div>

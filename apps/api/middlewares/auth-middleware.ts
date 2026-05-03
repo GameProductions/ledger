@@ -96,9 +96,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     const isUserLevelRoute = path.startsWith('/api/user') || 
                             path.startsWith('/api/auth/passkeys/') || 
                             path.startsWith('/api/auth/password/') ||
-                            path === '/api/auth/verify' ||
-                            path === '/api/auth/totp/setup' ||
-                            path === '/api/auth/totp/verify'
+                            path === '/api/auth/verify'
 
     if (isUserLevelRoute) {
       c.set('userId', userId)

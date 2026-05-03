@@ -1,4 +1,3 @@
-import { getLegacyExternalChartUrl } from '../services/chart-service'
 
 /**
  * LEDGER Financial Advisor

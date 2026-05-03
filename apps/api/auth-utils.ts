@@ -22,48 +22,6 @@ export function uint8ArrayToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-// --- BASE32 UTILS ---
-const B32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
-
-export function base32Encode(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer)
-  let bits = 0
-  let value = 0
-  let output = ''
-  for (let i = 0; i < bytes.length; i++) {
-    value = (value << 8) | bytes[i]
-    bits += 8
-    while (bits >= 5) {
-      output += B32_ALPHABET[(value >>> (bits - 5)) & 31]
-      bits -= 5
-    }
-  }
-  if (bits > 0) {
-    output += B32_ALPHABET[(value << (5 - bits)) & 31]
-  }
-  return output
-}
-
-export function base32Decode(str: string): Uint8Array {
-  str = str.toUpperCase().replace(/=+$/, '')
-  let bits = 0
-  let value = 0
-  const output = new Uint8Array((str.length * 5) / 8 | 0)
-  let index = 0
-  for (let i = 0; i < str.length; i++) {
-    const val = B32_ALPHABET.indexOf(str[i])
-    if (val === -1) throw new Error('Invalid base32 character')
-    value = (value << 5) | val
-    bits += 5
-    if (bits >= 8) {
-      output[index++] = (value >>> (bits - 8)) & 255
-      bits -= 8
-    }
-  }
-  return output
-}
-
-
 // --- TIMING SAFE EQUAL POLYFILL (Fleet Hardening) ---
 export function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -74,47 +32,6 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-// --- TOTP UTILS ---
-export async function generateTOTPSecret(): Promise<string> {
-  const bytes = crypto.getRandomValues(new Uint8Array(20))
-  return base32Encode(bytes.buffer)
-}
-
-export async function generateTOTPToken(secret: string, counter: number): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    base32Decode(secret) as any,
-    { name: 'HMAC', hash: 'SHA-1' },
-    false,
-    ['sign']
-  )
-
-  const counterBuffer = new ArrayBuffer(8)
-  const view = new DataView(counterBuffer)
-  view.setUint32(4, counter) // Standard counter is 8-byte, we use bottom 4 bytes
-  
-  const signature = await crypto.subtle.sign('HMAC', key, counterBuffer)
-  const hmac = new Uint8Array(signature)
-  const offset = hmac[hmac.length - 1] & 0xf
-  const binary =
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff)
-
-  const otp = binary % 1000000
-  return otp.toString().padStart(6, '0')
-}
-
-export async function verifyTOTP(secret: string, token: string, window = 1): Promise<boolean> {
-  const counter = Math.floor(Date.now() / 30000)
-  for (let i = -window; i <= window; i++) {
-    if (timingSafeEqual(await generateTOTPToken(secret, counter + i), token)) {
-      return true
-    }
-  }
-  return false
-}
 
 import { 
   verifyRegistrationResponse, 

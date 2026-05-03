@@ -28,14 +28,13 @@ export const getChartConfig = (type: 'pie' | 'bar', labels: string[], data: numb
 }
 
 /**
- * @deprecated Use getChartConfig and render client-side.
- * This sends sensitive financial data to a 3rd party (quickchart.io).
- * Only use for external integrations (Discord) where client-side rendering is impossible.
+ * @deprecated EXTERNAL DATA LEAK PROTECTION (Alert #19)
+ * This function previously sent sensitive financial data to quickchart.io.
+ * It has been decommissioned to ensure zero information exposure.
  */
 export const getLegacyExternalChartUrl = (type: 'pie' | 'bar', labels: string[], data: number[], title: string) => {
-  const config = getChartConfig(type, labels, data, title)
-  // Ensure we use the old QuickChart format for the title/legend if needed, 
-  // or just pass the config. QuickChart accepts standard Chart.js v2/v3 configs.
-  return `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(config))}&bg=%231e1e1e`
+  console.warn(`[SECURITY_ENFORCEMENT] Blocked external chart request for: ${title}`);
+  // Return a static placeholder that explains external charts are disabled for security
+  return `https://placehold.co/600x400/1e1e1e/ffffff?text=Security+Notice:+External+Charts+Decommissioned`;
 }
 

@@ -19,7 +19,6 @@ export const users = sqliteTable('users', {
   failedLoginAttempts: integer('failedLoginAttempts').default(0),
   lockoutUntil: text('lockoutUntil'),
   passwordChangedAt: text('passwordChangedAt'),
-  preferredMfaType: text('preferredMfaType'), // PASSKEY, TOTP, NONE
   createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
   timezone: text('timezone').default('UTC'),
   locale: text('locale').default('en-US'),
@@ -80,23 +79,6 @@ export const sessions = sqliteTable('sessions', {
   cfIp: text('cfIp'),
 }, (table) => ({
   userIdx: index('idx_sessions_user').on(table.userId),
-}));
-
-export const totpCredentials = sqliteTable('totpCredentials', {
-  id: text('id').primaryKey(),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  secret: text('secret').notNull(),
-  name: text('name').default('Authenticator App'),
-  verified: integer('verified').default(0),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
-  lastUsedAt: text('lastUsedAt'),
-  lastUsedIp: text('lastUsedIp'),
-  lastUsedIpV4: text('lastUsedIpV4'),
-  lastUsedIpV6: text('lastUsedIpV6'),
-  lastUsedLocation: text('lastUsedLocation'),
-  lastUsedUa: text('lastUsedUa'),
-}, (table) => ({
-  userIdx: index('idx_totp_credentials_user').on(table.userId),
 }));
 
 export const passkeys = sqliteTable('passkeys', {

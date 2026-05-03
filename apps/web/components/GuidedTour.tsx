@@ -6,57 +6,33 @@ import { useOnboarding } from '../context/OnboardingContext'
 const steps = [
   {
     id: 'welcome',
-    title: 'Welcome to LEDGER',
-    content: 'Live Evaluation of Daily Gains & Expense Records. Let’s get you set up for financial success.',
+    title: 'Welcome to LEDGER v6.1',
+    content: 'The Titan Guard Security update is here. We’ve overhauled our core architecture to ensure your financial data is more secure than ever.',
     target: null
   },
   {
     id: 'security',
-    title: 'Harden Your Security',
-    content: 'Set up PBKDF2 password protection and 2FA to keep your financial life bulletproof.',
+    title: 'Titan Guard Security',
+    content: 'Legacy TOTP (Authenticator Apps) has been decommissioned. Enroll your biometric Passkeys (TouchID/FaceID) for a passwordless, highly secure experience. If biometrics are unavailable, use your 8-character recovery codes.',
     target: '#user-profile-button'
   },
   {
-    id: 'dashboard',
-    title: 'Consolidated Tabs',
-    content: 'Navigate between Overview, Activity, Planning, and Insights with our new consolidated tab system.',
-    target: '#dashboard-tabs'
-  },
-  {
     id: 'vault',
-    title: 'Set Up Vault',
-    content: 'Secure your PII with end-to-end encryption.',
+    title: 'Identity Vault',
+    content: 'Your PII and sensitive data are now stored in an encrypted hardware-backed vault. Initialize your vault to enable advanced security features.',
     target: '#vault-init-button'
   },
   {
+    id: 'dashboard',
+    title: 'Consolidated Command Center',
+    content: 'Manage your entire financial fleet from one place. Overview, Activity, and Planning have been unified for a seamless experience.',
+    target: '#dashboard-tabs'
+  },
+  {
     id: 'accounts',
-    title: 'Connect Accounts',
-    content: 'Add your first bank or wallet.',
+    title: 'Smart Synchronization',
+    content: 'Connect your banks or crypto wallets. Our new matching engine automatically categorizes transactions with 99% accuracy.',
     target: '#add-account-button'
-  },
-  {
-    id: 'budget',
-    title: 'Set Your Budgets',
-    content: 'Define monthly limits for categories like Dining, Groceries, and Entertainment.',
-    target: '#budget-section'
-  },
-  {
-    id: 'subscriptions',
-    title: 'Audit Subscriptions',
-    content: 'Add your recurring bills and subscriptions to see your future cash flow. We also alert you 3 days before trials end!',
-    target: '#subscription-section'
-  },
-  {
-    id: 'rollovers',
-    title: 'Budget Rollovers',
-    content: 'Enable rollovers on any category to carry over surplus funds to the next month automatically.',
-    target: '#budget-section'
-  },
-  {
-    id: 'receipts',
-    title: 'Receipt Management',
-    content: 'Attach digital receipts to any transaction by clicking the folder icon. Secure, R2-backed storage.',
-    target: '.transaction-item'
   }
 ]
 

@@ -21,7 +21,7 @@ import {
   users, userOnboarding, sessions, households, accounts, userHouseholds, 
   householdInvites, userPreferences, notificationSettings, userPaymentMethods, 
   serviceProviders, linkedProviders, userIdentities, userLinkedAccounts, 
-  passkeys, subscriptions, totpCredentials, systemAnnouncements, 
+  passkeys, subscriptions, systemAnnouncements, 
   activityLogs as auditLogs 
 } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
@@ -713,46 +713,6 @@ user.get('/passkeys', async (c) => {
     success: true,
     data: results
   })
-})
-
-user.get('/totps', async (c) => {
-  const userId = c.get('userId') as string
-  const db = getDb(c.env)
-  const results = await db.select({
-    id: totpCredentials.id,
-    name: totpCredentials.name,
-    createdAt: totpCredentials.createdAt
-  }).from(totpCredentials).where(eq(totpCredentials.userId, userId))
-  return c.json({
-    success: true,
-    data: results
-  })
-})
-
-user.patch('/totpCredentials/:id', zValidator('json', z.object({ name: z.string() }), (result, c) => {
-  if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] TOTP update validation failed:`, result.error.issues);
-  }
-}), async (c) => {
-  const userId = c.get('userId') as string
-  const { id } = c.req.param()
-  const { name } = c.req.valid('json')
-  const db = getDb(c.env)
-  
-  await db.update(totpCredentials).set({ name }).where(and(eq(totpCredentials.id, id), eq(totpCredentials.userId, userId)))
-  await logAudit(c, 'totpCredentials', id, 'UPDATE', null, { name })
-  return c.json({ success: true })
-})
-
-user.delete('/totpCredentials/:id', stepUpMiddleware, async (c) => {
-  const userId = c.get('userId') as string
-  const { id } = c.req.param()
-  const db = getDb(c.env)
-  
-  await db.delete(totpCredentials).where(and(eq(totpCredentials.id, id), eq(totpCredentials.userId, userId)))
-  await logAudit(c, 'totpCredentials', id, 'DELETE')
-  
-  return c.json({ success: true })
 })
 
 export default user

@@ -57,7 +57,7 @@ This document serves as the absolute source of truth for all projects within the
   - **Zero-Trust Step-Up Auth**: Administrative dashboards (`/godmode`, `/admin`, and high-risk fleet actions) MUST NEVER rely solely on standardized SSO bearer tokens. Such routes MUST implement a **Biometric WebAuthn Challenge (Passkeys)** step-up verification. The backend middleware must confirm a cryptographic hardware signature from the user's physical device before yielding access to critical infrastructure.
   - **Passkey Implementation Workflow **: 
     - If a project already features a dedicated "User Account" or "Profile Settings" UI where users modify their core info, the Passkey CRUD module (list, generate, rename, revoke) MUST be natively embedded directly into that existing page.
-    - If a project is inherently lightweight (e.g., uses Discord SSO + step-up Zero Trust) and lacks a dedicated account page, it MUST construct a standalone `/settings` (Portal Settings) route dedicated exclusively to managing biometric hardware binders, maintaining the premium layout architecture established in the Foundation portal.
+    - If a project is inherently lightweight (e.g., uses Discord SSO + step-up Zero Trust) and lacks a dedicated account page, it MUST construct a standalone `/settings` (Portal Settings) route dedicated exclusively to managing biometric hardware binders and recovery codes, maintaining the premium layout architecture established in the Foundation portal.
 - **Role Hierarchy**: 
   - **Super Admin**: Full global control via the **God Mode** portal (`GodMode`).
   - **Admin**: Project-specific administrative access.
@@ -252,16 +252,7 @@ To ensure fleet-wide interoperability and unified identity management, all proje
 - `refreshToken`: `text('refresh_token')`
 - `tokenExpiresAt`: `text('token_expires_at')`
 
-### 16.3 TOTP Credentials Table (`totp_credentials`)
-Replaces legacy `totp_secret` and `totp_enabled` columns in the `users` table.
-- `id`: `text('id').primaryKey()`
-- `userId`: `text('user_id').references(() => users.id)`
-- `name`: `text('name').default('Authenticator App')`
-- `secret`: `text('secret')`
-- `verified`: `integer('verified').default(0)`
-- `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`
-
-### 16.4 Backup Codes Table (`backup_codes`)
+### 16.3 Backup Codes Table (`backup_codes`)
 Replaces legacy `backupCodesJson` blob on the `users` table.
 - `id`: `text('id').primaryKey()`
 - `userId`: `text('user_id').references(() => users.id)`
@@ -269,36 +260,36 @@ Replaces legacy `backupCodesJson` blob on the `users` table.
 - `usedAt`: `text('used_at')`
 - `createdAt`: `text('created_at').default(sql`CURRENT_TIMESTAMP`)`
 
-### 16.5 Geographic Session Tracking
+### 16.4 Geographic Session Tracking
 To ensure absolute forensic traceability, the `sessions` table MUST include:
 - `city`, `country`, `region`, `continent`, `latitude`, `longitude`, `cfIp`.
 - These must be populated from the Cloudflare `cf` metadata object on every login/verification.
 
-### 16.6 MFA & Session Hardening (Forensic Standard)
+### 16.5 MFA & Session Hardening (Forensic Standard)
 To ensure absolute account integrity and forensic traceability, all identity systems MUST implement the following:
 - **Session Geolocation**: The `sessions` table MUST include granular geographic metadata: `city`, `country`, `region`, `continent`, `latitude`, `longitude`, and `cfIp`.
-- **Dual-Stack IP Tracking**: All security tables (`sessions`, `totp_credentials`, `passkeys`) MUST track both `ip_v4` and `ip_v6` addresses to ensure transparency across all network types.
-- **MFA Usage Tracking**: Both `totp_credentials` and `passkeys` tables MUST track usage forensics: `lastUsedAt`, `lastUsedIp`, `lastUsedIpV4`, `lastUsedIpV6`, `lastUsedLocation`, and `lastUsedUa`.
-- **Recovery Logic**: TOTP enrollment MUST generate 10 high-entropy recovery codes stored as individual hashes in the `backup_codes` table. These codes MUST be displayed to the user immediately upon successful enrollment with a secure download option.
+- **Dual-Stack IP Tracking**: All security tables (`sessions`, `passkeys`) MUST track both `ip_v4` and `ip_v6` addresses to ensure transparency across all network types.
+- **MFA Usage Tracking**: The `passkeys` table MUST track usage forensics: `lastUsedAt`, `lastUsedIp`, `lastUsedIpV4`, `lastUsedIpV6`, `lastUsedLocation`, and `lastUsedUa`.
+- **Recovery Logic**: Passkey-only systems MUST generate 10 high-entropy recovery codes stored as individual hashes in the `backup_codes` table. These codes MUST be displayed to the user immediately upon successful passkey enrollment with a secure download option.
 - **Biometric Metadata**: Passkey entries MUST include an `aaguid` field for hardware identification, mapped to a human-readable provider name in the UI.
 
-### 16.7 Session Persistence & Lifecycle
+### 16.6 Session Persistence & Lifecycle
 - **Persistence Toggle**: All login flows (Discord, Passkey, Password) MUST support an optional `persistent` flag (boolean).
 - **Session Duration**:
   - `Temporary` (Default): Expires in 24 hours.
   - `Persistent` (Stay Signed In): Expires in 30 days.
 - **Database Schema**: The `sessions` table MUST include an `isPersistent` column (`integer`).
 
-### 16.8 UI/UX Forensic Parity & Reactive State
+### 16.7 UI/UX Forensic Parity & Reactive State
 - **IP Labeling**: UIs MUST explicitly label and display BOTH IPv4 and IPv6 addresses when available. Use standard "IPv4:" and "IPv6:" prefixes. Never label an IPv6 address as IPv4.
-- **Metadata Visibility**: Security listings (Sessions, Passkeys, TOTP) MUST surface full forensic metadata including:
+- **Metadata Visibility**: Security listings (Sessions, Passkeys) MUST surface full forensic metadata including:
     - **Network**: IPv4 and IPv6 addresses with explicit labels.
     - **Geographic**: Location (City, Country).
     - **Device**: Browser/OS (parsed from UA).
     - **Hardware**: Full AAGUID metadata and Hardware Provider name (mapped from AAGUID) for passkeys.
 - **Session Lifecycle UI**: Active session lists MUST include a "Current Session" badge and a "Persistence" indicator (Persistent vs Temporary), accompanied by a legend explaining these security states.
 - **Reactive CRUD**: All security management actions (Rename, Revoke, Enroll) MUST utilize optimistic UI updates or immediate state refreshes to reflect changes without requiring a full page reload.
-- **TOTP Enrollment**: Enrollment logic MUST generate and display 10 high-entropy recovery codes immediately upon successful binding, with a mandatory "Saved" verification and download option.
+- **Passkey Enrollment**: Enrollment logic MUST generate and display 10 high-entropy recovery codes immediately upon successful binding, with a mandatory "Saved" verification and download option.
 
 ## 17. Centralized Secret Management (Titan Guard v6.1)
 - **Zero-GitHub-Secret Policy**: The use of GitHub Repository Secrets for application-level keys is strictly prohibited. The ONLY exception is `OP_SERVICE_ACCOUNT_TOKEN`, which is required for vault access.

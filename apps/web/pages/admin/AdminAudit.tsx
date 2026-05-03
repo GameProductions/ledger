@@ -50,7 +50,7 @@ const AdminAudit: React.FC = () => {
               case 'PASSKEY_REGISTRATION':
                 return `Registered new biometric passkey: ${details.credentialName || 'Unnamed'}`;
               case 'TOTP_ENABLED':
-                return `Activated multi-factor authentication (TOTP)`;
+                return `Activated multi-factor authentication (Legacy TOTP - Decommissioned)`;
               case 'HOUSEHOLD_INVITE':
                 return `Sent household invitation to ${details.email}`;
               case 'ADMIN_LOGIN':

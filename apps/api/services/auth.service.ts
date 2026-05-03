@@ -1,10 +1,10 @@
 import { sign } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings } from '../types'
-import { verifyPassword, verifyTOTP, hashPassword, generateTOTPSecret } from '../auth-utils'
+import { verifyPassword, hashPassword } from '../auth-utils'
 import { EmailService } from './email.service'
 import { getDb } from '#/index'
-import { users, userIdentities, passwordResets, passkeys, adminInvitations, totpCredentials, userHouseholds, backupCodes } from '#/schema'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations, userHouseholds, backupCodes } from '#/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
 import { VaultService } from '../utils/vault.service'
 
@@ -90,60 +90,13 @@ export class AuthService {
     return user
   }
 
-  async verify2FA(user: any, totpCode?: string, metadata?: any) {
-    const db = getDb(this.env)
-    
-    // Check if user has any TOTP credentials or passkeys (2FA enabled check)
-    const userTotpsCount = await db.select({ count: sql`count(*)` }).from(totpCredentials).where(eq(totpCredentials.userId, user.id)).then(res => Number(res[0].count))
-    
-    if (userTotpsCount > 0) {
-      if (!totpCode) return { requires2FA: true }
-      const db = getDb(this.env)
-      
-      // 1. Try TOTP Verification
-      const userTotps = await db.select({ 
-        id: totpCredentials.id, 
-        secret: totpCredentials.secret 
-      }).from(totpCredentials).where(eq(totpCredentials.userId, user.id))
-      
-      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
-      
-      let isValid = false
-      for (const t of userTotps) {
-        let secret = await vaultService.getSecret(user.id, 'TOTP_SECRET', t.id)
-        
-        // Hardening: Ensure we don't use the '[VAULTED]' placeholder as a real secret
-        const effectiveSecret = secret || (t.secret !== '[VAULTED]' ? t.secret : null)
-        
-        if (effectiveSecret && await verifyTOTP(effectiveSecret, totpCode)) {
-          isValid = true
-          
-          await db.update(totpCredentials).set({
-            lastUsedAt: new Date().toISOString(),
-            lastUsedIp: metadata?.ip,
-            lastUsedIpV4: metadata?.ipV4,
-            lastUsedIpV6: metadata?.ipV6,
-            lastUsedLocation: metadata?.location,
-            lastUsedUa: metadata?.userAgent
-          }).where(eq(totpCredentials.id, t.id))
-          
-          break
-        }
-      }
-
-      
-      // 2. Backup Code Fallback (Titan Guard v6.1 Gold Standard)
-      if (!isValid && totpCode.length === 8) {
-        console.log(`[Auth] Attempting backup code verification for user ${user.id}`)
-        isValid = await this.verifyBackupCode(user.id, totpCode)
-        if (isValid) {
-          console.log(`[Auth] Backup code verified for user ${user.id}`)
-        }
-      }
-      
+  async verify2FA(user: any, recoveryCode?: string, metadata?: any) {
+    // TOTP Decommissioned in v6.1 - Only backup codes and passkeys (handled via WebAuthn routes) remain
+    if (recoveryCode) {
+      console.log(`[Auth] Attempting backup code verification for user ${user.id}`)
+      const isValid = await this.verifyBackupCode(user.id, recoveryCode)
       if (!isValid) {
-        console.warn(`[Auth] 2FA failed for user ${user.id} (Code: ${totpCode.substring(0, 2)}***)`)
-        throw new HTTPException(401, { message: 'Invalid 2FA code' })
+        throw new HTTPException(401, { message: 'Invalid recovery code' })
       }
     }
     return { requires2FA: false }
@@ -325,40 +278,6 @@ export class AuthService {
     return userId
   }
 
-  async setupTOTP(userId: string) {
-    const secret = await generateTOTPSecret()
-    return secret
-  }
-
-  async verifyAndEnableTOTP(userId: string, code: string, secret: string, name: string = 'Authenticator App', metadata?: any) {
-    const db = getDb(this.env)
-    const isValid = await verifyTOTP(secret, code)
-    if (isValid) {
-      const vaultService = new VaultService(db, this.env.ENCRYPTION_KEY)
-      const totpId = crypto.randomUUID()
-      await db.insert(totpCredentials).values({
-        id: totpId,
-        userId,
-        secret: '[VAULTED]',
-        name,
-        verified: 1,
-        lastUsedAt: new Date().toISOString(),
-        lastUsedIp: metadata?.ip,
-        lastUsedIpV4: metadata?.ipV4,
-        lastUsedIpV6: metadata?.ipV6,
-        lastUsedLocation: metadata?.location,
-        lastUsedUa: metadata?.userAgent
-      })
-      
-      await vaultService.setSecret(userId, 'TOTP_SECRET', totpId, secret)
-      
-      // Generate initial backup codes
-      await this.generateBackupCodes(userId)
-      
-      return true
-    }
-    return false
-  }
 
   async createAdminInvite(role: string = 'super_admin') {
     const db = getDb(this.env)

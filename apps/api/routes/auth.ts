@@ -91,7 +91,7 @@ async function createSessionTracker(c: any, userId: string, passkeyVerified: boo
 auth.post('/login', zValidator('json', z.object({
   username: z.string().min(1),
   password: z.string().min(1),
-  totpCode: z.string().optional(),
+  recoveryCode: z.string().optional(), // Rename totpCode to recoveryCode for backup code support
   persistent: z.boolean().optional()
 }), (result, c) => {
   if (!result.success) {
@@ -103,13 +103,13 @@ auth.post('/login', zValidator('json', z.object({
     return c.json({ success: false, error: result.error }, 400)
   }
 }), async (c) => {
-  const { username, password, totpCode, persistent } = c.req.valid('json')
+  const { username, password, recoveryCode, persistent } = c.req.valid('json')
   const authService = new AuthService(c.env)
   
   try {
     const metadata = getRequestMetadata(c)
     const user = await authService.validateCredentials(username, password)
-    const twoFactor = await authService.verify2FA(user, totpCode, metadata)
+    const twoFactor = await authService.verify2FA(user, recoveryCode, metadata)
     
     if (twoFactor.requires2FA) {
       return c.json({ success: true, data: { requires2FA: true } }, 202)
@@ -144,24 +144,6 @@ auth.post('/login', zValidator('json', z.object({
   }
 })
 
-// --- TOTP SETUP ---
-auth.post('/totp/setup', async (c) => {
-  const userId = c.get('userId')
-  const authService = new AuthService(c.env)
-  const metadata = getRequestMetadata(c)
-  const secret = await authService.setupTOTP(userId)
-  const otpauth = `otpauth://totp/LEDGER:${userId}?secret=${secret}&issuer=LEDGER`
-  return c.json({ success: true, data: { secret, qrUrl: otpauth } })
-})
-
-auth.post('/totp/verify', zValidator('json', z.object({ code: z.string(), secret: z.string(), name: z.string().optional() })), async (c) => {
-  const userId = c.get('userId')
-  const { code, secret, name } = c.req.valid('json')
-  const metadata = getRequestMetadata(c)
-  const authService = new AuthService(c.env)
-  const success = await authService.verifyAndEnableTOTP(userId, code, secret, name || 'Authenticator App', metadata)
-  return c.json({ success }, success ? 200 : 400)
-})
 
 auth.get('/login/discord', async (c) => {
   const clientId = c.env.DISCORD_CLIENT_ID

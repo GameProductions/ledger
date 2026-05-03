@@ -1,5 +1,5 @@
-export const FLEET_VERSION = 'v3.32.20'
-export const CURRENT_VERSION = '3.32.20'
+export const FLEET_VERSION = 'v6.1.0'
+export const CURRENT_VERSION = 'v6.1.0'
 export const APP_NAME = 'Ledger'
 export const SYSTEM_OWNER = 'GameProductions'
 
@@ -13,6 +13,7 @@ export const ROLES = {
 } as const
 
 export const VERSION_UPDATES = [
+  { version: 'v6.1.0', title: 'Titan Guard: The Gold Standard', description: 'Complete security overhaul. Decommissioned legacy TOTP in favor of secure WebAuthn Passkeys. Implemented biometric step-up authentication for all administrative actions and finalized the zero-knowledge identity vault.' },
   { version: 'v3.31.0', title: 'Rule 9 Standard Reorganization', description: 'Complete structural migration of application assets to standard directories (/app and /apps/api), updated entry points, and synchronized global path aliases for future-proof scalability.' },
   { version: 'v3.30.0', title: 'God Mode Hardening & Step-Up Auth', description: 'Renamed administrative suite to God Mode, implemented Biometric Step-Up authentication for high-risk actions, and enforced cascading integrity across the database schema.' },
   { version: 'v3.29.2', title: 'Immortal State Hardening (Final)', description: 'Definitive resolution for all context-driven 500 errors. Purged legacy CommonJS artifacts, enforced strict user verification across all planning routes, and modernized global error diagnostics.' },

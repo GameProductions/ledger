@@ -171,14 +171,12 @@ const AdminDashboard: React.FC = () => {
                 {Array.isArray(audit) && audit.map((log: any) => (
                   <div key={log.id} className="slide-up" style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', fontSize: '0.85rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontWeight: '700', color: 'var(--secondary)' }}>{log.action}</span>
-                      <span style={{ opacity: 0.5 }}>{log.createdAt}</span>
+                      <span style={{ fontWeight: '700', color: 'var(--secondary)' }}>{renderAuditAction(log)}</span>
+                      <span style={{ opacity: 0.5 }}>{new Date(log.createdAt).toLocaleString()}</span>
                     </div>
-                    <div style={{ marginTop: '0.3rem' }}>
-                      <span style={{ opacity: 0.7 }}>Target:</span> {log.target}
-                    </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.4, marginTop: '0.2rem' }}>
-                      Actor: {log.userId}
+                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.3rem', fontSize: '0.75rem', opacity: 0.6 }}>
+                      <span>Target: {log.targetType || 'System'} ({log.targetId || 'N/A'})</span>
+                      <span>Actor: {log.actorId || log.userId || 'System'}</span>
                     </div>
                   </div>
                 ))}
@@ -249,6 +247,55 @@ const AdminDashboard: React.FC = () => {
       </Modal>
     </div>
   )
+}
+
+function renderAuditAction(log: any) {
+  try {
+    const details = typeof log.detailsJson === 'string' ? JSON.parse(log.detailsJson) : (log.detailsJson || {});
+    
+    switch (log.action) {
+      case 'login':
+        return `Login via ${details.strategy || 'credentials'}`;
+      case 'ADMIN_MANUAL_CREATE':
+        return `Admin manually created user`;
+      case 'ADMIN_UPDATE':
+        return `Admin updated user properties`;
+      case 'ADMIN_DELETE':
+        return `Admin deleted user`;
+      case 'ADMIN_PASSWORD_RESET':
+        return `Admin forced password reset`;
+      case 'ADMIN_PASSKEY_RENAME':
+        return `Admin renamed passkey to "${details.name}"`;
+      case 'ADMIN_PASSKEY_DELETE':
+        return `Admin revoked biometric passkey`;
+      case 'ADMIN_USER_MERGE':
+        return `Admin merged user records`;
+      case 'PASSWORD_CHANGE':
+        return `User changed account password`;
+      case 'REGISTER':
+        if (log.targetType === 'passkeys') return `User enrolled new biometric passkey`;
+        return `New ${log.targetType} registered`;
+      case 'LINK':
+        return `User linked ${details.provider || 'external account'}`;
+      case 'STEP_UP_VERIFIED':
+        return `Biometric step-up verification successful`;
+      case 'INVITE_GENERATED':
+        return `New household invitation generated`;
+      case 'JOIN_VIA_INVITE':
+        return `User joined household via invitation`;
+      case 'PASSWORD_RECOVERY_REQUEST':
+        return `Password recovery token requested`;
+      case 'PASSWORD_RECOVERY_SUCCESS':
+        return `Password recovered via token`;
+      default:
+        // Convert snake_case or SCREAMING_SNAKE_CASE to Title Case
+        return log.action.split('_').map((word: string) => 
+          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+    }
+  } catch (e) {
+    return log.action;
+  }
 }
 
 export default AdminDashboard

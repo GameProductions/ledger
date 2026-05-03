@@ -43,53 +43,21 @@ describe('AuthService - verify2FA', () => {
     authService = new AuthService(mockEnv)
   })
 
-  it('should return requires2FA if user has TOTP credentials but no code provided', async () => {
+  it('should verify valid recovery code', async () => {
     const user = { id: 'user-1' }
-    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
-    
-    const result = await authService.verify2FA(user)
-    expect(result).toEqual({ requires2FA: true })
-  })
-
-  it('should verify valid TOTP code', async () => {
-    const user = { id: 'user-1' }
-    const totpCode = '123456'
-    
-    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
-    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }]) // Fetch secrets
-    mockGetSecret.mockResolvedValue('real-secret')
-    vi.mocked(authUtils.verifyTOTP).mockResolvedValue(true)
-
-    const result = await authService.verify2FA(user, totpCode)
-    expect(result).toEqual({ requires2FA: false })
-    expect(authUtils.verifyTOTP).toHaveBeenCalledWith('real-secret', totpCode)
-  })
-
-  it('should fallback to backup code if TOTP fails', async () => {
-    const user = { id: 'user-1' }
-    const backupCode = 'ABCDEFGH' // 8 chars
-    
-    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
-    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }]) // Fetch secrets
-    mockGetSecret.mockResolvedValue(null)
-    vi.mocked(authUtils.verifyTOTP).mockResolvedValue(false)
+    const recoveryCode = 'ABCDEFGH'
     
     // Mock verifyBackupCode
     const verifyBackupCodeSpy = vi.spyOn(authService, 'verifyBackupCode').mockResolvedValue(true)
 
-    const result = await authService.verify2FA(user, backupCode)
+    const result = await authService.verify2FA(user, recoveryCode)
     expect(result).toEqual({ requires2FA: false })
-    expect(verifyBackupCodeSpy).toHaveBeenCalledWith(user.id, backupCode)
+    expect(verifyBackupCodeSpy).toHaveBeenCalledWith(user.id, recoveryCode)
   })
 
-  it('should throw 401 if both TOTP and backup code fail', async () => {
+  it('should throw 401 if recovery code is invalid', async () => {
     const user = { id: 'user-1' }
     const invalidCode = 'INVALID1'
-    
-    mockDb.where.mockResolvedValueOnce([{ count: 1 }]) // Count check
-    mockDb.where.mockResolvedValueOnce([{ id: 'totp-1', secret: '[VAULTED]' }]) // Fetch secrets
-    mockGetSecret.mockResolvedValue(null)
-    vi.mocked(authUtils.verifyTOTP).mockResolvedValue(false)
     
     vi.spyOn(authService, 'verifyBackupCode').mockResolvedValue(false)
 
@@ -97,8 +65,14 @@ describe('AuthService - verify2FA', () => {
       await authService.verify2FA(user, invalidCode)
       expect(true).toBe(false) // Should not reach here
     } catch (e: any) {
-      expect(e.message).toBe('Invalid 2FA code')
+      expect(e.message).toBe('Invalid recovery code')
       expect(e.status).toBe(401)
     }
+  })
+
+  it('should return requires2FA: false if no code provided (legacy support)', async () => {
+    const user = { id: 'user-1' }
+    const result = await authService.verify2FA(user)
+    expect(result).toEqual({ requires2FA: false })
   })
 })

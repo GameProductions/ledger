@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
   const { showToast } = useToast()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [totpCode, setTotpCode] = useState('')
+  const [recoveryCode, setRecoveryCode] = useState('')
   const [mfaRequired, setMfaRequired] = useState(false)
   const [persistent, setPersistent] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -87,7 +87,7 @@ const LoginPage: React.FC = () => {
         body: JSON.stringify({ 
           username, 
           password, 
-          totpCode: totpCode || undefined,
+          recoveryCode: recoveryCode || undefined,
           persistent 
         })
       })
@@ -278,13 +278,13 @@ const LoginPage: React.FC = () => {
           <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
             {mfaRequired ? (
               <div className="space-y-4 reveal">
-                <p className="text-gray-400 text-sm mb-4">Enter the 6-digit code from your authenticator app.</p>
+                <p className="text-gray-400 text-sm mb-4">Enter your 8-character security recovery code.</p>
                 <Input 
-                  label="AUTHENTICATOR CODE" 
+                  label="RECOVERY CODE" 
                   type="text" 
-                  value={totpCode} 
-                  onChange={e => setTotpCode(e.target.value)} 
-                  placeholder="000000"
+                  value={recoveryCode} 
+                  onChange={e => setRecoveryCode(e.target.value)} 
+                  placeholder="XXXXXXXX"
                   className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono tracking-[0.5em] text-center text-xl"
                   autoFocus
                 />

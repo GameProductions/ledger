@@ -66,7 +66,28 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
     window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
+
+    // [FLEET-RESILIENCE] Asset Recovery Protocol
+    // Detects 404 errors on critical hashed assets (JS/CSS) which typically
+    // happen after a new deployment when the PWA cache is stale.
+    const handleAssetError = (e: ErrorEvent | PromiseRejectionEvent) => {
+      const target = e instanceof ErrorEvent ? e.target : null;
+      if (target && (target instanceof HTMLScriptElement || target instanceof HTMLLinkElement)) {
+        const src = (target as any).src || (target as any).href;
+        if (src && src.includes('/assets/')) {
+          console.error('[Asset Recovery] Failed to load essential asset:', src);
+          // Force a clean reload from the server to pick up the new index.html and assets
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener('error', handleAssetError, true);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange)
+      window.removeEventListener('error', handleAssetError, true)
+    }
   }, [])
 
   // Maintenance & System Config Engine with Resilience (3 Attempts)

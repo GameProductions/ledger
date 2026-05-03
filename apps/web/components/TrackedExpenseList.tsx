@@ -3,7 +3,7 @@ import { InlineToast } from './ui/InlineToast'
 import { useCurrency } from '../context/CurrencyContext'
 import { useToast } from '../context/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight } from 'lucide-react'
@@ -69,7 +69,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       body: JSON.stringify({ ids })
     })
     if (res.ok) {
-      mutate()
+      globalMutate('/api/tracked-expenses')
       setSelectedIds([])
       setConfirmDeleteId(null)
       setConfirmBulkDelete(false)
@@ -90,7 +90,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       })
     })
     if (res.ok) {
-      mutate()
+      globalMutate('/api/tracked-expenses')
       setSelectedIds([])
       setIsMoveToLedgerOpen(false)
     }
@@ -110,7 +110,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       })
     })
     if (res.ok) {
-      mutate()
+      globalMutate('/api/tracked-expenses')
       setEditingId(null)
       setEditForm(null)
     }
@@ -130,7 +130,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       })
     })
     if (res.ok) {
-      mutate()
+      globalMutate('/api/tracked-expenses')
       setIsBulkEditOpen(false)
       setBulkUpdates({})
     }

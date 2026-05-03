@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { Price } from './Price'
 import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag } from 'lucide-react'
 import { Modal } from './ui/Modal'
@@ -99,7 +99,7 @@ export const TransactionLedger: React.FC = () => {
       },
       body: JSON.stringify({ accounted_for: true })
     })
-    mutateTx()
+    globalMutate('/api/financials/transactions')
   }
 
   const bulkReconcile = async (reconciled: boolean) => {
@@ -113,14 +113,14 @@ export const TransactionLedger: React.FC = () => {
       },
       body: JSON.stringify({ transaction_ids: selectedIds, reconciled })
     })
-    mutateTx()
+    globalMutate('/api/financials/transactions')
     setSelectedIds([])
   }
 
   return (
     <div className="card w-full relative overflow-hidden" id="transaction-ledger">
       
-      <QuickAttentionAdd onAdded={mutateTx} />
+      <QuickAttentionAdd onAdded={() => globalMutate('/api/financials/transactions')} />
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
@@ -197,7 +197,7 @@ export const TransactionLedger: React.FC = () => {
                            ✨ {categories?.find((c:any) => c.id === suggestions[tx.id].categoryId)?.name || 'Suggested'}
                          </span>
                          <button 
-                           onClick={() => {/* Mock confirm & remember */ mutateTx()}}
+                           onClick={() => {/* Mock confirm & remember */ globalMutate('/api/financials/transactions')}}
                            className="text-[10px] bg-orange-500 text-black px-2 rounded-full font-bold uppercase tracking-widest hover:scale-105"
                          >
                            Confirm
@@ -338,7 +338,7 @@ export const TransactionLedger: React.FC = () => {
                    <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
                 </div>
              </div>
-             <button onClick={() => { setActiveSplitTx(null); mutateTx(); }} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
+             <button onClick={() => { setActiveSplitTx(null); globalMutate('/api/financials/transactions'); }} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
           </div>
         )}
       </Modal>
@@ -351,7 +351,7 @@ export const TransactionLedger: React.FC = () => {
                 <option value="">-- Select Parent Transaction --</option>
                 {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
              </select>
-             <button onClick={() => { setActiveLinkTx(null); mutateTx(); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
+             <button onClick={() => { setActiveLinkTx(null); globalMutate('/api/financials/transactions'); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
           </div>
         )}
       </Modal>

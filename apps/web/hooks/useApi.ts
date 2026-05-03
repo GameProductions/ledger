@@ -4,6 +4,13 @@ import { getApiUrl } from '../utils/api';
 
 const API_URL = getApiUrl();
 
+export const globalMutate = (path: string | string[]) => {
+  const paths = Array.isArray(path) ? path : [path];
+  paths.forEach(p => {
+    window.dispatchEvent(new CustomEvent('ledger-api-mutate', { detail: { path: p } }));
+  });
+};
+
 export const useApi = <T = any>(path: string | null, options: { refreshInterval?: number } = {}) => {
   const { token, logout, householdId, triggerStepUp } = useAuth()
   const [data, setData] = useState<T | undefined>(undefined)
@@ -13,7 +20,7 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
   const lastFetchTime = useRef<number>(0)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const fetcher = useCallback(async () => {
+  const fetcher = useCallback(async (force = false) => {
     if (!token || !path) return
     
     // Cancel any existing request for this hook instance
@@ -23,7 +30,7 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
     abortControllerRef.current = new AbortController()
 
     // Pacing: Don't fetch more than once every 2 seconds unless triggered manually
-    if (Date.now() - lastFetchTime.current < 2000) return
+    if (!force && Date.now() - lastFetchTime.current < 2000) return
     
     // Visibility Check: Don't fetch if tab is hidden
     if (document.visibilityState !== 'visible') return
@@ -83,7 +90,7 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
     }
   }, [path, token, householdId, options.refreshInterval, logout])
 
-  const lastPathRef = useRef<string>(path);
+  const lastPathRef = useRef<string | null>(path);
   const lastHouseholdIdRef = useRef<string | null>(householdId);
 
   useEffect(() => {
@@ -97,7 +104,7 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
       lastHouseholdIdRef.current = householdId
     }
     
-    fetcher()
+    fetcher(trigger > 0)
     
     let interval: any;
     if (options.refreshInterval) {
@@ -107,11 +114,23 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
     const handleVisible = () => {
        if (document.visibilityState === 'visible') fetcher()
     }
+    
+    const handleGlobalMutate = (e: any) => {
+      const mutatePath = e.detail?.path;
+      // Precise or Fuzzy Matching: If no path provided, mutate ALL. If path matches, mutate THIS.
+      if (!mutatePath || (path && path.startsWith(mutatePath))) {
+        console.debug(`[useApi] Global mutation triggered for ${path}`);
+        mutate();
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisible)
+    window.addEventListener('ledger-api-mutate', handleGlobalMutate)
 
     return () => {
       if (interval) clearInterval(interval)
       document.removeEventListener('visibilitychange', handleVisible)
+      window.removeEventListener('ledger-api-mutate', handleGlobalMutate)
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
       }

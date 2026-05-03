@@ -1,1 +1,0 @@
-ALTER TABLE `personal_access_tokens` ADD `scopes` text DEFAULT 'READ,WRITE';

@@ -1,1 +1,0 @@
-ALTER TABLE `pay_schedules` ADD `notes` text;

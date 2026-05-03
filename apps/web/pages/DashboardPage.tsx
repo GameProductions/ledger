@@ -315,6 +315,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     else mutateTx()
     
     setIsCalendarModalOpen(false)
+    globalMutate()
     showToast(isNew ? 'Entry Created' : 'Entry Updated')
   }
 

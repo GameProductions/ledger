@@ -97,7 +97,9 @@ export const HelpCenter: React.FC = () => {
               { id: '5', category: 'Lifecycle', title: 'Variable Pay Schedules', content: 'Handle complex income. Configure semi-monthly, bi-weekly, or irregular payday exceptions to keep your planning accurate.' },
               { id: '6', category: 'Advanced', title: 'Envelope Budgeting', content: 'Allocate every dollar. Use our digital envelope system to fund specific categories and track spending progress throughout the month.' },
               { id: '7', category: 'Security', title: 'Hardware Security (Step-Up)', content: 'Protect your God Mode. Sensitive administrative actions require a biometric "Step-Up" challenge using your hardware passkey (FaceID, TouchID, or Security Key).' },
-              { id: '8', category: 'Admin', title: 'God Mode Configuration', content: 'Universal management. God Mode allows super-administrators to manage households, audit system logs, and verify platform health.' }
+              { id: '8', category: 'Admin', title: 'God Mode Configuration', content: 'Universal management. God Mode allows super-administrators to manage households, audit system logs, and verify platform health.' },
+              { id: '9', category: 'System', title: 'Reactive Data Sync', content: 'Instant interface updates. When you add or delete a transaction, your entire ledger and dashboard sync immediately without requiring a page refresh.' },
+              { id: '10', category: 'System', title: 'Asset Recovery Protocol', content: 'Zero-downtime stability. If the PWA detects it is running a stale version after a deployment, it automatically triggers a clean sync to recover the latest assets.' }
             ]} />
           </div>
         </section>

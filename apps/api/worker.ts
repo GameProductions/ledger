@@ -47,7 +47,8 @@ app.use("*", secureHeaders({
           "'sha256-Cjkx713rgFgZqOqM8V2wzvCavph8V9ngzkc3SO3NuRo='",
           "'sha256-bM3/ZnGUs5w3Ai5RZkah2l61sVoF1iPy34B20eect34='",
           "'sha256-D3cps80YxnGx11p7WrszLalMhcoXKJGDmfuDaUQiNy8='",
-          "'sha256-6Qjxak4k3FeTg3KWtmF2eq9TlozHFq/KP0ZBFMi/lRw='"
+          "'sha256-6Qjxak4k3FeTg3KWtmF2eq9TlozHFq/KP0ZBFMi/lRw='",
+          "'sha256-Peau1EFir6u+pPKwebTwkAycHyN4vQKfR7aaeGjf7/k='"
       ],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
@@ -70,7 +71,8 @@ app.use("*", cors({
     return "https://ledger.gpnet.dev";
   },
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowHeaders: ["Content-Type", "Authorization", "x-household-id", "X-Ledger-Integrity"],
+  allowHeaders: ["Content-Type", "Authorization", "x-household-id", "X-Ledger-Integrity", "X-Requested-With"],
+  exposeHeaders: ["Content-Range", "X-Total-Count"],
   credentials: true,
   maxAge: 600,
 }));

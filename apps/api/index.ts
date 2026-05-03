@@ -49,19 +49,6 @@ app.use('*', (c, next) => {
   return csrf()(c, next)
 })
 
-// Strict CORS Validation
-app.use('/api/*', cors({
-  origin: (origin, c) => {
-    const allowed = [`https://ledger.gpnet.dev`, 'https://gpnet.dev', 'http://localhost:5173', 'http://localhost:8787'];
-    if (allowed.includes(origin)) return origin;
-    return `https://ledger.gpnet.dev`; 
-  },
-  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposeHeaders: ['Content-Range', 'X-Total-Count'],
-  credentials: true,
-  maxAge: 600,
-}))
 
 // Traffic Management
 app.use('*', async (c, next) => {

@@ -37,21 +37,8 @@ export const app = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 // 1. Global Middleware & Security
 app.use('*', logger())
 
-// [SECURITY] Strict Content Security Policy & Headers
-app.use('*', secureHeaders({
-  referrerPolicy: 'strict-origin-when-cross-origin',
-  contentSecurityPolicy: {
-    frameAncestors: ["'self'", "https://*.gpnet.dev", "http://localhost:*"],
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com", "'sha256-bM3/ZnGUs5w3Ai5RZkah2l61sVoF1iPy34B20eect34='"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-    fontSrc: ["'self'", "https://fonts.gstatic.com"],
-    imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com", "https://cdn.simpleicons.org", "https://flaticons.net", "https://cdn-icons-png.flaticon.com", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://media.giphy.com", "https://i.giphy.com", "https://media0.giphy.com", "https://media1.giphy.com", "https://media2.giphy.com", "https://media3.giphy.com", "https://media4.giphy.com", "https://tenor.com", "https://media.tenor.com", "https://images.unsplash.com"],
-    connectSrc: ["'self'", "https://api.gpnet.dev", "https://ledger.gpnet.dev", "http://localhost:8787"],
-    upgradeInsecureRequests: [],
-  },
-  xPermittedCrossDomainPolicies: 'none',
-}))
+// [SECURITY] Security headers are handled by the worker-level entry point (worker.ts)
+// to ensure consistency between static assets and API routes.
 
 // Global CSRF Protection (Exempting non-mutating manifests)
 app.use('*', (c, next) => {
@@ -87,11 +74,17 @@ app.use('*', async (c, next) => {
   
   // Try to get from cache first to avoid D1 cold starts on every request
   try {
-    const configCache = await (c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE)?.get('API_CONFIG', 'json') as Record<string, string>;
+    const cache = (c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE) as any;
+    let configCache: Record<string, string> | null = null;
+    
+    if (cache && typeof cache.get === 'function') {
+      configCache = await cache.get('API_CONFIG', 'json');
+    }
+
     if (configCache && configCache.MAINTENANCE_MODE === 'true') {
       isSoftLocked = true;
     } else if (!configCache) {
-      // If cache is empty, we must check DB to ensure we don't bypass on cache flush
+      // If cache is empty or unavailable, we must check DB to ensure we don't bypass on cache flush
       try {
         const db = getDb(c.env)
         const dbConfig = await db.select({ configValue: systemConfig.configValue })
@@ -102,14 +95,16 @@ app.use('*', async (c, next) => {
         
         if (dbConfig?.configValue === 'true') isSoftLocked = true
       } catch (dbErr) {
-        console.error('[Maintenance Check] Database query failed (likely missing table):', dbErr)
-        // Fallback to Hard Lock or default to false to allow recovery via admin routes
+        console.error('[Maintenance Check] Database query failed:', dbErr)
       }
     }
 
     // --- LEVEL 3: Global Status Check ---
     // Cache the global status for 60 seconds to avoid DDOSing Foundation
-    const globalStatusCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('global:maintenance')
+    let globalStatusCache = null;
+    if (cache && typeof cache.get === 'function') {
+       globalStatusCache = await cache.get('global:maintenance');
+    }
     if (globalStatusCache === 'true') {
       isGlobalLocked = true
     } else if (globalStatusCache === null) {
@@ -257,7 +252,7 @@ const safeJsonParse = (val: string | null) => {
 // 5. System Configuration & Theme Handling
 app.get('/api/config', async (c) => {
   const cached = await c.env.TITAN_GUARD_CACHE?.get('API_CONFIG', 'json')
-  if (cached) return c.json(cached)
+  if (cached) return c.json({ success: true, data: cached })
 
   // --- System Configuration (Titan Guard v6.1 Filtered) ---
   const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
@@ -291,17 +286,17 @@ app.get('/api/config', async (c) => {
 app.get('/api/theme/broadcast', async (c) => {
   try {
     const cached = await c.env.LEDGER_CACHE?.get('THEME_BROADCAST', 'json')
-    if (cached) return c.json(cached)
+    if (cached) return c.json({ success: true, data: cached })
 
     const db = getDb(c.env)
     const config = await db.select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, "broadcast_theme_id")).limit(1).then(res => res[0]);
-    if (!config || !config.configValue) return c.json({ themeId: null })
+    if (!config || !config.configValue) return c.json({ success: true, data: { themeId: null } })
     
     const result = { themeId: JSON.parse(config.configValue as string) }
     if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.put('THEME_BROADCAST', JSON.stringify(result), { expirationTtl: 60 }))
-    return c.json(result)
+    return c.json({ success: true, data: result })
   } catch (e) {
-    return c.json({ themeId: null })
+    return c.json({ success: true, data: { themeId: null } })
   }
 })
 
@@ -352,9 +347,10 @@ app.onError((err, c) => {
   console.error(`[Global Error] ${c.req.method} ${c.req.path} - Status: ${status}`, err)
   
   return c.json({
+    success: false,
     error: isProduction ? 'Internal Server Error' : err.message,
     status,
     path: isProduction ? undefined : c.req.path,
     stack: isProduction ? undefined : err.stack
-  }, status)
+  }, status as any)
 })

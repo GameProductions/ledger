@@ -48,7 +48,7 @@ entities.get('/:type', async (c) => {
   }
   
   const results = await query.limit(1000)
-  return c.json(results || [])
+  return c.json({ success: true, data: results || [] })
 })
 
 entities.patch('/:type/:id', async (c) => {
@@ -97,7 +97,7 @@ entities.get('/audit/report', async (c) => {
     .where(sql`action LIKE 'GOD_MODE_%'`)
     .orderBy(desc(schema.activityLogs.createdAt))
     .limit(100)
-  return c.json(results || [])
+  return c.json({ success: true, data: results || [] })
 })
 
 export default entities

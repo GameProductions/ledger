@@ -278,7 +278,7 @@ data.post('/import/confirm', zValidator('json', z.object({
 data.post('/webhooks/external', async (c) => {
   const payload = await c.req.json() as any
   console.log('[Connection Update]:', payload)
-  return c.json({ received: true })
+  return c.json({ success: true, data: { received: true } })
 })
 
 // Service Providers
@@ -352,7 +352,7 @@ data.post('/tools/tokens', zValidator('json', z.object({ name: z.string().min(1)
   })
     
   // Return the raw token ONLY once
-  return c.json({ token: tokenValue })
+  return c.json({ success: true, data: { token: tokenValue } })
 })
 
 data.get('/tools/tokens', async (c) => {

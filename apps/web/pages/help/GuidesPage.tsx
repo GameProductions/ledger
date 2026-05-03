@@ -18,10 +18,10 @@ export const GuidesPage: React.FC = () => {
       topics: ['Overview vs Activity', 'Planning Workspace', 'Insights & Health']
     },
     {
-      title: 'Biometric Identity & Passkeys',
+      title: 'Secure Login & Passkeys',
       duration: '6 min read',
       icon: <Fingerprint size={20} className="text-primary" />,
-      topics: ['Enrolling Biometrics', 'Multi-Passkey Governance', 'Hardware Security Keys']
+      topics: ['Setting up Passkeys', 'Moving from old security codes', 'Hardware Security Keys']
     },
     {
       title: 'Cross-Platform Identity Sync',
@@ -30,16 +30,16 @@ export const GuidesPage: React.FC = () => {
       topics: ['Discord/Google Linking', 'Avatar Sync', 'Asset Persistence on Unlink']
     },
     {
-      title: 'Multi-Cloud Security Architecture',
+      title: 'Secure Cloud Backup',
       duration: '8 min read',
       icon: <Shield size={20} className="text-blue-400" />,
-      topics: ['OAuth Scopes', 'Encrypted Backups', 'Token Shredding']
+      topics: ['Access permissions', 'Encrypted Backups', 'Safe data removal']
     },
     {
       title: 'Advanced Scheduling & Automation',
       duration: '10 min read',
       icon: <RefreshCw size={20} className="text-emerald-400" />,
-      topics: ['Variable Recurrences', 'Subscription Detection', 'Cron Patterns']
+      topics: ['Flexible bill dates', 'Automatic bill tracking', 'Scheduled updates']
     },
     {
       title: 'Mastering the Ledger: Splitting & Smart Matching',
@@ -105,19 +105,19 @@ export const FAQPage: React.FC = () => {
   const faqs = [
     {
       q: "What if I lose my biometric device?",
-      a: "If your primary passkey is unavailable, you can use your account recovery procedure (Forgot Password) to receive a secure token via email. Alternatively, we recommend enrolling multiple passkeys (e.g., iPhone FaceID and a Yubikey) for redundancy."
+      a: "Our security focuses on reliable access across all your devices. We recommend setting up at least two passkeys (for example, your phone and a secure physical key like a Yubikey). If you lose access to all your passkeys, you can recover your account using your connected Discord or Google account, or by contacting our support team."
     },
     {
       q: "Where is my data stored physically?",
-      a: "Your data is stored in Cloudflare's D1 distributed SQL database, while your cloud backups are pushed directly to your personal GDrive, Dropbox, or OneDrive storage. LEDGER does not maintain a copy outside of your household."
+      a: "Your data is kept in our secure storage, while your cloud backups are saved directly to your personal Google Drive, Dropbox, or OneDrive. LEDGER does not keep a copy of your records outside of your household."
     },
     {
       q: "Can I use LEDGER without a bank sync?",
-      a: "Absolutely. You can use the 'manual ledger' mode by creating manual accounts and importing CSV/JSON/QIF files directly via the data import settings."
+      a: "Absolutely. You can use the 'manual ledger' mode by creating accounts yourself and importing transaction files directly through the settings."
     },
     {
       q: "How secure is my bank connection?",
-      a: "We use AES-GCM 256-bit encryption for all external tokens. We never store your bank passwords; we only hold revocable OAuth access tokens granted by providers like Plaid or Akoya."
+      a: "We use military-grade encryption for all connections. We never store your bank passwords; we only hold secure access permissions granted by providers like Plaid or Akoya."
     },
     {
       q: "Can I link multiple bills to a single deposit or transfer?",

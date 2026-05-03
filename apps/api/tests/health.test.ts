@@ -5,10 +5,30 @@ describe('Global Infrastructure Checks', () => {
   it('Should successfully verify system health ping', async () => {
     const res = await ledgerApi.request('/ping', {}, {
       ENVIRONMENT: 'test',
-      DB: {} as any,
+      DB: {
+        prepare: () => {
+          const stmt = {
+            bind: () => stmt,
+            first: async () => null,
+            run: async () => ({ success: true }),
+            all: async () => ({ results: [] }),
+            raw: async () => []
+          }
+          return stmt
+        }
+      } as any,
       ASSETS: {} as any,
       BACKUPS: {} as any,
-      LEDGER_CACHE: {} as any,
+      LEDGER_CACHE: {
+        get: async () => null,
+        put: async () => {},
+        delete: async () => {}
+      } as any,
+      TITAN_GUARD_CACHE: {
+        get: async () => null,
+        put: async () => {},
+        delete: async () => {}
+      } as any,
       SESSION: {} as any,
       JWT_SECRET: 'test',
       DISCORD_TOKEN: 'test',

@@ -23,7 +23,7 @@ trackedExpensesRoutes.get('/', async (c) => {
     )
   )
   
-  return c.json(results)
+  return c.json({ success: true, data: results })
 })
 
 // 2. Create new tracked expense
@@ -109,7 +109,7 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
     and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids))
   )
   
-  if (items.length === 0) return c.json({ error: 'No items found' }, 404)
+  if (items.length === 0) return c.json({ success: false, error: 'No items found' }, 404)
   
   const promoTxs = items.map(item => {
     return db.insert(transactions).values({

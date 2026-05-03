@@ -35,7 +35,20 @@ app.use("*", secureHeaders({
         "https://images.unsplash.com", "https://*.giphy.com",
         "https://c.1password.com", "https://cache.agilebits.com", "https://raw.githubusercontent.com"
       ],
-      scriptSrc: ["'self'", "https://static.cloudflareinsights.com", "'sha256-jlsMk0YHlcRfVk3Qperx5kMvCH97KaEu4osmzX3GsuY='", "'sha256-InQKS/0eWsccv2yFQ9tVKWenXws5ak8p0SLxqqKNed0='", "'sha256-9tbxlnzuoYHl6nDKBrkpHQZjk2kwrfoB57fwKSlBVHo='", "'sha256-qp6fscPNSiydJYTWMlSfg2ogAnWVn9f9I+H0CmcQLqw='", "'sha256-vrHPKVKcxIEXKNW4BQWtXOBmAO9lizieLqgxnpOUnR0='", "'sha256-jCG/QZuBRzyJnHALam5ztm7E6KrhaE2M/a403o84fW0='", "'sha256-Cjkx713rgFgZqOqM8V2wzvCavph8V9ngzkc3SO3NuRo='", "'sha256-bM3/ZnGUs5w3Ai5RZkah2l61sVoF1iPy34B20eect34='"],
+      scriptSrc: [
+          "'self'", 
+          "https://static.cloudflareinsights.com",
+          "'sha256-jlsMk0YHlcRfVk3Qperx5kMvCH97KaEu4osmzX3GsuY='",
+          "'sha256-InQKS/0eWsccv2yFQ9tVKWenXws5ak8p0SLxqqKNed0='",
+          "'sha256-9tbxlnzuoYHl6nDKBrkpHQZjk2kwrfoB57fwKSlBVHo='",
+          "'sha256-qp6fscPNSiydJYTWMlSfg2ogAnWVn9f9I+H0CmcQLqw='",
+          "'sha256-vrHPKVKcxIEXKNW4BQWtXOBmAO9lizieLqgxnpOUnR0='",
+          "'sha256-jCG/QZuBRzyJnHALam5ztm7E6KrhaE2M/a403o84fW0='",
+          "'sha256-Cjkx713rgFgZqOqM8V2wzvCavph8V9ngzkc3SO3NuRo='",
+          "'sha256-bM3/ZnGUs5w3Ai5RZkah2l61sVoF1iPy34B20eect34='",
+          "'sha256-D3cps80YxnGx11p7WrszLalMhcoXKJGDmfuDaUQiNy8='",
+          "'sha256-6Qjxak4k3FeTg3KWtmF2eq9TlozHFq/KP0ZBFMi/lRw='"
+      ],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       connectSrc: [

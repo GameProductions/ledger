@@ -5,11 +5,10 @@ const PrivacyPolicy: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Privacy Policy</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: March 28, 2026</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: May 3, 2026</p>
       
       <section style={{ marginBottom: '2rem' }}>
-        <h3>1. Introduction</h3>
-        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency, biometric privacy, and privacy & data ownership.</p>
+        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency, login privacy, and total data ownership under our high-level security standard.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -18,10 +17,10 @@ const PrivacyPolicy: React.FC = () => {
         <br/><br/>
         Specifically, we collect and store:
         <ul>
-          <li><strong>Passkeys Metadata</strong>: When you enroll a Passkey, we store public keys and metadata (e.g., provider name, device type). <strong>Actual biometric data (fingerprints, FaceID) never leaves your device and is not accessible to LEDGER.</strong></li>
-          <li><strong>Identity Synchronization Assets</strong>: We synchronize display names and avatar URLs from linked Discord or Google accounts. You may choose to retain or revert these assets when unlinking an account.</li>
-          <li><strong>Financial Profiles</strong>: Your accounts and budgets are stored in a secure edge database (Cloudflare D1).</li>
-          <li><strong>Redundancy Backups</strong>: Encrypted backups are optionally pushed to your personal cloud storage (GDrive/Dropbox/OneDrive).</li>
+          <li><strong>Passkeys</strong>: When you set up a Passkey, we store secure keys and basic information (such as your device type). <strong>Your actual fingerprints or FaceID data never leaves your device and we cannot see it.</strong></li>
+          <li><strong>Profile Information</strong>: We update your display name and profile picture from your connected Discord or Google accounts. You can choose to keep or remove this info if you disconnect your account.</li>
+          <li><strong>Financial Profiles</strong>: Your accounts and budgets are stored in a secure database.</li>
+          <li><strong>Backups</strong>: Encrypted backups can be sent to your personal cloud storage (Google Drive, Dropbox, or OneDrive).</li>
         </ul>
         </p>
       </section>
@@ -32,8 +31,8 @@ const PrivacyPolicy: React.FC = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h3>4. Security & Audit Accountability</h3>
-        <p>We implement industry-standard AES-256 encryption, HSTS protocols, and WebAuthn (Passkey) standards. Authentication events, administrative overrides, and account linkage are recorded in a Secure Audit Log for accountability and security monitoring.</p>
+        <h3>4. Security & Records</h3>
+        <p>We use industry-standard military-grade encryption and secure connection protocols. Login events, important changes, and account connections are recorded in a secure log to keep your account safe and accountable.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

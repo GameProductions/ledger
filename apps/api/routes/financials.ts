@@ -385,7 +385,7 @@ financials.post('/transactions/infer', zValidator('json', z.object({
   const db = getDb(c.env)
   
   const suggestions = await inferTransactionDetails(db, householdId, rawDescription)
-  return c.json({ suggestions })
+  return c.json({ success: true, data: suggestions })
 })
 
 financials.post('/transactions', zValidator('json', TransactionSchema, (result, c) => {
@@ -792,14 +792,14 @@ financials.post('/transactions/import/analyze', async (c: any) => {
     const preview = lines.slice(1, 6)
       .filter(l => l.trim() !== '')
       .map((l: string) => l.split(',').map((v: string) => v.trim()))
-    return c.json({ type: 'csv', headers, preview })
+    return c.json({ success: true, data: { type: 'csv', headers, preview } })
   }
 
   if (file.name.endsWith('.json')) {
     try {
       const data = JSON.parse(text)
       const headers = Array.isArray(data) ? Object.keys(data[0]) : Object.keys(data)
-      return c.json({ type: 'json', headers })
+      return c.json({ success: true, data: { type: 'json', headers } })
     } catch (e) {
       return apiError(c, 'Invalid JSON', 'PARSE_ERROR', 'The uploaded JSON file is malformed and could not be parsed.')
     }

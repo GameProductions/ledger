@@ -74,7 +74,7 @@ system.post('/maintenance/migrate-secrets', async (c) => {
 system.get('/registry', async (c) => {
   const db = getDb(c.env)
   const results = await db.select().from(systemRegistry).orderBy(systemRegistry.name)
-  return c.json(results || [])
+  return c.json({ success: true, data: results || [] })
 })
 
 system.post('/registry', zValidator('json', SystemRegistrySchema), async (c) => {

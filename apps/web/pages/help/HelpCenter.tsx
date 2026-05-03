@@ -18,7 +18,7 @@ export const HelpCenter: React.FC = () => {
       description: 'Quick answers to common questions about security and sync.',
       icon: <HelpCircle className="text-purple-400" />,
       hash: '#/help/faq',
-      topics: ['Variable Recurrences', 'Subscription Detection', 'Trial Alerts', 'Budget Rollovers']
+      topics: ['Flexible bill dates', 'Automatic bill tracking', 'Trial Alerts', 'Monthly carryover']
     },
     {
       id: 'tours',
@@ -40,7 +40,7 @@ export const HelpCenter: React.FC = () => {
     <MainLayout>
       <div className="max-w-6xl mx-auto space-y-16 py-12">
         <header className="text-center space-y-4">
-          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-4 opacity-70">Support Ecosystem</div>
+          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-4 opacity-70">Support Center</div>
           <h1 className="text-5xl font-black italic tracking-tighter text-white">How can we help you?</h1>
           <p className="text-secondary text-lg max-w-2xl mx-auto font-medium">
             Master the LEDGER platform with our comprehensive documentation and direct support channels.
@@ -91,15 +91,15 @@ export const HelpCenter: React.FC = () => {
           <div className="glass-card p-1">
             <FoundationHelp items={[
               { id: '1', category: 'Basics', title: 'Wallet & Safe-to-Spend', content: 'Master your real-time spendable balance. LEDGER calculates exactly how much you can spend after accounting for upcoming bills and goals.' },
-              { id: '2', category: 'Planning', title: 'Future Balance Forecast', content: 'Visualize your financial trajectory. Our 6-month forecasting engine predicts your balance based on recurring schedules and historical data.' },
-              { id: '3', category: 'Automation', title: 'Smart Reconciliation', content: 'Link transactions automatically. Our matching engine detects patterns between bank imports and manual entries for a perfectly balanced ledger.' },
-              { id: '4', category: 'Security', title: 'Titan Guard Protection', content: 'Your privacy is paramount. LEDGER uses Titan Guard v6.1 encryption, ensuring your financial data never leaves your device unencrypted.' },
-              { id: '5', category: 'Lifecycle', title: 'Variable Pay Schedules', content: 'Handle complex income. Configure semi-monthly, bi-weekly, or irregular payday exceptions to keep your planning accurate.' },
-              { id: '6', category: 'Advanced', title: 'Envelope Budgeting', content: 'Allocate every dollar. Use our digital envelope system to fund specific categories and track spending progress throughout the month.' },
-              { id: '7', category: 'Security', title: 'Hardware Security (Step-Up)', content: 'Protect your God Mode. Sensitive administrative actions require a biometric "Step-Up" challenge using your hardware passkey (FaceID, TouchID, or Security Key).' },
-              { id: '8', category: 'Admin', title: 'God Mode Configuration', content: 'Universal management. God Mode allows super-administrators to manage households, audit system logs, and verify platform health.' },
-              { id: '9', category: 'System', title: 'Reactive Data Sync', content: 'Instant interface updates. When you add or delete a transaction, your entire ledger and dashboard sync immediately without requiring a page refresh.' },
-              { id: '10', category: 'System', title: 'Asset Recovery Protocol', content: 'Zero-downtime stability. If the PWA detects it is running a stale version after a deployment, it automatically triggers a clean sync to recover the latest assets.' }
+              { id: '2', category: 'Planning', title: 'Spending Forecast', content: 'See your future balance. Our 6-month forecast predicts your balance based on your bills and past spending.' },
+              { id: '3', category: 'Automation', title: 'Smart Matching', content: 'Connect bank entries automatically. We find patterns between your bank data and manual entries to keep your records perfectly balanced.' },
+              { id: '4', category: 'Security', title: 'High-Level Protection', content: 'Your privacy is paramount. LEDGER uses high-level security protection, ensuring your financial data never leaves your device unencrypted. We have moved away from traditional passwords to more secure biometric login methods.' },
+              { id: '5', category: 'Lifecycle', title: 'Flexible Paydays', content: 'Manage unusual income. Set up paydays that don’t happen on the same day every month to keep your records accurate.' },
+              { id: '6', category: 'Advanced', title: 'Budget Folders', content: 'Organize every dollar. Set aside money for specific needs and track how much you have left to spend each month.' },
+              { id: '7', category: 'Security', title: 'Identity Verification', content: 'Protect your sensitive actions. Important settings and data changes require a quick identity check using your phone or a secure physical key (FaceID, TouchID, or Security Key).' },
+              { id: '8', category: 'Admin', title: 'Security Health Monitoring', content: 'Universal management. Administrators can review security records and monitor overall system safety without ever seeing your private information.' },
+              { id: '9', category: 'System', title: 'Instant Data Updates', content: 'Always stay current. When you add or delete a transaction, your entire ledger and dashboard update immediately without needing to refresh the page.' },
+              { id: '10', category: 'System', title: 'Automatic Recovery', content: 'Always up to date. If the app detects a newer version is available, it automatically updates itself to ensure you have the latest features and security.' }
             ]} />
           </div>
         </section>

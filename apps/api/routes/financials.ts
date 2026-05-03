@@ -1227,85 +1227,8 @@ financials.post('/reconciliation/proposals/bulk-action', zValidator('json', z.ob
   return c.json({ success: true })
 })
 
-// --- Tracked Expenses (Moved from dedicated router) ---
-financials.get('/expenses/tracked', async (c) => {
-  const householdId = c.get('householdId')
-  const db = getDb(c.env)
-  const results = await db.select().from(trackedExpenses).where(
-    and(
-      eq(trackedExpenses.householdId, householdId),
-      eq(trackedExpenses.status, 'pending')
-    )
-  )
-  return c.json({ success: true, data: results })
-})
+// --- Tracked Expenses (Moved to dedicated router) ---
 
-financials.post('/expenses/tracked', zValidator('json', z.object({
-  amountCents: z.number().int(),
-  description: z.string(),
-  notes: z.string().optional(),
-  attentionRequired: z.boolean().optional(),
-  needsBalanceTransfer: z.boolean().optional(),
-  transferTiming: z.string().optional(),
-  isBorrowed: z.boolean().optional(),
-  borrowSource: z.string().optional()
-})), async (c) => {
-  const householdId = c.get('householdId')
-  const data = c.req.valid('json')
-  const db = getDb(c.env)
-  const id = crypto.randomUUID()
-  
-  await db.insert(trackedExpenses).values({
-    id,
-    householdId,
-    ...data,
-    status: 'pending'
-  })
-  
-  return c.json({ success: true, id })
-})
-
-financials.post('/expenses/tracked/promote', zValidator('json', z.object({
-  ids: z.array(z.string()),
-  transactionDetails: TransactionSchema.partial()
-})), async (c) => {
-  const householdId = c.get('householdId')
-  const { ids, transactionDetails } = c.req.valid('json')
-  const db = getDb(c.env)
-  
-  const items = await db.select().from(trackedExpenses).where(
-    and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids))
-  )
-  
-  if (items.length === 0) return c.json({ error: 'No items found' }, 404)
-  
-  const promoTxs = items.map(item => {
-    return db.insert(transactions).values({
-      id: crypto.randomUUID(),
-      householdId,
-      accountId: transactionDetails.accountId || 'default-account',
-      categoryId: transactionDetails.categoryId || null,
-      amountCents: item.amountCents,
-      description: item.description,
-      transactionDate: transactionDetails.transactionDate || new Date().toISOString().split('T')[0],
-      notes: item.notes,
-      attentionRequired: item.attentionRequired,
-      needsBalanceTransfer: item.needsBalanceTransfer,
-      transferTiming: item.transferTiming,
-      isBorrowed: item.isBorrowed,
-      borrowSource: item.borrowSource,
-      status: transactionDetails.status || 'pending'
-    })
-  })
-  
-  const updateTracked = db.update(trackedExpenses)
-    .set({ status: 'committed' })
-    .where(and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids)))
-    
-  await db.batch([...promoTxs, updateTracked] as any)
-  
-  return c.json({ success: true })
-})
 
 export default financials
 

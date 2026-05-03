@@ -25,6 +25,8 @@ import interopRoutes from './routes/interop'
 import backupRoutes from './routes/backup'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
+import trackedExpensesRoutes from './routes/tracked-expenses'
+
 
 // Durable Objects Exports (Required for Cloudflare)
 export { HouseholdSession, Vault } from './durable-objects'
@@ -41,7 +43,7 @@ app.use('*', secureHeaders({
   contentSecurityPolicy: {
     frameAncestors: ["'self'", "https://*.gpnet.dev", "http://localhost:*"],
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com", "'sha256-bM3/ZnGUs5w3Ai5RZkah2l61sVoF1iPy34B20eect34='"],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com"],
     imgSrc: ["'self'", "data:", "https://ledger.gpnet.dev", "https://www.gstatic.com", "https://raw.githubusercontent.com", "https://cdn.simpleicons.org", "https://flaticons.net", "https://cdn-icons-png.flaticon.com", "https://api.dicebear.com", "https://cdn.discordapp.com", "https://media.giphy.com", "https://i.giphy.com", "https://media0.giphy.com", "https://media1.giphy.com", "https://media2.giphy.com", "https://media3.giphy.com", "https://media4.giphy.com", "https://tenor.com", "https://media.tenor.com", "https://images.unsplash.com"],
@@ -240,6 +242,7 @@ app.route('/api/admin', adminRoutes)
 app.route('/api/backup', backupRoutes)
 app.route('/api/support', supportRoutes)
 app.route('/api/discord', discordRoutes)
+app.route('/api/tracked-expenses', trackedExpensesRoutes)
 
 // Helper to safely parse configuration values
 const safeJsonParse = (val: string | null) => {

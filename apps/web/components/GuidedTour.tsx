@@ -134,11 +134,11 @@ export const GuidedTour: React.FC = () => {
             </p>
 
             {isWelcome && updates.length > 0 && (
-              <div className="mb-6 flex flex-column gap-3 bg-white/5 p-4 rounded-lg border border-white/10">
+              <div className="mb-6 flex flex-col gap-3 bg-white/5 p-4 rounded-lg border border-white/10 max-h-[300px] overflow-y-auto custom-scrollbar">
                 {updates.map(u => (
-                  <div key={u.version}>
+                  <div key={u.version} className="mb-2 last:mb-0">
                     <div className="text-sm font-bold text-primary mb-1">{u.title} ({u.version})</div>
-                    <div className="text-sm text-secondary">{u.description}</div>
+                    <div className="text-sm text-secondary whitespace-pre-wrap leading-relaxed">{u.description}</div>
                   </div>
                 ))}
               </div>

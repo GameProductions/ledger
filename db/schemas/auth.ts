@@ -179,13 +179,3 @@ export const personalAccessTokens = sqliteTable('personalAccessTokens', {
 }, (table) => ({
   householdIdx: index('idx_pat_household').on(table.householdId),
 }));
-
-export const notificationSettings = sqliteTable('notificationSettings', {
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  event: text('event').notNull(),
-  enabled: integer('enabled', { mode: 'boolean' }).default(false),
-  offsetDays: integer('offsetDays').default(3),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.userId, table.type, table.event] }),
-}));

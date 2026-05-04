@@ -203,7 +203,8 @@ app.use('/api/*', async (c, next) => {
 
   const publicPaths = ['/api/theme/broadcast', '/api/health', '/api/config']
   const isPasskeyLogin = path.startsWith('/api/auth/passkeys/login/')
-  const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS') || isPasskeyLogin
+  const isSupportWebhook = path === '/api/support/webhook/github'
+  const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS') || isPasskeyLogin || isSupportWebhook
   
   if (isPublicApi) return await next()
   return authMiddleware(c, next)

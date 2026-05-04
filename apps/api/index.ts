@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, Context } from 'hono'
 import { logger } from 'hono/logger'
 import { csrf } from 'hono/csrf'
 import { secureHeaders } from 'hono/secure-headers'
@@ -11,8 +11,9 @@ import { stepUpMiddleware } from './middlewares/step-up-middleware'
 import { getDb } from '#/index'
 import { systemConfig } from '#/schema'
 import { eq } from 'drizzle-orm'
-import { logAudit } from './utils'
+import { logAudit, apiError } from './utils'
 import { ipRateLimit } from './utils/rate-limit'
+import { AUTH_EXCLUSIONS } from '@shared/constants'
 
 // Route Imports
 import authRoutes from './routes/auth'
@@ -54,7 +55,12 @@ app.use('*', (c, next) => {
 app.use('*', async (c, next) => {
   const path = c.req.path
   
-  // 1. Maintenance Status Check
+  // 1. Public Path Bypass (Skip complex logic for non-API and public routes)
+  if (AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
+    return await next()
+  }
+
+  // 2. Maintenance Status Check
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true'
   let isSoftLocked = false
   let isGlobalLocked = false
@@ -104,16 +110,18 @@ app.use('*', async (c, next) => {
           const statusStr = String(data.globalMaintenance);
           if (data.globalMaintenance === true) isGlobalLocked = true;
           
-          // Use waitUntil to avoid blocking if possible, and ignore 429s
-          const kvPromise = (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.put('global:maintenance', statusStr, { expirationTtl: 60 })
-            .catch(err => {
-              if (!err.message?.includes('429')) {
-                console.warn('[Maintenance Cache] KV Update Failed:', err.message);
-              }
-            });
-          
-          if (c.executionCtx?.waitUntil) {
-            c.executionCtx.waitUntil(kvPromise);
+          const kv = c.env.FLEET_SECURITY_CACHE || c.env.CACHE;
+          if (kv) {
+            const kvPromise = kv.put('global:maintenance', statusStr, { expirationTtl: 60 })
+              .catch((err: any) => {
+                if (!err.message?.includes('429')) {
+                  console.warn('[Maintenance Cache] KV Update Failed:', err.message);
+                }
+              });
+            
+            if (c.executionCtx?.waitUntil) {
+              c.executionCtx.waitUntil(kvPromise);
+            }
           }
         }
       } catch (fetchErr) {
@@ -153,9 +161,11 @@ app.use('/api/*', async (c, next) => {
   
   // 1. IP Rate Limiting
   if (path.startsWith('/api/auth')) {
-    await ipRateLimit('AUTH')(c, async () => {})
+    const res = await ipRateLimit('AUTH')(c, async () => {})
+    if (res instanceof Response) return res
   } else {
-    await ipRateLimit('API')(c, async () => {})
+    const res = await ipRateLimit('API')(c, async () => {})
+    if (res instanceof Response) return res
   }
 
   // 2. Public Access Check
@@ -217,7 +227,6 @@ app.get('/openapi.json', (c) => c.json(openApiSpec))
 // Specific Middleware Chains
 app.use('/api/admin/*', adminMiddleware)
 app.use('/api/admin/*', stepUpMiddleware)
-app.post('/api/theme/broadcast', authMiddleware)
 
 // 4. System Routes
 app.route('/api/auth', authRoutes)
@@ -244,36 +253,46 @@ const safeJsonParse = (val: string | null) => {
 
 // 5. System Configuration & Theme Handling
 app.get('/api/config', async (c) => {
-  const cached = await c.env.FLEET_SECURITY_CACHE?.get('API_CONFIG', 'json')
-  if (cached) return c.json({ success: true, data: cached })
-
-  // --- System Configuration (Fleet Security v6.1 Filtered) ---
-  const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
-  const db = getDb(c.env)
-  
-  let publicConfig = {};
   try {
-    const config = await db.select().from(systemConfig);
-    publicConfig = config
-      .filter(conf => PUBLIC_CONFIG_KEYS.includes(conf.configKey as string))
-      .reduce((acc, curr) => ({ 
-        ...acc, 
-        [curr.configKey as string]: safeJsonParse(curr.configValue as string) 
-      }), {});
-  } catch (dbErr) {
-    console.error('[Config API] Database fetch failed:', dbErr);
-    // Return empty config or defaults to avoid crashing the frontend
-  }
+    const cached = await c.env.FLEET_SECURITY_CACHE?.get('API_CONFIG', 'json')
+    if (cached) return c.json({ success: true, data: cached })
 
-  const result = {
-    ...publicConfig,
-    environment: c.env.ENVIRONMENT || 'production',
-    discordClientId: c.env.DISCORD_CLIENT_ID
-  }
+    // --- System Configuration (Fleet Security v6.1 Filtered) ---
+    const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
+    const db = getDb(c.env)
+    
+    let publicConfig = {};
+    try {
+      const config = await db.select().from(systemConfig);
+      publicConfig = config
+        .filter(conf => PUBLIC_CONFIG_KEYS.includes(conf.configKey as string))
+        .reduce((acc, curr) => ({ 
+          ...acc, 
+          [curr.configKey as string]: safeJsonParse(curr.configValue as string) 
+        }), {});
+    } catch (dbErr) {
+      console.error('[Config API] Database fetch failed:', dbErr);
+    }
 
-  const cache = c.env.CACHE || c.env.FLEET_SECURITY_CACHE;
-  if (cache) c.executionCtx.waitUntil(cache.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
-  return c.json({ success: true, data: result })
+    const result = {
+      ...publicConfig,
+      environment: c.env.ENVIRONMENT || 'production',
+      discordClientId: c.env.DISCORD_CLIENT_ID
+    }
+
+    // Cache the result for performance (5 minutes)
+    if (c.env.FLEET_SECURITY_CACHE) {
+      c.executionCtx.waitUntil(c.env.FLEET_SECURITY_CACHE.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
+    }
+
+    return c.json({ success: true, data: result })
+  } catch (err) {
+    console.error('[Config API] Critical failure:', err)
+    return c.json({ 
+      success: true, 
+      data: { environment: c.env.ENVIRONMENT || 'production' } 
+    })
+  }
 })
 
 app.get('/api/theme/broadcast', async (c) => {
@@ -293,7 +312,7 @@ app.get('/api/theme/broadcast', async (c) => {
   }
 })
 
-app.post('/api/theme/broadcast', async (c) => {
+app.post('/api/theme/broadcast', authMiddleware, async (c) => {
   const { themeId } = await c.req.json()
   const db = getDb(c.env)
   
@@ -314,8 +333,8 @@ app.post('/api/theme/broadcast', async (c) => {
   
   if (c.env.CACHE) c.executionCtx.waitUntil(c.env.CACHE.delete('THEME_BROADCAST'))
   
-  // Activity Logging
-  c.executionCtx.waitUntil(logAudit(c, 'system_config', 'broadcast_theme_id', 'UPDATE_THEME_BROADCAST', prevState, { themeId }));
+  // Activity Logging (Handles its own waitUntil internally)
+  logAudit(c, 'system_config', 'broadcast_theme_id', 'UPDATE_THEME_BROADCAST', prevState, { themeId });
   
   return c.json({ success: true })
 })
@@ -333,17 +352,10 @@ const msVerification = (c: any) => {
 app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
 // 7. Global Error Handler
-app.onError((err, c) => {
-  const isProduction = c.env.ENVIRONMENT === 'production'
+app.onError((err: Error, c: Context) => {
   const status = (err as any).status || 500
-  
-  console.error(`[Global Error] ${c.req.method} ${c.req.path} - Status: ${status}`, err)
-  
-  return c.json({
-    success: false,
-    error: isProduction ? 'Internal Server Error' : err.message,
-    status,
-    path: isProduction ? undefined : c.req.path,
-    stack: isProduction ? undefined : err.stack
-  }, status as any)
+  return apiError(c, err.message, 'INTERNAL_SERVER_ERROR', 'A system error occurred.', status, {
+    path: c.req.path,
+    stack: err.stack
+  })
 })

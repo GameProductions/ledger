@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm';
-import { vault } from '#/schema';
+import { vault_v2 as vault } from '#/schema';
 import { encryptData, decryptData } from './security';
 
 export type SecretScope = 'system' | 'discord' | 'google' | 'internal' | 'webhook' | string;

@@ -109,11 +109,8 @@ auth.post('/login', zValidator('json', z.object({
   try {
     const metadata = getRequestMetadata(c)
     const user = await authService.validateCredentials(username, password)
-    const twoFactor = await authService.verify2FA(user, recoveryCode, metadata)
     
-    if (twoFactor.requires2FA) {
-      return c.json({ success: true, data: { requires2FA: true } }, 202)
-    }
+    // Step-Up is handled via the separate WebAuthn flow now
 
     const sessionId = await createSessionTracker(c, user.id, false, !!persistent)
     const token = await authService.generateToken(user.id, sessionId)

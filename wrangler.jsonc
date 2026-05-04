@@ -8,8 +8,9 @@
     "~": "./apps/api",
     "#": "./db"
   },
-  "site": {
-    "bucket": "./dist"
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
   },
   "routes": [
 		{
@@ -41,7 +42,7 @@
   ],
   "r2_buckets": [
     {
-      "binding": "ASSETS",
+      "binding": "STORAGE",
       "bucket_name": "ledger-assets"
     },
     {

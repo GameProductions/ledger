@@ -2,10 +2,12 @@ export type D1Database = any;
 export type R2Bucket = any;
 export type DurableObjectNamespace = any;
 export type KVNamespace = any;
+export type Fetcher = any;
 
 export type Bindings = {
   DB: D1Database
-  ASSETS: R2Bucket
+  ASSETS: Fetcher
+  STORAGE: R2Bucket
   BACKUPS: R2Bucket
   STORAGE_BUCKET: R2Bucket
   LEDGER_CACHE: KVNamespace

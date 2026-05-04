@@ -864,10 +864,10 @@ financials.post('/transactions/:id/receipt', async (c) => {
   const file = body['file'] as File
   
   if (!file) return c.json({ error: 'No file uploaded' }, 400)
-  if (!c.env.ASSETS) return c.json({ error: 'Assets Bucket not configured' }, 500)
+  if (!c.env.STORAGE) return c.json({ error: 'Assets Bucket not configured' }, 500)
 
   const key = `receipts/${householdId}/${id}-${Date.now()}`
-  await c.env.ASSETS.put(key, await file.arrayBuffer(), {
+  await c.env.STORAGE.put(key, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type }
   })
 
@@ -887,7 +887,7 @@ financials.get('/transactions/:id/receipt', async (c) => {
     
   if (!txResult[0] || !txResult[0].receiptR2Key) return c.json({ error: 'Receipt not found' }, 404)
 
-  const object = await c.env.ASSETS.get(txResult[0].receiptR2Key)
+  const object = await c.env.STORAGE.get(txResult[0].receiptR2Key)
   if (!object) return c.json({ error: 'Object not found in R2' }, 404)
 
   const headers = new Headers()

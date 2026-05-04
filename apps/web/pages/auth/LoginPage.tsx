@@ -191,7 +191,7 @@ const LoginPage: React.FC = () => {
     setLoading(true)
     try {
       const apiUrl = getApiUrl()
-      const optRes = await fetch(`${apiUrl}/api/auth/passkeys/login-options`, { 
+      const optRes = await fetch(`${apiUrl}/api/auth/passkeys/login/options`, { 
         method: 'POST',
         credentials: 'include'
       })
@@ -204,7 +204,7 @@ const LoginPage: React.FC = () => {
       
       const assertion = await startAuthentication({ optionsJSON: optEnvelope.data })
       
-      const verifyRes = await fetch(`${apiUrl}/api/auth/passkeys/login-verify`, {
+      const verifyRes = await fetch(`${apiUrl}/api/auth/passkeys/login/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

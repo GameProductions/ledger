@@ -67,7 +67,7 @@ export const PasskeyModule = () => {
 
   const fetchPasskeys = async () => {
     try {
-      const res = await fetch('/api/auth/passkey/list');
+      const res = await fetch('/api/auth/passkeys');
       if (res.ok) {
         const data = await res.json();
         setPasskeys(data);
@@ -87,7 +87,7 @@ export const PasskeyModule = () => {
     setRegistering(true);
     try {
       // Step 1: Get registration options from server
-      const optionsRes = await fetch('/api/auth/passkey/register/options');
+      const optionsRes = await fetch('/api/auth/passkeys/register/options', { method: 'POST' });
       const options = await optionsRes.json();
 
       // Step 2: Use WebAuthn API to create credential
@@ -95,7 +95,7 @@ export const PasskeyModule = () => {
       const regResp = await startRegistration(options);
 
       // Step 3: Send response to server for verification
-      const verifyRes = await fetch('/api/auth/passkey/register/verify', {
+      const verifyRes = await fetch('/api/auth/passkeys/register/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(regResp),
@@ -122,7 +122,7 @@ export const PasskeyModule = () => {
 
   const deletePasskey = async (id: string) => {
     try {
-      const res = await fetch(`/api/auth/passkey/delete?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/auth/passkeys/${id}`, { method: 'DELETE' });
       if (res.ok) {
         showInline('Hardware signature revoked.', 'success');
         setConfirmDeleteId(null);
@@ -150,10 +150,10 @@ export const PasskeyModule = () => {
     }
 
     try {
-      const res = await fetch(`/api/auth/passkey/rename`, {
-        method: 'POST',
+      const res = await fetch(`/api/auth/passkeys/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, name: newName }),
+        body: JSON.stringify({ name: newName }),
       });
       if (res.ok) {
         showInline('Identity label updated.', 'success');

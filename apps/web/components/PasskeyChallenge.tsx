@@ -41,7 +41,7 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
         const verificationResp = await fetch('/api/admin/webauthn/verify-auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(asseResp),
+          body: JSON.stringify({ assertion: asseResp }),
         });
         
         if (verificationResp.ok) {

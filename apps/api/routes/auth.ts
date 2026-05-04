@@ -690,6 +690,12 @@ auth.post('/webauthn/verify-registration', async (c) => {
 
 // --- SHARED HANDLERS ---
 
+const getRpID = (c: any) => {
+  if (c.env.WEB_URL) return new URL(c.env.WEB_URL).hostname;
+  if (c.env.ENVIRONMENT === 'production') return 'ledger.gpnet.dev';
+  return c.req.header('host')?.split(':')[0] || 'localhost';
+};
+
 async function handleRegisterOptions(c: any) {
   const userId = c.get('userId')
   const db = getDb(c.env)
@@ -702,7 +708,7 @@ async function handleRegisterOptions(c: any) {
   
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
-    rpID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
+    rpID: getRpID(c),
     userID: new TextEncoder().encode(userId) as any,
     userName: user.username || user.email || 'unknown',
     attestationType: 'none',
@@ -741,7 +747,7 @@ async function handleRegisterVerify(c: any) {
     response: body,
     expectedChallenge,
     expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
-    expectedRPID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
+    expectedRPID: getRpID(c),
   })
 
   if (verification.verified && verification.registrationInfo) {
@@ -787,12 +793,18 @@ async function handleRegisterVerify(c: any) {
   return c.json({ verified: false }, 400)
 }
 
-// Original Routes
-auth.post('/passkeys/register-options', async (c) => {
+auth.get('/passkeys', async (c) => {
+  const userId = c.get('userId')
+  const db = getDb(c.env)
+  const results = await db.select().from(passkeys).where(eq(passkeys.userId, userId))
+  return c.json(results)
+})
+
+auth.post('/passkeys/register/options', async (c) => {
   return await handleRegisterOptions(c)
 })
 
-auth.post('/passkeys/register-verify', async (c) => {
+auth.post('/passkeys/register/verify', async (c) => {
   return await handleRegisterVerify(c)
 })
 
@@ -817,21 +829,14 @@ auth.delete('/passkeys/:id', async (c) => {
   return c.json({ success: true })
 })
 
-auth.delete('/passkeys/:id', async (c) => {
-  const userId = c.get('userId')
-  const { id } = c.req.param()
-  const db = getDb(c.env)
-  
-  await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
-  await logAudit(c, 'passkeys', id, 'DELETE')
-  return c.json({ success: true })
-})
+// Redundant route removed
 
-auth.post('/passkeys/login-options', async (c) => {
+
+auth.post('/passkeys/login/options', async (c) => {
   const options = await generateAuthenticationOptions({
-    rpID: c.req.header('host')?.split(':')[0] || 'gpnet.dev',
+    rpID: getRpID(c),
     allowCredentials: [], // Allow any credential for this RP
-    userVerification: 'preferred',
+    userVerification: 'required',
   })
 
   await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
@@ -845,7 +850,7 @@ auth.post('/passkeys/login-options', async (c) => {
   return c.json({ success: true, data: options })
 })
 
-auth.post('/passkeys/login-verify', zValidator('json', z.object({
+auth.post('/passkeys/login/verify', zValidator('json', z.object({
   assertion: z.any(),
   persistent: z.boolean().optional()
 })), async (c) => {
@@ -873,7 +878,8 @@ auth.post('/passkeys/login-verify', zValidator('json', z.object({
     response: assertion,
     expectedChallenge,
     expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
+    expectedRPID: getRpID(c),
+
     requireUserVerification: true,
     credential: {
       id: passkey.credentialId,

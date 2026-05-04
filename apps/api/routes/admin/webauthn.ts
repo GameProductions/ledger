@@ -19,6 +19,12 @@ import { HTTPException } from 'hono/http-exception'
 
 const webauthn = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
+const getRpID = (c: any) => {
+  if (c.env.WEB_URL) return new URL(c.env.WEB_URL).hostname;
+  if (c.env.ENVIRONMENT === 'production') return 'ledger.gpnet.dev';
+  return c.req.header('host')?.split(':')[0] || 'localhost';
+};
+
 /**
  * GET /api/admin/webauthn/passkeys
  * Lists all passkeys for the current user.
@@ -99,7 +105,7 @@ webauthn.post('/generate-registration', async (c) => {
   
   const options = await generateRegistrationOptions({
     rpName: 'LEDGER',
-    rpID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
+    rpID: getRpID(c),
     userID: new TextEncoder().encode(userId) as any,
     userName: user.username || user.email || 'unknown',
     attestationType: 'none',
@@ -139,7 +145,7 @@ webauthn.post('/verify-registration', async (c) => {
     response: body,
     expectedChallenge,
     expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
-    expectedRPID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
+    expectedRPID: getRpID(c),
   })
 
   if (verification.verified && verification.registrationInfo) {
@@ -193,7 +199,7 @@ webauthn.post('/generate-auth', async (c) => {
   const passkeysResult = await db.select({ credentialId: passkeys.credentialId }).from(passkeys).where(eq(passkeys.userId, userId))
   
   const options = await generateAuthenticationOptions({
-    rpID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
+    rpID: getRpID(c),
     allowCredentials: passkeysResult.map(pk => ({
       id: pk.credentialId,
       type: 'public-key'
@@ -251,7 +257,7 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
     response: assertion,
     expectedChallenge,
     expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
-    expectedRPID: c.env.WEB_URL ? new URL(c.env.WEB_URL).hostname : (c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost')),
+    expectedRPID: getRpID(c),
     requireUserVerification: true,
     credential: {
       id: passkey.credentialId,

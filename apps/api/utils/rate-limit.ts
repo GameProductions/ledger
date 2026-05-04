@@ -25,7 +25,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
     const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || '127.0.0.1';
 
     // 0. Global Block Enforcement (Fleet-wide Shield)
-    const isBlocked = await kv.get(`tg:block:${ip}`);
+    const isBlocked = await kv.get(`fs:block:${ip}`);
     if (isBlocked) {
       return c.json({ 
         error: 'Security Shield Active', 
@@ -40,8 +40,8 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
       // 1. Fetch Active Policy (Global -> Bot Specific)
       let globalConfig, botConfig;
       try {
-        globalConfig = await kv.get(`tg:config:${tier}`, 'json') as any;
-        botConfig = await kv.get(`tg:config:${botName}:${tier}`, 'json') as any;
+        globalConfig = await kv.get(`fs:config:${tier}`, 'json') as any;
+        botConfig = await kv.get(`fs:config:${botName}:${tier}`, 'json') as any;
       } catch (e) {
         console.warn(`[Fleet Security] Failed to fetch config from KV:`, e);
       }
@@ -50,7 +50,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
       const { limit, window } = policy;
 
       // 2. Perform Rate Limit Check
-      const key = `tg:bot:${botName}:rl:${tier}:${ip}`;
+      const key = `fs:bot:${botName}:rl:${tier}:${ip}`;
       let current;
       try {
         current = await kv.get(key, 'json') as { count: number; reset: number } | null;
@@ -72,7 +72,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
           
           // Log block for Foundation Monitoring
           try {
-            await kv.put(`tg:block:${ip}`, JSON.stringify({
+            await kv.put(`fs:block:${ip}`, JSON.stringify({
               bot: botName,
               tier,
               triggered: Date.now(),

@@ -10,7 +10,9 @@ import {
 import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit, getRequestMetadata } from '../utils'
-import { uint8ArrayToBase64, getRpID } from '../auth-utils'
+import { uint8ArrayToBase64, base64ToUint8Array, getRpID, hashIdentifier } from '../auth-utils'
+import { getAAGUIDMetadata } from '../utils/webauthn-metadata'
+import { VaultService } from '../utils/vault.service'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
@@ -750,25 +752,55 @@ async function handleRegisterVerify(c: any) {
       counter,
       credentialDeviceType,
       credentialBackedUp,
-      aaguid
+      aaguid,
+      attestationObject
     } = verification.registrationInfo
 
     const db = getDb(c.env)
     const id = crypto.randomUUID()
-    
     const metadata = getRequestMetadata(c)
+    
+    // 🏷️ Enrich with branding metadata
+    const branding = getAAGUIDMetadata(aaguid);
+    
+    // 🔒 Extreme Security: Store raw secrets in Vault, Hash in DB
+    const vault = new VaultService(db, c.env.JWT_SECRET);
+    const credIdB64 = uint8ArrayToBase64(credentialID);
+    const pubKeyB64 = uint8ArrayToBase64(credentialPublicKey);
+    
+    // Index by hash for Zero-Knowledge lookups
+    const credentialIdHash = await hashIdentifier(credIdB64);
+    
+    await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
+    await vault.setSecret(id, 'PUBLIC_KEY', 'webauthn', pubKeyB64);
+
     await db.insert(passkeys).values({
       id,
       userId,
-      name: `Passkey ${new Date().toLocaleDateString()}`,
-      credentialId: uint8ArrayToBase64(credentialID),
-      publicKey: uint8ArrayToBase64(credentialPublicKey),
+      name: body.name || `Passkey ${new Date().toLocaleDateString()}`,
+      credentialIdHash,
       counter,
       deviceType: credentialDeviceType,
       backedUp: credentialBackedUp ? 1 : 0,
+      attestationFormat: verification.registrationInfo.fmt || 'none',
+      userVerified: 1, // WebAuthn registration typically implies user verification
       aaguid: aaguid || null,
+      providerName: branding.name,
+      icon: branding.icon,
       transports: JSON.stringify(body.response.transports || []),
+      
+      // 🕒 Timestamps
+      createdAt: new Date().toISOString(),
       lastUsedAt: new Date().toISOString(),
+
+      // 🕵️ Registration Forensics (Immutable)
+      registrationIp: metadata.ip,
+      registrationIpV4: metadata.ipV4,
+      registrationIpV6: metadata.ipV6,
+      registrationLocation: metadata.location,
+      registrationUa: metadata.userAgent,
+
+      // 🕵️ Initial Usage Forensics
       lastUsedIp: metadata.ip,
       lastUsedIpV4: metadata.ipV4,
       lastUsedIpV6: metadata.ipV6,
@@ -776,7 +808,11 @@ async function handleRegisterVerify(c: any) {
       lastUsedUa: metadata.userAgent
     })
 
-    await logAudit(c, 'passkeys', id, 'REGISTER', null, { name: `Passkey ${new Date().toLocaleDateString()}` })
+    await logAudit(c, 'passkeys', id, 'REGISTER', null, { 
+      name: body.name || branding.name,
+      aaguid,
+      provider: branding.name 
+    })
 
     // Trigger Security Alert
     const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
@@ -864,38 +900,45 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   }
 
   const db = getDb(c.env)
+  const vault = new VaultService(db, c.env.JWT_SECRET)
+  
+  // 🔒 Zero-Knowledge Lookup by hash
+  const credentialIdHash = await hashIdentifier(assertion.id)
   const passkeyResult = await db.select()
     .from(passkeys)
-    .where(or(
-      eq(passkeys.credentialId, assertion.id),
-      eq(passkeys.credentialId, Buffer.from(assertion.id, 'base64').toString('base64'))
-    ))
+    .where(eq(passkeys.credentialIdHash, credentialIdHash))
     .limit(1)
   
   const passkey = passkeyResult[0]
-  
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized' })
+
+  // 🔑 Retrieve secrets from Vault
+  const publicKeyB64 = await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn')
+  const rawCredentialId = await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn')
+  
+  if (!publicKeyB64 || !rawCredentialId) {
+    throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
+  }
 
   const verification = await verifyAuthenticationResponse({
     response: assertion,
     expectedChallenge,
     expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
     expectedRPID: getRpID(c),
-
     requireUserVerification: true,
     credential: {
-      id: passkey.credentialId,
-      publicKey: Buffer.from(passkey.publicKey, 'base64'),
+      id: rawCredentialId,
+      publicKey: base64ToUint8Array(publicKeyB64),
       counter: passkey.counter,
-      transports: passkey.transports ? passkey.transports.split(',') : undefined
-    } as any
+      transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
+    }
   })
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Authentication failed' })
   }
 
-  // Update counter and metadata
+  // 📈 Update counter and forensic metadata
   const metadata = getRequestMetadata(c)
   await db.update(passkeys).set({ 
     counter: verification.authenticationInfo.newCounter,
@@ -910,7 +953,12 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   const authService = new AuthService(c.env)
   const sessionId = await createSessionTracker(c, passkey.userId, true, !!persistent)
   const token = await authService.generateToken(passkey.userId, sessionId)
-  await logAudit(c, 'users', passkey.userId, 'login', null, { strategy: 'passkey' })
+  
+  await logAudit(c, 'users', passkey.userId, 'login', null, { 
+    strategy: 'passkey',
+    passkeyId: passkey.id,
+    provider: passkey.providerName 
+  })
   
   return c.json({ success: true, data: { token } })
 })
@@ -928,78 +976,78 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   }
 
   const db = getDb(c.env)
+  const vault = new VaultService(db, c.env.JWT_SECRET)
   
-  // Normalize assertion ID (browser sends base64url)
-  const normalizedId = assertion.id.replace(/-/g, '+').replace(/_/g, '/')
-  const paddedId = normalizedId.padEnd(normalizedId.length + (4 - normalizedId.length % 4) % 4, '=')
-
+  // 🔒 Zero-Knowledge Lookup by hash
+  const credentialIdHash = await hashIdentifier(assertion.id)
   const passkeyResult = await db.select()
     .from(passkeys)
     .where(and(
       eq(passkeys.userId, userId),
-      or(
-        eq(passkeys.credentialId, assertion.id),
-        eq(passkeys.credentialId, paddedId)
-      )
+      eq(passkeys.credentialIdHash, credentialIdHash)
     ))
     .limit(1)
   
   const passkey = passkeyResult[0]
-  if (!passkey) {
-    console.error('[Step-Up] Passkey not found for user:', userId, 'id:', assertion.id)
-    throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
+  if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
+
+  // 🔑 Retrieve secrets from Vault
+  const publicKeyB64 = await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn')
+  const rawCredentialId = await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn')
+  
+  if (!publicKeyB64 || !rawCredentialId) {
+    throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
 
-  let verification
-  try {
-    verification = await verifyAuthenticationResponse({
-      response: assertion,
-      expectedChallenge,
-      expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-      expectedRPID: getRpID(c),
-      requireUserVerification: true,
-      credential: {
-        id: passkey.credentialId,
-        publicKey: Buffer.from(passkey.publicKey, 'base64'),
-        counter: passkey.counter,
-        transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
-      } as any
-    })
-  } catch (err: any) {
-    console.error('[Step-Up] Verification Exception:', err)
-    throw new HTTPException(401, { message: `Verification failed: ${err.message}` })
-  }
+  const verification = await verifyAuthenticationResponse({
+    response: assertion,
+    expectedChallenge,
+    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+    expectedRPID: getRpID(c),
+    requireUserVerification: true,
+    credential: {
+      id: rawCredentialId,
+      publicKey: base64ToUint8Array(publicKeyB64),
+      counter: passkey.counter,
+      transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
+    }
+  })
 
   if (!verification.verified) {
-    throw new HTTPException(401, { message: 'Step-Up verification failed' })
+    throw new HTTPException(401, { message: 'Step-up authentication failed' })
   }
 
-  // Update counters and session verification timestamp
+  // 📈 Update counters, timestamps and forensics
   const now = new Date().toISOString()
-  const newCounter = verification.authenticationInfo?.newCounter ?? passkey.counter
-  
-  if (!sessionId) {
-    console.error('[Step-Up] Critical: Missing Session ID in context during verification')
-    throw new HTTPException(500, { message: 'Session ID missing' })
-  }
-
   const metadata = getRequestMetadata(c)
-  await db.batch([
+  
+  const updates = [
     db.update(passkeys).set({ 
-      counter: newCounter,
+      counter: verification.authenticationInfo.newCounter,
       lastUsedAt: now,
       lastUsedIp: metadata.ip,
       lastUsedIpV4: metadata.ipV4,
       lastUsedIpV6: metadata.ipV6,
       lastUsedLocation: metadata.location,
       lastUsedUa: metadata.userAgent
-    }).where(eq(passkeys.id, passkey.id)),
-    db.update(sessions).set({ 
-      passkeyVerifiedAt: now 
-    }).where(eq(sessions.id, sessionId))
-  ])
+    }).where(eq(passkeys.id, passkey.id))
+  ]
 
-  await logAudit(c, 'sessions', sessionId, 'STEP_UP_VERIFIED', null, { passkeyId: passkey.id })
+  if (sessionId) {
+    updates.push(
+      db.update(sessions).set({ 
+        passkeyVerifiedAt: now 
+      }).where(eq(sessions.id, sessionId))
+    )
+  }
+
+  await db.batch(updates as any)
+
+  await logAudit(c, 'users', userId, 'step-up', null, { 
+    strategy: 'passkey',
+    passkeyId: passkey.id,
+    sessionId 
+  })
   
   return c.json({ success: true })
 })

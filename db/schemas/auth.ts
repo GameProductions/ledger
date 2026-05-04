@@ -84,18 +84,37 @@ export const sessions = sqliteTable('sessions', {
 export const passkeys = sqliteTable('passkeys', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  credentialId: text('credentialId').notNull(),
-  publicKey: text('publicKey').notNull(),
-  counter: integer('counter').notNull(),
-  deviceType: text('deviceType'),
-  backedUp: integer('backedUp').default(0), // 0 or 1
+  
+  // 🔐 Zero-Knowledge Lookup
+  // The raw credentialId is stored in the Vault. We use a SHA-256 hash here for lookups.
+  credentialIdHash: text('credentialIdHash').notNull().unique(),
+  
+  // 📈 Security & Counters
+  counter: integer('counter').notNull().default(0),
+  deviceType: text('deviceType'), // 'single_device' | 'multi_device'
+  backedUp: integer('backedUp').default(0), 
+  attestationFormat: text('attestationFormat'), // 'packed', 'none', etc.
+  userVerified: integer('userVerified').default(0),
+
+  // 🕒 Temporal Metadata
   createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
   lastUsedAt: text('lastUsedAt'),
+  
+  // 🏷️ Identity & Branding
   name: text('name'),
   aaguid: text('aaguid'),
-  transports: text('transports'),
   providerName: text('providerName'),
   icon: text('icon'),
+  transports: text('transports'), // JSON array of allowed transports
+
+  // 🕵️ Registration Forensics (Immutable)
+  registrationIp: text('registrationIp'),
+  registrationIpV4: text('registrationIpV4'),
+  registrationIpV6: text('registrationIpV6'),
+  registrationLocation: text('registrationLocation'),
+  registrationUa: text('registrationUa'),
+
+  // 🕵️ Usage Forensics (Mutable)
   lastUsedIp: text('lastUsedIp'),
   lastUsedIpV4: text('lastUsedIpV4'),
   lastUsedIpV6: text('lastUsedIpV6'),
@@ -103,6 +122,7 @@ export const passkeys = sqliteTable('passkeys', {
   lastUsedUa: text('lastUsedUa'),
 }, (table) => ({
   userIdx: index('idx_passkeys_user').on(table.userId),
+  hashIdx: index('idx_passkeys_hash').on(table.credentialIdHash),
 }));
 
 export const backupCodes = sqliteTable('backupCodes', {

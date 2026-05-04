@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import Papa from 'papaparse';
-import ExcelJS from 'exceljs';
 import { 
   FileCheck, 
   ShieldCheck, 
@@ -19,7 +17,7 @@ interface ImportReviewProps {
 
 const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [workbook, setWorkbook] = useState<ExcelJS.Workbook | null>(null);
+  const [workbook, setWorkbook] = useState<any>(null);
   const [availableSheets, setAvailableSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
   const [reviewItems, setReviewItems] = useState<any[]>([]);
@@ -37,16 +35,21 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       setReviewItems([]);
       
       if (uploadedFile.name.endsWith('.xlsx')) {
-        const wb = new ExcelJS.Workbook();
-        const arrayBuffer = await uploadedFile.arrayBuffer();
-        await wb.xlsx.load(arrayBuffer);
-        setWorkbook(wb);
-        const sheetNames = (wb.worksheets || []).map(ws => ws.name);
-        setAvailableSheets(sheetNames);
-        setSelectedSheet(sheetNames[0]);
-      } else if (uploadedFile.name.endsWith('.json')) {
-        setWorkbook(null);
-        setAvailableSheets([]);
+        setAnalyzing(true);
+        try {
+          const ExcelJS = (await import('exceljs')).default;
+          const wb = new ExcelJS.Workbook();
+          const arrayBuffer = await uploadedFile.arrayBuffer();
+          await wb.xlsx.load(arrayBuffer);
+          setWorkbook(wb as any);
+          const sheetNames = (wb.worksheets || []).map(ws => ws.name);
+          setAvailableSheets(sheetNames);
+          setSelectedSheet(sheetNames[0]);
+        } catch (err) {
+          showToast('Failed to load Excel library', 'error');
+        } finally {
+          setAnalyzing(false);
+        }
       } else {
         setWorkbook(null);
         setAvailableSheets([]);
@@ -131,17 +134,23 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           finalizeData([{ description: 'PDF Transaction Extraction', amount: 125.50, date: '2026-03-25' }]);
        }, 1500);
     } else {
-      Papa.parse(file, {
-        header: true,
-        complete: (results) => {
-          finalizeData((results?.data || []).map((r: any) => ({
-            description: r.Description || r.merchant || r.Name,
-            amount: parseFloat(r.Amount || r.amount || '0'),
-            date: r.Date || r.date,
-            category: r.Category
-          })));
-        }
-      });
+      try {
+        const Papa = (await import('papaparse')).default;
+        Papa.parse(file, {
+          header: true,
+          complete: (results) => {
+            finalizeData((results?.data || []).map((r: any) => ({
+              description: r.Description || r.merchant || r.Name,
+              amount: parseFloat(r.Amount || r.amount || '0'),
+              date: r.Date || r.date,
+              category: r.Category
+            })));
+          }
+        });
+      } catch (err) {
+        showToast('Failed to load CSV library', 'error');
+        setAnalyzing(false);
+      }
     }
   };
 

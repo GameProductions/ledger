@@ -6,7 +6,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "alias": {
     "~": "./apps/api",
-    "#": "./db"
+    "#": "./db",
+    "@shared": "./packages/shared"
   },
   "assets": {
     "directory": "./dist",

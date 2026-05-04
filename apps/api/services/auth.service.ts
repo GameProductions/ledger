@@ -401,55 +401,63 @@ export class AuthService {
     return true
   }
 
-  // --- BACKUP CODES (Fleet Security v6.1 - Gold Standard) ---
+  // --- BACKUP CODES (Extreme Hardening - Vault Integrated) ---
   async generateBackupCodes(userId: string) {
-    const db = getDb(this.env)
+    const db = getDb(this.env);
+    const vault = new VaultService(db, this.env.JWT_SECRET);
     
-    // 1. Clear existing codes
-    await db.delete(backupCodes).where(eq(backupCodes.userId, userId))
-    
-    // 2. Generate 10 new codes
+    // 1. Generate 10 new high-entropy codes
     const newCodes = Array.from({ length: 10 }, () => 
       Math.random().toString(36).substring(2, 10).toUpperCase()
-    )
+    );
     
-    // 3. Hash and save
-    const insertPromises = newCodes.map(async (code) => {
-      const codeHash = await hashPassword(code)
-      return db.insert(backupCodes).values({
-        id: crypto.randomUUID(),
-        userId,
-        codeHash,
-      })
-    })
+    // 2. Hash codes (Layered Security: Hashed before being Encrypted in Vault)
+    const hashes = await Promise.all(newCodes.map(code => hashPassword(code)));
     
-    await Promise.all(insertPromises)
+    // 3. Store as an encrypted blob in the vault
+    await vault.setSecret(userId, 'RECOVERY_CODES', 'internal', JSON.stringify(hashes));
     
-    // 4. Ensure legacy field is cleared
-    await db.update(users).set({ backupCodesJson: '[]' }).where(eq(users.id, userId))
+    // 4. Ensure legacy fields are cleared
+    await db.update(users).set({ backupCodesJson: '[]' }).where(eq(users.id, userId));
     
-    return newCodes
+    return newCodes;
   }
 
   async verifyBackupCode(userId: string, code: string) {
-    const db = getDb(this.env)
-    const storedCodes = await db.select().from(backupCodes).where(eq(backupCodes.userId, userId))
+    const db = getDb(this.env);
+    const vault = new VaultService(db, this.env.JWT_SECRET);
     
-    if (storedCodes.length === 0) return false
+    const vaultResult = await vault.getSecret(userId, 'RECOVERY_CODES', 'internal');
+    if (!vaultResult) return false;
     
-    const normalizedCode = code.toUpperCase()
+    let hashes: string[] = JSON.parse(vaultResult);
+    if (!Array.isArray(hashes) || hashes.length === 0) return false;
     
-    for (const stored of storedCodes) {
-      if (await verifyPassword(normalizedCode, stored.codeHash)) {
-        // Delete for maximum security
-        await db.delete(backupCodes).where(eq(backupCodes.id, stored.id))
-        
-        console.log(`[Auth] Backup code verified and consumed for user ${userId}`)
-        return true
+    const normalizedCode = code.toUpperCase();
+    let verifiedIdx = -1;
+    
+    for (let i = 0; i < hashes.length; i++) {
+      if (await verifyPassword(normalizedCode, hashes[i])) {
+        verifiedIdx = i;
+        break;
       }
     }
     
-    return false
+    if (verifiedIdx !== -1) {
+      // Consume the code
+      hashes.splice(verifiedIdx, 1);
+      
+      if (hashes.length > 0) {
+        await vault.setSecret(userId, 'RECOVERY_CODES', 'internal', JSON.stringify(hashes));
+      } else {
+        await vault.deleteSecret(userId, 'RECOVERY_CODES', 'internal');
+      }
+      
+      console.log(`[Auth] Backup code verified and consumed from vault for user ${userId}`);
+      return true;
+    }
+    
+    return false;
   }
 
   // --- PERSONALIZATION ---

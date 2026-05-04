@@ -4,8 +4,11 @@
  */
 
 // --- NATIVE BASE64 HELPERS (Buffer-free) ---
+// --- NATIVE BASE64URL HELPERS (Buffer-free) ---
 export function base64ToUint8Array(base64: string): Uint8Array {
-  const binaryString = atob(base64);
+  // Convert from Base64URL to standard Base64 if necessary
+  const standard = base64.replace(/-/g, '+').replace(/_/g, '/');
+  const binaryString = atob(standard);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
@@ -19,7 +22,22 @@ export function uint8ArrayToBase64(bytes: Uint8Array): string {
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return btoa(binary);
+  // Convert standard Base64 to Base64URL (no padding)
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * 🔒 SHA-256 Hash for Zero-Knowledge Lookups
+ */
+export async function hashIdentifier(id: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(id);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // --- TIMING SAFE EQUAL POLYFILL (Fleet Hardening) ---
@@ -127,14 +145,6 @@ export async function verifyPassword(password: string, storedHash: string): Prom
   }
 }
 
-function base64ToBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
 
 export const getRpID = (c: any) => {
   if (c.env.WEB_URL) return new URL(c.env.WEB_URL).hostname;

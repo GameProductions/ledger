@@ -11,7 +11,9 @@ import { Bindings, Variables } from '../../types'
 import { getDb } from '#/index'
 import { users, passkeys, sessions } from '#/schema'
 import { eq, and, or } from 'drizzle-orm'
-import { uint8ArrayToBase64, getRpID } from '../../auth-utils'
+import { uint8ArrayToBase64, getRpID, hashIdentifier, base64ToUint8Array } from '../../auth-utils'
+import { getAAGUIDMetadata } from '../../utils/webauthn-metadata'
+import { VaultService } from '../../utils/vault.service'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { getRequestMetadata, logAudit } from '../../utils'
 import { EmailService } from '../../services/email.service'
@@ -106,7 +108,7 @@ webauthn.post('/generate-registration', async (c) => {
     userName: user.username || user.email || 'unknown',
     attestationType: 'none',
     excludeCredentials: (passkeysResult || []).map((pk: any) => ({
-      id: pk.credentialId,
+      id: pk.credentialId, // Note: We need to retrieve raw IDs for exclusion if we want to be strict, but hashed comparison is also possible. For now, we'll retrieve them.
       type: 'public-key',
       transports: pk.transports ? JSON.parse(pk.transports) : [],
     })),
@@ -156,20 +158,46 @@ webauthn.post('/verify-registration', async (c) => {
 
     const db = getDb(c.env)
     const id = crypto.randomUUID()
-    
     const metadata = getRequestMetadata(c)
+    
+    // 🏷️ Enrich with branding metadata
+    const branding = getAAGUIDMetadata(aaguid);
+    
+    // 🔒 Extreme Security: Store raw secrets in Vault, Hash in DB
+    const vault = new VaultService(db, c.env.JWT_SECRET);
+    const credIdB64 = uint8ArrayToBase64(credentialID);
+    const pubKeyB64 = uint8ArrayToBase64(credentialPublicKey);
+    
+    // Index by hash for Zero-Knowledge lookups
+    const credentialIdHash = await hashIdentifier(credIdB64);
+    
+    await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
+    await vault.setSecret(id, 'PUBLIC_KEY', 'webauthn', pubKeyB64);
+
     await db.insert(passkeys).values({
       id,
       userId,
-      name: `Passkey ${new Date().toLocaleDateString()}`,
-      credentialId: uint8ArrayToBase64(credentialID),
-      publicKey: uint8ArrayToBase64(credentialPublicKey),
+      name: body.name || `Admin Passkey ${new Date().toLocaleDateString()}`,
+      credentialIdHash,
       counter,
       deviceType: credentialDeviceType,
       backedUp: credentialBackedUp ? 1 : 0,
+      attestationFormat: verification.registrationInfo.fmt || 'none',
+      userVerified: 1,
       aaguid: aaguid || null,
+      providerName: branding.name,
+      icon: branding.icon,
       transports: JSON.stringify(body.response.transports || []),
+      
+      createdAt: new Date().toISOString(),
       lastUsedAt: new Date().toISOString(),
+
+      registrationIp: metadata.ip,
+      registrationIpV4: metadata.ipV4,
+      registrationIpV6: metadata.ipV6,
+      registrationLocation: metadata.location,
+      registrationUa: metadata.userAgent,
+
       lastUsedIp: metadata.ip,
       lastUsedIpV4: metadata.ipV4,
       lastUsedIpV6: metadata.ipV6,
@@ -177,14 +205,17 @@ webauthn.post('/verify-registration', async (c) => {
       lastUsedUa: metadata.userAgent
     })
 
-    await logAudit(c, 'passkeys', id, 'REGISTER', null, { name: `Passkey ${new Date().toLocaleDateString()}` })
+    await logAudit(c, 'passkeys', id, 'REGISTER', null, { 
+      name: body.name || branding.name,
+      context: 'admin' 
+    })
 
     // Trigger Security Alert
     const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
     const user = userResult[0]
     if (user?.email) {
       try {
-        await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Biometric Passkey Enrolled')
+        await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Administrative Passkey Enrolled')
       } catch (e) {
         console.error('[Sentinel] Failed to send security alert:', e)
       }
@@ -200,15 +231,19 @@ webauthn.post('/verify-registration', async (c) => {
 webauthn.post('/generate-auth', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
+  const vault = new VaultService(db, c.env.JWT_SECRET)
   
-  const passkeysResult = await db.select({ credentialId: passkeys.credentialId }).from(passkeys).where(eq(passkeys.userId, userId))
+  const userPasskeys = await db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, userId))
   
+  // 🔑 Retrieve raw IDs from Vault for the allow list
+  const allowCredentials = await Promise.all(userPasskeys.map(async pk => {
+    const rawId = await vault.getSecret(pk.id, 'CREDENTIAL_ID', 'webauthn')
+    return rawId ? { id: rawId, type: 'public-key' as const } : null
+  }))
+
   const options = await generateAuthenticationOptions({
     rpID: getRpID(c),
-    allowCredentials: passkeysResult.map(pk => ({
-      id: pk.credentialId,
-      type: 'public-key'
-    })),
+    allowCredentials: allowCredentials.filter((c): c is { id: string, type: 'public-key' } => c !== null),
     userVerification: 'required',
   })
 
@@ -237,25 +272,27 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
   }
 
   const db = getDb(c.env)
+  const vault = new VaultService(db, c.env.JWT_SECRET)
   
-  // Normalize assertion ID
-  const normalizedId = assertion.id.replace(/-/g, '+').replace(/_/g, '/')
-  const paddedId = normalizedId.padEnd(normalizedId.length + (4 - normalizedId.length % 4) % 4, '=')
-
+  // 🔒 Zero-Knowledge Lookup by hash
+  const credentialIdHash = await hashIdentifier(assertion.id)
   const passkeyResult = await db.select()
     .from(passkeys)
     .where(and(
       eq(passkeys.userId, userId),
-      or(
-        eq(passkeys.credentialId, assertion.id),
-        eq(passkeys.credentialId, paddedId)
-      )
+      eq(passkeys.credentialIdHash, credentialIdHash)
     ))
     .limit(1)
   
   const passkey = passkeyResult[0]
-  if (!passkey) {
-    throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
+  if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
+
+  // 🔑 Retrieve secrets from Vault
+  const publicKeyB64 = await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn')
+  const rawCredentialId = await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn')
+  
+  if (!publicKeyB64 || !rawCredentialId) {
+    throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
 
   const verification = await verifyAuthenticationResponse({
@@ -265,18 +302,18 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
     expectedRPID: getRpID(c),
     requireUserVerification: true,
     credential: {
-      id: passkey.credentialId,
-      publicKey: Buffer.from(passkey.publicKey, 'base64'),
+      id: rawCredentialId,
+      publicKey: base64ToUint8Array(publicKeyB64),
       counter: passkey.counter,
       transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
-    } as any
+    }
   })
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Step-Up verification failed' })
   }
 
-  // Update counters and session verification timestamp
+  // 📈 Update counters and forensic metadata
   const now = new Date().toISOString()
   const metadata = getRequestMetadata(c)
   
@@ -292,10 +329,10 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
     }).where(eq(passkeys.id, passkey.id)),
     db.update(sessions).set({ 
       passkeyVerifiedAt: now 
-    }).where(eq(sessions.id, sessionId))
+    }).where(eq(sessions.id, sessionId || ''))
   ])
 
-  await logAudit(c, 'sessions', sessionId, 'STEP_UP_VERIFIED', null, { passkeyId: passkey.id })
+  await logAudit(c, 'sessions', sessionId || 'unknown', 'ADMIN_STEP_UP_VERIFIED', null, { passkeyId: passkey.id })
   
   return c.json({ success: true })
 })

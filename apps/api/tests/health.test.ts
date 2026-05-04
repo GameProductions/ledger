@@ -19,7 +19,7 @@ describe('Global Infrastructure Checks', () => {
       } as any,
       ASSETS: {} as any,
       BACKUPS: {} as any,
-      LEDGER_CACHE: {
+      CACHE: {
         get: async () => null,
         put: async () => {},
         delete: async () => {}

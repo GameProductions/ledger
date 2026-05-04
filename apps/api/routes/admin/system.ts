@@ -23,7 +23,7 @@ system.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async 
   const db = getDb(c.env)
   await db.update(systemConfig).set({ configValue, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(systemConfig.id, id))
   await logAudit(c, 'system_config', id, 'UPDATE_CONFIG', {}, { configValue }, {}, true)
-  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
+  if (c.env.CACHE) c.executionCtx.waitUntil(c.env.CACHE.delete('API_CONFIG'))
   return c.json({ success: true })
 })
 
@@ -58,7 +58,7 @@ system.post('/maintenance', zValidator('json', z.object({ enabled: z.boolean() }
     set: { configValue: enabled ? 'true' : 'false' }
   })
   
-  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('API_CONFIG'))
+  if (c.env.CACHE) c.executionCtx.waitUntil(c.env.CACHE.delete('API_CONFIG'))
   await logAudit(c, 'system', 'MAINTENANCE_MODE', 'TOGGLE_MAINTENANCE', null, { enabled }, {}, true)
   
   return c.json({ success: true })

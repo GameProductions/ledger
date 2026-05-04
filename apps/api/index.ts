@@ -61,7 +61,7 @@ app.use('*', async (c, next) => {
   
   // Try to get from cache first to avoid D1 cold starts on every request
   try {
-    const cache = (c.env.LEDGER_CACHE || c.env.FLEET_SECURITY_CACHE) as any;
+    const cache = (c.env.CACHE || c.env.FLEET_SECURITY_CACHE) as any;
     let configCache: Record<string, string> | null = null;
     
     if (cache && typeof cache.get === 'function') {
@@ -102,9 +102,9 @@ app.use('*', async (c, next) => {
         const data = await res.json() as { globalMaintenance: boolean };
         if (data.globalMaintenance === true) {
           isGlobalLocked = true;
-          await (c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'true', { expirationTtl: 60 });
+          await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.put('global:maintenance', 'true', { expirationTtl: 60 });
         } else {
-          await (c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'false', { expirationTtl: 60 });
+          await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.put('global:maintenance', 'false', { expirationTtl: 60 });
         }
       } catch (fetchErr) {
         console.error('[Global Lock Fetch Failed]', fetchErr);
@@ -112,7 +112,7 @@ app.use('*', async (c, next) => {
     }
 
     // --- LEVEL 2.5: Project Status Check ---
-    const remoteIndividualCache = await (c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger')
+    const remoteIndividualCache = await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.get('project:maintenance:ledger')
     if (remoteIndividualCache === 'true') {
       isGlobalLocked = true;
     }
@@ -165,7 +165,7 @@ app.get('/api/health', async (c) => {
   }
 
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true';
-  const kv = c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE;
+  const kv = c.env.FLEET_SECURITY_CACHE || c.env.CACHE;
   
   let localMaintenance = false;
   let globalCache = null;
@@ -265,14 +265,14 @@ app.get('/api/config', async (c) => {
     discordClientId: c.env.DISCORD_CLIENT_ID
   }
 
-  const cache = c.env.LEDGER_CACHE || c.env.FLEET_SECURITY_CACHE;
+  const cache = c.env.CACHE || c.env.FLEET_SECURITY_CACHE;
   if (cache) c.executionCtx.waitUntil(cache.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
   return c.json({ success: true, data: result })
 })
 
 app.get('/api/theme/broadcast', async (c) => {
   try {
-    const cached = await c.env.LEDGER_CACHE?.get('THEME_BROADCAST', 'json')
+    const cached = await c.env.CACHE?.get('THEME_BROADCAST', 'json')
     if (cached) return c.json({ success: true, data: cached })
 
     const db = getDb(c.env)
@@ -280,7 +280,7 @@ app.get('/api/theme/broadcast', async (c) => {
     if (!config || !config.configValue) return c.json({ success: true, data: { themeId: null } })
     
     const result = { themeId: JSON.parse(config.configValue as string) }
-    if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.put('THEME_BROADCAST', JSON.stringify(result), { expirationTtl: 60 }))
+    if (c.env.CACHE) c.executionCtx.waitUntil(c.env.CACHE.put('THEME_BROADCAST', JSON.stringify(result), { expirationTtl: 60 }))
     return c.json({ success: true, data: result })
   } catch (e) {
     return c.json({ success: true, data: { themeId: null } })
@@ -306,7 +306,7 @@ app.post('/api/theme/broadcast', async (c) => {
     set: { configValue: JSON.stringify(themeId) }
   });
   
-  if (c.env.LEDGER_CACHE) c.executionCtx.waitUntil(c.env.LEDGER_CACHE.delete('THEME_BROADCAST'))
+  if (c.env.CACHE) c.executionCtx.waitUntil(c.env.CACHE.delete('THEME_BROADCAST'))
   
   // Activity Logging
   c.executionCtx.waitUntil(logAudit(c, 'system_config', 'broadcast_theme_id', 'UPDATE_THEME_BROADCAST', prevState, { themeId }));

@@ -744,8 +744,15 @@ async function handleRegisterVerify(c: any) {
   })
 
   if (verification.verified && verification.registrationInfo) {
-    const { credential } = verification.registrationInfo
-    const { id: credentialId, publicKey: credentialPublicKey, counter } = credential
+    const { 
+      credentialID, 
+      credentialPublicKey, 
+      counter,
+      credentialDeviceType,
+      credentialBackedUp,
+      aaguid
+    } = verification.registrationInfo
+
     const db = getDb(c.env)
     const id = crypto.randomUUID()
     
@@ -754,10 +761,12 @@ async function handleRegisterVerify(c: any) {
       id,
       userId,
       name: `Passkey ${new Date().toLocaleDateString()}`,
-      credentialId: uint8ArrayToBase64(new Uint8Array(credentialId)),
-      publicKey: uint8ArrayToBase64(new Uint8Array(credentialPublicKey)),
+      credentialId: uint8ArrayToBase64(credentialID),
+      publicKey: uint8ArrayToBase64(credentialPublicKey),
       counter,
-      aaguid: verification.registrationInfo.aaguid || null,
+      deviceType: credentialDeviceType,
+      backedUp: credentialBackedUp ? 1 : 0,
+      aaguid: aaguid || null,
       transports: JSON.stringify(body.response.transports || []),
       lastUsedAt: new Date().toISOString(),
       lastUsedIp: metadata.ip,

@@ -24,7 +24,7 @@ describe('Global Infrastructure Checks', () => {
         put: async () => {},
         delete: async () => {}
       } as any,
-      TITAN_GUARD_CACHE: {
+      FLEET_SECURITY_CACHE: {
         get: async () => null,
         put: async () => {},
         delete: async () => {}

@@ -27,7 +27,7 @@
   ],
   "kv_namespaces": [
     {
-      "binding": "TITAN_GUARD_CACHE",
+      "binding": "FLEET_SECURITY_CACHE",
       "id": "3b5176621a954976ba0b6d78a2c9af08"
     },
     {

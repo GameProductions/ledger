@@ -7,7 +7,7 @@ declare namespace Cloudflare {
 		durableNamespaces: "HouseholdSession" | "Vault" | "ReconciliationAgent" | "MatchAgent" | "RuleAgent";
 	}
 	interface Env {
-		TITAN_GUARD_CACHE: KVNamespace;
+		FLEET_SECURITY_CACHE: KVNamespace;
 		LEDGER_CACHE: KVNamespace;
 		ledger_assets: KVNamespace;
 		ASSETS: R2Bucket;

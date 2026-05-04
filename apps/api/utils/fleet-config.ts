@@ -2,12 +2,12 @@ import { MiddlewareHandler } from 'hono';
 
 /**
  * 🛰️ Fleet Configuration Engine
- * Fetches project-specific overrides from Titan Guard KV.
+ * Fetches project-specific overrides from Fleet Security KV.
  * Allows Foundation to control feature flags and identity source of truth.
  */
 export const fleetConfig = (): MiddlewareHandler => {
   return async (c, next) => {
-    const kv = (c.env as any).TITAN_GUARD_CACHE;
+    const kv = (c.env as any).FLEET_SECURITY_CACHE;
     if (!kv) return await next();
 
     try {

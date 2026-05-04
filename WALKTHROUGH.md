@@ -1,6 +1,6 @@
-# Walkthrough: Titan Guard v1.1 Terminology Migration (Final Phase)
+# Walkthrough: Fleet Security v1.1 Terminology Migration (Final Phase)
 
-We have successfully completed the final phase of the fleet-wide terminology migration, ensuring 100% compliance with Titan Guard v1.1 human-first accessibility standards across the `Ledger` and `Groupcord` projects.
+We have successfully completed the final phase of the fleet-wide terminology migration, ensuring 100% compliance with Fleet Security v1.1 human-first accessibility standards across the `Ledger` and `Groupcord` projects.
 
 ## Changes Made
 

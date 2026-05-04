@@ -9,7 +9,7 @@ export type Bindings = {
   BACKUPS: R2Bucket
   STORAGE_BUCKET: R2Bucket
   LEDGER_CACHE: KVNamespace
-  TITAN_GUARD_CACHE: KVNamespace
+  FLEET_SECURITY_CACHE: KVNamespace
   SESSION: DurableObjectNamespace
   JWT_SECRET: string
   DISCORD_TOKEN: string

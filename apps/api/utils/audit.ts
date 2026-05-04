@@ -62,7 +62,7 @@ export const logAudit = (
       const plainAction = action.toLowerCase().replace(/_/g, ' ');
       console.log(`[SENTINEL] ${isAdmin ? 'Administrator' : 'User'} ${actorId} performed ${plainAction} on ${targetType} ${targetId || ''}`);
     } catch (error) {
-      console.error('[TITAN_GUARD_ERROR] Failed to record activity log:', error);
+      console.error('[FLEET_SECURITY_ERROR] Failed to record activity log:', error);
     }
   };
 

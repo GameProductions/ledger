@@ -61,7 +61,7 @@ app.use('*', async (c, next) => {
   
   // Try to get from cache first to avoid D1 cold starts on every request
   try {
-    const cache = (c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE) as any;
+    const cache = (c.env.LEDGER_CACHE || c.env.FLEET_SECURITY_CACHE) as any;
     let configCache: Record<string, string> | null = null;
     
     if (cache && typeof cache.get === 'function') {
@@ -102,9 +102,9 @@ app.use('*', async (c, next) => {
         const data = await res.json() as { globalMaintenance: boolean };
         if (data.globalMaintenance === true) {
           isGlobalLocked = true;
-          await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'true', { expirationTtl: 60 });
+          await (c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'true', { expirationTtl: 60 });
         } else {
-          await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'false', { expirationTtl: 60 });
+          await (c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE)?.put('global:maintenance', 'false', { expirationTtl: 60 });
         }
       } catch (fetchErr) {
         console.error('[Global Lock Fetch Failed]', fetchErr);
@@ -112,7 +112,7 @@ app.use('*', async (c, next) => {
     }
 
     // --- LEVEL 2.5: Project Status Check ---
-    const remoteIndividualCache = await (c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger')
+    const remoteIndividualCache = await (c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE)?.get('project:maintenance:ledger')
     if (remoteIndividualCache === 'true') {
       isGlobalLocked = true;
     }
@@ -165,7 +165,7 @@ app.get('/api/health', async (c) => {
   }
 
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true';
-  const kv = c.env.TITAN_GUARD_CACHE || c.env.LEDGER_CACHE;
+  const kv = c.env.FLEET_SECURITY_CACHE || c.env.LEDGER_CACHE;
   
   let localMaintenance = false;
   let globalCache = null;
@@ -238,10 +238,10 @@ const safeJsonParse = (val: string | null) => {
 
 // 5. System Configuration & Theme Handling
 app.get('/api/config', async (c) => {
-  const cached = await c.env.TITAN_GUARD_CACHE?.get('API_CONFIG', 'json')
+  const cached = await c.env.FLEET_SECURITY_CACHE?.get('API_CONFIG', 'json')
   if (cached) return c.json({ success: true, data: cached })
 
-  // --- System Configuration (Titan Guard v6.1 Filtered) ---
+  // --- System Configuration (Fleet Security v6.1 Filtered) ---
   const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
   const db = getDb(c.env)
   
@@ -265,7 +265,7 @@ app.get('/api/config', async (c) => {
     discordClientId: c.env.DISCORD_CLIENT_ID
   }
 
-  const cache = c.env.LEDGER_CACHE || c.env.TITAN_GUARD_CACHE;
+  const cache = c.env.LEDGER_CACHE || c.env.FLEET_SECURITY_CACHE;
   if (cache) c.executionCtx.waitUntil(cache.put('API_CONFIG', JSON.stringify(result), { expirationTtl: 300 }))
   return c.json({ success: true, data: result })
 })

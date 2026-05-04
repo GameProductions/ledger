@@ -14,53 +14,18 @@ import { Bindings } from './types';
  * for the Ledger PWA, ensuring compliance with the 'Command Central' protocol.
  */
 
-const app = new Hono();
+const app = new Hono<{ Bindings: Bindings; Variables: { cspNonce: string } }>();
 
+import { csrf } from "hono/csrf";
 import { cors } from "hono/cors";
-import { secureHeaders } from "hono/secure-headers";
+import { fleetSecurity, injectCSPNonce } from '~/utils/fleet-security';
 import { logger } from "hono/logger";
 
-app.use("*", logger());
+// [SECURITY] Strict Content Security Policy & Headers (Fleet Security Standard - Codified)
+app.use('*', csrf());
+app.use('*', fleetSecurity());
 
-// [SECURITY-V2] Fleet-wide Hardening
-app.use("*", secureHeaders({
-  contentSecurityPolicy: {
-      defaultSrc: ["'self'"],
-      imgSrc: [
-        "'self'", "data:", "blob:", 
-        "https://*.gpnet.dev", "https://*.glosonproductions.com",
-        "https://*.discordapp.com", "https://*.discord.com", "https://discord.com",
-        "https://www.gstatic.com", "https://cdn.simpleicons.org", "https://flaticons.net",
-        "https://api.dicebear.com", "https://ui-avatars.com", "https://api.qrserver.com",
-        "https://images.unsplash.com", "https://*.giphy.com",
-        "https://c.1password.com", "https://cache.agilebits.com", "https://raw.githubusercontent.com"
-      ],
-      scriptSrc: [
-          "'self'", 
-          "https://static.cloudflareinsights.com",
-          "'sha256-jlsMk0YHlcRfVk3Qperx5kMvCH97KaEu4osmzX3GsuY='",
-          "'sha256-InQKS/0eWsccv2yFQ9tVKWenXws5ak8p0SLxqqKNed0='",
-          "'sha256-9tbxlnzuoYHl6nDKBrkpHQZjk2kwrfoB57fwKSlBVHo='",
-          "'sha256-qp6fscPNSiydJYTWMlSfg2ogAnWVn9f9I+H0CmcQLqw='",
-          "'sha256-vrHPKVKcxIEXKNW4BQWtXOBmAO9lizieLqgxnpOUnR0='",
-          "'sha256-jCG/QZuBRzyJnHALam5ztm7E6KrhaE2M/a403o84fW0='",
-          "'sha256-Cjkx713rgFgZqOqM8V2wzvCavph8V9ngzkc3SO3NuRo='",
-          "'sha256-bM3/ZnGUs5w3Ai5RZkah2l61sVoF1iPy34B20eect34='",
-          "'sha256-D3cps80YxnGx11p7WrszLalMhcoXKJGDmfuDaUQiNy8='",
-          "'sha256-6Qjxak4k3FeTg3KWtmF2eq9TlozHFq/KP0ZBFMi/lRw='",
-          "'sha256-Peau1EFir6u+pPKwebTwkAycHyN4vQKfR7aaeGjf7/k='"
-      ],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: [
-        "'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com",
-        "https://discord.com", "https://*.discord.com", "https://canary.discord.com",
-        "https://cloudflareinsights.com", "https://static.cloudflareinsights.com"
-      ],
-      frameAncestors: ["'self'", "https://*.gpnet.dev", "http://localhost:*"],
-      upgradeInsecureRequests: [],
-    }
-}));
+app.use("*", logger());
 
 app.use("*", cors({
   origin: (origin) => {
@@ -105,11 +70,18 @@ app.all('/api/*', (c) => {
   return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
 })
 
-// 5. Frontend Orchestration (SPA Fallback)
-app.get('*', async (c) => {
+// 8. Static Assets & SPA Fallback (with Nonce Injection)
+app.get("*", async (c) => {
   const path = c.req.path;
-  if (path.includes('.') && !path.endsWith('.html')) return c.notFound();
-  return serveStatic({ path: 'index.html', manifest })(c, async () => {});
+  const nonce = c.get("cspNonce");
+
+  // Prevent SPA shell from masking missing API assets
+  if (path.includes(".") && !path.endsWith(".html")) return c.notFound();
+
+  const response = await serveStatic({ path: "index.html", manifest })(c, async () => {});
+  if (!response) return c.notFound();
+
+  return injectCSPNonce(response, nonce);
 });
 
 // 5. Durable Object & Agent Exports (Required for Cloudflare Orchestration)

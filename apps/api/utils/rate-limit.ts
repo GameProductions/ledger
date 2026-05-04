@@ -16,9 +16,9 @@ const DEFAULT_POLICIES: Record<RateLimitTier, { limit: number; window: number }>
 
 export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
   return async (c, next) => {
-    const kv = (c.env as any).TITAN_GUARD_CACHE;
+    const kv = (c.env as any).FLEET_SECURITY_CACHE;
     if (!kv) {
-      console.warn(`[Titan Guard] TITAN_GUARD_CACHE binding missing. Falling back to passthrough.`);
+      console.warn(`[Fleet Security] FLEET_SECURITY_CACHE binding missing. Falling back to passthrough.`);
       return await next();
     }
 
@@ -29,8 +29,8 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
     if (isBlocked) {
       return c.json({ 
         error: 'Security Shield Active', 
-        message: 'Titan Guard has restricted this IP due to fleet-wide policy violations.',
-        security_v: 'Titan Guard v6.1'
+        message: 'Fleet Security has restricted this IP due to fleet-wide policy violations.',
+        security_v: 'Fleet Security v6.1'
       }, 429);
     }
 
@@ -43,7 +43,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
         globalConfig = await kv.get(`tg:config:${tier}`, 'json') as any;
         botConfig = await kv.get(`tg:config:${botName}:${tier}`, 'json') as any;
       } catch (e) {
-        console.warn(`[Titan Guard] Failed to fetch config from KV:`, e);
+        console.warn(`[Fleet Security] Failed to fetch config from KV:`, e);
       }
       
       const policy = botConfig || globalConfig || DEFAULT_POLICIES[tier];
@@ -55,7 +55,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
       try {
         current = await kv.get(key, 'json') as { count: number; reset: number } | null;
       } catch (e) {
-        console.warn(`[Titan Guard] Failed to fetch rate limit state from KV:`, e);
+        console.warn(`[Fleet Security] Failed to fetch rate limit state from KV:`, e);
       }
 
       if (current) {
@@ -64,11 +64,11 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
           try {
             await kv.put(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
           } catch (e) {
-            console.warn(`[Titan Guard] Failed to reset rate limit in KV:`, e);
+            console.warn(`[Fleet Security] Failed to reset rate limit in KV:`, e);
           }
         } else if (current.count >= limit) {
           // 🚨 BLOCK TRIGGERED
-          console.error(`[Titan Guard] 🛑 Rate limit exceeded for ${ip} on ${botName} (${tier})`);
+          console.error(`[Fleet Security] 🛑 Rate limit exceeded for ${ip} on ${botName} (${tier})`);
           
           // Log block for Foundation Monitoring
           try {
@@ -80,7 +80,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
               window
             }), { expirationTtl: 3600 });
           } catch (e) {
-            console.warn(`[Titan Guard] Failed to log block in KV:`, e);
+            console.warn(`[Fleet Security] Failed to log block in KV:`, e);
           }
 
           return c.json({ 
@@ -92,7 +92,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
           try {
             await kv.put(key, JSON.stringify({ count: current.count + 1, reset: current.reset }), { expirationTtl: Math.ceil((current.reset - Date.now()) / 1000) + 60 });
           } catch (e) {
-            console.warn(`[Titan Guard] Failed to increment rate limit in KV:`, e);
+            console.warn(`[Fleet Security] Failed to increment rate limit in KV:`, e);
           }
         }
       } else {
@@ -104,7 +104,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
         }
       }
     } catch (error) {
-      console.error(`[Titan Guard] Critical failure in middleware:`, error);
+      console.error(`[Fleet Security] Critical failure in middleware:`, error);
       // Fail-open to ensure service availability
     }
 

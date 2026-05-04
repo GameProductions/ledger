@@ -12,7 +12,7 @@ const databases = [
 ];
 
 async function audit() {
-  console.log('=== FLEET VAULT AUDIT & MIGRATION (Titan Guard v6.1) ===\n');
+  console.log('=== FLEET VAULT AUDIT & MIGRATION (Fleet Security v6.1) ===\n');
   
   for (const dbName of databases) {
     const project = dbName.replace('-db', '');

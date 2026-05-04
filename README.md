@@ -1,11 +1,11 @@
 # LEDGER v3.33.0 (Forensic Edition)
 > **Secure Financial Platform** | Forensic Integrity & Agentic Reconciliation
 
-LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.33.0) introduces **Titan Guard v6.1** compliance, **Forensic Telemetry**, and **Zero-Native UI** interaction patterns.
+LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.33.0) introduces **Fleet Security v6.1** compliance, **Forensic Telemetry**, and **Zero-Native UI** interaction patterns.
 
 ## 🚀 Key Features
 
-### 🛡️ Forensic Integrity (Titan Guard v6.1)
+### 🛡️ Forensic Integrity (Fleet Security v6.1)
 - **Dual-Stack Network Forensics**: Full-stack transparency with labeled `IPv4` and `IPv6` chronology for every session and security event.
 - **Human-Readable Audit Logs**: Plain-English descriptions for all administrative and system actions, eradicating raw JSON jargon from the UI.
 - **Zero-Native Dialog System**: Complete eradication of browser-native alerts, confirms, and prompts in favor of a secure, promise-based toast utility.

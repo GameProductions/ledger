@@ -26,7 +26,7 @@ export class AuthService {
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
-    // --- LOCKOUT CHECK (Titan Guard v2.1) ---
+    // --- LOCKOUT CHECK (Fleet Security v2.1) ---
     if (user.lockoutUntil) {
       const lockoutDate = new Date(user.lockoutUntil);
       if (lockoutDate > new Date()) {
@@ -411,7 +411,7 @@ export class AuthService {
     return true
   }
 
-  // --- BACKUP CODES (Titan Guard v6.1 - Gold Standard) ---
+  // --- BACKUP CODES (Fleet Security v6.1 - Gold Standard) ---
   async generateBackupCodes(userId: string) {
     const db = getDb(this.env)
     

@@ -18,6 +18,7 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 import { csrf } from "hono/csrf";
 import { cors } from "hono/cors";
 import { fleetSecurity, injectCSPNonce } from '~/utils/fleet-security';
+import { apiError } from '~/utils/errors';
 import { logger } from "hono/logger";
 
 // [SECURITY] Strict Content Security Policy & Headers (Fleet Security Standard - Codified)
@@ -77,6 +78,11 @@ app.get("*", async (c) => {
   }
   
   return injectCSPNonce(res, nonce);
+});
+
+// 🏛️ Global Error Handler (Security System error handling)
+app.onError((err, c) => {
+  return apiError(c, err.message, 'INTERNAL_SERVER_ERROR', 'A system error occurred.', (err as any).status || 500, { stack: err.stack });
 });
 
 // 5. Durable Object & Agent Exports (Required for Cloudflare Orchestration)

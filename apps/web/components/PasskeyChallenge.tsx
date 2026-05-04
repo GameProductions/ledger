@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { Fingerprint, Loader2, ShieldAlert } from 'lucide-react';
+import { secureRequest } from '../utils/api';
 
 interface PasskeyChallengeProps {
   onSuccess: () => void;
@@ -25,7 +26,7 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
     setError(null);
     try {
       if (mode === 'auth') {
-        const resp = await fetch('/api/admin/webauthn/generate-auth', { method: 'POST' });
+        const resp = await secureRequest('/api/admin/webauthn/generate-auth', { method: 'POST' });
         if (resp.status === 404) {
           // No passkeys registered, switch to registration mode if authorized
           setMode('register');
@@ -38,7 +39,7 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
         const options = await resp.json() as any;
         const asseResp = await startAuthentication({ optionsJSON: options });
         
-        const verificationResp = await fetch('/api/admin/webauthn/verify-auth', {
+        const verificationResp = await secureRequest('/api/admin/webauthn/verify-auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ assertion: asseResp }),
@@ -52,7 +53,7 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
           setError((data as any).error || 'Verification failed');
         }
       } else {
-        const resp = await fetch('/api/admin/webauthn/generate-registration', { method: 'POST' });
+        const resp = await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' });
         if (!resp.ok) {
           const data = await resp.json().catch(() => ({ error: `Server error ${resp.status}` }));
           throw new Error((data as any).error || 'Failed to generate registration challenge');
@@ -61,7 +62,7 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
         
         const attResp = await startRegistration({ optionsJSON: options });
         
-        const verificationResp = await fetch('/api/admin/webauthn/verify-registration', {
+        const verificationResp = await secureRequest('/api/admin/webauthn/verify-registration', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(attResp),

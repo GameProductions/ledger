@@ -99,15 +99,25 @@ app.use('*', async (c, next) => {
       const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://foundation.gpnet.dev' : 'http://localhost:8787');
       try {
         const res = await fetch(`${foundationUrl}/api/fleet/status`);
-        const data = await res.json() as { globalMaintenance: boolean };
-        if (data.globalMaintenance === true) {
-          isGlobalLocked = true;
-          await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.put('global:maintenance', 'true', { expirationTtl: 60 });
-        } else {
-          await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.put('global:maintenance', 'false', { expirationTtl: 60 });
+        if (res.ok) {
+          const data = await res.json() as { globalMaintenance: boolean };
+          const statusStr = String(data.globalMaintenance);
+          if (data.globalMaintenance === true) isGlobalLocked = true;
+          
+          // Use waitUntil to avoid blocking if possible, and ignore 429s
+          const kvPromise = (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.put('global:maintenance', statusStr, { expirationTtl: 60 })
+            .catch(err => {
+              if (!err.message?.includes('429')) {
+                console.warn('[Maintenance Cache] KV Update Failed:', err.message);
+              }
+            });
+          
+          if (c.executionCtx?.waitUntil) {
+            c.executionCtx.waitUntil(kvPromise);
+          }
         }
       } catch (fetchErr) {
-        console.error('[Global Lock Fetch Failed]', fetchErr);
+        console.warn('[Maintenance Fetch] Foundation Unreachable:', fetchErr);
       }
     }
 

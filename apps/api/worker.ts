@@ -48,18 +48,6 @@ app.use('*', async (c, next) => {
   await next();
 });
 
-// 2. Static Asset Serving (PWA) - Terminal Asset Isolation
-app.use('/assets/*', serveStatic({ root: './', manifest }));
-app.use('/brand/*', serveStatic({ root: './', manifest }));
-app.get('/manifest.json', serveStatic({ path: 'manifest.json', manifest }));
-app.get('/sw.js', serveStatic({ path: 'sw.js', manifest }));
-app.get('/sw-register.js', serveStatic({ path: 'sw-register.js', manifest }));
-app.get('/apple-touch-icon.png', serveStatic({ path: 'apple-touch-icon.png', manifest }));
-app.get('/favicon.ico', async (c, next) => {
-  const res = await serveStatic({ path: 'favicon.ico', manifest })(c, next);
-  if (!res) return c.notFound();
-  return res;
-});
 
 // 3. Mount Backend API (Protected Domain)
 app.route('/', apiApp);

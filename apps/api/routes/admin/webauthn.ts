@@ -11,7 +11,7 @@ import { Bindings, Variables } from '../../types'
 import { getDb } from '#/index'
 import { users, passkeys, sessions } from '#/schema'
 import { eq, and, or } from 'drizzle-orm'
-import { uint8ArrayToBase64 } from '../../auth-utils'
+import { uint8ArrayToBase64, getRpID } from '../../auth-utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { getRequestMetadata, logAudit } from '../../utils'
 import { EmailService } from '../../services/email.service'
@@ -19,11 +19,7 @@ import { HTTPException } from 'hono/http-exception'
 
 const webauthn = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-const getRpID = (c: any) => {
-  if (c.env.WEB_URL) return new URL(c.env.WEB_URL).hostname;
-  if (c.env.ENVIRONMENT === 'production') return 'ledger.gpnet.dev';
-  return c.req.header('host')?.split(':')[0] || 'localhost';
-};
+// getRpID is now imported from auth-utils
 
 /**
  * GET /api/admin/webauthn/passkeys

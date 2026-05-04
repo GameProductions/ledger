@@ -1,5 +1,5 @@
-export const FLEET_VERSION = 'v6.1.1'
-export const CURRENT_VERSION = 'v6.1.1'
+export const FLEET_VERSION = 'v6.1.2'
+export const CURRENT_VERSION = 'v6.1.2'
 export const APP_NAME = 'Ledger'
 export const SYSTEM_OWNER = 'GameProductions'
 
@@ -13,6 +13,7 @@ export const ROLES = {
 } as const
 
 export const VERSION_UPDATES = [
+  { version: 'v3.33.4', title: 'Passkey Infrastructure Stabilization', description: 'Clean-slate re-implementation of WebAuthn flows. Unified Relying Party ID (RPID) verification, standardized biometric step-up challenges, and purged legacy TOTP logic for a lean, high-reliability security state.' },
   { version: 'v3.33.2', title: 'Authentication Stabilization', description: 'Resolved passkey authentication failures by aligning Relying Party IDs, enforcing biometric verification, and hardening public API route exclusions for login and support webhooks.' },
   { version: 'v6.1.0', title: 'Fleet Security: The Gold Standard', description: 'Complete security overhaul. Decommissioned legacy TOTP in favor of secure WebAuthn Passkeys. Implemented biometric step-up authentication for all administrative actions and finalized the zero-knowledge identity vault.' },
   { version: 'v3.31.0', title: 'Rule 9 Standard Reorganization', description: 'Complete structural migration of application assets to standard directories (/app and /apps/api), updated entry points, and synchronized global path aliases for future-proof scalability.' },
@@ -51,6 +52,7 @@ export const AUTH_EXCLUSIONS = [
   '/api/auth/admin/claim',
   '/api/support/webhook/github',
   '/api/theme/broadcast',
+  '/api/health',
   '/api/config',
   '/.well-known/microsoft-identity-association.json',
   '/favicon.ico',

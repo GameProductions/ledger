@@ -10,7 +10,7 @@ import {
 import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit, getRequestMetadata } from '../utils'
-import { uint8ArrayToBase64 } from '../auth-utils'
+import { uint8ArrayToBase64, getRpID } from '../auth-utils'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
@@ -690,11 +690,7 @@ auth.post('/webauthn/verify-registration', async (c) => {
 
 // --- SHARED HANDLERS ---
 
-const getRpID = (c: any) => {
-  if (c.env.WEB_URL) return new URL(c.env.WEB_URL).hostname;
-  if (c.env.ENVIRONMENT === 'production') return 'ledger.gpnet.dev';
-  return c.req.header('host')?.split(':')[0] || 'localhost';
-};
+// getRpID is now imported from auth-utils
 
 async function handleRegisterOptions(c: any) {
   const userId = c.get('userId')
@@ -954,7 +950,7 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
       response: assertion,
       expectedChallenge,
       expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-      expectedRPID: c.env.ENVIRONMENT === 'production' ? 'ledger.gpnet.dev' : (c.req.header('host')?.split(':')[0] || 'localhost'),
+      expectedRPID: getRpID(c),
       requireUserVerification: true,
       credential: {
         id: passkey.credentialId,

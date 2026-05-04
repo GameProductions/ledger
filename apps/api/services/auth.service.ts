@@ -12,7 +12,7 @@ export class AuthService {
   constructor(private env: Bindings) {}
 
   async validateCredentials(identifier: string, password: string) {
-    console.log('[Auth] Attempting login for:', identifier)
+    // Login attempt
     
     const db = getDb(this.env)
     const result = await db.select().from(users).where(
@@ -22,7 +22,7 @@ export class AuthService {
     const user = result[0]
 
     if (!user) {
-      console.warn('[Auth] User not found:', identifier)
+      // User not found
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
@@ -31,7 +31,7 @@ export class AuthService {
       const lockoutDate = new Date(user.lockoutUntil);
       if (lockoutDate > new Date()) {
         const remainingMinutes = Math.ceil((lockoutDate.getTime() - Date.now()) / (1000 * 60));
-        console.warn(`[Auth] Account locked for ${identifier}. Remaining: ${remainingMinutes}m`);
+        // Account locked
         throw new HTTPException(403, { 
           message: `Account is temporarily locked due to multiple failed attempts. Please try again in ${remainingMinutes} minutes.` 
         });
@@ -39,14 +39,14 @@ export class AuthService {
     }
 
     if (!user.passwordHash) {
-      console.warn('[Auth] Attempted password login on social-only account:', identifier)
+      // Social-only attempt
       throw new HTTPException(401, { message: 'Account linked via social provider. Please use Discord or Google login.' })
     }
     
     const isMatch = await verifyPassword(password, user.passwordHash)
     
     if (!isMatch) { 
-      console.warn('[Auth] Password mismatch for:', identifier)
+      // Password mismatch
       
       // Increment failed attempts
       const newAttempts = (user.failedLoginAttempts || 0) + 1;
@@ -80,7 +80,7 @@ export class AuthService {
     // --- RE-HASH ON LOGIN (v3.11.3 Security Hardening) ---
     const [iterations] = user.passwordHash.split('.')
     if (parseInt(iterations) < 100000) {
-      console.log('[Auth] Upgrading password hash iterations for:', user.username)
+      // Upgrading hash
       const newHash = await hashPassword(password)
       await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, user.id))
     }
@@ -90,17 +90,7 @@ export class AuthService {
     return user
   }
 
-  async verify2FA(user: any, recoveryCode?: string, metadata?: any) {
-    // TOTP Decommissioned in v6.1 - Only backup codes and passkeys (handled via WebAuthn routes) remain
-    if (recoveryCode) {
-      console.log(`[Auth] Attempting backup code verification for user ${user.id}`)
-      const isValid = await this.verifyBackupCode(user.id, recoveryCode)
-      if (!isValid) {
-        throw new HTTPException(401, { message: 'Invalid recovery code' })
-      }
-    }
-    return { requires2FA: false }
-  }
+  // TOTP/2FA logic decommissioned in v6.1 in favor of Biometric Passkeys (handled via WebAuthn routes)
 
   async generateToken(userId: string, sid?: string, householdId?: string, impersonatorId?: string) {
     const db = getDb(this.env)

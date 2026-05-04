@@ -150,17 +150,25 @@ app.use('*', async (c, next) => {
 app.use('/api/*', async (c, next) => {
   const path = c.req.path
   const method = c.req.method
-  const publicPaths = ['/api/theme/broadcast', '/api/health', '/api/config']
   
-  if (publicPaths.includes(path) || path.startsWith('/api/discord') || method === 'OPTIONS') {
+  // 1. IP Rate Limiting
+  if (path.startsWith('/api/auth')) {
+    await ipRateLimit('AUTH')(c, async () => {})
+  } else {
+    await ipRateLimit('API')(c, async () => {})
+  }
+
+  // 2. Public Access Check
+  if (AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
     return await next()
   }
 
-  if (path.startsWith('/api/auth')) {
-    return ipRateLimit('AUTH')(c, next)
+  if (path.startsWith('/api/discord') || method === 'OPTIONS') {
+    return await next()
   }
-  
-  return ipRateLimit('API')(c, next)
+
+  // 3. Authenticated Access
+  return authMiddleware(c, next)
 })
 
 // 2. Health & System Information
@@ -205,20 +213,6 @@ app.get('/api/health', async (c) => {
 })
 
 app.get('/openapi.json', (c) => c.json(openApiSpec))
-
-// 3. Global Auth Middleware Allocation
-app.use('/api/*', async (c, next) => {
-  const path = c.req.path
-  const method = c.req.method
-
-  const publicPaths = ['/api/theme/broadcast', '/api/health', '/api/config']
-  const isPasskeyLogin = path.startsWith('/api/auth/passkeys/login/')
-  const isSupportWebhook = path === '/api/support/webhook/github'
-  const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS') || isPasskeyLogin || isSupportWebhook
-  
-  if (isPublicApi) return await next()
-  return authMiddleware(c, next)
-})
 
 // Specific Middleware Chains
 app.use('/api/admin/*', adminMiddleware)

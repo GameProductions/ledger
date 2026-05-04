@@ -135,3 +135,9 @@ function base64ToBuffer(base64: string): ArrayBuffer {
   }
   return bytes.buffer;
 }
+
+export const getRpID = (c: any) => {
+  if (c.env.WEB_URL) return new URL(c.env.WEB_URL).hostname;
+  if (c.env.ENVIRONMENT === 'production') return 'ledger.gpnet.dev';
+  return c.req.header('host')?.split(':')[0] || 'localhost';
+};

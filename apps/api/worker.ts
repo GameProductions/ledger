@@ -1,12 +1,11 @@
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/cloudflare-workers';
 // @ts-expect-error - __STATIC_CONTENT_MANIFEST is provided at build time
 import manifest from '__STATIC_CONTENT_MANIFEST';
 import { app as apiApp } from './index';
 import { FLEET_VERSION } from '@shared/constants';
 import { handleScheduled } from './cron';
 import { handleQueue } from './queues';
-import { Bindings } from './types';
+import { Bindings, Variables } from './types';
 
 /**
  * Foundation: Unified Entry Point
@@ -14,7 +13,7 @@ import { Bindings } from './types';
  * for the Ledger PWA, ensuring compliance with the 'Command Central' protocol.
  */
 
-const app = new Hono<{ Bindings: Bindings; Variables: { cspNonce: string } }>();
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 import { csrf } from "hono/csrf";
 import { cors } from "hono/cors";
@@ -73,15 +72,23 @@ app.all('/api/*', (c) => {
 // 8. Static Assets & SPA Fallback (with Nonce Injection)
 app.get("*", async (c) => {
   const path = c.req.path;
-  const nonce = c.get("cspNonce");
-
-  // Prevent SPA shell from masking missing API assets
-  if (path.includes(".") && !path.endsWith(".html")) return c.notFound();
-
-  const response = await serveStatic({ path: "index.html", manifest })(c, async () => {});
-  if (!response) return c.notFound();
-
-  return injectCSPNonce(response, nonce);
+  const nonce = c.get('cspNonce');
+  
+  // Try to fetch from ASSETS
+  const assetRes = await c.env.ASSETS.fetch(c.req.raw as any);
+  const res = new Response(assetRes.body as any, assetRes as any);
+  
+  if (res.status === 404) {
+      if (path.startsWith('/api/') || path.startsWith('/auth/')) {
+          return c.json({ error: 'Not Found', path }, 404);
+      }
+      
+      // Serve index.html for SPA routing
+      const indexRes = await c.env.ASSETS.fetch(new Request(new URL('/index.html', c.req.url)) as any);
+      return injectCSPNonce(new Response(indexRes.body as any, indexRes as any), nonce);
+  }
+  
+  return injectCSPNonce(res, nonce);
 });
 
 // 5. Durable Object & Agent Exports (Required for Cloudflare Orchestration)

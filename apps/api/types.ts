@@ -46,5 +46,6 @@ export type Variables = {
   globalRole: string
   sessionId?: string
   impersonatorId?: string
+  cspNonce: string
   [key: string]: any
 }

@@ -7,6 +7,7 @@ import billingRoutes from './admin/billing'
 import householdRoutes from './admin/households'
 import communicationRoutes from './admin/communications'
 import entityRoutes from './admin/entities'
+import webauthnRoutes from './admin/webauthn'
 import { getDb } from '#/index'
 import { users, households, systemRegistry } from '#/schema'
 import { count, sql, or, like, desc } from 'drizzle-orm'
@@ -22,6 +23,7 @@ admin.route('/billing', billingRoutes)
 admin.route('/households', householdRoutes)
 admin.route('/communications', communicationRoutes)
 admin.route('/entities', entityRoutes)
+admin.route('/webauthn', webauthnRoutes)
 
 // Dashboard Stats
 admin.get('/stats', async (c) => {

@@ -58,6 +58,14 @@ This document serves as the absolute source of truth for all projects within the
   - **Passkey Implementation Workflow **: 
     - If a project already features a dedicated "User Account" or "Profile Settings" UI where users modify their core info, the Passkey CRUD module (list, generate, rename, revoke) MUST be natively embedded directly into that existing page.
     - If a project is inherently lightweight (e.g., uses Discord SSO + step-up Zero Trust) and lacks a dedicated account page, it MUST construct a standalone `/settings` (Portal Settings) route dedicated exclusively to managing biometric hardware binders and recovery codes, maintaining the premium layout architecture established in the Foundation portal.
+  - **Step-Up API Standard**: 
+    - Administrative WebAuthn routes MUST be located in the `admin` router stack (`apps/api/routes/admin/webauthn.ts`).
+    - Standard Endpoints:
+        - `POST /api/admin/webauthn/generate-auth` (Assertion Challenge)
+        - `POST /api/admin/webauthn/verify-auth` (Assertion Verification)
+        - `POST /api/admin/webauthn/generate-registration` (Enrollment Challenge)
+        - `POST /api/admin/webauthn/verify-registration` (Enrollment Verification)
+    - All routes in this namespace MUST be protected by `adminMiddleware`.
 - **Role Hierarchy**: 
   - **Super Admin**: Full global control via the **God Mode** portal (`GodMode`).
   - **Admin**: Project-specific administrative access.
@@ -305,3 +313,15 @@ To ensure absolute account integrity and forensic traceability, all identity sys
 - **Proactive Hardening**: 
   - Any local `.env` files or hardcoded secrets discovered in the codebase MUST be immediately migrated to 1Password and purged from local storage.
   - CI/CD workflows MUST use the `1password/load-secrets-action` as the authoritative mechanism for environment injection.
+
+## 18. Step-Up Authentication & Administrative Routing (Fleet Standard v6.1)
+- **Administrative Sub-Router**: All biometric Step-Up authentication logic MUST be centralized in a dedicated administrative WebAuthn sub-router located at `apps/api/routes/admin/webauthn.ts`.
+- **Standardized Endpoints**: The following endpoints are strictly required for administrative security parity:
+    - `POST /api/admin/webauthn/generate-registration`: Generates options for a new passkey.
+    - `POST /api/admin/webauthn/verify-registration`: Verifies and persists a new passkey.
+    - `POST /api/admin/webauthn/generate-auth`: Generates a biometric challenge for an existing session.
+    - `POST /api/admin/webauthn/verify-auth`: Verifies the challenge and issues a `passkey_verified` signed cookie.
+- **Middleware Enforcement**:
+    - These routes MUST be protected by `sessionMiddleware` to identify the actor.
+    - Administrative routes (`/admin/*`, `/godmode/*`) MUST verify the presence of a valid `passkey_verified` cookie before granting access to sensitive data or actions.
+- **Cookie Security**: The `passkey_verified` cookie MUST be a signed HTTP-only cookie with a maximum age of 3600 seconds (1 hour) to ensure short-lived administrative authorization.

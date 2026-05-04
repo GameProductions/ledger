@@ -10,6 +10,11 @@ import { eq } from 'drizzle-orm'
  * Ensures the current session has been verified with a biometric passkey within a specific window.
  */
 export const stepUpMiddleware = async (c: Context<{ Bindings: Bindings, Variables: Variables }>, next: Next) => {
+  const path = c.req.path
+  if (path.startsWith('/api/admin/webauthn')) {
+    return await next()
+  }
+
   const sessionId = c.get('sessionId')
   
   if (!sessionId) {

@@ -202,7 +202,8 @@ app.use('/api/*', async (c, next) => {
   const method = c.req.method
 
   const publicPaths = ['/api/theme/broadcast', '/api/health', '/api/config']
-  const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS')
+  const isPasskeyLogin = path.startsWith('/api/auth/passkeys/login/')
+  const isPublicApi = publicPaths.includes(path) || path.startsWith('/api/discord') || (method === 'OPTIONS') || isPasskeyLogin
   
   if (isPublicApi) return await next()
   return authMiddleware(c, next)

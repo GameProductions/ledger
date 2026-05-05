@@ -22,10 +22,91 @@ import { apiError } from '~/utils/errors';
 import { logger } from "hono/logger";
 import { ipRateLimit } from './middlewares/rate-limit';
 
-// [SECURITY] Strict Content Security Policy & Headers (Fleet Security Standard - Codified)
+// [SECURITY-V6.1] Fleet-wide Security Hardening & Vault Migration (TOP LEVEL - BYPASS CSRF)
+app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader !== `Bearer ${c.env.ADMIN_MIGRATION_KEY}`) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { getDb } = await import('#/index');
+    const { userIdentities, passwordResets, adminInvitations, personalAccessTokens, sessions, users, passkeys } = await import('#/schema');
+    const { eq, isNull, or, sql } = await import('drizzle-orm');
+
+    const db = getDb(c.env);
+    const results = { offloaded: 0, purged: 0 };
+
+    try {
+        // 1. Migrate OAuth Identities -> Offload
+        const identities = await db.select().from(userIdentities).where(
+            or(sql`accessToken IS NOT NULL`, sql`refreshToken IS NOT NULL`)
+        );
+
+        for (const identity of identities) {
+            let changed = false;
+            if (identity.accessToken && identity.accessToken !== '[VAULTED]') {
+                await offloadToFoundation(c, 'ledger', 'oauth_access_token', identity.userId, identity.accessToken);
+                results.offloaded++;
+                changed = true;
+            }
+            if (identity.refreshToken && identity.refreshToken !== '[VAULTED]') {
+                await offloadToFoundation(c, 'ledger', 'oauth_refresh_token', identity.userId, identity.refreshToken);
+                results.offloaded++;
+                changed = true;
+            }
+            
+            if (changed) {
+                await db.update(userIdentities).set({
+                    accessToken: '[VAULTED]',
+                    refreshToken: '[VAULTED]'
+                }).where(eq(userIdentities.id, identity.id));
+            }
+        }
+
+        // 2. Migrate Personal Access Tokens -> Offload
+        const pats = await db.select().from(personalAccessTokens).where(sql`tokenHash IS NOT NULL`);
+        for (const pat of pats) {
+            if (pat.tokenHash && pat.tokenHash !== '[VAULTED]') {
+                await offloadToFoundation(c, 'ledger', 'personal_access_token', pat.id, pat.tokenHash);
+                await db.update(personalAccessTokens).set({ tokenHash: '[VAULTED]' }).where(eq(personalAccessTokens.id, pat.id));
+                results.offloaded++;
+            }
+        }
+
+        // 3. Passkeys Reset (Fleet-wide 2FA Reset)
+        const allPasskeys = await db.select().from(passkeys);
+        for (const pk of allPasskeys) {
+            await offloadToFoundation(c, 'ledger', 'legacy_passkey', pk.userId, JSON.stringify(pk));
+            await db.delete(passkeys).where(eq(passkeys.id, pk.id));
+            results.offloaded++;
+        }
+
+        // 4. Reset 2FA verification flags for all users and sessions
+        await db.update(users).set({ passkeyVerifiedAt: null });
+        await db.update(sessions).set({ passkeyVerifiedAt: null });
+
+        // 5. Clean Slate Lifecycle Tokens
+        const resetPurge = await db.delete(passwordResets);
+        const invitePurge = await db.delete(adminInvitations);
+        const patPurge = await db.delete(personalAccessTokens).where(sql`tokenHash IS NULL`);
+        
+        results.purged = ((resetPurge as any).meta?.changes || 0) + ((invitePurge as any).meta?.changes || 0);
+
+        return c.json({
+            success: true,
+            data: results,
+            purgedPats: (patPurge as any).meta?.changes || 0,
+            message: 'Fleet Security v6.1 Offload Complete. Legacy plaintext material purged.'
+        });
+    } catch (err: any) {
+        console.error('[Vault Offload Error]', err);
+        return c.json({ success: false, error: err.message }, 500);
+    }
+});
+
+// [SECURITY] Strict Content Security Policy & Headers
 app.use('*', csrf());
 app.use('*', fleetSecurity());
-
 app.use("*", logger());
 
 app.use("*", cors({
@@ -43,24 +124,13 @@ app.use("*", cors({
   maxAge: 600,
 }));
 
-
 // 1. Foundation Integrity Protocol
 app.use('*', async (c, next) => {
   c.header('X-Ledger-Integrity', `certified-${FLEET_VERSION.replace('v', '')}`);
   await next();
 });
 
-
-// 3. Mount Backend API (Protected Domain)
-app.route('/', apiApp);
-
-// 4. API Shield: Explicit 404 for missing API routes to prevent HTML fallthrough
-app.all('/api/*', (c) => {
-  return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
-})
-
-// --- [SECURITY] Secret Migration & Clean Slate (Fleet v6.1) ---
-// This route is temporary and will be decommissioned after the fleet audit.
+// --- [SECURITY] Secret Migration Helper ---
 async function offloadToFoundation(c: any, source: string, category: string, recordId: string, plaintext: string) {
     const foundationUrl = c.env.FOUNDATION_URL || 'https://foundation.gpnet.dev';
     const url = `${foundationUrl}/api/admin/security/deletion-queue`;
@@ -85,61 +155,19 @@ async function offloadToFoundation(c: any, source: string, category: string, rec
     }
 }
 
-app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
-    const authHeader = c.req.header('Authorization');
-    if (authHeader !== `Bearer ${c.env.ADMIN_MIGRATION_KEY}`) {
-        return c.json({ error: 'Unauthorized' }, 401);
-    }
+// 3. Mount Backend API
+app.route('/', apiApp);
 
-    const { getDb } = await import('#/index');
-    const { userIdentities, passwordResets, adminInvitations, personalAccessTokens } = await import('#/schema');
-    const { eq, isNull, or, sql } = await import('drizzle-orm');
+// 4. API Shield
+app.all('/api/*', (c) => {
+  return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
+})
 
-    const db = getDb(c.env);
-    
-    // 1. Migrate OAuth Identities -> Offload
-    const identities = await db.select().from(userIdentities).where(
-        or(sql`accessToken IS NOT NULL`, sql`refreshToken IS NOT NULL`)
-    );
-
-    let offloaded = 0;
-    for (const identity of identities) {
-        if (identity.accessToken && identity.accessToken !== '[VAULTED]') {
-            await offloadToFoundation(c, 'ledger', 'oauth_access_token', identity.userId, identity.accessToken);
-            offloaded++;
-        }
-        if (identity.refreshToken && identity.refreshToken !== '[VAULTED]') {
-            await offloadToFoundation(c, 'ledger', 'oauth_refresh_token', identity.userId, identity.refreshToken);
-            offloaded++;
-        }
-        
-        await db.update(userIdentities).set({
-            accessToken: '[VAULTED]',
-            refreshToken: '[VAULTED]'
-        }).where(eq(userIdentities.id, identity.id));
-    }
-
-    // 2. Clean Slate Lifecycle Tokens (Purge plaintext tokens, requiring new hashes)
-    const resetPurge = await db.delete(passwordResets).where(sql`tokenHash IS NULL`);
-    const invitePurge = await db.delete(adminInvitations).where(sql`tokenHash IS NULL`);
-    const patPurge = await db.delete(personalAccessTokens).where(sql`tokenHash IS NULL`);
-
-    return c.json({
-        success: true,
-        offloadedIdentities: offloaded,
-        purgedResets: resetPurge.rowsAffected,
-        purgedInvites: invitePurge.rowsAffected,
-        purgedPats: patPurge.rowsAffected,
-        message: 'Fleet Security v6.1 Offload Complete. Legacy plaintext material purged.'
-    });
-});
-
-// 8. Static Assets & SPA Fallback (with Nonce Injection)
+// 8. Static Assets & SPA Fallback
 app.get("*", async (c) => {
   const path = c.req.path;
   const nonce = c.get('cspNonce');
   
-  // Try to fetch from ASSETS
   const assetRes = await c.env.ASSETS.fetch(c.req.raw as any);
   const res = new Response(assetRes.body as any, assetRes as any);
   
@@ -148,7 +176,6 @@ app.get("*", async (c) => {
           return c.json({ error: 'Not Found', path }, 404);
       }
       
-      // Serve index.html for SPA routing
       const indexRes = await c.env.ASSETS.fetch(new Request(new URL('/index.html', c.req.url)) as any);
       return injectCSPNonce(new Response(indexRes.body as any, indexRes as any), nonce);
   }
@@ -156,12 +183,11 @@ app.get("*", async (c) => {
   return injectCSPNonce(res, nonce);
 });
 
-// 🏛️ Global Error Handler (Security System error handling)
 app.onError((err, c) => {
   return apiError(c, err.message, 'INTERNAL_SERVER_ERROR', 'A system error occurred.', (err as any).status || 500, { stack: err.stack });
 });
 
-// 5. Durable Object & Agent Exports (Required for Cloudflare Orchestration)
+// 5. Durable Object & Agent Exports
 export { HouseholdSession, Vault } from './durable-objects'
 export { ReconciliationAgent } from './agents/ReconciliationAgent'
 export { MatchAgent } from './agents/MatchAgent'

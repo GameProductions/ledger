@@ -37,7 +37,7 @@ This document serves as the absolute source of truth for all projects within the
 - **Path Branching**: 
   - `/api/*`: Reserved for bot logic, webhooks, and backend API.
   - `/admin/*`: Dedicated directory for project-level administrative tools.
-  - `/godmode/*`: High-security portal for Super Admins.
+  - `/superadmin/*`: High-security portal for Super Admins.
   - `/*`: Reserved for the PWA (frontend) and static assets.
 - **Webhook Exemption**: Any Bearer/Token auth guards or strict middlewares acting globally on the `/api/*` blanket must explicitly whitelist routes containing `/discord` or `/interactions`. Failure to do this will block native webhook validation tools from remote platforms (e.g., Discord) causing 401s that break server-to-server operations.
 - **CORS Consolidation **: CORS MUST be handled exclusively in the root entry point (`server.ts`). Secondary CORS middlewares in sub-routers (e.g., `src/api/index.ts`) are strictly prohibited as they cause preflight (`OPTIONS`) request failures. The root CORS handler MUST explicitly allow `Authorization`, `x-household-id`, and `X-Ledger-Integrity` headers.
@@ -54,7 +54,7 @@ This document serves as the absolute source of truth for all projects within the
   - **Raw Snowflake Pattern (I-AM, Food)**: For lightweight apps strictly coupled to a remote ecosystem, use the raw remote provider identifier (e.g., the Discord Snowflake ID) directly as the primary database ID to eliminate query overhead.
 - **Security Standard & Zero-Trust Authentication **:
   - **Hashing**: Use PBKDF2 with **100,000 iterations** for all password hashing (native Cloudflare Worker limit).
-  - **Zero-Trust Step-Up Auth**: Administrative dashboards (`/godmode`, `/admin`, and high-risk fleet actions) MUST NEVER rely solely on standardized SSO bearer tokens. Such routes MUST implement a **Biometric WebAuthn Challenge (Passkeys)** step-up verification. The backend middleware must confirm a cryptographic hardware signature from the user's physical device before yielding access to critical infrastructure.
+  - **Zero-Trust Step-Up Auth**: Administrative dashboards (`/superadmin`, `/admin`, and high-risk fleet actions) MUST NEVER rely solely on standardized SSO bearer tokens. Such routes MUST implement a **Biometric WebAuthn Challenge (Passkeys)** step-up verification. The backend middleware must confirm a cryptographic hardware signature from the user's physical device before yielding access to critical infrastructure.
   - **Passkey Implementation Workflow **: 
     - If a project already features a dedicated "User Account" or "Profile Settings" UI where users modify their core info, the Passkey CRUD module (list, generate, rename, revoke) MUST be natively embedded directly into that existing page.
     - If a project is inherently lightweight (e.g., uses Discord SSO + step-up Zero Trust) and lacks a dedicated account page, it MUST construct a standalone `/settings` (Portal Settings) route dedicated exclusively to managing biometric hardware binders and recovery codes, maintaining the premium layout architecture established in the Foundation portal.
@@ -67,19 +67,19 @@ This document serves as the absolute source of truth for all projects within the
         - `POST /api/admin/webauthn/verify-registration` (Enrollment Verification)
     - All routes in this namespace MUST be protected by `adminMiddleware`.
 - **Role Hierarchy**: 
-  - **Super Admin**: Full global control via the **God Mode** portal (`GodMode`).
+  - **Super Admin**: Full global control via the **Super Admin** portal (`SuperAdmin`).
   - **Admin**: Project-specific administrative access.
   - **Mod**: Content moderation and user management.
   - **User**: Standard access.
 - **User Management**: Always include full CRUD for user management, accessible to Mods and above.
-- **God Mode (`GodMode`)**:
-  - **Component**: Create a separate, secure portal named `GodMode` for Super Admins.
-  - **Pathing **: All God Mode tools MUST be located in `app/routes/godmode/` and use a dedicated `GodModeLayout`.
-  - **Isolation **: Never mention or list God Mode features/capabilities outside of designated God Mode routes or protected administrative documentation. Public documentation and landing pages MUST remain clean of any "God Mode" references.
+- **Super Admin Portal (`SuperAdmin`)**:
+  - **Component**: Create a separate, secure portal named `SuperAdmin` for Super Admins.
+  - **Pathing **: All Super Admin tools MUST be located in `app/routes/superadmin/` and use a dedicated `SuperAdminLayout`.
+  - **Isolation **: Never mention or list Super Admin features/capabilities outside of designated Super Admin routes or protected administrative documentation. Public documentation and landing pages MUST remain clean of any "Super Admin" references.
   - **Impersonation**: Must support "View As" mode with a persistent warning header.
   - **Audit Logging **: Sensitive administrative actions MUST be logged using a centralized audit utility. This utility MUST comply with the **Fleet Security Stable** forensic standard (see Section 14), capturing actor, action, target entity, state changes, and network forensics (IP/UA).
-  - **Walkthrough History **: A full history of all project `walkthrough.md` files MUST be preserved and synchronized within the God Mode "Help" or "Audit" section for comprehensive architectural traceability.
-  - **Setup Guides **: The God Mode "Help" section MUST contain exhaustive, step-by-step setup instructions for all platform integrations. This includes:
+  - **Walkthrough History **: A full history of all project `walkthrough.md` files MUST be preserved and synchronized within the Super Admin "Help" or "Audit" section for comprehensive architectural traceability.
+  - **Setup Guides **: The Super Admin "Help" section MUST contain exhaustive, step-by-step setup instructions for all platform integrations. This includes:
     - **Exact Enpoints**: Providing the project's specific callback and interactions URLs (e.g., `https://[project].gpnet.dev/api/...`).
     - **App Listing Metadata**: Standardized descriptions and feature lists intended for third-party app stores/listings.
     - **Constraint**: NEVER use the word "exhaustive" when presenting feature lists, even if the list is comprehensive.
@@ -153,7 +153,7 @@ All projects MUST adhere to this unified monorepo-style layout to ensure scalabi
 
 ### 4. Application Logic (inside `apps/web/` or `apps/api/`)
 - **`routes/`**: Entry points for UI pages or API endpoints.
-- **`layouts/`**: (Web) Page-level frames (e.g., `RootLayout`, `GodModeLayout`).
+- **`layouts/`**: (Web) Page-level frames (e.g., `RootLayout`, `SuperAdminLayout`).
 - **`components/`**: UI components.
 - **`hooks/`**: Custom React hooks.
 - **`context/`**: React Context providers.
@@ -231,7 +231,7 @@ All projects MUST adhere to this unified monorepo-style layout to ensure scalabi
 - **Legacy Purging**: Once a migration is confirmed by the user as successful, the archive table may be dropped to maintain database hygiene.
 ## 15. AI Agent & Assistant Protocol 
 - **Language Standard**: All AI interactions, agent persona communications, status reports, tool summaries, and user-facing responses MUST be in English. No other languages are permitted unless explicitly requested.
-- **Tone & Jargon**: The assistant must maintain a professional and premium tone. **God Mode** is the only allowed themed jargon.
+- **Tone & Jargon**: The assistant must maintain a professional and premium tone. Use of any themed jargon or informal terminology is strictly prohibited.
 - **Migration & Verifiability**: During database migrations (Rule 14), the agent MUST explicitly perform a 1:1 row count verification between the archive and new table. The agent MUST report the exact results and any anomalies to the user before requesting final decommission approval.
 - **Operational Consistency**: Maintain English as the sole operational language for all internal and external communication.
 
@@ -325,7 +325,7 @@ To ensure absolute account integrity and forensic traceability, all identity sys
     - `POST /api/admin/webauthn/verify-auth`: Verifies the challenge and issues a `passkey_verified` signed cookie.
 - **Middleware Enforcement**:
     - These routes MUST be protected by `sessionMiddleware` to identify the actor.
-    - Administrative routes (`/admin/*`, `/godmode/*`) MUST verify the presence of a valid `passkey_verified` cookie before granting access to sensitive data or actions.
+    - Administrative routes (`/admin/*`, `/superadmin/*`) MUST verify the presence of a valid `passkey_verified` cookie before granting access to sensitive data or actions.
 - **Cookie Security**: The `passkey_verified` cookie MUST be a signed HTTP-only cookie with a maximum age of 3600 seconds (1 hour) to ensure short-lived administrative authorization.
 
 ## 19. Passkey Standardization & Forensic Standards (v6.1)

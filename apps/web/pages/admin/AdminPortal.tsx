@@ -13,7 +13,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
 
   React.useEffect(() => {
     const originalTitle = document.title;
-    document.title = "God Mode | COMMAND CENTER";
+    document.title = "Super Admin | COMMAND CENTER";
     return () => { document.title = originalTitle; };
   }, []);
 
@@ -22,7 +22,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
       <div className="flex items-center justify-center min-h-screen bg-black text-white p-6 text-center shadow-[inset_0_0_100px_rgba(239,68,68,0.1)]">
         <div className="animate-in zoom-in duration-500">
           <h1 className="text-6xl font-black text-red-500 mb-6 tracking-tighter shadow-glow-red italic">403: ACCESS DENIED</h1>
-          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to God Mode authorized personnel. Your unauthorized attempt has been recorded for security review.</p>
+          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to Super Admin authorized personnel. Your unauthorized attempt has been recorded for security review.</p>
           <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Return to Home</a>
         </div>
       </div>
@@ -30,7 +30,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   }
 
   const navItems = [
-    { name: 'God Mode Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Super Admin Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
     { name: 'User Directory', path: '#/admin/users', icon: Users },
     { name: 'Household Registry', path: '#/admin/households', icon: Shield },
     { name: 'Service Providers', path: '#/admin/providers', icon: Globe },
@@ -40,7 +40,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
     { name: 'Global Search', path: '#/admin/search', icon: Search },
     { name: 'Platform Settings', path: '#/admin/config', icon: Settings },
     { name: 'System Broadcast', path: '#/admin/broadcast', icon: Zap },
-    { name: 'God Mode Guide', path: '#/admin/guide', icon: FileText },
+    { name: 'Super Admin Guide', path: '#/admin/guide', icon: FileText },
   ];
 
   return (
@@ -50,11 +50,11 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-white/10">
-               G
+               S
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight uppercase italic">GOD <span className="text-emerald-500">MODE</span></h1>
+                <h1 className="text-xl font-black tracking-tight uppercase italic">SUPER <span className="text-emerald-500">ADMIN</span></h1>
                 <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Authorized</span>
               </div>
               <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black">Administrative Access</p>

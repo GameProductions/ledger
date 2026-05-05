@@ -403,7 +403,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
   const db = getDb(c.env)
 
   try {
-    // God Mode Enforcement: Check if accounts/categories are required
+    // Super Admin Enforcement: Check if accounts/categories are required
     const config = await db.select({ configValue: systemConfig.configValue })
       .from(systemConfig)
       .where(eq(systemConfig.configKey, 'REQUIRE_TRANSACTION_CONTEXT'))

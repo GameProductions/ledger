@@ -12,6 +12,8 @@ export type SecretKeyName =
     | 'WEBHOOK_URL'
     | 'WEBHOOK_SECRET'
     | 'EXTERNAL_CONNECTION_TOKEN'
+    | 'PASSKEY_PUBLIC_KEY'
+    | 'CREDENTIAL_ID'
     | string;
 
 export class VaultService {

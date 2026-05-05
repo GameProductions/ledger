@@ -7,6 +7,7 @@ import { getDb } from '#/index'
 import { users, userIdentities, passwordResets, passkeys, adminInvitations, userHouseholds, backupCodes } from '#/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
 import { VaultService } from '../utils/vault.service'
+import { hashToken, hashIdentifier } from '../utils/security'
 
 export class AuthService {
   constructor(private env: Bindings) {}
@@ -278,9 +279,11 @@ export class AuthService {
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 24)
 
+    const tokenHash = await hashToken(token)
+
     await db.insert(adminInvitations).values({
       id: crypto.randomUUID(),
-      token: token,
+      tokenHash: tokenHash,
       role: role,
       expiresAt: expiresAt.toISOString(),
     })
@@ -290,9 +293,11 @@ export class AuthService {
 
   async consumeAdminInvite(token: string, username: string, password: string, email: string) {
     const db = getDb(this.env)
+    const tokenHash = await hashToken(token)
+    
     const inviteResult = await db.select().from(adminInvitations).where(
       and(
-        eq(adminInvitations.token, token),
+        eq(adminInvitations.tokenHash, tokenHash),
         eq(adminInvitations.isClaimed, 0),
         gt(adminInvitations.expiresAt, sql`CURRENT_TIMESTAMP`)
       )
@@ -313,7 +318,7 @@ export class AuthService {
         globalRole: invite.role,
         status: 'active'
       }),
-      db.update(adminInvitations).set({ isClaimed: 1 }).where(eq(adminInvitations.token, token))
+      db.update(adminInvitations).set({ isClaimed: 1 }).where(eq(adminInvitations.tokenHash, tokenHash))
     ])
 
     return userId
@@ -328,12 +333,13 @@ export class AuthService {
     if (!user || !user.email) return null 
 
     const token = crypto.randomUUID()
+    const tokenHash = await hashToken(token)
     const expiresAt = new Date(Date.now() + 3600000).toISOString() 
     
     await db.insert(passwordResets).values({
       id: crypto.randomUUID(),
       userId: user.id,
-      token: token,
+      tokenHash: tokenHash,
       expiresAt: expiresAt,
     })
 
@@ -349,9 +355,11 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string) {
     const db = getDb(this.env)
+    const tokenHash = await hashToken(token)
+    
     const resetResult = await db.select().from(passwordResets).where(
       and(
-        eq(passwordResets.token, token),
+        eq(passwordResets.tokenHash, tokenHash),
         eq(passwordResets.isUsed, 0),
         gt(passwordResets.expiresAt, sql`DATETIME("now")`)
       )
@@ -362,7 +370,7 @@ export class AuthService {
     const passwordHash = await hashPassword(newPassword)
     await db.batch([
       db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: 0 }).where(eq(users.id, reset.userId)),
-      db.update(passwordResets).set({ isUsed: 1 }).where(eq(passwordResets.token, token))
+      db.update(passwordResets).set({ isUsed: 1 }).where(eq(passwordResets.tokenHash, tokenHash))
     ])
     return true
   }

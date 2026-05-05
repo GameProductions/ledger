@@ -109,9 +109,9 @@ This document serves as the absolute source of truth for all projects within the
     - Bottom Row (Standard): `{new Date().getFullYear()} GameProductions™. All rights reserved.`
     - Bottom Row (Gloson Production): `{new Date().getFullYear()} GameProductions™ | Gloson Production™. All rights reserved.`
 - **Notifications**: Dismissable toasts only. Do NOT use browser alerts.
-- **In-Line Confirmation Law**: Any field that supports in-line operations or actions requiring a confirmation step MUST display its confirmation toast in-line (directly within the component's context) to maintain focus and prevent UI jarring.
 - **What's New Modals**: All update/release notes modals MUST use a vertical, scrollable list (`.scrollable-list`). They must track the last version viewed by the user so that upon their next visit, they see an aggregated view of all versions and changes released since their last recorded view.
-- **Reactive Data Synchronization**: All data-driven components (Lists, Ledgers, Summaries) MUST implement a global mutation listener. When a data-modifying action occurs (Add, Edit, Delete), the component MUST broadcast a global mutation event (e.g., `[app-name]-api-mutate`) to notify all active hooks watching that resource path to refetch data immediately. This ensures application-wide state consistency without requiring manual page refreshes.
+
+- **Reactive Data Synchronization**: All data-driven components (Lists, Ledgers, Summaries) MUST implement a global mutation listener. When a data-modifying action occurs (Add, Edit, Delete), the component MUST broadcast a global mutation event (e.g., `[app-name]-api-mutate`) to notify all active hooks watching that resource path to refetch data immediately. This ensures application-wide state consistency without requiring manual page refreshes. 
 
 ## 6. Local Development & Deployment
 - **Local-First Testing**: Mandatory local testing before any deployment. 
@@ -216,7 +216,8 @@ All projects MUST adhere to this unified monorepo-style layout to ensure scalabi
 - **Rule 13.11 (Non-blocking I/O & CPU Integrity)**: All non-essential operations (e.g., audit logging, telemetry, cache warming) MUST be orchestrated via `c.executionCtx.waitUntil()`. This prevents secondary background logic from consuming the primary request's CPU quota and ensures minimum response latency.
 - **Rule 13.12 (Cold Storage & R2 Offloading)**: High-volume datasets or large metadata blobs (historical logs, detailed transaction data, media) MUST be migrated to Cloudflare R2 (Cold Storage) via a dedicated `ArchiveService`. The D1 database MUST remain lean, reserved exclusively for frequently accessed relational data.
 - **Rule 13.13 (Heavy Task Orchestration - Queues)**: Any operation with a projected CPU duration exceeding 10ms or involving bulk data mutations MUST be offloaded to Cloudflare Queues. The API worker MUST only act as a thin ingress, pushing task payloads into the queue for asynchronous processing to prevent Error 1102 (CPU Limit Exceeded).
-- **Rule 13.14 (Asset Recovery Protocol)**: All PWAs MUST implement a global error listener in the root component to detect failed network requests (`404`) for hashed assets within the `/assets/` directory. If a critical script or stylesheet fails to load (typically due to a stale PWA cache after a new deployment), the application MUST automatically trigger a `window.location.reload()` to force a clean synchronization with the latest server-side bundle.
+
+- **Rule 13.14 (Asset Recovery Protocol)**: All PWAs MUST implement a global error listener in the root component to detect failed network requests (`404`) for hashed assets within the `/assets/` directory. If a critical script or stylesheet fails to load (typically due to a stale PWA cache after a new deployment), the application MUST automatically trigger a `window.location.reload()` to force a clean synchronization with the latest server-side bundle. 
 
 ## 14. Destructive SQL & Migration Law 
 - **Archive Before Action**: Any destructive change (table drop, column removal, type change) MUST be preceded by an archival step. Rename the existing table to `[original_name]_archive_[timestamp]`.
@@ -290,13 +291,14 @@ To ensure absolute account integrity and forensic traceability, all identity sys
 
 ### 16.7 UI/UX Forensic Parity & Reactive State
 - **IP Labeling**: UIs MUST explicitly label and display BOTH IPv4 and IPv6 addresses when available. Use standard "IPv4:" and "IPv6:" prefixes. Never label an IPv6 address as IPv4.
-- **Metadata Visibility**: Security listings (Sessions, Passkeys) MUST surface full forensic metadata including:
-    - **Network**: IPv4 and IPv6 addresses with explicit labels.
-    - **Geographic**: Location (City, Country).
-    - **Device**: Browser/OS (parsed from UA).
-    - **Hardware**: Full AAGUID metadata and Hardware Provider name (mapped from AAGUID) for passkeys.
+- **Metadata Visibility**: Security listings (Sessions, Passkeys) MUST surface full high-fidelity forensic metadata including:
+    - **Network**: IPv4 and IPv6 addresses with explicit labels and dual-stack transparency.
+    - **Geographic**: Granular location details (City, State/Region, Country, Latitude/Longitude).
+    - **Device**: Comprehensive context including Browser, OS, and parsed Device Name from User-Agent.
+    - **Hardware Branding**: Full AAGUID metadata including high-quality manufacturer logos (SVG/CDN), security classification (Hardware vs Software), and manufacturer attribution.
+    - **Temporal**: Precise timestamps for Creation and Last Usage, along with an absolute Usage Counter.
 - **Session Lifecycle UI**: Active session lists MUST include a "Current Session" badge and a "Persistence" indicator (Persistent vs Temporary), accompanied by a legend explaining these security states.
-- **Reactive CRUD**: All security management actions (Rename, Revoke, Enroll) MUST utilize optimistic UI updates or immediate state refreshes to reflect changes without requiring a full page reload.
+- **Reactive CRUD**: All security management architecture (Rename, Revoke, Enroll) MUST utilize optimistic UI updates or immediate state refreshes to reflect changes without requiring a full page reload.
 - **Passkey Enrollment**: Enrollment logic MUST generate and display 10 high-entropy recovery codes immediately upon successful binding, with a mandatory "Saved" verification and download option.
 
 ## 17. Centralized Secret Management (Fleet Security v6.1)
@@ -325,3 +327,18 @@ To ensure absolute account integrity and forensic traceability, all identity sys
     - These routes MUST be protected by `sessionMiddleware` to identify the actor.
     - Administrative routes (`/admin/*`, `/godmode/*`) MUST verify the presence of a valid `passkey_verified` cookie before granting access to sensitive data or actions.
 - **Cookie Security**: The `passkey_verified` cookie MUST be a signed HTTP-only cookie with a maximum age of 3600 seconds (1 hour) to ensure short-lived administrative authorization.
+
+## 19. Passkey Standardization & Forensic Standards (v6.1)
+- **Encoding Standard**: All WebAuthn binary data (Credential IDs, Public Keys, Signatures) MUST be encoded using **base64url**. Standard `base64` is strictly prohibited to ensure maximum URL and database compatibility.
+- **Biometric Isolation (Vault Service)**: Sensitive biometric identifiers, specifically the `publicKey` (encoded as base64url) and the raw `credentialId` (encoded as base64url), MUST NEVER be stored in the relational database (`passkeys` table). These materials MUST be stored exclusively in the `VaultService` under the `PASSKEY_PUBLIC_KEY` and `CREDENTIAL_ID` secret names respectively, isolated by the unique passkey UUID.
+- **Zero-Knowledge Identifier Hashing**: To prevent raw exposure of biometric identifiers while maintaining lookup efficiency, the `passkeys` table MUST use a **SHA-256 hash** of the `credentialId` (the "Identifier Hash") for indexing and verification lookups.
+- **AAGUID High-Fidelity Branding**: Passkey registration and listing MUST implement rich AAGUID metadata mapping. 
+    - **Logo Integration**: Display high-quality logos for recognized providers (Apple, Google, Microsoft, Yubico) using verified SVGs or CDN-hosted assets.
+    - **Security Grading**: Explicitly label the security level of the hardware (e.g., "Hardware Protected (TEE/SE)", "Software Protected (Fallback)").
+    - **Manufacturer Attribution**: Surface the manufacturer name derived from the AAGUID.
+- **Forensic Granularity**: All passkey registrations and authentication events MUST capture:
+    - **Dual-Stack Network Data**: Explicitly log both `ip_v4` and `ip_v6` addresses for every lifecycle event.
+    - **Granular Geolocation**: Log `city`, `country`, `region`, `latitude`, and `longitude` derived from Cloudflare headers.
+    - **Device Context**: Log `user_agent`, `browser`, `os`, and `device_name`.
+    - **Audit Continuity**: Every passkey record MUST maintain a permanent `registration_forensics` block and a rolling `last_used_forensics` block.
+- **Administrative Clearing**: Upon transition to the base64url and Vault standard, all existing legacy passkey registrations MUST be cleared from the database to ensure state purity and security compliance.

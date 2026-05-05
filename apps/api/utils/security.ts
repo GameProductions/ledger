@@ -97,3 +97,37 @@ export async function hashToken(token: string): Promise<string> {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+// --- NATIVE BASE64URL HELPERS (Buffer-free) ---
+export function base64ToUint8Array(base64: string): Uint8Array {
+  const standard = base64.replace(/-/g, '+').replace(/_/g, '/');
+  const binaryString = atob(standard);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+export function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * 🔒 SHA-256 Hash for Zero-Knowledge Lookups
+ */
+export async function hashIdentifier(id: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(id);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}

@@ -46,7 +46,7 @@ export const userIdentities = sqliteTable('userIdentities', {
 export const passwordResets = sqliteTable('passwordResets', {
   id: text('id').primaryKey(),
   userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  token: text('token').notNull(),
+  tokenHash: text('tokenHash').notNull(), // Zero-knowledge hash
   isUsed: integer('isUsed').default(0),
   expiresAt: text('expiresAt').notNull(),
 }, (table) => ({
@@ -70,6 +70,7 @@ export const sessions = sqliteTable('sessions', {
   browser: text('browser'),
   cfRay: text('cfRay'),
   isPersistent: integer('isPersistent').default(0),
+  location: text('location'), // Fleet Standardization
   city: text('city'),
   country: text('country'),
   region: text('region'),
@@ -105,12 +106,20 @@ export const passkeys = sqliteTable('passkeys', {
   aaguid: text('aaguid'),
   providerName: text('providerName'),
   icon: text('icon'),
+  securityLevel: text('securityLevel'),
+  manufacturer: text('manufacturer'),
+  logo: text('logo'),
   transports: text('transports'), // JSON array of allowed transports
 
   // 🕵️ Registration Forensics (Immutable)
   registrationIp: text('registrationIp'),
   registrationIpV4: text('registrationIpV4'),
   registrationIpV6: text('registrationIpV6'),
+  registrationCity: text('registrationCity'),
+  registrationCountry: text('registrationCountry'),
+  registrationRegion: text('registrationRegion'),
+  registrationLatitude: text('registrationLatitude'),
+  registrationLongitude: text('registrationLongitude'),
   registrationLocation: text('registrationLocation'),
   registrationUa: text('registrationUa'),
 
@@ -118,6 +127,11 @@ export const passkeys = sqliteTable('passkeys', {
   lastUsedIp: text('lastUsedIp'),
   lastUsedIpV4: text('lastUsedIpV4'),
   lastUsedIpV6: text('lastUsedIpV6'),
+  lastUsedCity: text('lastUsedCity'),
+  lastUsedCountry: text('lastUsedCountry'),
+  lastUsedRegion: text('lastUsedRegion'),
+  lastUsedLatitude: text('lastUsedLatitude'),
+  lastUsedLongitude: text('lastUsedLongitude'),
   lastUsedLocation: text('lastUsedLocation'),
   lastUsedUa: text('lastUsedUa'),
 }, (table) => ({
@@ -164,7 +178,7 @@ export const userPreferences = sqliteTable('userPreferences', {
 export const adminInvitations = sqliteTable('adminInvitations', {
   id: text('id').primaryKey(),
   email: text('email'),
-  token: text('token').notNull().unique(),
+  tokenHash: text('tokenHash').notNull().unique(), // Zero-knowledge hash
   role: text('role').notNull(),
   isClaimed: integer('isClaimed').default(0),
   expiresAt: text('expiresAt').notNull(),
@@ -175,9 +189,11 @@ export const personalAccessTokens = sqliteTable('personalAccessTokens', {
   id: text('id').primaryKey(),
   householdId: text('householdId').notNull(), 
   name: text('name'),
+  tokenHash: text('tokenHash').notNull().unique(), // Zero-knowledge hash
   scopes: text('scopes').default('READ,WRITE'),
   createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
   lastUsedAt: text('lastUsedAt'),
 }, (table) => ({
   householdIdx: index('idx_pat_household').on(table.householdId),
 }));
+

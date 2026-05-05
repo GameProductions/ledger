@@ -1,56 +1,69 @@
 /**
  * 🔐 WebAuthn AAGUID Metadata Mapping
  * Provides human-readable provider names and branding for passkeys.
+ * [FLEET-STANDARD] Consistent with Fleet Forensic Standard v6.1.
  */
 
 export interface PasskeyProviderMetadata {
   name: string;
-  icon: string; // URL to icon or simpleicons name
+  icon: string;
+  logo?: string;
+  securityLevel: string;
+  manufacturer: string;
 }
 
 // Common AAGUIDs mapped to human-readable names and branding
-// Data sourced from FIDO Alliance Metadata Service and community lists
 const AAGUID_MAP: Record<string, PasskeyProviderMetadata> = {
-  // Apple
-  '7d444828-ea09-41ac-aa13-f4ef75782728': { name: 'Apple iCloud / FaceID', icon: 'apple' },
-  '00000000-0000-0000-0000-000000000000': { name: 'Apple Device (Local)', icon: 'apple' },
-  
-  // Google
-  'adce361d-73e3-4bc2-aa0b-222a0887e81b': { name: 'Google Chrome / Android', icon: 'google' },
-  '61229f34-f25b-4395-9271-4770337c768a': { name: 'Google Titan Key', icon: 'google' },
-  
-  // Microsoft
-  '6028744f-f9ce-4277-90f7-640b3967f407': { name: 'Windows Hello', icon: 'windows' },
-  
-  // Yubico
-  'cb699144-3074-4b5b-ad7d-ef74895c721c': { name: 'YubiKey 5 Series', icon: 'yubico' },
-  'fa2b9927-3efc-4981-aa94-98447814ec92': { name: 'YubiKey 5 FIPS', icon: 'yubico' },
-  '8d350915-d91d-4074-a035-7c5ec82f5b61': { name: 'YubiKey 5 Nano', icon: 'yubico' },
-  
-  // 1Password
-  'b31f79f2-085f-40f4-9041-356c38f4d96c': { name: '1Password', icon: '1password' },
-  
-  // Bitwarden
-  '86111f3b-7f12-429a-8c76-5957d096c4a3': { name: 'Bitwarden', icon: 'bitwarden' },
-  
-  // Dashlane
-  '6398935c-2794-4d83-9366-4172f3a60c6d': { name: 'Dashlane', icon: 'dashlane' }
+  'ad155505-7d1d-473d-8517-c8a417646a53': { 
+    name: 'Apple iCloud Keychain', 
+    icon: 'apple', 
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
+    securityLevel: 'Hardware Protected (TEE/SE)',
+    manufacturer: 'Apple Inc.'
+  },
+  'ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4': { 
+    name: 'Google Password Manager', 
+    icon: 'google', 
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg',
+    securityLevel: 'Hardware Protected (TEE)',
+    manufacturer: 'Google LLC'
+  },
+  '6028c46d-0081-4229-873b-554474775f0a': { 
+    name: 'Windows Hello', 
+    icon: 'windows', 
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+    securityLevel: 'Hardware Protected (TPM)',
+    manufacturer: 'Microsoft Corporation'
+  },
+  'f8a011f3-8c0a-4d15-8006-17111f9edc01': { 
+    name: 'YubiKey 5 Series', 
+    icon: 'key', 
+    logo: 'https://www.yubico.com/wp-content/uploads/2020/09/yubico-logo.png',
+    securityLevel: 'Hardware Protected (Secure Element)',
+    manufacturer: 'Yubico AB'
+  },
 };
 
 /**
  * Returns metadata for a given AAGUID.
- * Falls back to "Unknown Authenticator" if no match is found.
  */
 export function getAAGUIDMetadata(aaguid: string | null | undefined): PasskeyProviderMetadata {
   if (!aaguid) {
-    return { name: 'Unknown Authenticator', icon: 'shield-question' };
+    return { 
+      name: 'Generic Authenticator', 
+      icon: 'key', 
+      securityLevel: 'Software Protected (Fallback)',
+      manufacturer: 'Unknown'
+    };
   }
   
   const metadata = AAGUID_MAP[aaguid.toLowerCase()];
-  if (metadata) {
-    return metadata;
-  }
+  if (metadata) return metadata;
   
-  // Generic fallbacks for common brand strings if we have them (future expansion)
-  return { name: `Authenticator (${aaguid.slice(0, 8)})`, icon: 'key' };
+  return { 
+    name: 'Hardware Security Key', 
+    icon: 'key', 
+    securityLevel: 'Hardware Protected',
+    manufacturer: 'Generic Manufacturer'
+  };
 }

@@ -37,7 +37,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       if (!patAuthQuery) {
         patAuthQuery = db.select({ householdId: personalAccessTokens.householdId, scopes: personalAccessTokens.scopes })
           .from(personalAccessTokens)
-          .where(eq(personalAccessTokens.id, sql.placeholder('tokenHash')))
+          .where(eq(personalAccessTokens.tokenHash, sql.placeholder('tokenHash')))
           .limit(1)
           .prepare()
       }

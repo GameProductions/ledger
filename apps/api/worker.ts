@@ -20,6 +20,7 @@ import { cors } from "hono/cors";
 import { fleetSecurity, injectCSPNonce } from '~/utils/fleet-security';
 import { apiError } from '~/utils/errors';
 import { logger } from "hono/logger";
+import { ipRateLimit } from './middlewares/rate-limit';
 
 // [SECURITY] Strict Content Security Policy & Headers (Fleet Security Standard - Codified)
 app.use('*', csrf());
@@ -57,6 +58,81 @@ app.route('/', apiApp);
 app.all('/api/*', (c) => {
   return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
 })
+
+// --- [SECURITY] Secret Migration & Clean Slate (Fleet v6.1) ---
+// This route is temporary and will be decommissioned after the fleet audit.
+async function offloadToFoundation(c: any, source: string, category: string, recordId: string, plaintext: string) {
+    const foundationUrl = c.env.FOUNDATION_URL || 'https://foundation.gpnet.dev';
+    const url = `${foundationUrl}/api/admin/security/deletion-queue`;
+    
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Service-Token': c.env.SHARED_SERVICE_SECRET
+            },
+            body: JSON.stringify({
+                sourceSystem: source,
+                category,
+                recordId,
+                plaintext,
+                actorId: 'migration-task'
+            })
+        });
+    } catch (e) {
+        console.error(`[Offload] Failed to offload ${category} for ${recordId}:`, e);
+    }
+}
+
+app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
+    const authHeader = c.req.header('Authorization');
+    if (authHeader !== `Bearer ${c.env.ADMIN_MIGRATION_KEY}`) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { getDb } = await import('#/index');
+    const { userIdentities, passwordResets, adminInvitations, personalAccessTokens } = await import('#/schema');
+    const { eq, isNull, or, sql } = await import('drizzle-orm');
+
+    const db = getDb(c.env);
+    
+    // 1. Migrate OAuth Identities -> Offload
+    const identities = await db.select().from(userIdentities).where(
+        or(sql`accessToken IS NOT NULL`, sql`refreshToken IS NOT NULL`)
+    );
+
+    let offloaded = 0;
+    for (const identity of identities) {
+        if (identity.accessToken && identity.accessToken !== '[VAULTED]') {
+            await offloadToFoundation(c, 'ledger', 'oauth_access_token', identity.userId, identity.accessToken);
+            offloaded++;
+        }
+        if (identity.refreshToken && identity.refreshToken !== '[VAULTED]') {
+            await offloadToFoundation(c, 'ledger', 'oauth_refresh_token', identity.userId, identity.refreshToken);
+            offloaded++;
+        }
+        
+        await db.update(userIdentities).set({
+            accessToken: '[VAULTED]',
+            refreshToken: '[VAULTED]'
+        }).where(eq(userIdentities.id, identity.id));
+    }
+
+    // 2. Clean Slate Lifecycle Tokens (Purge plaintext tokens, requiring new hashes)
+    const resetPurge = await db.delete(passwordResets).where(sql`tokenHash IS NULL`);
+    const invitePurge = await db.delete(adminInvitations).where(sql`tokenHash IS NULL`);
+    const patPurge = await db.delete(personalAccessTokens).where(sql`tokenHash IS NULL`);
+
+    return c.json({
+        success: true,
+        offloadedIdentities: offloaded,
+        purgedResets: resetPurge.rowsAffected,
+        purgedInvites: invitePurge.rowsAffected,
+        purgedPats: patPurge.rowsAffected,
+        message: 'Fleet Security v6.1 Offload Complete. Legacy plaintext material purged.'
+    });
+});
 
 // 8. Static Assets & SPA Fallback (with Nonce Injection)
 app.get("*", async (c) => {

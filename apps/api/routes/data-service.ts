@@ -346,7 +346,8 @@ data.post('/tools/tokens', zValidator('json', z.object({ name: z.string().min(1)
   
   const db = getDb(c.env)
   await db.insert(personalAccessTokens).values({
-    id: tokenHash, // Use hash as ID for lookup
+    id: crypto.randomUUID(),
+    tokenHash: tokenHash, 
     householdId,
     name
   })

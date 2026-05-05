@@ -747,14 +747,12 @@ async function handleRegisterVerify(c: any) {
 
   if (verification.verified && verification.registrationInfo) {
     const { 
-      credentialID, 
-      credentialPublicKey, 
-      counter,
-      credentialDeviceType,
-      credentialBackedUp,
-      aaguid,
-      attestationObject
-    } = verification.registrationInfo
+      credential, 
+      aaguid, 
+      credentialDeviceType, 
+      credentialBackedUp 
+    } = verification.registrationInfo;
+    const { publicKey, id: credentialID, counter } = credential;
 
     const db = getDb(c.env)
     const id = crypto.randomUUID()
@@ -765,8 +763,10 @@ async function handleRegisterVerify(c: any) {
     
     // 🔒 Extreme Security: Store raw secrets in Vault, Hash in DB
     const vault = new VaultService(db, c.env.JWT_SECRET);
-    const credIdB64 = uint8ArrayToBase64(credentialID);
-    const pubKeyB64 = uint8ArrayToBase64(credentialPublicKey);
+    
+    // Standardize ID as URL-safe base64 using Buffer
+    const credIdB64 = Buffer.from(credentialID).toString('base64url');
+    const pubKeyB64 = Buffer.from(publicKey).toString('base64url');
     
     // Index by hash for Zero-Knowledge lookups
     const credentialIdHash = await hashIdentifier(credIdB64);
@@ -927,9 +927,9 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
     expectedRPID: getRpID(c),
     requireUserVerification: true,
     credential: {
-      id: rawCredentialId,
+      id: base64ToUint8Array(rawCredentialId),
       publicKey: base64ToUint8Array(publicKeyB64),
-      counter: passkey.counter,
+      counter: passkey.counter || 0,
       transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
     }
   })
@@ -1006,9 +1006,9 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
     expectedRPID: getRpID(c),
     requireUserVerification: true,
     credential: {
-      id: rawCredentialId,
+      id: base64ToUint8Array(rawCredentialId),
       publicKey: base64ToUint8Array(publicKeyB64),
-      counter: passkey.counter,
+      counter: passkey.counter || 0,
       transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
     }
   })

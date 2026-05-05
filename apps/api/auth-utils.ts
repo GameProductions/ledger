@@ -1,32 +1,11 @@
-/**
- * LEDGER Auth Utilities
- * Implements TOTP (RFC 6238) and WebAuthn helpers using Web Crypto API.
- */
+import { Buffer } from 'node:buffer';
 
-// --- NATIVE BASE64 HELPERS (Buffer-free) ---
-// --- NATIVE BASE64URL HELPERS (Buffer-free) ---
 export function base64ToUint8Array(base64: string): Uint8Array {
-  // Convert from Base64URL to standard Base64 if necessary
-  const standard = base64.replace(/-/g, '+').replace(/_/g, '/');
-  const binaryString = atob(standard);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
+  return new Uint8Array(Buffer.from(base64, 'base64url'));
 }
 
 export function uint8ArrayToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  // Convert standard Base64 to Base64URL (no padding)
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return Buffer.from(bytes).toString('base64url');
 }
 
 /**
@@ -54,9 +33,16 @@ export function timingSafeEqual(a: string, b: string): boolean {
 import { 
   verifyRegistrationResponse, 
   verifyAuthenticationResponse,
-  VerifyRegistrationResponseOpts,
-  VerifyAuthenticationResponseOpts
+  type VerifyRegistrationResponseOpts,
+  type VerifyAuthenticationResponseOpts
 } from '@simplewebauthn/server';
+
+export { 
+  verifyRegistrationResponse, 
+  verifyAuthenticationResponse,
+  type VerifyRegistrationResponseOpts,
+  type VerifyAuthenticationResponseOpts
+};
 
 // --- WEBAUTHN UTILS (Industrial Verified) ---
 export async function verifyWebAuthnAssertion(

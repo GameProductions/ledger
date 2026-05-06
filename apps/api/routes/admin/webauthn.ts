@@ -112,14 +112,13 @@ webauthn.post('/verify-registration', async (c) => {
   if (verification.verified && verification.registrationInfo) {
     const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp, aaguid } = verification.registrationInfo
     const db = getDb(c.env)
-    const id = crypto.randomUUID()
     const forensics = getForensics(c)
     const branding = getAAGUIDMetadata(aaguid);
     const vault = new VaultService(db, c.env.JWT_SECRET);
     
     const credIdB64 = uint8ArrayToBase64(credentialID);
+    const id = credIdB64;
     const pubKeyB64 = uint8ArrayToBase64(credentialPublicKey);
-    const credentialIdHash = await hashIdentifier(credIdB64);
     
     await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
     await vault.setSecret(id, 'PASSKEY_PUBLIC_KEY', 'webauthn', pubKeyB64);
@@ -215,8 +214,8 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
 
   const db = getDb(c.env)
   const vault = new VaultService(db, c.env.JWT_SECRET)
-  const credentialIdHash = await hashIdentifier(assertion.id)
-  const passkeyResult = await db.select().from(passkeys).where(and(eq(passkeys.userId, userId), eq(passkeys.credentialIdHash, credentialIdHash))).limit(1)
+  const id = assertion.id;
+  const passkeyResult = await db.select().from(passkeys).where(and(eq(passkeys.userId, userId), eq(passkeys.id, id))).limit(1)
   
   const passkey = passkeyResult[0]
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized' })

@@ -297,7 +297,7 @@ export const WebhookSchema = z.object({
 
 // --- ADMIN SCHEMAS ---
 export const UpdateUserAdminSchema = z.object({
-  globalRole: z.enum(['user', 'admin', 'super_admin', 'operator']).optional(),
+  globalRole: z.enum(['user', 'admin', 'owner', 'operator']).optional(),
   status: z.enum(['active', 'suspended', 'invited']).optional(),
   displayName: z.string().optional(),
   email: z.string().email().optional(),
@@ -308,7 +308,7 @@ export const CreateUserAdminSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   displayName: z.string().min(1),
-  globalRole: z.enum(['user', 'admin', 'super_admin', 'operator']).default('user'),
+  globalRole: z.enum(['user', 'admin', 'owner', 'operator']).default('user'),
   forcePasswordChange: z.boolean().optional().default(true),
 })
 

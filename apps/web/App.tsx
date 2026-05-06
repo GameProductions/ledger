@@ -184,7 +184,7 @@ const AppContent: React.FC = () => {
       )
     }
 
-    // Maintenance Gate: Only allow Super Admins into the /admin namespace
+    // Maintenance Gate: Only allow Owners into the /admin namespace
     const isAdminPath = path.startsWith('#/admin')
     if (isMaintenance && !isAdminPath) {
        return <MaintenanceView />
@@ -209,9 +209,9 @@ const AppContent: React.FC = () => {
     // 3. Auth Guard
     if (!user) return <LoginPage />
 
-    // 3. Super Admin Portal - Super-Admin Only
+    // 3. Owner Portal - Super-Admin Only
     if (isAdminPath) {
-      if (globalRole !== 'super_admin' && localStorage.getItem('ledger_globalRole') !== 'super_admin') return <DashboardPage view={view} setView={setView} />
+      if (globalRole !== 'owner' && localStorage.getItem('ledger_globalRole') !== 'owner') return <DashboardPage view={view} setView={setView} />
       
       const renderAdmin = () => {
         if (path === '#/admin/dashboard') return <AdminDashboard />

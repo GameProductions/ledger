@@ -270,7 +270,7 @@ export class AuthService {
   }
 
 
-  async createAdminInvite(role: string = 'super_admin') {
+  async createAdminInvite(role: string = 'owner') {
     const db = getDb(this.env)
     const token = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))))
       .replace(/[^a-zA-Z0-9]/g, '')

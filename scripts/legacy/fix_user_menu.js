@@ -5,8 +5,8 @@ const filePath = path.join(__dirname, '../ledger/src/web/components/UserMenu.tsx
 let content = fs.readFileSync(filePath, 'utf8');
 
 content = content.replace(
-  /\{\!isPcc && globalRole === 'super_admin' && \(/g,
-  "{!isPcc && (globalRole === 'super_admin' || profile?.globalRole === 'super_admin') && ("
+  /\{\!isPcc && globalRole === 'owner' && \(/g,
+  "{!isPcc && (globalRole === 'owner' || profile?.globalRole === 'owner') && ("
 );
 
 fs.writeFileSync(filePath, content);

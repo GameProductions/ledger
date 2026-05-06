@@ -10,7 +10,7 @@ import { HTTPException } from 'hono/http-exception'
 
 const entities = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// Generic Entity CRUD for Super Admin
+// Generic Entity CRUD for Owner
 const getTable = (type: string) => {
   const mapping: Record<string, any> = {
     'categories': schema.categories,

@@ -14,7 +14,7 @@ type OGMetadata = {
 /**
  * Foundation OG Meta Tag Editor (Stable)
  * Admin-only UI for overriding app-sharing metadata.
- * Part of the Super Admin Branding suite.
+ * Part of the Owner Branding suite.
  */
 export const OGEditor = ({ initialMetadata, onSave }: { initialMetadata: OGMetadata, onSave: (data: OGMetadata) => void }) => {
   const [metadata, setMetadata] = useState(initialMetadata);

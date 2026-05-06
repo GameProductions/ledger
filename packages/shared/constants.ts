@@ -6,7 +6,7 @@ export const SYSTEM_OWNER = 'GameProductions'
 export const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY']
 
 export const ROLES = {
-  SUPER_ADMIN: 'super_admin',
+  SUPER_ADMIN: 'owner',
   ADMIN: 'admin',
   OPERATOR: 'operator',
   USER: 'user'
@@ -17,7 +17,7 @@ export const VERSION_UPDATES = [
   { version: 'v3.33.2', title: 'Authentication Stabilization', description: 'Resolved passkey authentication failures by aligning Relying Party IDs, enforcing biometric verification, and hardening public API route exclusions for login and support webhooks.' },
   { version: 'v6.1.0', title: 'Fleet Security Overhaul', description: 'Complete security standard unification across all apps. Decommissioned legacy TOTP in favor of secure WebAuthn Passkeys. Implemented biometric step-up authentication for all administrative actions and finalized the zero-knowledge identity vault.' },
   { version: 'v3.31.0', title: 'Rule 9 Standard Reorganization', description: 'Complete structural migration of application assets to standard directories (/app and /apps/api), updated entry points, and synchronized global path aliases for future-proof scalability.' },
-  { version: 'v3.30.0', title: 'Super Admin Hardening & Step-Up Auth', description: 'Renamed administrative suite to Super Admin, implemented Biometric Step-Up authentication for high-risk actions, and enforced cascading integrity across the database schema.' },
+  { version: 'v3.30.0', title: 'Owner Hardening & Step-Up Auth', description: 'Renamed administrative suite to Owner, implemented Biometric Step-Up authentication for high-risk actions, and enforced cascading integrity across the database schema.' },
   { version: 'v3.29.2', title: 'Immortal State Hardening (Final)', description: 'Definitive resolution for all context-driven 500 errors. Purged legacy CommonJS artifacts, enforced strict user verification across all planning routes, and modernized global error diagnostics.' },
   { version: 'v3.29.1', title: 'Stability Hardened (Consolidated Routing)', description: 'Consolidated API architecture to resolve route-matching conflicts. Migrated to strict ESM imports in auth middleware and implemented an API Shield handler to prevent unintended SPA fallbacks.' },
   { version: 'v3.25.0', title: 'Security Insights & System Protection', description: 'Implemented the high-density Transaction Ledger with smart matching, automated splitting/linking, and a full security pass (automated alarms, clear logs, and 100% audit coverage).' },

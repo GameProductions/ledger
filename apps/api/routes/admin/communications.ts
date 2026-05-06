@@ -53,7 +53,7 @@ communications.get('/invitations', async (c) => {
 })
 
 communications.post('/invitations', zValidator('json', z.object({
-  role: z.enum(['super_admin', 'operator']),
+  role: z.enum(['owner', 'operator']),
   expires_in_hours: z.number().default(24)
 })), async (c) => {
   const { role, expires_in_hours } = c.req.valid('json')

@@ -17,7 +17,7 @@ LEDGER is a production-grade personal and household finance platform built for s
 - **Rule-Based Pairing**: Automated transaction categorization and linking based on historical patterns and shared visibility rules.
 
 ### 🛡️ Security & Activity Tracking
-- **Super Admin Access (Impersonation)**: Securely log in as users for support with a confirmation workflow and privacy masking.
+- **Owner Access (Impersonation)**: Securely log in as users for support with a confirmation workflow and privacy masking.
 - **Hardened Hashing**: PBKDF2-SHA256 with **100,000 iterations** for maximum password security.
 - **Zero-Trust Validation**: Strict Zod-powered input validation on all API endpoints.
 - **Activity History**: Detailed record of all administrative actions.
@@ -77,7 +77,7 @@ LEDGER is the direct successor to the **CASH** platform, evolving through severa
 - **v3.11.x (Hardening Era)**: Transitioned authentication to Node.js `Buffer` logic for cross-environment Bit-Perfect Cryptographic Stability.
 - **v3.13.x (Mobility Era)**: Full Mobile-First refactor and PWA Asset Hardening.
 - **v3.15.x (Secure Era)**: Rebranded from "Territory" to **"Household Management"** and adopted Plain English terminology.
-- **v3.19.2 (Secure Era)**: Implementation of the **Payment Intelligence** and Super Admin Impersonation.
+- **v3.19.2 (Secure Era)**: Implementation of the **Payment Intelligence** and Owner Impersonation.
 - **v3.32.1 (Agentic Era)**: Transitioned to **Modular Architecture** and introduced the **Cloudflare Agents SDK** for stateful reconciliation.
 
 ---

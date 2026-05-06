@@ -11,7 +11,7 @@ import {
 
 const API = getApiUrl()
 
-// Helper for Super Admin actions
+// Helper for Owner actions
 const adminRequest = async (secureFetch: any, method: string, path: string, body?: any) => {
   const res = await secureFetch(path, {
     method,
@@ -71,7 +71,7 @@ const AdminEntityManager: React.FC = () => {
   const handleSave = async () => {
     if (!editing) return
     await adminRequest(secureFetch, 'PATCH', `/api/admin/entities/${activeType}/${editing.id}`, editData)
-    showToast('Record updated via Super Admin', 'success')
+    showToast('Record updated via Owner', 'success')
     setEditing(null)
     setEditData({})
     mutate()
@@ -79,7 +79,7 @@ const AdminEntityManager: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     await adminRequest(secureFetch, 'DELETE', `/api/admin/entities/${activeType}/${id}`)
-    showToast('Record removed via Super Admin', 'success')
+    showToast('Record removed via Owner', 'success')
     setDeleting(null)
     mutate()
   }
@@ -98,7 +98,7 @@ const AdminEntityManager: React.FC = () => {
             <Shield size={24} className="text-emerald-500" />
           </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight">Super Admin</h2>
+            <h2 className="text-2xl font-black tracking-tight">Owner</h2>
             <p className="text-xs text-white/40 font-medium">Platform-wide CRUD access across all households and users. All actions are audited.</p>
           </div>
         </div>
@@ -110,7 +110,7 @@ const AdminEntityManager: React.FC = () => {
       {/* Audit Log Drawer */}
       {showAudit && (
         <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Super Admin Audit Log</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Owner Audit Log</div>
           {(auditLog || []).length === 0 ? (
             <div className="text-sm text-white/30">No god-mode actions recorded yet.</div>
           ) : (
@@ -242,7 +242,7 @@ const AdminEntityManager: React.FC = () => {
       </Modal>
 
       {/* Delete Confirmation */}
-      <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Super Admin Delete" footer={
+      <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Owner Delete" footer={
         <>
           <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/60">Cancel</button>
           <button onClick={() => deleting && handleDelete(deleting)} className="px-5 py-2.5 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 transition-all">

@@ -46,9 +46,9 @@ Follow these steps to initialize a new GameProductions bot/PWA project. All step
 - Ensure the **Landing Page** is Google-compliant for account-linking approval.
 - Add **Microsoft Verification**: Create `.well-known/microsoft-identity-association.json`.
 
-## 7. Admin & "Super Admin"
-- Implement the **Role Hierarchy**: Super Admin, Admin, Mod, User.
-- Create a separate **Super Admin Portal** for Super Admins.
+## 7. Admin & "Owner"
+- Implement the **Role Hierarchy**: Owner, Admin, Mod, User.
+- Create a separate **Owner Portal** for Owners.
 - Implement **User Management (CRUD)** for Mods+.
 
 ## 8. Local Development & Deployment

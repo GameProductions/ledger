@@ -817,7 +817,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
                   </div>
                 </div>
-                {user?.globalRole === 'super_admin' && (
+                {user?.globalRole === 'owner' && (
                   <button 
                     onClick={() => mutateAnnouncements()}
                     className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"

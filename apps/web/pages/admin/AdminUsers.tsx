@@ -553,7 +553,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                    onChange={e => setFormData({ ...formData, globalRole: e.target.value })}
                  >
                    <option value="user">USER</option>
-                   <option value="super_admin">SUPER_ADMIN</option>
+                   <option value="owner">SUPER_ADMIN</option>
                  </select>
               </div>
 
@@ -763,7 +763,7 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </td>
                 <td className="px-8 py-6">
-                  <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${u.globalRole === 'super_admin' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${u.globalRole === 'owner' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
                     {u.globalRole}
                   </span>
                 </td>
@@ -804,7 +804,7 @@ const AdminUsers: React.FC = () => {
                           <div className="h-px bg-white/5 my-1" />
                           
                           <button 
-                            onClick={() => handleUpdate(u.id, { globalRole: u.globalRole === 'user' ? 'super_admin' : 'user' })}
+                            onClick={() => handleUpdate(u.id, { globalRole: u.globalRole === 'user' ? 'owner' : 'user' })}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/5 rounded-xl transition-all"
                           >
                             <Shield size={16} className="text-primary" />

@@ -398,9 +398,9 @@ user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result,
   const userId = c.get('userId') as string
   const db = getDb(c.env)
 
-  if (globalRole !== 'super_admin') {
+  if (globalRole !== 'owner') {
      const membership = await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0])
-     if (!membership || (membership.role !== 'admin' && membership.role !== 'super_admin')) {
+     if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) {
        throw new HTTPException(403, { message: 'Forbidden: Insufficient permissions to rename household' })
      }
   }

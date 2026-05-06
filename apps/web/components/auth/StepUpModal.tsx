@@ -71,7 +71,7 @@ export const StepUpModal: React.FC<StepUpModalProps> = ({ isOpen, onClose, onSuc
           <div className="space-y-2">
             <h2 className="text-2xl font-black italic tracking-tighter text-white uppercase">Identity Verification</h2>
             <p className="text-slate-400 font-medium">
-              You are attempting to access <span className="text-primary font-bold">Super Admin</span>. 
+              You are attempting to access <span className="text-primary font-bold">Owner</span>. 
               Please verify your identity using your hardware passkey.
             </p>
           </div>

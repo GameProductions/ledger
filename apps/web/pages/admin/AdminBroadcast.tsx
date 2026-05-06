@@ -14,7 +14,7 @@ export const AdminBroadcast: React.FC = () => {
   const { data: invitations = [], mutate: mutateInvitations } = useApi('/api/admin/communications/invitations');
   
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', contentMd: '', priority: 'info' });
-  const [inviteRole, setInviteRole] = useState<'super_admin' | 'operator'>('super_admin');
+  const [inviteRole, setInviteRole] = useState<'owner' | 'operator'>('owner');
   const [confirmDeleteAnnouncementId, setConfirmDeleteAnnouncementId] = useState<string | null>(null);
   const [confirmDeleteInviteToken, setConfirmDeleteInviteToken] = useState<string | null>(null);
 
@@ -95,7 +95,7 @@ export const AdminBroadcast: React.FC = () => {
           </div>
           <div className="px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-3">
              <ShieldCheck size={20} className="text-emerald-500" />
-             <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Super Admin</span>
+             <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Owner</span>
           </div>
         </header>
 
@@ -171,7 +171,7 @@ export const AdminBroadcast: React.FC = () => {
              <div className="card p-8 bg-deep/40 backdrop-blur-3xl border-glass-border">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-3 border-b border-glass-border pb-4 uppercase tracking-tighter">
                 <Ticket size={24} className="text-secondary" />
-                Super Admin Invitations
+                Owner Invitations
               </h3>
               
               <p className="text-xs text-secondary mb-6 font-medium leading-relaxed">
@@ -184,7 +184,7 @@ export const AdminBroadcast: React.FC = () => {
                   onChange={e => setInviteRole(e.target.value as any)}
                   className="flex-1 bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-black uppercase tracking-widest appearance-none"
                 >
-                  <option value="super_admin">Full Super Admin Access</option>
+                  <option value="owner">Full Owner Access</option>
                   <option value="operator">System Operator</option>
                 </select>
                 <button onClick={createInvite} className="flex-1 bg-secondary text-white font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all flex items-center justify-center gap-2">

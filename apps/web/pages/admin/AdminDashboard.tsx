@@ -194,7 +194,7 @@ const AdminDashboard: React.FC = () => {
 
         <div className="p-8 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full" />
-          <h3 className="text-lg font-bold mb-4 relative">Super Admin Access</h3>
+          <h3 className="text-lg font-bold mb-4 relative">Owner Access</h3>
           <div className="space-y-3 relative">
             <button 
               onClick={() => showToast('System update started...', 'info')}

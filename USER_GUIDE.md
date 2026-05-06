@@ -42,7 +42,7 @@ When using the platform in public, or during an administrative support session, 
 ## 🤖 Discord & Support
 
 ### Support Center
-If you encounter issues, use the **Support Center** in Super Admin. The system automatically extracts repository metadata to ensure your support tickets are processed with full technical context.
+If you encounter issues, use the **Support Center** in Owner. The system automatically extracts repository metadata to ensure your support tickets are processed with full technical context.
 
 ### Discord Commands
 Interact with your ledger directly from your Discord server:

@@ -20,13 +20,13 @@ const UserMenu: React.FC<{
   const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
 
   const menuItems = isAdminPortal ? [
-    { icon: LayoutDashboard, label: 'Super Admin Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
+    { icon: LayoutDashboard, label: 'Owner Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
     { icon: Cpu, label: 'System Configuration', hash: '#/admin/config', color: 'text-blue-400' },
     { icon: Database, label: 'Master Registry', hash: '#/admin/registry', color: 'text-orange-400' },
     { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
     { icon: Megaphone, label: 'Global Broadcast', hash: '#/admin/broadcast', color: 'text-rose-500' },
     { icon: Activity, label: 'Safety Vault', hash: '#/admin/audit', color: 'text-secondary' },
-    { icon: Shield, label: 'Super Admin Portal', hash: '#/admin/entities', color: 'text-amber-500' },
+    { icon: Shield, label: 'Owner Portal', hash: '#/admin/entities', color: 'text-amber-500' },
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
@@ -64,7 +64,7 @@ const UserMenu: React.FC<{
             <span className="text-sm font-bold text-white">{(profile?.displayName || user?.displayName || 'User')}</span>
           </Masked>
           {isAdminPortal ? (
-            <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">Super Admin</span>
+            <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">Owner</span>
           ) : isImpersonating ? (
             <span className="text-[10px] text-purple-400 font-black uppercase tracking-tighter">Impersonating</span>
           ) : null}
@@ -86,7 +86,7 @@ const UserMenu: React.FC<{
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                  {isAdminPortal ? 'Super Admin Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
+                  {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
                 </div>
                 <Masked>
                   <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
@@ -101,7 +101,7 @@ const UserMenu: React.FC<{
                     style={{ background: 'none', border: 'none' }}
                   >
                     <LayoutDashboard size={18} className="text-emerald-500" />
-                    <span>Exit Super Admin</span>
+                    <span>Exit Owner</span>
                   </button>
                 ) : (
                   !isHome && (
@@ -128,14 +128,14 @@ const UserMenu: React.FC<{
                   </button>
                 ))}
 
-                {!isAdminPortal && (globalRole === 'super_admin' || profile?.globalRole === 'super_admin') && (
+                {!isAdminPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
                   <button 
                     onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-emerald-500/10 text-sm text-text-main transition-colors text-left group"
                     style={{ background: 'none', border: 'none' }}
                   >
                     <Shield size={18} className="text-emerald-500 group-hover:animate-pulse" />
-                    <span className="group-hover:text-emerald-400 transition-colors">Super Admin</span>
+                    <span className="group-hover:text-emerald-400 transition-colors">Owner</span>
                   </button>
                 )}
 

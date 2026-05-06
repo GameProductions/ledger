@@ -71,7 +71,7 @@ remindersApi.patch('/:id', zValidator('json', z.object({
   const db = getDb(c.env)
   
   const role = c.get('globalRole')
-  const filter = role === 'super_admin' 
+  const filter = role === 'owner' 
     ? and(eq(reminders.id, id), eq(reminders.householdId, householdId))
     : and(eq(reminders.id, id), eq(reminders.householdId, householdId), eq(reminders.userId, userId))
 
@@ -102,7 +102,7 @@ remindersApi.delete('/:id', async (c) => {
   const db = getDb(c.env)
   
   const role = c.get('globalRole')
-  const filter = role === 'super_admin' 
+  const filter = role === 'owner' 
     ? and(eq(reminders.id, id), eq(reminders.householdId, householdId))
     : and(eq(reminders.id, id), eq(reminders.householdId, householdId), eq(reminders.userId, userId))
 

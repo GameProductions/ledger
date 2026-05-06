@@ -301,7 +301,7 @@ const SettingsPage: React.FC = () => {
             {/* Account Role Badge */}
             <div className="flex justify-center md:justify-start">
               <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.15em] text-primary shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                {profile?.globalRole === 'super_admin' ? 'Super Admin' : (profile?.globalRole || 'Standard User')}
+                {profile?.globalRole === 'owner' ? 'Owner' : (profile?.globalRole || 'Standard User')}
               </div>
             </div>
             

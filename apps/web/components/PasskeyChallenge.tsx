@@ -104,7 +104,7 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
           </h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 max-w-[260px] leading-relaxed">
             {mode === 'auth' 
-              ? `Verify your identity using a passkey to access ${appName || 'Super Admin Mode'}.` 
+              ? `Verify your identity using a passkey to access ${appName || 'Owner Mode'}.` 
               : 'Enable secure access by registering your passkey.'}
           </p>
 

@@ -13,16 +13,16 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
 
   React.useEffect(() => {
     const originalTitle = document.title;
-    document.title = "Super Admin | COMMAND CENTER";
+    document.title = "Owner | COMMAND CENTER";
     return () => { document.title = originalTitle; };
   }, []);
 
-  if (!user || user.globalRole !== 'super_admin') {
+  if (!user || user.globalRole !== 'owner') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white p-6 text-center shadow-[inset_0_0_100px_rgba(239,68,68,0.1)]">
         <div className="animate-in zoom-in duration-500">
           <h1 className="text-6xl font-black text-red-500 mb-6 tracking-tighter shadow-glow-red italic">403: ACCESS DENIED</h1>
-          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to Super Admin authorized personnel. Your unauthorized attempt has been recorded for security review.</p>
+          <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to Owner authorized personnel. Your unauthorized attempt has been recorded for security review.</p>
           <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Return to Home</a>
         </div>
       </div>
@@ -30,7 +30,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   }
 
   const navItems = [
-    { name: 'Super Admin Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Owner Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
     { name: 'User Directory', path: '#/admin/users', icon: Users },
     { name: 'Household Registry', path: '#/admin/households', icon: Shield },
     { name: 'Service Providers', path: '#/admin/providers', icon: Globe },
@@ -40,7 +40,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
     { name: 'Global Search', path: '#/admin/search', icon: Search },
     { name: 'Platform Settings', path: '#/admin/config', icon: Settings },
     { name: 'System Broadcast', path: '#/admin/broadcast', icon: Zap },
-    { name: 'Super Admin Guide', path: '#/admin/guide', icon: FileText },
+    { name: 'Owner Guide', path: '#/admin/guide', icon: FileText },
   ];
 
   return (

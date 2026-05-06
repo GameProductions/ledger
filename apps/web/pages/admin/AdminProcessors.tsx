@@ -110,7 +110,7 @@ const AdminProcessors: React.FC = () => {
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
-          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Super Admin Mode - Billing Infrastructure</p>
+          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Owner Mode - Billing Infrastructure</p>
         </div>
         <button 
           onClick={() => {

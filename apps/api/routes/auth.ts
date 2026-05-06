@@ -259,7 +259,7 @@ auth.get('/callback/discord', async (c) => {
 
     // Standard Unified Tier Schema for Ledger
     let metadata: Record<string, any> = {}
-    if (dbUser[0]?.role === 'super_admin') {
+    if (dbUser[0]?.role === 'owner') {
       metadata.ledger_tier = 3
     } else if (dbUser[0]?.role === 'admin') {
       metadata.ledger_tier = 2
@@ -1095,9 +1095,9 @@ auth.post('/password/change', zValidator('json', z.object({ newPassword: z.strin
 
 // --- ADMIN INVITATIONS ---
 auth.post('/admin/invite', async (c) => {
-  // Requires authenticated super_admin or secret (for first time setup)
-  // For simplicity here, we'll allow it if a super_admin is logged in
-  if (c.get('globalRole') !== 'super_admin') throw new HTTPException(403, { message: 'Forbidden' })
+  // Requires authenticated owner or secret (for first time setup)
+  // For simplicity here, we'll allow it if a owner is logged in
+  if (c.get('globalRole') !== 'owner') throw new HTTPException(403, { message: 'Forbidden' })
   
   const authService = new AuthService(c.env)
   const token = await authService.createAdminInvite()

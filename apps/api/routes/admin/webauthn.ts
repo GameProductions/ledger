@@ -11,7 +11,7 @@ import { Bindings, Variables } from '../../types'
 import { getDb } from '#/index'
 import { users, passkeys, sessions } from '#/schema'
 import { eq, and, desc } from 'drizzle-orm'
-import { uint8ArrayToBase64, getRpID, hashIdentifier, base64ToUint8Array } from '../../auth-utils'
+import { uint8ArrayToBase64, uint8ArrayToBase64url, getRpID, hashIdentifier, base64ToUint8Array } from '../../auth-utils'
 import { getAAGUIDMetadata } from '../../utils/webauthn-metadata'
 import { VaultService } from '../../utils/vault.service'
 import { getForensics } from '../../utils/forensics'
@@ -116,9 +116,9 @@ webauthn.post('/verify-registration', async (c) => {
     const branding = getAAGUIDMetadata(aaguid);
     const vault = new VaultService(db, c.env.JWT_SECRET);
     
-    const credIdB64 = uint8ArrayToBase64(credentialID);
+    const credIdB64 = uint8ArrayToBase64url(credentialID);
     const id = credIdB64;
-    const pubKeyB64 = uint8ArrayToBase64(credentialPublicKey);
+    const pubKeyB64 = uint8ArrayToBase64url(credentialPublicKey);
     
     await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
     await vault.setSecret(id, 'PASSKEY_PUBLIC_KEY', 'webauthn', pubKeyB64);
@@ -127,7 +127,7 @@ webauthn.post('/verify-registration', async (c) => {
       id,
       userId,
       name: name || `Admin Passkey ${new Date().toLocaleDateString()}`,
-      credentialIdHash,
+      credentialIdHash: await hashIdentifier(credIdB64),
       counter,
       deviceType: credentialDeviceType,
       backedUp: credentialBackedUp ? 1 : 0,
@@ -232,7 +232,7 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
     expectedRPID: getRpID(c),
     requireUserVerification: true,
     credential: {
-      id: rawCredentialId,
+      id: base64ToUint8Array(rawCredentialId),
       publicKey: base64ToUint8Array(publicKeyB64),
       counter: passkey.counter,
       transports: passkey.transports ? JSON.parse(passkey.transports) : undefined

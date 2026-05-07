@@ -10,7 +10,7 @@ import {
 import { AuthService } from '../services/auth.service'
 import { Bindings, Variables } from '../types'
 import { logAudit, getRequestMetadata } from '../utils'
-import { uint8ArrayToBase64, base64ToUint8Array, getRpID, hashIdentifier } from '../auth-utils'
+import { uint8ArrayToBase64, base64ToUint8Array, uint8ArrayToBase64url, decodeBase64, getRpID, hashIdentifier } from '../auth-utils'
 import { getAAGUIDMetadata } from '../utils/webauthn-metadata'
 import { VaultService } from '../utils/vault.service'
 import { setSignedCookie, getSignedCookie } from 'hono/cookie'
@@ -170,7 +170,7 @@ auth.get('/login/discord', async (c) => {
   const persistent = c.req.query('persistent') === 'true'
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
-  const state = btoa(JSON.stringify({ challenge, userId, targetOrigin, persistent }))
+  const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin, persistent })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -199,7 +199,7 @@ auth.get('/callback/discord', async (c) => {
   let isLinkedRoleMetadataUpdate = false
   let isPersistent = false
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
     isPersistent = !!decoded.persistent
     if (decoded.linkedRoles) isLinkedRoleMetadataUpdate = true
@@ -309,7 +309,7 @@ auth.get('/discord/linked-roles/verify', async (c) => {
 
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
-  const state = btoa(JSON.stringify({ challenge, userId: null, targetOrigin, linkedRoles: true }))
+  const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId: null, targetOrigin, linkedRoles: true })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -352,7 +352,7 @@ auth.get('/login/google', async (c) => {
   const persistent = c.req.query('persistent') === 'true'
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/google`
-  const state = btoa(JSON.stringify({ challenge, userId, targetOrigin, persistent }))
+  const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin, persistent })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -380,7 +380,7 @@ auth.get('/callback/google', async (c) => {
   let sessionUserId: string | null = null
   let isPersistent = false
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
     isPersistent = !!decoded.persistent
   } catch (e) {
@@ -457,7 +457,7 @@ auth.get('/login/dropbox', async (c) => {
 
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/dropbox`
-  const state = btoa(JSON.stringify({ challenge, userId, targetOrigin }))
+  const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -484,7 +484,7 @@ auth.get('/callback/dropbox', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -561,7 +561,7 @@ auth.get('/login/onedrive', async (c) => {
 
   const challenge = crypto.randomUUID()
   const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/onedrive`
-  const state = btoa(JSON.stringify({ challenge, userId, targetOrigin }))
+  const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
     path: '/',
@@ -588,7 +588,7 @@ auth.get('/callback/onedrive', async (c) => {
   // Parse state for session context
   let sessionUserId: string | null = null
   try {
-    const decoded = JSON.parse(atob(state))
+    const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
   } catch (e) {
     console.warn('[OAuth] State decode failure:', e)
@@ -765,8 +765,8 @@ async function handleRegisterVerify(c: any) {
     const vault = new VaultService(db, c.env.JWT_SECRET);
     
     // Standardize ID as URL-safe base64 using Buffer
-    const credIdB64 = Buffer.from(credentialID).toString('base64url');
-    const pubKeyB64 = Buffer.from(publicKey).toString('base64url');
+    const credIdB64 = uint8ArrayToBase64url(credentialID);
+    const pubKeyB64 = uint8ArrayToBase64url(publicKey);
     
     // Index by hash for Zero-Knowledge lookups
     const credentialIdHash = await hashIdentifier(credIdB64);

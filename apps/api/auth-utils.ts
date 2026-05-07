@@ -1,11 +1,31 @@
-import { Buffer } from 'node:buffer';
-
 export function base64ToUint8Array(base64: string): Uint8Array {
-  return new Uint8Array(Buffer.from(base64, 'base64url'));
+  const binaryString = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 }
 
 export function uint8ArrayToBase64(bytes: Uint8Array): string {
-  return Buffer.from(bytes).toString('base64url');
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+export function uint8ArrayToBase64url(bytes: Uint8Array): string {
+  return uint8ArrayToBase64(bytes)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+export function decodeBase64(base64: string): string {
+  const binaryString = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+  return new TextDecoder().decode(Uint8Array.from(binaryString, m => m.charCodeAt(0)));
 }
 
 /**

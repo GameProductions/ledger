@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
-import { Calendar, DollarSign, Wallet, Shield, Info, Tag, Users } from 'lucide-react';
+import { Calendar, DollarSign, Wallet, Shield, Info, Tag, Users, Trash2 } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { getApiUrl } from '../utils/api';
 
@@ -45,6 +45,28 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
             setUpcomingEffectiveDate(schedule.upcomingEffectiveDate || '');
         }
     }, [schedule]);
+
+    const handleDelete = async () => {
+        if (!token || !schedule?.id) return;
+        
+        if (!window.confirm('Are you sure you want to remove this income source?')) return;
+
+        setLoading(true);
+        const apiUrl = getApiUrl().replace(/\/$/, '');
+        const res = await fetch(`${apiUrl}/api/planning/pay-schedules/${schedule.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            showToast('Income source removed');
+            onUpdate();
+            onClose();
+        } else {
+            showToast('Failed to remove income source', 'error');
+        }
+        setLoading(false);
+    };
 
     const handleSave = async () => {
         if (!token) return;
@@ -233,9 +255,19 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                    <button
-                        onClick={onClose}
+                <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                    {schedule?.id ? (
+                        <button
+                            onClick={handleDelete}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-4 py-2 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                        >
+                            <Trash2 size={14} /> Remove Source
+                        </button>
+                    ) : <div />}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
                         className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 transition-all"
                     >
                         Cancel

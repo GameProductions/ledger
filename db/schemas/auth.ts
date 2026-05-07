@@ -84,56 +84,56 @@ export const sessions = sqliteTable('sessions', {
 
 export const passkeys = sqliteTable('passkeys', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   
   // 🔐 Zero-Knowledge Lookup
   // The raw credentialId is stored in the Vault. We use a SHA-256 hash here for lookups.
-  credentialIdHash: text('credentialIdHash').notNull().unique(),
+  credentialIdHash: text('credential_id_hash').notNull().unique(),
   
   // 📈 Security & Counters
   counter: integer('counter').notNull().default(0),
-  deviceType: text('deviceType'), // 'single_device' | 'multi_device'
-  backedUp: integer('backedUp').default(0), 
-  attestationFormat: text('attestationFormat'), // 'packed', 'none', etc.
-  userVerified: integer('userVerified').default(0),
+  deviceType: text('device_type'), // 'single_device' | 'multi_device'
+  backedUp: integer('backed_up').default(0), 
+  attestationFormat: text('attestation_format'), // 'packed', 'none', etc.
+  userVerified: integer('user_verified').default(0),
 
   // 🕒 Temporal Metadata
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
-  lastUsedAt: text('lastUsedAt'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  lastUsedAt: text('last_used_at'),
   
   // 🏷️ Identity & Branding
   name: text('name'),
   aaguid: text('aaguid'),
-  providerName: text('providerName'),
+  providerName: text('provider_name'),
   icon: text('icon'),
-  securityLevel: text('securityLevel'),
+  securityLevel: text('security_level'),
   manufacturer: text('manufacturer'),
   logo: text('logo'),
   transports: text('transports'), // JSON array of allowed transports
 
   // 🕵️ Registration Forensics (Immutable)
-  registrationIp: text('registrationIp'),
-  registrationIpV4: text('registrationIpV4'),
-  registrationIpV6: text('registrationIpV6'),
-  registrationCity: text('registrationCity'),
-  registrationCountry: text('registrationCountry'),
-  registrationRegion: text('registrationRegion'),
-  registrationLatitude: text('registrationLatitude'),
-  registrationLongitude: text('registrationLongitude'),
-  registrationLocation: text('registrationLocation'),
-  registrationUa: text('registrationUa'),
+  registrationIp: text('registration_ip'),
+  registrationIpV4: text('registration_ipv4'),
+  registrationIpV6: text('registration_ipv6'),
+  registrationCity: text('registration_city'),
+  registrationCountry: text('registration_country'),
+  registrationRegion: text('registration_region'),
+  registrationLatitude: text('registration_latitude'),
+  registrationLongitude: text('registration_longitude'),
+  registrationLocation: text('registration_location'),
+  registrationUa: text('registration_ua'),
 
   // 🕵️ Usage Forensics (Mutable)
-  lastUsedIp: text('lastUsedIp'),
-  lastUsedIpV4: text('lastUsedIpV4'),
-  lastUsedIpV6: text('lastUsedIpV6'),
-  lastUsedCity: text('lastUsedCity'),
-  lastUsedCountry: text('lastUsedCountry'),
-  lastUsedRegion: text('lastUsedRegion'),
-  lastUsedLatitude: text('lastUsedLatitude'),
-  lastUsedLongitude: text('lastUsedLongitude'),
-  lastUsedLocation: text('lastUsedLocation'),
-  lastUsedUa: text('lastUsedUa'),
+  lastUsedIp: text('last_used_ip'),
+  lastUsedIpV4: text('last_used_ip_v4'),
+  lastUsedIpV6: text('last_used_ip_v6'),
+  lastUsedCity: text('last_used_city'),
+  lastUsedCountry: text('last_used_country'),
+  lastUsedRegion: text('last_used_region'),
+  lastUsedLatitude: text('last_used_latitude'),
+  lastUsedLongitude: text('last_used_longitude'),
+  lastUsedLocation: text('last_used_location'),
+  lastUsedUa: text('last_used_ua'),
 }, (table) => ({
   userIdx: index('idx_passkeys_user').on(table.userId),
   hashIdx: index('idx_passkeys_hash').on(table.credentialIdHash),
@@ -196,4 +196,3 @@ export const personalAccessTokens = sqliteTable('personalAccessTokens', {
 }, (table) => ({
   householdIdx: index('idx_pat_household').on(table.householdId),
 }));
-

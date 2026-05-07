@@ -116,9 +116,9 @@ webauthn.post('/verify-registration', async (c) => {
     const branding = getAAGUIDMetadata(aaguid);
     const vault = new VaultService(db, c.env.JWT_SECRET);
     
-    const credIdB64 = uint8ArrayToBase64url(credentialID);
+    const credIdB64 = uint8ArrayToBase64url(new Uint8Array(credentialID));
     const id = credIdB64;
-    const pubKeyB64 = uint8ArrayToBase64url(credentialPublicKey);
+    const pubKeyB64 = uint8ArrayToBase64url(new Uint8Array(credentialPublicKey));
     
     await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
     await vault.setSecret(id, 'PASSKEY_PUBLIC_KEY', 'webauthn', pubKeyB64);

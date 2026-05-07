@@ -11,6 +11,7 @@ import { Bindings, Variables } from '../../types'
 import { getDb } from '#/index'
 import { users, passkeys, sessions } from '#/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { setSignedCookie, getSignedCookie, deleteCookie } from 'hono/cookie'
 import { uint8ArrayToBase64, uint8ArrayToBase64url, getRpID, hashIdentifier, base64ToUint8Array } from '../../auth-utils'
 import { getAAGUIDMetadata } from '../../utils/webauthn-metadata'
 import { VaultService } from '../../utils/vault.service'
@@ -101,12 +102,15 @@ webauthn.post('/verify-registration', async (c) => {
   const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
 
   if (!expectedChallenge) throw new HTTPException(401, { message: 'Invalid or expired challenge' })
+  
+  deleteCookie(c, 'webauthn_challenge')
 
   const verification = await verifyRegistrationResponse({
     response: attestation,
     expectedChallenge,
     expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
     expectedRPID: getRpID(c),
+    requireUserVerification: true
   })
 
   if (verification.verified && verification.registrationInfo) {

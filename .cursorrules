@@ -122,7 +122,13 @@ This document serves as the absolute source of truth for all projects within the
 ## 7. Development & DevOps 
 - **Version Control**: GitHub (`GameProductions/`) for all code management.
 - **CI/CD**: Use GitHub Actions for auto-deploy.
-- **Versioning**: Major (X.0.0), Minor (0.X.0), Patch (0.0.X). Prefix commits (e.g., `Stable.3: Add feature X`).
+- **Versioning**: Major (X.0.0), Minor (0.X.0), Patch (0.0.X). 
+- **Commit Format**: All commit messages MUST follow this structured format:
+    1. **Prefix**: The current version from `package.json` in `[vx.y.z]` format.
+    2. **Title**: A concise, one-line summary.
+    3. **Details**: A prioritized, bulleted list of all significant changes.
+    4. **Context**: Mention of specific components/modules modified.
+    - *Example*: `[v3.9.0] Feature: Scheduled Post Sharing & Stability Fixes`
 - **CLI Maintenance**: Always keep `gh`, `wrangler`, and other CLI tools updated.
 - **Security & Hardening**: Maintain absolute health for Dependabot and vulnerability monitoring. Resolve security concerns immediately.
 - **Project Synchronization **: You MUST continuously track all tasks (historical and future) mapped inside `task.md` or any development checklist directly to the overarching GitHub Project 17. You will maintain strict 1:1 synchronization by orchestrating Draft Items natively via the GitHub CLI.

@@ -439,7 +439,7 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
   
   // 2. Update Balance (Harden with householdId constraint)
   const updateBalance = db.update(personalLoans)
-    .set({ remainingBalanceCents: sql`remainingBalanceCents - ${data.amountCents}` })
+    .set({ remainingBalanceCents: sql`remaining_balance_cents - ${data.amountCents}` })
     .where(and(eq(personalLoans.id, loanId), eq(personalLoans.householdId, householdId)))
     
   await db.batch([addPayment, updateBalance])
@@ -643,7 +643,7 @@ planning.get('/budgets', async (c) => {
   
   const spends = await db.select({
     categoryId: transactions.categoryId,
-    totalSpend: sql<number>`SUM(amountCents)`.as('totalSpend')
+    totalSpend: sql<number>`SUM(amount_cents)`.as('totalSpend')
   }).from(transactions).where(eq(transactions.householdId, householdId)).groupBy(transactions.categoryId)
   
   const budgets = cats.map(cat => {
@@ -672,8 +672,8 @@ planning.post('/budget/fund', zValidator('json', z.object({
   const db = getDb(c.env)
 
   await db.batch([
-    db.update(households).set({ unallocatedBalanceCents: sql`unallocatedBalanceCents - ${amountCents}` }).where(eq(households.id, householdId)),
-    db.update(categories).set({ envelopeBalanceCents: sql`envelopeBalanceCents + ${amountCents}` }).where(and(eq(categories.id, categoryId), eq(categories.householdId, householdId)))
+    db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents - ${amountCents}` }).where(eq(households.id, householdId)),
+    db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${amountCents}` }).where(and(eq(categories.id, categoryId), eq(categories.householdId, householdId)))
   ])
 
   await logAudit(c, 'categories', categoryId, 'FUND_ENVELOPE', null, { amountCents })
@@ -689,7 +689,7 @@ planning.post('/budget/deposit', zValidator('json', z.object({
   const { amountCents } = c.req.valid('json')
   const db = getDb(c.env)
 
-  await db.update(households).set({ unallocatedBalanceCents: sql`unallocatedBalanceCents + ${amountCents}` }).where(eq(households.id, householdId))
+  await db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents + ${amountCents}` }).where(eq(households.id, householdId))
 
   await logAudit(c, 'households', householdId, 'DEPOSIT_FUNDS', null, { amountCents })
 
@@ -706,8 +706,8 @@ planning.post('/budget/transfer', zValidator('json', z.object({
   const db = getDb(c.env)
 
   await db.batch([
-    db.update(categories).set({ envelopeBalanceCents: sql`envelopeBalanceCents - ${amountCents}` }).where(and(eq(categories.id, fromCategoryId), eq(categories.householdId, householdId))),
-    db.update(categories).set({ envelopeBalanceCents: sql`envelopeBalanceCents + ${amountCents}` }).where(and(eq(categories.id, toCategoryId), eq(categories.householdId, householdId)))
+    db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents - ${amountCents}` }).where(and(eq(categories.id, fromCategoryId), eq(categories.householdId, householdId))),
+    db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${amountCents}` }).where(and(eq(categories.id, toCategoryId), eq(categories.householdId, householdId)))
   ])
 
   await logAudit(c, 'categories', 'TRANSFER', 'TRANSFER_ENVELOPE', null, { 
@@ -734,7 +734,7 @@ planning.post('/budget/rollover', async (c) => {
 
   const patches = cats.map(cat => {
     if (cat.rolloverEnabled) {
-      return db.update(categories).set({ envelopeBalanceCents: sql`envelopeBalanceCents + ${cat.monthlyBudgetCents || 0}` }).where(eq(categories.id, cat.id))
+      return db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${cat.monthlyBudgetCents || 0}` }).where(eq(categories.id, cat.id))
     } else {
       return db.update(categories).set({ envelopeBalanceCents: cat.monthlyBudgetCents || 0 }).where(eq(categories.id, cat.id))
     }

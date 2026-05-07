@@ -25,6 +25,7 @@ import {
   activityLogs as auditLogs 
 } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/sqlite-core'
 import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -55,7 +56,7 @@ user.get('/profile', async (c) => {
       avatarUrl: users.avatarUrl,
       forcePasswordChange: users.forcePasswordChange,
       locale: users.locale,
-      themePreference: users.themePreference,
+      theme: users.theme,
       timezone: users.timezone,
       createdAt: users.createdAt
     }).from(users).where(eq(users.id, userId as string))
@@ -89,7 +90,7 @@ user.get('/profile', async (c) => {
   }
 })
 
-user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
+user.patch('/profile', stepUpMiddleware, zValidator('json', ProfileSchema, (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Profile update validation failed:`, result.error.issues);
   }
@@ -100,7 +101,7 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   
   const updates: any = {}
   if (data.displayName) updates.displayName = data.displayName
-  if (data.themePreference) updates.themePreference = data.themePreference
+  if (data.theme) updates.theme = data.theme
   if (data.timezone) updates.timezone = data.timezone
   
   if (data.email !== undefined) {
@@ -125,7 +126,7 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   
   if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl || null
   if (data.locale !== undefined) updates.locale = data.locale || 'en'
-  if (data.themePreference !== undefined) updates.themePreference = data.themePreference || 'system'
+  if (data.theme !== undefined) updates.theme = data.theme || 'system'
   
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
@@ -310,7 +311,7 @@ user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) =
   return c.json({ success: true, id, name }, 201)
 })
 
-user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
+user.post('/households/invite', stepUpMiddleware, zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Household invite validation failed:`, result.error.issues);
   }
@@ -581,21 +582,28 @@ user.delete('/identities/:id', stepUpMiddleware, async (c) => {
 })
 
 user.get('/providers', async (c) => {
-  // Use raw sql for complex joins unmapped perfectly in generated schema
   const db = getDb(c.env)
   const userId = c.get('userId') as string
-  const results = await db.run(sql`SELECT lp.*, sp.name as providerName, sp.iconUrl as iconUrl FROM linkedProviders lp JOIN serviceProviders sp ON lp.serviceProviderId = sp.id WHERE lp.userId = ${userId}`)
-  // D1 run result logic vs .all(): if mapped D1 driver is used, better to wrap in query
-  // Fallback to strict DB.prepare for unmapped complex joins
-  const dbRes = await c.env.DB.prepare(
-    `SELECT lp.*, sp.name as providerName, sp.iconUrl as iconUrl 
-     FROM linkedProviders lp
-     JOIN serviceProviders sp ON lp.serviceProviderId = sp.id
-     WHERE lp.userId = ?`
-  ).bind(userId).all()
+  
+  const results = await db.select({
+    id: linkedProviders.id,
+    userId: linkedProviders.userId,
+    serviceProviderId: linkedProviders.serviceProviderId,
+    accountReference: linkedProviders.accountReference,
+    customLabel: linkedProviders.customLabel,
+    metadata: linkedProviders.metadata,
+    createdAt: linkedProviders.createdAt,
+    provider_name: serviceProviders.name,
+    icon_url: serviceProviders.iconUrl
+  })
+  .from(linkedProviders)
+  .innerJoin(serviceProviders, eq(linkedProviders.serviceProviderId, serviceProviders.id))
+  .where(eq(linkedProviders.userId, userId))
+  .all()
+
   return c.json({
     success: true,
-    data: dbRes.results
+    data: results
   })
 })
 
@@ -621,15 +629,32 @@ user.post('/providers/link', zValidator('json', z.object({
 
 user.get('/linked-accounts', async (c) => {
   const userId = c.get('userId') as string
-  const dbRes = await c.env.DB.prepare(`
-    SELECT la.*, sp.name as providerName, sp.visibility as providerBranding, 'N/A' as paymentMethodName 
-    FROM linkedProviders la 
-    JOIN serviceProviders sp ON la.serviceProviderId = sp.id 
-    WHERE la.userId = ?
-  `).bind(userId).all()
+  const db = getDb(c.env)
+
+  const results = await db.select({
+    id: userLinkedAccounts.id,
+    userId: userLinkedAccounts.userId,
+    householdId: userLinkedAccounts.householdId,
+    providerId: userLinkedAccounts.providerId,
+    paymentMethodId: userLinkedAccounts.paymentMethodId,
+    emailAttached: userLinkedAccounts.emailAttached,
+    membershipStartDate: userLinkedAccounts.membershipStartDate,
+    membershipEndDate: userLinkedAccounts.membershipEndDate,
+    subscriptionId: userLinkedAccounts.subscriptionId,
+    notes: userLinkedAccounts.notes,
+    status: userLinkedAccounts.status,
+    providerName: serviceProviders.name,
+    providerBranding: serviceProviders.visibility,
+    paymentMethodName: sql<string>`'N/A'`
+  })
+  .from(userLinkedAccounts)
+  .innerJoin(serviceProviders, eq(userLinkedAccounts.providerId, serviceProviders.id))
+  .where(eq(userLinkedAccounts.userId, userId))
+  .all()
+
   return c.json({
     success: true,
-    data: dbRes.results
+    data: results
   })
 })
 
@@ -729,23 +754,31 @@ user.get('/audit', async (c) => {
   const householdId = c.get('householdId')
   if (!householdId) return c.json({ success: true, data: [] })
 
-  const { results } = await c.env.DB.prepare(`
-    SELECT 
-      a.id, 
-      a.action, 
-      a.targetType, 
-      a.targetId, 
-      a.detailsJson, 
-      a.createdAt as createdAt,
-      u_actor.displayName as actorName,
-      u_target.displayName as targetName
-    FROM activityLogs a
-    LEFT JOIN users u_actor ON a.actorId = u_actor.id
-    LEFT JOIN users u_target ON a.targetId = u_target.id AND a.targetType = 'users'
-    WHERE a.householdId = ?
-    ORDER BY a.createdAt DESC 
-    LIMIT 100
-  `).bind(householdId).all()
+  const db = getDb(c.env)
+  
+  const uActor = alias(users, 'u_actor')
+  const uTarget = alias(users, 'u_target')
+
+  const results = await db.select({
+    id: auditLogs.id,
+    action: auditLogs.action,
+    target_type: auditLogs.targetType,
+    target_id: auditLogs.targetId,
+    details_json: auditLogs.detailsJson,
+    created_at: auditLogs.createdAt,
+    actor_name: uActor.displayName,
+    target_name: uTarget.displayName
+  })
+  .from(auditLogs)
+  .leftJoin(uActor, eq(auditLogs.actorId, uActor.id))
+  .leftJoin(uTarget, and(
+    eq(auditLogs.targetId, uTarget.id),
+    eq(auditLogs.targetType, 'users')
+  ))
+  .where(eq(auditLogs.householdId, householdId))
+  .orderBy(desc(auditLogs.createdAt))
+  .limit(100)
+  .all()
   
   return c.json({ success: true, data: results || [] })
 })

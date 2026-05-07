@@ -37,9 +37,11 @@ import {
   activityLogs
 } from '#/schema'
 import { billers, reconciliationProposals } from '#/schema'
-import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or } from 'drizzle-orm'
+import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/sqlite-core'
 import { inferTransactionDetails } from '../inference'
 import { ReconciliationService } from '../services/reconciliation.service'
+import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -480,7 +482,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
 })
 
 // Transaction Export
-financials.get('/transactions/export', async (c) => {
+financials.get('/transactions/export', stepUpMiddleware, async (c) => {
   const householdId = c.get('householdId')
   const format = c.req.query('format') || 'json'
 
@@ -575,23 +577,30 @@ financials.post('/transactions/:id/timeline', zValidator('json', TimelineEntrySc
 
 financials.get('/transactions/suggest-links', async (c) => {
   const householdId = c.get('householdId')
-  // We can write manual SQL for this complex query using Drizzle raw or just raw SQL since it uses core sqlite functions like ABS and julianday
   const db = getDb(c.env)
-  // I will just use run/raw since the heuristic is quite SQL-specific (julianday)
-  // Wait, I can use c.env.DB.prepare here as an exception for complex raw queries, or `db.run(sql`...`)` which drizzle provides.
-  // Using explicit sql template for Drizzle:
-  // Note: db.run wrapper doesn't extract select arrays like .all(), it is better to `.all()` from D1.
-  // Actually db.all(sql`...`) works in Drizzle! Wait, Drizzle instance doesn't have `.all()` exposed that easily unless it's a D1 `session.all()`.
-  // I will just use `c.env.DB.prepare(...).all()` here because Drizzle ORM doesn't easily map this specific self-join with julianday without messy raw sql wrappers.
-  const { results } = await c.env.DB.prepare(`
-    SELECT t1.id as originalId, t2.id as suggestedId, t1.description, t2.description as suggestedDescription, t1.amountCents as amountCents
-    FROM transactions t1
-    JOIN transactions t2 ON t1.householdId = t2.householdId 
-      AND t1.amountCents = -t2.amountCents
-      AND ABS(julianday(t1.transactionDate) - julianday(t2.transactionDate)) <= 7
-    WHERE t1.householdId = ? AND t1.id < t2.id
-    LIMIT 5
-  `).bind(householdId).all()
+  const t1 = alias(transactions, 't1')
+  const t2 = alias(transactions, 't2')
+
+  const results = await db.select({
+    originalId: t1.id,
+    suggestedId: t2.id,
+    description: t1.description,
+    suggestedDescription: t2.description,
+    amountCents: t1.amountCents
+  })
+  .from(t1)
+  .innerJoin(t2, and(
+    eq(t1.householdId, t2.householdId),
+    eq(t1.amountCents, sql`-${t2.amountCents}`),
+    sql`ABS(julianday(${t1.transactionDate}) - julianday(${t2.transactionDate})) <= 7`
+  ))
+  .where(and(
+    eq(t1.householdId, householdId),
+    sql`${t1.id} < ${t2.id}`
+  ))
+  .limit(5)
+  .all()
+
   return c.json({ success: true, data: results || [] })
 })
 
@@ -1071,41 +1080,57 @@ financials.get('/shared-balances', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   
-  const results = await c.env.DB.prepare(`
-    SELECT sb.*, 
-      u1.displayName as fromDisplayName, u1.avatarUrl as fromAvatarUrl,
-      u2.displayName as toDisplayName, u2.avatarUrl as toAvatarUrl,
-      t.description as transactionDescription
-    FROM sharedBalances sb
-    LEFT JOIN users u1 ON sb.fromUserId = u1.id
-    LEFT JOIN users u2 ON sb.toUserId = u2.id
-    LEFT JOIN transactions t ON sb.transactionId = t.id
-    WHERE sb.householdId = ?
-    ORDER BY sb.rowid DESC
-  `).bind(householdId).all()
+  const u2 = alias(users, 'u2')
+
+  const results = await db.select({
+    id: sharedBalances.id,
+    householdId: sharedBalances.householdId,
+    fromUserId: sharedBalances.fromUserId,
+    toUserId: sharedBalances.toUserId,
+    amountCents: sharedBalances.amountCents,
+    transactionId: sharedBalances.transactionId,
+    fromDisplayName: users.displayName,
+    fromAvatarUrl: users.avatarUrl,
+    toDisplayName: u2.displayName,
+    toAvatarUrl: u2.avatarUrl,
+    transactionDescription: transactions.description
+  })
+  .from(sharedBalances)
+  .leftJoin(users, eq(sharedBalances.fromUserId, users.id))
+  .leftJoin(u2, eq(sharedBalances.toUserId, u2.id))
+  .leftJoin(transactions, eq(sharedBalances.transactionId, transactions.id))
+  .where(eq(sharedBalances.householdId, householdId))
+  .orderBy(desc(sharedBalances.id))
+  .all()
   
-  return c.json({ success: true, data: results.results || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.get('/shared-balances/summary', async (c) => {
   const householdId = c.get('householdId')
 
   // Net balances between all pairs of users
-  const results = await c.env.DB.prepare(`
-    SELECT 
-      fromUserId, toUserId,
-      SUM(amountCents) as netCents,
-      u1.displayName as fromName, u1.avatarUrl as fromAvatar,
-      u2.displayName as toName, u2.avatarUrl as toAvatar
-    FROM sharedBalances sb
-    LEFT JOIN users u1 ON sb.fromUserId = u1.id
-    LEFT JOIN users u2 ON sb.toUserId = u2.id
-    WHERE sb.householdId = ?
-    GROUP BY fromUserId, toUserId
-    HAVING SUM(amountCents) != 0
-  `).bind(householdId).all()
+  const u1 = alias(users, 'u1')
+  const u2 = alias(users, 'u2')
+
+  const results = await db.select({
+    fromUserId: sharedBalances.fromUserId,
+    toUserId: sharedBalances.toUserId,
+    netCents: sum(sharedBalances.amountCents),
+    fromName: u1.displayName,
+    fromAvatar: u1.avatarUrl,
+    toName: u2.displayName,
+    toAvatar: u2.avatarUrl
+  })
+  .from(sharedBalances)
+  .leftJoin(u1, eq(sharedBalances.fromUserId, u1.id))
+  .leftJoin(u2, eq(sharedBalances.toUserId, u2.id))
+  .where(eq(sharedBalances.householdId, householdId))
+  .groupBy(sharedBalances.fromUserId, sharedBalances.toUserId)
+  .having(sql`SUM(${sharedBalances.amountCents}) != 0`)
+  .all()
   
-  return c.json({ success: true, data: results.results || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/shared-balances', zValidator('json', z.object({
@@ -1141,7 +1166,8 @@ financials.delete('/shared-balances/:id', async (c) => {
   const householdId = c.get('householdId')
   const id = c.req.param('id')
   
-  await c.env.DB.prepare(`DELETE FROM sharedBalances WHERE id = ? AND householdId = ?`).bind(id, householdId).run()
+  const db = getDb(c.env)
+  await db.delete(sharedBalances).where(and(eq(sharedBalances.id, id), eq(sharedBalances.householdId, householdId)))
   await logAudit(c, 'shared_balances', id, 'DELETE')
   return c.json({ success: true })
 })
@@ -1154,11 +1180,15 @@ financials.post('/shared-balances/settle', zValidator('json', z.object({
   const userId = c.get('userId') as string
   const { withUserId } = c.req.valid('json')
   
-  await c.env.DB.prepare(`
-    DELETE FROM sharedBalances 
-    WHERE householdId = ? 
-    AND ((fromUserId = ? AND toUserId = ?) OR (fromUserId = ? AND toUserId = ?))
-  `).bind(householdId, userId, withUserId, withUserId, userId).run()
+  const db = getDb(c.env)
+  await db.delete(sharedBalances)
+    .where(and(
+      eq(sharedBalances.householdId, householdId),
+      or(
+        and(eq(sharedBalances.fromUserId, userId), eq(sharedBalances.toUserId, withUserId)),
+        and(eq(sharedBalances.fromUserId, withUserId), eq(sharedBalances.toUserId, userId))
+      )
+    ))
   
   await logAudit(c, 'shared_balances', 'settle', 'SETTLE', null, { user1: userId, user2: withUserId })
   return c.json({ success: true })
@@ -1193,18 +1223,29 @@ financials.get('/reconciliation/proposals', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   
-  const results = await c.env.DB.prepare(`
-    SELECT rp.*, 
-      t1.description as primaryDescription, t1.amountCents as primaryAmount, t1.transactionDate as primaryDate,
-      t2.description as suggestedDescription, t2.amountCents as suggestedAmount, t2.transactionDate as suggestedDate
-    FROM reconciliationProposals rp
-    JOIN transactions t1 ON rp.primaryTransactionId = t1.id
-    JOIN transactions t2 ON rp.suggestedTransactionId = t2.id
-    WHERE rp.householdId = ? AND rp.status = 'pending'
-    ORDER BY rp.confidenceScore DESC
-  `).bind(householdId).all()
+  const t1 = alias(transactions, 't1')
+  const t2 = alias(transactions, 't2')
+
+  const results = await db.select({
+    ...reconciliationProposals,
+    primaryDescription: t1.description,
+    primaryAmount: t1.amountCents,
+    primaryDate: t1.transactionDate,
+    suggestedDescription: t2.description,
+    suggestedAmount: t2.amountCents,
+    suggestedDate: t2.transactionDate
+  })
+  .from(reconciliationProposals)
+  .join(t1, eq(reconciliationProposals.primaryTransactionId, t1.id))
+  .join(t2, eq(reconciliationProposals.suggestedTransactionId, t2.id))
+  .where(and(
+    eq(reconciliationProposals.householdId, householdId),
+    eq(reconciliationProposals.status, 'pending')
+  ))
+  .orderBy(desc(reconciliationProposals.confidenceScore))
+  .all()
   
-  return c.json({ success: true, data: results.results || [] })
+  return c.json({ success: true, data: results || [] })
 })
 
 financials.post('/reconciliation/sync', async (c) => {

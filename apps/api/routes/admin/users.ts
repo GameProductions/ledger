@@ -69,7 +69,7 @@ userAdmin.get('/:id', async (c) => {
   if (!userFields) throw new HTTPException(404, { message: 'User not found' })
 
   const connections = await db.select().from(externalConnections).where(
-    sql`householdId IN (SELECT householdId FROM userHouseholds WHERE userId = ${userId})`
+    sql`household_id IN (SELECT household_id FROM user_households WHERE user_id = ${userId})`
   )
   const socialLinks = await db.select().from(userIdentities).where(eq(userIdentities.userId, userId))
   const userPasskeys = await db.select().from(passkeys).where(eq(passkeys.userId, userId))

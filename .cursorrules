@@ -358,3 +358,14 @@ To ensure absolute account integrity and forensic traceability, all identity sys
 - **Interface Standard**: All high-level administrative tools, dashboards, and portals MUST be collectively referred to as **Administration**.
 - **Visual Purity**: Administrative interfaces MUST be free of informal jargon (e.g., "God Mode", "Power", "Supreme").
 - **Routing Standard**: Access to administrative features MUST be gated via the `/administration/` namespace.
+
+## 21. Migration Lifecycle & Squashing (Standard v6.1)
+- **Milestone Squashing**: Periodically, upon reaching a stable architectural milestone or after successful large-scale schema alignments, individual migration files in `db/migrations/` MUST be squashed into a single `0000_initial_schema.sql`.
+- **Archiving Workflow**:
+  1. **Preservation**: Move all existing `.sql` files from `db/migrations/` to a timestamped history directory: `archive/migrations/history_[timestamp]/`.
+  2. **Consolidation**: Create a new `db/migrations/0000_initial_schema.sql` by concatenating all archived migrations in strict sequential order.
+- **Remote State Synchronization**:
+  - **Reset**: To maintain 1:1 parity with the squashed local state, the remote `d1_migrations` table MUST be cleared: `DELETE FROM d1_migrations;`.
+  - **Alignment**: The new squash identifier (`0000_initial_schema.sql`) MUST be manually inserted into the remote `d1_migrations` table to mark the baseline as applied: `INSERT INTO d1_migrations (name, applied_at) VALUES ('0000_initial_schema.sql', CURRENT_TIMESTAMP);`.
+- **Post-Squash Verification**: You MUST verify the sync status immediately after a squash using `wrangler d1 migrations list --remote`. The database MUST report `✅ No migrations to apply!`.
+- **Fresh Installation Readiness**: This process ensures that new environments can be provisioned using a single, optimized schema baseline while preserving full architectural history in the `archive/` directory.

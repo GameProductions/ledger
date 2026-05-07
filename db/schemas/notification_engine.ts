@@ -6,100 +6,100 @@ import { households } from './financials';
 // [NEW] Core Reminders table
 export const reminders_new = sqliteTable('reminders_new', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  ownerId: text('ownerId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
-  targetId: text('targetId'), 
-  targetType: text('targetType'), 
+  targetId: text('target_id'), 
+  targetType: text('target_type'), 
   priority: text('priority').notNull().default('MEDIUM'), 
   status: text('status').notNull().default('ACTIVE'), 
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 // [NEW] Collaboration & Sharing
-export const reminderMembers = sqliteTable('reminderMembers', {
+export const reminderMembers = sqliteTable('reminder_members', {
   id: text('id').primaryKey(),
-  reminderId: text('reminderId').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   role: text('role').notNull().default('MEMBER'), 
-  joinedAt: text('joinedAt').default(sql`CURRENT_TIMESTAMP`),
+  joinedAt: text('joined_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const reminderShares = sqliteTable('reminderShares', {
+export const reminderShares = sqliteTable('reminder_shares', {
   id: text('id').primaryKey(),
-  reminderId: text('reminderId').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
-  shareToken: text('shareToken').notNull().unique(),
-  expiresAt: text('expiresAt'),
-  maxUses: integer('maxUses').default(0), 
-  usedCount: integer('usedCount').default(0),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
+  shareToken: text('share_token').notNull().unique(),
+  expiresAt: text('expires_at'),
+  maxUses: integer('max_uses').default(0), 
+  usedCount: integer('used_count').default(0),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const reminderActivity = sqliteTable('reminderActivity', {
+export const reminderActivity = sqliteTable('reminder_activity', {
   id: text('id').primaryKey(),
-  reminderId: text('reminderId').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
-  actorId: text('actorId').notNull().references(() => users.id),
+  reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
+  actorId: text('actor_id').notNull().references(() => users.id),
   action: text('action').notNull(), 
-  detailsJson: text('detailsJson'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  detailsJson: text('details_json'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 // [NEW] Scheduling & Delivery
-export const reminderSchedules = sqliteTable('reminderSchedules', {
+export const reminderSchedules = sqliteTable('reminder_schedules', {
   id: text('id').primaryKey(),
-  reminderId: text('reminderId').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
-  scheduleType: text('scheduleType').notNull(), 
-  cronString: text('cronString'),
-  nextRunAt: text('nextRunAt').notNull(),
-  lastRunAt: text('lastRunAt'),
-  isActive: integer('isActive', { mode: 'boolean' }).default(true),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
+  scheduleType: text('schedule_type').notNull(), 
+  cronString: text('cron_string'),
+  nextRunAt: text('next_run_at').notNull(),
+  lastRunAt: text('last_run_at'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const reminderChannels = sqliteTable('reminderChannels', {
+export const reminderChannels = sqliteTable('reminder_channels', {
   id: text('id').primaryKey(),
-  scheduleId: text('scheduleId').notNull().references(() => reminderSchedules.id, { onDelete: 'cascade' }),
-  channelType: text('channelType').notNull(), 
+  scheduleId: text('schedule_id').notNull().references(() => reminderSchedules.id, { onDelete: 'cascade' }),
+  channelType: text('channel_type').notNull(), 
   target: text('target'), 
-  soundId: text('soundId'), 
-  isEnabled: integer('isEnabled', { mode: 'boolean' }).default(true),
+  soundId: text('sound_id'), 
+  isEnabled: integer('is_enabled', { mode: 'boolean' }).default(true),
 });
 
 // [NEW] Audio & Settings
-export const notificationSounds = sqliteTable('notificationSounds', {
+export const notificationSounds = sqliteTable('notification_sounds', {
   id: text('id').primaryKey(),
-  userId: text('userId').references(() => users.id, { onDelete: 'cascade' }), 
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), 
   name: text('name').notNull(),
-  r2Key: text('r2Key').notNull(), 
-  fileSize: integer('fileSize'),
-  mimeType: text('mimeType').default('audio/mpeg'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  r2Key: text('r2_key').notNull(), 
+  fileSize: integer('file_size'),
+  mimeType: text('mime_type').default('audio/mpeg'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const userNotificationSettings = sqliteTable('userNotificationSettings', {
-  userId: text('userId').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
-  dndEnabled: integer('dndEnabled', { mode: 'boolean' }).default(false),
-  dndStart: text('dndStart').default('22:00'),
-  dndEnd: text('dndEnd').default('08:00'),
-  allowHighPriorityInDnd: integer('allowHighPriorityInDnd', { mode: 'boolean' }).default(true),
-  defaultSoundId: text('defaultSoundId'),
-  updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
+export const userNotificationSettings = sqliteTable('user_notification_settings', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  dndEnabled: integer('dnd_enabled', { mode: 'boolean' }).default(false),
+  dndStart: text('dnd_start').default('22:00'),
+  dndEnd: text('dnd_end').default('08:00'),
+  allowHighPriorityInDnd: integer('allow_high_priority_in_dnd', { mode: 'boolean' }).default(true),
+  defaultSoundId: text('default_sound_id'),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const activityLogs = sqliteTable('activityLogs', {
+export const activityLogs = sqliteTable('activity_logs', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  actorId: text('actorId').notNull().references(() => users.id),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  actorId: text('actor_id').notNull().references(() => users.id),
   action: text('action').notNull(),
-  targetType: text('targetType').notNull(),
-  targetId: text('targetId'),
-  detailsJson: text('detailsJson'),
+  targetType: text('target_type').notNull(),
+  targetId: text('target_id'),
+  detailsJson: text('details_json'),
   severity: text('severity').notNull().default('INFO'),
-  ipAddress: text('ipAddress'),
-  userAgent: text('userAgent'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_activity_logs_household').on(table.householdId),
   actorIdx: index('idx_activity_logs_actor').on(table.actorId),

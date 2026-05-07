@@ -5,16 +5,16 @@ import { users } from './auth';
 export const households = sqliteTable('households', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   currency: text('currency').default('USD'),
-  countryCode: text('countryCode').default('US'),
-  unallocatedBalanceCents: integer('unallocatedBalanceCents').default(0),
+  countryCode: text('country_code').default('US'),
+  unallocatedBalanceCents: integer('unallocated_balance_cents').default(0),
   status: text('status').default('active'),
 });
 
-export const userHouseholds = sqliteTable('userHouseholds', {
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+export const userHouseholds = sqliteTable('user_households', {
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   role: text('role').default('member'),
 }, (table) => ({
   pk: primaryKey({ columns: [table.userId, table.householdId] }),
@@ -22,10 +22,10 @@ export const userHouseholds = sqliteTable('userHouseholds', {
 
 export const accounts = sqliteTable('accounts', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   type: text('type').notNull(),
-  balanceCents: integer('balanceCents').default(0),
+  balanceCents: integer('balance_cents').default(0),
   currency: text('currency').default('USD'),
   status: text('status').default('active'),
 }, (table) => ({
@@ -34,15 +34,15 @@ export const accounts = sqliteTable('accounts', {
 
 export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   icon: text('icon'),
   color: text('color'),
-  monthlyBudgetCents: integer('monthlyBudgetCents').default(0),
-  envelopeBalanceCents: integer('envelopeBalanceCents').default(0),
-  rolloverEnabled: integer('rolloverEnabled', { mode: 'boolean' }).default(false),
-  rolloverCents: integer('rolloverCents').default(0),
-  emergencyFund: integer('emergencyFund', { mode: 'boolean' }).default(false),
+  monthlyBudgetCents: integer('monthly_budget_cents').default(0),
+  envelopeBalanceCents: integer('envelope_balance_cents').default(0),
+  rolloverEnabled: integer('rollover_enabled', { mode: 'boolean' }).default(false),
+  rolloverCents: integer('rollover_cents').default(0),
+  emergencyFund: integer('emergency_fund', { mode: 'boolean' }).default(false),
 }, (table) => ({
   householdIdx: index('idx_categories_household').on(table.householdId),
 }));
@@ -50,38 +50,38 @@ export const categories = sqliteTable('categories', {
 export const billers = sqliteTable('billers', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  logoUrl: text('logoUrl'),
+  logoUrl: text('logo_url'),
   website: text('website'),
   industry: text('industry'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const transactions = sqliteTable('transactions', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  accountId: text('accountId').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
-  categoryId: text('categoryId').references(() => categories.id, { onDelete: 'set null' }),
-  amountCents: integer('amountCents').notNull(),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  amountCents: integer('amount_cents').notNull(),
   description: text('description'),
-  transactionDate: text('transactionDate').default(sql`(DATE('now'))`),
+  transactionDate: text('transaction_date').default(sql`(DATE('now'))`),
   status: text('status').default('pending'),
-  isRecurring: integer('isRecurring', { mode: 'boolean' }).default(false),
-  receiptR2Key: text('receiptR2Key'),
-  ownerId: text('ownerId').references(() => users.id, { onDelete: 'set null' }),
-  confirmationNumber: text('confirmationNumber'),
-  linkedTransactionId: text('linkedTransactionId').references(() => transactions.id, { onDelete: 'set null' }),
-  reconciliationStatus: text('reconciliationStatus').default('unreconciled'),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  receiptR2Key: text('receipt_r2_key'),
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
+  confirmationNumber: text('confirmation_number'),
+  linkedTransactionId: text('linked_transaction_id').references(() => transactions.id, { onDelete: 'set null' }),
+  reconciliationStatus: text('reconciliation_status').default('unreconciled'),
   notes: text('notes'),
-  rawDescription: text('rawDescription'),
-  parentId: text('parentId').references(() => transactions.id, { onDelete: 'cascade' }),
-  providerId: text('providerId'), // Loosely coupled to system.serviceProviders
-  billId: text('billId'), // Loosely coupled to bills
-  attentionRequired: integer('attentionRequired', { mode: 'boolean' }).default(false),
-  needsBalanceTransfer: integer('needsBalanceTransfer', { mode: 'boolean' }).default(false),
-  transferTiming: text('transferTiming'),
-  isBorrowed: integer('isBorrowed', { mode: 'boolean' }).default(false),
-  borrowSource: text('borrowSource'),
-  accountedFor: integer('accountedFor', { mode: 'boolean' }).default(false),
+  rawDescription: text('raw_description'),
+  parentId: text('parent_id').references(() => transactions.id, { onDelete: 'cascade' }),
+  providerId: text('provider_id'), // Loosely coupled to system.serviceProviders
+  billId: text('bill_id'), // Loosely coupled to bills
+  attentionRequired: integer('attention_required', { mode: 'boolean' }).default(false),
+  needsBalanceTransfer: integer('needs_balance_transfer', { mode: 'boolean' }).default(false),
+  transferTiming: text('transfer_timing'),
+  isBorrowed: integer('is_borrowed', { mode: 'boolean' }).default(false),
+  borrowSource: text('borrow_source'),
+  accountedFor: integer('accounted_for', { mode: 'boolean' }).default(false),
   source: text('source').default('manual'),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
@@ -91,18 +91,18 @@ export const transactions = sqliteTable('transactions', {
   dateIdx: index('idx_transactions_date').on(table.transactionDate),
 }));
 
-export const transactionPairingRules = sqliteTable('transactionPairingRules', {
+export const transactionPairingRules = sqliteTable('transaction_pairing_rules', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   pattern: text('pattern').notNull(),
-  targetProviderId: text('targetProviderId'),
-  targetCategoryId: text('targetCategoryId').references(() => categories.id, { onDelete: 'cascade' }),
-  autoConfirm: integer('autoConfirm', { mode: 'boolean' }).default(false),
-  ownerId: text('ownerId').references(() => users.id, { onDelete: 'set null' }),
+  targetProviderId: text('target_provider_id'),
+  targetCategoryId: text('target_category_id').references(() => categories.id, { onDelete: 'cascade' }),
+  autoConfirm: integer('auto_confirm', { mode: 'boolean' }).default(false),
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   visibility: text('visibility').default('private'), 
-  ruleType: text('ruleType').default('manual'),
-  metadataJson: text('metadataJson'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  ruleType: text('rule_type').default('manual'),
+  metadataJson: text('metadata_json'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_pairing_rules_household').on(table.householdId),
   categoryIdx: index('idx_pairing_rules_category').on(table.targetCategoryId),
@@ -110,20 +110,20 @@ export const transactionPairingRules = sqliteTable('transactionPairingRules', {
 
 export const bills = sqliteTable('bills', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  amountCents: integer('amountCents').notNull(),
-  dueDate: text('dueDate').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  dueDate: text('due_date').notNull(),
   status: text('status').default('unpaid'),
   notes: text('notes'),
-  categoryId: text('categoryId').references(() => categories.id, { onDelete: 'set null' }),
-  accountId: text('accountId').references(() => accounts.id, { onDelete: 'set null' }),
-  isRecurring: integer('isRecurring', { mode: 'boolean' }).default(false),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
   frequency: text('frequency'),
-  upcomingAmountCents: integer('upcomingAmountCents'),
-  upcomingEffectiveDate: text('upcomingEffectiveDate'),
-  ownerId: text('ownerId').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_bills_household').on(table.householdId),
   ownerIdx: index('idx_bills_owner').on(table.ownerId),
@@ -131,136 +131,136 @@ export const bills = sqliteTable('bills', {
 
 export const subscriptions = sqliteTable('subscriptions', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  amountCents: integer('amountCents').notNull(),
-  billingCycle: text('billingCycle').notNull(),
-  nextBillingDate: text('nextBillingDate'),
-  trialEndDate: text('trialEndDate'),
-  isTrial: integer('isTrial', { mode: 'boolean' }).default(false),
-  categoryId: text('categoryId').references(() => categories.id, { onDelete: 'set null' }),
-  accountId: text('accountId').references(() => accounts.id, { onDelete: 'set null' }),
-  paymentMode: text('paymentMode').default('manual'),
-  ownerId: text('ownerId').references(() => users.id, { onDelete: 'set null' }),
-  upcomingAmountCents: integer('upcomingAmountCents'),
-  upcomingEffectiveDate: text('upcomingEffectiveDate'),
+  amountCents: integer('amount_cents').notNull(),
+  billingCycle: text('billing_cycle').notNull(),
+  nextBillingDate: text('next_billing_date'),
+  trialEndDate: text('trial_end_date'),
+  isTrial: integer('is_trial', { mode: 'boolean' }).default(false),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+  paymentMode: text('payment_mode').default('manual'),
+  ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));
 
-export const reconciliationProposals = sqliteTable('reconciliationProposals', {
+export const reconciliationProposals = sqliteTable('reconciliation_proposals', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  primaryTransactionId: text('primaryTransactionId').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
-  suggestedTransactionId: text('suggestedTransactionId').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
-  confidenceScore: integer('confidenceScore').default(0),
-  matchReason: text('matchReason'),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  primaryTransactionId: text('primary_transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+  suggestedTransactionId: text('suggested_transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+  confidenceScore: integer('confidence_score').default(0),
+  matchReason: text('match_reason'),
   status: text('status').default('pending'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_recon_proposals_household').on(table.householdId),
   primaryTxIdx: index('idx_recon_proposals_primary').on(table.primaryTransactionId),
   suggestedTxIdx: index('idx_recon_proposals_suggested').on(table.suggestedTransactionId),
 }));
 
-export const sharedBalances = sqliteTable('sharedBalances', {
+export const sharedBalances = sqliteTable('shared_balances', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  fromUserId: text('fromUserId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  toUserId: text('toUserId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  amountCents: integer('amountCents').notNull(),
-  transactionId: text('transactionId').references(() => transactions.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  fromUserId: text('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  toUserId: text('to_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  amountCents: integer('amount_cents').notNull(),
+  transactionId: text('transaction_id').references(() => transactions.id, { onDelete: 'cascade' }),
 }, (table) => ({
   householdIdx: index('idx_shared_balances_household').on(table.householdId),
   transactionIdx: index('idx_shared_balances_transaction').on(table.transactionId),
 }));
 
-export const liabilitySplits = sqliteTable('liabilitySplits', {
+export const liabilitySplits = sqliteTable('liability_splits', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  targetId: text('targetId').notNull(),
-  targetType: text('targetType').notNull(), 
-  originatorUserId: text('originatorUserId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  assignedUserId: text('assignedUserId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  splitType: text('splitType').notNull(),
-  splitValue: integer('splitValue').notNull(),
-  calculatedAmountCents: integer('calculatedAmountCents').notNull(),
-  overrideDate: text('overrideDate'),
-  overrideFrequency: text('overrideFrequency'),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  targetId: text('target_id').notNull(),
+  targetType: text('target_type').notNull(), 
+  originatorUserId: text('originator_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  assignedUserId: text('assigned_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  splitType: text('split_type').notNull(),
+  splitValue: integer('split_value').notNull(),
+  calculatedAmountCents: integer('calculated_amount_cents').notNull(),
+  overrideDate: text('override_date'),
+  overrideFrequency: text('override_frequency'),
   status: text('status').default('pending'),
-  isMasterLedgerPublic: integer('isMasterLedgerPublic', { mode: 'boolean' }).default(false),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: text('updatedAt').default(sql`CURRENT_TIMESTAMP`),
+  isMasterLedgerPublic: integer('is_master_ledger_public', { mode: 'boolean' }).default(false),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const creditCards = sqliteTable('creditCards', {
+export const creditCards = sqliteTable('credit_cards', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  accountId: text('accountId').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
-  creditLimitCents: integer('creditLimitCents').notNull(),
-  interestRateApy: integer('interestRateApy'),
-  statementClosingDay: integer('statementClosingDay'),
-  paymentDueDay: integer('paymentDueDay'),
-  nextStatementDate: text('nextStatementDate'),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  creditLimitCents: integer('credit_limit_cents').notNull(),
+  interestRateApy: integer('interest_rate_apy'),
+  statementClosingDay: integer('statement_closing_day'),
+  paymentDueDay: integer('payment_due_day'),
+  nextStatementDate: text('next_statement_date'),
 }, (table) => ({
   householdIdx: index('idx_credit_cards_household').on(table.householdId),
   accountIdx: index('idx_credit_cards_account').on(table.accountId),
 }));
 
-export const savingsBuckets = sqliteTable('savingsBuckets', {
+export const savingsBuckets = sqliteTable('savings_buckets', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  targetCents: integer('targetCents').notNull(),
-  currentCents: integer('currentCents').default(0),
-  targetDate: text('targetDate'),
-  categoryId: text('categoryId').references(() => categories.id, { onDelete: 'set null' }),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  targetCents: integer('target_cents').notNull(),
+  currentCents: integer('current_cents').default(0),
+  targetDate: text('target_date'),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_savings_household').on(table.householdId),
 }));
 
-export const transactionTimeline = sqliteTable('transactionTimeline', {
+export const transactionTimeline = sqliteTable('transaction_timeline', {
   id: text('id').primaryKey(),
-  transactionId: text('transactionId').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+  transactionId: text('transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
   content: text('content'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   transactionIdx: index('idx_timeline_transaction').on(table.transactionId),
 }));
 
-export const installmentPlans = sqliteTable('installmentPlans', {
+export const installmentPlans = sqliteTable('installment_plans', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  totalAmountCents: integer('totalAmountCents').notNull(),
-  installmentAmountCents: integer('installmentAmountCents').notNull(),
-  totalInstallments: integer('totalInstallments').notNull(),
-  remainingInstallments: integer('remainingInstallments').notNull(),
+  totalAmountCents: integer('total_amount_cents').notNull(),
+  installmentAmountCents: integer('installment_amount_cents').notNull(),
+  totalInstallments: integer('total_installments').notNull(),
+  remainingInstallments: integer('remaining_installments').notNull(),
   frequency: text('frequency').notNull(), 
-  nextPaymentDate: text('nextPaymentDate').notNull(),
-  accountId: text('accountId').references(() => accounts.id, { onDelete: 'set null' }),
-  paymentMode: text('paymentMode').default('manual'),
+  nextPaymentDate: text('next_payment_date').notNull(),
+  accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+  paymentMode: text('payment_mode').default('manual'),
   status: text('status').default('active'),
-  upcomingAmountCents: integer('upcomingAmountCents'),
-  upcomingEffectiveDate: text('upcomingEffectiveDate'),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({
   householdIdx: index('idx_installments_household').on(table.householdId),
 }));
 
-export const investmentHoldings = sqliteTable('investmentHoldings', {
+export const investmentHoldings = sqliteTable('investment_holdings', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  accountId: text('accountId').references(() => accounts.id, { onDelete: 'set null' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
-  assetType: text('assetType').notNull().default('misc'),
+  assetType: text('asset_type').notNull().default('misc'),
   quantity: integer('quantity').notNull(),
-  costBasisCents: integer('costBasisCents'),
-  valueCents: integer('valueCents').notNull(),
+  costBasisCents: integer('cost_basis_cents'),
+  valueCents: integer('value_cents').notNull(),
   currency: text('currency').default('USD'),
-  institutionId: text('institutionId'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  institutionId: text('institution_id'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_invest_holdings_household').on(table.householdId),
   accountIdx: index('idx_invest_holdings_account').on(table.accountId),
@@ -268,44 +268,44 @@ export const investmentHoldings = sqliteTable('investmentHoldings', {
 
 export const reports = sqliteTable('reports', {
   id: text('id').primaryKey(),
-  householdId: text('householdId').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
-  periodStart: text('periodStart'),
-  periodEnd: text('periodEnd'),
-  dataJson: text('dataJson'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  periodStart: text('period_start'),
+  periodEnd: text('period_end'),
+  dataJson: text('data_json'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_reports_household').on(table.householdId),
 }));
 
-export const userPaymentMethods = sqliteTable('userPaymentMethods', {
+export const userPaymentMethods = sqliteTable('user_payment_methods', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  householdId: text('householdId').references(() => households.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   type: text('type').notNull(), 
-  lastFour: text('lastFour'),
-  brandingUrl: text('brandingUrl'),
+  lastFour: text('last_four'),
+  brandingUrl: text('branding_url'),
   status: text('status').default('active'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   userIdx: index('idx_payment_methods_user').on(table.userId),
   householdIdx: index('idx_payment_methods_household').on(table.householdId),
 }));
 
-export const userLinkedAccounts = sqliteTable('userLinkedAccounts', {
+export const userLinkedAccounts = sqliteTable('user_linked_accounts', {
   id: text('id').primaryKey(),
-  userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  householdId: text('householdId').references(() => households.id, { onDelete: 'cascade' }),
-  providerId: text('providerId').notNull(),
-  paymentMethodId: text('paymentMethodId').references(() => userPaymentMethods.id, { onDelete: 'cascade' }),
-  emailAttached: text('emailAttached'),
-  membershipStartDate: text('membershipStartDate'),
-  membershipEndDate: text('membershipEndDate'),
-  subscriptionId: text('subscriptionId'),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  householdId: text('household_id').references(() => households.id, { onDelete: 'cascade' }),
+  providerId: text('provider_id').notNull(),
+  paymentMethodId: text('payment_method_id').references(() => userPaymentMethods.id, { onDelete: 'cascade' }),
+  emailAttached: text('email_attached'),
+  membershipStartDate: text('membership_start_date'),
+  membershipEndDate: text('membership_end_date'),
+  subscriptionId: text('subscription_id'),
   notes: text('notes'),
   status: text('status').default('active'),
-  createdAt: text('createdAt').default(sql`CURRENT_TIMESTAMP`),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   userIdx: index('idx_linked_accounts_user').on(table.userId),
   householdIdx: index('idx_linked_accounts_household').on(table.householdId),

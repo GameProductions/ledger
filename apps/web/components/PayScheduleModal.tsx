@@ -280,6 +280,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                         {loading ? 'Saving...' : (schedule ? 'Update Income' : 'Add Income Source')}
                     </button>
                 </div>
+                </div>
             </div>
         </Modal>
     );

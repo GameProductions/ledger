@@ -234,7 +234,7 @@ export const ProfileSchema = z.object({
   avatarUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
   timezone: z.string().min(1).max(50).optional(),
   locale: z.string().min(2).max(10).optional(),
-  themePreference: z.enum(['light', 'dark', 'system']).optional()
+  theme: z.enum(['light', 'dark', 'system']).optional()
 })
 
 export const JoinHouseholdSchema = z.object({
@@ -371,7 +371,7 @@ export const UserOutputSchema = z.object({
   totpEnabled: z.number().nullable().optional(),
   forcePasswordChange: z.union([z.boolean(), z.number()]).nullable().optional(),
   locale: z.string().nullable().optional(),
-  themePreference: z.string().nullable().optional(),
+  theme: z.string().nullable().optional(),
   timezone: z.string().nullable().optional(),
   createdAt: z.string().nullable().optional(),
   householdId: z.string().nullable().optional()

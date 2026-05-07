@@ -4,11 +4,42 @@ import { zValidator } from '@hono/zod-validator'
 import { Bindings, Variables } from '../types'
 import { logAudit } from '../utils'
 import { HTTPException } from 'hono/http-exception'
+import { getDb } from '#/index'
+import { 
+  households, accounts, categories, transactions, subscriptions, 
+  savingsBuckets, templates, creditCards, investmentHoldings, 
+  schedules, webhooks, userIdentities, paySchedules, payExceptions,
+  installmentPlans, personalLoans, loanPayments, bills, liabilitySplits
+} from '#/schema'
+import { eq, and, sql } from 'drizzle-orm'
+import { VaultService } from '../services/vault.service'
+import { stepUpMiddleware } from '../middlewares/step-up-middleware'
+
+const SCHEMA_MAP: Record<string, any> = {
+  households,
+  accounts,
+  categories,
+  transactions,
+  subscriptions,
+  paySchedules,
+  payExceptions,
+  savingsBuckets,
+  templates,
+  installmentPlans,
+  creditCards,
+  personalLoans,
+  loanPayments,
+  bills,
+  liabilitySplits,
+  investmentHoldings,
+  schedules,
+  webhooks
+}
 
 const backup = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // 🛑 EXPORT: Data Backup (Full JSON Account Export)
-backup.get('/export', async (c) => {
+backup.get('/export', stepUpMiddleware, async (c) => {
   const householdId = c.get('householdId')
   
   const tables = [
@@ -31,17 +62,23 @@ backup.get('/export', async (c) => {
     'webhooks'
   ]
 
+  const db = getDb(c.env)
   const dump: Record<string, any[]> = {}
   
   for (const table of tables) {
-    const { results } = await c.env.DB.prepare(`SELECT * FROM ${table} WHERE householdId = ?`)
-      .bind(householdId).all()
-    dump[table] = results
+    const tableObj = SCHEMA_MAP[table]
+    if (tableObj) {
+      const results = await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)).all()
+      dump[table] = results
+    } else {
+      // Fallback for tables not in SCHEMA_MAP (should use sql identifier)
+      const results = await db.run(sql`SELECT * FROM ${sql.identifier(table)} WHERE household_id = ${householdId}`).then(res => res.results)
+      dump[table] = results
+    }
   }
 
   // Special case: households table (filter by ID)
-  const { results: h } = await c.env.DB.prepare(`SELECT * FROM households WHERE id = ?`)
-    .bind(householdId).all()
+  const h = await db.select().from(households).where(eq(households.id, householdId)).all()
   dump['households'] = h
 
   return c.json({
@@ -74,7 +111,7 @@ const TABLE_WHITELIST: Record<string, string[]> = {
   webhooks: ['id', 'householdId', 'url', 'secret', 'eventList', 'isActive']
 };
 
-backup.post('/restore', zValidator('json', z.object({
+backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
   data: z.record(z.string(), z.array(z.any()))
 })), async (c) => {
   const householdId = c.get('householdId')
@@ -118,13 +155,16 @@ backup.post('/restore', zValidator('json', z.object({
         throw new HTTPException(400, { message: 'Invalid data format. Restore cancelled to ensure security.' });
       }
 
-      const placeholders = actualCols.map(() => '?').join(', ');
-      const cols = actualCols.join(', ');
-      const values = actualCols.map(c => sanitizedRow[c]);
-      
-      // 4. SECURE EXECUTION: Column names are now verified against a static whitelist and strict regex
-      await db.prepare(`INSERT OR REPLACE INTO ${table} (${cols}) VALUES (${placeholders})`)
-        .bind(...values).run();
+      // 4. SECURE EXECUTION: Use Drizzle ORM for insert/replace
+      const tableObj = SCHEMA_MAP[table]
+      if (tableObj) {
+        await db.insert(tableObj).values(sanitizedRow).onConflictDoUpdate({
+          target: tableObj.id,
+          set: sanitizedRow
+        })
+      } else {
+        await db.run(sql`INSERT OR REPLACE INTO ${sql.identifier(table)} (${sql.raw(actualCols.join(', '))}) VALUES (${sql.raw(actualCols.map(() => '?').join(', '))})`.bind(...actualCols.map(c => sanitizedRow[c])))
+      }
       
       totalRestored++;
     }
@@ -135,15 +175,19 @@ backup.post('/restore', zValidator('json', z.object({
 })
 
 // 🛑 CLOUD SYNC: Provider Redundancy (Google/Dropbox/OneDrive)
-backup.post('/cloud/:provider', async (c) => {
+backup.post('/cloud/:provider', stepUpMiddleware, async (c) => {
   const householdId = c.get('householdId')
   const provider = c.req.param('provider')
   const userId = c.get('userId')
   const vaultService = new VaultService(c.env)
   
   // 1. Fetch Cloud Tokens from Vault
-  const identity = await c.env.DB.prepare('SELECT id FROM userIdentities WHERE userId = ? AND provider = ?')
-    .bind(userId, provider).first() as any
+  const db = getDb(c.env)
+  const identity = await db.select({ id: userIdentities.id })
+    .from(userIdentities)
+    .where(and(eq(userIdentities.userId, userId), eq(userIdentities.provider, provider)))
+    .limit(1)
+    .then(res => res[0])
     
   if (!identity) {
     throw new HTTPException(401, { message: `Identity for ${provider} not linked. Please connect your account in Settings.` })
@@ -158,8 +202,11 @@ backup.post('/cloud/:provider', async (c) => {
   const tables = ['households', 'accounts', 'categories', 'transactions', 'subscriptions']
   const dump: Record<string, any[]> = {}
   for (const table of tables) {
-    const { results } = await c.env.DB.prepare(`SELECT * FROM ${table} WHERE householdId = ?`).bind(householdId).all()
-    dump[table] = results
+    const tableObj = SCHEMA_MAP[table]
+    if (tableObj) {
+      const results = await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)).all()
+      dump[table] = results
+    }
   }
   
   const payload = JSON.stringify({ version: '3.18.0', data: dump })

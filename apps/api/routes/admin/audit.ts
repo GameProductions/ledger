@@ -51,7 +51,7 @@ audit.get('/system', async (c) => {
     target: activityLogs.targetType
   })
   .from(activityLogs)
-  .where(sql`targetType IN ('system', 'system_config', 'system_feature_flags')`)
+  .where(sql`target_type IN ('system', 'system_config', 'system_feature_flags')`)
   .orderBy(desc(activityLogs.createdAt))
   .limit(50)
 

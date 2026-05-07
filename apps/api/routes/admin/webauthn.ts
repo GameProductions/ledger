@@ -110,13 +110,14 @@ webauthn.post('/verify-registration', async (c) => {
   })
 
   if (verification.verified && verification.registrationInfo) {
-    const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp, aaguid } = verification.registrationInfo
+    const { credential, aaguid } = verification.registrationInfo
+    const { id: credentialID, publicKey: credentialPublicKey, counter } = credential
     const db = getDb(c.env)
     const forensics = getForensics(c)
     const branding = getAAGUIDMetadata(aaguid);
     const vault = new VaultService(db, c.env.JWT_SECRET);
     
-    const credIdB64 = uint8ArrayToBase64url(new Uint8Array(credentialID));
+    const credIdB64 = credentialID;
     const id = credIdB64;
     const pubKeyB64 = uint8ArrayToBase64url(new Uint8Array(credentialPublicKey));
     

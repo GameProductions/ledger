@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1777474848822,
-      "tag": "0000_initial_camelcase_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1777546156469,
-      "tag": "0001_fast_rumiko_fujikawa",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1777732470904,
-      "tag": "0002_v6_3_notification_engine",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1777732673299,
-      "tag": "0003_manual_catchup_fix",
+      "when": 1778197171055,
+      "tag": "0000_young_hemingway",
       "breakpoints": true
     }
   ]

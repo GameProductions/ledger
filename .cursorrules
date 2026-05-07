@@ -360,12 +360,13 @@ To ensure absolute account integrity and forensic traceability, all identity sys
 - **Routing Standard**: Access to administrative features MUST be gated via the `/administration/` namespace.
 
 ## 21. Migration Lifecycle & Squashing (Standard v6.1)
-- **Milestone Squashing**: Periodically, upon reaching a stable architectural milestone or after successful large-scale schema alignments, individual migration files in `db/migrations/` MUST be squashed into a single `0000_initial_schema.sql`.
+- **Milestone Squashing**: Periodically, individual migrations in `db/migrations/` MUST be squashed into a single `0000_initial_schema.sql` to ensure fresh install reliability.
 - **Archiving Workflow**:
-  1. **Preservation**: Move all existing `.sql` files from `db/migrations/` to a timestamped history directory: `archive/migrations/history_[timestamp]/`.
-  2. **Consolidation**: Create a new `db/migrations/0000_initial_schema.sql` by concatenating all archived migrations in strict sequential order.
+  1. **Preservation**: Move existing `.sql` files to `archive/migrations/history_[timestamp]/`.
+  2. **Clean Slate**: Delete the `db/migrations/meta/` directory to force a full schema regeneration.
+  3. **Consolidation**: Run `npx drizzle-kit generate` to create a clean, single-file baseline from the current `schema.ts`.
+  4. **Naming**: Rename the generated `.sql` file to `0000_initial_schema.sql`.
 - **Remote State Synchronization**:
-  - **Reset**: To maintain 1:1 parity with the squashed local state, the remote `d1_migrations` table MUST be cleared: `DELETE FROM d1_migrations;`.
-  - **Alignment**: The new squash identifier (`0000_initial_schema.sql`) MUST be manually inserted into the remote `d1_migrations` table to mark the baseline as applied: `INSERT INTO d1_migrations (name, applied_at) VALUES ('0000_initial_schema.sql', CURRENT_TIMESTAMP);`.
-- **Post-Squash Verification**: You MUST verify the sync status immediately after a squash using `wrangler d1 migrations list --remote`. The database MUST report `✅ No migrations to apply!`.
-- **Fresh Installation Readiness**: This process ensures that new environments can be provisioned using a single, optimized schema baseline while preserving full architectural history in the `archive/` directory.
+  - **Reset**: Clear the remote `d1_migrations` table: `DELETE FROM d1_migrations;`.
+  - **Alignment**: Manually insert the squash identifier: `INSERT INTO d1_migrations (name, applied_at) VALUES ('0000_initial_schema.sql', CURRENT_TIMESTAMP);`.
+- **Post-Squash Verification**: Verify sync with `wrangler d1 migrations list --remote`. The database MUST report `✅ No migrations to apply!`.

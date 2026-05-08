@@ -6,6 +6,35 @@ import { activityLogs } from '#/schema';
  * Security Utility - Forensic Audit Utility (Zero-Latency)
  * Consolidated Activity Logging for the Ledger platform.
  */
+const SENSITIVE_KEYS = [
+  'password', 'passwordHash', 'token', 'accessToken', 'refreshToken', 
+  'secret', 'key', 'webhookUrl', 'discordWebhookUrl', 'totpSecret',
+  'email', 'phone', 'ssn', 'creditCard'
+];
+
+/**
+ * Recursively redacts sensitive keys from an object or array.
+ */
+function redactSensitiveData(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  
+  if (Array.isArray(data)) {
+    return data.map(item => redactSensitiveData(item));
+  }
+
+  const redacted: any = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (SENSITIVE_KEYS.some(k => key.toLowerCase().includes(k.toLowerCase()))) {
+      redacted[key] = '[REDACTED]';
+    } else if (typeof value === 'object') {
+      redacted[key] = redactSensitiveData(value);
+    } else {
+      redacted[key] = value;
+    }
+  }
+  return redacted;
+}
+
 export const logAudit = (
   c: Context<any>, 
   targetType: string, 
@@ -42,6 +71,10 @@ export const logAudit = (
         impersonatorId
       };
 
+      // Hardened Data Redaction
+      const safeOldValues = redactSensitiveData(oldValues);
+      const safeNewValues = redactSensitiveData(newValues);
+
       await db.insert(activityLogs).values({
         householdId,
         actorId,
@@ -51,8 +84,8 @@ export const logAudit = (
         targetType,
         targetId: targetId ? String(targetId) : null,
         detailsJson: JSON.stringify(finalDetails),
-        oldValuesJson: JSON.stringify(oldValues || {}),
-        newValuesJson: JSON.stringify(newValues || {}),
+        oldValuesJson: JSON.stringify(safeOldValues || {}),
+        newValuesJson: JSON.stringify(safeNewValues || {}),
         ipAddress: connectingIp,
         userAgent,
         cfRay

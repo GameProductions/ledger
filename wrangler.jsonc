@@ -107,6 +107,14 @@
       "enabled": true
     }
   },
+  "queues": {
+    "producers": [
+      {
+        "queue": "fleet-activity",
+        "binding": "FLEET_ACTIVITY"
+      }
+    ]
+  },
   "vars": {
     "APP_NAME": "LEDGER",
     "ENVIRONMENT": "production",

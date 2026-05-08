@@ -40,6 +40,9 @@ export type Bindings = {
   RECONCILIATION_AGENT: any
   MATCH_AGENT: any
   RULE_AGENT: any
+  
+  // 🛰️ Fleet Activity Queue (Producer)
+  FLEET_ACTIVITY?: Queue;
 }
 
 export type Variables = {

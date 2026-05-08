@@ -47,14 +47,11 @@ export const logAudit = (
 ) => {
   const performAudit = async () => {
     try {
-      if (!c.env?.DB) return;
-      
-      const db = getDb(c.env);
       const actorId = c.var?.userId || c.get('userId') || 'system';
       const householdId = c.get('householdId');
       const impersonatorId = c.get('impersonatorId');
       
-      const connectingIp = c.req.header('cf-connecting-ip') || 
+      const ipAddress = c.req.header('cf-connecting-ip') || 
                         c.req.header('x-forwarded-for') || 
                         c.req.header('x-real-ip') ||
                         '0.0.0.0';
@@ -62,38 +59,65 @@ export const logAudit = (
       const cfRay = c.req.header('cf-ray') || 'Unknown-Ray';
       const cfIpCountry = c.req.header('cf-ipcountry') || 'Unknown';
 
-      const finalDetails = {
+      // Redact PII before logging
+      const safeOldValues = redactSensitiveData(oldValues || {});
+      const safeNewValues = redactSensitiveData(newValues || {});
+      const safeMeta = redactSensitiveData({
         ...(metadata || {}),
         path: c.req.path,
         method: c.req.method,
         cfRay,
         cfIpCountry,
-        impersonatorId
+        impersonatorId,
+        householdId,
+        actorType: isAdmin ? 'ADMIN' : (actorId === 'system' ? 'SYSTEM' : 'USER')
+      });
+
+      const severity: 'INFO' | 'WARN' | 'CRITICAL' = 
+        action.includes('CRITICAL') || action.includes('ADMIN') || action.includes('DELETE') 
+          ? 'CRITICAL' : 'INFO';
+
+      const message = {
+        source: 'ledger',
+        actorId,
+        ipAddress,
+        userAgent,
+        action: action.toUpperCase(),
+        severity,
+        targetType,
+        recordId: targetId ? String(targetId) : null,
+        oldValuesJson: JSON.stringify(safeOldValues),
+        newValuesJson: JSON.stringify(safeNewValues),
+        metadataJson: JSON.stringify(safeMeta),
+        timestamp: Date.now(),
       };
 
-      // Hardened Data Redaction
-      const safeOldValues = redactSensitiveData(oldValues);
-      const safeNewValues = redactSensitiveData(newValues);
+      // 🛰️ Primary: Push to Fleet Activity Queue
+      if (c.env?.FLEET_ACTIVITY) {
+        await c.env.FLEET_ACTIVITY.send(message);
+        return;
+      }
 
+      // 🏠 Fallback: Local D1 write
+      if (!c.env?.DB) return;
+      const db = getDb(c.env);
       await db.insert(activityLogs).values({
         householdId,
         actorId,
         actorType: isAdmin ? 'ADMIN' : (actorId === 'system' ? 'SYSTEM' : 'USER'),
-        action: action.toUpperCase(),
-        severity: action.includes('CRITICAL') || action.includes('ADMIN') || action.includes('DELETE') ? 'CRITICAL' : 'INFO',
+        action: message.action,
+        severity: message.severity,
         targetType,
-        targetId: targetId ? String(targetId) : null,
-        detailsJson: JSON.stringify(finalDetails),
-        oldValuesJson: JSON.stringify(safeOldValues || {}),
-        newValuesJson: JSON.stringify(safeNewValues || {}),
-        ipAddress: connectingIp,
+        targetId: message.recordId,
+        detailsJson: message.metadataJson,
+        oldValuesJson: message.oldValuesJson,
+        newValuesJson: message.newValuesJson,
+        ipAddress,
         userAgent,
         cfRay
-      });
+      }).catch(e => console.error('[AUDIT_FAILURE]', e));
 
-      // HUMAN-FIRST TERMINOLOGY: Use plain English for logs
-      const plainAction = action.toLowerCase().replace(/_/g, ' ');
-      console.log(`[SENTINEL] ${isAdmin ? 'Administrator' : 'User'} ${actorId} performed ${plainAction} on ${targetType} ${targetId || ''}`);
+      console.log(`[SENTINEL] Audit logged (local fallback): ${action} on ${targetType} ${targetId || ''}`);
     } catch (error) {
       console.error('[FLEET_SECURITY_ERROR] Failed to record activity log:', error);
     }

@@ -32,7 +32,7 @@ export const sanitizeImageUrl = (url: string | undefined): string | undefined =>
       // Although React escapes these, being explicit helps static analyzers.
       return trimmed.replace(/[<>"'\s]/g, '');
     }
-  } catch (e) {
+  } catch (e: any) {
     // If it's not a valid URL (and not relative/data), ignore it
     return undefined;
   }

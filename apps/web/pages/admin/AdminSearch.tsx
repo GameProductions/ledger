@@ -15,12 +15,12 @@ const AdminSearch: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/search/global?q=${encodeURIComponent(query)}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/search/global?q=${encodeURIComponent(query)}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       setResults(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('PCC Search failed:', err);
     } finally {
       setLoading(false);

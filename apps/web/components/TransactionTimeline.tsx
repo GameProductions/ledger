@@ -27,15 +27,15 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
   const fetchTimeline = async () => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/financials/transactions/${transactionId}/timeline`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        }
-      });
-      const data = await res.json();
+      const res = (await fetch(`/api/financials/transactions/${transactionId}/timeline`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              }
+            }) as any);
+      const data = (await res.json() as any);
       setEntries(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Timeline fetch failed', e);
     } finally {
       setLoading(false);
@@ -50,22 +50,22 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
     if (!newNote.trim() || !token) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/financials/transactions/${transactionId}/timeline`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({ type, content: newNote.trim() })
-      });
+      const res = (await fetch(`/api/financials/transactions/${transactionId}/timeline`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({ type, content: newNote.trim() })
+            }) as any);
       if (res.ok) {
         showToast(`Stored ${type} successfully`, 'success');
         setNewNote('');
         fetchTimeline();
         if (onActivity) onActivity();
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Action failed', 'error');
     } finally {
       setIsSubmitting(false);

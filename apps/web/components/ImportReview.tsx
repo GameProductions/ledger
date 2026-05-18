@@ -26,7 +26,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   const { showToast } = useToast();
   
   // Available Household Members for Mapping
-  const { data: members } = useApi<any[]>('/api/admin/users');
+  const { data: members } = (useApi<any[]>('/api/admin/users') as any);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -39,13 +39,13 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         try {
           const ExcelJS = (await import('exceljs')).default;
           const wb = new ExcelJS.Workbook();
-          const arrayBuffer = await uploadedFile.arrayBuffer();
+          const arrayBuffer = (await uploadedFile.arrayBuffer() as any);
           await wb.xlsx.load(arrayBuffer);
           setWorkbook(wb as any);
           const sheetNames = (wb.worksheets || []).map(ws => ws.name);
           setAvailableSheets(sheetNames);
           setSelectedSheet(sheetNames[0]);
-        } catch (err) {
+        } catch (err: any) {
           showToast('Failed to load Excel library', 'error');
         } finally {
           setAnalyzing(false);
@@ -111,9 +111,9 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       });
       finalizeData(rows);
     } else if (file.name.endsWith('.json')) {
-      const text = await file.text();
+      const text = (await file.text() as any);
       try {
-        const data = JSON.parse(text);
+        const data = (JSON.parse(text) as any);
         const rows = Array.isArray(data) ? data : [data];
         finalizeData(rows.map((r: any) => ({
           description: r.description || r.Description || r.merchant || r.name || 'JSON Record',
@@ -124,7 +124,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           ownerId: r.ownerId || null,
           ownerName: r.ownerName || ''
         })));
-      } catch (e) {
+      } catch (e: any) {
         showToast('Invalid JSON file', 'error');
         setAnalyzing(false);
       }
@@ -147,7 +147,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
             })));
           }
         });
-      } catch (err) {
+      } catch (err: any) {
         showToast('Failed to load CSV library', 'error');
         setAnalyzing(false);
       }
@@ -158,18 +158,18 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     if (reviewItems.length === 0) return;
     setCommitting(true);
     try {
-      const res = await fetch(`${getApiUrl()}/api/data/import/confirm`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-        },
-        body: JSON.stringify({ 
-           type: 'transactions',
-           scope, 
-           data: reviewItems 
-        })
-      });
+      const res = (await fetch(`${getApiUrl()}/api/data/import/confirm`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+              },
+              body: JSON.stringify({ 
+                 type: 'transactions',
+                 scope, 
+                 data: reviewItems 
+              })
+            }) as any);
       if (res.ok) {
         showToast(`Successfully imported to ${scope === 'household' ? 'Shared Ledger' : 'Personal Hub'}`, 'success');
         onImportComplete();

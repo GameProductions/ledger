@@ -4,22 +4,22 @@ export class EmailService {
   constructor(private env: Bindings) {}
 
   private async sendEmail(to: string, subject: string, html: string) {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: this.env.FROM_EMAIL || 'LEDGER <onboarding@resend.dev>',
-        to: [to],
-        subject,
-        html,
-      }),
-    })
+    const res = (await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: this.env.FROM_EMAIL || 'LEDGER <onboarding@resend.dev>',
+            to: [to],
+            subject,
+            html,
+          }),
+        }) as any)
 
     if (!res.ok) {
-      const error = await res.text()
+      const error = (await res.text() as any)
       console.error('[EmailService] Resend API Error:', error)
       throw new Error('Failed to send email via Resend')
     }

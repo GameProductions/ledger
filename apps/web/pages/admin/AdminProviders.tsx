@@ -31,17 +31,17 @@ const AdminProviders: React.FC = () => {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
       
-      const [provRes, procRes] = await Promise.all([
-        fetch(`${apiUrl}/api/admin/billing/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${apiUrl}/api/admin/billing/networks`, { headers: { 'Authorization': `Bearer ${token}` } })
-      ]);
+      const [provRes, procRes] = (await Promise.all([
+              fetch(`${apiUrl}/api/admin/billing/providers`, { headers: { 'Authorization': `Bearer ${token}` } }),
+              fetch(`${apiUrl}/api/admin/billing/networks`, { headers: { 'Authorization': `Bearer ${token}` } })
+            ]) as any);
       
-      const provData = await provRes.json();
-      const procData = await procRes.json();
+      const provData = (await provRes.json() as any);
+      const procData = (await procRes.json() as any);
       
       if (provData.success) setProviders(provData.data || []);
       if (procData.success) setProcessors(procData.data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
@@ -63,11 +63,11 @@ const AdminProviders: React.FC = () => {
     
     const method = editingId ? 'PATCH' : 'POST';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(newItem)
-    });
+    const res = (await fetch(url, {
+          method,
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newItem)
+        }) as any);
 
     if (res.ok) {
       showToast(editingId ? 'Provider updated' : 'New provider added', 'success');
@@ -76,7 +76,7 @@ const AdminProviders: React.FC = () => {
       setNewItem({ name: '', billingProcessorId: '', websiteUrl: '', brandingUrl: '', logoUrl: '', support_email: '', privacy_policy_url: '', is3rdPartyCapable: false });
       fetchData();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.message || 'Failed to save', 'error');
     }
   };
@@ -100,17 +100,17 @@ const AdminProviders: React.FC = () => {
   const handleDelete = async (id: string) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/admin/billing/providers/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const res = (await fetch(`${apiUrl}/api/admin/billing/providers/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }) as any);
 
     if (res.ok) {
       showToast('Provider deleted', 'success');
       setConfirmDeleteId(null);
       fetchData();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.message || 'Purge failed', 'error');
     }
   };

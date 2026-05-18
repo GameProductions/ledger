@@ -15,29 +15,29 @@ export async function offloadToFoundation(
   const url = `${foundationUrl}/api/admin/security/deletion-queue`;
   
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Service-Token': c.env.SHARED_SERVICE_SECRET
-      },
-      body: JSON.stringify({
-        sourceSystem: source,
-        category,
-        recordId,
-        plaintext,
-        actorId: 'system-migration'
-      })
-    });
+    const response = (await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Token': c.env.SHARED_SERVICE_SECRET
+          },
+          body: JSON.stringify({
+            sourceSystem: source,
+            category,
+            recordId,
+            plaintext,
+            actorId: 'system-migration'
+          })
+        }) as any);
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = (await response.text() as any);
       console.error(`[FOUNDATION_OFFLOAD_FAILED] ${response.status}: ${errorText}`);
       return false;
     }
 
     return true;
-  } catch (e) {
+  } catch (e: any) {
     console.error(`[FOUNDATION_OFFLOAD_ERROR] Failed to offload ${category} for ${recordId}:`, e);
     return false;
   }

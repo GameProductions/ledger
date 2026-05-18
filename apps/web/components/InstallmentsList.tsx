@@ -9,7 +9,7 @@ import { Price } from './Price';
 
 export const InstallmentsList: React.FC = () => {
     const { token, householdId } = useAuth();
-    const { data: installments = [], loading, mutate } = useApi('/api/planning/installment-plans');
+    const { data: installments = [], loading, mutate } = (useApi('/api/planning/installment-plans') as any);
     const { showToast } = useToast();
     
     // UI State for Modals
@@ -20,13 +20,13 @@ export const InstallmentsList: React.FC = () => {
         if (!token) return;
         const apiUrl = getApiUrl().replace(/\/$/, '');
 
-        const res = await fetch(`${apiUrl}/api/planning/installment-plans/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'x-household-id': householdId || ''
-            }
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/installment-plans/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'x-household-id': householdId || ''
+                    }
+                }) as any);
 
         if (res.ok) {
             showToast('Installment plan removed from ledger');
@@ -36,14 +36,14 @@ export const InstallmentsList: React.FC = () => {
 
     const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
         if (!token) return;
-        const res = await fetch(`${getApiUrl()}/api/planning/splits/installment/${targetId}/public`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ isPublic: isPublic })
-        });
+        const res = (await fetch(`${getApiUrl()}/api/planning/splits/installment/${targetId}/public`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ isPublic: isPublic })
+                }) as any);
 
         if (res.ok) {
             showToast(isPublic ? 'Master Ledger is now public' : 'Master Ledger is now private');

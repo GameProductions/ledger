@@ -13,21 +13,21 @@ import { LiabilitySplitter } from './LiabilitySplitter'
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
-  const { data: subs = [], loading, mutate } = useApi('/api/planning/subscriptions')
-  const { data: linkedAccounts = [] } = useApi('/api/user/linked-accounts')
+  const { data: subs = [], loading, mutate } = (useApi('/api/planning/subscriptions') as any)
+  const { data: linkedAccounts = [] } = (useApi('/api/user/linked-accounts') as any)
   const [showAdd, setShowAdd] = useState(false)
   const [reminderTarget, setReminderTarget] = useState<{id: string, name: string} | null>(null)
 
   const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
     if (!token) return;
-    const res = await fetch(`${getApiUrl()}/api/planning/splits/subscription/${targetId}/public`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ isPublic: isPublic })
-    });
+    const res = (await fetch(`${getApiUrl()}/api/planning/splits/subscription/${targetId}/public`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ isPublic: isPublic })
+        }) as any);
 
     if (res.ok) {
         showToast(isPublic ? 'Master Ledger is now public' : 'Master Ledger is now private');

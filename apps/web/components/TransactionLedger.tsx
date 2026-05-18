@@ -19,9 +19,9 @@ export const TransactionLedger: React.FC = () => {
   const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false)
   
   // Data Fetching
-  const { data: transactions = [], mutate: mutateTx } = useApi(`/api/financials/transactions?q=${q}&sort_by=${sortBy}&sort_dir=${sortDir}&limit=${limit}`)
-  const { data: accounts = [] } = useApi('/api/financials/accounts')
-  const { data: categories = [] } = useApi('/api/financials/categories')
+  const { data: transactions = [], mutate: mutateTx } = (useApi(`/api/financials/transactions?q=${q}&sort_by=${sortBy}&sort_dir=${sortDir}&limit=${limit}`) as any)
+  const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
+  const { data: categories = [] } = (useApi('/api/financials/categories') as any)
 
   // Selection & Details State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -39,20 +39,20 @@ export const TransactionLedger: React.FC = () => {
         if (!tx.categoryId && !suggestions[tx.id]) {
           try {
             const apiUrl = getApiUrl();
-            const res = await fetch(`${apiUrl}/api/financials/transactions/infer`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'x-household-id': householdId || ''
-              },
-              body: JSON.stringify({ raw_description: tx.description })
-            });
-            const data = await res.json();
+            const res = (await fetch(`${apiUrl}/api/financials/transactions/infer`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                            'x-household-id': householdId || ''
+                          },
+                          body: JSON.stringify({ raw_description: tx.description })
+                        }) as any);
+            const data = (await res.json() as any);
             if (data.suggestions) {
               setSuggestions(prev => ({ ...prev, [tx.id]: data.suggestions }));
             }
-          } catch(e) {}
+          } catch(e: any) {}
         }
       }
     };

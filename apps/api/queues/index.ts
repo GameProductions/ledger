@@ -26,7 +26,7 @@ export const handleQueue = async (batch: any, env: Bindings): Promise<void> => {
       }
 
       message.ack()
-    } catch (e) {
+    } catch (e: any) {
       console.error(`[Queue Error] Task Failed: ${message.id}`, e)
       // Message will be retried based on queue config
     }

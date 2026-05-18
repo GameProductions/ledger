@@ -51,7 +51,7 @@ export const useExport = () => {
         worksheet.addRow(row);
       });
 
-      const buffer = await workbook.xlsx.writeBuffer();
+      const buffer = (await workbook.xlsx.writeBuffer() as any);
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -89,22 +89,22 @@ export const useExport = () => {
     } else if (format === 'gsheets' as any) {
       // Proxy through backend for security
       try {
-        const res = await fetch(`${getApiUrl().replace(/\/$/, '')}/api/financials/transactions/export/gsheets`, {
-          method: 'POST',
-          headers: { 
-            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-            'Content-Type': 'application/json' 
-          },
-          body: JSON.stringify({ filename, data, columns })
-        });
+        const res = (await fetch(`${getApiUrl().replace(/\/$/, '')}/api/financials/transactions/export/gsheets`, {
+                  method: 'POST',
+                  headers: { 
+                    'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+                    'Content-Type': 'application/json' 
+                  },
+                  body: JSON.stringify({ filename, data, columns })
+                }) as any);
         if (!res.ok) {
-          const err = await res.json();
+          const err = (await res.json() as any);
           showToast(err.message || 'Failed to export to Google Sheets', 'error');
           return;
         }
-        const { url } = await res.json();
+        const { url } = (await res.json() as any);
         window.open(url, '_blank');
-      } catch (err) {
+      } catch (err: any) {
         showToast('Failed to export to Google Sheets.', 'error');
       }
     }

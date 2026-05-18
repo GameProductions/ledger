@@ -11,20 +11,20 @@ const InviteManager: React.FC = () => {
     if (!token) return
 
     const apiUrl = getApiUrl()
-    const res = await fetch(`${apiUrl}/api/user/households/invite`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'x-household-id': householdId || ''
-      }
-    })
+    const res = (await fetch(`${apiUrl}/api/user/households/invite`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          }
+        }) as any)
     if (!res.ok) {
-      const errorText = await res.text()
+      const errorText = (await res.text() as any)
       console.error('[InviteManager] Generation failed:', errorText)
       return
     }
 
-    const data = await res.json()
+    const data = (await res.json() as any)
     const fullUrl = `${window.location.origin}/${data.url}`
     setLink(fullUrl)
     setInvited(true)

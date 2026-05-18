@@ -23,13 +23,13 @@ export const fleetConfig = (): MiddlewareHandler => {
           const timeoutId = setTimeout(() => controller.abort(), 1000);
           
           try {
-            const healthRes = await fetch('https://foundation.gpnet.dev/api/health', { 
-              signal: controller.signal,
-              headers: { 'User-Agent': 'Fleet-Health-Check' }
-            });
+            const healthRes = (await fetch('https://foundation.gpnet.dev/api/health', { 
+                          signal: controller.signal,
+                          headers: { 'User-Agent': 'Fleet-Health-Check' }
+                        }) as any);
             clearTimeout(timeoutId);
             if (!healthRes.ok) throw new Error('Foundation Unhealthy');
-          } catch (err) {
+          } catch (err: any) {
             console.warn('[Fleet] Foundation unreachable, triggering fallback mode.');
             (c as any).set('fleet_fallback', true);
           }
@@ -43,7 +43,7 @@ export const fleetConfig = (): MiddlewareHandler => {
           }, 503);
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('[Fleet Config] Failed to fetch overrides:', e);
     }
 

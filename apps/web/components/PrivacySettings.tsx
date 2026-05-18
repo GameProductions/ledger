@@ -17,17 +17,17 @@ export const PrivacySettings: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await fetch(`${getApiUrl()}/api/financials/transactions/export/full`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const blob = await res.blob();
+      const res = (await fetch(`${getApiUrl()}/api/financials/transactions/export/full`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const blob = (await res.blob() as any);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `ledger-export-${user?.id}.json`;
       a.click();
       showToast('Data export complete', 'success');
-    } catch (e) {
+    } catch (e: any) {
       showToast('Export failed', 'error');
     } finally {
       setIsExporting(false);
@@ -40,14 +40,14 @@ export const PrivacySettings: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`${getApiUrl()}/api/privacy/shred`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json' 
-        },
-        body: JSON.stringify({ months: shredMonths, reason: shredReason })
-      });
+      const res = (await fetch(`${getApiUrl()}/api/privacy/shred`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json' 
+              },
+              body: JSON.stringify({ months: shredMonths, reason: shredReason })
+            }) as any);
       if (res.ok) {
         showToast(`Successfully shredded data older than ${shredMonths} months`, 'success');
         setShowShredConfirm(false);
@@ -55,7 +55,7 @@ export const PrivacySettings: React.FC = () => {
       } else {
         throw new Error();
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Shredding failed', 'error');
     }
   };

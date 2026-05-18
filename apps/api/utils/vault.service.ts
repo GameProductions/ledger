@@ -23,17 +23,17 @@ export class VaultService {
      * Stores a secret in the vault, encrypted at rest.
      */
     async setSecret(ownerId: string, keyName: SecretKeyName, scope: SecretScope, plaintext: string) {
-        const full = await encryptData(plaintext, this.encryptionKey);
+        const full = (await encryptData(plaintext, this.encryptionKey) as any);
         const [iv, encryptedValue] = full.split(':');
         
         // Check if exists to update or insert
-        const existing = await this.db.select().from(vault).where(
-            and(
-                eq(vault.ownerId, ownerId),
-                eq(vault.keyName, keyName),
-                eq(vault.scope, scope)
-            )
-        ).limit(1);
+        const existing = (await this.db.select().from(vault).where(
+                    and(
+                        eq(vault.ownerId, ownerId),
+                        eq(vault.keyName, keyName),
+                        eq(vault.scope, scope)
+                    )
+                ).limit(1) as any);
 
         if (existing.length > 0) {
             await this.db.update(vault).set({
@@ -59,13 +59,13 @@ export class VaultService {
      * Retrieves and decrypts a secret from the vault.
      */
     async getSecret(ownerId: string, keyName: SecretKeyName, scope: SecretScope): Promise<string | null> {
-        const result = await this.db.select().from(vault).where(
-            and(
-                eq(vault.ownerId, ownerId),
-                eq(vault.keyName, keyName),
-                eq(vault.scope, scope)
-            )
-        ).limit(1);
+        const result = (await this.db.select().from(vault).where(
+                    and(
+                        eq(vault.ownerId, ownerId),
+                        eq(vault.keyName, keyName),
+                        eq(vault.scope, scope)
+                    )
+                ).limit(1) as any);
 
         if (result.length === 0) return null;
 

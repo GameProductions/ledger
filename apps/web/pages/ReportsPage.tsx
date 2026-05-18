@@ -39,25 +39,25 @@ const ReportsPage: React.FC = () => {
         const headers = { 'Authorization': `Bearer ${token}` };
         const apiUrl = getApiUrl();
 
-        const [spendRes, nwRes, reportsRes] = await Promise.all([
-          fetch(`${apiUrl}/api/interop/analytics/category-spending?timeframe=30d`, { headers }),
-          fetch(`${apiUrl}/api/interop/analytics/net-worth`, { headers }),
-          fetch(`${apiUrl}/api/interop/reports`, { headers })
-        ]);
+        const [spendRes, nwRes, reportsRes] = (await Promise.all([
+                  fetch(`${apiUrl}/api/interop/analytics/category-spending?timeframe=30d`, { headers }),
+                  fetch(`${apiUrl}/api/interop/analytics/net-worth`, { headers }),
+                  fetch(`${apiUrl}/api/interop/reports`, { headers })
+                ]) as any);
 
         if (spendRes.ok) {
-          const res = await spendRes.json();
+          const res = (await spendRes.json() as any);
           setCategorySpending((res.success ? res.data : res) || []);
         }
         if (nwRes.ok) {
-          const res = await nwRes.json();
+          const res = (await nwRes.json() as any);
           setNetWorth((res.success ? res.data : res) || { current_net_worth_cents: 0, history: [] });
         }
         if (reportsRes.ok) {
-          const res = await reportsRes.json();
+          const res = (await reportsRes.json() as any);
           setReports((res.success ? res.data : res) || []);
         }
-      } catch (e) {
+      } catch (e: any) {
         showToast('Failed to load financial analysis data', 'error');
       }
     };
@@ -70,27 +70,27 @@ const ReportsPage: React.FC = () => {
   const shareSnapshot = async () => {
     try {
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/interop/reports`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          name: `Financial Snapshot - ${new Date().toLocaleDateString()}`,
-          data: (categorySpending || []).map(c => ({ 
-            date: new Date().toLocaleDateString(), 
-            description: c.name, 
-            amount: (c.totalCents / 100).toFixed(2) 
-          })),
-          expiresInDays: 7
-        })
-      });
-      const { url } = await res.json();
+      const res = (await fetch(`${apiUrl}/api/interop/reports`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ 
+                name: `Financial Snapshot - ${new Date().toLocaleDateString()}`,
+                data: (categorySpending || []).map(c => ({ 
+                  date: new Date().toLocaleDateString(), 
+                  description: c.name, 
+                  amount: (c.totalCents / 100).toFixed(2) 
+                })),
+                expiresInDays: 7
+              })
+            }) as any);
+      const { url } = (await res.json() as any);
       const absoluteUrl = `${window.location.origin}${window.location.pathname}${url}`;
       await navigator.clipboard.writeText(absoluteUrl);
       showToast('Snapshot URL copied to clipboard (Expires in 7 days)', 'success');
-    } catch (e) {
+    } catch (e: any) {
       showToast('Failed to share snapshot', 'error');
     }
   };
@@ -98,24 +98,24 @@ const ReportsPage: React.FC = () => {
   const generateSnapshot = async () => {
     try {
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/interop/reports/snapshot`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ type: 'net_worth_snapshot' })
-      });
+      const res = (await fetch(`${apiUrl}/api/interop/reports/snapshot`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ type: 'net_worth_snapshot' })
+            }) as any);
       if (res.ok) {
         showToast('Financial snapshot generated successfully', 'success');
         // Reload reports
         const apiUrl = getApiUrl();
-        const reportsRes = await fetch(`${apiUrl}/api/interop/reports`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const reportsRes = (await fetch(`${apiUrl}/api/interop/reports`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                }) as any);
         if (reportsRes.ok) setReports(await reportsRes.json());
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Failed to generate snapshot', 'error');
     }
   };

@@ -47,18 +47,18 @@ entities.get('/:type', async (c) => {
     query = query.where(and(...conditions))
   }
   
-  const results = await query.limit(1000)
+  const results = (await query.limit(1000) as any)
   return c.json({ success: true, data: results || [] })
 })
 
 entities.patch('/:type/:id', async (c) => {
   const { type, id } = c.req.param()
-  const data = await c.req.json()
+  const data = (await c.req.json() as any)
   const table = getTable(type)
   if (!table) throw new HTTPException(400, { message: 'Invalid entity type' })
   
   const db = getDb(c.env)
-  const old = await db.select().from(table).where(eq(table.id, id)).limit(1).then(res => res[0])
+  const old = (await db.select().from(table).where(eq(table.id, id)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'Record not found' })
 
   // Clean data to only include valid columns
@@ -81,7 +81,7 @@ entities.delete('/:type/:id', async (c) => {
   if (!table) throw new HTTPException(400, { message: 'Invalid entity type' })
   
   const db = getDb(c.env)
-  const old = await db.select().from(table).where(eq(table.id, id)).limit(1).then(res => res[0])
+  const old = (await db.select().from(table).where(eq(table.id, id)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'Record not found' })
 
   await db.delete(table).where(eq(table.id, id))
@@ -92,11 +92,11 @@ entities.delete('/:type/:id', async (c) => {
 
 entities.get('/audit/report', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select()
-    .from(schema.activityLogs)
-    .where(sql`action LIKE 'GOD_MODE_%'`)
-    .orderBy(desc(schema.activityLogs.createdAt))
-    .limit(100)
+  const results = (await db.select()
+      .from(schema.activityLogs)
+      .where(sql`action LIKE 'GOD_MODE_%'`)
+      .orderBy(desc(schema.activityLogs.createdAt))
+      .limit(100) as any)
   return c.json({ success: true, data: results || [] })
 })
 

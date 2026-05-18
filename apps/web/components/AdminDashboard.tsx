@@ -6,9 +6,9 @@ import { Button } from './ui/Button'
 import { getApiUrl } from '../utils/api'
 
 const AdminDashboard: React.FC = () => {
-  const { data: users = [], loading: loadingUsers, mutate: mutateUsers } = useApi('/api/admin/users')
-  const { data: connections = [], loading: loadingConn, mutate: mutateConn } = useApi('/api/admin/connections')
-  const { data: audit = [], loading: loadingAudit, mutate: mutateAudit } = useApi('/api/admin/audit')
+  const { data: users = [], loading: loadingUsers, mutate: mutateUsers } = (useApi('/api/admin/users') as any)
+  const { data: connections = [], loading: loadingConn, mutate: mutateConn } = (useApi('/api/admin/connections') as any)
+  const { data: audit = [], loading: loadingAudit, mutate: mutateAudit } = (useApi('/api/admin/audit') as any)
   const [activeTab, setActiveTab] = useState<'users' | 'connections' | 'audit'>('users')
   const { showToast } = useToast()
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -293,7 +293,7 @@ function renderAuditAction(log: any) {
           word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         ).join(' ');
     }
-  } catch (e) {
+  } catch (e: any) {
     return log.action;
   }
 }

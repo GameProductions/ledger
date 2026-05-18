@@ -13,13 +13,13 @@ const householdAdmin = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 householdAdmin.get('/', async (c) => {
   const db = getDb(c.env)
   // Get households with member counts
-  const results = await db.select({
-    id: households.id,
-    name: households.name,
-    currency: households.currency,
-    createdAt: households.createdAt,
-    memberCount: sql<number>`(SELECT COUNT(*) FROM userHouseholds WHERE householdId = ${households.id})`
-  }).from(households).orderBy(desc(households.createdAt))
+  const results = (await db.select({
+      id: households.id,
+      name: households.name,
+      currency: households.currency,
+      createdAt: households.createdAt,
+      memberCount: sql<number>`(SELECT COUNT(*) FROM userHouseholds WHERE householdId = ${households.id})`
+    }).from(households).orderBy(desc(households.createdAt)) as any)
   
   return c.json({ success: true, data: results || [] })
 })
@@ -29,10 +29,10 @@ householdAdmin.patch('/:id', zValidator('json', z.object({
   currency: z.string().length(3).optional()
 })), async (c) => {
   const id = c.req.param('id')
-  const data = c.req.valid('json')
+  const data = (c.req.valid('json') as any)
   const db = getDb(c.env)
   
-  const old = await db.select().from(households).where(eq(households.id, id)).limit(1).then(res => res[0])
+  const old = (await db.select().from(households).where(eq(households.id, id)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'Household not found' })
 
   await db.update(households).set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(households.id, id))
@@ -45,7 +45,7 @@ householdAdmin.delete('/:id', async (c) => {
   const id = c.req.param('id')
   const db = getDb(c.env)
   
-  const old = await db.select().from(households).where(eq(households.id, id)).limit(1).then(res => res[0])
+  const old = (await db.select().from(households).where(eq(households.id, id)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'Household not found' })
 
   // Cascade delete or restrict?

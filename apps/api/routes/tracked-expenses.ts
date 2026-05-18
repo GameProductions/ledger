@@ -16,12 +16,12 @@ trackedExpensesRoutes.get('/', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   
-  const results = await db.select().from(trackedExpenses).where(
-    and(
-      eq(trackedExpenses.householdId, householdId),
-      eq(trackedExpenses.status, 'pending')
-    )
-  )
+  const results = (await db.select().from(trackedExpenses).where(
+      and(
+        eq(trackedExpenses.householdId, householdId),
+        eq(trackedExpenses.status, 'pending')
+      )
+    ) as any)
   
   return c.json({ success: true, data: results })
 })
@@ -38,7 +38,7 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
   borrowSource: z.string().optional().nullable()
 })), async (c) => {
   const householdId = c.get('householdId')
-  const data = c.req.valid('json')
+  const data = (c.req.valid('json') as any)
   const db = getDb(c.env)
   const id = crypto.randomUUID()
   
@@ -105,9 +105,9 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
   const { ids, transactionDetails } = c.req.valid('json')
   const db = getDb(c.env)
   
-  const items = await db.select().from(trackedExpenses).where(
-    and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids))
-  )
+  const items = (await db.select().from(trackedExpenses).where(
+      and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids))
+    ) as any)
   
   if (items.length === 0) return c.json({ success: false, error: 'No items found' }, 404)
   

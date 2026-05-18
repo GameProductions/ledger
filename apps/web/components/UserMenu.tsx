@@ -13,7 +13,7 @@ const UserMenu: React.FC<{
   isAdminPortal?: boolean 
 }> = ({ view, setView, isAdminPortal = false }) => {
   const { user, logout, globalRole, isImpersonating } = useAuth() as any
-  const { data: profile } = useApi('/api/user/profile')
+  const { data: profile } = (useApi('/api/user/profile') as any)
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'

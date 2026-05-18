@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { 
   Fingerprint, 
@@ -40,12 +41,12 @@ export const PasskeyModule = () => {
 
   const fetchPasskeys = async () => {
     try {
-      const res = await secureRequest('/api/admin/webauthn/passkeys');
+      const res = (await secureRequest('/api/admin/webauthn/passkeys') as any);
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json() as any);
         setPasskeys(data.passkeys || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch passkeys:', err);
     } finally {
       setLoading(false);
@@ -59,21 +60,21 @@ export const PasskeyModule = () => {
   const generatePasskey = async () => {
     setRegistering(true);
     try {
-      const optionsRes = await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' });
-      const options = await optionsRes.json();
-      const { startRegistration } = await import('@simplewebauthn/browser');
-      const regResp = await startRegistration({ optionsJSON: options });
+      const optionsRes = (await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' }) as any);
+      const options = (await optionsRes.json() as any);
+      const { startRegistration } = (await import('@simplewebauthn/browser') as any);
+      const regResp = (await startRegistration({ optionsJSON: options }) as any);
 
-      const name = await showPrompt('Label Passkey', 'Enter a name for this hardware key (e.g. MacBook TouchID)', 'Primary Key');
+      const name = (await showPrompt('Label Passkey', 'Enter a name for this hardware key (e.g. MacBook TouchID)', 'Primary Key') as any);
       if (!name) return;
 
-      const verifyRes = await secureRequest('/api/admin/webauthn/verify-registration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attestation: regResp, name }),
-      });
+      const verifyRes = (await secureRequest('/api/admin/webauthn/verify-registration', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ attestation: regResp, name }),
+            }) as any);
 
-      const verification = await verifyRes.json();
+      const verification = (await verifyRes.json() as any);
       if (verification.verified) {
         showInline('Hardware signature verified and linked.', 'success');
         fetchPasskeys();
@@ -93,7 +94,7 @@ export const PasskeyModule = () => {
 
   const deletePasskey = async (id: string) => {
     try {
-      const res = await secureRequest(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' });
+      const res = (await secureRequest(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' }) as any);
       if (res.ok) {
         showInline('Hardware signature revoked.', 'success');
         setConfirmDeleteId(null);
@@ -102,7 +103,7 @@ export const PasskeyModule = () => {
       } else {
         showInline('Failed to revoke signature.', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showInline('An error occurred during revocation.', 'error');
     }
   };

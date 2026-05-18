@@ -89,7 +89,7 @@ const Calendar: React.FC<CalendarProps> = ({
         const daysInRange = eachDayOfInterval({ start: resolvedRange.start, end: resolvedRange.end });
         const padding = Array.from({ length: firstDay }, (_, i) => addDays(resolvedRange.start, -(firstDay - i)));
         return [...padding.map(d => ({ date: d, isPadding: true })), ...daysInRange.map(d => ({ date: d, isPadding: false }))];
-    } catch(e) {
+    } catch(e: any) {
         return [];
     }
   }, [resolvedRange]);

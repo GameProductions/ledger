@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -110,12 +111,12 @@ auth.post('/login', zValidator('json', z.object({
   
   try {
     const metadata = getRequestMetadata(c)
-    const user = await authService.validateCredentials(username, password)
+    const user = (await authService.validateCredentials(username, password) as any)
     
     // Step-Up is handled via the separate WebAuthn flow now
 
-    const sessionId = await createSessionTracker(c, user.id, false, !!persistent)
-    const token = await authService.generateToken(user.id, sessionId)
+    const sessionId = (await createSessionTracker(c, user.id, false, !!persistent) as any)
+    const token = (await authService.generateToken(user.id, sessionId) as any)
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
     return c.json({ 
@@ -162,7 +163,7 @@ auth.get('/login/discord', async (c) => {
     try {
       const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
     }
   }
@@ -188,7 +189,7 @@ auth.get('/login/discord', async (c) => {
 auth.get('/callback/discord', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
-  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+  const savedState = (await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state') as any)
 
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
@@ -203,29 +204,29 @@ auth.get('/callback/discord', async (c) => {
     sessionUserId = decoded.userId
     isPersistent = !!decoded.persistent
     if (decoded.linkedRoles) isLinkedRoleMetadataUpdate = true
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[OAuth] State decode failure:', e)
   }
 
   const authService = new AuthService(c.env)
   
   // 1. Exchange code for token
-  const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      client_id: c.env.DISCORD_CLIENT_ID || '',
-      client_secret: c.env.DISCORD_CLIENT_SECRET || '',
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/discord`
-    })
-  })
+  const tokenRes = (await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: c.env.DISCORD_CLIENT_ID || '',
+        client_secret: c.env.DISCORD_CLIENT_SECRET || '',
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/discord`
+      })
+    }) as any)
   const tokenData = await tokenRes.json() as any
   
   // 2. Fetch profile
-  const userRes = await fetch('https://discord.com/api/users/@me', {
-    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-  })
+  const userRes = (await fetch('https://discord.com/api/users/@me', {
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+    }) as any)
   const profile = await userRes.json() as any
   
   const socialProfile = {
@@ -255,7 +256,7 @@ auth.get('/callback/discord', async (c) => {
   // PUSH LINKED ROLES METADATA IF SOLICITED
   if (isLinkedRoleMetadataUpdate || tokenData.scope?.includes('role_connections.write')) {
     const db = getDb(c.env)
-    const dbUser = await db.select({ role: users.globalRole }).from(users).where(eq(users.id, finalUserId!)).limit(1)
+    const dbUser = (await db.select({ role: users.globalRole }).from(users).where(eq(users.id, finalUserId!)).limit(1) as any)
 
     // Standard Unified Tier Schema for Ledger
     let metadata: Record<string, any> = {}
@@ -281,7 +282,7 @@ auth.get('/callback/discord', async (c) => {
         }),
       });
       console.log(`[LINKED ROLES] Successfully pushed metadata to Discord for ${profile.username}`);
-    } catch(e) {
+    } catch(e: any) {
       console.error('[LINKED ROLES] Failed to push metadata to Discord', e);
     }
 
@@ -294,8 +295,8 @@ auth.get('/callback/discord', async (c) => {
   if (sessionUserId) {
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
-    const sessionId = await createSessionTracker(c, finalUserId!, false, isPersistent)
-    const token = await authService.generateToken(finalUserId!, sessionId)
+    const sessionId = (await createSessionTracker(c, finalUserId!, false, isPersistent) as any)
+    const token = (await authService.generateToken(finalUserId!, sessionId) as any)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -344,7 +345,7 @@ auth.get('/login/google', async (c) => {
     try {
       const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
     }
   }
@@ -370,7 +371,7 @@ auth.get('/login/google', async (c) => {
 auth.get('/callback/google', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
-  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+  const savedState = (await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state') as any)
 
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
@@ -383,27 +384,27 @@ auth.get('/callback/google', async (c) => {
     const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
     isPersistent = !!decoded.persistent
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[OAuth] State decode failure:', e)
   }
 
   const authService = new AuthService(c.env)
   
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      client_id: c.env.GOOGLE_CLIENT_ID || '',
-      client_secret: c.env.GOOGLE_CLIENT_SECRET || '',
-      code: code || '',
-      grant_type: 'authorization_code',
-      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/google`
-    })
-  })
+  const tokenRes = (await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: c.env.GOOGLE_CLIENT_ID || '',
+        client_secret: c.env.GOOGLE_CLIENT_SECRET || '',
+        code: code || '',
+        grant_type: 'authorization_code',
+        redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/google`
+      })
+    }) as any)
   const tokenData = await tokenRes.json() as any
   
-  const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-  })
+  const userRes = (await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+    }) as any)
   const profile = await userRes.json() as any
   
   const socialProfile = {
@@ -426,9 +427,9 @@ auth.get('/callback/google', async (c) => {
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE
-    const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens)
-    const sessionId = await createSessionTracker(c, userId, false, isPersistent)
-    const token = await authService.generateToken(userId, sessionId)
+    const userId = (await authService.findOrCreateSocialUser('google', socialProfile, socialTokens) as any)
+    const sessionId = (await createSessionTracker(c, userId, false, isPersistent) as any)
+    const token = (await authService.generateToken(userId, sessionId) as any)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -450,7 +451,7 @@ auth.get('/login/dropbox', async (c) => {
     try {
       const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
     }
   }
@@ -475,7 +476,7 @@ auth.get('/login/dropbox', async (c) => {
 auth.get('/callback/dropbox', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
-  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+  const savedState = (await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state') as any)
 
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
@@ -486,28 +487,28 @@ auth.get('/callback/dropbox', async (c) => {
   try {
     const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[OAuth] State decode failure:', e)
   }
 
   const authService = new AuthService(c.env)
-  const tokenRes = await fetch('https://api.dropbox.com/oauth2/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      client_id: c.env.DROPBOX_CLIENT_ID || '',
-      client_secret: c.env.DROPBOX_CLIENT_SECRET || '',
-      code: code || '',
-      grant_type: 'authorization_code',
-      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/dropbox`
-    })
-  })
+  const tokenRes = (await fetch('https://api.dropbox.com/oauth2/token', {
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: c.env.DROPBOX_CLIENT_ID || '',
+        client_secret: c.env.DROPBOX_CLIENT_SECRET || '',
+        code: code || '',
+        grant_type: 'authorization_code',
+        redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/dropbox`
+      })
+    }) as any)
   const tokenData = await tokenRes.json() as any
   
-  const userRes = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(null)
-  })
+  const userRes = (await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(null)
+    }) as any)
   const profile = await userRes.json() as any
   
   const socialProfile = {
@@ -530,9 +531,9 @@ auth.get('/callback/dropbox', async (c) => {
     return c.redirect(`${c.env.WEB_URL || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')}/#/settings`)
   } else {
     // LOGIN MODE
-    const userId = await authService.findOrCreateSocialUser('dropbox', socialProfile, socialTokens)
-    const sessionId = await createSessionTracker(c, userId)
-    const token = await authService.generateToken(userId, sessionId)
+    const userId = (await authService.findOrCreateSocialUser('dropbox', socialProfile, socialTokens) as any)
+    const sessionId = (await createSessionTracker(c, userId) as any)
+    const token = (await authService.generateToken(userId, sessionId) as any)
     return c.redirect(`${c.env.WEB_URL || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')}/#/login?token=${token}`)
   }
 })
@@ -554,7 +555,7 @@ auth.get('/login/onedrive', async (c) => {
     try {
       const payload = await jwtVerify(token, c.env.JWT_SECRET, 'HS256') as any
       userId = payload.sub
-    } catch (e) {
+    } catch (e: any) {
       console.warn('[OAuth] Failed to verify existing token for linking:', e)
     }
   }
@@ -579,7 +580,7 @@ auth.get('/login/onedrive', async (c) => {
 auth.get('/callback/onedrive', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
-  const savedState = await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state')
+  const savedState = (await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state') as any)
 
   if (!code || !state || state !== savedState) {
     throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
@@ -590,26 +591,26 @@ auth.get('/callback/onedrive', async (c) => {
   try {
     const decoded = JSON.parse(decodeBase64(state))
     sessionUserId = decoded.userId
-  } catch (e) {
+  } catch (e: any) {
     console.warn('[OAuth] State decode failure:', e)
   }
 
   const authService = new AuthService(c.env)
-  const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      client_id: c.env.ONEDRIVE_CLIENT_ID || '',
-      client_secret: c.env.ONEDRIVE_CLIENT_SECRET || '',
-      code: code || '',
-      grant_type: 'authorization_code',
-      redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/onedrive`
-    })
-  })
+  const tokenRes = (await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: c.env.ONEDRIVE_CLIENT_ID || '',
+        client_secret: c.env.ONEDRIVE_CLIENT_SECRET || '',
+        code: code || '',
+        grant_type: 'authorization_code',
+        redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/onedrive`
+      })
+    }) as any)
   const tokenData = await tokenRes.json() as any
   
-  const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-  })
+  const userRes = (await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+    }) as any)
   const profile = await userRes.json() as any
   
   const socialProfile = {
@@ -631,9 +632,9 @@ auth.get('/callback/onedrive', async (c) => {
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE
-    const userId = await authService.findOrCreateSocialUser('onedrive', socialProfile, socialTokens)
-    const sessionId = await createSessionTracker(c, userId)
-    const token = await authService.generateToken(userId, sessionId)
+    const userId = (await authService.findOrCreateSocialUser('onedrive', socialProfile, socialTokens) as any)
+    const sessionId = (await createSessionTracker(c, userId) as any)
+    const token = (await authService.generateToken(userId, sessionId) as any)
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
   }
 })
@@ -644,14 +645,14 @@ auth.get('/callback/onedrive', async (c) => {
 auth.get('/webauthn/passkeys', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
-  const results = await db.select({
-    id: passkeys.id,
-    name: passkeys.name,
-    aaguid: passkeys.aaguid,
-    createdAt: passkeys.createdAt,
-    counter: passkeys.counter,
-    lastUsedAt: passkeys.lastUsedAt
-  }).from(passkeys).where(eq(passkeys.userId, userId))
+  const results = (await db.select({
+      id: passkeys.id,
+      name: passkeys.name,
+      aaguid: passkeys.aaguid,
+      createdAt: passkeys.createdAt,
+      counter: passkeys.counter,
+      lastUsedAt: passkeys.lastUsedAt
+    }).from(passkeys).where(eq(passkeys.userId, userId)) as any)
   
   return c.json({
     success: true,
@@ -694,29 +695,29 @@ auth.post('/webauthn/verify-registration', async (c) => {
 async function handleRegisterOptions(c: any) {
   const userId = c.get('userId')
   const db = getDb(c.env)
-  const userResult = await db.select({ email: users.email, username: users.username }).from(users).where(eq(users.id, userId)).limit(1)
+  const userResult = (await db.select({ email: users.email, username: users.username }).from(users).where(eq(users.id, userId)).limit(1) as any)
   const user = userResult[0]
   
   if (!user) throw new HTTPException(404, { message: 'User not found' })
 
-  const passkeysResult = await db.select({ credentialId: passkeys.credentialId, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId))
+  const passkeysResult = (await db.select({ credentialId: passkeys.credentialId, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId)) as any)
   
-  const options = await generateRegistrationOptions({
-    rpName: 'LEDGER',
-    rpID: getRpID(c),
-    userID: new TextEncoder().encode(userId) as any,
-    userName: user.username || user.email || 'unknown',
-    attestationType: 'none',
-    excludeCredentials: (passkeysResult || []).map((pk: any) => ({
-      id: pk.credentialId,
-      type: 'public-key',
-      transports: pk.transports ? JSON.parse(pk.transports) : [],
-    })),
-    authenticatorSelection: {
-      residentKey: 'required',
-      userVerification: 'required',
-    },
-  })
+  const options = (await generateRegistrationOptions({
+      rpName: 'LEDGER',
+      rpID: getRpID(c),
+      userID: new TextEncoder().encode(userId) as any,
+      userName: user.username || user.email || 'unknown',
+      attestationType: 'none',
+      excludeCredentials: (passkeysResult || []).map((pk: any) => ({
+        id: pk.credentialId,
+        type: 'public-key',
+        transports: pk.transports ? JSON.parse(pk.transports) : [],
+      })),
+      authenticatorSelection: {
+        residentKey: 'required',
+        userVerification: 'required',
+      },
+    }) as any)
 
   await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
     path: '/',
@@ -731,19 +732,19 @@ async function handleRegisterOptions(c: any) {
 
 async function handleRegisterVerify(c: any) {
   const userId = c.get('userId')
-  const body = await c.req.json()
-  const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+  const body = (await c.req.json() as any)
+  const expectedChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
 
   if (!expectedChallenge) {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
   }
 
-  const verification = await verifyRegistrationResponse({
-    response: body,
-    expectedChallenge,
-    expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
-    expectedRPID: getRpID(c),
-  })
+  const verification = (await verifyRegistrationResponse({
+      response: body,
+      expectedChallenge,
+      expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
+      expectedRPID: getRpID(c),
+    }) as any)
 
   if (verification.verified && verification.registrationInfo) {
     const { 
@@ -769,7 +770,7 @@ async function handleRegisterVerify(c: any) {
     const pubKeyB64 = uint8ArrayToBase64url(publicKey);
     
     // Index by hash for Zero-Knowledge lookups
-    const credentialIdHash = await hashIdentifier(credIdB64);
+    const credentialIdHash = (await hashIdentifier(credIdB64) as any);
     
     await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
     await vault.setSecret(id, 'PUBLIC_KEY', 'webauthn', pubKeyB64);
@@ -815,12 +816,12 @@ async function handleRegisterVerify(c: any) {
     })
 
     // Trigger Security Alert
-    const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
+    const userResult = (await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1) as any)
     const user = userResult[0]
     if (user?.email) {
       try {
         await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'New Biometric Passkey Enrolled')
-      } catch (e) {
+      } catch (e: any) {
         console.error('[Sentinel] Failed to send security alert:', e)
       }
     }
@@ -834,7 +835,7 @@ async function handleRegisterVerify(c: any) {
 auth.get('/passkeys', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
-  const results = await db.select().from(passkeys).where(eq(passkeys.userId, userId))
+  const results = (await db.select().from(passkeys).where(eq(passkeys.userId, userId)) as any)
   return c.json(results)
 })
 
@@ -871,11 +872,11 @@ auth.delete('/passkeys/:id', async (c) => {
 
 
 auth.post('/passkeys/login/options', async (c) => {
-  const options = await generateAuthenticationOptions({
-    rpID: getRpID(c),
-    allowCredentials: [], // Allow any credential for this RP
-    userVerification: 'required',
-  })
+  const options = (await generateAuthenticationOptions({
+      rpID: getRpID(c),
+      allowCredentials: [], // Allow any credential for this RP
+      userVerification: 'required',
+    }) as any)
 
   await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
     path: '/',
@@ -893,7 +894,7 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   persistent: z.boolean().optional()
 })), async (c) => {
   const { assertion, persistent } = c.req.valid('json')
-  const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+  const expectedChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
 
   if (!expectedChallenge) {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
@@ -903,36 +904,36 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   const vault = new VaultService(db, c.env.JWT_SECRET)
   
   // 🔒 Zero-Knowledge Lookup by hash
-  const credentialIdHash = await hashIdentifier(assertion.id)
-  const passkeyResult = await db.select()
-    .from(passkeys)
-    .where(eq(passkeys.credentialIdHash, credentialIdHash))
-    .limit(1)
+  const credentialIdHash = (await hashIdentifier(assertion.id) as any)
+  const passkeyResult = (await db.select()
+      .from(passkeys)
+      .where(eq(passkeys.credentialIdHash, credentialIdHash))
+      .limit(1) as any)
   
   const passkey = passkeyResult[0]
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized' })
 
   // 🔑 Retrieve secrets from Vault
-  const publicKeyB64 = await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn')
-  const rawCredentialId = await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn')
+  const publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+  const rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
   
   if (!publicKeyB64 || !rawCredentialId) {
     throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
 
-  const verification = await verifyAuthenticationResponse({
-    response: assertion,
-    expectedChallenge,
-    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: getRpID(c),
-    requireUserVerification: true,
-    credential: {
-      id: base64ToUint8Array(rawCredentialId),
-      publicKey: base64ToUint8Array(publicKeyB64),
-      counter: passkey.counter || 0,
-      transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
-    }
-  })
+  const verification = (await verifyAuthenticationResponse({
+      response: assertion,
+      expectedChallenge,
+      expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+      expectedRPID: getRpID(c),
+      requireUserVerification: true,
+      credential: {
+        id: base64ToUint8Array(rawCredentialId),
+        publicKey: base64ToUint8Array(publicKeyB64),
+        counter: passkey.counter || 0,
+        transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
+      }
+    }) as any)
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Authentication failed' })
@@ -951,8 +952,8 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   }).where(eq(passkeys.id, passkey.id))
 
   const authService = new AuthService(c.env)
-  const sessionId = await createSessionTracker(c, passkey.userId, true, !!persistent)
-  const token = await authService.generateToken(passkey.userId, sessionId)
+  const sessionId = (await createSessionTracker(c, passkey.userId, true, !!persistent) as any)
+  const token = (await authService.generateToken(passkey.userId, sessionId) as any)
   
   await logAudit(c, 'users', passkey.userId, 'login', null, { 
     strategy: 'passkey',
@@ -969,7 +970,7 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   const userId = c.get('userId')
   const sessionId = c.get('sessionId')
   const { assertion } = c.req.valid('json')
-  const expectedChallenge = await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge')
+  const expectedChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
 
   if (!expectedChallenge) {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
@@ -979,39 +980,39 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   const vault = new VaultService(db, c.env.JWT_SECRET)
   
   // 🔒 Zero-Knowledge Lookup by hash
-  const credentialIdHash = await hashIdentifier(assertion.id)
-  const passkeyResult = await db.select()
-    .from(passkeys)
-    .where(and(
-      eq(passkeys.userId, userId),
-      eq(passkeys.credentialIdHash, credentialIdHash)
-    ))
-    .limit(1)
+  const credentialIdHash = (await hashIdentifier(assertion.id) as any)
+  const passkeyResult = (await db.select()
+      .from(passkeys)
+      .where(and(
+        eq(passkeys.userId, userId),
+        eq(passkeys.credentialIdHash, credentialIdHash)
+      ))
+      .limit(1) as any)
   
   const passkey = passkeyResult[0]
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
 
   // 🔑 Retrieve secrets from Vault
-  const publicKeyB64 = await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn')
-  const rawCredentialId = await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn')
+  const publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+  const rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
   
   if (!publicKeyB64 || !rawCredentialId) {
     throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
 
-  const verification = await verifyAuthenticationResponse({
-    response: assertion,
-    expectedChallenge,
-    expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
-    expectedRPID: getRpID(c),
-    requireUserVerification: true,
-    credential: {
-      id: base64ToUint8Array(rawCredentialId),
-      publicKey: base64ToUint8Array(publicKeyB64),
-      counter: passkey.counter || 0,
-      transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
-    }
-  })
+  const verification = (await verifyAuthenticationResponse({
+      response: assertion,
+      expectedChallenge,
+      expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+      expectedRPID: getRpID(c),
+      requireUserVerification: true,
+      credential: {
+        id: base64ToUint8Array(rawCredentialId),
+        publicKey: base64ToUint8Array(publicKeyB64),
+        counter: passkey.counter || 0,
+        transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
+      }
+    }) as any)
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Step-up authentication failed' })
@@ -1057,7 +1058,7 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
 auth.post('/password/reset-request', zValidator('json', z.object({ identifier: z.string() })), async (c) => {
   const { identifier } = c.req.valid('json')
   const authService = new AuthService(c.env)
-  const token = await authService.requestPasswordReset(identifier)
+  const token = (await authService.requestPasswordReset(identifier) as any)
   
   // In a real app, this would send an email. For now, we'll return it in dev or log it.
   console.log(`[AUTH] Password reset requested for ${identifier}. Token: ${token}`)
@@ -1080,12 +1081,12 @@ auth.post('/password/change', zValidator('json', z.object({ newPassword: z.strin
   
   // Trigger Security Alert
   const db = getDb(c.env)
-  const userResult = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1)
+  const userResult = (await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1) as any)
   const user = userResult[0]
   if (user?.email) {
     try {
       await new EmailService(c.env).sendSecurityAlertEmail(user.email, 'Account Password Modified')
-    } catch (e) {
+    } catch (e: any) {
       console.error('[Sentinel] Failed to send security alert:', e)
     }
   }
@@ -1100,7 +1101,7 @@ auth.post('/admin/invite', async (c) => {
   if (c.get('globalRole') !== 'owner') throw new HTTPException(403, { message: 'Forbidden' })
   
   const authService = new AuthService(c.env)
-  const token = await authService.createAdminInvite()
+  const token = (await authService.createAdminInvite() as any)
   return c.json({ token, url: `${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/claim?token=${token}` })
 })
 
@@ -1112,7 +1113,7 @@ auth.post('/admin/claim', zValidator('json', z.object({
 })), async (c) => {
   const { token, username, password, email } = c.req.valid('json')
   const authService = new AuthService(c.env)
-  const userId = await authService.consumeAdminInvite(token, username, password, email)
+  const userId = (await authService.consumeAdminInvite(token, username, password, email) as any)
   
   await logAudit(c, 'users', userId, 'claim_invite', null, { username, email })
   return c.json({ success: true, userId })

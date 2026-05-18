@@ -11,7 +11,7 @@ import { PayScheduleModal } from './PayScheduleModal';
 export const PaySchedulesList: React.FC = () => {
     const { token } = useAuth();
     const { showToast } = useToast();
-    const { data: schedules = [], mutate: mutateSchedules } = useApi('/api/planning/pay-schedules');
+    const { data: schedules = [], mutate: mutateSchedules } = (useApi('/api/planning/pay-schedules') as any);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<any>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -20,10 +20,10 @@ export const PaySchedulesList: React.FC = () => {
         if (!token) return;
         
         const apiUrl = getApiUrl().replace(/\/$/, '');
-        const res = await fetch(`${apiUrl}/api/planning/pay-schedules/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/pay-schedules/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }) as any);
 
         if (res.ok) {
             showToast('Income source removed');

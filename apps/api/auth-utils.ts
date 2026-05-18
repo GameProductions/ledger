@@ -33,8 +33,8 @@ export function decodeBase64(base64: string): string {
  */
 export async function hashIdentifier(id: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(id);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const data = (encoder.encode(id) as any);
+  const hashBuffer = (await crypto.subtle.digest('SHA-256', data) as any);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -69,9 +69,9 @@ export async function verifyWebAuthnAssertion(
   options: VerifyAuthenticationResponseOpts
 ): Promise<boolean> {
   try {
-    const verification = await verifyAuthenticationResponse(options);
+    const verification = (await verifyAuthenticationResponse(options) as any);
     return verification.verified;
-  } catch (e) {
+  } catch (e: any) {
     console.error('[WebAuthn] Assertion verification failed', e);
     return false;
   }
@@ -81,12 +81,12 @@ export async function verifyWebAuthnRegistration(
   options: VerifyRegistrationResponseOpts
 ): Promise<{ success: boolean; registrationInfo?: any }> {
   try {
-    const verification = await verifyRegistrationResponse(options);
+    const verification = (await verifyRegistrationResponse(options) as any);
     return { 
       success: verification.verified, 
       registrationInfo: verification.registrationInfo 
     };
-  } catch (e) {
+  } catch (e: any) {
     console.error('[WebAuthn] Registration verification failed', e);
     return { success: false };
   }
@@ -97,8 +97,8 @@ const DEFAULT_ITERATIONS = 100000
 
 export async function hashToken(token: string): Promise<string> {
   const encoder = new TextEncoder()
-  const data = encoder.encode(token)
-  const hash = await crypto.subtle.digest('SHA-256', data)
+  const data = (encoder.encode(token) as any)
+  const hash = (await crypto.subtle.digest('SHA-256', data) as any)
   return Array.from(new Uint8Array(hash))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
@@ -107,16 +107,16 @@ export async function hashToken(token: string): Promise<string> {
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
   const salt = crypto.getRandomValues(new Uint8Array(16))
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']
-  )
+  const keyMaterial = (await crypto.subtle.importKey(
+      'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']
+    ) as any)
   const pbkdf2Params = {
     name: 'PBKDF2',
     salt,
     iterations: DEFAULT_ITERATIONS,
     hash: 'SHA-256'
   }
-  const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
+  const derivedBits = (await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256) as any)
   
   // Format: iterations.salt_base64.hash_base64
   const saltBase64 = uint8ArrayToBase64(salt)
@@ -130,16 +130,16 @@ export async function verifyPassword(password: string, storedHash: string): Prom
     const salt = base64ToUint8Array(saltBase64)
     
     const encoder = new TextEncoder()
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']
-    )
+    const keyMaterial = (await crypto.subtle.importKey(
+          'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey']
+        ) as any)
     const pbkdf2Params = {
       name: 'PBKDF2',
       salt,
       iterations: parseInt(iterations),
       hash: 'SHA-256'
     }
-    const derivedBits = await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256)
+    const derivedBits = (await crypto.subtle.deriveBits(pbkdf2Params, keyMaterial, 256) as any)
     const actualHashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits))
     
     const isMatched = timingSafeEqual(actualHashBase64, expectedHashBase64)

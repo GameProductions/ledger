@@ -3,7 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { Price } from './Price'
 
 const BudgetProgress: React.FC = () => {
-  const { data, loading } = useApi<{ budgets: any[], unallocatedBalanceCents: number }>('/api/planning/budgets')
+  const { data, loading } = (useApi<{ budgets: any[], unallocatedBalanceCents: number }>('/api/planning/budgets') as any)
 
   if (loading) return <div>Loading budgets...</div>
   const budgets = data?.budgets || []

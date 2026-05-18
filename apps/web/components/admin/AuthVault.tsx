@@ -48,7 +48,7 @@ export const AuthVault: React.FC = () => {
 
   const fetchPasskeys = useCallback(async () => {
     try {
-      const resp = await fetch('/api/admin/webauthn/passkeys');
+      const resp = (await fetch('/api/admin/webauthn/passkeys') as any);
       if (!resp.ok) return;
       const data = await resp.json() as any;
       setPasskeys(data.passkeys || []);
@@ -66,21 +66,21 @@ export const AuthVault: React.FC = () => {
   const handleRegisterPasskey = async () => {
     setRegistering(true);
     try {
-      const genResp = await fetch('/api/admin/webauthn/generate-registration', { method: 'POST' });
+      const genResp = (await fetch('/api/admin/webauthn/generate-registration', { method: 'POST' }) as any);
       if (!genResp.ok) throw new Error('Failed to generate challenge');
       const options = await genResp.json() as any;
 
       showToast('Hardware interaction required: touch your security key.', 'info');
-      const attResp = await startRegistration({ optionsJSON: options });
+      const attResp = (await startRegistration({ optionsJSON: options }) as any);
 
       const name = prompt('Label this hardware key:', 'Primary Admin Key');
       if (!name) return;
 
-      const verifyResp = await fetch('/api/admin/webauthn/verify-registration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attestation: attResp, name }),
-      });
+      const verifyResp = (await fetch('/api/admin/webauthn/verify-registration', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ attestation: attResp, name }),
+            }) as any);
 
       if (verifyResp.ok) {
         showToast('Administrative passkey anchored to hardware.', 'success');
@@ -97,7 +97,7 @@ export const AuthVault: React.FC = () => {
 
   const handleRevoke = async (id: string) => {
     try {
-      const resp = await fetch(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' });
+      const resp = (await fetch(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' }) as any);
       if (resp.ok) {
         showToast(`Passkey revoked.`, 'success');
         setConfirmRevokeId(null);

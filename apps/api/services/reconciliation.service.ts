@@ -27,7 +27,7 @@ export class ReconciliationService {
     const id = this.env.RECONCILIATION_AGENT.idFromName(householdId);
     const agent = this.env.RECONCILIATION_AGENT.get(id);
     
-    const result = await agent.reconcile(householdId);
+    const result = (await agent.reconcile(householdId) as any);
     return result.proposalsGenerated || 0;
   }
 
@@ -44,12 +44,12 @@ export class ReconciliationService {
       return
     }
 
-    const proposals = await this.db.select().from(reconciliationProposals).where(
-      and(
-        eq(reconciliationProposals.householdId, householdId),
-        inArray(reconciliationProposals.id, proposalIds)
-      )
-    )
+    const proposals = (await this.db.select().from(reconciliationProposals).where(
+          and(
+            eq(reconciliationProposals.householdId, householdId),
+            inArray(reconciliationProposals.id, proposalIds)
+          )
+        ) as any)
 
     for (const p of proposals) {
       const b1 = this.db.update(transactions)

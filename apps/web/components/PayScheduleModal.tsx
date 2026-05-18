@@ -16,7 +16,7 @@ interface PayScheduleModalProps {
 export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onClose, onUpdate, schedule }) => {
     const { token, householdId } = useAuth();
     const { showToast } = useToast();
-    const { data: household } = useApi('/api/user/households/current');
+    const { data: household } = (useApi('/api/user/households/current') as any);
     const [loading, setLoading] = React.useState(false);
 
     // Form State
@@ -53,10 +53,10 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
         setLoading(true);
         const apiUrl = getApiUrl().replace(/\/$/, '');
-        const res = await fetch(`${apiUrl}/api/planning/pay-schedules/${schedule.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/pay-schedules/${schedule.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }) as any);
 
         if (res.ok) {
             showToast('Income source removed');
@@ -89,14 +89,14 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
         const method = schedule ? 'PATCH' : 'POST';
         const url = schedule ? `${apiUrl}/api/planning/pay-schedules/${schedule.id}` : `${apiUrl}/api/planning/pay-schedules`;
 
-        const res = await fetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
+        const res = (await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                }) as any);
 
         if (res.ok) {
             showToast(schedule ? 'Income schedule updated' : 'New income source added');

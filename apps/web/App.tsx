@@ -96,7 +96,7 @@ const AppContent: React.FC = () => {
       setRetryAttempt(attempt > 1 ? attempt : 0)
       try {
         const apiUrl = getApiUrl()
-        const res = await fetch(`${apiUrl}/api/config`)
+        const res = (await fetch(`${apiUrl}/api/config`) as any)
         
         if (res.status === 503) {
           setIsMaintenance(true)
@@ -116,11 +116,11 @@ const AppContent: React.FC = () => {
            throw new Error(`Connection Error: ${res.status}`)
         }
 
-        const config = await res.json()
+        const config = (await res.json() as any)
         setIsMaintenance(config.MAINTENANCE_MODE === 'true' || config.MAINTENANCE_MODE === true)
         setIsError(false)
         setRetryAttempt(0)
-      } catch (e) {
+      } catch (e: any) {
         if (attempt < 3) {
           // Linear backoff for standard errors
           await new Promise(r => setTimeout(r, 2000 * attempt))

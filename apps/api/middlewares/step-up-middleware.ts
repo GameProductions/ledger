@@ -22,9 +22,9 @@ export const stepUpMiddleware = async (c: Context<{ Bindings: Bindings, Variable
   }
 
   const db = getDb(c.env)
-  const sessionResult = await db.select({ 
-    passkeyVerifiedAt: sessions.passkeyVerifiedAt 
-  }).from(sessions).where(eq(sessions.id, sessionId)).limit(1)
+  const sessionResult = (await db.select({ 
+      passkeyVerifiedAt: sessions.passkeyVerifiedAt 
+    }).from(sessions).where(eq(sessions.id, sessionId)).limit(1) as any)
 
   const session = sessionResult[0]
   const MAX_STEP_UP_AGE_MS = 15 * 60 * 1000 // 15 Minutes window for high-risk actions

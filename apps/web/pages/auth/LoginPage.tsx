@@ -41,17 +41,17 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
+      const res = (await fetch(`${apiUrl}/api/user/profile`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+              credentials: 'include'
+            }) as any);
       
       if (!res.ok) {
         showToast('Failed to start session: Invalid profile response', 'error');
         return;
       }
       
-      const envelope = await res.json();
+      const envelope = (await res.json() as any);
       if (!envelope.success || !envelope.data) {
         showToast('Login sequence failed: Malformed profile envelope', 'error');
         return;
@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
         login(token, profile);
         window.location.hash = '#/';
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('OAuth login failed', 'error');
     } finally {
       setLoading(false);
@@ -81,24 +81,24 @@ const LoginPage: React.FC = () => {
     setLoading(true)
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username, 
-          password, 
-          recoveryCode: recoveryCode || undefined,
-          persistent 
-        })
-      })
+      const res = (await fetch(`${apiUrl}/api/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                username, 
+                password, 
+                recoveryCode: recoveryCode || undefined,
+                persistent 
+              })
+            }) as any)
       
       if (!res.ok) {
-        const envelope = await res.json()
+        const envelope = (await res.json() as any)
         showToast(`Login Failed: ${envelope.error || 'Unknown error'}`, 'error')
         return
       }
 
-      const loginEnvelope = await res.json()
+      const loginEnvelope = (await res.json() as any)
       if (!loginEnvelope.success || !loginEnvelope.data) {
         showToast('Login Protocol Error: Invalid server response', 'error')
         return
@@ -113,17 +113,17 @@ const LoginPage: React.FC = () => {
       }
 
       if (authData.token) {
-        const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
-          headers: { 'Authorization': `Bearer ${authData.token}` },
-          credentials: 'include'
-        })
+        const profileRes = (await fetch(`${apiUrl}/api/user/profile`, {
+                  headers: { 'Authorization': `Bearer ${authData.token}` },
+                  credentials: 'include'
+                }) as any)
 
         if (!profileRes.ok) {
           showToast('Login sequence failed: Profile retrieval error', 'error');
           return;
         }
 
-        const profileEnvelope = await profileRes.json()
+        const profileEnvelope = (await profileRes.json() as any)
         if (!profileEnvelope.success || !profileEnvelope.data) {
           showToast('Security Identity Error: Missing profile data', 'error');
           return;
@@ -145,7 +145,7 @@ const LoginPage: React.FC = () => {
                  name: profile.displayName
                });
                navigator.credentials.store(cred);
-             } catch (e) {
+             } catch (e: any) {
                console.warn('[Credential Manager] Storage failed:', e);
              }
            }
@@ -153,7 +153,7 @@ const LoginPage: React.FC = () => {
            window.location.hash = '#/'
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Network error during login.', 'error')
     } finally {
       setLoading(false)
@@ -163,17 +163,17 @@ const LoginPage: React.FC = () => {
   const handleTokenLogin = async (token: string) => {
     try {
       const apiUrl = getApiUrl()
-      const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      })
+      const profileRes = (await fetch(`${apiUrl}/api/user/profile`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+              credentials: 'include'
+            }) as any)
 
       if (!profileRes.ok) {
         showToast('Login sequence failed: Profile retrieval error', 'error');
         return;
       }
 
-      const profileEnvelope = await profileRes.json()
+      const profileEnvelope = (await profileRes.json() as any)
       if (!profileEnvelope.success || !profileEnvelope.data) {
         showToast('Security Identity Error: Missing profile data', 'error');
         return;
@@ -182,7 +182,7 @@ const LoginPage: React.FC = () => {
       const profile = profileEnvelope.data;
       login(token, profile)
       window.location.hash = '#/'
-    } catch (e) {
+    } catch (e: any) {
       showToast('Network error during profile sync.', 'error')
     }
   }
@@ -191,27 +191,27 @@ const LoginPage: React.FC = () => {
     setLoading(true)
     try {
       const apiUrl = getApiUrl()
-      const optRes = await fetch(`${apiUrl}/api/auth/passkeys/login/options`, { 
-        method: 'POST',
-        credentials: 'include'
-      })
+      const optRes = (await fetch(`${apiUrl}/api/auth/passkeys/login/options`, { 
+              method: 'POST',
+              credentials: 'include'
+            }) as any)
       
-      const optEnvelope = await optRes.json()
+      const optEnvelope = (await optRes.json() as any)
       if (!optEnvelope.success || !optEnvelope.data) {
         showToast('Biometric Protocol Error: Options delivery failed', 'error')
         return
       }
       
-      const assertion = await startAuthentication({ optionsJSON: optEnvelope.data })
+      const assertion = (await startAuthentication({ optionsJSON: optEnvelope.data }) as any)
       
-      const verifyRes = await fetch(`${apiUrl}/api/auth/passkeys/login/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ assertion })
-      })
+      const verifyRes = (await fetch(`${apiUrl}/api/auth/passkeys/login/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ assertion })
+            }) as any)
       
-      const authEnvelope = await verifyRes.json()
+      const authEnvelope = (await verifyRes.json() as any)
       if (authEnvelope.success && authEnvelope.data?.token) {
         handleTokenLogin(authEnvelope.data.token)
       } else {
@@ -238,7 +238,7 @@ const LoginPage: React.FC = () => {
       })
       showToast('Recovery process initiated. Check console.', 'success')
       setIsForgotModalOpen(false)
-    } catch (e) {
+    } catch (e: any) {
       showToast('Recovery failed', 'error')
     }
   }
@@ -246,17 +246,17 @@ const LoginPage: React.FC = () => {
   const handleResetPassword = async () => {
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/auth/password/reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: resetToken, newPassword })
-      })
+      const res = (await fetch(`${apiUrl}/api/auth/password/reset`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: resetToken, newPassword })
+            }) as any)
       if (res.ok) {
         showToast('Password reset successfully', 'success')
         setResetToken(null)
         window.location.hash = '#/login'
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Reset failed', 'error')
     }
   }

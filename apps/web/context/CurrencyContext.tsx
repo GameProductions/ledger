@@ -10,8 +10,8 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
 
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { data: profile } = useApi('/api/user/profile')
-  const { data: globalConfig } = useApi('/api/config')
+  const { data: profile } = (useApi('/api/user/profile') as any)
+  const { data: globalConfig } = (useApi('/api/config') as any)
   
   const settings = useMemo(() => {
     try {

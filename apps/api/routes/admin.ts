@@ -28,9 +28,9 @@ admin.route('/webauthn', webauthnRoutes)
 // Dashboard Stats
 admin.get('/stats', async (c) => {
   const db = getDb(c.env)
-  const userCount = await db.select({ count: count() }).from(users).then(res => res[0].count)
-  const activeToday = await db.select({ count: count() }).from(users).where(sql`last_active_at > date("now", "-1 day")`).then(res => res[0].count)
-  const householdCount = await db.select({ count: count() }).from(households).then(res => res[0].count)
+  const userCount = (await db.select({ count: count() }).from(users).then(res => res[0].count) as any)
+  const activeToday = (await db.select({ count: count() }).from(users).where(sql`last_active_at > date("now", "-1 day")`).then(res => res[0].count) as any)
+  const householdCount = (await db.select({ count: count() }).from(households).then(res => res[0].count) as any)
   
   return c.json({
     success: true,
@@ -49,17 +49,17 @@ admin.get('/search', async (c) => {
   if (q.length < 2) return c.json({ success: true, data: { users: [], registry: [] } })
   const db = getDb(c.env)
 
-  const usersRes = await db.select({
-    id: users.id,
-    email: users.email,
-    displayName: users.displayName
-  }).from(users).where(or(like(users.email, `%${q}%`), like(users.displayName, `%${q}%`))).limit(10)
+  const usersRes = (await db.select({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName
+    }).from(users).where(or(like(users.email, `%${q}%`), like(users.displayName, `%${q}%`))).limit(10) as any)
 
-  const registryRes = await db.select({
-    id: systemRegistry.id,
-    name: systemRegistry.name,
-    itemType: systemRegistry.itemType
-  }).from(systemRegistry).where(like(systemRegistry.name, `%${q}%`)).limit(10)
+  const registryRes = (await db.select({
+      id: systemRegistry.id,
+      name: systemRegistry.name,
+      itemType: systemRegistry.itemType
+    }).from(systemRegistry).where(like(systemRegistry.name, `%${q}%`)).limit(10) as any)
 
   return c.json({ success: true, data: { users: usersRes, registry: registryRes } })
 })

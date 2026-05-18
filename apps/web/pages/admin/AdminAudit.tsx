@@ -11,12 +11,12 @@ const AdminAudit: React.FC = () => {
       try {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/admin/audit`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
+        const res = (await fetch(`${apiUrl}/api/admin/audit`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                }) as any);
+        const data = (await res.json() as any);
         setLogs(data.data || []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch activity logs:', err);
       } finally {
         setLoading(false);

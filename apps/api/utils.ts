@@ -13,7 +13,7 @@ export const encrypt = async (text: string, key: string) => {
 export const decrypt = async (encryptedData: string, key: string) => {
   try {
     return await decryptData(encryptedData, key)
-  } catch (e) {
+  } catch (e: any) {
     return 'DECRYPTION_FAILED'
   }
 }

@@ -80,14 +80,14 @@ app.use('*', async (c, next) => {
       // If cache is empty or unavailable, we must check DB to ensure we don't bypass on cache flush
       try {
         const db = getDb(c.env)
-        const dbConfig = await db.select({ configValue: systemConfig.configValue })
-          .from(systemConfig)
-          .where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
-          .limit(1)
-          .then(res => res[0])
+        const dbConfig = (await db.select({ configValue: systemConfig.configValue })
+                  .from(systemConfig)
+                  .where(eq(systemConfig.configKey, 'MAINTENANCE_MODE'))
+                  .limit(1)
+                  .then(res => res[0]) as any)
         
         if (dbConfig?.configValue === 'true') isSoftLocked = true
-      } catch (dbErr) {
+      } catch (dbErr: any) {
         console.error('[Maintenance Check] Database query failed:', dbErr)
       }
     }
@@ -104,7 +104,7 @@ app.use('*', async (c, next) => {
       // Fallback: Perform background fetch to Foundation
       const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://foundation.gpnet.dev' : 'http://localhost:8787');
       try {
-        const res = await fetch(`${foundationUrl}/api/fleet/status`);
+        const res = (await fetch(`${foundationUrl}/api/fleet/status`) as any);
         if (res.ok) {
           const data = await res.json() as { globalMaintenance: boolean };
           const statusStr = String(data.globalMaintenance);
@@ -124,17 +124,17 @@ app.use('*', async (c, next) => {
             }
           }
         }
-      } catch (fetchErr) {
+      } catch (fetchErr: any) {
         console.warn('[Maintenance Fetch] Foundation Unreachable:', fetchErr);
       }
     }
 
     // --- LEVEL 2.5: Project Status Check ---
-    const remoteIndividualCache = await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.get('project:maintenance:ledger')
+    const remoteIndividualCache = (await (c.env.FLEET_SECURITY_CACHE || c.env.CACHE)?.get('project:maintenance:ledger') as any)
     if (remoteIndividualCache === 'true') {
       isGlobalLocked = true;
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('[Maintenance Check Error]', e)
     // Fallback: If DB/Cache is unreachable, we default to whatever the Hard Lock says
   }
@@ -161,10 +161,10 @@ app.use('/api/*', async (c, next) => {
   
   // 1. IP Rate Limiting
   if (path.startsWith('/api/auth')) {
-    const res = await ipRateLimit('AUTH')(c, async () => {})
+    const res = (await ipRateLimit('AUTH')(c, async () => {}) as any)
     if (res instanceof Response) return res
   } else {
-    const res = await ipRateLimit('API')(c, async () => {})
+    const res = (await ipRateLimit('API')(c, async () => {}) as any)
     if (res instanceof Response) return res
   }
 
@@ -188,7 +188,7 @@ app.get('/api/health', async (c) => {
   let dbStatus = "connected";
   try {
      await getDb(c.env).select({ configKey: systemConfig.configKey }).from(systemConfig).limit(1);
-  } catch (e) {
+  } catch (e: any) {
      dbStatus = "error";
   }
 
@@ -206,7 +206,7 @@ app.get('/api/health', async (c) => {
       globalCache = await kv.get('global:maintenance');
       projectCache = await kv.get('project:maintenance:ledger');
     }
-  } catch (e) {
+  } catch (e: any) {
     console.warn(`[System] Health check failed to reach KV:`, e);
   }
   
@@ -254,7 +254,7 @@ const safeJsonParse = (val: string | null) => {
 // 5. System Configuration & Theme Handling
 app.get('/api/config', async (c) => {
   try {
-    const cached = await c.env.FLEET_SECURITY_CACHE?.get('API_CONFIG', 'json')
+    const cached = (await c.env.FLEET_SECURITY_CACHE?.get('API_CONFIG', 'json') as any)
     if (cached) return c.json({ success: true, data: cached })
 
     // --- System Configuration (Fleet Security v6.1 Filtered) ---
@@ -263,14 +263,14 @@ app.get('/api/config', async (c) => {
     
     let publicConfig = {};
     try {
-      const config = await db.select().from(systemConfig);
+      const config = (await db.select().from(systemConfig) as any);
       publicConfig = config
         .filter(conf => PUBLIC_CONFIG_KEYS.includes(conf.configKey as string))
         .reduce((acc, curr) => ({ 
           ...acc, 
           [curr.configKey as string]: safeJsonParse(curr.configValue as string) 
         }), {});
-    } catch (dbErr) {
+    } catch (dbErr: any) {
       console.error('[Config API] Database fetch failed:', dbErr);
     }
 
@@ -286,7 +286,7 @@ app.get('/api/config', async (c) => {
     }
 
     return c.json({ success: true, data: result })
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Config API] Critical failure:', err)
     return c.json({ 
       success: true, 
@@ -297,30 +297,30 @@ app.get('/api/config', async (c) => {
 
 app.get('/api/theme/broadcast', async (c) => {
   try {
-    const cached = await c.env.CACHE?.get('THEME_BROADCAST', 'json')
+    const cached = (await c.env.CACHE?.get('THEME_BROADCAST', 'json') as any)
     if (cached) return c.json({ success: true, data: cached })
 
     const db = getDb(c.env)
-    const config = await db.select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, "broadcast_theme_id")).limit(1).then(res => res[0]);
+    const config = (await db.select({ configValue: systemConfig.configValue }).from(systemConfig).where(eq(systemConfig.configKey, "broadcast_theme_id")).limit(1).then(res => res[0]) as any);
     if (!config || !config.configValue) return c.json({ success: true, data: { themeId: null } })
     
     const result = { themeId: JSON.parse(config.configValue as string) }
     if (c.env.CACHE) c.executionCtx.waitUntil(c.env.CACHE.put('THEME_BROADCAST', JSON.stringify(result), { expirationTtl: 60 }))
     return c.json({ success: true, data: result })
-  } catch (e) {
+  } catch (e: any) {
     return c.json({ success: true, data: { themeId: null } })
   }
 })
 
 app.post('/api/theme/broadcast', authMiddleware, async (c) => {
-  const { themeId } = await c.req.json()
+  const { themeId } = (await c.req.json() as any)
   const db = getDb(c.env)
   
-  const prevState = await db.select({ configValue: systemConfig.configValue })
-    .from(systemConfig)
-    .where(eq(systemConfig.configKey, "broadcast_theme_id"))
-    .limit(1)
-    .then(res => res[0]);
+  const prevState = (await db.select({ configValue: systemConfig.configValue })
+      .from(systemConfig)
+      .where(eq(systemConfig.configKey, "broadcast_theme_id"))
+      .limit(1)
+      .then(res => res[0]) as any);
 
   await db.insert(systemConfig).values({
     id: crypto.randomUUID(),

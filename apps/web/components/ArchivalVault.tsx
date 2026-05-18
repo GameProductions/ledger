@@ -23,17 +23,17 @@ export function ArchivalVault() {
   const restoreEntity = async (type: string, id: string) => {
     try {
       const apiUrl = getApiUrl().replace(/\/$/, '');
-      const res = await fetch(`${apiUrl}/api/user/households/restore/${type}/${id}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${apiUrl}/api/user/households/restore/${type}/${id}`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
         showToast('Entity successfully resurrected from Archive', 'success');
         setArchived(a => a.filter(x => x.id !== id));
       } else {
         showToast('Restoration failed', 'error');
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Restoration error', 'error');
     }
   };

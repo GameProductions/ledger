@@ -3,7 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 
 const UserProfile: React.FC = () => {
-  const { data: profile } = useApi('/api/user/profile')
+  const { data: profile } = (useApi('/api/user/profile') as any)
   const [name, setName] = useState('')
   const [editing, setEditing] = useState(false)
 

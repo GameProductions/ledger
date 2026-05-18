@@ -14,10 +14,10 @@ const BackupHub: React.FC = () => {
   const handleCloudBackup = async (provider: string) => {
     setLoading(provider);
     try {
-      const res = await fetch(`${getApiUrl()}/api/backup/cloud/${provider}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${getApiUrl()}/api/backup/cloud/${provider}`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (!res.ok) throw new Error(await res.text());
       showToast(`Master Backup successfully synced to ${provider}`, 'success');
     } catch (e: any) {
@@ -30,10 +30,10 @@ const BackupHub: React.FC = () => {
   const downloadLocalBackup = async () => {
     setLoading('local');
     try {
-      const res = await fetch(`${getApiUrl()}/api/backup/export`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${getApiUrl()}/api/backup/export`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -52,14 +52,14 @@ const BackupHub: React.FC = () => {
     
     setLoading('restore');
     try {
-      const text = await file.text();
+      const text = (await file.text() as any);
       const backup = JSON.parse(text);
       
-      const res = await fetch(`${getApiUrl()}/api/backup/restore`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(backup)
-      });
+      const res = (await fetch(`${getApiUrl()}/api/backup/restore`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify(backup)
+            }) as any);
       
       if (!res.ok) throw new Error(await res.text());
       showToast('Master Restore complete. Data has been synchronized.', 'success');

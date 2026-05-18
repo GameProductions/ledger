@@ -11,7 +11,7 @@ import { getApiUrl } from '../utils/api';
 const InvestmentPortfolioPage: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast, showConfirm } = useToast();
-  const { data: investments = [], mutate } = useApi('/api/financials/investments');
+  const { data: investments = [], mutate } = (useApi('/api/financials/investments') as any);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   
   const [isAdding, setIsAdding] = useState(false);
@@ -27,21 +27,21 @@ const InvestmentPortfolioPage: React.FC = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${getApiUrl()}/api/financials/investments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify(newInv)
-      });
+      const res = (await fetch(`${getApiUrl()}/api/financials/investments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify(newInv)
+            }) as any);
       if (res.ok) {
         showToast('Asset Recorded', 'success');
         setIsAdding(false);
         mutate();
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Record failed', 'error');
     }
   };
@@ -58,7 +58,7 @@ const InvestmentPortfolioPage: React.FC = () => {
       showToast('Asset Removed', 'success');
       setConfirmDeleteId(null);
       mutate();
-    } catch (err) {
+    } catch (err: any) {
       showToast('Deletion failed', 'error');
     }
   };

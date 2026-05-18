@@ -4,9 +4,9 @@ import { eq, like, desc, and } from 'drizzle-orm'
 
 export const inferTransactionDetails = async (db: ReturnType<typeof getDb>, householdId: string, rawDescription: string) => {
   // 1. Check exact explicit rules
-  const rules = await db.select()
-    .from(transactionPairingRules)
-    .where(eq(transactionPairingRules.householdId, householdId))
+  const rules = (await db.select()
+      .from(transactionPairingRules)
+      .where(eq(transactionPairingRules.householdId, householdId)) as any)
   
   for (const rule of rules) {
     if (rawDescription.toLowerCase().includes(rule.pattern.toLowerCase())) {
@@ -20,17 +20,17 @@ export const inferTransactionDetails = async (db: ReturnType<typeof getDb>, hous
   }
 
   // 2. No explicit rule found, do historical frequency search
-  const historyMatches = await db.select({
-    categoryId: transactions.categoryId,
-    providerId: transactions.providerId
-  })
-    .from(transactions)
-    .where(and(
-      eq(transactions.householdId, householdId),
-      like(transactions.description, `%${rawDescription.substring(0, 8)}%`) // fuzzy match prefix
-    ))
-    .orderBy(desc(transactions.transactionDate))
-    .limit(10)
+  const historyMatches = (await db.select({
+      categoryId: transactions.categoryId,
+      providerId: transactions.providerId
+    })
+      .from(transactions)
+      .where(and(
+        eq(transactions.householdId, householdId),
+        like(transactions.description, `%${rawDescription.substring(0, 8)}%`) // fuzzy match prefix
+      ))
+      .orderBy(desc(transactions.transactionDate))
+      .limit(10) as any)
 
   if (historyMatches.length > 0) {
     // Basic heuristics: majority vote

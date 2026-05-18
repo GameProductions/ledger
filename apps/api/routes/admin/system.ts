@@ -13,7 +13,7 @@ const system = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 system.get('/config', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemConfig).orderBy(systemConfig.configKey)
+  const results = (await db.select().from(systemConfig).orderBy(systemConfig.configKey) as any)
   return c.json({ success: true, data: results || [] })
 })
 
@@ -29,7 +29,7 @@ system.patch('/config/:id', zValidator('json', UpdateSystemConfigSchema), async 
 
 system.get('/features', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey)
+  const results = (await db.select().from(systemFeatureFlags).orderBy(systemFeatureFlags.featureKey) as any)
   return c.json({ success: true, data: results || [] })
 })
 
@@ -73,12 +73,12 @@ system.post('/maintenance/migrate-secrets', async (c) => {
 
 system.get('/registry', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(systemRegistry).orderBy(systemRegistry.name)
+  const results = (await db.select().from(systemRegistry).orderBy(systemRegistry.name) as any)
   return c.json({ success: true, data: results || [] })
 })
 
 system.post('/registry', zValidator('json', SystemRegistrySchema), async (c) => {
-  const data = c.req.valid('json')
+  const data = (c.req.valid('json') as any)
   const db = getDb(c.env)
   const id = crypto.randomUUID()
   await db.insert(systemRegistry).values({ 
@@ -104,7 +104,7 @@ system.post('/self-heal', async (c) => {
   const db = getDb(c.env)
   try {
     // Check if systemConfig has anything
-    const countRes = await db.select({ val: sql`count(*)` }).from(systemConfig)
+    const countRes = (await db.select({ val: sql`count(*)` }).from(systemConfig) as any)
     const count = Number(countRes[0]?.val || 0)
     
     if (count === 0) {

@@ -111,10 +111,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const fetchBroadcast = async () => {
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/theme/broadcast`);
-        const data = await res.json();
+        const res = (await fetch(`${apiUrl}/api/theme/broadcast`) as any);
+        const data = (await res.json() as any);
         if (data.themeId) setBroadcastThemeId(data.themeId);
-      } catch (e) {}
+      } catch (e: any) {}
     };
     fetchBroadcast();
     const interval = setInterval(fetchBroadcast, 60000); // Check every minute

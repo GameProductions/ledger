@@ -11,7 +11,7 @@ import { ShieldCheck, Terminal } from 'lucide-react'
 
 const PreferencesPage: React.FC = () => {
   const { token, householdId } = useAuth()
-  const { data: profile } = useApi('/api/user/profile')
+  const { data: profile } = (useApi('/api/user/profile') as any)
   const settings = JSON.parse(profile?.settingsJson || '{}')
 
   const updateSettings = async (newSettings: any) => {

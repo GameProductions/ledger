@@ -16,7 +16,7 @@ interface LiabilitySplitterProps {
 export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, targetType, totalAmountCents, onComplete }) => {
     const { token, user } = useAuth();
     const { showToast } = useToast();
-    const { data: household } = useApi('/api/user/households/current');
+    const { data: household } = (useApi('/api/user/households/current') as any);
     
     const [splitMode, setSplitMode] = useState<'percentage' | 'fixed'>('percentage');
     const [assignments, setAssignments] = useState<Record<string, number>>({});
@@ -50,20 +50,20 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
         }));
 
         try {
-            const res = await fetch(`${getApiUrl()}/api/planning/splits`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ splits })
-            });
+            const res = (await fetch(`${getApiUrl()}/api/planning/splits`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ splits })
+                        }) as any);
 
             if (res.ok) {
                 showToast('Liability delegated securely.');
                 if (onComplete) onComplete();
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
             showToast('Failed to delegate liability, check connection.');
         }

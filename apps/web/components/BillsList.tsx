@@ -10,7 +10,7 @@ import { Price } from './Price';
 
 export const BillsList: React.FC = () => {
     const { token, householdId, user } = useAuth();
-    const { data: bills = [], loading, mutate } = useApi('/api/planning/bills');
+    const { data: bills = [], loading, mutate } = (useApi('/api/planning/bills') as any);
     const { showToast } = useToast();
     
     // UI State for Modals
@@ -21,13 +21,13 @@ export const BillsList: React.FC = () => {
         if (!token) return;
         const apiUrl = getApiUrl().replace(/\/$/, '');
 
-        const res = await fetch(`${apiUrl}/api/planning/bills/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'x-household-id': householdId || ''
-            }
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/bills/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'x-household-id': householdId || ''
+                    }
+                }) as any);
 
         if (res.ok) {
             showToast('Bill removed from ledger');
@@ -39,15 +39,15 @@ export const BillsList: React.FC = () => {
         if (!token) return;
         const apiUrl = getApiUrl().replace(/\/$/, '');
 
-        const res = await fetch(`${apiUrl}/api/planning/bills/${id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'x-household-id': householdId || ''
-            },
-            body: JSON.stringify({ status: newStatus })
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/bills/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'x-household-id': householdId || ''
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                }) as any);
 
         if (res.ok) {
             showToast(`Bill marked as ${newStatus}`);
@@ -57,14 +57,14 @@ export const BillsList: React.FC = () => {
 
     const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
         if (!token) return;
-        const res = await fetch(`${getApiUrl()}/api/planning/splits/bill/${targetId}/public`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ isPublic: isPublic })
-        });
+        const res = (await fetch(`${getApiUrl()}/api/planning/splits/bill/${targetId}/public`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ isPublic: isPublic })
+                }) as any);
 
         if (res.ok) {
             showToast(isPublic ? 'Master Ledger is now public' : 'Master Ledger is now private');

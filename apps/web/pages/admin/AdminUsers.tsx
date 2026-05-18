@@ -43,16 +43,16 @@ const UserDetailsModal: React.FC<{
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/users/${userId}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         setDetails(data.data);
       } else {
         showToast(data.error || 'User Search Failed', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch user details:', err);
     } finally {
       setLoading(false);
@@ -441,16 +441,16 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+      const res = (await fetch(`${apiUrl}/api/admin/users`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(formData)
+            }) as any);
       
-      const data = await res.json();
+      const data = (await res.json() as any);
       if (!res.ok) throw new Error(data.error || 'Creation failed');
       
       onSuccess();
@@ -613,16 +613,16 @@ const AdminUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/users`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         setUsers(data.data || []);
       } else {
         showToast(data.error || 'Failed to resolve users', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch users:', err);
     } finally {
       setLoading(false);
@@ -652,10 +652,10 @@ const AdminUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/${userToDelete.id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${apiUrl}/api/admin/users/${userToDelete.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
         showToast('User account successfully deleted', 'success');
         setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
@@ -674,18 +674,18 @@ const AdminUsers: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/merge`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceId: mergeSource, targetId: mergeTarget })
-      });
+      const res = (await fetch(`${apiUrl}/api/admin/users/merge`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sourceId: mergeSource, targetId: mergeTarget })
+            }) as any);
       if (res.ok) {
         showToast('Accounts successfully merged', 'success');
         fetchUsers();
         setMergeSource(null);
         setMergeTarget(null);
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(err.error || 'Merge failed', 'error');
       }
     } finally {
@@ -978,11 +978,11 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/users/${target.id}/impersonate`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/users/${target.id}/impersonate`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       
       if (data.token && data.impersonationContext) {
         const { householdId, profile, globalRole } = data.impersonationContext;

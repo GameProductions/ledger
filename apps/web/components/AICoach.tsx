@@ -18,18 +18,18 @@ const AICoach: React.FC = () => {
     setLoading(true)
 
     try {
-      const res = await fetch(`${getApiUrl()}/api/interop/coach/ask/ask`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({ question: question })
-      })
-      const data = await res.json()
+      const res = (await fetch(`${getApiUrl()}/api/interop/coach/ask/ask`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({ question: question })
+            }) as any)
+      const data = (await res.json() as any)
       setMessages(prev => [...prev, { role: 'coach', text: data.answer }])
-    } catch (e) {
+    } catch (e: any) {
       setMessages(prev => [...prev, { role: 'coach', text: "Sorry, I'm having trouble connecting to the backend right now." }])
     } finally {
       setLoading(false)

@@ -19,10 +19,10 @@ interop.post('/coach/ask/ask', zValidator('json', z.object({
   const db = getDb(c.env)
 
   // Fetch some context for the coach
-  const totalSpend = await db.select({ total: sql`sum(amountCents)` })
-    .from(transactions)
-    .where(eq(transactions.householdId, householdId))
-    .then(res => res[0]?.total || 0)
+  const totalSpend = (await db.select({ total: sql`sum(amountCents)` })
+      .from(transactions)
+      .where(eq(transactions.householdId, householdId))
+      .then(res => res[0]?.total || 0) as any)
 
   const answer = getCoachingAnswer(question, Number(totalSpend))
 
@@ -34,9 +34,9 @@ interop.get('/developer/webhooks', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   
-  const results = await db.select()
-    .from(webhooks)
-    .where(eq(webhooks.householdId, householdId))
+  const results = (await db.select()
+      .from(webhooks)
+      .where(eq(webhooks.householdId, householdId)) as any)
     
   return c.json(results)
 })
@@ -52,7 +52,7 @@ interop.post('/developer/webhooks', zValidator('json', z.object({
   const id = crypto.randomUUID()
   const rawSecret = 'whk_' + crypto.randomUUID().replace(/-/g, '')
   
-  const secret = await encrypt(rawSecret, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  const secret = (await encrypt(rawSecret, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET) as any)
   
   await db.insert(webhooks).values({
     id,

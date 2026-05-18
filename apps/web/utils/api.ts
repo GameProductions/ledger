@@ -25,15 +25,15 @@ export const secureRequest = async (path: string, options: RequestInit = {}) => 
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...options,
-    headers,
-  });
+  const response = (await fetch(`${apiUrl}${path}`, {
+      ...options,
+      headers,
+    }) as any);
 
   if (!response.ok) {
     // Global handling for auth errors can be added here if needed, 
     // but usually handled by AuthContext/useApi hook.
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = (await response.json().catch(() => ({})) as any);
     const error = new Error(errorData.message || `Request failed with status ${response.status}`);
     (error as any).status = response.status;
     (error as any).data = errorData;

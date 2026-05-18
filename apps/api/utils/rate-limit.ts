@@ -29,7 +29,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
     const botName = (c.env as any).APP_NAME || 'ledger';
     
     // 0. Global Block Enforcement (Fleet-wide Shield)
-    const isBlocked = await kv.get(`fs:block:${ip}`);
+    const isBlocked = (await kv.get(`fs:block:${ip}`) as any);
     if (isBlocked) {
       return c.json({ 
         error: 'Security Shield Active', 
@@ -97,7 +97,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
         // First strike
         safePut(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[Fleet Security] Critical failure in middleware:`, error);
       // Fail-open to ensure service availability
     }

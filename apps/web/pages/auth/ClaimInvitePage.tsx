@@ -22,21 +22,21 @@ const ClaimInvitePage: React.FC = () => {
     setLoading(true)
     try {
       const apiUrl = getApiUrl().replace(/\/$/, '')
-      const res = await fetch(`${apiUrl}/api/auth/admin/claim`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, username, password, email })
-      })
+      const res = (await fetch(`${apiUrl}/api/auth/admin/claim`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, username, password, email })
+            }) as any)
       
       if (!res.ok) {
-        const error = await res.json()
+        const error = (await res.json() as any)
         showToast(`Claim Failed: ${error.error || 'Unknown error'}`, 'error')
         return
       }
 
       showToast('Invite claimed! You can now log in.', 'success')
       window.location.hash = '#/login'
-    } catch (e) {
+    } catch (e: any) {
       showToast('Network error during claim.', 'error')
     } finally {
       setLoading(false)

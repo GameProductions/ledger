@@ -13,11 +13,11 @@ const API = getApiUrl()
 
 // Helper for Owner actions
 const adminRequest = async (secureFetch: any, method: string, path: string, body?: any) => {
-  const res = await secureFetch(path, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined
-  })
+  const res = (await secureFetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    }) as any)
   return res.json()
 }
 
@@ -46,7 +46,7 @@ const AdminEntityManager: React.FC = () => {
 
   // Audit log
   const [showAudit, setShowAudit] = useState(false)
-  const { data: auditLog = [] } = useApi(showAudit ? '/api/admin/entities/audit/report' : '')
+  const { data: auditLog = [] } = (useApi(showAudit ? '/api/admin/entities/audit/report' : '') as any)
 
   // Build query
   const activeMeta = ENTITY_TYPES.find(e => e.key === activeType)!
@@ -56,8 +56,8 @@ const AdminEntityManager: React.FC = () => {
     ? `?userId=${userFilter}`
     : ''
 
-  const { data: items = [], loading, mutate } = useApi(`/api/admin/entities/${activeType}${qs}`)
-  const { data: allHouseholds = [] } = useApi('/api/admin/households?limit=200')
+  const { data: items = [], loading, mutate } = (useApi(`/api/admin/entities/${activeType}${qs}`) as any)
+  const { data: allHouseholds = [] } = (useApi('/api/admin/households?limit=200') as any)
 
   // Edit state
   const [editing, setEditing] = useState<any>(null)

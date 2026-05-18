@@ -29,7 +29,7 @@ export class ArchiveService {
         customMetadata: { archivedAt: new Date().toISOString() }
       })
       return key
-    } catch (e) {
+    } catch (e: any) {
       console.error(`[Archive Failure] ${key}`, e)
       throw e
     }
@@ -40,7 +40,7 @@ export class ArchiveService {
    */
   async get(key: string) {
     if (!this.env.STORAGE_BUCKET) return null
-    const obj = await this.env.STORAGE_BUCKET.get(key)
+    const obj = (await this.env.STORAGE_BUCKET.get(key) as any)
     if (!obj) return null
     return await obj.json()
   }

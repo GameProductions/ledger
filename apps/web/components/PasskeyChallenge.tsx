@@ -26,53 +26,53 @@ export default function PasskeyChallenge({ onSuccess, appName, children }: Passk
     setError(null);
     try {
       if (mode === 'auth') {
-        const resp = await secureRequest('/api/admin/webauthn/generate-auth', { method: 'POST' });
+        const resp = (await secureRequest('/api/admin/webauthn/generate-auth', { method: 'POST' }) as any);
         if (resp.status === 404) {
           // No passkeys registered, switch to registration mode if authorized
           setMode('register');
           return;
         }
         if (!resp.ok) {
-          const data = await resp.json().catch(() => ({ error: `Server error ${resp.status}` }));
+          const data = (await resp.json().catch(() => ({ error: `Server error ${resp.status}` })) as any);
           throw new Error((data as any).error || 'Failed to generate auth challenge');
         }
         const options = await resp.json() as any;
-        const asseResp = await startAuthentication({ optionsJSON: options });
+        const asseResp = (await startAuthentication({ optionsJSON: options }) as any);
         
-        const verificationResp = await secureRequest('/api/admin/webauthn/verify-auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ assertion: asseResp }),
-        });
+        const verificationResp = (await secureRequest('/api/admin/webauthn/verify-auth', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ assertion: asseResp }),
+                }) as any);
         
         if (verificationResp.ok) {
           setVerified(true);
           onSuccess();
         } else {
-          const data = await verificationResp.json().catch(() => ({ error: 'Verification failed' }));
+          const data = (await verificationResp.json().catch(() => ({ error: 'Verification failed' })) as any);
           setError((data as any).error || 'Verification failed');
         }
       } else {
-        const resp = await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' });
+        const resp = (await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' }) as any);
         if (!resp.ok) {
-          const data = await resp.json().catch(() => ({ error: `Server error ${resp.status}` }));
+          const data = (await resp.json().catch(() => ({ error: `Server error ${resp.status}` })) as any);
           throw new Error((data as any).error || 'Failed to generate registration challenge');
         }
         const options = await resp.json() as any;
         
-        const attResp = await startRegistration({ optionsJSON: options });
+        const attResp = (await startRegistration({ optionsJSON: options }) as any);
         
-        const verificationResp = await secureRequest('/api/admin/webauthn/verify-registration', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(attResp),
-        });
+        const verificationResp = (await secureRequest('/api/admin/webauthn/verify-registration', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(attResp),
+                }) as any);
         
         if (verificationResp.ok) {
           setVerified(true);
           onSuccess();
         } else {
-          const data = await verificationResp.json().catch(() => ({ error: 'Registration failed' }));
+          const data = (await verificationResp.json().catch(() => ({ error: 'Registration failed' })) as any);
           setError((data as any).error || 'Registration failed');
         }
       }

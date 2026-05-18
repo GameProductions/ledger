@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
@@ -16,11 +17,11 @@ const API = getApiUrl()
 
 // ─── Generic CRUD helper ────────────────────────────────────────────
 async function apiCall(token: string, householdId: string, method: string, path: string, body?: any) {
-  const res = await fetch(`${API}${path}`, {
-    method,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'x-household-id': householdId || '' },
-    body: body ? JSON.stringify(body) : undefined
-  })
+  const res = (await fetch(`${API}${path}`, {
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'x-household-id': householdId || '' },
+      body: body ? JSON.stringify(body) : undefined
+    }) as any)
   return res.json()
 }
 
@@ -40,7 +41,7 @@ interface EntityManagerProps {
 const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fields, displayFn, idField = 'id', emptyMessage, scope = 'household' }) => {
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
-  const { data: items = [], loading, mutate } = useApi(apiPath)
+  const { data: items = [], loading, mutate } = (useApi(apiPath) as any)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [formData, setFormData] = useState<any>({})

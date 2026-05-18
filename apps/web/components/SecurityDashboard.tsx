@@ -30,14 +30,14 @@ export function SecurityDashboard() {
     if (!token) return;
     try {
       const apiUrl = (getApiUrl() || '').replace(/\/$/, '');
-      const res = await fetch(`${apiUrl}/api/user/sessions`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${apiUrl}/api/user/sessions`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
-        const json = await res.json();
+        const json = (await res.json() as any);
         setSessions(Array.isArray(json.data) ? json.data : []);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to load sessions', e);
     } finally {
       setLoading(false);
@@ -51,10 +51,10 @@ export function SecurityDashboard() {
   const revokeSession = async (id: string) => {
     try {
       const apiUrl = (getApiUrl() || '').replace(/\/$/, '');
-      const res = await fetch(`${apiUrl}/api/user/sessions/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${apiUrl}/api/user/sessions/${id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
         setSessions(s => s.filter(x => x.id !== id));
         showToast('Session revoked successfully', 'success');
@@ -62,7 +62,7 @@ export function SecurityDashboard() {
       } else {
         showToast('Failed to revoke session', 'error');
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Error revoking session', 'error');
     }
   };
@@ -72,10 +72,10 @@ export function SecurityDashboard() {
     setRevokingAll(true);
     try {
       const apiUrl = (getApiUrl() || '').replace(/\/$/, '');
-      const res = await fetch(`${apiUrl}/api/user/sessions`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${apiUrl}/api/user/sessions`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
         // Keep only the first session (current)
         setSessions(s => s.length > 0 ? [s[0]] : []);
@@ -83,7 +83,7 @@ export function SecurityDashboard() {
       } else {
         showToast('Failed to revoke sessions', 'error');
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Error revoking sessions', 'error');
     } finally {
       setRevokingAll(false);

@@ -6,7 +6,7 @@ import { getApiUrl } from '../utils/api'
 const API_URL = getApiUrl()
 
 const SavingsBuckets: React.FC = () => {
-  const { data: buckets = [], mutate } = useApi('/api/financials/buckets')
+  const { data: buckets = [], mutate } = (useApi('/api/financials/buckets') as any)
   const [isAdding, setIsAdding] = React.useState(false)
   const [name, setName] = React.useState('')
   const [amount, setAmount] = React.useState('')

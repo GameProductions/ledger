@@ -14,10 +14,10 @@ support.get('/issues', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
   
-  const results = await db.select()
-    .from(supportIssues)
-    .where(eq(supportIssues.userId, userId))
-    .orderBy(desc(supportIssues.createdAt))
+  const results = (await db.select()
+      .from(supportIssues)
+      .where(eq(supportIssues.userId, userId))
+      .orderBy(desc(supportIssues.createdAt)) as any)
     
   return c.json({ success: true, data: results })
 })
@@ -26,10 +26,10 @@ support.get('/issues/:id/comments', async (c) => {
   const { id } = c.req.param()
   const db = getDb(c.env)
   
-  const results = await db.select()
-    .from(supportComments)
-    .where(eq(supportComments.issueId, id))
-    .orderBy(desc(supportComments.createdAt))
+  const results = (await db.select()
+      .from(supportComments)
+      .where(eq(supportComments.issueId, id))
+      .orderBy(desc(supportComments.createdAt)) as any)
     
   return c.json({ success: true, data: results })
 })
@@ -42,7 +42,7 @@ support.post('/issues/:id/comments', zValidator('json', z.object({
   const { body } = c.req.valid('json')
   const db = getDb(c.env)
   
-  const issue = await db.select().from(supportIssues).where(eq(supportIssues.id, id)).limit(1).then(res => res[0])
+  const issue = (await db.select().from(supportIssues).where(eq(supportIssues.id, id)).limit(1).then(res => res[0]) as any)
   if (!issue) throw new HTTPException(404, { message: 'Issue not found' })
   
   const commentId = crypto.randomUUID()
@@ -70,7 +70,7 @@ support.post('/issues/:id/comments', zValidator('json', z.object({
          },
          body: JSON.stringify({ body: `**[Ledger User Comment]**\n\n${body}` })
        })
-     } catch (err) {
+     } catch (err: any) {
        console.error('[Support] Failed to push comment to GitHub:', err)
      }
   }
@@ -120,16 +120,16 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
         const repoMatch = repoRaw.match(/([^\/]+\/[^\/]+)$/)
         const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
 
-        const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
-          method: 'POST',
-          headers: {
-            'Authorization': c.env.GITHUB_TOKEN.startsWith('ghp_') ? `token ${c.env.GITHUB_TOKEN}` : `Bearer ${c.env.GITHUB_TOKEN}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'LEDGER-Forensic-Support-Engine'
-          },
-          body: JSON.stringify({
-            title: `[Support] ${title}`,
-            body: `
+        const res = (await fetch(`https://api.github.com/repos/${repo}/issues`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': c.env.GITHUB_TOKEN.startsWith('ghp_') ? `token ${c.env.GITHUB_TOKEN}` : `Bearer ${c.env.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'LEDGER-Forensic-Support-Engine'
+                  },
+                  body: JSON.stringify({
+                    title: `[Support] ${title}`,
+                    body: `
 ### Description
 ${description}
 
@@ -142,9 +142,9 @@ ${description}
 ${JSON.stringify(metadata || {}, null, 2)}
 \`\`\`
             `.trim(),
-            labels: ['support', category || 'other'].filter(Boolean)
-          })
-        })
+                    labels: ['support', category || 'other'].filter(Boolean)
+                  })
+                }) as any)
 
         if (res.ok) {
           const ghData: any = await res.json()
@@ -155,10 +155,10 @@ ${JSON.stringify(metadata || {}, null, 2)}
             githubIssueId: ghData.id
           }).where(eq(supportIssues.id, id))
         } else {
-          const errText = await res.text()
+          const errText = (await res.text() as any)
           console.error(`[Support] GitHub API error for repo ${repo}:`, errText)
         }
-      } catch (ghErr) {
+      } catch (ghErr: any) {
         console.error('[Support] GitHub Integration exception:', ghErr)
       }
     }
@@ -177,7 +177,7 @@ ${JSON.stringify(metadata || {}, null, 2)}
 
 // GitHub Webhook for Real-Time Sync
 support.post('/webhook/github', async (c) => {
-  const payload = await c.req.json()
+  const payload = (await c.req.json() as any)
   const db = getDb(c.env)
   
   // 1. Handle Issue Status Changes
@@ -191,19 +191,19 @@ support.post('/webhook/github', async (c) => {
   // 2. Handle New Comments
   if (payload.action === 'created' && payload.comment && payload.issue) {
     // Find the local ticket by GitHub Issue ID
-    const tickets = await db.select()
-      .from(supportIssues)
-      .where(eq(supportIssues.githubIssueId, payload.issue.id))
-      .limit(1)
+    const tickets = (await db.select()
+          .from(supportIssues)
+          .where(eq(supportIssues.githubIssueId, payload.issue.id))
+          .limit(1) as any)
     
     if (tickets.length > 0) {
       const ticket = tickets[0]
       
       // Check if comment already exists (prevent duplicates)
-      const existing = await db.select()
-        .from(supportComments)
-        .where(eq(supportComments.githubCommentId, payload.comment.id))
-        .limit(1)
+      const existing = (await db.select()
+              .from(supportComments)
+              .where(eq(supportComments.githubCommentId, payload.comment.id))
+              .limit(1) as any)
       
       if (existing.length === 0) {
         await db.insert(supportComments).values({

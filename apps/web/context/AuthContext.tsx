@@ -39,11 +39,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const verifySession = async () => {
         try {
           const apiUrl = getApiUrl()
-          const res = await fetch(`${apiUrl}/api/auth/verify`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
+          const res = (await fetch(`${apiUrl}/api/auth/verify`, {
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    }) as any)
           if (res.ok) {
-            const envelope = await res.json()
+            const envelope = (await res.json() as any)
             if (envelope.success && envelope.data) {
               const { globalRole: role, isImpersonating: imp } = envelope.data
               setGlobalRole(role)
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } else if (res.status === 401) {
             logout()
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('[Auth] Verification failed', err)
         }
       }
@@ -126,14 +126,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     })
 
-    const res = await makeRequest()
+    const res = (await makeRequest() as any)
 
     if (res.status === 401 || res.status === 403) {
       const isStepUp = res.headers.get('X-Step-Up') === 'Required'
       if (isStepUp) {
         return new Promise((resolve) => {
           triggerStepUp(async () => {
-            const retryRes = await makeRequest()
+            const retryRes = (await makeRequest() as any)
             resolve(retryRes)
           })
         })

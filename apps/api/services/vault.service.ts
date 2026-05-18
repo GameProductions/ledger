@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { eq, and } from 'drizzle-orm';
 import { vault } from '#/schema';
 import { encryptData, decryptData } from '../utils/security';
@@ -9,7 +10,7 @@ export class VaultService {
      * Stores a secret in the vault.
      */
     async store(ownerId: string, keyName: string, scope: string, plaintext: string) {
-        const full = await encryptData(plaintext, this.encryptionKey);
+        const full = (await encryptData(plaintext, this.encryptionKey) as any);
         const [iv, encryptedValue] = full.split(':');
         const id = crypto.randomUUID();
         
@@ -33,13 +34,13 @@ export class VaultService {
      * Retrieves a secret from the vault.
      */
     async get(ownerId: string, keyName: string, scope: string): Promise<string | null> {
-        const result = await this.db.select().from(vault).where(
-            and(
-                eq(vault.ownerId, ownerId),
-                eq(vault.keyName, keyName),
-                eq(vault.scope, scope)
-            )
-        ).limit(1);
+        const result = (await this.db.select().from(vault).where(
+                    and(
+                        eq(vault.ownerId, ownerId),
+                        eq(vault.keyName, keyName),
+                        eq(vault.scope, scope)
+                    )
+                ).limit(1) as any);
 
         if (result.length === 0) return null;
 

@@ -65,7 +65,7 @@ describe('ReconciliationService', () => {
         get: vi.fn().mockReturnValue(mockAgentStub)
       }
       
-      const count = await reconService.generateProposals(householdId)
+      const count = (await reconService.generateProposals(householdId) as any)
       
       expect(count).toBe(1)
       expect(mockEnv.RECONCILIATION_AGENT.get).toHaveBeenCalled()

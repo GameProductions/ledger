@@ -14,9 +14,9 @@ interface TrackedExpenseListProps {
 }
 
 export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshTrigger }) => {
-  const { data: tracked = [], mutate } = useApi('/api/tracked-expenses')
-  const { data: accounts = [] } = useApi('/api/financials/accounts')
-  const { data: categories = [] } = useApi('/api/financials/categories')
+  const { data: tracked = [], mutate } = (useApi('/api/tracked-expenses') as any)
+  const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
+  const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { symbol, formatPrice } = useCurrency()
 
   React.useEffect(() => {
@@ -59,15 +59,15 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { showToast } = useToast()
 
   const handleDelete = async (ids: string[]) => {
-    const res = await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_householdId') || ''
-      },
-      body: JSON.stringify({ ids })
-    })
+    const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+            'x-household-id': localStorage.getItem('ledger_householdId') || ''
+          },
+          body: JSON.stringify({ ids })
+        }) as any)
     if (res.ok) {
       globalMutate('/api/tracked-expenses')
       setSelectedIds([])
@@ -77,18 +77,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   }
 
   const handleMoveToLedger = async () => {
-    const res = await fetch(`${getApiUrl()}/api/tracked-expenses/promote`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_householdId') || ''
-      },
-      body: JSON.stringify({
-        ids: selectedIds,
-        transactionDetails: ledgerDetails
-      })
-    })
+    const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/promote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+            'x-household-id': localStorage.getItem('ledger_householdId') || ''
+          },
+          body: JSON.stringify({
+            ids: selectedIds,
+            transactionDetails: ledgerDetails
+          })
+        }) as any)
     if (res.ok) {
       globalMutate('/api/tracked-expenses')
       setSelectedIds([])
@@ -97,18 +97,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   }
 
   const handleUpdate = async (id: string, updates: any) => {
-    const res = await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_householdId') || ''
-      },
-      body: JSON.stringify({
-        ids: [id],
-        updates
-      })
-    })
+    const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+            'x-household-id': localStorage.getItem('ledger_householdId') || ''
+          },
+          body: JSON.stringify({
+            ids: [id],
+            updates
+          })
+        }) as any)
     if (res.ok) {
       globalMutate('/api/tracked-expenses')
       setEditingId(null)
@@ -117,18 +117,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   }
 
   const handleBulkUpdate = async () => {
-    const res = await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
-        'x-household-id': localStorage.getItem('ledger_householdId') || ''
-      },
-      body: JSON.stringify({
-        ids: selectedIds,
-        updates: bulkUpdates
-      })
-    })
+    const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+            'x-household-id': localStorage.getItem('ledger_householdId') || ''
+          },
+          body: JSON.stringify({
+            ids: selectedIds,
+            updates: bulkUpdates
+          })
+        }) as any)
     if (res.ok) {
       globalMutate('/api/tracked-expenses')
       setIsBulkEditOpen(false)

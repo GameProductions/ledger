@@ -32,7 +32,7 @@ const isPrivateIp = (url: string) => {
       if (parts[0] === 192 && parts[1] === 168) return true
       if (parts[0] === 169 && parts[1] === 254) return true // Link-local / metadata
     }
-  } catch (e) {}
+  } catch (e: any) {}
   return false
 }
 
@@ -43,15 +43,15 @@ data.get('/analysis/summary', async (c) => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
   const db = getDb(c.env)
   
-  const incomeResult = await db.select({ total: sql<number>`SUM(amountCents)` })
-    .from(transactions)
-    .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
-    .limit(1)
+  const incomeResult = (await db.select({ total: sql<number>`SUM(amountCents)` })
+      .from(transactions)
+      .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
+      .limit(1) as any)
   
-  const expenseResult = await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
-    .from(transactions)
-    .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
-    .limit(1)
+  const expenseResult = (await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
+      .from(transactions)
+      .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
+      .limit(1) as any)
   
   const totalIncome = incomeResult[0]?.total || 0
   const totalExpense = expenseResult[0]?.total || 0
@@ -59,10 +59,10 @@ data.get('/analysis/summary', async (c) => {
   const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
   
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const recentExpenseResult = await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
-    .from(transactions)
-    .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
-    .limit(1)
+  const recentExpenseResult = (await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
+      .from(transactions)
+      .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
+      .limit(1) as any)
     
   const burnRate = (recentExpenseResult[0]?.total || 0) / 30
   
@@ -89,16 +89,16 @@ data.get('/analysis/category-spending', async (c) => {
   const startDateStr = startDate.toISOString().split('T')[0]
 
   const db = getDb(c.env)
-  const results = await db.select({
-    name: categories.name,
-    color: categories.color,
-    totalCents: sql<number>`SUM(ABS(${transactions.amountCents}))`
-  })
-  .from(transactions)
-  .innerJoin(categories, eq(transactions.categoryId, categories.id))
-  .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, startDateStr)))
-  .groupBy(categories.id)
-  .orderBy(desc(sql`SUM(ABS(${transactions.amountCents}))`))
+  const results = (await db.select({
+      name: categories.name,
+      color: categories.color,
+      totalCents: sql<number>`SUM(ABS(${transactions.amountCents}))`
+    })
+    .from(transactions)
+    .innerJoin(categories, eq(transactions.categoryId, categories.id))
+    .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, startDateStr)))
+    .groupBy(categories.id)
+    .orderBy(desc(sql`SUM(ABS(${transactions.amountCents}))`)) as any)
 
   return c.json({ success: true, data: results || [] })
 })
@@ -107,14 +107,14 @@ data.get('/analysis/net-worth', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   
-  const accsResult = await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId))
+  const accsResult = (await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId)) as any)
   const netWorthCents = accsResult.reduce((sum, a) => sum + (a.balanceCents || 0), 0)
   
-  const snapshots = await db.select({ createdAt: reports.createdAt, dataJson: reports.dataJson })
-    .from(reports)
-    .where(and(eq(reports.householdId, householdId), eq(reports.type, 'net_worth_snapshot')))
-    .orderBy(desc(reports.createdAt))
-    .limit(6)
+  const snapshots = (await db.select({ createdAt: reports.createdAt, dataJson: reports.dataJson })
+      .from(reports)
+      .where(and(eq(reports.householdId, householdId), eq(reports.type, 'net_worth_snapshot')))
+      .orderBy(desc(reports.createdAt))
+      .limit(6) as any)
 
   const history = (snapshots || []).map((s: any) => ({
     date: s.createdAt.split('T')[0],
@@ -151,19 +151,19 @@ data.get('/analysis/forecast', async (c) => {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const db = getDb(c.env)
   
-  const incomeResult = await db.select({ total: sql<number>`SUM(amountCents)` })
-    .from(transactions)
-    .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
-    .limit(1)
+  const incomeResult = (await db.select({ total: sql<number>`SUM(amountCents)` })
+      .from(transactions)
+      .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
+      .limit(1) as any)
     
-  const expenseResult = await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
-    .from(transactions)
-    .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
-    .limit(1)
+  const expenseResult = (await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
+      .from(transactions)
+      .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
+      .limit(1) as any)
     
   const monthlySurplus = (incomeResult[0]?.total || 0) - (expenseResult[0]?.total || 0)
 
-  const accsResult = await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId))
+  const accsResult = (await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId)) as any)
   const startingBalance = accsResult.reduce((sum, a) => sum + (a.balanceCents || 0), 0)
   
   const forecast = dates.map((date, i) => {
@@ -187,8 +187,8 @@ data.post('/scrape', zValidator('json', z.object({
   }
 
   try {
-    const response = await fetch(url)
-    const html = await response.text()
+    const response = (await fetch(url) as any)
+    const html = (await response.text() as any)
     
     // Basic metadata extraction
     const title = html.match(/<title>(.*?)<\/title>/i)?.[1] || url
@@ -214,7 +214,7 @@ data.post('/scrape', zValidator('json', z.object({
         type
       }
     })
-  } catch (err) {
+  } catch (err: any) {
     throw new HTTPException(500, { message: 'Failure to analyze the provided link' })
   }
 })
@@ -246,9 +246,9 @@ data.post('/import/confirm', zValidator('json', z.object({
     
     let authorizedOwners: string[] = []
     if (distinctOwners.length > 0) {
-      const validMembers = await db.select({ userId: userHouseholds.userId })
-        .from(userHouseholds)
-        .where(and(eq(userHouseholds.householdId, householdId), inArray(userHouseholds.userId, distinctOwners)))
+      const validMembers = (await db.select({ userId: userHouseholds.userId })
+              .from(userHouseholds)
+              .where(and(eq(userHouseholds.householdId, householdId), inArray(userHouseholds.userId, distinctOwners))) as any)
       authorizedOwners = validMembers.map(m => m.userId)
     }
 
@@ -300,7 +300,7 @@ data.get('/providers', async (c) => {
     filters.push(like(serviceProviders.name, `%${q}%`))
   }
   
-  const results = await db.select().from(serviceProviders).where(and(...filters))
+  const results = (await db.select().from(serviceProviders).where(and(...filters)) as any)
   return c.json({ success: true, data: results || [] })
 })
 
@@ -308,13 +308,13 @@ data.get('/providers', async (c) => {
 data.get('/history', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = await db.select({
-    id: reports.id,
-    type: reports.type,
-    periodStart: reports.periodStart,
-    periodEnd: reports.periodEnd,
-    createdAt: reports.createdAt
-  }).from(reports).where(eq(reports.householdId, householdId)).orderBy(desc(reports.createdAt))
+  const results = (await db.select({
+      id: reports.id,
+      type: reports.type,
+      periodStart: reports.periodStart,
+      periodEnd: reports.periodEnd,
+      createdAt: reports.createdAt
+    }).from(reports).where(eq(reports.householdId, householdId)).orderBy(desc(reports.createdAt)) as any)
   
   return c.json({ success: true, data: results || [] })
 })
@@ -342,7 +342,7 @@ data.post('/tools/tokens', zValidator('json', z.object({ name: z.string().min(1)
   // Audit Phase 4: Cryptographic Hashing for PATs
   const rawToken = crypto.randomUUID().replace(/-/g, '')
   const tokenValue = `ledger_${rawToken}`
-  const tokenHash = await hashToken(tokenValue)
+  const tokenHash = (await hashToken(tokenValue) as any)
   
   const db = getDb(c.env)
   await db.insert(personalAccessTokens).values({
@@ -359,11 +359,11 @@ data.post('/tools/tokens', zValidator('json', z.object({ name: z.string().min(1)
 data.get('/tools/tokens', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = await db.select({
-    id: personalAccessTokens.id,
-    name: personalAccessTokens.name,
-    createdAt: personalAccessTokens.createdAt
-  }).from(personalAccessTokens).where(eq(personalAccessTokens.householdId, householdId))
+  const results = (await db.select({
+      id: personalAccessTokens.id,
+      name: personalAccessTokens.name,
+      createdAt: personalAccessTokens.createdAt
+    }).from(personalAccessTokens).where(eq(personalAccessTokens.householdId, householdId)) as any)
   
   return c.json({ success: true, data: results || [] })
 })

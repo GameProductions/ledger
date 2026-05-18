@@ -10,8 +10,8 @@ import { InlineToast } from '../../components/ui/InlineToast';
 export const AdminBroadcast: React.FC = () => {
   const { token } = useAuth();
   const { showToast, showConfirm } = useToast();
-  const { data: announcements = [], mutate: mutateAnnouncements } = useApi('/api/admin/communications/announcements');
-  const { data: invitations = [], mutate: mutateInvitations } = useApi('/api/admin/communications/invitations');
+  const { data: announcements = [], mutate: mutateAnnouncements } = (useApi('/api/admin/communications/announcements') as any);
+  const { data: invitations = [], mutate: mutateInvitations } = (useApi('/api/admin/communications/invitations') as any);
   
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', contentMd: '', priority: 'info' });
   const [inviteRole, setInviteRole] = useState<'owner' | 'operator'>('owner');
@@ -21,31 +21,31 @@ export const AdminBroadcast: React.FC = () => {
   const createAnnouncement = async () => {
     if (!newAnnouncement.title || !newAnnouncement.contentMd) return;
     try {
-      const res = await fetch(`${getApiUrl()}/api/admin/communications/announcements`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newAnnouncement)
-      });
-      const data = await res.json();
+      const res = (await fetch(`${getApiUrl()}/api/admin/communications/announcements`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(newAnnouncement)
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         showToast('Message Sent', 'success');
         setNewAnnouncement({ title: '', contentMd: '', priority: 'info' });
         mutateAnnouncements();
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Failed to send', 'error');
     }
   };
 
   const deleteAnnouncement = async (id: string) => {
-    const res = await fetch(`${getApiUrl()}/api/admin/communications/announcements/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
+    const res = (await fetch(`${getApiUrl()}/api/admin/communications/announcements/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }) as any);
+    const data = (await res.json() as any);
     if (data.success) {
       setConfirmDeleteAnnouncementId(null);
       mutateAnnouncements();
@@ -54,31 +54,31 @@ export const AdminBroadcast: React.FC = () => {
 
   const createInvite = async () => {
     try {
-      const res = await fetch(`${getApiUrl()}/api/admin/communications/invitations`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ role: inviteRole, expires_in_hours: 24 })
-      });
-      const data = await res.json();
+      const res = (await fetch(`${getApiUrl()}/api/admin/communications/invitations`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ role: inviteRole, expires_in_hours: 24 })
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success && data.token) {
         navigator.clipboard.writeText(`${window.location.origin}/#/claim?token=${data.token}`);
         showToast('Invite copied to clipboard', 'success');
         mutateInvitations();
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('failed to create invite', 'error');
     }
   };
 
   const deleteInvite = async (tokenStr: string) => {
-    const res = await fetch(`${getApiUrl()}/api/admin/communications/invitations/${tokenStr}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const data = await res.json();
+    const res = (await fetch(`${getApiUrl()}/api/admin/communications/invitations/${tokenStr}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }) as any);
+    const data = (await res.json() as any);
     if (data.success) {
       setConfirmDeleteInviteToken(null);
       mutateInvitations();

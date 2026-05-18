@@ -19,14 +19,14 @@ const AdminHouseholds: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/households`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/households`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         setHouseholds(data.data || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch households:', err);
     } finally {
       setLoading(false);
@@ -53,7 +53,7 @@ const AdminHouseholds: React.FC = () => {
       setHouseholds(prev => prev.map(h => h.id === id ? { ...h, name: newName } : h));
       setEditingId(null);
       setNewName('');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Rename failed:', err);
     }
   };
@@ -68,7 +68,7 @@ const AdminHouseholds: React.FC = () => {
       });
       setHouseholds(prev => prev.filter(h => h.id !== id));
       setConfirmDeleteId(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Deletion failed:', err);
     }
   };

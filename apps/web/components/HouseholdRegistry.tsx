@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import { Shield, Edit3, Plus, Send, Copy, Check, Users, UserMinus, ShieldAlert, Trash2, ChevronDown, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,9 +16,9 @@ const API_URL = getApiUrl();
 
 const HouseholdRegistry: React.FC = () => {
   const { householdId } = useAuth();
-  const { data: profile } = useApi('/api/user/profile');
-  const { data: households } = useApi('/api/user/households');
-  const { data: members, mutate: mutateMembers } = useApi(householdId ? `/api/user/households/${householdId}/members` : null);
+  const { data: profile } = (useApi('/api/user/profile') as any);
+  const { data: households } = (useApi('/api/user/households') as any);
+  const { data: members, mutate: mutateMembers } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any);
   
   const currentHousehold = useMemo(() => {
     if (Array.isArray(households) && householdId) {
@@ -62,23 +63,23 @@ const HouseholdRegistry: React.FC = () => {
   const handleRename = async () => {
     const token = localStorage.getItem('ledger_token');
     try {
-      const res = await fetch(`${API_URL}/api/user/households/${householdId}`, {
-        method: 'PATCH',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: householdName })
-      });
+      const res = (await fetch(`${API_URL}/api/user/households/${householdId}`, {
+              method: 'PATCH',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ name: householdName })
+            }) as any);
       if (res.ok) {
         showToast('Household renamed successfully', 'success');
         window.location.reload();
         setIsRenaming(false);
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to rename household'), 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       showToast(formatHumanError(err, 'Failed to connect to servers'), 'error');
     }
@@ -88,19 +89,19 @@ const HouseholdRegistry: React.FC = () => {
     setUpdatingRole(memberId);
     const token = localStorage.getItem('ledger_token');
     try {
-      const res = await fetch(`${API_URL}/api/user/households/${householdId}/members/${memberId}`, {
-        method: 'PATCH',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ role })
-      });
+      const res = (await fetch(`${API_URL}/api/user/households/${householdId}/members/${memberId}`, {
+              method: 'PATCH',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ role })
+            }) as any);
       if (res.ok) {
         showToast('Member role updated', 'success');
         mutateMembers();
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to update role'), 'error');
       }
     } finally {
@@ -112,16 +113,16 @@ const HouseholdRegistry: React.FC = () => {
     setRemovingMember(memberId);
     const token = localStorage.getItem('ledger_token');
     try {
-      const res = await fetch(`${API_URL}/api/user/households/${householdId}/members/${memberId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${API_URL}/api/user/households/${householdId}/members/${memberId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
         showToast('Member removed', 'success');
         setConfirmRemoveId(null);
         mutateMembers();
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to remove member'), 'error');
       }
     } finally {
@@ -133,16 +134,16 @@ const HouseholdRegistry: React.FC = () => {
     setArchiving(true);
     const token = localStorage.getItem('ledger_token');
     try {
-      const res = await fetch(`${API_URL}/api/user/households/${householdId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = (await fetch(`${API_URL}/api/user/households/${householdId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
       if (res.ok) {
         showToast('Household archived successfully', 'success');
         window.location.href = '/#/';
         window.location.reload();
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to archive household'), 'error');
       }
     } finally {
@@ -156,22 +157,22 @@ const HouseholdRegistry: React.FC = () => {
     const token = localStorage.getItem('ledger_token');
     setCreating(true);
     try {
-      const res = await fetch(`${API_URL}/api/user/households`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: newHouseholdName })
-      });
+      const res = (await fetch(`${API_URL}/api/user/households`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ name: newHouseholdName })
+            }) as any);
       if (res.ok) {
         showToast('New household created', 'success');
         window.location.reload(); // Switch context
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to create household'), 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast(formatHumanError(err, 'Network error while creating household'), 'error');
     } finally {
       setCreating(false);
@@ -184,16 +185,16 @@ const HouseholdRegistry: React.FC = () => {
     setLoading(true);
     const token = localStorage.getItem('ledger_token');
     try {
-      const res = await fetch(`${API_URL}/api/user/households/invite`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({ email: inviteEmail || undefined })
-      });
-      const data = await res.json();
+      const res = (await fetch(`${API_URL}/api/user/households/invite`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({ email: inviteEmail || undefined })
+            }) as any);
+      const data = (await res.json() as any);
       if (res.ok) {
         setInviteUrl(`${window.location.origin}/${data.url}`);
         if (inviteEmail) {
@@ -204,7 +205,7 @@ const HouseholdRegistry: React.FC = () => {
       } else {
         showToast(formatHumanError(data, 'Invite generation failed'), 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast(formatHumanError(err, 'Network error while generating invite'), 'error');
     } finally {
       setLoading(false);

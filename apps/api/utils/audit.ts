@@ -118,7 +118,7 @@ export const logAudit = (
       }).catch(e => console.error('[AUDIT_FAILURE]', e));
 
       console.log(`[SENTINEL] Audit logged (local fallback): ${action} on ${targetType} ${targetId || ''}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[FLEET_SECURITY_ERROR] Failed to record activity log:', error);
     }
   };

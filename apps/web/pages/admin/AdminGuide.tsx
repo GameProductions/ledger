@@ -21,18 +21,18 @@ const AdminGuide: React.FC = () => {
   useEffect(() => {
     const fetchWalkthroughs = async () => {
       try {
-        const res = await fetch(`/api/admin/walkthroughs`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'x-household-id': householdId || ''
-          }
-        });
+        const res = (await fetch(`/api/admin/walkthroughs`, {
+                  headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'x-household-id': householdId || ''
+                  }
+                }) as any);
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json() as any);
           setWalkthroughs(data);
           if (data.length > 0) setSelectedWalkthrough(data[0]);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch walkthroughs:', err);
       } finally {
         setLoading(false);

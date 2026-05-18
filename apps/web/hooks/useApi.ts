@@ -36,13 +36,13 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
     if (document.visibilityState !== 'visible') return
 
     try {
-      const res = await fetch(`${API_URL}${path}`, {
-        signal: abortControllerRef.current.signal,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        }
-      })
+      const res = (await fetch(`${API_URL}${path}`, {
+              signal: abortControllerRef.current.signal,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              }
+            }) as any)
       
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
@@ -67,7 +67,7 @@ export const useApi = <T = any>(path: string | null, options: { refreshInterval?
         throw new Error(`API Error: ${res.status}`);
       }
 
-      const envelope = await res.json()
+      const envelope = (await res.json() as any)
       
       // Zero-Trust Validation: Every response MUST follow the { success: true, data: T } envelope
       if (envelope.success !== true || envelope.data === undefined) {

@@ -24,9 +24,9 @@ const API_URL = getApiUrl();
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
-  const { data: profile, mutate } = useApi('/api/user/profile')
-  const { data: accounts } = useApi('/api/financials/accounts')
-  const { data: identities, mutate: mutateIdentities } = useApi('/api/user/identities')
+  const { data: profile, mutate } = (useApi('/api/user/profile') as any)
+  const { data: accounts } = (useApi('/api/financials/accounts') as any)
+  const { data: identities, mutate: mutateIdentities } = (useApi('/api/user/identities') as any)
 
   const [activeTab, setActiveTab] = useTabState<'security' | 'social' | 'display' | 'data'>('security')
 
@@ -73,29 +73,29 @@ const SettingsPage: React.FC = () => {
     if (!token) return
     setSaving(true)
     try {
-      const res = await fetch(`${API_URL}/api/user/profile`, {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_householdId') || ''
-        },
-        body: JSON.stringify({ 
-          displayName: name,
-          username: username,
-          email: email,
-          avatarUrl: avatar || null,
-          timezone: timezone
-        })
-      })
+      const res = (await fetch(`${API_URL}/api/user/profile`, {
+              method: 'PATCH',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': localStorage.getItem('ledger_householdId') || ''
+              },
+              body: JSON.stringify({ 
+                displayName: name,
+                username: username,
+                email: email,
+                avatarUrl: avatar || null,
+                timezone: timezone
+              })
+            }) as any)
       if (!res.ok) {
-        const err = await res.json()
+        const err = (await res.json() as any)
         showToast(formatHumanError(err, 'Update Failed'), 'error')
         return
       }
       if (mutate) mutate()
       showToast('Profile Updated Successfully', 'success')
-    } catch (e) {
+    } catch (e: any) {
       console.error('[SettingsPage] Update Error:', e)
       showToast(formatHumanError(e, 'Network error preventing profile save'), 'error')
     } finally {
@@ -120,15 +120,15 @@ const SettingsPage: React.FC = () => {
     setChangingPass(true)
     try {
       // Fix: Prepend /api to the endpoint path
-      const res = await fetch(`${API_URL}/api/auth/password/change`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_householdId') || ''
-        },
-        body: JSON.stringify({ newPassword })
-      })
+      const res = (await fetch(`${API_URL}/api/auth/password/change`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': localStorage.getItem('ledger_householdId') || ''
+              },
+              body: JSON.stringify({ newPassword })
+            }) as any)
       if (res.ok) {
         showToast('Password updated successfuly', 'success')
         
@@ -140,16 +140,16 @@ const SettingsPage: React.FC = () => {
               name: profile?.displayName || user?.displayName
             });
             navigator.credentials.store(cred);
-          } catch (e) {
+          } catch (e: any) {
             console.warn('[Credential Manager] Update failed:', e);
           }
         }
         setNewPassword('')
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(err.message || 'Failed to update password', 'error');
       }
-    } catch (e) {
+    } catch (e: any) {
       showToast('Network error updating password', 'error')
     } finally {
       setChangingPass(false)
@@ -159,22 +159,22 @@ const SettingsPage: React.FC = () => {
   const handleUnlinkIdentity = async () => {
     if (!confirmUnlink) return
     try {
-      const res = await fetch(`${API_URL}/api/user/identities/${confirmUnlink.id}?keep_settings=${keepSettingsOnUnlink}`, {
-        method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_householdId') || ''
-        }
-      });
+      const res = (await fetch(`${API_URL}/api/user/identities/${confirmUnlink.id}?keep_settings=${keepSettingsOnUnlink}`, {
+              method: 'DELETE',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': localStorage.getItem('ledger_householdId') || ''
+              }
+            }) as any);
       if (res.ok) {
         showToast(`${confirmUnlink.provider} unlinked successfully`, 'success');
         mutateIdentities();
         mutate();
       } else {
-        const err = await res.json();
+        const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to unlink account'), 'error');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
       showToast(formatHumanError(e, 'Network error during unlink'), 'error');
     } finally {
@@ -185,15 +185,15 @@ const SettingsPage: React.FC = () => {
   const handleSyncProfile = async (provider: string, identityId: string) => {
     setSyncing(provider)
     try {
-      const res = await fetch(`${API_URL}/api/user/profile/sync`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': localStorage.getItem('ledger_householdId') || ''
-        },
-        body: JSON.stringify({ provider, identityId })
-      })
+      const res = (await fetch(`${API_URL}/api/user/profile/sync`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': localStorage.getItem('ledger_householdId') || ''
+              },
+              body: JSON.stringify({ provider, identityId })
+            }) as any)
       if (res.ok) {
         showToast(`Synced with ${provider}`, 'success')
         mutate()

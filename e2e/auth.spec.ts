@@ -5,7 +5,7 @@ test.describe('Ledger Authentication & Initialization Flow', () => {
     await page.goto('/');
 
     // Expect a title "to contain" a substring.
-    await expect(page).toHaveTitle(/LEDGER/);
+    await expect(page).toHaveTitle(/Ledger/i);
 
     // Expect the floating footer
     const footer = page.locator('footer');

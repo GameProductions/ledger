@@ -43,20 +43,20 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
         setLoading(true);
 
         const apiUrl = getApiUrl().replace(/\/$/, '');
-        const res = await fetch(`${apiUrl}/api/planning/pay-exceptions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                payScheduleId: payday.payScheduleId,
-                originalDate: payday.originalDate,
-                overrideDate: overrideDate || null,
-                overrideAmountCents: overrideAmountCents || null,
-                note: note || null
-            })
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/pay-exceptions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        payScheduleId: payday.payScheduleId,
+                        originalDate: payday.originalDate,
+                        overrideDate: overrideDate || null,
+                        overrideAmountCents: overrideAmountCents || null,
+                        note: note || null
+                    })
+                }) as any);
 
         if (res.ok) {
             showToast('Private payday exception saved');
@@ -73,12 +73,12 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
         setLoading(true);
 
         const apiUrl = getApiUrl().replace(/\/$/, '');
-        const res = await fetch(`${apiUrl}/api/planning/pay-exceptions/${payday.id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const res = (await fetch(`${apiUrl}/api/planning/pay-exceptions/${payday.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }) as any);
 
         if (res.ok) {
             showToast('Exception cleared - reverted to projected data');

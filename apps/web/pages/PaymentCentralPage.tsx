@@ -42,25 +42,25 @@ const PaymentCentralPage: React.FC = () => {
       const apiUrl = getApiUrl();
       const headers = { 'Authorization': `Bearer ${token}`, 'x-household-id': householdId || '' };
       
-      const [methodsRes, accountsRes, providersRes, subsRes] = await Promise.all([
-        fetch(`${apiUrl}/api/user/payment-methods`, { headers }),
-        fetch(`${apiUrl}/api/user/linked-accounts`, { headers }),
-        fetch(`${apiUrl}/api/data/providers`, { headers }),
-        fetch(`${apiUrl}/api/planning/subscriptions`, { headers })
-      ]);
+      const [methodsRes, accountsRes, providersRes, subsRes] = (await Promise.all([
+              fetch(`${apiUrl}/api/user/payment-methods`, { headers }),
+              fetch(`${apiUrl}/api/user/linked-accounts`, { headers }),
+              fetch(`${apiUrl}/api/data/providers`, { headers }),
+              fetch(`${apiUrl}/api/planning/subscriptions`, { headers })
+            ]) as any);
       
-      const [methodsData, accountsData, providersData, subsData] = await Promise.all([
-        methodsRes.json(),
-        accountsRes.json(),
-        providersRes.json(),
-        subsRes.json()
-      ]);
+      const [methodsData, accountsData, providersData, subsData] = (await Promise.all([
+              methodsRes.json(),
+              accountsRes.json(),
+              providersRes.json(),
+              subsRes.json()
+            ]) as any);
       
       setPaymentMethods(Array.isArray(methodsData) ? methodsData : []);
       setLinkedAccounts(Array.isArray(accountsData) ? accountsData : []);
       setProviders(Array.isArray(providersData) ? providersData : []);
       setSubscriptions(Array.isArray(subsData) ? subsData : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch payment data:', err);
     } finally {
       setLoading(false);
@@ -74,22 +74,22 @@ const PaymentCentralPage: React.FC = () => {
   const handleAddMethod = async (e: React.FormEvent) => {
     e.preventDefault();
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/user/payment-methods`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json',
-        'x-household-id': householdId || ''
-      },
-      body: JSON.stringify(newMethod)
-    });
+    const res = (await fetch(`${apiUrl}/api/user/payment-methods`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json',
+            'x-household-id': householdId || ''
+          },
+          body: JSON.stringify(newMethod)
+        }) as any);
     if (res.ok) {
       showToast('Payment method added!', 'success');
       setShowAddMethod(false);
       setNewMethod({ name: '', type: 'credit_card', lastFour: '', brandingUrl: '' });
       fetchData();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.error || 'Failed to add method', 'error');
     }
   };
@@ -110,22 +110,22 @@ const PaymentCentralPage: React.FC = () => {
       status: newAccount.status
     };
 
-    const res = await fetch(`${apiUrl}/api/user/linked-accounts`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${token}`, 
-        'Content-Type': 'application/json',
-        'x-household-id': householdId || ''
-      },
-      body: JSON.stringify(payload)
-    });
+    const res = (await fetch(`${apiUrl}/api/user/linked-accounts`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json',
+            'x-household-id': householdId || ''
+          },
+          body: JSON.stringify(payload)
+        }) as any);
     if (res.ok) {
       showToast('Account linked successfully!', 'success');
       setShowLinkAccount(false);
       setNewAccount({ providerId: '', paymentMethodId: '', emailAttached: '', membershipStartDate: '', membershipEndDate: '', subscriptionId: '', notes: '', status: 'active' });
       fetchData();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.error || 'Failed to link account', 'error');
     }
   };

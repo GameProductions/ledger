@@ -16,7 +16,7 @@ const GithubIcon = ({ size = 20, className = "" }: { size?: number, className?: 
 const SupportPortal: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast } = useToast();
-  const { data: issues = [], mutate } = useApi('/api/support/issues');
+  const { data: issues = [], mutate } = (useApi('/api/support/issues') as any);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -27,7 +27,7 @@ const SupportPortal: React.FC = () => {
   });
 
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
-  const { data: comments = [], mutate: mutateComments } = useApi(selectedIssueId ? `/api/support/issues/${selectedIssueId}/comments` : '');
+  const { data: comments = [], mutate: mutateComments } = (useApi(selectedIssueId ? `/api/support/issues/${selectedIssueId}/comments` : '') as any);
   const [commentBody, setCommentBody] = useState('');
   const [isCommenting, setIsCommenting] = useState(false);
 
@@ -38,22 +38,22 @@ const SupportPortal: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const res = await fetch(`${getApiUrl()}/api/support/issues`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({
-          ...formData,
-          metadata: {
-            url: window.location.href,
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-          }
-        })
-      });
+      const res = (await fetch(`${getApiUrl()}/api/support/issues`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({
+                ...formData,
+                metadata: {
+                  url: window.location.href,
+                  userAgent: navigator.userAgent,
+                  timestamp: new Date().toISOString()
+                }
+              })
+            }) as any);
       
       if (res.ok) {
         showToast('Support Request Sent', 'success');
@@ -73,21 +73,21 @@ const SupportPortal: React.FC = () => {
     setIsCommenting(true);
     
     try {
-      const res = await fetch(`${getApiUrl()}/api/support/issues/${selectedIssueId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ body: commentBody })
-      });
+      const res = (await fetch(`${getApiUrl()}/api/support/issues/${selectedIssueId}/comments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ body: commentBody })
+            }) as any);
       
       if (res.ok) {
         setCommentBody('');
         mutateComments();
         showToast('Comment posted', 'success');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Error posting comment', 'error');
     } finally {
       setIsCommenting(false);

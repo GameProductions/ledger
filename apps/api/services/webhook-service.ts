@@ -20,7 +20,7 @@ export const isValidWebhookUrl = (url: string) => {
     if (blacklist.some(h => hostname.includes(h))) return false
     
     return true
-  } catch (e) {
+  } catch (e: any) {
     return false
   }
 }
@@ -29,12 +29,12 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
   if (!householdId) return
 
   const db = getDb(c.env)
-  const hooks = await db.select({
-    id: webhooks.id,
-    url: webhooks.url,
-    secret: webhooks.secret,
-    eventList: webhooks.eventList
-  }).from(webhooks).where(and(eq(webhooks.householdId, householdId), eq(webhooks.isActive, true)))
+  const hooks = (await db.select({
+      id: webhooks.id,
+      url: webhooks.url,
+      secret: webhooks.secret,
+      eventList: webhooks.eventList
+    }).from(webhooks).where(and(eq(webhooks.householdId, householdId), eq(webhooks.isActive, true))) as any)
 
   for (const hook of hooks) {
     if (!isValidWebhookUrl(hook.url as string)) {
@@ -44,7 +44,7 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
 
     const events = (hook.eventList as string).split(',')
     if (events.includes('*') || events.includes(event)) {
-      const decSecret = await decrypt(hook.secret as string, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+      const decSecret = (await decrypt(hook.secret as string, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET) as any)
       const finalSecret = decSecret === 'DECRYPTION_FAILED' ? hook.secret : decSecret
 
       const deliveryId = crypto.randomUUID()
@@ -58,10 +58,10 @@ export const dispatchWebhook = async (c: Context<{ Bindings: Bindings, Variables
 
       // FORENSIC HARDENING: Generate HMAC-SHA256 signature instead of sending raw secret
       const encoder = new TextEncoder()
-      const key = await crypto.subtle.importKey(
-        'raw', encoder.encode(finalSecret as string), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-      )
-      const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(bodyStr))
+      const key = (await crypto.subtle.importKey(
+              'raw', encoder.encode(finalSecret as string), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+            ) as any)
+      const signature = (await crypto.subtle.sign('HMAC', key, encoder.encode(bodyStr)) as any)
       const sigHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
 
       // Log Attempt

@@ -33,15 +33,15 @@ const DataCenterPage: React.FC = () => {
     if (!url) return;
     setScanning(true);
     try {
-      const res = await fetch(`${API_URL}/api/data/scrape`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
-        },
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
+      const res = (await fetch(`${API_URL}/api/data/scrape`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`
+              },
+              body: JSON.stringify({ url })
+            }) as any);
+      const data = (await res.json() as any);
       setScanResult(data.data);
     } finally {
       setScanning(false);

@@ -11,9 +11,9 @@ const SnapshotViewer: React.FC = () => {
     const fetchSnapshot = async () => {
       const id = window.location.hash.split('/').pop();
       try {
-        const res = await fetch(`${getApiUrl()}/api/public/snapshots/${id}`);
+        const res = (await fetch(`${getApiUrl()}/api/public/snapshots/${id}`) as any);
         if (!res.ok) throw new Error('Snapshot not found or expired');
-        const data = await res.json();
+        const data = (await res.json() as any);
         setSnapshot(data);
       } catch (err: any) {
         setError(err.message);

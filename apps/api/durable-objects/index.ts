@@ -54,7 +54,7 @@ export class Vault {
     }
 
     if (request.method === 'GET') {
-      const value = await this.state.storage.get(vaultKey)
+      const value = (await this.state.storage.get(vaultKey) as any)
       return new Response(JSON.stringify({ value }))
     }
 

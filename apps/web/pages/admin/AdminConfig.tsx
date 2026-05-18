@@ -18,17 +18,17 @@ const AdminConfig: React.FC = () => {
       try {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = getApiUrl();
-        const [configRes, featureRes] = await Promise.all([
-          fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`${apiUrl}/api/admin/system/features`, { headers: { 'Authorization': `Bearer ${token}` } })
-        ]);
+        const [configRes, featureRes] = (await Promise.all([
+                  fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                  fetch(`${apiUrl}/api/admin/system/features`, { headers: { 'Authorization': `Bearer ${token}` } })
+                ]) as any);
         
-        const configData = await configRes.json();
-        const featureData = await featureRes.json();
+        const configData = (await configRes.json() as any);
+        const featureData = (await featureRes.json() as any);
         
         setConfigs(configData.data || []);
         setFeatures(featureData.data || []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch PCC config:', err);
       } finally {
         setLoading(false);
@@ -66,21 +66,21 @@ const AdminConfig: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/system/self-heal`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/system/self-heal`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       setHealResult({ success: data.success, message: data.message || (data.success ? "System tables healed successfully." : "Heal failed.") });
       setConfirmHeal(false);
       
       // Refresh config if successful
       if (data.success) {
-        const configRes = await fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const configData = await configRes.json();
+        const configRes = (await fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }) as any);
+        const configData = (await configRes.json() as any);
         setConfigs(configData.data || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       setHealResult({ success: false, message: "Network error during self-heal." });
     } finally {
       setHealing(false);

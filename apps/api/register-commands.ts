@@ -38,9 +38,9 @@ async function registerCommands() {
   try {
     // 1. Get Application ID from @me
     console.log('Fetching Application ID...');
-    const meRes = await fetch('https://discord.com/api/v10/users/@me', {
-      headers: { Authorization: `Bot ${TOKEN}` },
-    });
+    const meRes = (await fetch('https://discord.com/api/v10/users/@me', {
+          headers: { Authorization: `Bot ${TOKEN}` },
+        }) as any);
     
     if (!meRes.ok) {
       throw new Error(`Failed to fetch @me: ${meRes.statusText}`);
@@ -52,24 +52,24 @@ async function registerCommands() {
 
     // 2. Register Global Commands
     console.log(`Registering ${commands.length} commands...`);
-    const res = await fetch(`https://discord.com/api/v10/applications/${appId}/commands`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bot ${TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(commands),
-    });
+    const res = (await fetch(`https://discord.com/api/v10/applications/${appId}/commands`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bot ${TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(commands),
+        }) as any);
 
     if (res.ok) {
       console.log('✅ Successfully registered commands.');
-      const data = await res.json();
+      const data = (await res.json() as any);
       console.log(JSON.stringify(data, null, 2));
     } else {
-      const error = await res.text();
+      const error = (await res.text() as any);
       throw new Error(`Failed to register commands: ${res.status} ${error}`);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error registering commands:', error);
     process.exit(1);
   }

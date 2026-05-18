@@ -13,12 +13,12 @@ const billing = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 billing.get('/networks', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(billingProcessors).orderBy(billingProcessors.name)
+  const results = (await db.select().from(billingProcessors).orderBy(billingProcessors.name) as any)
   return c.json({ success: true, data: results || [] })
 })
 
 billing.post('/networks', zValidator('json', BillingProcessorSchema), async (c) => {
-  const data = c.req.valid('json')
+  const data = (c.req.valid('json') as any)
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   await db.insert(billingProcessors).values({ id, ...data })
@@ -28,7 +28,7 @@ billing.post('/networks', zValidator('json', BillingProcessorSchema), async (c) 
 
 billing.get('/providers', async (c) => {
   const db = getDb(c.env)
-  const results = await db.select().from(serviceProviders).orderBy(serviceProviders.name)
+  const results = (await db.select().from(serviceProviders).orderBy(serviceProviders.name) as any)
   return c.json({ success: true, data: results || [] })
 })
 

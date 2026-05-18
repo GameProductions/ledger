@@ -25,15 +25,15 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsRes, logsRes, configRes] = await Promise.all([
-          secureFetch(`/api/admin/stats`),
-          secureFetch(`/api/admin/audit/system`),
-          secureFetch(`/api/admin/system/config`)
-        ]);
+        const [statsRes, logsRes, configRes] = (await Promise.all([
+                  secureFetch(`/api/admin/stats`),
+                  secureFetch(`/api/admin/audit/system`),
+                  secureFetch(`/api/admin/system/config`)
+                ]) as any);
         
-        const statsData = await statsRes.json();
-        const logsData = await logsRes.json();
-        const configData = await configRes.json();
+        const statsData = (await statsRes.json() as any);
+        const logsData = (await logsRes.json() as any);
+        const configData = (await configRes.json() as any);
         
         if (statsData.success) setStats(statsData.data);
         if (logsData.success) setSystemLogs(logsData.data);
@@ -42,7 +42,7 @@ const AdminDashboard: React.FC = () => {
           const maintenance = configData.data.find((c: any) => c.configKey === 'MAINTENANCE_MODE');
           setMaintenanceEnabled(maintenance?.configValue === 'true');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch PCC data:', err);
       } finally {
         setLoading(false);
@@ -54,17 +54,17 @@ const AdminDashboard: React.FC = () => {
   const handleToggleMaintenance = async () => {
     setLoadingMaintenance(true);
     try {
-      const res = await secureFetch(`/api/admin/system/maintenance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !maintenanceEnabled })
-      });
-      const data = await res.json();
+      const res = (await secureFetch(`/api/admin/system/maintenance`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ enabled: !maintenanceEnabled })
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         setMaintenanceEnabled(!maintenanceEnabled);
         showToast(`Maintenance mode ${!maintenanceEnabled ? 'enabled' : 'disabled'}`, 'info');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Action failed', 'error');
     } finally {
       setLoadingMaintenance(false);
@@ -75,22 +75,22 @@ const AdminDashboard: React.FC = () => {
     if (!announcement.title || !announcement.content) return;
     setSending(true);
     try {
-      const res = await secureFetch(`/api/admin/communications/announcements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title: announcement.title, 
-          contentMd: announcement.content, 
-          priority: announcement.priority 
-        })
-      });
-      const data = await res.json();
+      const res = (await secureFetch(`/api/admin/communications/announcements`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                title: announcement.title, 
+                contentMd: announcement.content, 
+                priority: announcement.priority 
+              })
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         showToast('Announcement broadcasted', 'success');
         setIsAnnouncementModalOpen(false);
         setAnnouncement({ title: '', content: '', priority: 'info' });
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Broadcast failed', 'error');
     } finally {
       setSending(false);
@@ -100,16 +100,16 @@ const AdminDashboard: React.FC = () => {
   const handleMigrateSecrets = async () => {
     setMigratingSecrets(true);
     try {
-      const res = await secureFetch(`/api/admin/system/maintenance/migrate-secrets`, {
-        method: 'POST'
-      });
-      const data = await res.json();
+      const res = (await secureFetch(`/api/admin/system/maintenance/migrate-secrets`, {
+              method: 'POST'
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         showToast(`Secret migration complete: ${data.count} secrets encrypted`, 'success');
       } else {
         showToast(data.error || 'Migration failed', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Secret migration failed', 'error');
     } finally {
       setMigratingSecrets(false);
@@ -119,17 +119,17 @@ const AdminDashboard: React.FC = () => {
   const handleGithubSync = async () => {
     setSyncingGithub(true);
     try {
-      const res = await secureFetch(`/api/support/webhook/github`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync' })
-      });
+      const res = (await secureFetch(`/api/support/webhook/github`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'sync' })
+            }) as any);
       if (res.ok) {
         showToast('GitHub sync triggered successfully', 'success');
       } else {
         showToast('GitHub sync failed', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('GitHub sync request failed', 'error');
     } finally {
       setSyncingGithub(false);

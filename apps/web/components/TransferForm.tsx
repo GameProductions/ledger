@@ -3,7 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 
 const TransferForm: React.FC = () => {
-  const { data: accounts } = useApi('/api/financials/accounts')
+  const { data: accounts } = (useApi('/api/financials/accounts') as any)
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [amount, setAmount] = useState('')

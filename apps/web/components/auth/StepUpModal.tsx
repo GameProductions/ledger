@@ -23,28 +23,28 @@ export const StepUpModal: React.FC<StepUpModalProps> = ({ isOpen, onClose, onSuc
 
     try {
       // 1. Get Authentication Options
-      const optionsRes = await fetch(`${API_URL}/api/auth/passkeys/login-options`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const optionsEnvelope = await optionsRes.json();
+      const optionsRes = (await fetch(`${API_URL}/api/auth/passkeys/login-options`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const optionsEnvelope = (await optionsRes.json() as any);
       
       if (!optionsEnvelope.success) throw new Error(optionsEnvelope.error || 'Failed to get auth options');
 
       // 2. Start WebAuthn Authentication
-      const assertion = await startAuthentication({ optionsJSON: optionsEnvelope.data });
+      const assertion = (await startAuthentication({ optionsJSON: optionsEnvelope.data }) as any);
 
       // 3. Verify Assertion
-      const verifyRes = await fetch(`${API_URL}/api/auth/passkeys/step-up-verify`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ assertion })
-      });
+      const verifyRes = (await fetch(`${API_URL}/api/auth/passkeys/step-up-verify`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ assertion })
+            }) as any);
 
-      const verifyEnvelope = await verifyRes.json();
+      const verifyEnvelope = (await verifyRes.json() as any);
       if (verifyEnvelope.success) {
         onSuccess();
       } else {

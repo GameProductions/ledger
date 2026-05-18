@@ -25,14 +25,14 @@ const JoinHouseholdPage: React.FC = () => {
     setLoading(true)
     setStatus('loading')
     try {
-      const res = await fetch(`${getApiUrl()}/api/user/households/join`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${userToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token: inviteToken })
-      })
+      const res = (await fetch(`${getApiUrl()}/api/user/households/join`, {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${userToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ token: inviteToken })
+            }) as any)
 
       let data: any = {}
       try {
@@ -42,7 +42,7 @@ const JoinHouseholdPage: React.FC = () => {
         } else {
           data = { error: await res.text() }
         }
-      } catch (e) {
+      } catch (e: any) {
         data = { error: 'Failed to parse server response' }
       }
 
@@ -66,7 +66,7 @@ const JoinHouseholdPage: React.FC = () => {
         window.location.reload() // Reload to refresh context
       }, 2000)
 
-    } catch (err) {
+    } catch (err: any) {
       setStatus('error')
       setErrorMsg('Network error. Check your connection.')
       showToast('Network error during join.', 'error')

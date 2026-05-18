@@ -38,11 +38,11 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const fetchOnboardingStatus = async () => {
     try {
-      const res = await fetch(`${apiUrl}/api/user/onboarding`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      const res = (await fetch(`${apiUrl}/api/user/onboarding`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any)
       if (res.ok) {
-        const envelope = await res.json()
+        const envelope = (await res.json() as any)
         if (envelope.success && envelope.data) {
           const data = envelope.data
           setCompletedSteps(data.completedSteps || [])
@@ -57,7 +57,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[DIAGNOSTIC_FAILURE] Failed to fetch onboarding status:', error)
     } finally {
       setIsLoading(false)
@@ -66,16 +66,16 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const completeStep = async (step: string, isLast?: boolean, version?: string) => {
     try {
-      const res = await fetch(`${apiUrl}/api/user/onboarding/step`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ step, isLast, version })
-      })
+      const res = (await fetch(`${apiUrl}/api/user/onboarding/step`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ step, isLast, version })
+            }) as any)
       if (res.ok) {
-        const envelope = await res.json()
+        const envelope = (await res.json() as any)
         if (envelope.success && envelope.data) {
           const data = envelope.data
           setCompletedSteps(data.completedSteps || [])
@@ -83,7 +83,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           if (isLast) setActiveStep(null)
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[DIAGNOSTIC_FAILURE] Failed to update onboarding step:', error)
     }
   }

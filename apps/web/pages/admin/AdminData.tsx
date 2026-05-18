@@ -25,10 +25,10 @@ const AdminData: React.FC = () => {
 
   const fetchItems = async () => {
     try {
-      const res = await secureFetch(`/api/admin/system/registry`);
-      const data = await res.json();
+      const res = (await secureFetch(`/api/admin/system/registry`) as any);
+      const data = (await res.json() as any);
       setItems(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch system data:', err);
     } finally {
       setLoading(false);
@@ -50,10 +50,10 @@ const AdminData: React.FC = () => {
       metadataJson: newItem.metadataJson || {}
     };
 
-    const res = await secureFetch(`/api/admin/system/registry`, {
-      method: 'POST',
-      body: JSON.stringify(submissionData)
-    });
+    const res = (await secureFetch(`/api/admin/system/registry`, {
+          method: 'POST',
+          body: JSON.stringify(submissionData)
+        }) as any);
     
     if (res.ok) {
       showToast('System item added successfully', 'success');
@@ -61,15 +61,15 @@ const AdminData: React.FC = () => {
       setNewItem({ itemType: 'processor', name: '', websiteUrl: '', logoUrl: '', metadataJson: {} });
       fetchItems();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.message || 'Submission Failed', 'error');
     }
   };
 
   const handleDelete = async (id: string) => {
-    const res = await secureFetch(`/api/admin/system/registry/${id}`, {
-      method: 'DELETE'
-    });
+    const res = (await secureFetch(`/api/admin/system/registry/${id}`, {
+          method: 'DELETE'
+        }) as any);
 
     if (res.ok) {
       showToast('Item removed from system', 'success');

@@ -15,7 +15,7 @@ interface ReminderManagerProps {
 export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targetType, targetName, onClose }) => {
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
-  const { data: reminders, loading, mutate } = useApi(`/api/planning/reminders/${targetType}/${targetId}`)
+  const { data: reminders, loading, mutate } = (useApi(`/api/planning/reminders/${targetType}/${targetId}`) as any)
   const [showAdd, setShowAdd] = useState(false)
 
   const [deliveryType, setDeliveryType] = useState('discord_dm')
@@ -28,22 +28,22 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
     if (!token) return
     const apiUrl = getApiUrl().replace(/\/$/, '')
 
-    const res = await fetch(`${apiUrl}/api/planning/reminders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'x-household-id': householdId || ''
-      },
-      body: JSON.stringify({
-        targetId: targetId,
-        targetType: targetType,
-        deliveryType: deliveryType,
-        deliveryTarget: deliveryTarget,
-        frequencyDays: Number(frequencyDays),
-        note: note
-      })
-    })
+    const res = (await fetch(`${apiUrl}/api/planning/reminders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          },
+          body: JSON.stringify({
+            targetId: targetId,
+            targetType: targetType,
+            deliveryType: deliveryType,
+            deliveryTarget: deliveryTarget,
+            frequencyDays: Number(frequencyDays),
+            note: note
+          })
+        }) as any)
 
     if (res.ok) {
       showToast('Reminder added successfully!', 'success')
@@ -60,13 +60,13 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
     if (!token) return
     const apiUrl = getApiUrl().replace(/\/$/, '')
 
-    const res = await fetch(`${apiUrl}/api/planning/reminders/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'x-household-id': householdId || ''
-      }
-    })
+    const res = (await fetch(`${apiUrl}/api/planning/reminders/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          }
+        }) as any)
 
     if (res.ok) {
       showToast('Reminder deleted', 'success')

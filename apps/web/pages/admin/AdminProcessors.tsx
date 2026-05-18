@@ -25,14 +25,14 @@ const AdminProcessors: React.FC = () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/api/admin/billing/networks`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${apiUrl}/api/admin/billing/networks`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         setProcessors(data.data || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch processors:', err);
     } finally {
       setLoading(false);
@@ -54,11 +54,11 @@ const AdminProcessors: React.FC = () => {
     
     const method = editingId ? 'PATCH' : 'POST';
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(newItem)
-    });
+    const res = (await fetch(url, {
+          method,
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(newItem)
+        }) as any);
 
     if (res.ok) {
       showToast(editingId ? 'Processor updated' : 'New processor added', 'success');
@@ -67,7 +67,7 @@ const AdminProcessors: React.FC = () => {
       setNewItem({ name: '', websiteUrl: '', brandingUrl: '', support_url: '', subscriptionId_notes: '' });
       fetchProcessors();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.message || 'Failed to save', 'error');
     }
   };
@@ -88,17 +88,17 @@ const AdminProcessors: React.FC = () => {
   const handleDelete = async (id: string) => {
     const token = localStorage.getItem('ledger_token');
     const apiUrl = getApiUrl();
-    const res = await fetch(`${apiUrl}/api/admin/billing/networks/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const res = (await fetch(`${apiUrl}/api/admin/billing/networks/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }) as any);
 
     if (res.ok) {
       showToast('Processor deleted', 'success');
       setConfirmDeleteId(null);
       fetchProcessors();
     } else {
-      const err = await res.json();
+      const err = (await res.json() as any);
       showToast(err.message || 'Deletion failed', 'error');
     }
   };

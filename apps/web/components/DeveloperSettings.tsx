@@ -8,8 +8,8 @@ import { getApiUrl } from '../utils/api'
 const DeveloperSettings: React.FC = () => {
   const { token, householdId } = useAuth()
   const { showToast, showPrompt } = useToast()
-  const { data: tokens = [], mutate: mutateTokens } = useApi('/api/data/tools/tokens')
-  const { data: webhooksList, mutate: mutateWebhooks } = useApi('/api/interop/developer/webhooks')
+  const { data: tokens = [], mutate: mutateTokens } = (useApi('/api/data/tools/tokens') as any)
+  const { data: webhooksList, mutate: mutateWebhooks } = (useApi('/api/interop/developer/webhooks') as any)
   const [newToken, setNewToken] = useState<string | null>(null)
   const [webhookUrl, setWebhookUrl] = useState('')
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
@@ -19,25 +19,25 @@ const DeveloperSettings: React.FC = () => {
   const [confirmRestore, setConfirmRestore] = useState(false)
 
   const createToken = async () => {
-    const name = await showPrompt('Name for this token?')
+    const name = (await showPrompt('Name for this token?') as any)
     if (!name) return
     const apiUrl = getApiUrl()
-    const res = await fetch(`${apiUrl}/api/data/tools/tokens`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'x-household-id': householdId || ''
-      },
-      body: JSON.stringify({ name })
-    })
-    const data = await res.json()
+    const res = (await fetch(`${apiUrl}/api/data/tools/tokens`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          },
+          body: JSON.stringify({ name })
+        }) as any)
+    const data = (await res.json() as any)
     setNewToken(data.token)
     mutateTokens()
   }
 
   const renameToken = async (id: string, currentName: string) => {
-    const newName = await showPrompt('New name for this token?', currentName)
+    const newName = (await showPrompt('New name for this token?', currentName) as any)
     if (!newName || newName === currentName) return
     
     const apiUrl = getApiUrl()
@@ -102,10 +102,10 @@ const DeveloperSettings: React.FC = () => {
   const exportData = async () => {
     const apiUrl = getApiUrl()
     try {
-      const res = await fetch(`${apiUrl}/api/backup/export`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'x-household-id': householdId || '' }
-      })
-      const data = await res.json()
+      const res = (await fetch(`${apiUrl}/api/backup/export`, {
+              headers: { 'Authorization': `Bearer ${token}`, 'x-household-id': householdId || '' }
+            }) as any)
+      const data = (await res.json() as any)
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -113,7 +113,7 @@ const DeveloperSettings: React.FC = () => {
       a.download = `ledger_backup_${new Date().toISOString().split('T')[0]}.json`
       a.click()
       showToast('Export successful', 'success')
-    } catch (err) {
+    } catch (err: any) {
       showToast('Export failed', 'error')
     }
   }
@@ -122,19 +122,19 @@ const DeveloperSettings: React.FC = () => {
     if (!restoreFile) return
     
     try {
-      const text = await restoreFile.text()
+      const text = (await restoreFile.text() as any)
       const body = JSON.parse(text)
       
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/backup/restore`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify(body)
-      })
+      const res = (await fetch(`${apiUrl}/api/backup/restore`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify(body)
+            }) as any)
       
       if (res.ok) {
         showToast('System Restored Successfully', 'success')
@@ -143,7 +143,7 @@ const DeveloperSettings: React.FC = () => {
       } else {
         throw new Error('Restore failed')
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Failed to restore data', 'error')
     }
   }
@@ -166,7 +166,7 @@ const DeveloperSettings: React.FC = () => {
         })
       })
       showToast('Backup scheduled', 'success')
-    } catch (err) {
+    } catch (err: any) {
       showToast('Failed to schedule backup', 'error')
     }
   }

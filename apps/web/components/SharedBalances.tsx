@@ -34,9 +34,9 @@ interface BalanceSummary {
 export default function SharedBalances() {
   const { token, user, householdId } = useAuth()
   const { showToast } = useToast()
-  const { data: balances = [], mutate: mutateBalances } = useApi('/api/financials/shared-balances')
-  const { data: summary = [], mutate: mutateSummary } = useApi('/api/financials/shared-balances/summary')
-  const { data: members = [] } = useApi(householdId ? `/api/user/households/${householdId}/members` : null)
+  const { data: balances = [], mutate: mutateBalances } = (useApi('/api/financials/shared-balances') as any)
+  const { data: summary = [], mutate: mutateSummary } = (useApi('/api/financials/shared-balances/summary') as any)
+  const { data: members = [] } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any)
   
   const [showAddModal, setShowAddModal] = useState(false)
   const [newIOU, setNewIOU] = useState({ toUserId: '', amount: '', description: '' })
@@ -49,19 +49,19 @@ export default function SharedBalances() {
     setAdding(true)
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/financials/shared-balances`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({
-          toUserId: newIOU.toUserId,
-          amountCents: Math.round(parseFloat(newIOU.amount) * 100),
-          description: newIOU.description || undefined
-        })
-      })
+      const res = (await fetch(`${apiUrl}/api/financials/shared-balances`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({
+                toUserId: newIOU.toUserId,
+                amountCents: Math.round(parseFloat(newIOU.amount) * 100),
+                description: newIOU.description || undefined
+              })
+            }) as any)
       if (res.ok) {
         showToast('IOU recorded', 'success')
         setShowAddModal(false)
@@ -71,7 +71,7 @@ export default function SharedBalances() {
       } else {
         showToast('Failed to record IOU', 'error')
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Error creating IOU', 'error')
     } finally {
       setAdding(false)
@@ -92,7 +92,7 @@ export default function SharedBalances() {
       setConfirmDeleteId(null)
       mutateBalances()
       mutateSummary()
-    } catch (err) {
+    } catch (err: any) {
       showToast('Failed to delete', 'error')
     }
   }
@@ -100,22 +100,22 @@ export default function SharedBalances() {
   const settleWith = async (withUserId: string) => {
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/financials/shared-balances/settle`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({ withUserId: withUserId })
-      })
+      const res = (await fetch(`${apiUrl}/api/financials/shared-balances/settle`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({ withUserId: withUserId })
+            }) as any)
       if (res.ok) {
         showToast('All settled!', 'success')
         setConfirmSettleUserId(null)
         mutateBalances()
         mutateSummary()
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Settlement failed', 'error')
     }
   }

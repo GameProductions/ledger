@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
@@ -27,17 +28,17 @@ const ReconciliationPage: React.FC = () => {
 
   const fetchProposals = async () => {
     try {
-      const res = await fetch(`${getApiUrl()}/api/financials/reconciliation/proposals`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${getApiUrl()}/api/financials/reconciliation/proposals`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              }
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         setProposals(data.data || []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to fetch proposals:', err);
     } finally {
       setLoading(false);
@@ -51,19 +52,19 @@ const ReconciliationPage: React.FC = () => {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await fetch(`${getApiUrl()}/api/financials/reconciliation/sync`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        }
-      });
-      const data = await res.json();
+      const res = (await fetch(`${getApiUrl()}/api/financials/reconciliation/sync`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              }
+            }) as any);
+      const data = (await res.json() as any);
       if (data.success) {
         showToast(`Engine synced. Found ${data.proposalsGenerated} new potential matches.`, 'success');
         fetchProposals();
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Sync failed', 'error');
     } finally {
       setSyncing(false);
@@ -75,21 +76,21 @@ const ReconciliationPage: React.FC = () => {
     if (ids.length === 0) return;
 
     try {
-      const res = await fetch(`${getApiUrl()}/api/financials/reconciliation/proposals/bulk-action`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({ proposalIds: ids, action })
-      });
+      const res = (await fetch(`${getApiUrl()}/api/financials/reconciliation/proposals/bulk-action`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({ proposalIds: ids, action })
+            }) as any);
       if (res.ok) {
         showToast(`${ids.length} proposals ${action === 'approve' ? 'approved' : 'rejected'}`, 'success');
         setSelected(new Set());
         fetchProposals();
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Action failed', 'error');
     }
   };

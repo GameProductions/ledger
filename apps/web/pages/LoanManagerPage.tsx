@@ -11,7 +11,7 @@ import { InlineToast } from '../components/ui/InlineToast';
 const LoanManagerPage: React.FC = () => {
   const { token, householdId } = useAuth();
   const { showToast, showConfirm, showPrompt } = useToast();
-  const { data: loans = [], mutate } = useApi('/api/planning/p2p/loans');
+  const { data: loans = [], mutate } = (useApi('/api/planning/p2p/loans') as any);
   
   const [isAdding, setIsAdding] = useState(false);
   const [newLoan, setNewLoan] = useState({
@@ -37,15 +37,15 @@ const LoanManagerPage: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`${getApiUrl()}/api/planning/p2p/loans`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify(newLoan)
-      });
+      const res = (await fetch(`${getApiUrl()}/api/planning/p2p/loans`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify(newLoan)
+            }) as any);
       if (res.ok) {
         showToast('Loan Record Created', 'success');
         setIsAdding(false);
@@ -62,7 +62,7 @@ const LoanManagerPage: React.FC = () => {
         const errData = await res.json() as any;
         showToast(errData.message || 'Creation failed', 'error');
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Creation failed', 'error');
     }
   };
@@ -79,13 +79,13 @@ const LoanManagerPage: React.FC = () => {
       showToast('Loan Deleted', 'success');
       setConfirmDeleteId(null);
       mutate();
-    } catch (err) {
+    } catch (err: any) {
       showToast('Deletion failed', 'error');
     }
   };
 
   const handleLogPayment = async (loanId: string) => {
-    const amountStr = await showPrompt('Enter payment amount (e.g. 50.00):', '', 'Log Payment');
+    const amountStr = (await showPrompt('Enter payment amount (e.g. 50.00):', '', 'Log Payment') as any);
     if (!amountStr) return;
     const val = parseFloat(amountStr);
     if (isNaN(val) || val <= 0) {
@@ -96,20 +96,20 @@ const LoanManagerPage: React.FC = () => {
     const email = await showPrompt('Enter recipient email for receipt (optional):', '', 'Receipt Recipient') || '';
 
     try {
-      const res = await fetch(`${getApiUrl()}/api/planning/p2p/loans/${loanId}/payments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'x-household-id': householdId || ''
-        },
-        body: JSON.stringify({ amountCents, email, method: 'Manual Entry' })
-      });
+      const res = (await fetch(`${getApiUrl()}/api/planning/p2p/loans/${loanId}/payments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || ''
+              },
+              body: JSON.stringify({ amountCents, email, method: 'Manual Entry' })
+            }) as any);
       if (res.ok) {
         showToast('Payment Logged Successfully', 'success');
         mutate();
       }
-    } catch (err) {
+    } catch (err: any) {
       showToast('Payment log failed', 'error');
     }
   };

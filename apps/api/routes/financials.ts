@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
@@ -35,7 +34,8 @@ import {
   sharedBalances,
   transactionPairingRules,
   trackedExpenses,
-  activityLogs
+  activityLogs,
+  users
 } from '#/schema'
 import { billers, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
@@ -54,7 +54,7 @@ financials.get('/categories', async (c) => {
     const results = (await db.select().from(categories).where(eq(categories.householdId, householdId)) as any)
     return c.json({ 
       success: true, 
-      data: results.map(row => {
+      data: results.map((row: any) => {
         try {
           return CategoryOutputSchema.parse(row)
         } catch (e: any) {
@@ -128,7 +128,7 @@ financials.get('/accounts', async (c) => {
     
     return c.json({ 
       success: true, 
-      data: results.map(row => {
+      data: results.map((row: any) => {
         try {
           return AccountOutputSchema.parse(row)
         } catch (e: any) {
@@ -360,7 +360,7 @@ financials.get('/transactions', async (c) => {
 
     return c.json({ 
       success: true, 
-      data: results.map(row => {
+      data: results.map((row: any) => {
         try {
           return TransactionOutputSchema.parse(row)
         } catch (e: any) {
@@ -509,7 +509,7 @@ financials.get('/transactions/export', stepUpMiddleware, async (c) => {
     const headers = Object.keys(results[0])
     const csv = [
       headers.join(','),
-      ...results.map(row => headers.map(h => JSON.stringify(row[h as keyof typeof row] ?? '')).join(','))
+      ...results.map((row: any) => headers.map(h => JSON.stringify(row[h as keyof typeof row] ?? '')).join(','))
     ].join('\n')
     
     return new Response(csv, {
@@ -800,7 +800,7 @@ financials.post('/transactions/import/analyze', async (c: any) => {
     if (lines.length === 0 || !lines[0]) return apiError(c, 'Empty CSV', 'INVALID_FILE', 'The uploaded CSV file appears to be empty.')
     const headers = lines[0].split(',').map((h: string) => h.trim())
     const preview = lines.slice(1, 6)
-      .filter(l => l.trim() !== '')
+      .filter((l: any) => l.trim() !== '')
       .map((l: string) => l.split(',').map((v: string) => v.trim()))
     return c.json({ success: true, data: { type: 'csv', headers, preview } })
   }
@@ -1109,6 +1109,7 @@ financials.get('/shared-balances', async (c) => {
 
 financials.get('/shared-balances/summary', async (c) => {
   const householdId = c.get('householdId')
+  const db = getDb(c.env)
 
   // Net balances between all pairs of users
   const u1 = alias(users, 'u1')
@@ -1228,7 +1229,13 @@ financials.get('/reconciliation/proposals', async (c) => {
   const t2 = alias(transactions, 't2')
 
   const results = (await db.select({
-      ...reconciliationProposals,
+      id: reconciliationProposals.id,
+      householdId: reconciliationProposals.householdId,
+      primaryTransactionId: reconciliationProposals.primaryTransactionId,
+      suggestedTransactionId: reconciliationProposals.suggestedTransactionId,
+      confidenceScore: reconciliationProposals.confidenceScore,
+      status: reconciliationProposals.status,
+      createdAt: reconciliationProposals.createdAt,
       primaryDescription: t1.description,
       primaryAmount: t1.amountCents,
       primaryDate: t1.transactionDate,
@@ -1237,8 +1244,8 @@ financials.get('/reconciliation/proposals', async (c) => {
       suggestedDate: t2.transactionDate
     })
     .from(reconciliationProposals)
-    .join(t1, eq(reconciliationProposals.primaryTransactionId, t1.id))
-    .join(t2, eq(reconciliationProposals.suggestedTransactionId, t2.id))
+    .innerJoin(t1, eq(reconciliationProposals.primaryTransactionId, t1.id))
+    .innerJoin(t2, eq(reconciliationProposals.suggestedTransactionId, t2.id))
     .where(and(
       eq(reconciliationProposals.householdId, householdId),
       eq(reconciliationProposals.status, 'pending')

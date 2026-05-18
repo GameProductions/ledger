@@ -17,6 +17,7 @@ interface AuthContextType {
   setPrivacyMode: (active: boolean) => void
   triggerStepUp: (onResolved: () => void) => void
   secureFetch: (input: string, init?: RequestInit) => Promise<Response>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -149,12 +150,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res
   }, [token, householdId, triggerStepUp, logout])
 
+  const refreshProfile = React.useCallback(async () => {
+    if (!token) return
+    try {
+      const apiUrl = getApiUrl()
+      const res = await fetch(`${apiUrl}/api/user/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const envelope = (await res.json() as any)
+        if (envelope.success && envelope.data) {
+          setUser(envelope.data)
+          localStorage.setItem('ledger_user', JSON.stringify(envelope.data))
+        }
+      }
+    } catch (err) {
+      console.error('[Auth] Failed to refresh profile', err)
+    }
+  }, [token])
+
   const authValue = React.useMemo(() => ({ 
     user, token, householdId, globalRole, privacyMode, isImpersonating, isAdminVerified,
     setAdminVerified: setIsAdminVerified,
     login, logout, setHouseholdId, setPrivacyMode: handleSetPrivacyMode,
-    triggerStepUp, secureFetch
-  }), [user, token, householdId, globalRole, privacyMode, isImpersonating, isAdminVerified, login, logout, handleSetPrivacyMode, triggerStepUp, secureFetch])
+    triggerStepUp, secureFetch, refreshProfile
+  }), [user, token, householdId, globalRole, privacyMode, isImpersonating, isAdminVerified, login, logout, handleSetPrivacyMode, triggerStepUp, secureFetch, refreshProfile])
 
 
   return (

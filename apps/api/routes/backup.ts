@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -13,7 +12,7 @@ import {
   installmentPlans, personalLoans, loanPayments, bills, liabilitySplits
 } from '#/schema'
 import { eq, and, sql } from 'drizzle-orm'
-import { VaultService } from '../services/vault.service'
+import { VaultService } from '../utils/vault.service'
 import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
 const SCHEMA_MAP: Record<string, any> = {
@@ -117,7 +116,7 @@ backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
 })), async (c) => {
   const householdId = c.get('householdId')
   const { data } = c.req.valid('json')
-  const db = c.env.DB;
+  const db = getDb(c.env);
   
   let totalRestored = 0;
   const tables = Object.keys(data).filter(t => !!TABLE_WHITELIST[t]);
@@ -164,7 +163,7 @@ backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
           set: sanitizedRow
         })
       } else {
-        await db.run(sql`INSERT OR REPLACE INTO ${sql.identifier(table)} (${sql.raw(actualCols.join(', '))}) VALUES (${sql.raw(actualCols.map(() => '?').join(', '))})`.bind(...actualCols.map(c => sanitizedRow[c])))
+        await db.run(sql`INSERT OR REPLACE INTO ${sql.identifier(table)} (${sql.raw(actualCols.join(', '))}) VALUES (${sql.join(actualCols.map(c => sanitizedRow[c]), sql`, `)})`)
       }
       
       totalRestored++;
@@ -178,12 +177,10 @@ backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
 // 🛑 CLOUD SYNC: Provider Redundancy (Google/Dropbox/OneDrive)
 backup.post('/cloud/:provider', stepUpMiddleware, async (c) => {
   const householdId = c.get('householdId')
-  const provider = c.req.param('provider')
+  const provider = c.req.param('provider') as string
   const userId = c.get('userId')
-  const vaultService = new VaultService(c.env)
-  
-  // 1. Fetch Cloud Tokens from Vault
   const db = getDb(c.env)
+  const vaultService = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
   const identity = (await db.select({ id: userIdentities.id })
       .from(userIdentities)
       .where(and(eq(userIdentities.userId, userId), eq(userIdentities.provider, provider)))

@@ -4,8 +4,8 @@ import { getApiUrl } from '../utils/api';
 
 const API_URL = getApiUrl();
 
-export const globalMutate = (path: string | string[]) => {
-  const paths = Array.isArray(path) ? path : [path];
+export const globalMutate = (path?: string | string[]) => {
+  const paths = Array.isArray(path) ? path : [path || ''];
   paths.forEach(p => {
     window.dispatchEvent(new CustomEvent('ledger-api-mutate', { detail: { path: p } }));
   });

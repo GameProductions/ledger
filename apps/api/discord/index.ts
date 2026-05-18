@@ -33,7 +33,7 @@ discord.post('/interactions', async (c) => {
     
     if (name === 'ledger-safety') {
       const dbAccounts = (await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId)) as any);
-      const totalBalance = dbAccounts.reduce((sum, a) => sum + (a.balanceCents || 0), 0)
+      const totalBalance = dbAccounts.reduce((sum: any, a: any) => sum + (a.balanceCents || 0), 0)
       return c.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: { content: `🛡️ **LEDGER Safety Number**: Your current total balance is **$${(totalBalance / 100).toFixed(2)}**. Drive safe!` }
@@ -50,7 +50,7 @@ discord.post('/interactions', async (c) => {
       
       let content = "📅 **Upcoming Bills (7 Days)**:\n"
       if (subs.length === 0) content += "No bills due soon. You're all clear!"
-      else subs.forEach(s => { content += `- ${s.name}: **$${((s.amountCents || 0)/100).toFixed(2)}** on ${s.nextBillingDate}\n` })
+      else subs.forEach((s: any) => { content += `- ${s.name}: **$${((s.amountCents || 0)/100).toFixed(2)}** on ${s.nextBillingDate}\n` })
 
       return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
@@ -61,11 +61,11 @@ discord.post('/interactions', async (c) => {
               envelopeBalanceCents: categories.envelopeBalanceCents
             }).from(categories).where(eq(categories.householdId, householdId)).limit(5) as any);
       
-      const totalInCats = cats.reduce((sum, cat) => sum + (cat.envelopeBalanceCents || 0), 0)
-      const labels = cats.map(cat => cat.name)
+      const totalInCats = cats.reduce((sum: any, cat: any) => sum + (cat.envelopeBalanceCents || 0), 0)
+      const labels = cats.map((cat: any) => cat.name)
       
       // FORENSIC PRIVACY: Send percentages to 3rd party instead of raw currency amounts
-      const data = (cats.map(cat => {
+      const data = (cats.map((cat: any) => {
               if (totalInCats === 0) return 0
               return Math.round(((cat.envelopeBalanceCents || 0) / totalInCats) * 100)
             }) as any)
@@ -94,7 +94,7 @@ discord.post('/interactions', async (c) => {
             }).from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(5) as any);
       
       let content = "🔍 **Latest Audit Logs**:\n"
-      results.forEach(r => { content += `- ${r.createdAt}: **${r.action}** on \`${r.targetType}\`\n` })
+      results.forEach((r: any) => { content += `- ${r.createdAt}: **${r.action}** on \`${r.targetType}\`\n` })
       return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content } })
     }
   }

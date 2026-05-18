@@ -1,11 +1,10 @@
-// @ts-nocheck
 import { Agent } from 'agents';
 import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '#/schema';
 import { eq, and, sql, ne, lte, gte, or } from 'drizzle-orm';
 import { Bindings } from '../types';
 
-export class MatchAgent extends Agent<Bindings> {
+export class MatchAgent extends Agent<any> {
   /**
    * Scans unreconciled transactions and generates pairing proposals.
    */

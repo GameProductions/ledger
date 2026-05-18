@@ -23,7 +23,10 @@ export const loanPayments = sqliteTable('loan_payments', {
   id: text('id').primaryKey(),
   loanId: text('loan_id').notNull().references(() => personalLoans.id, { onDelete: 'cascade' }),
   amountCents: integer('amount_cents').notNull(),
-  paymentDate: text('payment_date').notNull(),
+  paymentDate: text('payment_date').default(sql`CURRENT_TIMESTAMP`),
+  platform: text('platform'),
+  externalId: text('external_id'),
+  method: text('method'),
   notes: text('notes'),
   status: text('status').default('completed'),
 }, (table) => ({

@@ -40,7 +40,7 @@ export type Bindings = {
   RECONCILIATION_AGENT: any
   MATCH_AGENT: any
   RULE_AGENT: any
-  
+  ADMIN_MIGRATION_KEY: string
   // 🛰️ Fleet Activity Queue (Producer)
   FLEET_ACTIVITY?: Queue;
 }

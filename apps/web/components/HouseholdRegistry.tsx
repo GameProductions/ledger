@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import { Shield, Edit3, Plus, Send, Copy, Check, Users, UserMinus, ShieldAlert, Trash2, ChevronDown, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,6 +52,8 @@ const HouseholdRegistry: React.FC = () => {
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const [removingMember, setRemovingMember] = useState<string | null>(null);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
 
   React.useEffect(() => {
     if (currentHousehold?.name) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Context, Next } from 'hono'
 import { Bindings } from '../types'
 import { HTTPException } from 'hono/http-exception'
@@ -14,7 +13,7 @@ export const ipRateLimit = (limit: number = 60, windowSeconds: number = 60) => {
     const key = `rate_limit:${ip}:${c.req.path}`
     
     // Use Cloudflare Cache API for distributed rate limiting (Zero Cost)
-    const cache = caches.default
+    const cache = (caches as any).default
     const cacheKey = new Request(`https://rate-limit.gpnet.internal/${key}`)
     
     const existing = (await cache.match(cacheKey) as any)

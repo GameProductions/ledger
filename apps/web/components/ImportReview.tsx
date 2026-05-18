@@ -82,13 +82,13 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       const rows: any[] = [];
       const headerRow = ws.getRow(1);
       const headers: string[] = [];
-      headerRow.eachCell(cell => headers.push(cell.text));
+      headerRow.eachCell((cell: any) => headers.push(cell.text));
 
-      ws.eachRow((row, rowNumber) => {
+      ws.eachRow((row: any, rowNumber: number) => {
         if (rowNumber === 1) return; // Skip headers
         
         const rowData: any = {};
-        row.eachCell((cell, colNumber) => {
+        row.eachCell((cell: any, colNumber: number) => {
           const header = headers[colNumber - 1];
           if (header) rowData[header.toLowerCase()] = cell.value;
           

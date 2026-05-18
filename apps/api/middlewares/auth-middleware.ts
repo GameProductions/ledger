@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { HTTPException } from 'hono/http-exception'
 import { verify } from 'hono/jwt'
 import { Context, Next } from 'hono'
@@ -126,7 +125,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         }
         activeHouseholdId = 'ledger-main-001'
         console.info(`[Detailed Audit] Owner ${userId} bypassing membership for virtual root access. Reason: ${auditReason}`)
-        c.executionCtx.waitUntil(logAudit(c, 'households', activeHouseholdId, 'ADMIN_BYPASS_ROOT', null, { reason: auditReason }))
+        logAudit(c, 'households', activeHouseholdId, 'ADMIN_BYPASS_ROOT', null, { reason: auditReason })
       } else {
         throw new HTTPException(401, { message: 'Invalid or missing Household' })
       }
@@ -154,7 +153,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
          throw new HTTPException(403, { message: 'Owner access requires x-audit-reason header' })
        }
        console.warn(`[Administrative Override] Owner ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId}). Reason: ${auditReason}`)
-       c.executionCtx.waitUntil(logAudit(c, 'households', String(activeHouseholdId), 'ADMIN_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId }))
+       logAudit(c, 'households', String(activeHouseholdId), 'ADMIN_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId })
     }
     
     c.set('userId', userId)

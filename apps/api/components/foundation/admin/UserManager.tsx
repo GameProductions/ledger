@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** @jsxImportSource react */
 import React, { useState } from 'react';
 import { Shield, User, Key, Trash2, Mail, CheckCircle, XCircle } from 'lucide-react';
@@ -11,7 +10,7 @@ export const UserManager = (props: any) => {
   const { users = [], onUpdate, onDelete } = props;
   const [filter, setFilter] = useState('');
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter((u: any) => 
     u.username?.toLowerCase().includes(filter.toLowerCase()) || 
     u.email?.toLowerCase().includes(filter.toLowerCase())
   );
@@ -50,7 +49,7 @@ export const UserManager = (props: any) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/50">
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user: any) => (
               <tr key={user.id} className="hover:bg-slate-900/30 transition-colors group">
                 <td className="px-8 py-5">
                   <div className="flex items-center gap-4">
@@ -81,7 +80,7 @@ export const UserManager = (props: any) => {
                 </td>
                 <td className="px-8 py-5">
                   <div className="flex flex-wrap gap-2">
-                    {(user.roles || []).map(role => (
+                    {(user.roles || []).map((role: any) => (
                       <span key={role} className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded text-[9px] font-bold uppercase tracking-wider">
                         {role}
                       </span>

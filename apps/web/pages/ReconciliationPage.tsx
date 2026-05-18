@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
@@ -124,7 +123,7 @@ const ReconciliationPage: React.FC = () => {
 
           <div className="md:col-span-2 flex items-center justify-end gap-4">
              <Button 
-               variant="outline" 
+               variant="glass" 
                className="h-14 px-8 rounded-2xl border-white/10 hover:bg-white/5"
                onClick={handleSync}
                disabled={syncing}
@@ -136,7 +135,7 @@ const ReconciliationPage: React.FC = () => {
              {selected.size > 0 && (
                <div className="flex gap-2 animate-in slide-in-from-right-4">
                   <Button 
-                    variant="ghost" 
+                    variant="danger" 
                     className="h-14 px-8 rounded-2xl text-red-400 hover:bg-red-500/10"
                     onClick={() => handleBulkAction('reject')}
                   >

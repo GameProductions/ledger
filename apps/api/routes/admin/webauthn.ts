@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -114,7 +113,7 @@ webauthn.post('/verify-registration', async (c) => {
     }) as any)
 
   if (verification.verified && verification.registrationInfo) {
-    const { credential, aaguid } = verification.registrationInfo
+    const { credential, aaguid, credentialDeviceType, credentialBackedUp } = verification.registrationInfo
     const { id: credentialID, publicKey: credentialPublicKey, counter } = credential
     const db = getDb(c.env)
     const forensics = getForensics(c)
@@ -189,14 +188,14 @@ webauthn.post('/generate-auth', async (c) => {
   const db = getDb(c.env)
   const vault = new VaultService(db, c.env.JWT_SECRET)
   const userPasskeys = (await db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, userId)) as any)
-  const allowCredentials = (await Promise.all(userPasskeys.map(async pk => {
+  const allowCredentials = (await Promise.all(userPasskeys.map(async (pk: any) => {
       const rawId = (await vault.getSecret(pk.id, 'CREDENTIAL_ID', 'webauthn') as any)
       return rawId ? { id: rawId, type: 'public-key' as const } : null
     })) as any)
 
   const options = (await generateAuthenticationOptions({
       rpID: getRpID(c),
-      allowCredentials: allowCredentials.filter((c): c is { id: string, type: 'public-key' } => c !== null),
+      allowCredentials: allowCredentials.filter((c: any): c is { id: string, type: 'public-key' } => c !== null),
       userVerification: 'required',
     }) as any)
 
@@ -237,8 +236,8 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
       expectedRPID: getRpID(c),
       requireUserVerification: true,
       credential: {
-        id: base64ToUint8Array(rawCredentialId),
-        publicKey: base64ToUint8Array(publicKeyB64),
+        id: rawCredentialId,
+        publicKey: base64ToUint8Array(publicKeyB64) as any,
         counter: passkey.counter,
         transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
       }

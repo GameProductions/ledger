@@ -1,10 +1,9 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import Subscriptions from '../components/Subscriptions'
 import Calendar from '../components/Calendar'
 import BudgetProgress from '../components/BudgetProgress'

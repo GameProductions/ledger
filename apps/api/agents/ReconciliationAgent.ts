@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Agent } from 'agents';
 import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '#/schema';
@@ -7,7 +6,7 @@ import { Bindings } from '../types';
 import { MatchAgent } from './MatchAgent';
 import { RuleAgent } from './RuleAgent';
 
-export class ReconciliationAgent extends Agent<Bindings> {
+export class ReconciliationAgent extends Agent<any> {
   
   /**
    * Orchestrates the reconciliation process for a household.
@@ -19,8 +18,8 @@ export class ReconciliationAgent extends Agent<Bindings> {
     const db = drizzle(this.env.DB, { schema });
 
     // 1. Spawn Sub-agents for specialized tasks
-    const matcher = this.subAgent(MatchAgent, 'matcher');
-    const ruler = this.subAgent(RuleAgent, 'ruler');
+    const matcher = await this.subAgent(MatchAgent, 'matcher');
+    const ruler = await this.subAgent(RuleAgent, 'ruler');
 
     // 2. Fetch unreconciled transactions for rule application
     const unreconciledTxs = (await db.select().from(schema.transactions).where(
@@ -30,7 +29,7 @@ export class ReconciliationAgent extends Agent<Bindings> {
           )
         ) as any);
 
-    const txIds = unreconciledTxs.map(t => t.id);
+    const txIds = unreconciledTxs.map((t: any) => t.id);
 
     // 3. Execute tasks
     // Matcher scans everything unreconciled

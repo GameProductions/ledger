@@ -111,7 +111,7 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
   
   if (items.length === 0) return c.json({ success: false, error: 'No items found' }, 404)
   
-  const promoTxs = items.map(item => {
+  const promoTxs = items.map((item: any) => {
     return db.insert(transactions).values({
       id: crypto.randomUUID(),
       householdId,

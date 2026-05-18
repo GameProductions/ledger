@@ -1,11 +1,10 @@
-// @ts-nocheck
 import { Agent } from 'agents';
 import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '#/schema';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { Bindings } from '../types';
 
-export class RuleAgent extends Agent<Bindings> {
+export class RuleAgent extends Agent<any> {
   /**
    * Applies pairing rules to a list of transactions.
    */

@@ -12,6 +12,11 @@ export const paySchedules = sqliteTable('pay_schedules', {
   frequency: text('frequency').notNull(),
   nextPayDate: text('next_pay_date'),
   estimatedAmountCents: integer('estimated_amount_cents'),
+  notes: text('notes'),
+  semiMonthlyDay1: integer('semi_monthly_day_1'),
+  semiMonthlyDay2: integer('semi_monthly_day_2'),
+  upcomingAmountCents: integer('upcoming_amount_cents'),
+  upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({
   householdIdx: index('idx_pay_schedules_household').on(table.householdId),
 }));
@@ -20,9 +25,11 @@ export const payExceptions = sqliteTable('pay_exceptions', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  payScheduleId: text('pay_schedule_id').notNull().references(() => paySchedules.id, { onDelete: 'cascade' }),
   originalDate: text('original_date').notNull(),
   overrideDate: text('override_date'),
   overrideAmountCents: integer('override_amount_cents'),
+  note: text('note'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_pay_exceptions_household').on(table.householdId),

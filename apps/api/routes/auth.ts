@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -700,7 +699,16 @@ async function handleRegisterOptions(c: any) {
   
   if (!user) throw new HTTPException(404, { message: 'User not found' })
 
-  const passkeysResult = (await db.select({ credentialId: passkeys.credentialId, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId)) as any)
+  const userPasskeys = (await db.select({ id: passkeys.id, transports: passkeys.transports }).from(passkeys).where(eq(passkeys.userId, userId)) as any)
+  const vault = new VaultService(db, c.env.JWT_SECRET)
+  const excludeCredentials = (await Promise.all((userPasskeys || []).map(async (pk: any) => {
+    const rawId = await vault.getSecret(pk.id, 'CREDENTIAL_ID', 'webauthn')
+    return rawId ? {
+      id: rawId,
+      type: 'public-key' as const,
+      transports: pk.transports ? JSON.parse(pk.transports) : [],
+    } : null
+  })).then(res => res.filter((item): item is any => item !== null)) as any)
   
   const options = (await generateRegistrationOptions({
       rpName: 'LEDGER',
@@ -708,11 +716,7 @@ async function handleRegisterOptions(c: any) {
       userID: new TextEncoder().encode(userId) as any,
       userName: user.username || user.email || 'unknown',
       attestationType: 'none',
-      excludeCredentials: (passkeysResult || []).map((pk: any) => ({
-        id: pk.credentialId,
-        type: 'public-key',
-        transports: pk.transports ? JSON.parse(pk.transports) : [],
-      })),
+      excludeCredentials,
       authenticatorSelection: {
         residentKey: 'required',
         userVerification: 'required',
@@ -928,8 +932,8 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
       expectedRPID: getRpID(c),
       requireUserVerification: true,
       credential: {
-        id: base64ToUint8Array(rawCredentialId),
-        publicKey: base64ToUint8Array(publicKeyB64),
+        id: rawCredentialId,
+        publicKey: base64ToUint8Array(publicKeyB64) as any,
         counter: passkey.counter || 0,
         transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
       }
@@ -1007,8 +1011,8 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
       expectedRPID: getRpID(c),
       requireUserVerification: true,
       credential: {
-        id: base64ToUint8Array(rawCredentialId),
-        publicKey: base64ToUint8Array(publicKeyB64),
+        id: rawCredentialId,
+        publicKey: base64ToUint8Array(publicKeyB64) as any,
         counter: passkey.counter || 0,
         transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
       }
@@ -1022,7 +1026,7 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   const now = new Date().toISOString()
   const metadata = getRequestMetadata(c)
   
-  const updates = [
+  const updates: any[] = [
     db.update(passkeys).set({ 
       counter: verification.authenticationInfo.newCounter,
       lastUsedAt: now,

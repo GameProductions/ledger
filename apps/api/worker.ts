@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono';
 // @ts-expect-error - __STATIC_CONTENT_MANIFEST is provided at build time
 import manifest from '__STATIC_CONTENT_MANIFEST';

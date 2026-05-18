@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { sign } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { Bindings } from '../types'
@@ -425,9 +424,6 @@ export class AuthService {
     
     // 3. Store as an encrypted blob in the vault
     await vault.setSecret(userId, 'RECOVERY_CODES', 'internal', JSON.stringify(hashes));
-    
-    // 4. Ensure legacy fields are cleared
-    await db.update(users).set({ backupCodesJson: '[]' }).where(eq(users.id, userId));
     
     return newCodes;
   }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
@@ -196,7 +195,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
-type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans'
+type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'billers'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'categories', label: 'Categories', icon: <Tag size={16} /> },

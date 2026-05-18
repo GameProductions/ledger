@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
@@ -165,7 +164,7 @@ user.get('/onboarding', async (c) => {
   const db = getDb(c.env)
   
   const completedNodes = (await db.select({ stepId: userOnboarding.stepId }).from(userOnboarding).where(and(eq(userOnboarding.userId, userId), eq(userOnboarding.status, 'completed'))) as any)
-  const completedSteps = completedNodes.map(r => r.stepId)
+  const completedSteps = completedNodes.map((r: any) => r.stepId)
   
   const userResult = (await db.select({ lastSeenVersion: users.lastSeenVersion }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]) as any)
   const lastVersion = userResult?.lastSeenVersion || 'Stable'
@@ -211,7 +210,7 @@ user.post('/onboarding/step', zValidator('json', z.object({
   }
   
   const completedNodes = (await db.select({ stepId: userOnboarding.stepId }).from(userOnboarding).where(and(eq(userOnboarding.userId, userId), eq(userOnboarding.status, 'completed'))) as any)
-  const completedSteps = completedNodes.map(r => r.stepId)
+  const completedSteps = completedNodes.map((r: any) => r.stepId)
 
   return c.json({
     success: true,
@@ -274,7 +273,7 @@ user.get('/households/current', async (c) => {
       .all() as any)
 
   // Transform to match frontend expectations: { user: { id, displayName, ... }, role }
-  const formattedMembers = members.map(m => ({
+  const formattedMembers = members.map((m: any) => ({
     user: {
       id: m.id,
       email: m.email,
@@ -925,7 +924,7 @@ user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ t
 
 user.delete('/households/:id', stepUpMiddleware, async (c) => {
   const userId = c.get('userId') as string
-  const id = c.req.param('id')
+  const id = c.req.param('id') as string
   const db = getDb(c.env)
   
   const membership = (await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0]) as any)

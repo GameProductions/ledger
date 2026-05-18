@@ -110,7 +110,7 @@ data.get('/analysis/net-worth', async (c) => {
   const db = getDb(c.env)
   
   const accsResult = (await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId)) as any)
-  const netWorthCents = accsResult.reduce((sum, a) => sum + (a.balanceCents || 0), 0)
+  const netWorthCents = accsResult.reduce((sum: any, a: any) => sum + (a.balanceCents || 0), 0)
   
   const snapshots = (await db.select({ createdAt: reports.createdAt, dataJson: reports.dataJson })
       .from(reports)
@@ -166,7 +166,7 @@ data.get('/analysis/forecast', async (c) => {
   const monthlySurplus = (incomeResult[0]?.total || 0) - (expenseResult[0]?.total || 0)
 
   const accsResult = (await db.select({ balanceCents: accounts.balanceCents }).from(accounts).where(eq(accounts.householdId, householdId)) as any)
-  const startingBalance = accsResult.reduce((sum, a) => sum + (a.balanceCents || 0), 0)
+  const startingBalance = accsResult.reduce((sum: any, a: any) => sum + (a.balanceCents || 0), 0)
   
   const forecast = dates.map((date, i) => {
     const projectedBalance = startingBalance + (monthlySurplus * (i + 1))
@@ -251,7 +251,7 @@ data.post('/import/confirm', zValidator('json', z.object({
       const validMembers = (await db.select({ userId: userHouseholds.userId })
               .from(userHouseholds)
               .where(and(eq(userHouseholds.householdId, householdId), inArray(userHouseholds.userId, distinctOwners))) as any)
-      authorizedOwners = validMembers.map(m => m.userId)
+      authorizedOwners = validMembers.map((m: any) => m.userId)
     }
 
     const records = items.map(item => ({

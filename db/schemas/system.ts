@@ -211,7 +211,12 @@ export const reminders = sqliteTable('reminders', {
   deliveryTarget: text('delivery_target'),
   priority: text('priority').notNull().default('medium'),
   status: text('status').notNull().default('active'),
-  dueAt: text('due_at').notNull(),
+  dueAt: text('due_at'),
+  frequencyDays: integer('frequency_days').notNull().default(0),
+  timeOfDay: text('time_of_day').default('09:00'),
+  note: text('note'),
+  lastSentAt: text('last_sent_at'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   targetIdx: index('idx_reminders_target').on(table.targetType, table.targetId),

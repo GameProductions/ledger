@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Bindings } from '../types'
 import { SchedulingService } from '../services/scheduling.service'
 import { decrypt } from '../utils'
@@ -139,7 +138,6 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
         await db.update(externalConnections).set({ lastSyncAt: sql`CURRENT_TIMESTAMP` }).where(eq(externalConnections.id, conn.id))
         
         await db.insert(activityLogs).values({
-          id: crypto.randomUUID(),
           actorId: 'system',
           actorType: 'SYSTEM',
           action: 'SYNC_SUCCESS',
@@ -154,7 +152,6 @@ export const syncAllConnections = async (env: Bindings): Promise<SyncResult[]> =
     } catch (e: any) {
       console.error(`[Sync] Error syncing connection ${conn.id}:`, e)
       await db.insert(activityLogs).values({
-          id: crypto.randomUUID(),
           actorId: 'system',
           actorType: 'SYSTEM',
           action: 'SYNC_FAILURE',
@@ -428,7 +425,6 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
             await db.update(table as any).set(updates).where(eq((table as any).id, item.id));
 
             await db.insert(activityLogs).values({
-              id: crypto.randomUUID(),
               actorId: 'system',
               actorType: 'SYSTEM',
               action: 'RATE_AUTO_UPDATE',

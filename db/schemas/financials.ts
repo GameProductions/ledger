@@ -69,11 +69,11 @@ export const transactions = sqliteTable('transactions', {
   receiptR2Key: text('receipt_r2_key'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   confirmationNumber: text('confirmation_number'),
-  linkedTransactionId: text('linked_transaction_id').references(() => transactions.id, { onDelete: 'set null' }),
+  linkedTransactionId: text('linked_transaction_id').references((): any => transactions.id, { onDelete: 'set null' }),
   reconciliationStatus: text('reconciliation_status').default('unreconciled'),
   notes: text('notes'),
   rawDescription: text('raw_description'),
-  parentId: text('parent_id').references(() => transactions.id, { onDelete: 'cascade' }),
+  parentId: text('parent_id').references((): any => transactions.id, { onDelete: 'cascade' }),
   providerId: text('provider_id'), // Loosely coupled to system.serviceProviders
   billId: text('bill_id'), // Loosely coupled to bills
   attentionRequired: integer('attention_required', { mode: 'boolean' }).default(false),

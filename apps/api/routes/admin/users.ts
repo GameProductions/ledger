@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
@@ -94,7 +93,7 @@ userAdmin.patch('/:id', zValidator('json', UpdateUserAdminSchema), async (c) => 
   const old = (await db.select().from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'User not found' })
 
-  await db.update(users).set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(users.id, userId))
+  await db.update(users).set({ ...data }).where(eq(users.id, userId))
   await logAudit(c, 'users', userId, 'ADMIN_UPDATE', old, data, {}, true)
   
   return c.json({ success: true })
@@ -127,8 +126,7 @@ userAdmin.post('/:id/password/reset', zValidator('json', z.object({
   const passwordHash = (await hashPassword(new_password) as any)
   await db.update(users).set({ 
     passwordHash, 
-    forcePasswordChange: is_temporary ? 1 : 0,
-    updatedAt: sql`CURRENT_TIMESTAMP` 
+    forcePasswordChange: is_temporary ? 1 : 0
   }).where(eq(users.id, userId))
   
   await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', { forcePasswordChange: old.forcePasswordChange }, { forcePasswordChange: is_temporary ? 1 : 0 }, {}, true)

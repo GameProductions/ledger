@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
@@ -47,10 +46,10 @@ planning.get('/subscriptions', async (c) => {
   const allSubs = (await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'subscription'))) as any)
   
-  const results = allSubs.map(sub => {
-    const userSplit = splits.find(s => s.targetId === sub.id && s.assignedUserId === user?.id)
+  const results = allSubs.map((sub: any) => {
+    const userSplit = splits.find((s: any) => s.targetId === sub.id && s.assignedUserId === user?.id)
     if (userSplit) {
-       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter(s => s.targetId === sub.id) : undefined;
+       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter((s: any) => s.targetId === sub.id) : undefined;
        return {
          ...sub,
          amountCents: userSplit.calculatedAmountCents,
@@ -62,9 +61,9 @@ planning.get('/subscriptions', async (c) => {
        }
     }
     
-    const originatedSplits = splits.filter(s => s.targetId === sub.id && s.originatorUserId === user?.id)
+    const originatedSplits = splits.filter((s: any) => s.targetId === sub.id && s.originatorUserId === user?.id)
     if (originatedSplits.length > 0) {
-      const remainingCents = sub.amountCents - originatedSplits.reduce((acc, curr) => acc + curr.calculatedAmountCents, 0)
+      const remainingCents = sub.amountCents - originatedSplits.reduce((acc: any, curr: any) => acc + curr.calculatedAmountCents, 0)
       return {
         ...sub,
         amountCents: remainingCents,
@@ -148,10 +147,10 @@ planning.get('/bills', async (c) => {
   const allBills = (await db.select().from(bills).where(eq(bills.householdId, householdId)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'bill'))) as any)
   
-  const results = allBills.map(bill => {
-    const userSplit = splits.find(s => s.targetId === bill.id && s.assignedUserId === user?.id)
+  const results = allBills.map((bill: any) => {
+    const userSplit = splits.find((s: any) => s.targetId === bill.id && s.assignedUserId === user?.id)
     if (userSplit) {
-       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter(s => s.targetId === bill.id) : undefined;
+       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter((s: any) => s.targetId === bill.id) : undefined;
        return {
          ...bill,
          amountCents: userSplit.calculatedAmountCents,
@@ -162,9 +161,9 @@ planning.get('/bills', async (c) => {
          splits: publicSplits
        }
     }
-    const originatedSplits = splits.filter(s => s.targetId === bill.id && s.originatorUserId === user?.id)
+    const originatedSplits = splits.filter((s: any) => s.targetId === bill.id && s.originatorUserId === user?.id)
     if (originatedSplits.length > 0) {
-      const remainingCents = bill.amountCents - originatedSplits.reduce((acc, curr) => acc + curr.calculatedAmountCents, 0)
+      const remainingCents = bill.amountCents - originatedSplits.reduce((acc: any, curr: any) => acc + curr.calculatedAmountCents, 0)
       return {
         ...bill,
         amountCents: remainingCents,
@@ -282,10 +281,10 @@ planning.get('/installment-plans', async (c) => {
   const allInstallments = (await db.select().from(installmentPlans).where(eq(installmentPlans.householdId, householdId)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'installment'))) as any)
   
-  const results = allInstallments.map(inst => {
-    const userSplit = splits.find(s => s.targetId === inst.id && s.assignedUserId === user?.id)
+  const results = allInstallments.map((inst: any) => {
+    const userSplit = splits.find((s: any) => s.targetId === inst.id && s.assignedUserId === user?.id)
     if (userSplit) {
-       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter(s => s.targetId === inst.id) : undefined;
+       const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter((s: any) => s.targetId === inst.id) : undefined;
        return {
          ...inst,
          installmentAmountCents: userSplit.calculatedAmountCents,
@@ -297,9 +296,9 @@ planning.get('/installment-plans', async (c) => {
        }
     }
     
-    const originatedSplits = splits.filter(s => s.targetId === inst.id && s.originatorUserId === user?.id)
+    const originatedSplits = splits.filter((s: any) => s.targetId === inst.id && s.originatorUserId === user?.id)
     if (originatedSplits.length > 0) {
-      const remainingCents = inst.installmentAmountCents - originatedSplits.reduce((acc, curr) => acc + curr.calculatedAmountCents, 0)
+      const remainingCents = inst.installmentAmountCents - originatedSplits.reduce((acc: any, curr: any) => acc + curr.calculatedAmountCents, 0)
       return {
         ...inst,
         installmentAmountCents: remainingCents,
@@ -647,8 +646,8 @@ planning.get('/budgets', async (c) => {
       totalSpend: sql<number>`SUM(amount_cents)`.as('totalSpend')
     }).from(transactions).where(eq(transactions.householdId, householdId)).groupBy(transactions.categoryId) as any)
   
-  const budgets = cats.map(cat => {
-    const spend = spends.find(s => s.categoryId === cat.id)?.totalSpend || 0
+  const budgets = cats.map((cat: any) => {
+    const spend = spends.find((s: any) => s.categoryId === cat.id)?.totalSpend || 0
     return {
       ...cat,
       spendCents: spend
@@ -733,7 +732,7 @@ planning.post('/budget/rollover', async (c) => {
 
   if (!cats || cats.length === 0) return c.json({ success: true, count: 0 })
 
-  const patches = cats.map(cat => {
+  const patches = cats.map((cat: any) => {
     if (cat.rolloverEnabled) {
       return db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${cat.monthlyBudgetCents || 0}` }).where(eq(categories.id, cat.id))
     } else {

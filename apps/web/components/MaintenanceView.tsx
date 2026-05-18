@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { Lock, RefreshCw, ShieldAlert, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 
@@ -18,7 +17,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
     const checkInterval = setInterval(() => {
       fetch('/api/health')
         .then(res => res.json())
-        .then(data => {
+        .then((data: any) => {
           if (data.status === 'online' && !data.maintenance) {
             window.location.reload();
           }

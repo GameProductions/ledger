@@ -265,8 +265,8 @@ app.get('/api/config', async (c) => {
     try {
       const config = (await db.select().from(systemConfig) as any);
       publicConfig = config
-        .filter(conf => PUBLIC_CONFIG_KEYS.includes(conf.configKey as string))
-        .reduce((acc, curr) => ({ 
+        .filter((conf: any) => PUBLIC_CONFIG_KEYS.includes(conf.configKey as string))
+        .reduce((acc: any, curr: any) => ({ 
           ...acc, 
           [curr.configKey as string]: safeJsonParse(curr.configValue as string) 
         }), {});

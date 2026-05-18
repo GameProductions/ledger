@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** @jsxImportSource react */
 
 
@@ -18,7 +17,13 @@ type Service = {
  * Centralized interface for linking and managing 3rd party APIs.
  * Supports dynamic redirect construction with app-specific scopes.
  */
-export const ServiceLinker = ({ services, onConnect, onDisconnect }: { services: Service[] }) => {
+interface ServiceLinkerProps {
+  services: Service[];
+  onConnect: (id: string, scopes: string[]) => void;
+  onDisconnect: (id: string) => void;
+}
+
+export const ServiceLinker = ({ services, onConnect, onDisconnect }: ServiceLinkerProps) => {
   return (
     <div className="gp-service-linker">
       <h3>Integration Core</h3>

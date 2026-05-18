@@ -468,17 +468,6 @@ export class AuthService {
     return false;
   }
 
-  async verify2FA(user: { id: string }, code?: string) {
-    if (!code) {
-      return { requires2FA: false };
-    }
-    const isValid = await this.verifyBackupCode(user.id, code);
-    if (!isValid) {
-      throw new HTTPException(401, { message: 'Invalid recovery code' });
-    }
-    return { requires2FA: false };
-  }
-
   // --- PERSONALIZATION ---
   async updatePreferences(userId: string, preferences: { locale?: string, theme?: string }) {
     const db = getDb(this.env)

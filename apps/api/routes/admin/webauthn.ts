@@ -16,7 +16,6 @@ import { uint8ArrayToBase64, uint8ArrayToBase64url, getRpID, hashIdentifier, bas
 import { getAAGUIDMetadata } from '../../utils/webauthn-metadata'
 import { VaultService } from '../../utils/vault.service'
 import { getForensics } from '../../utils/forensics'
-import { setSignedCookie, getSignedCookie } from 'hono/cookie'
 import { logAudit } from '../../utils'
 import { EmailService } from '../../services/email.service'
 import { HTTPException } from 'hono/http-exception'

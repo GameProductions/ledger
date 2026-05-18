@@ -33,7 +33,7 @@ export class SchedulingService {
 
     // 2. Determine the "Base Date" for calculation.
     const baseDateUtc = schedule.lastRunAt ? parseISO(schedule.lastRunAt) : parseISO(schedule.startDate);
-    let localDate = toZonedTime(baseDateUtc, tz);
+    const localDate = toZonedTime(baseDateUtc, tz);
 
     // 3. Perform the arithmetic based on frequency
     const interval = schedule.frequencyInterval || 1;

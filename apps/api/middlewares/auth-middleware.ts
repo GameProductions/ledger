@@ -23,7 +23,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       return await next()
     }
 
-    let token = c.req.header('Authorization')?.replace('Bearer ', '')
+    const token = c.req.header('Authorization')?.replace('Bearer ', '')
     if (!token) throw new HTTPException(401, { message: 'Missing Authorization Token' })
     const jwtSecret = c.env.JWT_SECRET
     if (!jwtSecret) {

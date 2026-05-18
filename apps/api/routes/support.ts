@@ -58,7 +58,7 @@ support.post('/issues/:id/comments', zValidator('json', z.object({
   if (issue.githubIssueNumber && c.env.GITHUB_TOKEN && c.env.GITHUB_REPO) {
      try {
        const repoRaw = c.env.GITHUB_REPO.trim()
-       const repoMatch = repoRaw.match(/([^\/]+\/[^\/]+)$/)
+       const repoMatch = repoRaw.match(/([^/]+\/[^/]+)$/)
        const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
        
        await fetch(`https://api.github.com/repos/${repo}/issues/${issue.githubIssueNumber}/comments`, {
@@ -117,7 +117,7 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
       try {
         // Sanitize Repo Name (Extract owner/repo in case user provided full URL)
         const repoRaw = c.env.GITHUB_REPO.trim()
-        const repoMatch = repoRaw.match(/([^\/]+\/[^\/]+)$/)
+        const repoMatch = repoRaw.match(/([^/]+\/[^/]+)$/)
         const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
 
         const res = (await fetch(`https://api.github.com/repos/${repo}/issues`, {

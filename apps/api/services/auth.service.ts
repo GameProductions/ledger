@@ -439,7 +439,7 @@ export class AuthService {
     const vaultResult = (await vault.getSecret(userId, 'RECOVERY_CODES', 'internal') as any);
     if (!vaultResult) return false;
     
-    let hashes: string[] = JSON.parse(vaultResult);
+    const hashes: string[] = JSON.parse(vaultResult);
     if (!Array.isArray(hashes) || hashes.length === 0) return false;
     
     const normalizedCode = code.toUpperCase();

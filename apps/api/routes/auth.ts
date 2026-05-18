@@ -259,7 +259,7 @@ auth.get('/callback/discord', async (c) => {
     const dbUser = (await db.select({ role: users.globalRole }).from(users).where(eq(users.id, finalUserId!)).limit(1) as any)
 
     // Standard Unified Tier Schema for Ledger
-    let metadata: Record<string, any> = {}
+    const metadata: Record<string, any> = {}
     if (dbUser[0]?.role === 'owner') {
       metadata.ledger_tier = 3
     } else if (dbUser[0]?.role === 'admin') {

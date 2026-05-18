@@ -11,7 +11,7 @@ export const globalMutate = (path: string | string[]) => {
   });
 };
 
-export const useApi = <T = any>(path: string | null, options: { refreshInterval?: number } = {}) => {
+export const useApi = <T = unknown>(path: string | null, options: { refreshInterval?: number } = {}) => {
   const { token, logout, householdId, triggerStepUp } = useAuth()
   const [data, setData] = useState<T | undefined>(undefined)
   const [loading, setLoading] = useState(true)

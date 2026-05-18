@@ -28,15 +28,6 @@ const LoginPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('')
   const [isForcingChange, setIsForcingChange] = useState(false)
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.split('?')[1]);
-    const token = params.get('token');
-    const reset = params.get('reset_token');
-    
-    if (token) handleOAuthCallback(token);
-    if (reset) setResetToken(reset);
-  }, []);
-
   const handleOAuthCallback = async (token: string) => {
     setLoading(true);
     try {
@@ -71,6 +62,15 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split('?')[1]);
+    const token = params.get('token');
+    const reset = params.get('reset_token');
+    
+    if (token) handleOAuthCallback(token);
+    if (reset) setResetToken(reset);
+  }, []);
 
   const handleLogin = async () => {
     if (!username || !password) {

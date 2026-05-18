@@ -31,7 +31,7 @@ export class RuleAgent extends Agent<Bindings> {
     let appliedCount = 0;
 
     for (const tx of txs) {
-      let updates: any = {};
+      const updates: any = {};
       for (const rule of rules) {
         try {
           const pattern = new RegExp(rule.pattern, 'i');

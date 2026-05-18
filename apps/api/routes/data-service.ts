@@ -32,7 +32,9 @@ const isPrivateIp = (url: string) => {
       if (parts[0] === 192 && parts[1] === 168) return true
       if (parts[0] === 169 && parts[1] === 254) return true // Link-local / metadata
     }
-  } catch (e: any) {}
+  } catch (e: any) {
+    // Ignore invalid or malformed URL parsing errors safely
+  }
   return false
 }
 

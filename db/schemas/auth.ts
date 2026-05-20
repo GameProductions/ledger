@@ -1,7 +1,7 @@
-import { sqliteTable, text, integer, primaryKey, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { boolean, pgTable, text, integer, primaryKey, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').unique(), 
   displayName: text('display_name'),
@@ -11,11 +11,11 @@ export const users = sqliteTable('users', {
   globalRole: text('global_role').default('user'),
   status: text('status').default('active'),
   lastActiveAt: text('last_active_at'),
-  forcePasswordChange: integer('force_password_change').default(0),
+  forcePasswordChange: boolean('force_password_change').default(false),
   passkeyVerifiedAt: text('passkey_verified_at'),
   lastLogin: text('last_login').default(sql`CURRENT_TIMESTAMP`),
   lastSeenVersion: text('last_seen_version').default('0.0.0'),
-  onboardingCompleted: integer('onboarding_completed').default(0),
+  onboardingCompleted: boolean('onboarding_completed').default(false),
   failedLoginAttempts: integer('failed_login_attempts').default(0),
   lockoutUntil: text('lockout_until'),
   passwordChangedAt: text('password_changed_at'),
@@ -25,7 +25,7 @@ export const users = sqliteTable('users', {
   theme: text('theme').default('system'),
 });
 
-export const userIdentities = sqliteTable('user_identities', {
+export const userIdentities = pgTable('user_identities', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   provider: text('provider').notNull(),
@@ -43,17 +43,17 @@ export const userIdentities = sqliteTable('user_identities', {
   uniqueIdentity: uniqueIndex('idx_user_identities_unique').on(table.provider, table.providerUserId),
 }));
 
-export const passwordResets = sqliteTable('password_resets', {
+export const passwordResets = pgTable('password_resets', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   tokenHash: text('token_hash').notNull(), // Zero-knowledge hash
-  isUsed: integer('is_used').default(0),
+  isUsed: boolean('is_used').default(false),
   expiresAt: text('expires_at').notNull(),
 }, (table) => ({
   userIdx: index('idx_pass_resets_user').on(table.userId),
 }));
 
-export const sessions = sqliteTable('sessions', {
+export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
@@ -69,7 +69,7 @@ export const sessions = sqliteTable('sessions', {
   os: text('os'),
   browser: text('browser'),
   cfRay: text('cf_ray'),
-  isPersistent: integer('is_persistent').default(0),
+  isPersistent: boolean('is_persistent').default(false),
   location: text('location'), // Fleet Standardization
   city: text('city'),
   country: text('country'),
@@ -82,7 +82,7 @@ export const sessions = sqliteTable('sessions', {
   userIdx: index('idx_sessions_user').on(table.userId),
 }));
 
-export const passkeys = sqliteTable('passkeys', {
+export const passkeys = pgTable('passkeys', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   
@@ -93,9 +93,9 @@ export const passkeys = sqliteTable('passkeys', {
   // 📈 Security & Counters
   counter: integer('counter').notNull().default(0),
   deviceType: text('device_type'), // 'single_device' | 'multi_device'
-  backedUp: integer('backed_up').default(0), 
+  backedUp: boolean('backed_up').default(false), 
   attestationFormat: text('attestation_format'), // 'packed', 'none', etc.
-  userVerified: integer('user_verified').default(0),
+  userVerified: boolean('user_verified').default(false),
 
   // 🕒 Temporal Metadata
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
@@ -139,7 +139,7 @@ export const passkeys = sqliteTable('passkeys', {
   hashIdx: index('idx_passkeys_hash').on(table.credentialIdHash),
 }));
 
-export const backupCodes = sqliteTable('backup_codes', {
+export const backupCodes = pgTable('backup_codes', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   codeHash: text('code_hash').notNull(),
@@ -149,7 +149,7 @@ export const backupCodes = sqliteTable('backup_codes', {
   userIdx: index('idx_backup_codes_user').on(table.userId),
 }));
 
-export const passkeyChallenges = sqliteTable('passkey_challenges', {
+export const passkeyChallenges = pgTable('passkey_challenges', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   challenge: text('challenge').notNull(),
@@ -157,7 +157,7 @@ export const passkeyChallenges = sqliteTable('passkey_challenges', {
   expiresAt: text('expires_at').notNull(),
 });
 
-export const userOnboarding = sqliteTable('user_onboarding', {
+export const userOnboarding = pgTable('user_onboarding', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   stepId: text('step_id').notNull(),
@@ -167,7 +167,7 @@ export const userOnboarding = sqliteTable('user_onboarding', {
   userIdx: index('idx_onboarding_user').on(table.userId),
 }));
 
-export const userPreferences = sqliteTable('user_preferences', {
+export const userPreferences = pgTable('user_preferences', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   key: text('key').notNull(),
   value: text('value'),
@@ -175,17 +175,17 @@ export const userPreferences = sqliteTable('user_preferences', {
   pk: primaryKey({ columns: [table.userId, table.key] }),
 }));
 
-export const adminInvitations = sqliteTable('admin_invitations', {
+export const adminInvitations = pgTable('admin_invitations', {
   id: text('id').primaryKey(),
   email: text('email'),
   tokenHash: text('token_hash').notNull().unique(), // Zero-knowledge hash
   role: text('role').notNull(),
-  isClaimed: integer('is_claimed').default(0),
+  isClaimed: boolean('is_claimed').default(false),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const personalAccessTokens = sqliteTable('personal_access_tokens', {
+export const personalAccessTokens = pgTable('personal_access_tokens', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull(), 
   name: text('name'),

@@ -68,17 +68,15 @@ backup.get('/export', stepUpMiddleware, async (c) => {
   for (const table of tables) {
     const tableObj = SCHEMA_MAP[table]
     if (tableObj) {
-      const results = (await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)).all() as any)
+      const results = (await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)) as any)
       dump[table] = results
     } else {
-      // Fallback for tables not in SCHEMA_MAP (should use sql identifier)
-      const results = (await db.run(sql`SELECT * FROM ${sql.identifier(table)} WHERE household_id = ${householdId}`).then(res => res.results) as any)
-      dump[table] = results
+      throw new Error('Unsupported dynamic table select')
     }
   }
 
   // Special case: households table (filter by ID)
-  const h = (await db.select().from(households).where(eq(households.id, householdId)).all() as any)
+  const h = (await db.select().from(households).where(eq(households.id, householdId)) as any)
   dump['households'] = h
 
   return c.json({
@@ -163,7 +161,7 @@ backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
           set: sanitizedRow
         })
       } else {
-        await db.run(sql`INSERT OR REPLACE INTO ${sql.identifier(table)} (${sql.raw(actualCols.join(', '))}) VALUES (${sql.join(actualCols.map(c => sanitizedRow[c]), sql`, `)})`)
+        throw new Error('Unsupported dynamic table insert')
       }
       
       totalRestored++;
@@ -202,7 +200,7 @@ backup.post('/cloud/:provider', stepUpMiddleware, async (c) => {
   for (const table of tables) {
     const tableObj = SCHEMA_MAP[table]
     if (tableObj) {
-      const results = (await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)).all() as any)
+      const results = (await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)) as any)
       dump[table] = results
     }
   }

@@ -1,5 +1,5 @@
 import { Agent } from 'agents';
-import { drizzle } from 'drizzle-orm/d1';
+import { getDb } from '#/index';
 import * as schema from '#/schema';
 import { eq, and, sql, ne, lte, gte, or } from 'drizzle-orm';
 import { Bindings } from '../types';
@@ -9,7 +9,7 @@ export class MatchAgent extends Agent<any> {
    * Scans unreconciled transactions and generates pairing proposals.
    */
   async findMatches(householdId: string) {
-    const db = drizzle(this.env.DB, { schema });
+    const db = getDb(this.env);
     
     // 1. Fetch unreconciled transactions
     const unreconciled = (await db.select().from(schema.transactions).where(
@@ -33,7 +33,7 @@ export class MatchAgent extends Agent<any> {
                   eq(schema.transactions.amountCents, -tx.amountCents),
                   eq(schema.transactions.amountCents, tx.amountCents)
                 ),
-                sql`ABS(julianday(${schema.transactions.transactionDate}) - julianday(${tx.transactionDate})) <= 7`
+                sql`ABS(CAST(${schema.transactions.transactionDate} AS date) - CAST(${tx.transactionDate} AS date)) <= 7`
               )
             ) as any);
 

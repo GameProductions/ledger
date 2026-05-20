@@ -39,7 +39,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
           .from(personalAccessTokens)
           .where(eq(personalAccessTokens.tokenHash, sql.placeholder('tokenHash')))
           .limit(1)
-          .prepare()
+          .prepare('pat_auth_query')
       }
       
       const tokenHash = (await hashToken(token) as any)
@@ -66,7 +66,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         .from(users)
         .where(eq(users.id, sql.placeholder('userId')))
         .limit(1)
-        .prepare()
+        .prepare('verify_user_query')
     }
     const userResult = (await verifyUserQuery.execute({ userId: String(payload.sub) }) as any)
       
@@ -113,7 +113,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         .from(households)
         .where(eq(households.id, sql.placeholder('householdId')))
         .limit(1)
-        .prepare()
+        .prepare('verify_household_query')
     }
     const hhResult = (await verifyHouseholdQuery.execute({ householdId: String(activeHouseholdId) }) as any)
 
@@ -138,7 +138,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
           .from(userHouseholds)
           .where(and(eq(userHouseholds.userId, sql.placeholder('userId')), eq(userHouseholds.householdId, sql.placeholder('householdId'))))
           .limit(1)
-          .prepare()
+          .prepare('verify_membership_query')
       }
       const uhResult = (await verifyMembershipQuery.execute({ userId: String(userId), householdId: String(activeHouseholdId) }) as any)
       

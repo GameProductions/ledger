@@ -298,8 +298,8 @@ export class AuthService {
     const inviteResult = (await db.select().from(adminInvitations).where(
           and(
             eq(adminInvitations.tokenHash, tokenHash),
-            eq(adminInvitations.isClaimed, 0),
-            gt(adminInvitations.expiresAt, sql`CURRENT_TIMESTAMP`)
+            eq(adminInvitations.isClaimed, false),
+            gt(adminInvitations.expiresAt, new Date().toISOString())
           )
         ).limit(1) as any)
 
@@ -318,7 +318,7 @@ export class AuthService {
         globalRole: invite.role,
         status: 'active'
       }),
-      db.update(adminInvitations).set({ isClaimed: 1 }).where(eq(adminInvitations.tokenHash, tokenHash))
+      db.update(adminInvitations).set({ isClaimed: true }).where(eq(adminInvitations.tokenHash, tokenHash))
     ])
 
     return userId
@@ -360,8 +360,8 @@ export class AuthService {
     const resetResult = (await db.select().from(passwordResets).where(
           and(
             eq(passwordResets.tokenHash, tokenHash),
-            eq(passwordResets.isUsed, 0),
-            gt(passwordResets.expiresAt, sql`DATETIME("now")`)
+            eq(passwordResets.isUsed, false),
+            gt(passwordResets.expiresAt, new Date().toISOString())
           )
         ).limit(1) as any)
     const reset = resetResult[0]
@@ -369,8 +369,8 @@ export class AuthService {
 
     const passwordHash = (await hashPassword(newPassword) as any)
     await db.batch([
-      db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: 0 }).where(eq(users.id, reset.userId)),
-      db.update(passwordResets).set({ isUsed: 1 }).where(eq(passwordResets.tokenHash, tokenHash))
+      db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: false }).where(eq(users.id, reset.userId)),
+      db.update(passwordResets).set({ isUsed: true }).where(eq(passwordResets.tokenHash, tokenHash))
     ])
     return true
   }
@@ -378,14 +378,14 @@ export class AuthService {
   async changePassword(userId: string, newPassword: string) {
     const db = getDb(this.env)
     const passwordHash = (await hashPassword(newPassword) as any)
-    await db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: 0 }).where(eq(users.id, userId))
+    await db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: false }).where(eq(users.id, userId))
     return true
   }
 
   async adminResetPassword(userId: string, newPassword: string, isTemporary: boolean = false) {
     const db = getDb(this.env)
     const passwordHash = (await hashPassword(newPassword) as any)
-    await db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: isTemporary ? 1 : 0 }).where(eq(users.id, userId))
+    await db.update(users).set({ passwordHash: passwordHash, forcePasswordChange: !!isTemporary }).where(eq(users.id, userId))
     return true
   }
 

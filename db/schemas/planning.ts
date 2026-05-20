@@ -1,10 +1,10 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { boolean, pgTable, text, integer, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { households } from './financials';
 
 import { users } from './auth';
 
-export const paySchedules = sqliteTable('pay_schedules', {
+export const paySchedules = pgTable('pay_schedules', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
@@ -21,7 +21,7 @@ export const paySchedules = sqliteTable('pay_schedules', {
   householdIdx: index('idx_pay_schedules_household').on(table.householdId),
 }));
 
-export const payExceptions = sqliteTable('pay_exceptions', {
+export const payExceptions = pgTable('pay_exceptions', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -36,17 +36,17 @@ export const payExceptions = sqliteTable('pay_exceptions', {
   userIdx: index('idx_pay_exceptions_user').on(table.userId),
 }));
 
-export const trackedExpenses = sqliteTable('tracked_expenses', {
+export const trackedExpenses = pgTable('tracked_expenses', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   description: text('description').notNull(),
   amountCents: integer('amount_cents').notNull(),
   status: text('status').default('pending'), // pending, committed, ignored
   notes: text('notes'),
-  attentionRequired: integer('attention_required', { mode: 'boolean' }).default(false),
-  needsBalanceTransfer: integer('needs_balance_transfer', { mode: 'boolean' }).default(false),
+  attentionRequired: boolean('attention_required').default(false),
+  needsBalanceTransfer: boolean('needs_balance_transfer').default(false),
   transferTiming: text('transfer_timing'),
-  isBorrowed: integer('is_borrowed', { mode: 'boolean' }).default(false),
+  isBorrowed: boolean('is_borrowed').default(false),
   borrowSource: text('borrow_source'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({

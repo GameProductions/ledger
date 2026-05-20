@@ -1,5 +1,5 @@
 import { Agent } from 'agents';
-import { drizzle } from 'drizzle-orm/d1';
+import { getDb } from '#/index';
 import * as schema from '#/schema';
 import { eq, and } from 'drizzle-orm';
 import { Bindings } from '../types';
@@ -15,7 +15,7 @@ export class ReconciliationAgent extends Agent<any> {
   async reconcile(householdId: string) {
     console.log(`[ReconciliationAgent] Orchestrating reconciliation for household: ${householdId}`);
     
-    const db = drizzle(this.env.DB, { schema });
+    const db = getDb(this.env);
 
     // 1. Spawn Sub-agents for specialized tasks
     const matcher = await this.subAgent(MatchAgent, 'matcher');

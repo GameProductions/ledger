@@ -4,9 +4,9 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../../types'
 import { getDb } from '#/index'
 import { systemAnnouncements, adminInvitations } from '#/schema'
-import { eq, desc, sql } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import { logAudit, hashToken } from '../../utils'
-import { HTTPException } from 'hono/http-exception'
+
 
 const communications = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -29,7 +29,7 @@ communications.post('/announcements', zValidator('json', z.object({
   await db.insert(systemAnnouncements).values({
     id,
     ...data,
-    isActive: 1,
+    isActive: true,
     authorId: (c.get('user') as any).id
   })
   

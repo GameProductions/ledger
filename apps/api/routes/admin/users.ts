@@ -5,7 +5,7 @@ import { Bindings, Variables } from '../../types'
 import { CreateUserAdminSchema, UpdateUserAdminSchema } from '@shared/schemas'
 import { getDb } from '#/index'
 import { users, passkeys, userIdentities, userHouseholds, externalConnections, adminInvitations } from '#/schema'
-import { eq, desc, count, or, and, sql } from 'drizzle-orm'
+import { eq, desc, or, and, sql } from 'drizzle-orm'
 import { hashPassword } from '../../auth-utils'
 import { EmailService } from '../../services/email.service'
 import { logAudit } from '../../utils'
@@ -46,7 +46,7 @@ userAdmin.post('/', zValidator('json', CreateUserAdminSchema), async (c) => {
     displayName,
     globalRole,
     status: 'active',
-    forcePasswordChange: forcePasswordChange ? 1 : 0
+    forcePasswordChange: !!forcePasswordChange
   })
   
   await logAudit(c, 'users', userId, 'ADMIN_MANUAL_CREATE', null, { username, email, globalRole }, {}, true)
@@ -126,10 +126,10 @@ userAdmin.post('/:id/password/reset', zValidator('json', z.object({
   const passwordHash = (await hashPassword(new_password) as any)
   await db.update(users).set({ 
     passwordHash, 
-    forcePasswordChange: is_temporary ? 1 : 0
+    forcePasswordChange: !!is_temporary
   }).where(eq(users.id, userId))
   
-  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', { forcePasswordChange: old.forcePasswordChange }, { forcePasswordChange: is_temporary ? 1 : 0 }, {}, true)
+  await logAudit(c, 'users', userId, 'ADMIN_PASSWORD_RESET', { forcePasswordChange: old.forcePasswordChange }, { forcePasswordChange: !!is_temporary }, {}, true)
   
   return c.json({ success: true })
 })

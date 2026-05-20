@@ -1,5 +1,5 @@
 import { Agent } from 'agents';
-import { drizzle } from 'drizzle-orm/d1';
+import { getDb } from '#/index';
 import * as schema from '#/schema';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { Bindings } from '../types';
@@ -9,7 +9,7 @@ export class RuleAgent extends Agent<any> {
    * Applies pairing rules to a list of transactions.
    */
   async applyRules(householdId: string, transactionIds: string[]) {
-    const db = drizzle(this.env.DB, { schema });
+    const db = getDb(this.env);
     
     // 1. Fetch transactions
     const txs = (await db.select().from(schema.transactions).where(

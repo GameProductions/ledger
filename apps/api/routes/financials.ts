@@ -39,7 +39,7 @@ import {
 } from '#/schema'
 import { billers, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/sqlite-core'
+import { alias } from 'drizzle-orm/pg-core'
 import { inferTransactionDetails } from '../inference'
 import { ReconciliationService } from '../services/reconciliation.service'
 import { stepUpMiddleware } from '../middlewares/step-up-middleware'
@@ -593,14 +593,13 @@ financials.get('/transactions/suggest-links', async (c) => {
     .innerJoin(t2, and(
       eq(t1.householdId, t2.householdId),
       eq(t1.amountCents, sql`-${t2.amountCents}`),
-      sql`ABS(julianday(${t1.transactionDate}) - julianday(${t2.transactionDate})) <= 7`
+      sql`ABS(CAST(${t1.transactionDate} AS date) - CAST(${t2.transactionDate} AS date)) <= 7`
     ))
     .where(and(
       eq(t1.householdId, householdId),
       sql`${t1.id} < ${t2.id}`
     ))
-    .limit(5)
-    .all() as any)
+    .limit(5) as any)
 
   return c.json({ success: true, data: results || [] })
 })
@@ -1101,8 +1100,7 @@ financials.get('/shared-balances', async (c) => {
     .leftJoin(u2, eq(sharedBalances.toUserId, u2.id))
     .leftJoin(transactions, eq(sharedBalances.transactionId, transactions.id))
     .where(eq(sharedBalances.householdId, householdId))
-    .orderBy(desc(sharedBalances.id))
-    .all() as any)
+    .orderBy(desc(sharedBalances.id)) as any)
   
   return c.json({ success: true, data: results || [] })
 })
@@ -1129,8 +1127,7 @@ financials.get('/shared-balances/summary', async (c) => {
     .leftJoin(u2, eq(sharedBalances.toUserId, u2.id))
     .where(eq(sharedBalances.householdId, householdId))
     .groupBy(sharedBalances.fromUserId, sharedBalances.toUserId)
-    .having(sql`SUM(${sharedBalances.amountCents}) != 0`)
-    .all() as any)
+    .having(sql`SUM(${sharedBalances.amountCents}) != 0`) as any)
   
   return c.json({ success: true, data: results || [] })
 })
@@ -1250,8 +1247,7 @@ financials.get('/reconciliation/proposals', async (c) => {
       eq(reconciliationProposals.householdId, householdId),
       eq(reconciliationProposals.status, 'pending')
     ))
-    .orderBy(desc(reconciliationProposals.confidenceScore))
-    .all() as any)
+    .orderBy(desc(reconciliationProposals.confidenceScore)) as any)
   
   return c.json({ success: true, data: results || [] })
 })

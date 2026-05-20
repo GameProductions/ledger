@@ -1,4 +1,4 @@
-import { addWeeks, addDays, getDaysInMonth, setDate, isAfter, isBefore, startOfMonth, endOfMonth, parseISO, format } from 'date-fns';
+import { addDays, getDaysInMonth, setDate, isAfter, isBefore, parseISO, format } from 'date-fns';
 
 export interface PaydayInstance {
   id?: string;
@@ -123,7 +123,7 @@ export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: Payday
 
     sortedPaydays.forEach((payday, idx) => {
         const nextPayday = sortedPaydays[idx + 1];
-        const items = liabilities.filter(item => {
+        const items = safeLiabilities.filter(item => {
             const date = item.dueDate || item.nextBillingDate || item.nextPaymentDate || item.transactionDate;
             if (!date) return false;
             

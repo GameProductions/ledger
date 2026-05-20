@@ -12,7 +12,7 @@ import { getDb } from '#/index'
 import { users, passkeys, sessions } from '#/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { setSignedCookie, getSignedCookie, deleteCookie } from 'hono/cookie'
-import { uint8ArrayToBase64, uint8ArrayToBase64url, getRpID, hashIdentifier, base64ToUint8Array } from '../../auth-utils'
+import { uint8ArrayToBase64url, getRpID, hashIdentifier, base64ToUint8Array } from '../../auth-utils'
 import { getAAGUIDMetadata } from '../../utils/webauthn-metadata'
 import { VaultService } from '../../utils/vault.service'
 import { getForensics } from '../../utils/forensics'
@@ -134,9 +134,9 @@ webauthn.post('/verify-registration', async (c) => {
       credentialIdHash: await hashIdentifier(credIdB64),
       counter,
       deviceType: credentialDeviceType,
-      backedUp: credentialBackedUp ? 1 : 0,
+      backedUp: !!credentialBackedUp,
       attestationFormat: (verification.registrationInfo as any).fmt || 'none',
-      userVerified: 1,
+      userVerified: true,
       aaguid: aaguid || null,
       providerName: branding.name,
       icon: branding.icon,

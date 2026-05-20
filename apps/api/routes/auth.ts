@@ -69,7 +69,7 @@ async function createSessionTracker(c: any, userId: string, passkeyVerified: boo
     ipAddress: meta.ip,
     ipV4: meta.ipV4,
     ipV6: meta.ipV6,
-    isPersistent: isPersistent ? 1 : 0,
+    isPersistent: !!isPersistent,
     passkeyVerifiedAt: passkeyVerified ? new Date().toISOString() : null,
     lastActiveAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + expirationHours * 60 * 60 * 1000).toISOString(),
@@ -786,9 +786,9 @@ async function handleRegisterVerify(c: any) {
       credentialIdHash,
       counter,
       deviceType: credentialDeviceType,
-      backedUp: credentialBackedUp ? 1 : 0,
+      backedUp: !!credentialBackedUp,
       attestationFormat: verification.registrationInfo.fmt || 'none',
-      userVerified: 1, // WebAuthn registration typically implies user verification
+      userVerified: true, // WebAuthn registration typically implies user verification
       aaguid: aaguid || null,
       providerName: branding.name,
       icon: branding.icon,

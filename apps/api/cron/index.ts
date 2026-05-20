@@ -367,10 +367,11 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
     if (env.BACKUPS) {
       ctx.waitUntil((async () => {
         try {
+          const db = getDb(env);
           const tables = ['users', 'households', 'user_households', 'accounts', 'transactions', 'subscriptions', 'passkeys'];
           const dump: Record<string, any[]> = {};
           for (const table of tables) {
-            const { results } = (await env.DB.prepare(`SELECT * FROM ${table}`).all() as any);
+            const results = (await db.execute(sql.raw(`SELECT * FROM ${table}`)) as any);
             dump[table] = results;
           }
           const payload = JSON.stringify({ version: 'Stable', timestamp: nowIso, data: dump });

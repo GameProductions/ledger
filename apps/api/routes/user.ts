@@ -25,7 +25,7 @@ import {
   activityLogs as auditLogs 
 } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/sqlite-core'
+import { alias } from 'drizzle-orm/pg-core'
 import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -255,7 +255,7 @@ user.get('/households/current', async (c) => {
       currency: households.currency,
       countryCode: households.countryCode,
       unallocatedBalanceCents: households.unallocatedBalanceCents
-    }).from(households).where(eq(households.id, householdId)).get() as any)
+    }).from(households).where(eq(households.id, householdId)).then(res => res[0]) as any)
 
   if (!household) {
     return c.json({ success: false, error: 'Household not found' }, 404)
@@ -269,8 +269,7 @@ user.get('/households/current', async (c) => {
       role: userHouseholds.role
     }).from(users)
       .innerJoin(userHouseholds, eq(users.id, userHouseholds.userId))
-      .where(eq(userHouseholds.householdId, householdId))
-      .all() as any)
+      .where(eq(userHouseholds.householdId, householdId)) as any)
 
   // Transform to match frontend expectations: { user: { id, displayName, ... }, role }
   const formattedMembers = members.map((m: any) => ({
@@ -598,8 +597,7 @@ user.get('/providers', async (c) => {
     })
     .from(linkedProviders)
     .innerJoin(serviceProviders, eq(linkedProviders.serviceProviderId, serviceProviders.id))
-    .where(eq(linkedProviders.userId, userId))
-    .all() as any)
+    .where(eq(linkedProviders.userId, userId)) as any)
 
   return c.json({
     success: true,
@@ -649,8 +647,7 @@ user.get('/linked-accounts', async (c) => {
     })
     .from(userLinkedAccounts)
     .innerJoin(serviceProviders, eq(userLinkedAccounts.providerId, serviceProviders.id))
-    .where(eq(userLinkedAccounts.userId, userId))
-    .all() as any)
+    .where(eq(userLinkedAccounts.userId, userId)) as any)
 
   return c.json({
     success: true,
@@ -777,8 +774,7 @@ user.get('/audit', async (c) => {
     ))
     .where(eq(auditLogs.householdId, householdId))
     .orderBy(desc(auditLogs.createdAt))
-    .limit(100)
-    .all() as any)
+    .limit(100) as any)
   
   return c.json({ success: true, data: results || [] })
 })

@@ -1,9 +1,9 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './auth';
 import { households } from './financials';
 
-export const personalLoans = sqliteTable('personal_loans', {
+export const personalLoans = pgTable('personal_loans', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   lenderUserId: text('lender_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -19,7 +19,7 @@ export const personalLoans = sqliteTable('personal_loans', {
   lenderIdx: index('idx_personal_loans_lender').on(table.lenderUserId),
 }));
 
-export const loanPayments = sqliteTable('loan_payments', {
+export const loanPayments = pgTable('loan_payments', {
   id: text('id').primaryKey(),
   loanId: text('loan_id').notNull().references(() => personalLoans.id, { onDelete: 'cascade' }),
   amountCents: integer('amount_cents').notNull(),

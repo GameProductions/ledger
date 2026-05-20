@@ -1,8 +1,8 @@
-import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+import { boolean, pgTable, text, integer, primaryKey, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './auth';
 
-export const households = sqliteTable('households', {
+export const households = pgTable('households', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
@@ -12,7 +12,7 @@ export const households = sqliteTable('households', {
   status: text('status').default('active'),
 });
 
-export const userHouseholds = sqliteTable('user_households', {
+export const userHouseholds = pgTable('user_households', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   role: text('role').default('member'),
@@ -20,7 +20,7 @@ export const userHouseholds = sqliteTable('user_households', {
   pk: primaryKey({ columns: [table.userId, table.householdId] }),
 }));
 
-export const accounts = sqliteTable('accounts', {
+export const accounts = pgTable('accounts', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -32,7 +32,7 @@ export const accounts = sqliteTable('accounts', {
   householdIdx: index('idx_accounts_household').on(table.householdId),
 }));
 
-export const categories = sqliteTable('categories', {
+export const categories = pgTable('categories', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -40,14 +40,14 @@ export const categories = sqliteTable('categories', {
   color: text('color'),
   monthlyBudgetCents: integer('monthly_budget_cents').default(0),
   envelopeBalanceCents: integer('envelope_balance_cents').default(0),
-  rolloverEnabled: integer('rollover_enabled', { mode: 'boolean' }).default(false),
+  rolloverEnabled: boolean('rollover_enabled').default(false),
   rolloverCents: integer('rollover_cents').default(0),
-  emergencyFund: integer('emergency_fund', { mode: 'boolean' }).default(false),
+  emergencyFund: boolean('emergency_fund').default(false),
 }, (table) => ({
   householdIdx: index('idx_categories_household').on(table.householdId),
 }));
 
-export const billers = sqliteTable('billers', {
+export const billers = pgTable('billers', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   logoUrl: text('logo_url'),
@@ -56,16 +56,16 @@ export const billers = sqliteTable('billers', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const transactions = sqliteTable('transactions', {
+export const transactions = pgTable('transactions', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
   categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
   amountCents: integer('amount_cents').notNull(),
   description: text('description'),
-  transactionDate: text('transaction_date').default(sql`(DATE('now'))`),
+  transactionDate: text('transaction_date').default(sql`CURRENT_DATE::text`),
   status: text('status').default('pending'),
-  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  isRecurring: boolean('is_recurring').default(false),
   receiptR2Key: text('receipt_r2_key'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   confirmationNumber: text('confirmation_number'),
@@ -76,12 +76,12 @@ export const transactions = sqliteTable('transactions', {
   parentId: text('parent_id').references((): any => transactions.id, { onDelete: 'cascade' }),
   providerId: text('provider_id'), // Loosely coupled to system.serviceProviders
   billId: text('bill_id'), // Loosely coupled to bills
-  attentionRequired: integer('attention_required', { mode: 'boolean' }).default(false),
-  needsBalanceTransfer: integer('needs_balance_transfer', { mode: 'boolean' }).default(false),
+  attentionRequired: boolean('attention_required').default(false),
+  needsBalanceTransfer: boolean('needs_balance_transfer').default(false),
   transferTiming: text('transfer_timing'),
-  isBorrowed: integer('is_borrowed', { mode: 'boolean' }).default(false),
+  isBorrowed: boolean('is_borrowed').default(false),
   borrowSource: text('borrow_source'),
-  accountedFor: integer('accounted_for', { mode: 'boolean' }).default(false),
+  accountedFor: boolean('accounted_for').default(false),
   source: text('source').default('manual'),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
@@ -91,13 +91,13 @@ export const transactions = sqliteTable('transactions', {
   dateIdx: index('idx_transactions_date').on(table.transactionDate),
 }));
 
-export const transactionPairingRules = sqliteTable('transaction_pairing_rules', {
+export const transactionPairingRules = pgTable('transaction_pairing_rules', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   pattern: text('pattern').notNull(),
   targetProviderId: text('target_provider_id'),
   targetCategoryId: text('target_category_id').references(() => categories.id, { onDelete: 'cascade' }),
-  autoConfirm: integer('auto_confirm', { mode: 'boolean' }).default(false),
+  autoConfirm: boolean('auto_confirm').default(false),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   visibility: text('visibility').default('private'), 
   ruleType: text('rule_type').default('manual'),
@@ -108,7 +108,7 @@ export const transactionPairingRules = sqliteTable('transaction_pairing_rules', 
   categoryIdx: index('idx_pairing_rules_category').on(table.targetCategoryId),
 }));
 
-export const bills = sqliteTable('bills', {
+export const bills = pgTable('bills', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -118,7 +118,7 @@ export const bills = sqliteTable('bills', {
   notes: text('notes'),
   categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
   accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
-  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  isRecurring: boolean('is_recurring').default(false),
   frequency: text('frequency'),
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
@@ -129,7 +129,7 @@ export const bills = sqliteTable('bills', {
   ownerIdx: index('idx_bills_owner').on(table.ownerId),
 }));
 
-export const subscriptions = sqliteTable('subscriptions', {
+export const subscriptions = pgTable('subscriptions', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -137,7 +137,7 @@ export const subscriptions = sqliteTable('subscriptions', {
   billingCycle: text('billing_cycle').notNull(),
   nextBillingDate: text('next_billing_date'),
   trialEndDate: text('trial_end_date'),
-  isTrial: integer('is_trial', { mode: 'boolean' }).default(false),
+  isTrial: boolean('is_trial').default(false),
   categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
   accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   paymentMode: text('payment_mode').default('manual'),
@@ -148,7 +148,7 @@ export const subscriptions = sqliteTable('subscriptions', {
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));
 
-export const reconciliationProposals = sqliteTable('reconciliation_proposals', {
+export const reconciliationProposals = pgTable('reconciliation_proposals', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   primaryTransactionId: text('primary_transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
@@ -163,7 +163,7 @@ export const reconciliationProposals = sqliteTable('reconciliation_proposals', {
   suggestedTxIdx: index('idx_recon_proposals_suggested').on(table.suggestedTransactionId),
 }));
 
-export const sharedBalances = sqliteTable('shared_balances', {
+export const sharedBalances = pgTable('shared_balances', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   fromUserId: text('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -175,7 +175,7 @@ export const sharedBalances = sqliteTable('shared_balances', {
   transactionIdx: index('idx_shared_balances_transaction').on(table.transactionId),
 }));
 
-export const liabilitySplits = sqliteTable('liability_splits', {
+export const liabilitySplits = pgTable('liability_splits', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   targetId: text('target_id').notNull(),
@@ -188,12 +188,12 @@ export const liabilitySplits = sqliteTable('liability_splits', {
   overrideDate: text('override_date'),
   overrideFrequency: text('override_frequency'),
   status: text('status').default('pending'),
-  isMasterLedgerPublic: integer('is_master_ledger_public', { mode: 'boolean' }).default(false),
+  isMasterLedgerPublic: boolean('is_master_ledger_public').default(false),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const creditCards = sqliteTable('credit_cards', {
+export const creditCards = pgTable('credit_cards', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
@@ -207,7 +207,7 @@ export const creditCards = sqliteTable('credit_cards', {
   accountIdx: index('idx_credit_cards_account').on(table.accountId),
 }));
 
-export const savingsBuckets = sqliteTable('savings_buckets', {
+export const savingsBuckets = pgTable('savings_buckets', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -220,7 +220,7 @@ export const savingsBuckets = sqliteTable('savings_buckets', {
   householdIdx: index('idx_savings_household').on(table.householdId),
 }));
 
-export const transactionTimeline = sqliteTable('transaction_timeline', {
+export const transactionTimeline = pgTable('transaction_timeline', {
   id: text('id').primaryKey(),
   transactionId: text('transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
@@ -230,7 +230,7 @@ export const transactionTimeline = sqliteTable('transaction_timeline', {
   transactionIdx: index('idx_timeline_transaction').on(table.transactionId),
 }));
 
-export const installmentPlans = sqliteTable('installment_plans', {
+export const installmentPlans = pgTable('installment_plans', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -249,7 +249,7 @@ export const installmentPlans = sqliteTable('installment_plans', {
   householdIdx: index('idx_installments_household').on(table.householdId),
 }));
 
-export const investmentHoldings = sqliteTable('investment_holdings', {
+export const investmentHoldings = pgTable('investment_holdings', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
@@ -266,7 +266,7 @@ export const investmentHoldings = sqliteTable('investment_holdings', {
   accountIdx: index('idx_invest_holdings_account').on(table.accountId),
 }));
 
-export const reports = sqliteTable('reports', {
+export const reports = pgTable('reports', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
@@ -278,7 +278,7 @@ export const reports = sqliteTable('reports', {
   householdIdx: index('idx_reports_household').on(table.householdId),
 }));
 
-export const userPaymentMethods = sqliteTable('user_payment_methods', {
+export const userPaymentMethods = pgTable('user_payment_methods', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   householdId: text('household_id').references(() => households.id, { onDelete: 'cascade' }),
@@ -293,7 +293,7 @@ export const userPaymentMethods = sqliteTable('user_payment_methods', {
   householdIdx: index('idx_payment_methods_household').on(table.householdId),
 }));
 
-export const userLinkedAccounts = sqliteTable('user_linked_accounts', {
+export const userLinkedAccounts = pgTable('user_linked_accounts', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   householdId: text('household_id').references(() => households.id, { onDelete: 'cascade' }),

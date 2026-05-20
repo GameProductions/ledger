@@ -4,10 +4,10 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../../types'
 import { UpdateSystemConfigSchema, UpdateSystemFeatureSchema, SystemRegistrySchema } from '@shared/schemas'
 import { getDb } from '#/index'
-import { systemConfig, systemFeatureFlags, systemRegistry, systemAnnouncements, systemWalkthroughs } from '#/schema'
-import { eq, desc, sql } from 'drizzle-orm'
+import { systemConfig, systemFeatureFlags, systemRegistry } from '#/schema'
+import { eq, sql } from 'drizzle-orm'
 import { logAudit } from '../../utils'
-import { HTTPException } from 'hono/http-exception'
+
 
 const system = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -38,7 +38,7 @@ system.patch('/features/:id', zValidator('json', UpdateSystemFeatureSchema), asy
   const { enabledGlobally } = c.req.valid('json')
   const db = getDb(c.env)
   await db.update(systemFeatureFlags).set({ 
-    enabledGlobally: enabledGlobally ? 1 : 0, 
+    enabledGlobally: !!enabledGlobally, 
     updatedAt: sql`CURRENT_TIMESTAMP` 
   }).where(eq(systemFeatureFlags.id, id))
   await logAudit(c, 'system_feature_flags', id, 'TOGGLE_FEATURE', {}, { enabledGlobally }, {}, true)

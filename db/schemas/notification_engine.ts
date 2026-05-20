@@ -1,10 +1,10 @@
-import { sqliteTable, text, integer, primaryKey, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { boolean, pgTable, text, integer, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './auth';
 import { households } from './financials';
 
 // [NEW] Core Reminders table
-export const reminders_new = sqliteTable('reminders_new', {
+export const reminders_new = pgTable('reminders_new', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   ownerId: text('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -19,7 +19,7 @@ export const reminders_new = sqliteTable('reminders_new', {
 });
 
 // [NEW] Collaboration & Sharing
-export const reminderMembers = sqliteTable('reminder_members', {
+export const reminderMembers = pgTable('reminder_members', {
   id: text('id').primaryKey(),
   reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -27,7 +27,7 @@ export const reminderMembers = sqliteTable('reminder_members', {
   joinedAt: text('joined_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const reminderShares = sqliteTable('reminder_shares', {
+export const reminderShares = pgTable('reminder_shares', {
   id: text('id').primaryKey(),
   reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
   shareToken: text('share_token').notNull().unique(),
@@ -37,7 +37,7 @@ export const reminderShares = sqliteTable('reminder_shares', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const reminderActivity = sqliteTable('reminder_activity', {
+export const reminderActivity = pgTable('reminder_activity', {
   id: text('id').primaryKey(),
   reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
   actorId: text('actor_id').notNull().references(() => users.id),
@@ -47,28 +47,28 @@ export const reminderActivity = sqliteTable('reminder_activity', {
 });
 
 // [NEW] Scheduling & Delivery
-export const reminderSchedules = sqliteTable('reminder_schedules', {
+export const reminderSchedules = pgTable('reminder_schedules', {
   id: text('id').primaryKey(),
   reminderId: text('reminder_id').notNull().references(() => reminders_new.id, { onDelete: 'cascade' }),
   scheduleType: text('schedule_type').notNull(), 
   cronString: text('cron_string'),
   nextRunAt: text('next_run_at').notNull(),
   lastRunAt: text('last_run_at'),
-  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  isActive: boolean('is_active').default(true),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const reminderChannels = sqliteTable('reminder_channels', {
+export const reminderChannels = pgTable('reminder_channels', {
   id: text('id').primaryKey(),
   scheduleId: text('schedule_id').notNull().references(() => reminderSchedules.id, { onDelete: 'cascade' }),
   channelType: text('channel_type').notNull(), 
   target: text('target'), 
   soundId: text('sound_id'), 
-  isEnabled: integer('is_enabled', { mode: 'boolean' }).default(true),
+  isEnabled: boolean('is_enabled').default(true),
 });
 
 // [NEW] Audio & Settings
-export const notificationSounds = sqliteTable('notification_sounds', {
+export const notificationSounds = pgTable('notification_sounds', {
   id: text('id').primaryKey(),
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), 
   name: text('name').notNull(),
@@ -78,17 +78,17 @@ export const notificationSounds = sqliteTable('notification_sounds', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const userNotificationSettings = sqliteTable('user_notification_settings', {
+export const userNotificationSettings = pgTable('user_notification_settings', {
   userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
-  dndEnabled: integer('dnd_enabled', { mode: 'boolean' }).default(false),
+  dndEnabled: boolean('dnd_enabled').default(false),
   dndStart: text('dnd_start').default('22:00'),
   dndEnd: text('dnd_end').default('08:00'),
-  allowHighPriorityInDnd: integer('allow_high_priority_in_dnd', { mode: 'boolean' }).default(true),
+  allowHighPriorityInDnd: boolean('allow_high_priority_in_dnd').default(true),
   defaultSoundId: text('default_sound_id'),
   updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const activityLogs = sqliteTable('activity_logs', {
+export const activityLogs = pgTable('activity_logs', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   actorId: text('actor_id').notNull().references(() => users.id),

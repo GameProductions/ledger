@@ -415,9 +415,13 @@ export class AuthService {
     const vault = new VaultService(db, this.env.JWT_SECRET);
     
     // 1. Generate 10 new high-entropy codes
-    const newCodes = Array.from({ length: 10 }, () => 
-      Math.random().toString(36).substring(2, 10).toUpperCase()
-    );
+    const newCodes = Array.from({ length: 10 }, () => {
+      const bytes = crypto.getRandomValues(new Uint8Array(8));
+      return Array.from(bytes, byte => {
+        const val = byte % 36;
+        return val < 10 ? String(val) : String.fromCharCode(val - 10 + 65);
+      }).join('');
+    });
     
     // 2. Hash codes (Layered Security: Hashed before being Encrypted in Vault)
     const hashes = (await Promise.all(newCodes.map(code => hashPassword(code))) as any);

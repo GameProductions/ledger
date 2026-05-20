@@ -31,9 +31,11 @@ const UserDetailsModal: React.FC<{
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    const array = new Uint32Array(16);
+    window.crypto.getRandomValues(array);
     let password = "";
     for (let i = 0; i < 16; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
+        password += chars.charAt(array[i] % chars.length);
     }
     setManualPass(password);
     setShowPass(true);
@@ -427,9 +429,11 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    const array = new Uint32Array(16);
+    window.crypto.getRandomValues(array);
     let password = "";
     for (let i = 0; i < 16; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
+        password += chars.charAt(array[i] % chars.length);
     }
     setFormData({ ...formData, password });
   };

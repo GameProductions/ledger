@@ -5,7 +5,6 @@ export type KVNamespace = any;
 export type Fetcher = any;
 
 export type Bindings = {
-  DB: D1Database
   ASSETS: Fetcher
   STORAGE: R2Bucket
   BACKUPS: R2Bucket

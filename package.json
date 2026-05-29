@@ -8,7 +8,8 @@
     "build": "npm run build:web",
     "lint": "eslint .",
     "test": "vitest",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "secrets:sync": "op inject -i .dev.vars.tpl -o .dev.vars --force"
   },
   "dependencies": {
     "@cloudflare/agents": "^0.0.16",

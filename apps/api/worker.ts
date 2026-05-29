@@ -10,7 +10,7 @@ import { Bindings, Variables } from './types';
 /**
  * Foundation: Unified Entry Point
  * This file orchestrates both the Hono Financial API and static asset serving
- * for the Ledger PWA, ensuring compliance with the 'Command Central' protocol.
+ * for the Ledger PWA, ensuring compliance with the Foundation Console.
  */
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();

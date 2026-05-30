@@ -13,7 +13,33 @@ const system = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 system.get('/config', async (c) => {
   const db = getDb(c.env)
-  const results = (await db.select().from(systemConfig).orderBy(systemConfig.configKey) as any)
+  let results = (await db.select().from(systemConfig).orderBy(systemConfig.configKey) as any)
+  
+  const keys = new Set(results.map((r: any) => r.configKey));
+  let needsReFetch = false;
+  
+  if (!keys.has('DEFAULT_TIMEZONE')) {
+    await db.insert(systemConfig).values({
+      id: crypto.randomUUID(),
+      configKey: 'DEFAULT_TIMEZONE',
+      configValue: 'UTC'
+    });
+    needsReFetch = true;
+  }
+  
+  if (!keys.has('DEFAULT_LOCALE')) {
+    await db.insert(systemConfig).values({
+      id: crypto.randomUUID(),
+      configKey: 'DEFAULT_LOCALE',
+      configValue: 'en-US'
+    });
+    needsReFetch = true;
+  }
+  
+  if (needsReFetch) {
+    results = (await db.select().from(systemConfig).orderBy(systemConfig.configKey) as any);
+  }
+  
   return c.json({ success: true, data: results || [] })
 })
 
@@ -110,8 +136,28 @@ system.post('/self-heal', async (c) => {
     if (count === 0) {
       await db.insert(systemConfig).values([
         { id: crypto.randomUUID(), configKey: 'MAINTENANCE_MODE', configValue: 'false' },
-        { id: crypto.randomUUID(), configKey: 'VERSION', configValue: '1.0.0' }
+        { id: crypto.randomUUID(), configKey: 'VERSION', configValue: '1.0.0' },
+        { id: crypto.randomUUID(), configKey: 'DEFAULT_TIMEZONE', configValue: 'UTC' },
+        { id: crypto.randomUUID(), configKey: 'DEFAULT_LOCALE', configValue: 'en-US' }
       ])
+    } else {
+      const existing = (await db.select().from(systemConfig) as any)
+      const keys = new Set(existing.map((r: any) => r.configKey))
+      
+      if (!keys.has('DEFAULT_TIMEZONE')) {
+        await db.insert(systemConfig).values({
+          id: crypto.randomUUID(),
+          configKey: 'DEFAULT_TIMEZONE',
+          configValue: 'UTC'
+        })
+      }
+      if (!keys.has('DEFAULT_LOCALE')) {
+        await db.insert(systemConfig).values({
+          id: crypto.randomUUID(),
+          configKey: 'DEFAULT_LOCALE',
+          configValue: 'en-US'
+        })
+      }
     }
     
     await logAudit(c, 'system', 'global', 'SELF_HEAL', null, { status: 'success' }, {}, true)

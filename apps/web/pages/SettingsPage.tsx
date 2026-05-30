@@ -21,6 +21,18 @@ import { getApiUrl } from '../utils/api'
 
 const API_URL = getApiUrl();
 
+const locales = [
+  { value: 'en-US', label: 'English (United States)' },
+  { value: 'en-GB', label: 'English (United Kingdom)' },
+  { value: 'es-ES', label: 'Español (España)' },
+  { value: 'fr-FR', label: 'Français (France)' },
+  { value: 'de-DE', label: 'Deutsch (Deutschland)' },
+  { value: 'it-IT', label: 'Italiano (Italia)' },
+  { value: 'ja-JP', label: '日本語 (日本)' },
+  { value: 'zh-CN', label: '简体中文 (中国)' },
+  { value: 'pt-BR', label: 'Português (Brasil)' },
+  { value: 'ru-RU', label: 'Русский (Россия)' }
+];
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth()
@@ -39,6 +51,7 @@ const SettingsPage: React.FC = () => {
   
   // UI Display Settings State
   const [timezone, setTimezone] = useState('UTC')
+  const [locale, setLocale] = useState('en-US')
   const settingsJson = JSON.parse(profile?.settingsJson || '{}')
 
   // Modals / Edit Trackers
@@ -62,6 +75,7 @@ const SettingsPage: React.FC = () => {
       setEmail(profile.email || '')
       setAvatar(profile.avatarUrl || '')
       setTimezone(profile.timezone || 'UTC')
+      setLocale(profile.locale || 'en-US')
     }
   }, [profile])
 
@@ -85,7 +99,8 @@ const SettingsPage: React.FC = () => {
                 username: username,
                 email: email,
                 avatarUrl: avatar || null,
-                timezone: timezone
+                timezone: timezone,
+                locale: locale
               })
             }) as any)
       if (!res.ok) {
@@ -553,13 +568,31 @@ const SettingsPage: React.FC = () => {
                         value={timezone}
                         onChange={(e) => {
                           setTimezone(e.target.value)
-                          // Optionally autosave timezone locally or wait for universal save button
                         }}
                         onBlur={updateProfile}
                         className="w-full p-4 bg-black border border-white/5 rounded-2xl font-bold text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer"
                       >
                         {Intl.supportedValuesOf('timeZone').map(tz => (
                           <option key={tz} value={tz}>{tz}</option>
+                        ))}
+                      </select>
+                   </div>
+                </section>
+
+                <section className="card p-8">
+                   <div className="space-y-4">
+                      <label className="flex items-center gap-3 text-lg font-bold">Language & Locale</label>
+                      <p className="text-sm text-secondary mb-4">Configure your preferred language and regional formats.</p>
+                      <select 
+                        value={locale}
+                        onChange={(e) => {
+                          setLocale(e.target.value)
+                        }}
+                        onBlur={updateProfile}
+                        className="w-full p-4 bg-black border border-white/5 rounded-2xl font-bold text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer"
+                      >
+                        {locales.map(loc => (
+                          <option key={loc.value} value={loc.value}>{loc.label}</option>
                         ))}
                       </select>
                    </div>

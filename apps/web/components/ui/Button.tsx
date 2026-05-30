@@ -29,9 +29,12 @@ export const Button: React.FC<ButtonProps> = ({
     lg: "px-8 py-4 rounded-2xl text-sm"
   };
 
+  const variantStyle = Object.prototype.hasOwnProperty.call(variants, variant) ? variants[variant] : variants.primary;
+  const sizeStyle = Object.prototype.hasOwnProperty.call(sizes, size) ? sizes[size] : sizes.md;
+
   return (
     <button 
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${baseStyles} ${variantStyle} ${sizeStyle} ${className}`}
       disabled={loading || props.disabled}
       {...props}
     >

@@ -4,6 +4,35 @@ import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { InlineToast } from '../../components/ui/InlineToast';
 
+const timezones = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'US Eastern Time (EST/EDT)' },
+  { value: 'America/Chicago', label: 'US Central Time (CST/CDT)' },
+  { value: 'America/Denver', label: 'US Mountain Time (MST/MDT)' },
+  { value: 'America/Los_Angeles', label: 'US Pacific Time (PST/PDT)' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+  { value: 'Asia/Kolkata', label: 'Kolkata (IST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT/BRST)' },
+  { value: 'Africa/Cairo', label: 'Cairo (EET)' }
+];
+
+const locales = [
+  { value: 'en-US', label: 'English (United States)' },
+  { value: 'en-GB', label: 'English (United Kingdom)' },
+  { value: 'es-ES', label: 'Español (España)' },
+  { value: 'fr-FR', label: 'Français (France)' },
+  { value: 'de-DE', label: 'Deutsch (Deutschland)' },
+  { value: 'it-IT', label: 'Italiano (Italia)' },
+  { value: 'ja-JP', label: '日本語 (日本)' },
+  { value: 'zh-CN', label: '简体中文 (中国)' },
+  { value: 'pt-BR', label: 'Português (Brasil)' },
+  { value: 'ru-RU', label: 'Русский (Россия)' }
+];
+
 const AdminConfig: React.FC = () => {
   const { showConfirm } = useToast();
   const [configs, setConfigs] = useState<any[]>([]);
@@ -89,6 +118,9 @@ const AdminConfig: React.FC = () => {
 
   if (loading) return <AdminPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></AdminPortal>;
 
+  const defaultTimezoneCfg = configs.find(c => c.configKey === 'DEFAULT_TIMEZONE');
+  const defaultLocaleCfg = configs.find(c => c.configKey === 'DEFAULT_LOCALE');
+
   return (
     <AdminPortal activePath="#/admin/config">
       <div className="space-y-12">
@@ -140,7 +172,7 @@ const AdminConfig: React.FC = () => {
             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Settings</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(configs || []).map(cfg => (
+            {(configs || []).filter(cfg => cfg.configKey !== 'DEFAULT_TIMEZONE' && cfg.configKey !== 'DEFAULT_LOCALE').map(cfg => (
               <div key={cfg.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
                 <div className="mb-4">
                   <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.configKey || cfg.configKey}</p>
@@ -157,6 +189,50 @@ const AdminConfig: React.FC = () => {
                 </div>
               </div>
             ))}
+
+            {/* Custom Timezone Selector */}
+            {defaultTimezoneCfg && (
+              <div className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
+                <div className="mb-4">
+                  <p className="font-bold text-emerald-400 mb-1 leading-none">DEFAULT_TIMEZONE</p>
+                  <p className="text-sm text-gray-500">The default fallback timezone for users and transaction schedules.</p>
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                  <select 
+                    value={defaultTimezoneCfg.configValue ?? 'UTC'} 
+                    onChange={(e) => handleUpdateConfig(defaultTimezoneCfg.id, e.target.value)}
+                    className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all text-white"
+                  >
+                    {timezones.map(tz => (
+                      <option key={tz.value} value={tz.value}>{tz.label}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-600 uppercase font-black">Dropdown</span>
+                </div>
+              </div>
+            )}
+
+            {/* Custom Locale Selector */}
+            {defaultLocaleCfg && (
+              <div className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
+                <div className="mb-4">
+                  <p className="font-bold text-emerald-400 mb-1 leading-none">DEFAULT_LOCALE</p>
+                  <p className="text-sm text-gray-500">The default fallback language and regional display format.</p>
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                  <select 
+                    value={defaultLocaleCfg.configValue ?? 'en-US'} 
+                    onChange={(e) => handleUpdateConfig(defaultLocaleCfg.id, e.target.value)}
+                    className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all text-white"
+                  >
+                    {locales.map(loc => (
+                      <option key={loc.value} value={loc.value}>{loc.label}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-600 uppercase font-black">Dropdown</span>
+                </div>
+              </div>
+            )}
             
             {/* Rule 231: Session Persistence Toggle */}
             <div className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">

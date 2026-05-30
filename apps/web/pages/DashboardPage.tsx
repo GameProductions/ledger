@@ -418,7 +418,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     key={i} 
                     className="h-full border-r border-black/20 bg-primary/40 transition-all hover:bg-primary"
                     style={{ width: '16.66%', opacity: 0.3 + (i * 0.1) }}
-                    title={`${p.date}: $${(p.balance_cents/100).toFixed(0)}`}
+                    title={`${p.date}: $` + (p.balance_cents/100).toFixed(0)}
                   />
                 ))}
               </div>
@@ -1022,7 +1022,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     value: b.id,
                     label: b.name,
                     icon: <span className="text-sm">{b.icon}</span>,
-                    metadata: { subtext: `$${((b.envelopeBalanceCents || 0)/100).toFixed(2)}` }
+                    metadata: { subtext: '$' + ((b.envelopeBalanceCents || 0)/100).toFixed(2) }
                   })) : []}
                   value={fundCategoryId}
                   onChange={(val) => setFundCategoryId(val)}

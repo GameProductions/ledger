@@ -14,6 +14,30 @@ import {
 
 const API = getApiUrl()
 
+function getSafeValue(obj: any, key: string): any {
+  if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    return undefined;
+  }
+  return obj ? obj[key] : undefined;
+}
+
+function setSafeValue(obj: any, key: string, value: any): any {
+  if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    return obj;
+  }
+  if (obj) {
+    obj[key] = value;
+  }
+  return obj;
+}
+
+function safeSpreadUpdate(obj: any, key: string, value: any): any {
+  if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    return { ...obj };
+  }
+  return { ...obj, [key]: value };
+}
+
 // ─── Generic CRUD helper ────────────────────────────────────────────
 async function apiCall(token: string, householdId: string, method: string, path: string, body?: any) {
   const res = (await fetch(`${API}${path}`, {
@@ -52,8 +76,12 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
   const openEdit = (item: any) => {
     const data: any = {}
     fields.forEach(f => {
-      if (f.type === 'cents' && item[f.key] !== undefined) data[f.key] = item[f.key] / 100
-      else data[f.key] = item[f.key] ?? ''
+      const val = getSafeValue(item, f.key)
+      if (f.type === 'cents' && val !== undefined) {
+        setSafeValue(data, f.key, val / 100)
+      } else {
+        setSafeValue(data, f.key, val ?? '')
+      }
     })
     setFormData(data)
     setEditing(item)
@@ -64,16 +92,21 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
     e.preventDefault()
     const payload: any = {}
     fields.forEach(f => {
-      const v = formData[f.key]
+      const v = getSafeValue(formData, f.key)
       if (v === undefined || v === '') return
-      if (f.type === 'cents') payload[f.key] = Math.round(parseFloat(v) * 100)
-      else if (f.type === 'number') payload[f.key] = parseFloat(v)
-      else if (f.type === 'boolean') payload[f.key] = v === true || v === 'true'
-      else payload[f.key] = v
+      if (f.type === 'cents') {
+        setSafeValue(payload, f.key, Math.round(parseFloat(v) * 100))
+      } else if (f.type === 'number') {
+        setSafeValue(payload, f.key, parseFloat(v))
+      } else if (f.type === 'boolean') {
+        setSafeValue(payload, f.key, v === true || v === 'true')
+      } else {
+        setSafeValue(payload, f.key, v)
+      }
     })
     
     if (editing) {
-      await apiCall(token!, householdId!, 'PATCH', `${apiPath}/${editing[idField]}`, payload)
+      await apiCall(token!, householdId!, 'PATCH', `${apiPath}/${getSafeValue(editing, idField)}`, payload)
       showToast(`${title.slice(0, -1)} updated`, 'success')
     } else {
       await apiCall(token!, householdId!, 'POST', apiPath, payload)
@@ -125,51 +158,57 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
         <div className="py-12 text-center text-white/30 text-sm">{emptyMessage || `No ${title.toLowerCase()} yet. Click Add to create one.`}</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((item: any) => (
-            <div key={item[idField]} className="group flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] transition-all">
-              <div className="flex-1 min-w-0">{displayFn(item)}</div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(item)} className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-primary transition-colors" title="Edit">
-                  <Pencil size={14} />
-                </button>
-                <button onClick={() => setDeleting(item[idField])} className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors" title="Delete">
-                  <Trash2 size={14} />
-                </button>
+          {filtered.map((item: any) => {
+            const itemId = getSafeValue(item, idField);
+            return (
+              <div key={itemId} className="group flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] transition-all">
+                <div className="flex-1 min-w-0">{displayFn(item)}</div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => openEdit(item)} className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-primary transition-colors" title="Edit">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => setDeleting(itemId)} className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors" title="Delete">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Create / Edit Modal */}
       <Modal isOpen={showForm} onClose={resetForm} title={editing ? `Edit ${title.slice(0, -1)}` : `New ${title.slice(0, -1)}`}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {fields.map(f => (
-            <div key={f.key}>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1.5">{f.label}</label>
-              {f.type === 'select' ? (
-                <select value={formData[f.key] ?? ''} onChange={e => setFormData({ ...formData, [f.key]: e.target.value })} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
-                  <option value="">Select...</option>
-                  {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              ) : f.type === 'boolean' ? (
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={formData[f.key] === true || formData[f.key] === 'true' || formData[f.key] === 1} onChange={e => setFormData({ ...formData, [f.key]: e.target.checked })} className="sr-only peer" />
-                  <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-primary transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
-                  <span className="text-sm text-white/60">{formData[f.key] ? 'Enabled' : 'Disabled'}</span>
-                </label>
-              ) : (
-                <input
-                  type={f.type === 'cents' ? 'number' : f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
-                  step={f.type === 'cents' ? '0.01' : f.type === 'number' ? 'any' : undefined}
-                  value={formData[f.key] ?? ''}
-                  onChange={e => setFormData({ ...formData, [f.key]: e.target.value })}
-                  placeholder={f.placeholder || f.label}
-                  className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm"
-                />
-              )}
-            </div>
-          ))}
+          {fields.map(f => {
+            const formVal = getSafeValue(formData, f.key);
+            return (
+              <div key={f.key}>
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1.5">{f.label}</label>
+                {f.type === 'select' ? (
+                  <select value={formVal ?? ''} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
+                    <option value="">Select...</option>
+                    {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                ) : f.type === 'boolean' ? (
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={formVal === true || formVal === 'true' || formVal === 1} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.checked))} className="sr-only peer" />
+                    <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-primary transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
+                    <span className="text-sm text-white/60">{formVal ? 'Enabled' : 'Disabled'}</span>
+                  </label>
+                ) : (
+                  <input
+                    type={f.type === 'cents' ? 'number' : f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                    step={f.type === 'cents' ? '0.01' : f.type === 'number' ? 'any' : undefined}
+                    value={formVal ?? ''}
+                    onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))}
+                    placeholder={f.placeholder || f.label}
+                    className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm"
+                  />
+                )}
+              </div>
+            );
+          })}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={resetForm} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
             <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-primary rounded-xl text-sm font-bold text-white hover:bg-primary/80 transition-all">

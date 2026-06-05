@@ -291,8 +291,35 @@ export class AuthService {
     return token
   }
 
-  async consumeAdminInvite(token: string, username: string, password: string, email: string) {
+  async consumeAdminInvite(token: string | undefined, username: string, password: string, email: string) {
     const db = getDb(this.env)
+    
+    // First user setup flow check
+    const existingUsers = await db.select({ id: users.id }).from(users).limit(1)
+    if (existingUsers.length === 0) {
+      const userId = crypto.randomUUID()
+      const passwordHash = (await hashPassword(password) as any)
+      await db.insert(users).values({
+        id: userId,
+        username: username,
+        email: email,
+        passwordHash: passwordHash,
+        globalRole: 'owner',
+        status: 'active'
+      })
+      return userId
+    }
+
+    // Check duplicate username/email (User Management SOP)
+    const duplicate = await db.select({ id: users.id })
+      .from(users)
+      .where(or(eq(users.username, username), eq(users.email, email)))
+      .limit(1)
+    if (duplicate.length > 0) {
+      throw new HTTPException(409, { message: 'Username or email already exists' })
+    }
+
+    if (!token) throw new HTTPException(400, { message: 'Invitation token is required' })
     const tokenHash = (await hashToken(token) as any)
     
     const inviteResult = (await db.select().from(adminInvitations).where(
@@ -309,17 +336,15 @@ export class AuthService {
     const userId = crypto.randomUUID()
     const passwordHash = (await hashPassword(password) as any)
     
-    await db.batch([
-      db.insert(users).values({
-        id: userId,
-        username: username,
-        email: email,
-        passwordHash: passwordHash,
-        globalRole: invite.role,
-        status: 'active'
-      }),
-      db.update(adminInvitations).set({ isClaimed: true }).where(eq(adminInvitations.tokenHash, tokenHash))
-    ])
+    await db.insert(users).values({
+      id: userId,
+      username: username,
+      email: email,
+      passwordHash: passwordHash,
+      globalRole: invite.role,
+      status: 'active'
+    })
+    await db.update(adminInvitations).set({ isClaimed: true }).where(eq(adminInvitations.tokenHash, tokenHash))
 
     return userId
   }

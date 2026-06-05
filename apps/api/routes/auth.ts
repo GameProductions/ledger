@@ -1110,7 +1110,7 @@ auth.post('/admin/invite', async (c) => {
 })
 
 auth.post('/admin/claim', zValidator('json', z.object({
-  token: z.string(),
+  token: z.string().optional(),
   username: z.string().min(3),
   password: z.string().min(8),
   email: z.string().email()

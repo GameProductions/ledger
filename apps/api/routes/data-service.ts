@@ -45,12 +45,12 @@ data.get('/analysis/summary', async (c) => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
   const db = getDb(c.env)
   
-  const incomeResult = (await db.select({ total: sql<number>`SUM(amountCents)` })
+  const incomeResult = (await db.select({ total: sql<number>`SUM(${transactions.amountCents})` })
       .from(transactions)
       .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
       .limit(1) as any)
   
-  const expenseResult = (await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
+  const expenseResult = (await db.select({ total: sql<number>`SUM(ABS(${transactions.amountCents}))` })
       .from(transactions)
       .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, startOfMonth)))
       .limit(1) as any)
@@ -61,7 +61,7 @@ data.get('/analysis/summary', async (c) => {
   const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
   
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  const recentExpenseResult = (await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
+  const recentExpenseResult = (await db.select({ total: sql<number>`SUM(ABS(${transactions.amountCents}))` })
       .from(transactions)
       .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
       .limit(1) as any)
@@ -153,12 +153,12 @@ data.get('/analysis/forecast', async (c) => {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const db = getDb(c.env)
   
-  const incomeResult = (await db.select({ total: sql<number>`SUM(amountCents)` })
+  const incomeResult = (await db.select({ total: sql<number>`SUM(${transactions.amountCents})` })
       .from(transactions)
       .where(and(eq(transactions.householdId, householdId), gt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
       .limit(1) as any)
     
-  const expenseResult = (await db.select({ total: sql<number>`SUM(ABS(amountCents))` })
+  const expenseResult = (await db.select({ total: sql<number>`SUM(ABS(${transactions.amountCents}))` })
       .from(transactions)
       .where(and(eq(transactions.householdId, householdId), lt(transactions.amountCents, 0), gte(transactions.transactionDate, thirtyDaysAgo)))
       .limit(1) as any)

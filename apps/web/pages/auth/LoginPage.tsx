@@ -64,6 +64,22 @@ const LoginPage: React.FC = () => {
   };
 
   useEffect(() => {
+    const checkSetup = async () => {
+      try {
+        const apiUrl = getApiUrl().replace(/\/$/, '')
+        const res = await fetch(`${apiUrl}/api/auth/setup-status`)
+        if (res.ok) {
+          const data = await res.json() as { needsSetup: boolean }
+          if (data.needsSetup) {
+            window.location.hash = '#/claim'
+          }
+        }
+      } catch (e) {
+        console.error('Failed to check setup status', e)
+      }
+    }
+    checkSetup()
+
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
     const token = params.get('token');
     const reset = params.get('reset_token');

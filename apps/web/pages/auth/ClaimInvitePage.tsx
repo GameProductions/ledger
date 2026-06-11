@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -10,12 +10,38 @@ const ClaimInvitePage: React.FC = () => {
   const [password, setPassword] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
+  const [needsSetup, setNeedsSetup] = useState(false)
+  const [loadingSetup, setLoadingSetup] = useState(true)
   
   const query = new URLSearchParams(window.location.search || window.location.hash.split('?')[1])
   const token = query.get('token')
 
+  useEffect(() => {
+    if (token) {
+      setLoadingSetup(false)
+      return
+    }
+
+    const checkSetupStatus = async () => {
+      try {
+        const apiUrl = getApiUrl().replace(/\/$/, '')
+        const res = await fetch(`${apiUrl}/api/auth/setup-status`)
+        if (res.ok) {
+          const data = await res.json() as { needsSetup: boolean }
+          setNeedsSetup(data.needsSetup)
+        }
+      } catch (e) {
+        console.error('Failed to check setup status', e)
+      } finally {
+        setLoadingSetup(false)
+      }
+    }
+
+    checkSetupStatus()
+  }, [token])
+
   const handleClaim = async () => {
-    if (!token) {
+    if (!token && !needsSetup) {
       showToast('Missing invitation token', 'error')
       return
     }
@@ -25,7 +51,7 @@ const ClaimInvitePage: React.FC = () => {
       const res = (await fetch(`${apiUrl}/api/auth/admin/claim`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token, username, password, email })
+              body: JSON.stringify({ token: token || undefined, username, password, email })
             }) as any)
       
       if (!res.ok) {
@@ -34,7 +60,7 @@ const ClaimInvitePage: React.FC = () => {
         return
       }
 
-      showToast('Invite claimed! You can now log in.', 'success')
+      showToast('Account setup complete! You can now log in.', 'success')
       window.location.hash = '#/login'
     } catch (e: any) {
       showToast('Network error during claim.', 'error')
@@ -43,7 +69,17 @@ const ClaimInvitePage: React.FC = () => {
     }
   }
 
-  if (!token) return <div className="flex-center min-h-[80vh] font-bold uppercase tracking-widest text-secondary">Invalid Invitation</div>
+  if (loadingSetup) {
+    return (
+      <div className="flex-center min-h-[80vh] text-secondary">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!token && !needsSetup) {
+    return <div className="flex-center min-h-[80vh] font-bold uppercase tracking-widest text-secondary">Invalid Invitation</div>
+  }
 
   return (
     <div className="flex-center min-h-screen p-4">
@@ -51,8 +87,12 @@ const ClaimInvitePage: React.FC = () => {
         <div className="text-center space-y-4">
           <img src="/assets/icon.png" alt="LEDGER Logo" className="h-16 mx-auto" />
           <div>
-            <h2 className="text-2xl font-black tracking-tighter">Join as Admin</h2>
-            <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">Create your super admin account</p>
+            <h2 className="text-2xl font-black tracking-tighter">
+              {needsSetup ? 'Setup Owner Account' : 'Join as Admin'}
+            </h2>
+            <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">
+              {needsSetup ? 'Create the first owner account' : 'Create your admin account'}
+            </p>
           </div>
         </div>
         <form 
@@ -91,7 +131,7 @@ const ClaimInvitePage: React.FC = () => {
             className="w-full"
             loading={loading}
           >
-            Claim Invitation
+            {needsSetup ? 'Set Up Account' : 'Claim Invitation'}
           </Button>
         </form>
       </div>

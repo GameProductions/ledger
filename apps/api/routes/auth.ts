@@ -1109,6 +1109,12 @@ auth.post('/admin/invite', async (c) => {
   return c.json({ token, url: `${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:3000'}/claim?token=${token}` })
 })
 
+auth.get('/setup-status', async (c) => {
+  const db = getDb(c.env)
+  const existingUsers = await db.select({ id: users.id }).from(users).limit(1)
+  return c.json({ needsSetup: existingUsers.length === 0 })
+})
+
 auth.post('/admin/claim', zValidator('json', z.object({
   token: z.string().optional(),
   username: z.string().min(3),

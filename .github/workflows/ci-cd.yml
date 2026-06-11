@@ -47,7 +47,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Load Secrets from 1Password
-        uses: 1password/load-secrets-action@2a9101f21de4fcc2ae46583a248b43d50ad0476a # v2
+        uses: 1password/load-secrets-action@be2f36bec409a934fef5d502f0864ab86af8faf7 # v2
         with:
           export-env: true
         env:

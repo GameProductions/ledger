@@ -4,7 +4,7 @@ import { Bindings } from '../types'
 import { verifyPassword, hashPassword } from '../auth-utils'
 import { EmailService } from './email.service'
 import { getDb } from '#/index'
-import { users, userIdentities, passwordResets, passkeys, adminInvitations, userHouseholds, backupCodes } from '#/schema'
+import { users, userIdentities, passwordResets, passkeys, adminInvitations, userHouseholds, backupCodes, households } from '#/schema'
 import { eq, or, and, gt, sql } from 'drizzle-orm'
 import { VaultService } from '../utils/vault.service'
 import { hashToken, hashIdentifier } from '../utils/security'
@@ -105,7 +105,27 @@ export class AuthService {
               .from(userHouseholds)
               .where(eq(userHouseholds.userId, userId))
               .limit(1) as any)
-      targetHouseholdId = userHh[0]?.householdId || 'ledger-main-001'
+      targetHouseholdId = userHh[0]?.householdId
+      
+      if (!targetHouseholdId) {
+        targetHouseholdId = 'ledger-main-001'
+        try {
+          // Dynamically seed default household if missing
+          await db.insert(households).values({
+            id: 'ledger-main-001',
+            name: 'Primary Household',
+            currency: 'USD'
+          }).onConflictDoNothing()
+          
+          await db.insert(userHouseholds).values({
+            userId: userId,
+            householdId: 'ledger-main-001',
+            role: 'admin'
+          }).onConflictDoNothing()
+        } catch (err) {
+          console.error('[Auth Service] Failed to dynamically seed default household:', err)
+        }
+      }
     }
 
     const [user] = (await db.select({ globalRole: users.globalRole }).from(users).where(eq(users.id, userId)).limit(1) as any)
@@ -299,6 +319,8 @@ export class AuthService {
     if (existingUsers.length === 0) {
       const userId = crypto.randomUUID()
       const passwordHash = (await hashPassword(password) as any)
+      
+      // Create owner user
       await db.insert(users).values({
         id: userId,
         username: username,
@@ -307,6 +329,21 @@ export class AuthService {
         globalRole: 'owner',
         status: 'active'
       })
+      
+      // Create primary default household
+      await db.insert(households).values({
+        id: 'ledger-main-001',
+        name: 'Primary Household',
+        currency: 'USD'
+      })
+      
+      // Associate owner with the default household
+      await db.insert(userHouseholds).values({
+        userId: userId,
+        householdId: 'ledger-main-001',
+        role: 'admin'
+      })
+      
       return userId
     }
 

@@ -368,32 +368,38 @@ auth.get('/login/google', async (c) => {
 })
 
 auth.get('/callback/google', async (c) => {
+  const baseUrl = c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'
+  const errorRedirect = (msg: string) => c.redirect(`${baseUrl}/#/login?error=${encodeURIComponent(msg)}`)
+
   const code = c.req.query('code')
   const state = c.req.query('state')
+  const oauthError = c.req.query('error')
+
+  // Google sent back an error (e.g. user denied access)
+  if (oauthError) {
+    console.warn('[OAuth/Google] Provider returned error:', oauthError)
+    return errorRedirect(`Google sign-in was cancelled or denied: ${oauthError}`)
+  }
 
   if (!code || !state) {
     console.error('[OAuth/Google] Missing code or state in callback')
-    throw new HTTPException(400, { message: 'Missing OAuth code or state' })
+    return errorRedirect('Missing OAuth code or state — please try again.')
   }
 
-  // Decode state — it's a base64-encoded JSON payload set during /login/google.
-  // We validate by structure rather than cookie comparison because the SSO proxy
-  // redirect chain (sso.gpnet.dev → ledger.gpnet.dev) may not forward the HttpOnly
-  // cookie reliably across origins.
+  // Decode state — validated by structure since the HttpOnly cookie
+  // may not survive the SSO proxy cross-origin redirect chain.
   let sessionUserId: string | null = null
   let isPersistent = false
-  let stateChallenge: string | null = null
   try {
     const decoded = JSON.parse(decodeBase64(state))
     if (!decoded.challenge || !decoded.targetOrigin) {
       throw new Error('State payload missing required fields')
     }
-    stateChallenge = decoded.challenge
     sessionUserId = decoded.userId || null
     isPersistent = !!decoded.persistent
   } catch (e: any) {
     console.error('[OAuth/Google] State decode failure:', e.message)
-    throw new HTTPException(400, { message: 'Invalid OAuth state payload' })
+    return errorRedirect('Invalid OAuth state — please start the sign-in again.')
   }
 
   const authService = new AuthService(c.env)
@@ -403,6 +409,7 @@ auth.get('/callback/google', async (c) => {
   try {
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: c.env.GOOGLE_CLIENT_ID || '',
         client_secret: c.env.GOOGLE_CLIENT_SECRET || '',
@@ -413,13 +420,14 @@ auth.get('/callback/google', async (c) => {
     })
     tokenData = await tokenRes.json() as any
     if (tokenData.error) {
-      console.error('[OAuth/Google] Token exchange error:', tokenData.error, tokenData.error_description)
-      throw new HTTPException(502, { message: `Google token exchange failed: ${tokenData.error_description || tokenData.error}` })
+      const detail = tokenData.error_description || tokenData.error
+      console.error('[OAuth/Google] Token exchange error:', tokenData.error, detail)
+      // Redirect to app with the exact Google error so we can diagnose it
+      return errorRedirect(`Google sign-in failed: ${detail}`)
     }
   } catch (e: any) {
-    if (e instanceof HTTPException) throw e
     console.error('[OAuth/Google] Token exchange network failure:', e.message)
-    throw new HTTPException(502, { message: 'Failed to contact Google for token exchange' })
+    return errorRedirect('Could not reach Google for sign-in — please try again.')
   }
 
   // Fetch user profile from Google
@@ -430,13 +438,12 @@ auth.get('/callback/google', async (c) => {
     })
     profile = await userRes.json() as any
     if (!profile.id) {
-      console.error('[OAuth/Google] Userinfo response missing id:', profile)
-      throw new HTTPException(502, { message: 'Google returned incomplete profile data' })
+      console.error('[OAuth/Google] Userinfo response missing id:', JSON.stringify(profile))
+      return errorRedirect('Google returned an incomplete profile — please try again.')
     }
   } catch (e: any) {
-    if (e instanceof HTTPException) throw e
     console.error('[OAuth/Google] Userinfo fetch failure:', e.message)
-    throw new HTTPException(502, { message: 'Failed to fetch Google profile' })
+    return errorRedirect('Could not fetch your Google profile — please try again.')
   }
 
   const socialProfile = {
@@ -452,19 +459,22 @@ auth.get('/callback/google', async (c) => {
     expires_in: tokenData.expires_in
   }
 
-  const baseUrl = c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'
-
-  if (sessionUserId) {
-    // LINK MODE — user is already logged in and connecting their Google account
-    await authService.linkSocialAccount(sessionUserId, 'google', socialProfile, socialTokens)
-    await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'google', userId: sessionUserId })
-    return c.redirect(`${baseUrl}/#/settings`)
-  } else {
-    // LOGIN MODE — find or create account from Google identity
-    const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens) as any
-    const sessionId = await createSessionTracker(c, userId, false, isPersistent) as any
-    const token = await authService.generateToken(userId, sessionId) as any
-    return c.redirect(`${baseUrl}/#/login?token=${token}`)
+  try {
+    if (sessionUserId) {
+      // LINK MODE — user is already logged in and connecting their Google account
+      await authService.linkSocialAccount(sessionUserId, 'google', socialProfile, socialTokens)
+      await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'google', userId: sessionUserId })
+      return c.redirect(`${baseUrl}/#/settings`)
+    } else {
+      // LOGIN MODE — find or create account from Google identity
+      const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens) as any
+      const sessionId = await createSessionTracker(c, userId, false, isPersistent) as any
+      const token = await authService.generateToken(userId, sessionId) as any
+      return c.redirect(`${baseUrl}/#/login?token=${token}`)
+    }
+  } catch (e: any) {
+    console.error('[OAuth/Google] Account linking/creation failure:', e.message)
+    return errorRedirect(`Sign-in failed: ${e.message}`)
   }
 })
 

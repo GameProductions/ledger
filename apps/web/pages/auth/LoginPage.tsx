@@ -83,9 +83,11 @@ const LoginPage: React.FC = () => {
     const params = new URLSearchParams(window.location.hash.split('?')[1]);
     const token = params.get('token');
     const reset = params.get('reset_token');
+    const oauthError = params.get('error');
     
     if (token) handleOAuthCallback(token);
     if (reset) setResetToken(reset);
+    if (oauthError) showToast(decodeURIComponent(oauthError), 'error');
   }, []);
 
   const handleLogin = async () => {

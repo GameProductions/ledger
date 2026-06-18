@@ -25,6 +25,7 @@ export const StepUpModal: React.FC<StepUpModalProps> = ({ isOpen, onClose, onSuc
       // 1. Get Authentication Options
       const optionsRes = (await fetch(`${API_URL}/api/auth/passkeys/login/options`, {
               method: 'POST',
+              credentials: 'include',
               headers: { 'Authorization': `Bearer ${token}` }
             }) as any);
       const optionsEnvelope = (await optionsRes.json() as any);
@@ -37,6 +38,7 @@ export const StepUpModal: React.FC<StepUpModalProps> = ({ isOpen, onClose, onSuc
       // 3. Verify Assertion
       const verifyRes = (await fetch(`${API_URL}/api/auth/passkeys/step-up-verify`, {
               method: 'POST',
+              credentials: 'include',
               headers: { 
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`

@@ -936,7 +936,8 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   const expectedChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
 
   if (!expectedChallenge) {
-    throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
+    console.warn('[WebAuthn/Login] Challenge cookie missing or expired')
+    throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge. Please start over.' })
   }
 
   const db = getDb(c.env)
@@ -957,13 +958,16 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
   const rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
   
   if (!publicKeyB64 || !rawCredentialId) {
+    console.error('[WebAuthn/Login] Vault missing cryptographic materials for passkey:', passkey.id)
     throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
 
-  const verification = (await verifyAuthenticationResponse({
+  let verification: any
+  try {
+    verification = await verifyAuthenticationResponse({
       response: assertion,
       expectedChallenge,
-      expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+      expectedOrigin: c.env.WEB_URL || c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
       expectedRPID: getRpID(c),
       requireUserVerification: true,
       credential: {
@@ -972,33 +976,45 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
         counter: passkey.counter || 0,
         transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
       }
-    }) as any)
+    })
+  } catch (e: any) {
+    console.error('[WebAuthn/Login] verifyAuthenticationResponse threw:', e.message)
+    throw new HTTPException(401, { message: `Biometric verification failed: ${e.message}` })
+  }
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Authentication failed' })
   }
 
   // 📈 Update counter and forensic metadata
-  const metadata = getRequestMetadata(c)
-  await db.update(passkeys).set({ 
-    counter: verification.authenticationInfo.newCounter,
-    lastUsedAt: new Date().toISOString(),
-    lastUsedIp: metadata.ip,
-    lastUsedIpV4: metadata.ipV4,
-    lastUsedIpV6: metadata.ipV6,
-    lastUsedLocation: metadata.location,
-    lastUsedUa: metadata.userAgent
-  }).where(eq(passkeys.id, passkey.id))
+  try {
+    const metadata = getRequestMetadata(c)
+    await db.update(passkeys).set({ 
+      counter: verification.authenticationInfo.newCounter,
+      lastUsedAt: new Date().toISOString(),
+      lastUsedIp: metadata.ip,
+      lastUsedIpV4: metadata.ipV4,
+      lastUsedIpV6: metadata.ipV6,
+      lastUsedLocation: metadata.location,
+      lastUsedUa: metadata.userAgent
+    }).where(eq(passkeys.id, passkey.id))
+  } catch (e: any) {
+    console.error('[WebAuthn/Login] Counter update failed (non-fatal):', e.message)
+  }
 
   const authService = new AuthService(c.env)
   const sessionId = (await createSessionTracker(c, passkey.userId, true, !!persistent) as any)
   const token = (await authService.generateToken(passkey.userId, sessionId) as any)
   
-  await logAudit(c, 'users', passkey.userId, 'login', null, { 
-    strategy: 'passkey',
-    passkeyId: passkey.id,
-    provider: passkey.providerName 
-  })
+  try {
+    await logAudit(c, 'users', passkey.userId, 'login', null, { 
+      strategy: 'passkey',
+      passkeyId: passkey.id,
+      provider: passkey.providerName 
+    })
+  } catch (e: any) {
+    console.error('[WebAuthn/Login] Audit log failed (non-fatal):', e.message)
+  }
   
   return c.json({ success: true, data: { token } })
 })
@@ -1012,7 +1028,8 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   const expectedChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
 
   if (!expectedChallenge) {
-    throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
+    console.warn('[WebAuthn/StepUp] Challenge cookie missing or expired')
+    throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge. Please start over.' })
   }
 
   const db = getDb(c.env)
@@ -1036,13 +1053,16 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   const rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
   
   if (!publicKeyB64 || !rawCredentialId) {
+    console.error('[WebAuthn/StepUp] Vault missing cryptographic materials for passkey:', passkey.id)
     throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
 
-  const verification = (await verifyAuthenticationResponse({
+  let verification: any
+  try {
+    verification = await verifyAuthenticationResponse({
       response: assertion,
       expectedChallenge,
-      expectedOrigin: c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
+      expectedOrigin: c.env.WEB_URL || c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
       expectedRPID: getRpID(c),
       requireUserVerification: true,
       credential: {
@@ -1051,7 +1071,11 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
         counter: passkey.counter || 0,
         transports: passkey.transports ? JSON.parse(passkey.transports) : undefined
       }
-    }) as any)
+    })
+  } catch (e: any) {
+    console.error('[WebAuthn/StepUp] verifyAuthenticationResponse threw:', e.message)
+    throw new HTTPException(401, { message: `Biometric verification failed: ${e.message}` })
+  }
 
   if (!verification.verified) {
     throw new HTTPException(401, { message: 'Step-up authentication failed' })
@@ -1059,35 +1083,48 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
 
   // 📈 Update counters, timestamps and forensics
   const now = new Date().toISOString()
-  const metadata = getRequestMetadata(c)
-  
-  const updates: any[] = [
-    db.update(passkeys).set({ 
-      counter: verification.authenticationInfo.newCounter,
-      lastUsedAt: now,
-      lastUsedIp: metadata.ip,
-      lastUsedIpV4: metadata.ipV4,
-      lastUsedIpV6: metadata.ipV6,
-      lastUsedLocation: metadata.location,
-      lastUsedUa: metadata.userAgent
-    }).where(eq(passkeys.id, passkey.id))
-  ]
+  try {
+    const metadata = getRequestMetadata(c)
+    const updates: any[] = [
+      db.update(passkeys).set({ 
+        counter: verification.authenticationInfo.newCounter,
+        lastUsedAt: now,
+        lastUsedIp: metadata.ip,
+        lastUsedIpV4: metadata.ipV4,
+        lastUsedIpV6: metadata.ipV6,
+        lastUsedLocation: metadata.location,
+        lastUsedUa: metadata.userAgent
+      }).where(eq(passkeys.id, passkey.id))
+    ]
 
-  if (sessionId) {
-    updates.push(
-      db.update(sessions).set({ 
-        passkeyVerifiedAt: now 
-      }).where(eq(sessions.id, sessionId))
-    )
+    if (sessionId) {
+      updates.push(
+        db.update(sessions).set({ 
+          passkeyVerifiedAt: now 
+        }).where(eq(sessions.id, sessionId))
+      )
+    }
+
+    await db.batch(updates as any)
+  } catch (e: any) {
+    console.error('[WebAuthn/StepUp] Post-verification update failed (non-fatal):', e.message)
+    // Still mark session as verified even if DB update fails
+    if (sessionId) {
+      try {
+        await db.update(sessions).set({ passkeyVerifiedAt: now }).where(eq(sessions.id, sessionId))
+      } catch {}
+    }
   }
 
-  await db.batch(updates as any)
-
-  await logAudit(c, 'users', userId, 'step-up', null, { 
-    strategy: 'passkey',
-    passkeyId: passkey.id,
-    sessionId 
-  })
+  try {
+    await logAudit(c, 'users', userId, 'step-up', null, { 
+      strategy: 'passkey',
+      passkeyId: passkey.id,
+      sessionId 
+    })
+  } catch (e: any) {
+    console.error('[WebAuthn/StepUp] Audit log failed (non-fatal):', e.message)
+  }
   
   return c.json({ success: true })
 })

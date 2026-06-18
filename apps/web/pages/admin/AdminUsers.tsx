@@ -517,7 +517,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                 <input 
                   required
                   type="email"
-                  placeholder="contact@gpnet.dev"
+                  placeholder="e.g. j.wick@gpnet.dev"
                   className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl text-sm font-bold focus:border-emerald-500/50 outline-none transition-all"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -557,7 +557,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                    onChange={e => setFormData({ ...formData, globalRole: e.target.value })}
                  >
                    <option value="user">USER</option>
-                   <option value="owner">SUPER_ADMIN</option>
+                   <option value="owner">OWNER</option>
                  </select>
               </div>
 
@@ -579,7 +579,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                   onClick={onClose}
                   className="flex-1 py-4 px-6 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-white/5 transition-all"
                  >
-                   Abort
+                   Cancel
                  </button>
                  <button 
                   type="submit" 

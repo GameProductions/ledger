@@ -228,7 +228,7 @@ export const ReconciliationProposalSchema = z.object({
 
 // --- USER & HOUSEHOLD SCHEMAS ---
 export const ProfileSchema = z.object({
-  displayName: z.string().min(1).max(100).optional(),
+  displayName: z.string().max(100).optional(),
   username: z.string().min(3).max(50).optional(),
   email: z.string().email().optional(),
   avatarUrl: z.string().url().or(z.string().length(0)).nullable().optional(),

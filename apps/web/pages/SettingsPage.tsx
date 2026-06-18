@@ -35,7 +35,7 @@ const locales = [
 ];
 
 const SettingsPage: React.FC = () => {
-  const { user, token } = useAuth()
+  const { user, token, login } = useAuth()
   const { data: profile, mutate } = (useApi('/api/user/profile') as any)
   const { data: accounts } = (useApi('/api/financials/accounts') as any)
   const { data: identities, mutate: mutateIdentities } = (useApi('/api/user/identities') as any)
@@ -107,6 +107,13 @@ const SettingsPage: React.FC = () => {
         const err = (await res.json() as any)
         showToast(formatHumanError(err, 'Update Failed'), 'error')
         return
+      }
+      // Immediately sync local auth state from the response so the display name
+      // doesn't revert if the mutate() re-fetch races with the form's useEffect.
+      const responseData = await res.json() as any
+      if (responseData.data) {
+        const updatedUser = { ...user, ...responseData.data }
+        login(token, updatedUser)
       }
       if (typeof mutate === 'function') mutate()
       showToast('Profile Updated Successfully', 'success')

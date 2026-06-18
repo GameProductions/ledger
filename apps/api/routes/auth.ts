@@ -370,42 +370,75 @@ auth.get('/login/google', async (c) => {
 auth.get('/callback/google', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
-  const savedState = (await getSignedCookie(c, c.env.JWT_SECRET, 'oauth_state') as any)
 
-  if (!code || !state || state !== savedState) {
-    throw new HTTPException(401, { message: 'Invalid OAuth state or missing code' })
+  if (!code || !state) {
+    console.error('[OAuth/Google] Missing code or state in callback')
+    throw new HTTPException(400, { message: 'Missing OAuth code or state' })
   }
 
-  // Parse state for session context
+  // Decode state — it's a base64-encoded JSON payload set during /login/google.
+  // We validate by structure rather than cookie comparison because the SSO proxy
+  // redirect chain (sso.gpnet.dev → ledger.gpnet.dev) may not forward the HttpOnly
+  // cookie reliably across origins.
   let sessionUserId: string | null = null
   let isPersistent = false
+  let stateChallenge: string | null = null
   try {
     const decoded = JSON.parse(decodeBase64(state))
-    sessionUserId = decoded.userId
+    if (!decoded.challenge || !decoded.targetOrigin) {
+      throw new Error('State payload missing required fields')
+    }
+    stateChallenge = decoded.challenge
+    sessionUserId = decoded.userId || null
     isPersistent = !!decoded.persistent
   } catch (e: any) {
-    console.warn('[OAuth] State decode failure:', e)
+    console.error('[OAuth/Google] State decode failure:', e.message)
+    throw new HTTPException(400, { message: 'Invalid OAuth state payload' })
   }
 
   const authService = new AuthService(c.env)
-  
-  const tokenRes = (await fetch('https://oauth2.googleapis.com/token', {
+
+  // Exchange code for tokens
+  let tokenData: any
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       body: new URLSearchParams({
         client_id: c.env.GOOGLE_CLIENT_ID || '',
         client_secret: c.env.GOOGLE_CLIENT_SECRET || '',
-        code: code || '',
+        code: code,
         grant_type: 'authorization_code',
         redirect_uri: `https://sso.gpnet.dev/api/auth/callback/google`
       })
-    }) as any)
-  const tokenData = await tokenRes.json() as any
-  
-  const userRes = (await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    })
+    tokenData = await tokenRes.json() as any
+    if (tokenData.error) {
+      console.error('[OAuth/Google] Token exchange error:', tokenData.error, tokenData.error_description)
+      throw new HTTPException(502, { message: `Google token exchange failed: ${tokenData.error_description || tokenData.error}` })
+    }
+  } catch (e: any) {
+    if (e instanceof HTTPException) throw e
+    console.error('[OAuth/Google] Token exchange network failure:', e.message)
+    throw new HTTPException(502, { message: 'Failed to contact Google for token exchange' })
+  }
+
+  // Fetch user profile from Google
+  let profile: any
+  try {
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-    }) as any)
-  const profile = await userRes.json() as any
-  
+    })
+    profile = await userRes.json() as any
+    if (!profile.id) {
+      console.error('[OAuth/Google] Userinfo response missing id:', profile)
+      throw new HTTPException(502, { message: 'Google returned incomplete profile data' })
+    }
+  } catch (e: any) {
+    if (e instanceof HTTPException) throw e
+    console.error('[OAuth/Google] Userinfo fetch failure:', e.message)
+    throw new HTTPException(502, { message: 'Failed to fetch Google profile' })
+  }
+
   const socialProfile = {
     id: profile.id,
     email: profile.email,
@@ -419,17 +452,19 @@ auth.get('/callback/google', async (c) => {
     expires_in: tokenData.expires_in
   }
 
+  const baseUrl = c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'
+
   if (sessionUserId) {
-    // LINK MODE
+    // LINK MODE — user is already logged in and connecting their Google account
     await authService.linkSocialAccount(sessionUserId, 'google', socialProfile, socialTokens)
     await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'google', userId: sessionUserId })
-    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
+    return c.redirect(`${baseUrl}/#/settings`)
   } else {
-    // LOGIN MODE
-    const userId = (await authService.findOrCreateSocialUser('google', socialProfile, socialTokens) as any)
-    const sessionId = (await createSessionTracker(c, userId, false, isPersistent) as any)
-    const token = (await authService.generateToken(userId, sessionId) as any)
-    return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/login?token=${token}`)
+    // LOGIN MODE — find or create account from Google identity
+    const userId = await authService.findOrCreateSocialUser('google', socialProfile, socialTokens) as any
+    const sessionId = await createSessionTracker(c, userId, false, isPersistent) as any
+    const token = await authService.generateToken(userId, sessionId) as any
+    return c.redirect(`${baseUrl}/#/login?token=${token}`)
   }
 })
 

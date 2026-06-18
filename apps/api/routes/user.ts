@@ -100,7 +100,7 @@ user.patch('/profile', stepUpMiddleware, zValidator('json', ProfileSchema, (resu
   const db = getDb(c.env)
   
   const updates: any = {}
-  if (data.displayName) updates.displayName = data.displayName
+  if (data.displayName !== undefined) updates.displayName = data.displayName || null
   if (data.theme) updates.theme = data.theme
   if (data.timezone) updates.timezone = data.timezone
   
@@ -132,8 +132,24 @@ user.patch('/profile', stepUpMiddleware, zValidator('json', ProfileSchema, (resu
     await db.update(users).set(updates).where(eq(users.id, userId))
     await logAudit(c, 'users', userId, 'UPDATE', null, updates)
   }
-  
-  return c.json({ success: true, message: 'Profile updated' })
+
+  // Return the fresh profile so the client can update its local state immediately
+  // without needing a separate GET /profile round-trip.
+  const [updated] = await db.select({
+    id: users.id,
+    username: users.username,
+    email: users.email,
+    displayName: users.displayName,
+    globalRole: users.globalRole,
+    status: users.status,
+    avatarUrl: users.avatarUrl,
+    locale: users.locale,
+    theme: users.theme,
+    timezone: users.timezone,
+    createdAt: users.createdAt
+  }).from(users).where(eq(users.id, userId))
+
+  return c.json({ success: true, message: 'Profile updated', data: updated || null })
 })
 
 user.post('/profile/sync', zValidator('json', z.object({ provider: z.string(), identityId: z.string() }), (result, c) => {

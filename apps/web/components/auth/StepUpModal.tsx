@@ -23,7 +23,7 @@ export const StepUpModal: React.FC<StepUpModalProps> = ({ isOpen, onClose, onSuc
 
     try {
       // 1. Get Authentication Options
-      const optionsRes = (await fetch(`${API_URL}/api/auth/passkeys/login-options`, {
+      const optionsRes = (await fetch(`${API_URL}/api/auth/passkeys/login/options`, {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` }
             }) as any);

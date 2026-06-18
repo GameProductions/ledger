@@ -90,7 +90,7 @@ user.get('/profile', async (c) => {
   }
 })
 
-user.patch('/profile', stepUpMiddleware, zValidator('json', ProfileSchema, (result, c) => {
+user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Profile update validation failed:`, result.error.issues);
   }

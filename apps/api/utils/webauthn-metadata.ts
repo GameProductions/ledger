@@ -222,12 +222,12 @@ const AAGUID_MAP: Record<string, PasskeyProviderMetadata> = {
   '6f7e5b97-3a5c-4ead-8fe5-9f6f3e3e8c5b': { ...YUBIKEY, name: 'YubiKey Bio (USB-C)', securityLevel: 'Hardware Protected (SE + Biometric)' },
 
   // 1Password
+  'bada5566-a7aa-401f-bd96-45619a55120d': ONEPASSWORD,
   'a4e9fc6d-4cbe-4758-b8ba-37598bb5bbaa': ONEPASSWORD,
-  'bdb6a04e-4d37-4c42-8a4f-21938e1c17da': ONEPASSWORD,
 
   // Bitwarden
-  'bada5566-a7aa-401f-bd96-45619a55120d': BITWARDEN,
   'd548826e-79b4-db40-a3d8-11116f7e8349': BITWARDEN,
+  'bdb6a04e-4d37-4c42-8a4f-21938e1c17da': BITWARDEN,
 
   // Dashlane
   '39a5647e-1853-446c-a1f6-a79bae9f5bc7': DASHLANE,

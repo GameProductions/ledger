@@ -31,7 +31,24 @@ webauthn.get('/passkeys', async (c) => {
   
   const db = getDb(c.env)
   const userPasskeys = (await db.select().from(passkeys).where(eq(passkeys.userId, userId)).orderBy(desc(passkeys.createdAt)) as any)
-  return c.json({ passkeys: userPasskeys })
+
+  // Enrich each passkey with fresh provider metadata (adds service, color, description, website)
+  const enriched = userPasskeys.map((pk: any) => {
+    const branding = getAAGUIDMetadata(pk.aaguid)
+    return {
+      ...pk,
+      providerName: branding.name,
+      service: branding.service,
+      logo: pk.logo || branding.logo,
+      color: branding.color,
+      description: branding.description,
+      website: branding.website,
+      manufacturer: pk.manufacturer || branding.manufacturer,
+      securityLevel: pk.securityLevel || branding.securityLevel,
+    }
+  })
+
+  return c.json({ passkeys: enriched })
 })
 
 /**
@@ -127,10 +144,14 @@ webauthn.post('/verify-registration', async (c) => {
     await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
     await vault.setSecret(id, 'PASSKEY_PUBLIC_KEY', 'webauthn', pubKeyB64);
 
+    // Auto-generate a friendly sequential name if none provided
+    const existingCount = (await db.select({ id: passkeys.id }).from(passkeys).where(eq(passkeys.userId, userId)) as any).length
+    const autoName = name?.trim() || `Passkey ${existingCount + 1}`
+
     await db.insert(passkeys).values({
       id,
       userId,
-      name: name || `Admin Passkey ${new Date().toLocaleDateString()}`,
+      name: autoName,
       credentialIdHash: await hashIdentifier(credIdB64),
       counter,
       deviceType: credentialDeviceType,

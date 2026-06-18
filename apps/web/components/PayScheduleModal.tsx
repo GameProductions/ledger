@@ -15,7 +15,7 @@ interface PayScheduleModalProps {
 
 export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onClose, onUpdate, schedule }) => {
     const { token, householdId } = useAuth();
-    const { showToast } = useToast();
+    const { showToast, showConfirm } = useToast();
     const { data: household } = (useApi('/api/user/households/current') as any);
     const [loading, setLoading] = React.useState(false);
 
@@ -49,7 +49,8 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
     const handleDelete = async () => {
         if (!token || !schedule?.id) return;
         
-        if (!window.confirm('Are you sure you want to remove this income source?')) return;
+        const confirmed = await showConfirm('Are you sure you want to remove this income source?', 'Remove Income Source');
+        if (!confirmed) return;
 
         setLoading(true);
         const apiUrl = getApiUrl().replace(/\/$/, '');

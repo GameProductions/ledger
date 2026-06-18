@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { startRegistration } from '@simplewebauthn/browser';
 import { 
   Fingerprint, 
   Key, 
@@ -61,7 +62,6 @@ export const PasskeyModule = () => {
     try {
       const optionsRes = (await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' }) as any);
       const options = (await optionsRes.json() as any);
-      const { startRegistration } = (await import('@simplewebauthn/browser') as any);
       const regResp = (await startRegistration({ optionsJSON: options }) as any);
 
       const name = (await showPrompt('Label Passkey', 'Enter a name for this hardware key (e.g. MacBook TouchID)', 'Primary Key') as any);

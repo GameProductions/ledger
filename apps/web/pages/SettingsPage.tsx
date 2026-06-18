@@ -108,7 +108,7 @@ const SettingsPage: React.FC = () => {
         showToast(formatHumanError(err, 'Update Failed'), 'error')
         return
       }
-      if (mutate) mutate()
+      if (typeof mutate === 'function') mutate()
       showToast('Profile Updated Successfully', 'success')
     } catch (e: any) {
       console.error('[SettingsPage] Update Error:', e)
@@ -183,8 +183,8 @@ const SettingsPage: React.FC = () => {
             }) as any);
       if (res.ok) {
         showToast(`${confirmUnlink.provider} unlinked successfully`, 'success');
-        mutateIdentities();
-        mutate();
+        if (typeof mutateIdentities === 'function') mutateIdentities();
+        if (typeof mutate === 'function') mutate();
       } else {
         const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to unlink account'), 'error');
@@ -211,7 +211,7 @@ const SettingsPage: React.FC = () => {
             }) as any)
       if (res.ok) {
         showToast(`Synced with ${provider}`, 'success')
-        mutate()
+        if (typeof mutate === 'function') mutate()
       }
     } finally {
       setSyncing(null)

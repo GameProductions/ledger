@@ -39,7 +39,7 @@ interface PasskeyRecord {
 }
 
 export const AuthVault: React.FC = () => {
-  const { showToast } = useToast();
+  const { showToast, showPrompt } = useToast();
   const [passkeys, setPasskeys] = useState<PasskeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -73,7 +73,7 @@ export const AuthVault: React.FC = () => {
       showToast('Hardware interaction required: touch your security key.', 'info');
       const attResp = (await startRegistration({ optionsJSON: options }) as any);
 
-      const name = prompt('Label this hardware key:', 'Primary Admin Key');
+      const name = await showPrompt('Label this hardware key:', 'Primary Admin Key', 'Register Passkey');
       if (!name) return;
 
       const verifyResp = (await fetch('/api/admin/webauthn/verify-registration', {

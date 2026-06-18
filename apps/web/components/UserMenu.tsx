@@ -17,7 +17,22 @@ const UserMenu: React.FC<{
   const [isOpen, setIsOpen] = useState(false)
 
   const isHome = !window.location.hash || window.location.hash === '#/'
-  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const displayName = profile?.displayName || user?.displayName || profile?.username || user?.username || 'User'
+  const avatarUrl = sanitizeImageUrl(profile?.avatarUrl || user?.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile?.id || user?.id || 'default'}`
+  const role = profile?.globalRole || user?.globalRole || globalRole || 'user'
+
+  const getRoleBadgeStyles = (r: string) => {
+    switch (r?.toLowerCase()) {
+      case 'owner':
+        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+      case 'admin':
+        return 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      case 'user':
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+      default:
+        return 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+    }
+  }
 
   const menuItems = isAdminPortal ? [
     { icon: LayoutDashboard, label: 'Owner Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
@@ -61,13 +76,18 @@ const UserMenu: React.FC<{
         </div>
         <div className="flex flex-col items-start ml-1 leading-none text-left">
           <Masked>
-            <span className="text-sm font-bold text-white">{(profile?.displayName || user?.displayName || 'User')}</span>
+            <span className="text-sm font-bold text-white">{displayName}</span>
           </Masked>
-          {isAdminPortal ? (
-            <span className="text-xs text-emerald-500 font-black uppercase tracking-tighter">Owner</span>
-          ) : isImpersonating ? (
-            <span className="text-[10px] text-purple-400 font-black uppercase tracking-tighter">Impersonating</span>
-          ) : null}
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${getRoleBadgeStyles(role)}`}>
+              {role}
+            </span>
+            {isImpersonating && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border bg-purple-500/10 text-purple-400 border-purple-500/20">
+                Impersonated
+              </span>
+            )}
+          </div>
         </div>
         <ChevronDown size={14} className={`text-secondary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -84,13 +104,18 @@ const UserMenu: React.FC<{
               className="!absolute top-full right-0 mt-3 w-64 card overflow-hidden p-2 shadow-2xl z-[2001]"
               style={{ background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--primary)' }}
             >
-              <div className="px-3 py-2 border-b border-glass-border mb-2">
-                <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                  {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
+              <div className="px-3 py-2 border-b border-glass-border mb-2 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
+                    {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
+                  </div>
+                  <Masked>
+                    <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
+                  </Masked>
                 </div>
-                <Masked>
-                  <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
-                </Masked>
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${getRoleBadgeStyles(role)}`}>
+                  {role}
+                </span>
               </div>
 
               <div className="space-y-1">

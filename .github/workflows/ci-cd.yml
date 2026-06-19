@@ -63,8 +63,8 @@ jobs:
           DISCORD_CLIENT_ID: "op://6wgu5yz5yphvacdimgc64ej65i/Ledger - Discord/DISCORD_CLIENT_ID"
           DISCORD_CLIENT_SECRET: "op://6wgu5yz5yphvacdimgc64ej65i/Ledger - Discord/DISCORD_CLIENT_SECRET"
           # Integrations
-          GOOGLE_CLIENT_ID: "op://6wgu5yz5yphvacdimgc64ej65i/Google Integration/CLIENT_ID"
-          GOOGLE_CLIENT_SECRET: "op://6wgu5yz5yphvacdimgc64ej65i/Google Integration/CLIENT_SECRET"
+          GOOGLE_CLIENT_ID: "op://6wgu5yz5yphvacdimgc64ej65i/Ledger - Google/client id"
+          GOOGLE_CLIENT_SECRET: "op://6wgu5yz5yphvacdimgc64ej65i/Ledger - Google/client secret"
           DROPBOX_CLIENT_ID: "op://6wgu5yz5yphvacdimgc64ej65i/Dropbox Integration/CLIENT_ID"
           DROPBOX_CLIENT_SECRET: "op://6wgu5yz5yphvacdimgc64ej65i/Dropbox Integration/CLIENT_SECRET"
           ONEDRIVE_CLIENT_ID: "op://6wgu5yz5yphvacdimgc64ej65i/OneDrive Integration/CLIENT_ID"

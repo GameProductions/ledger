@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
-import { useApi } from '../hooks/useApi';
+import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Briefcase, Plus, Trash2, LineChart, TrendingUp, Landmark, Coins, Diamond } from 'lucide-react';
 import { InlineToast } from '../components/ui/InlineToast';
@@ -40,6 +40,7 @@ const InvestmentPortfolioPage: React.FC = () => {
         showToast('Asset Recorded', 'success');
         setIsAdding(false);
         mutate();
+        globalMutate();
       }
     } catch (err: any) {
       showToast('Record failed', 'error');
@@ -58,6 +59,7 @@ const InvestmentPortfolioPage: React.FC = () => {
       showToast('Asset Removed', 'success');
       setConfirmDeleteId(null);
       mutate();
+      globalMutate();
     } catch (err: any) {
       showToast('Deletion failed', 'error');
     }

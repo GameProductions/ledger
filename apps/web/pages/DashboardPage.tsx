@@ -34,7 +34,7 @@ import { InstallmentsList } from '../components/InstallmentsList'
 import { PaySchedulesList } from '../components/PaySchedulesList'
 import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
-import { projectPaydays } from '../utils/payCycleUtils'
+import { projectPaydays, projectRecurringItems } from '../utils/payCycleUtils'
 import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2 } from 'lucide-react';
 
 const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
@@ -178,6 +178,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       },
       body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     });
+    globalMutate();
     showToast('Layout settings saved');
   };
 
@@ -197,6 +198,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     return projectPaydays(paySchedules, start, end, payExceptions);
   }, [paySchedules, payExceptions]);
 
+  const projectedRecurring = React.useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+    return projectRecurringItems(subscriptions, bills, installments, start, end);
+  }, [subscriptions, bills, installments]);
+
   const handleDeposit = async () => {
     await fetch(`${apiUrl}/api/planning/budget/deposit`, {
       method: 'POST',
@@ -208,6 +216,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       body: JSON.stringify({ amountCents: parseFloat(depositAmount) * 100 })
     })
     mutateBudgets()
+    globalMutate()
     setShowDepositModal(false)
     setDepositAmount('')
     showToast('Deposit Successful')
@@ -228,6 +237,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       })
     })
     mutateBudgets()
+    globalMutate()
     setShowFundModal(false)
     setFundAmount('')
     showToast('Envelope Funded')
@@ -246,6 +256,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       }
     })
     mutateBudgets()
+    globalMutate()
     setIsRolloverModalOpen(false)
     showToast('Month Rolled Over Successfully')
   }
@@ -261,6 +272,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       body: JSON.stringify({ status: current ? 'none' : 'reconciled' })
     })
     mutateTx()
+    globalMutate()
     showToast('Transaction Updated')
   }
 
@@ -342,6 +354,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     else if (type === 'subscription') mutateSubs()
     else mutateTx()
     
+    globalMutate()
     setIsDeleteModalOpen(false)
     setIsCalendarModalOpen(false)
     setDeletePending(null)
@@ -357,6 +370,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   subscriptions={subscriptions || []} 
                   bills={bills || []}
                   installments={installments || []}
+                  recurringProjections={projectedRecurring}
                   paySchedules={projectedPaydays}
                   payScheduleDefinitions={paySchedules}
                   onDayClick={(date) => {
@@ -577,6 +591,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       })
                   });
                   mutateTx();
+                  globalMutate();
                   descInput.value = '';
                   amountInput.value = '';
                   showToast('Transaction Added');
@@ -924,6 +939,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                             body: JSON.stringify({ linkedToIds: [t.id] })
                           })
                           mutateTx()
+                          globalMutate()
                           setLinkingTx(null)
                           showToast('Smart Match Applied')
                         }}
@@ -961,6 +977,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           body: JSON.stringify({ linkedToIds: [t.id] })
                         })
                         mutateTx()
+                        globalMutate()
                         setLinkingTx(null)
                         showToast('Linked Successfully')
                       }}
@@ -995,6 +1012,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     body: JSON.stringify({ targetId: 'all' })
                   })
                   mutateTx()
+                  globalMutate()
                   setLinkingTx(null)
                   showToast('Links Reset')
                 }}

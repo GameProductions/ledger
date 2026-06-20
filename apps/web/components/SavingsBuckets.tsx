@@ -1,6 +1,6 @@
 import React from 'react'
 import { Price } from './Price'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 
 const API_URL = getApiUrl()
@@ -22,7 +22,8 @@ const SavingsBuckets: React.FC = () => {
     setIsAdding(false)
     setName('')
     setAmount('')
-    mutate()
+    mutate();
+    globalMutate();
   }
 
   return (

@@ -26,8 +26,6 @@ import {
 } from '#/schema'
 import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
-import { stepUpMiddleware } from '../middlewares/step-up-middleware'
-
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // Profile & Identity
@@ -326,7 +324,7 @@ user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) =
   return c.json({ success: true, id, name }, 201)
 })
 
-user.post('/households/invite', stepUpMiddleware, zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
+user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Household invite validation failed:`, result.error.issues);
   }
@@ -587,7 +585,7 @@ user.get('/identities', async (c) => {
   })
 })
 
-user.delete('/identities/:id', stepUpMiddleware, async (c) => {
+user.delete('/identities/:id', async (c) => {
   const userId = c.get('userId') as string
   const { id } = c.req.param()
   const db = getDb(c.env)
@@ -934,7 +932,7 @@ user.delete('/households/:id/members/:memberId', zValidator('json', z.object({ t
   return c.json({ success: true })
 })
 
-user.delete('/households/:id', stepUpMiddleware, async (c) => {
+user.delete('/households/:id', async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id') as string
   const db = getDb(c.env)
@@ -967,7 +965,7 @@ user.post('/households/restore/:entityType/:entityId', async (c) => {
 })
 
 
-user.patch('/households/:id/transfer', stepUpMiddleware, zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
+user.patch('/households/:id/transfer', zValidator('json', z.object({ newOwnerId: z.string() }), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Household transfer validation failed:`, result.error.issues);
   }

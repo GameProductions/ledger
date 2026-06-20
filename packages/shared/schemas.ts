@@ -345,7 +345,7 @@ export const EnvelopeSchema = z.object({
 export const CategoryOutputSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.string(),
+  type: z.string().nullish(),
   envelopeBalanceCents: z.number().int(),
   color: z.string().nullable(),
   icon: z.string().nullable(),

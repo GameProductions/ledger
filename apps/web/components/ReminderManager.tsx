@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { getApiUrl } from '../utils/api'
@@ -50,7 +50,8 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
       setShowAdd(false)
       setDeliveryTarget('')
       setNote('')
-      mutate()
+      mutate();
+      globalMutate();
     } else {
       showToast('Failed to add reminder', 'error')
     }
@@ -70,7 +71,8 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
 
     if (res.ok) {
       showToast('Reminder deleted', 'success')
-      mutate()
+      mutate();
+      globalMutate();
     }
   }
 

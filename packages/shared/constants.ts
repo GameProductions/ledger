@@ -51,6 +51,8 @@ export const AUTH_EXCLUSIONS = [
   '/api/auth/password/reset',
   '/api/auth/admin/claim',
   '/api/auth/setup-status',
+  '/api/auth/cross-device/initiate',
+  '/api/auth/cross-device/poll',
   '/api/support/webhook/github',
   '/api/theme/broadcast',
   '/api/health',

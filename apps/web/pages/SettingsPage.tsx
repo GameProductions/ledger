@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, ShieldCheck, Lock, Palette, Layout } from 'lucide-react'
 import { MainLayout } from '../components/layout/MainLayout'
 import { useToast } from '../context/ToastContext'
@@ -12,12 +12,14 @@ import { Price } from '../components/Price'
 import HouseholdRegistry from '../components/HouseholdRegistry'
 import { useTabState } from '../hooks/useTabState'
 import { SecurityDashboard } from '../components/SecurityDashboard'
+import { CrossDeviceRequests } from '../components/CrossDeviceRequests'
 import { ArchivalVault } from '../components/ArchivalVault'
 import { PasskeyModule } from '../components/PasskeyModule'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { formatHumanError } from '../utils/error-handler'
 import { sanitizeImageUrl } from '../utils/security'
 import { getApiUrl } from '../utils/api'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
 
 const API_URL = getApiUrl();
 
@@ -35,7 +37,7 @@ const locales = [
 ];
 
 const SettingsPage: React.FC = () => {
-  const { user, token, login } = useAuth()
+  const { user, token, login, secureFetch } = useAuth()
   const { data: profile, mutate } = (useApi('/api/user/profile') as any)
   const { data: accounts } = (useApi('/api/financials/accounts') as any)
   const { data: identities, mutate: mutateIdentities } = (useApi('/api/user/identities') as any)
@@ -53,6 +55,9 @@ const SettingsPage: React.FC = () => {
   const [timezone, setTimezone] = useState('UTC')
   const [locale, setLocale] = useState('en-US')
   const settingsJson = JSON.parse(profile?.settingsJson || '{}')
+  const timezoneOptions = useMemo(() =>
+    Intl.supportedValuesOf('timeZone').map(tz => ({ value: tz, label: tz })),
+  [])
 
   // Modals / Edit Trackers
   const [isEditingAlias, setIsEditingAlias] = useState(false)
@@ -116,6 +121,7 @@ const SettingsPage: React.FC = () => {
         login(token, updatedUser)
       }
       if (typeof mutate === 'function') mutate()
+      globalMutate()
       showToast('Profile Updated Successfully', 'success')
     } catch (e: any) {
       console.error('[SettingsPage] Update Error:', e)
@@ -127,7 +133,7 @@ const SettingsPage: React.FC = () => {
 
   const updateSettingsJson = async (newSettings: any) => {
     if (!token) return
-    await fetch(`${API_URL}/api/user/profile`, {
+    const res = await fetch(`${API_URL}/api/user/profile`, {
       method: 'PATCH',
       headers: { 
         'Content-Type': 'application/json',
@@ -135,7 +141,7 @@ const SettingsPage: React.FC = () => {
       },
       body: JSON.stringify({ settingsJson: JSON.stringify(newSettings) })
     })
-    window.location.reload()
+    if (res.ok) globalMutate()
   }
 
   const handleUpdatePassword = async () => {
@@ -180,18 +186,18 @@ const SettingsPage: React.FC = () => {
 
   const handleUnlinkIdentity = async () => {
     if (!confirmUnlink) return
+    const identity = confirmUnlink
+    const keepSettings = keepSettingsOnUnlink
+    setConfirmUnlink(null)
     try {
-      const res = (await fetch(`${API_URL}/api/user/identities/${confirmUnlink.id}?keep_settings=${keepSettingsOnUnlink}`, {
-              method: 'DELETE',
-              headers: { 
-                'Authorization': `Bearer ${token}`,
-                'x-household-id': localStorage.getItem('ledger_householdId') || ''
-              }
+      const res = (await secureFetch(`/api/user/identities/${identity.id}?keep_settings=${keepSettings}`, {
+              method: 'DELETE'
             }) as any);
       if (res.ok) {
-        showToast(`${confirmUnlink.provider} unlinked successfully`, 'success');
+        showToast(`${identity.provider} unlinked successfully`, 'success');
         if (typeof mutateIdentities === 'function') mutateIdentities();
         if (typeof mutate === 'function') mutate();
+        globalMutate();
       } else {
         const err = (await res.json() as any);
         showToast(formatHumanError(err, 'Failed to unlink account'), 'error');
@@ -199,8 +205,6 @@ const SettingsPage: React.FC = () => {
     } catch (e: any) {
       console.error(e)
       showToast(formatHumanError(e, 'Network error during unlink'), 'error');
-    } finally {
-      setConfirmUnlink(null);
     }
   };
 
@@ -219,6 +223,7 @@ const SettingsPage: React.FC = () => {
       if (res.ok) {
         showToast(`Synced with ${provider}`, 'success')
         if (typeof mutate === 'function') mutate()
+        globalMutate()
       }
     } finally {
       setSyncing(null)
@@ -456,6 +461,7 @@ const SettingsPage: React.FC = () => {
               {/* Grid for other security modules */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <PasskeyModule />
+                <CrossDeviceRequests />
               </div>
             <SecurityDashboard />
             </div>
@@ -569,20 +575,17 @@ const SettingsPage: React.FC = () => {
 
                 <section className="card p-8">
                    <div className="space-y-4">
-                      <label className="flex items-center gap-3 text-lg font-bold">Timezone Display</label>
+                       <label className="flex items-center gap-3 text-lg font-bold">Timezone Display</label>
                       <p className="text-sm text-secondary mb-4">Set your primary organizational timezone.</p>
-                      <select 
+                      <SearchableSelect
+                        options={timezoneOptions}
                         value={timezone}
-                        onChange={(e) => {
-                          setTimezone(e.target.value)
+                        onChange={(v) => {
+                          setTimezone(v);
+                          updateProfile()
                         }}
-                        onBlur={updateProfile}
-                        className="w-full p-4 bg-black border border-white/5 rounded-2xl font-bold text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer"
-                      >
-                        {Intl.supportedValuesOf('timeZone').map(tz => (
-                          <option key={tz} value={tz}>{tz}</option>
-                        ))}
-                      </select>
+                        placeholder="Select timezone..."
+                      />
                    </div>
                 </section>
 

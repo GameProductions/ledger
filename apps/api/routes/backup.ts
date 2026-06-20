@@ -13,7 +13,7 @@ import {
 } from '#/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import { VaultService } from '../utils/vault.service'
-import { stepUpMiddleware } from '../middlewares/step-up-middleware'
+
 
 const SCHEMA_MAP: Record<string, any> = {
   households,
@@ -39,7 +39,7 @@ const SCHEMA_MAP: Record<string, any> = {
 const backup = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
 // 🛑 EXPORT: Data Backup (Full JSON Account Export)
-backup.get('/export', stepUpMiddleware, async (c) => {
+backup.get('/export', async (c) => {
   const householdId = c.get('householdId')
   
   const tables = [
@@ -109,7 +109,7 @@ const TABLE_WHITELIST: Record<string, string[]> = {
   webhooks: ['id', 'householdId', 'url', 'secret', 'eventList', 'isActive']
 };
 
-backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
+backup.post('/restore', zValidator('json', z.object({
   data: z.record(z.string(), z.array(z.any()))
 })), async (c) => {
   const householdId = c.get('householdId')
@@ -173,7 +173,7 @@ backup.post('/restore', stepUpMiddleware, zValidator('json', z.object({
 })
 
 // 🛑 CLOUD SYNC: Provider Redundancy (Google/Dropbox/OneDrive)
-backup.post('/cloud/:provider', stepUpMiddleware, async (c) => {
+backup.post('/cloud/:provider', async (c) => {
   const householdId = c.get('householdId')
   const provider = c.req.param('provider') as string
   const userId = c.get('userId')

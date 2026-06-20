@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
-import { useApi } from '../hooks/useApi';
+import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
 import { HandCoins, Plus, Trash2, Calendar, User, Phone, BadgeDollarSign, Receipt } from 'lucide-react';
@@ -58,6 +58,7 @@ const LoanManagerPage: React.FC = () => {
           originationDate: new Date().toISOString().split('T')[0]
         });
         mutate();
+        globalMutate();
       } else {
         const errData = await res.json() as any;
         showToast(errData.message || 'Creation failed', 'error');
@@ -79,6 +80,7 @@ const LoanManagerPage: React.FC = () => {
       showToast('Loan Deleted', 'success');
       setConfirmDeleteId(null);
       mutate();
+      globalMutate();
     } catch (err: any) {
       showToast('Deletion failed', 'error');
     }
@@ -108,6 +110,7 @@ const LoanManagerPage: React.FC = () => {
       if (res.ok) {
         showToast('Payment Logged Successfully', 'success');
         mutate();
+        globalMutate();
       }
     } catch (err: any) {
       showToast('Payment log failed', 'error');

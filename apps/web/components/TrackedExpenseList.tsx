@@ -19,8 +19,12 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { symbol, formatPrice } = useCurrency()
 
+  const lastRefreshRef = React.useRef(refreshTrigger)
   React.useEffect(() => {
-    if (refreshTrigger) mutate()
+    if (refreshTrigger && refreshTrigger !== lastRefreshRef.current) {
+      lastRefreshRef.current = refreshTrigger
+      mutate()
+    }
   }, [refreshTrigger, mutate])
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -69,7 +73,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           body: JSON.stringify({ ids })
         }) as any)
     if (res.ok) {
-      globalMutate('/api/tracked-expenses')
+      globalMutate()
       setSelectedIds([])
       setConfirmDeleteId(null)
       setConfirmBulkDelete(false)
@@ -90,7 +94,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           })
         }) as any)
     if (res.ok) {
-      globalMutate('/api/tracked-expenses')
+      globalMutate()
       setSelectedIds([])
       setIsMoveToLedgerOpen(false)
     }
@@ -110,7 +114,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           })
         }) as any)
     if (res.ok) {
-      globalMutate('/api/tracked-expenses')
+      globalMutate()
       setEditingId(null)
       setEditForm(null)
     }
@@ -130,7 +134,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           })
         }) as any)
     if (res.ok) {
-      globalMutate('/api/tracked-expenses')
+      globalMutate()
       setIsBulkEditOpen(false)
       setBulkUpdates({})
     }
@@ -139,7 +143,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   if (tracked.length === 0) return null;
 
   return (
-    <div className="mt-4 border-t border-white/5 pt-6">
+    <>
+      <div className="mt-4 border-t border-white/5 pt-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-200/60 flex items-center gap-2">
@@ -315,9 +320,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           </motion.div>
         ))}
       </div>
-
-      {/* Move to Ledger Modal */}
-      <Modal isOpen={isMoveToLedgerOpen} onClose={() => setIsMoveToLedgerOpen(false)} title="Add to Main Ledger">
+    </div>
+    <Modal isOpen={isMoveToLedgerOpen} onClose={() => setIsMoveToLedgerOpen(false)} title="Add to Main Ledger">
         <div className="space-y-6 p-1">
           <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
             <p className="text-sm text-orange-200/80 font-medium">Moving {selectedIds.length} items to the transaction ledger.</p>
@@ -393,7 +397,6 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         </div>
       </Modal>
 
-      {/* Bulk Edit Modal */}
       <Modal isOpen={isBulkEditOpen} onClose={() => setIsBulkEditOpen(false)} title="Bulk Edit Tracked Expenses">
         <div className="space-y-6 p-1">
           <p className="text-xs text-secondary italic mb-4">Editing {selectedIds.length} items. Leave fields blank to keep existing values.</p>
@@ -431,6 +434,6 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           </button>
         </div>
       </Modal>
-    </div>
+    </>
   )
 }

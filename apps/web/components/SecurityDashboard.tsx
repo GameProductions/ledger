@@ -129,6 +129,38 @@ export function SecurityDashboard() {
           </div>
         )}
 
+        {sessions.length > 1 && (
+          <div className="mx-5 mb-5 p-6 rounded-2xl bg-red-500/5 border border-red-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShieldOff className="w-5 h-5 text-red-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-red-400">Bulk Session Revocation</p>
+                  <p className="text-xs text-red-500/60">Sign out from all other devices immediately. Only your current session will remain active.</p>
+                </div>
+              </div>
+              {confirmRevokeAll ? (
+                <InlineToast
+                  message="Revoke all other devices?"
+                  type="confirm"
+                  onConfirm={revokeAllOtherSessions}
+                  onCancel={() => setConfirmRevokeAll(false)}
+                />
+              ) : (
+                <Button
+                  variant="glass"
+                  size="sm"
+                  onClick={() => setConfirmRevokeAll(true)}
+                  disabled={revokingAll}
+                  className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 font-bold shrink-0"
+                >
+                  {revokingAll ? 'Revoking...' : `Revoke All (${sessions.length - 1})`}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="divide-y divide-white/5">
           {(sessions || []).map((s: any, idx: number) => (
             <div key={s.id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
@@ -214,38 +246,6 @@ export function SecurityDashboard() {
           </div>
         
       </Card>
-
-      {sessions.length > 1 && (
-        <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldOff className="w-5 h-5 text-red-500" />
-              <div>
-                <p className="text-sm font-bold text-red-400">Bulk Session Revocation</p>
-                <p className="text-xs text-red-500/60">Sign out from all other devices immediately. Only your current session will remain active.</p>
-              </div>
-            </div>
-            {confirmRevokeAll ? (
-              <InlineToast 
-                message="Revoke all other devices?" 
-                type="confirm" 
-                onConfirm={revokeAllOtherSessions} 
-                onCancel={() => setConfirmRevokeAll(false)} 
-              />
-            ) : (
-              <Button
-                variant="glass"
-                size="sm"
-                onClick={() => setConfirmRevokeAll(true)}
-                disabled={revokingAll}
-                className="bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 font-bold"
-              >
-                {revokingAll ? 'Revoking...' : `Revoke All (${sessions.length - 1})`}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

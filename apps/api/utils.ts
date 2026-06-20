@@ -47,16 +47,14 @@ export const apiError = (
     console.warn(`[API_ERROR] [${traceId}] ${code}: ${message}`, { details })
   }
 
-  // PRODUCTION MASKING: Don't leak raw internal error objects to clients
-  // If it's a 500+, we show a generic message unless in DEV.
-  const finalMessage = isDev ? message : (status >= 500 ? 'An internal system error occurred. Our team has been notified.' : message)
+  // PRODUCTION MASKING: Don't leak stack traces or internal details to clients
   const sanitizedDetails = isDev ? details : (status >= 500 ? { traceId } : details)
 
   return c.json({
     success: false,
-    error: isDev ? error : (status >= 500 ? 'InternalServerError' : error),
+    error,
     code,
-    message: finalMessage,
+    message: isDev ? message : (status >= 500 ? 'An internal system error occurred.' : message),
     details: sanitizedDetails,
     traceId
   }, status as any)

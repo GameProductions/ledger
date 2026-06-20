@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useApi } from '../../hooks/useApi'
+import { useApi, globalMutate } from '../../hooks/useApi'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { Modal } from '../../components/ui/Modal'
@@ -74,14 +74,16 @@ const AdminEntityManager: React.FC = () => {
     showToast('Record updated via Owner', 'success')
     setEditing(null)
     setEditData({})
-    mutate()
+    mutate();
+    globalMutate();
   }
 
   const handleDelete = async (id: string) => {
     await adminRequest(secureFetch, 'DELETE', `/api/admin/entities/${activeType}/${id}`)
     showToast('Record removed via Owner', 'success')
     setDeleting(null)
-    mutate()
+    mutate();
+    globalMutate();
   }
 
   const openEdit = (item: any) => {
@@ -90,9 +92,9 @@ const AdminEntityManager: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
             <Shield size={24} className="text-emerald-500" />
@@ -218,39 +220,38 @@ const AdminEntityManager: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
 
-      {/* Edit Modal */}
-      <Modal isOpen={!!editing} onClose={() => { setEditing(null); setEditData({}) }} title={`Edit ${activeMeta.label.slice(0, -1)}`}>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {editing && Object.entries(editData).filter(([k]) => k !== 'id' && !k.endsWith('_at')).map(([key, value]) => (
-            <div key={key}>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">{key}</label>
-              <input
-                value={String(value ?? '')}
-                onChange={e => setEditData({ ...editData, [key]: e.target.value })}
-                className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm font-mono"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-white/10">
-          <button onClick={() => { setEditing(null); setEditData({}) }} className="px-4 py-2 text-sm text-white/60">Cancel</button>
-          <button onClick={handleSave} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 rounded-xl text-sm font-bold text-white hover:bg-emerald-500 transition-all">
-            <Check size={14} /> Save (Audited)
-          </button>
-        </div>
-      </Modal>
+    <Modal isOpen={!!editing} onClose={() => { setEditing(null); setEditData({}) }} title={`Edit ${activeMeta.label.slice(0, -1)}`}>
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {editing && Object.entries(editData).filter(([k]) => k !== 'id' && !k.endsWith('_at')).map(([key, value]) => (
+          <div key={key}>
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">{key}</label>
+            <input
+              value={String(value ?? '')}
+              onChange={e => setEditData({ ...editData, [key]: e.target.value })}
+              className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm font-mono"
+            />
+          </div>
+        ))}
+      </div>
+      <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-white/10">
+        <button onClick={() => { setEditing(null); setEditData({}) }} className="px-4 py-2 text-sm text-white/60">Cancel</button>
+        <button onClick={handleSave} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 rounded-xl text-sm font-bold text-white hover:bg-emerald-500 transition-all">
+          <Check size={14} /> Save (Audited)
+        </button>
+      </div>
+    </Modal>
 
-      {/* Delete Confirmation */}
-      <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Owner Delete" footer={
-        <>
-          <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/60">Cancel</button>
-          <button onClick={() => deleting && handleDelete(deleting)} className="px-5 py-2.5 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 transition-all">
-            Confirm Delete (Audited)
-          </button>
-        </>
-      }>
-        <p className="text-white/60 text-sm">This action will be permanently logged in the admin audit trail. Continue?</p>
+    <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Owner Delete" footer={
+      <>
+        <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/60">Cancel</button>
+        <button onClick={() => deleting && handleDelete(deleting)} className="px-5 py-2.5 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 transition-all">
+          Confirm Delete (Audited)
+        </button>
+      </>
+    }>
+      <p className="text-white/60 text-sm">This action will be permanently logged in the admin audit trail. Continue?</p>
       </Modal>
     </div>
   )

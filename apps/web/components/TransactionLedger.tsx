@@ -99,7 +99,7 @@ export const TransactionLedger: React.FC = () => {
       },
       body: JSON.stringify({ accounted_for: true })
     })
-    globalMutate('/api/financials/transactions')
+    globalMutate()
   }
 
   const bulkReconcile = async (reconciled: boolean) => {
@@ -113,14 +113,15 @@ export const TransactionLedger: React.FC = () => {
       },
       body: JSON.stringify({ transaction_ids: selectedIds, reconciled })
     })
-    globalMutate('/api/financials/transactions')
+    globalMutate()
     setSelectedIds([])
   }
 
   return (
-    <div className="card w-full relative overflow-hidden" id="transaction-ledger">
+    <>
+      <div className="card w-full relative overflow-hidden" id="transaction-ledger">
       
-      <QuickAttentionAdd onAdded={() => globalMutate('/api/financials/transactions')} />
+      <QuickAttentionAdd onAdded={() => globalMutate()} />
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
@@ -197,7 +198,7 @@ export const TransactionLedger: React.FC = () => {
                            ✨ {categories?.find((c:any) => c.id === suggestions[tx.id].categoryId)?.name || 'Suggested'}
                          </span>
                          <button 
-                           onClick={() => {/* Mock confirm & remember */ globalMutate('/api/financials/transactions')}}
+                           onClick={() => {/* Mock confirm & remember */ globalMutate()}}
                            className="text-[10px] bg-orange-500 text-black px-2 rounded-full font-bold uppercase tracking-widest hover:scale-105"
                          >
                            Confirm
@@ -306,55 +307,55 @@ export const TransactionLedger: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="Mastering the Ledger">
-        <div className="space-y-6 text-sm text-gray-300">
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Smart Matching</h3>
-            <p>The ledger learns from your habits. If you regularly tag "AMZN MKTPLACE" as "Shopping", the system will start suggesting this category automatically. You can click "Remember this" to let the system auto-categorize it next time.</p>
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Splitting Transactions</h3>
-            <p>Did you buy groceries and a gift at the same store? You can split a single transaction into multiple categories. The original amount remains as the "parent" so your bank records stay accurate.</p>
-          </div>
-          <div>
-            <h3 className="text-white font-bold text-lg mb-2">Linking Transfers</h3>
-            <p>If you made a large deposit (like $1,000) meant to cover several bills, you can use the Link tool to tie that single transfer to multiple expenses, helping you track exactly where that money was spent.</p>
-          </div>
-        </div>
-      </Modal>
-
-      <Modal isOpen={!!activeSplitTx} onClose={() => setActiveSplitTx(null)} title="Split Transaction">
-        {activeSplitTx && (
-          <div className="space-y-4">
-             <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amountCents={activeSplitTx.amountCents} /></span></p>
-             <div className="grid grid-cols-2 gap-4">
-                <div>
-                   <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 1 Amount</label>
-                   <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
-                </div>
-                <div>
-                   <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 2 Amount</label>
-                   <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
-                </div>
-             </div>
-             <button onClick={() => { setActiveSplitTx(null); globalMutate('/api/financials/transactions'); }} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
-          </div>
-        )}
-      </Modal>
-
-      <Modal isOpen={!!activeLinkTx} onClose={() => setActiveLinkTx(null)} title="Link to Transfer/Bill">
-        {activeLinkTx && (
-          <div className="space-y-4 text-center">
-             <p className="text-secondary text-sm mb-6">Select a parent transfer or bill to link this transaction to. This allows the system to accurately track multi-payment scenarios.</p>
-             <select className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white mb-6">
-                <option value="">-- Select Parent Transaction --</option>
-                {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
-             </select>
-             <button onClick={() => { setActiveLinkTx(null); globalMutate('/api/financials/transactions'); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
-          </div>
-        )}
-      </Modal>
     </div>
+    <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="Mastering the Ledger">
+      <div className="space-y-6 text-sm text-gray-300">
+        <div>
+          <h3 className="text-white font-bold text-lg mb-2">Smart Matching</h3>
+          <p>The ledger learns from your habits. If you regularly tag "AMZN MKTPLACE" as "Shopping", the system will start suggesting this category automatically. You can click "Remember this" to let the system auto-categorize it next time.</p>
+        </div>
+        <div>
+          <h3 className="text-white font-bold text-lg mb-2">Splitting Transactions</h3>
+          <p>Did you buy groceries and a gift at the same store? You can split a single transaction into multiple categories. The original amount remains as the "parent" so your bank records stay accurate.</p>
+        </div>
+        <div>
+          <h3 className="text-white font-bold text-lg mb-2">Linking Transfers</h3>
+          <p>If you made a large deposit (like $1,000) meant to cover several bills, you can use the Link tool to tie that single transfer to multiple expenses, helping you track exactly where that money was spent.</p>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal isOpen={!!activeSplitTx} onClose={() => setActiveSplitTx(null)} title="Split Transaction">
+      {activeSplitTx && (
+        <div className="space-y-4">
+           <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amountCents={activeSplitTx.amountCents} /></span></p>
+           <div className="grid grid-cols-2 gap-4">
+              <div>
+                 <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 1 Amount</label>
+                 <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
+              </div>
+              <div>
+                 <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 2 Amount</label>
+                 <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
+              </div>
+           </div>
+           <button onClick={() => { setActiveSplitTx(null); globalMutate(); }} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
+         </div>
+      )}
+    </Modal>
+
+    <Modal isOpen={!!activeLinkTx} onClose={() => setActiveLinkTx(null)} title="Link to Transfer/Bill">
+      {activeLinkTx && (
+        <div className="space-y-4 text-center">
+           <p className="text-secondary text-sm mb-6">Select a parent transfer or bill to link this transaction to. This allows the system to accurately track multi-payment scenarios.</p>
+           <select className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white mb-6">
+              <option value="">-- Select Parent Transaction --</option>
+              {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
+           </select>
+           <button onClick={() => { setActiveLinkTx(null); globalMutate(); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
+         </div>
+      )}
+    </Modal>
+    </>
   )
 }

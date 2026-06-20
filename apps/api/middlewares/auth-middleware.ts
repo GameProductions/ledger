@@ -101,6 +101,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     if (isUserLevelRoute) {
       c.set('userId', userId)
       c.set('globalRole', globalRole as string)
+      if (payload.sid) c.set('sessionId', payload.sid)
       // Attempt to set householdId if present, but don't fail if not
       if (activeHouseholdId) c.set('householdId', String(activeHouseholdId))
       await next()

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useApi } from '../hooks/useApi';
+import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
 import { Trash2, AlertCircle, Share2, ShieldCheck, Layers, CreditCard } from 'lucide-react';
@@ -31,6 +31,7 @@ export const InstallmentsList: React.FC = () => {
         if (res.ok) {
             showToast('Installment plan removed from ledger');
             mutate();
+            globalMutate();
         }
     };
 
@@ -48,6 +49,7 @@ export const InstallmentsList: React.FC = () => {
         if (res.ok) {
             showToast(isPublic ? 'Master Ledger is now public' : 'Master Ledger is now private');
             mutate();
+            globalMutate();
         }
     };
 
@@ -206,6 +208,7 @@ export const InstallmentsList: React.FC = () => {
                                         onComplete={() => {
                                             setOpenSplitterId(null);
                                             mutate();
+                                            globalMutate();
                                         }} 
                                     />
                                 </div>

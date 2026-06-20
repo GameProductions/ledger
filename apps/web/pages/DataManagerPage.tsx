@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { MainLayout } from '../components/layout/MainLayout'
@@ -113,14 +113,16 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
       showToast(`${title.slice(0, -1)} created`, 'success')
     }
     resetForm()
-    mutate()
+    mutate();
+    globalMutate();
   }
 
   const handleDelete = async (id: string) => {
     await apiCall(token!, householdId!, 'DELETE', `${apiPath}/${id}`)
     showToast(`${title.slice(0, -1)} removed`, 'success')
     setDeleting(null)
-    mutate()
+    mutate();
+    globalMutate();
   }
 
   const filtered = search
@@ -128,7 +130,8 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
     : items || []
 
   return (
-    <div className="space-y-4">
+    <>
+      <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -176,60 +179,58 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
           })}
         </div>
       )}
-
-      {/* Create / Edit Modal */}
-      <Modal isOpen={showForm} onClose={resetForm} title={editing ? `Edit ${title.slice(0, -1)}` : `New ${title.slice(0, -1)}`}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {fields.map(f => {
-            const formVal = getSafeValue(formData, f.key);
-            return (
-              <div key={f.key}>
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1.5">{f.label}</label>
-                {f.type === 'select' ? (
-                  <select value={formVal ?? ''} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
-                    <option value="">Select...</option>
-                    {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                ) : f.type === 'boolean' ? (
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={formVal === true || formVal === 'true' || formVal === 1} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.checked))} className="sr-only peer" />
-                    <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-primary transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
-                    <span className="text-sm text-white/60">{formVal ? 'Enabled' : 'Disabled'}</span>
-                  </label>
-                ) : (
-                  <input
-                    type={f.type === 'cents' ? 'number' : f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
-                    step={f.type === 'cents' ? '0.01' : f.type === 'number' ? 'any' : undefined}
-                    value={formVal ?? ''}
-                    onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))}
-                    placeholder={f.placeholder || f.label}
-                    className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm"
-                  />
-                )}
-              </div>
-            );
-          })}
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={resetForm} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
-            <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-primary rounded-xl text-sm font-bold text-white hover:bg-primary/80 transition-all">
-              <Check size={14} /> {editing ? 'Save Changes' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Delete Confirmation */}
-      <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Confirm Removal" footer={
-        <>
-          <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
-          <button onClick={() => deleting && handleDelete(deleting)} className="px-5 py-2.5 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 transition-all">
-            Remove Permanently
-          </button>
-        </>
-      }>
-        <p className="text-white/60 text-sm">This action cannot be undone. Are you sure you want to remove this {title.slice(0, -1).toLowerCase()}?</p>
-      </Modal>
     </div>
+    <Modal isOpen={showForm} onClose={resetForm} title={editing ? `Edit ${title.slice(0, -1)}` : `New ${title.slice(0, -1)}`}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {fields.map(f => {
+          const formVal = getSafeValue(formData, f.key);
+          return (
+            <div key={f.key}>
+              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1.5">{f.label}</label>
+              {f.type === 'select' ? (
+                <select value={formVal ?? ''} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
+                  <option value="">Select...</option>
+                  {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              ) : f.type === 'boolean' ? (
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={formVal === true || formVal === 'true' || formVal === 1} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.checked))} className="sr-only peer" />
+                  <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-primary transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
+                  <span className="text-sm text-white/60">{formVal ? 'Enabled' : 'Disabled'}</span>
+                </label>
+              ) : (
+                <input
+                  type={f.type === 'cents' ? 'number' : f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                  step={f.type === 'cents' ? '0.01' : f.type === 'number' ? 'any' : undefined}
+                  value={formVal ?? ''}
+                  onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))}
+                  placeholder={f.placeholder || f.label}
+                  className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm"
+                />
+              )}
+            </div>
+          );
+        })}
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={resetForm} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
+          <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-primary rounded-xl text-sm font-bold text-white hover:bg-primary/80 transition-all">
+            <Check size={14} /> {editing ? 'Save Changes' : 'Create'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+
+    <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Confirm Removal" footer={
+      <>
+        <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
+        <button onClick={() => deleting && handleDelete(deleting)} className="px-5 py-2.5 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 transition-all">
+          Remove Permanently
+        </button>
+      </>
+    }>
+      <p className="text-white/60 text-sm">This action cannot be undone. Are you sure you want to remove this {title.slice(0, -1).toLowerCase()}?</p>
+    </Modal>
+    </>
   )
 }
 

@@ -7,7 +7,6 @@ import { openApiSpec } from './openapi'
 import { Bindings, Variables } from './types'
 import { authMiddleware } from './middlewares/auth-middleware'
 import { adminMiddleware } from './middlewares/admin-middleware'
-import { stepUpMiddleware } from './middlewares/step-up-middleware'
 import { getDb } from '#/index'
 import { systemConfig } from '#/schema'
 import { eq } from 'drizzle-orm'
@@ -226,8 +225,6 @@ app.get('/openapi.json', (c) => c.json(openApiSpec))
 
 // Specific Middleware Chains
 app.use('/api/admin/*', adminMiddleware)
-app.use('/api/admin/*', stepUpMiddleware)
-
 // 4. System Routes
 app.route('/api/auth', authRoutes)
 app.route('/api/financials', financialsRoutes)
@@ -277,7 +274,10 @@ app.get('/api/config', async (c) => {
     const result = {
       ...publicConfig,
       environment: c.env.ENVIRONMENT || 'production',
-      discordClientId: c.env.DISCORD_CLIENT_ID
+      discordClientId: c.env.DISCORD_CLIENT_ID,
+      dropboxClientId: c.env.DROPBOX_CLIENT_ID || '',
+      googleClientId: c.env.GOOGLE_CLIENT_ID || '',
+      onedriveClientId: c.env.ONEDRIVE_CLIENT_ID || ''
     }
 
     // Cache the result for performance (5 minutes)

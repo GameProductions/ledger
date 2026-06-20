@@ -18,8 +18,8 @@ import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
-import { users, passkeys, sessions } from '#/schema'
-import { eq, or, and } from 'drizzle-orm'
+import { users, passkeys, sessions, crossDeviceAuth } from '#/schema'
+import { eq, or, and, isNull } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -143,6 +143,113 @@ auth.post('/login', zValidator('json', z.object({
   }
 })
 
+
+// --- CROSS-DEVICE AUTH ---
+auth.post('/cross-device/initiate', async (c) => {
+  const code = Math.random().toString(36).slice(2, 8).toUpperCase()
+  const pollToken = crypto.randomUUID()
+  const preAuthToken = await new AuthService(c.env).generateToken('pending', `cross-${crypto.randomUUID()}`)
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+  const meta = getRequestMetadata(c)
+
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(crossDeviceAuth).values({
+    id,
+    code,
+    pollToken,
+    authToken: preAuthToken,
+    status: 'pending',
+    deviceInfo: JSON.stringify({ userAgent: meta.userAgent, ip: meta.ip }),
+    expiresAt,
+  })
+
+  return c.json({ success: true, data: { code, pollToken, expiresIn: 300, id } })
+})
+
+auth.get('/cross-device/poll', zValidator('query', z.object({
+  code: z.string().length(6),
+  pollToken: z.string().uuid(),
+})), async (c) => {
+  const { code, pollToken } = c.req.valid('query')
+  const db = getDb(c.env)
+  const rows = await db.select().from(crossDeviceAuth)
+    .where(and(eq(crossDeviceAuth.code, code), eq(crossDeviceAuth.pollToken, pollToken)))
+    .limit(1)
+
+  if (!rows.length) {
+    return c.json({ success: true, data: { status: 'invalid' } })
+  }
+
+  const record = rows[0]
+  if (new Date(record.expiresAt) < new Date()) {
+    return c.json({ success: true, data: { status: 'expired' } })
+  }
+
+  if (record.status === 'approved' && record.authToken) {
+    return c.json({ success: true, data: { status: 'approved', token: record.authToken } })
+  }
+
+  return c.json({ success: true, data: { status: record.status } })
+})
+
+auth.post('/cross-device/approve', zValidator('json', z.object({
+  code: z.string().length(6),
+})), async (c) => {
+  const userId = c.get('userId')
+  const { code } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const rows = await db.select().from(crossDeviceAuth)
+    .where(eq(crossDeviceAuth.code, code))
+    .limit(1)
+
+  if (!rows.length) {
+    throw new HTTPException(404, { message: 'Invalid code' })
+  }
+
+  const record = rows[0]
+  if (record.status !== 'pending') {
+    throw new HTTPException(400, { message: `Code is already ${record.status}` })
+  }
+  if (new Date(record.expiresAt) < new Date()) {
+    throw new HTTPException(400, { message: 'Code has expired' })
+  }
+
+  const authService = new AuthService(c.env)
+  const sessionId = await createSessionTracker(c, userId, false, true)
+  const realToken = await authService.generateToken(userId, sessionId)
+
+  await db.update(crossDeviceAuth)
+    .set({ status: 'approved', approvedByUserId: userId, authToken: realToken, approvedAt: new Date().toISOString() })
+    .where(eq(crossDeviceAuth.id, record.id))
+
+  await logAudit(c, 'crossDeviceAuth', record.id, 'APPROVE', null, { approvedBy: userId })
+
+  return c.json({ success: true })
+})
+
+auth.get('/cross-device/pending', async (c) => {
+  const db = getDb(c.env)
+  const rows = await db.select({
+    id: crossDeviceAuth.id,
+    code: crossDeviceAuth.code,
+    deviceInfo: crossDeviceAuth.deviceInfo,
+    status: crossDeviceAuth.status,
+    expiresAt: crossDeviceAuth.expiresAt,
+    createdAt: crossDeviceAuth.createdAt,
+  }).from(crossDeviceAuth)
+    .where(and(eq(crossDeviceAuth.status, 'pending'), isNull(crossDeviceAuth.approvedByUserId)))
+
+  return c.json({ success: true, data: rows.filter(r => new Date(r.expiresAt) > new Date()) })
+})
+
+auth.delete('/cross-device/:id/cancel', async (c) => {
+  const { id } = c.req.param()
+  const db = getDb(c.env)
+  await db.update(crossDeviceAuth).set({ status: 'cancelled' }).where(eq(crossDeviceAuth.id, id))
+  return c.json({ success: true })
+})
 
 auth.get('/login/discord', async (c) => {
   const clientId = c.env.DISCORD_CLIENT_ID
@@ -547,18 +654,28 @@ auth.get('/callback/dropbox', async (c) => {
       })
     }) as any)
   const tokenData = await tokenRes.json() as any
-  
+
+  if (!tokenRes.ok || !tokenData.access_token) {
+    console.error('[Dropbox] Token exchange failed:', tokenData)
+    throw new HTTPException(500, { message: `Dropbox token exchange failed: ${tokenData.error_description || tokenData.error || 'Unknown error'}` })
+  }
+
   const userRes = (await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${tokenData.access_token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(null)
     }) as any)
   const profile = await userRes.json() as any
-  
+
+  if (!userRes.ok || !profile.account_id) {
+    console.error('[Dropbox] Profile fetch failed:', profile)
+    throw new HTTPException(500, { message: `Failed to fetch Dropbox profile: ${profile.error_summary || 'Unknown error'}` })
+  }
+
   const socialProfile = {
-    id: profile.accountId,
+    id: profile.account_id,
     email: profile.email,
-    name: profile.name.displayName,
+    name: profile.name?.display_name || profile.name?.displayName,
     avatar: profile.profile_photo_url
   }
 
@@ -571,7 +688,7 @@ auth.get('/callback/dropbox', async (c) => {
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'dropbox', socialProfile, socialTokens)
-    await logAudit(c, 'userIdentities', profile.accountId, 'LINK', null, { provider: 'dropbox', userId: sessionUserId })
+    await logAudit(c, 'userIdentities', socialProfile.id, 'LINK', null, { provider: 'dropbox', userId: sessionUserId })
     return c.redirect(`${c.env.WEB_URL || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')}/#/settings`)
   } else {
     // LOGIN MODE
@@ -651,16 +768,10 @@ auth.get('/callback/onedrive', async (c) => {
       })
     }) as any)
   const tokenData = await tokenRes.json() as any
-  
-  const userRes = (await fetch('https://graph.microsoft.com/v1.0/me', {
-      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
-    }) as any)
-  const profile = await userRes.json() as any
-  
-  const socialProfile = {
-    id: profile.id,
-    email: profile.mail || profile.userPrincipalName,
-    name: profile.displayName
+
+  if (!tokenRes.ok || !tokenData.access_token) {
+    console.error('[OneDrive] Token exchange failed:', tokenData)
+    throw new HTTPException(500, { message: `OneDrive token exchange failed: ${tokenData.error_description || tokenData.error || 'Unknown error'}` })
   }
 
   const socialTokens = {
@@ -669,10 +780,26 @@ auth.get('/callback/onedrive', async (c) => {
     expires_in: tokenData.expires_in
   }
 
+  const userRes = (await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+    }) as any)
+  const profile = await userRes.json() as any
+
+  if (!userRes.ok || !profile.id) {
+    console.error('[OneDrive] Profile fetch failed:', profile)
+    throw new HTTPException(500, { message: `Failed to fetch OneDrive profile: ${profile.error?.message || 'Unknown error'}` })
+  }
+
+  const socialProfile = {
+    id: profile.id,
+    email: profile.mail || profile.userPrincipalName,
+    name: profile.displayName
+  }
+
   if (sessionUserId) {
     // LINK MODE
     await authService.linkSocialAccount(sessionUserId, 'onedrive', socialProfile, socialTokens)
-    await logAudit(c, 'userIdentities', profile.id, 'LINK', null, { provider: 'onedrive', userId: sessionUserId })
+    await logAudit(c, 'userIdentities', socialProfile.id, 'LINK', null, { provider: 'onedrive', userId: sessionUserId })
     return c.redirect(`${c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'}/#/settings`)
   } else {
     // LOGIN MODE

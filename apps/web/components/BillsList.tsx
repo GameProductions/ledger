@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useApi } from '../hooks/useApi';
+import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
 import { Trash2, AlertCircle, Calendar as CalendarIcon, ExternalLink, ShieldCheck, Share2 } from 'lucide-react';
@@ -32,6 +32,7 @@ export const BillsList: React.FC = () => {
         if (res.ok) {
             showToast('Bill removed from ledger');
             mutate();
+            globalMutate();
         }
     };
 
@@ -52,6 +53,7 @@ export const BillsList: React.FC = () => {
         if (res.ok) {
             showToast(`Bill marked as ${newStatus}`);
             mutate();
+            globalMutate();
         }
     };
 
@@ -228,6 +230,7 @@ export const BillsList: React.FC = () => {
                                     onComplete={() => {
                                         setOpenSplitterId(null);
                                         mutate();
+                                        globalMutate();
                                     }} 
                                 />
                             </div>

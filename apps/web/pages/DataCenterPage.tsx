@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import ImportReview from '../components/ImportReview';
 import { PrivacySettings } from '../components/PrivacySettings';
 import { getApiUrl } from '../utils/api';
+import { useApi } from '../hooks/useApi';
 import { 
   Cloud, 
   Upload, 
@@ -12,8 +13,13 @@ import {
   Shield, 
   Users, 
   Lock, 
-  Download
+  Download,
+  Loader2,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
+import { openDropboxPicker, openOneDrivePicker, downloadCloudFile, CloudFileResult } from '../utils/cloudPicker';
 
 const API_URL = getApiUrl();
 
@@ -23,11 +29,40 @@ const DataCenterPage: React.FC = () => {
   const [url, setUrl] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [picking, setPicking] = useState<string | null>(null);
+  const [cloudFile, setCloudFile] = useState<CloudFileResult | null>(null);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const { data: config } = useApi<any>('/api/config')
 
   const handleExport = async (format: 'csv' | 'xlsx' | 'pdf' | 'json') => {
     const token = localStorage.getItem('ledger_token');
     window.open(`${API_URL}/api/financials/transactions/export?format=${format}&token=${token}`, '_blank');
   };
+
+  const handleCloudPick = useCallback(async (provider: string) => {
+    setCloudFile(null)
+    setCloudError(null)
+    setPicking(provider)
+    try {
+      let result: CloudFileResult
+      if (provider === 'dropbox') {
+        if (!config?.dropboxClientId) throw new Error('Dropbox not configured')
+        result = await openDropboxPicker(config.dropboxClientId)
+      } else if (provider === 'onedrive') {
+        if (!config?.onedriveClientId) throw new Error('OneDrive not configured')
+        result = await openOneDrivePicker(config.onedriveClientId)
+      } else if (provider === 'google') {
+        if (!config?.googleClientId) throw new Error('Google Drive not configured')
+        window.location.href = `${API_URL}/api/auth/login/google?auth_token=${localStorage.getItem('ledger_token')}`
+        return
+      } else return
+      setCloudFile(result)
+    } catch (e: any) {
+      if (e.message !== 'Cancelled') setCloudError(e.message)
+    } finally {
+      setPicking(null)
+    }
+  }, [config, API_URL])
 
   const handleUrlScan = async () => {
     if (!url) return;
@@ -120,20 +155,49 @@ const DataCenterPage: React.FC = () => {
                   <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 py-12 text-center">
                     <Cloud size={64} className="mx-auto text-slate-700 mb-6" />
                     <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Remote Storage Sync</h3>
-                    <p className="text-slate-500 max-w-md mx-auto">Connect your preferred cloud provider to pick files or store automated exports securely.</p>
+                    <p className="text-slate-500 max-w-md mx-auto">Pick a file directly from your cloud provider to import into Ledger.</p>
                     
                     <div className="grid grid-cols-3 gap-4 max-w-md mx-auto pt-8">
                        {[
-                         { name: 'Google Drive', color: 'hover:bg-blue-500/10 hover:border-blue-500/30' },
-                         { name: 'Dropbox', color: 'hover:bg-indigo-500/10 hover:border-indigo-500/30' },
-                         { name: 'OneDrive', color: 'hover:bg-sky-500/10 hover:border-sky-500/30' }
+                         { id: 'google', name: 'Google Drive', color: 'hover:bg-blue-500/10 hover:border-blue-500/30' },
+                         { id: 'dropbox', name: 'Dropbox', color: 'hover:bg-indigo-500/10 hover:border-indigo-500/30' },
+                         { id: 'onedrive', name: 'OneDrive', color: 'hover:bg-sky-500/10 hover:border-sky-500/30' }
                        ].map(p => (
-                         <button key={p.name} className={`p-6 rounded-3xl bg-white/5 border border-white/5 transition-all group ${p.color}`}>
-                            <div className="aspect-square w-full rounded-2xl bg-black/40 mb-3 flex items-center justify-center font-bold text-xs uppercase group-hover:scale-105 transition-all">{p.name.split(' ')[0]}</div>
-                            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Connect</p>
+                         <button
+                           key={p.id}
+                           onClick={() => handleCloudPick(p.id)}
+                           disabled={!!picking}
+                           className={`p-6 rounded-3xl bg-white/5 border border-white/5 transition-all group ${p.color} disabled:opacity-50`}
+                         >
+                            <div className="aspect-square w-full rounded-2xl bg-black/40 mb-3 flex items-center justify-center font-bold text-xs uppercase group-hover:scale-105 transition-all">
+                              {picking === p.id ? <Loader2 size={20} className="animate-spin" /> : p.name.split(' ')[0]}
+                            </div>
+                            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                              {picking === p.id ? 'Opening...' : 'Pick File'}
+                            </p>
                          </button>
                        ))}
                     </div>
+
+                    {cloudError && (
+                      <div className="max-w-md mx-auto p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm text-left">
+                        <AlertCircle size={18} className="shrink-0" />
+                        <p>{cloudError}</p>
+                      </div>
+                    )}
+
+                    {cloudFile && (
+                      <div className="max-w-md mx-auto p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl text-left animate-in fade-in zoom-in-95 duration-500">
+                        <div className="flex items-center gap-3 mb-3">
+                          <CheckCircle2 size={20} className="text-emerald-500 shrink-0" />
+                          <p className="text-sm font-bold text-emerald-500">File selected from {cloudFile.provider}</p>
+                        </div>
+                        <p className="text-lg font-black tracking-tight text-white truncate">{cloudFile.name}</p>
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                          {(cloudFile.bytes / 1024).toFixed(1)} KB &middot; Switch to <strong>File Drop</strong> tab above to review and import
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
@@ -32,6 +32,7 @@ const Subscriptions: React.FC = () => {
     if (res.ok) {
         showToast(isPublic ? 'Master Ledger is now public' : 'Master Ledger is now private');
         mutate();
+        globalMutate();
     }
   };
   
@@ -84,7 +85,8 @@ const Subscriptions: React.FC = () => {
           }).then(() => {
             showToast('Subscription added!', 'success')
             setShowAdd(false)
-            mutate()
+            mutate();
+            globalMutate();
           })
         }}>
           <div className="grid grid-cols-2 gap-3">
@@ -252,6 +254,7 @@ const Subscriptions: React.FC = () => {
                         onComplete={() => {
                             setOpenSplitterId(null);
                             mutate();
+                            globalMutate();
                         }} 
                     />
                 </div>

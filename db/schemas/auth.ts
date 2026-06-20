@@ -185,6 +185,22 @@ export const adminInvitations = pgTable('admin_invitations', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const crossDeviceAuth = pgTable('cross_device_auth', {
+  id: text('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  pollToken: text('poll_token').notNull(),
+  authToken: text('auth_token'),
+  status: text('status').default('pending'),
+  deviceInfo: text('device_info'),
+  approvedByUserId: text('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  approvedAt: text('approved_at'),
+}, (table) => ({
+  codeIdx: index('idx_cross_device_code').on(table.code),
+  statusIdx: index('idx_cross_device_status').on(table.status),
+}));
+
 export const personalAccessTokens = pgTable('personal_access_tokens', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull(), 

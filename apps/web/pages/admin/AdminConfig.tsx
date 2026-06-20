@@ -3,6 +3,7 @@ import AdminPortal from './AdminPortal';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { InlineToast } from '../../components/ui/InlineToast';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 
 const timezones = [
   { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
@@ -198,15 +199,13 @@ const AdminConfig: React.FC = () => {
                   <p className="text-sm text-gray-500">The default fallback timezone for users and transaction schedules.</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
-                  <select 
-                    value={defaultTimezoneCfg.configValue ?? 'UTC'} 
-                    onChange={(e) => handleUpdateConfig(defaultTimezoneCfg.id, e.target.value)}
-                    className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all text-white"
-                  >
-                    {timezones.map(tz => (
-                      <option key={tz.value} value={tz.value}>{tz.label}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={timezones}
+                    value={defaultTimezoneCfg.configValue ?? 'UTC'}
+                    onChange={(v) => handleUpdateConfig(defaultTimezoneCfg.id, v)}
+                    className="flex-1"
+                    placeholder="Select timezone..."
+                  />
                   <span className="text-xs text-gray-600 uppercase font-black">Dropdown</span>
                 </div>
               </div>

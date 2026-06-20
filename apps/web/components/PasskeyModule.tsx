@@ -22,6 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { secureRequest } from '../utils/api';
+import { Card } from './ui/Card';
 
 // ─── Provider Logo ──────────────────────────────────────────────────────────
 const ProviderLogo = ({ logo, color, service }: { logo?: string; color?: string; service?: string }) => {
@@ -254,7 +255,8 @@ export const PasskeyModule = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <Card className="bg-[#121212] border-white/5 overflow-hidden">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -262,9 +264,9 @@ export const PasskeyModule = () => {
             <ShieldCheck className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <h3 className="text-xl font-black text-white">Hardware Key Subsystem</h3>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mt-0.5">
-              Biometric Step-Up Enforcement v6.1
+            <h3 className="text-xl font-black text-white">Passkeys</h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Use your fingerprint, face, or security key to sign in quickly and securely
             </p>
           </div>
         </div>
@@ -469,5 +471,6 @@ export const PasskeyModule = () => {
         )}
       </div>
     </div>
+    </Card>
   );
 };

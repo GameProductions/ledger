@@ -47,7 +47,8 @@ export const PaySchedulesList: React.FC = () => {
     }, 0) || 0;
 
     return (
-        <section className="card space-y-6">
+        <>
+          <section className="card space-y-6">
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -155,12 +156,13 @@ export const PaySchedulesList: React.FC = () => {
                 )}
             </div>
 
-            <PayScheduleModal 
-                isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(null as any)} 
-                onUpdate={() => mutateSchedules()}
-                schedule={editingSchedule}
-            />
         </section>
+        <PayScheduleModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            onUpdate={() => mutateSchedules()}
+            schedule={editingSchedule}
+        />
+        </>
     );
 };

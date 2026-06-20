@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useApi } from '../hooks/useApi';
+import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { Send, MessageSquare, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Price } from './Price';
@@ -59,6 +59,7 @@ const SupportPortal: React.FC = () => {
         showToast('Support Request Sent', 'success');
         setFormData({ title: '', description: '', category: 'General', priority: 'medium' });
         mutate();
+        globalMutate();
       } else {
         throw new Error('Failed to send request');
       }
@@ -85,6 +86,7 @@ const SupportPortal: React.FC = () => {
       if (res.ok) {
         setCommentBody('');
         mutateComments();
+        globalMutate();
         showToast('Comment posted', 'success');
       }
     } catch (err: any) {

@@ -115,6 +115,133 @@ function addMonths(date: Date, amount: number) {
     return d;
 }
 
+export interface RecurringProjection {
+  id: string;
+  originalId: string;
+  date: string;
+  originalDate: string;
+  description: string;
+  amountCents: number;
+  type: 'subscription' | 'bill' | 'installment';
+  originalData: any;
+  notes?: string;
+}
+
+export const projectRecurringItems = (
+  subscriptions: any[],
+  bills: any[],
+  installments: any[],
+  viewStart: Date,
+  viewEnd: Date,
+): RecurringProjection[] => {
+  const instances: RecurringProjection[] = [];
+
+  const projectDates = (startDateStr: string, frequency: string, maxCount: number = Infinity): string[] => {
+    const dates: string[] = [];
+    let current = parseISO(startDateStr);
+    let iterations = 0;
+    const maxIterations = 200;
+
+    while (isAfter(current, viewStart) && iterations < maxIterations) {
+      if (frequency === 'weekly') current = addDays(current, -7);
+      else if (frequency === 'biweekly') current = addDays(current, -14);
+      else if (frequency === 'monthly') {
+        const day = current.getDate();
+        current = addMonths(current, -1);
+        current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      } else break;
+      iterations++;
+    }
+
+    iterations = 0;
+    while (isBefore(current, viewEnd) && iterations < maxIterations && dates.length < maxCount) {
+      if (!isBefore(current, viewStart)) {
+        dates.push(format(current, 'yyyy-MM-dd'));
+      }
+
+      if (frequency === 'weekly') current = addDays(current, 7);
+      else if (frequency === 'biweekly') current = addDays(current, 14);
+      else if (frequency === 'monthly') {
+        const day = current.getDate();
+        current = addMonths(current, 1);
+        current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      }
+      else if (frequency === 'quarterly') {
+        const day = current.getDate();
+        current = addMonths(current, 3);
+        current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      }
+      else if (frequency === 'annually') {
+        const day = current.getDate();
+        current = addMonths(current, 12);
+        current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      }
+      else break;
+      iterations++;
+    }
+
+    return dates;
+  };
+
+  subscriptions.forEach(sub => {
+    if (!sub.nextBillingDate || !sub.billingCycle || sub.billingCycle === 'manual' || sub.billingCycle === 'one-time') return;
+    const dates = projectDates(sub.nextBillingDate, sub.billingCycle);
+    dates.forEach(date => {
+      instances.push({
+        id: `sub-proj-${sub.id}-${date}`,
+        originalId: sub.id,
+        date,
+        originalDate: sub.nextBillingDate,
+        description: sub.name || sub.description || '',
+        amountCents: sub.amountCents || 0,
+        type: 'subscription',
+        originalData: sub,
+        notes: sub.notes,
+      });
+    });
+  });
+
+  bills.forEach(bill => {
+    if (!bill.dueDate || !bill.frequency || bill.frequency === 'manual' || bill.frequency === 'one-time') return;
+    const dates = projectDates(bill.dueDate, bill.frequency);
+    dates.forEach(date => {
+      instances.push({
+        id: `bill-proj-${bill.id}-${date}`,
+        originalId: bill.id,
+        date,
+        originalDate: bill.dueDate,
+        description: bill.name || bill.description || '',
+        amountCents: bill.amountCents || 0,
+        type: 'bill',
+        originalData: bill,
+        notes: bill.notes,
+      });
+    });
+  });
+
+  installments.forEach(inst => {
+    if (!inst.nextPaymentDate || !inst.frequency || inst.frequency === 'manual' || inst.frequency === 'one-time') return;
+    const amount = inst.installmentAmountCents || inst.amountCents || 0;
+    const maxCount = inst.remainingInstallments || 100;
+    const dates = projectDates(inst.nextPaymentDate, inst.frequency, maxCount);
+    dates.forEach(date => {
+      instances.push({
+        id: `inst-proj-${inst.id}-${date}`,
+        originalId: inst.id,
+        date,
+        originalDate: inst.nextPaymentDate,
+        description: inst.name || inst.description || '',
+        amountCents: amount,
+        type: 'installment',
+        originalData: inst,
+        notes: inst.notes,
+      });
+    });
+  });
+
+  return instances;
+};
+
 export const groupLiabilitiesByCycle = (liabilities: any[] = [], paydays: PaydayInstance[] = []) => {
     const safeLiabilities = Array.isArray(liabilities) ? liabilities : [];
     const safePaydays = Array.isArray(paydays) ? paydays : [];

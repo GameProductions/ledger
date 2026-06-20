@@ -4,7 +4,7 @@ import { useTheme } from '../../context/ThemeContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Fingerprint, RefreshCw, Check } from 'lucide-react'
+import { Fingerprint, RefreshCw, Check, Smartphone, Copy, ExternalLink } from 'lucide-react'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Modal } from '../../components/ui/Modal'
 import { PasswordChecklist } from '../../components/PasswordChecklist'
@@ -21,6 +21,79 @@ const LoginPage: React.FC = () => {
   const [persistent, setPersistent] = useState(true)
   const [loading, setLoading] = useState(false)
   
+  // Cross-Device Auth State
+  const [showCrossDevice, setShowCrossDevice] = useState(false)
+  const [crossDeviceCode, setCrossDeviceCode] = useState('')
+  const [crossDevicePollToken, setCrossDevicePollToken] = useState('')
+  const [crossDeviceId, setCrossDeviceId] = useState('')
+  const [crossDeviceStatus, setCrossDeviceStatus] = useState<'idle' | 'initiating' | 'showing' | 'approved' | 'expired'>('idle')
+  const [crossDeviceCopied, setCrossDeviceCopied] = useState(false)
+
+  const handleCrossDeviceInitiate = async () => {
+    setCrossDeviceStatus('initiating')
+    try {
+      const apiUrl = getApiUrl()
+      const res = await fetch(`${apiUrl}/api/auth/cross-device/initiate`, { method: 'POST' })
+      if (!res.ok) throw new Error('Initiation failed')
+      const json = await res.json() as any
+      if (!json.success || !json.data) throw new Error('Invalid response')
+      const { code, pollToken, id } = json.data
+      setCrossDeviceCode(code)
+      setCrossDevicePollToken(pollToken)
+      setCrossDeviceId(id)
+      setCrossDeviceStatus('showing')
+      // Start polling
+      pollCrossDeviceStatus(code, pollToken)
+    } catch (e: any) {
+      showToast('Failed to initiate cross-device sign-in', 'error')
+      setCrossDeviceStatus('idle')
+    }
+  }
+
+  const pollCrossDeviceStatus = async (code: string, pollToken: string) => {
+    const apiUrl = getApiUrl()
+    const poll = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/auth/cross-device/poll?code=${code}&pollToken=${pollToken}`)
+        if (!res.ok) return
+        const json = await res.json() as any
+        if (!json.success) return
+        const { status, token: authToken } = json.data
+        if (status === 'approved' && authToken) {
+          setCrossDeviceStatus('approved')
+          handleTokenLogin(authToken)
+          return
+        }
+        if (status === 'expired') {
+          setCrossDeviceStatus('expired')
+          return
+        }
+        setTimeout(poll, 2000)
+      } catch {
+        setTimeout(poll, 2000)
+      }
+    }
+    poll()
+  }
+
+  const handleCrossDeviceCancel = async () => {
+    if (!crossDeviceId) return
+    try {
+      const apiUrl = getApiUrl()
+      await fetch(`${apiUrl}/api/auth/cross-device/${crossDeviceId}/cancel`, { method: 'DELETE' })
+    } catch {}
+    setCrossDeviceStatus('idle')
+    setCrossDeviceCode('')
+    setCrossDevicePollToken('')
+    setCrossDeviceId('')
+  }
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(crossDeviceCode)
+    setCrossDeviceCopied(true)
+    setTimeout(() => setCrossDeviceCopied(false), 2000)
+  }
+
   // Recovery State
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false)
   const [recoveryEmail, setRecoveryEmail] = useState('')
@@ -402,6 +475,76 @@ const LoginPage: React.FC = () => {
               Discord
             </button>
           </div>
+
+          {!showCrossDevice ? (
+            <button
+              type="button"
+              onClick={() => setShowCrossDevice(true)}
+              className="w-full flex items-center justify-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs uppercase tracking-widest text-slate-400"
+            >
+              <Smartphone className="w-4 h-4" />
+              Sign in using another device
+            </button>
+          ) : crossDeviceStatus === 'idle' || crossDeviceStatus === 'initiating' ? (
+            <button
+              type="button"
+              onClick={handleCrossDeviceInitiate}
+              disabled={crossDeviceStatus === 'initiating'}
+              className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all font-black uppercase tracking-widest text-xs text-primary"
+            >
+              {crossDeviceStatus === 'initiating' ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4" />
+              )}
+              Generate Authorization Code
+            </button>
+          ) : crossDeviceStatus === 'showing' ? (
+            <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4 reveal">
+              <div className="text-center space-y-1">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Enter this code on your authorized device</p>
+                <p className="text-[10px] text-slate-500">Settings → Security → Authorize Device Sign-In</p>
+              </div>
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-4xl font-black tracking-[0.3em] text-primary font-mono">{crossDeviceCode}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                  title="Copy code"
+                >
+                  {crossDeviceCopied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5 text-slate-400" />}
+                </button>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
+                <span className="text-[10px] text-slate-500">Waiting for approval...</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCrossDeviceCancel}
+                className="w-full text-[10px] text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest font-black"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : crossDeviceStatus === 'approved' ? (
+            <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2 text-center reveal">
+              <Check className="w-8 h-8 text-emerald-400 mx-auto" />
+              <p className="text-sm font-black text-emerald-400">Authorized! Signing in...</p>
+            </div>
+          ) : (
+            <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 space-y-3 reveal">
+              <p className="text-sm font-black text-red-400 text-center">Code expired</p>
+              <button
+                type="button"
+                onClick={() => { setShowCrossDevice(false); setCrossDeviceStatus('idle') }}
+                className="w-full text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+              >
+                Try again
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

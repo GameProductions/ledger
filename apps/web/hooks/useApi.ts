@@ -12,7 +12,7 @@ export const globalMutate = (path?: string | string[]) => {
 };
 
 export const useApi = <T = unknown>(path: string | null, options: { refreshInterval?: number } = {}) => {
-  const { token, logout, householdId, triggerStepUp } = useAuth()
+  const { token, logout, householdId } = useAuth()
   const [data, setData] = useState<T | undefined>(undefined)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
@@ -45,17 +45,7 @@ export const useApi = <T = unknown>(path: string | null, options: { refreshInter
             }) as any)
       
       if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          const isStepUp = res.headers.get('X-Step-Up') === 'Required';
-          if (isStepUp) {
-            console.warn(`[Step-Up] Required for ${path}. Pausing request.`);
-            triggerStepUp(() => {
-              console.info(`[Step-Up] Resolved. Retrying ${path}.`);
-              mutate();
-            });
-            return;
-          }
-
+        if ((res.status === 401 || res.status === 403)) {
           const isLoggingOut = (window as any)._ledger_is_logging_out;
           if (!isLoggingOut) {
             (window as any)._ledger_is_logging_out = true;
@@ -137,7 +127,7 @@ export const useApi = <T = unknown>(path: string | null, options: { refreshInter
     }
   }, [fetcher, trigger, options.refreshInterval, path, householdId])
 
-  const mutate = () => setTrigger(v => v + 1)
+  const mutate = useCallback(() => setTrigger(v => v + 1), [])
 
   return { data, loading, error, mutate }
 }

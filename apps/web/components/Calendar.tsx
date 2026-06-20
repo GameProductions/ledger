@@ -34,6 +34,7 @@ interface CalendarProps {
   subscriptions?: any[];
   bills?: any[];
   installments?: any[];
+  recurringProjections?: any[];
   paySchedules?: any[]; // These are projected instances
   payScheduleDefinitions?: any[]; // Raw definitions for schedule selection
   onDayClick: (date: Date) => void;
@@ -45,6 +46,7 @@ const Calendar: React.FC<CalendarProps> = ({
   subscriptions = [], 
   bills = [], 
   installments = [], 
+  recurringProjections = [],
   paySchedules = [], 
   payScheduleDefinitions = [],
   onDayClick, 
@@ -117,10 +119,22 @@ const Calendar: React.FC<CalendarProps> = ({
       return tx.transactionDate === dateStr;
     }).map(tx => ({ ...tx, type: 'transaction' }));
 
+    const dayRecurringProj = (Array.isArray(recurringProjections) ? recurringProjections : [])
+      .filter(rp => rp.date === dateStr)
+      .map(rp => ({
+          ...rp.originalData,
+          id: rp.id,
+          type: rp.type,
+          description: rp.description,
+          amountCents: rp.amountCents,
+          _date: parseISO(rp.date),
+      }));
+
     const dayBills = (Array.isArray(subscriptions) ? subscriptions : [])
       .concat(Array.isArray(bills) ? bills : [])
       .concat(Array.isArray(installments) ? installments : [])
       .filter(sub => {
+        if (sub.frequency || sub.billingCycle) return false;
         const subDateStr = sub.nextBillingDate || sub.dueDate || sub.nextPayDate;
         return subDateStr === dateStr;
     }).map(sub => ({ 
@@ -145,7 +159,7 @@ const Calendar: React.FC<CalendarProps> = ({
     // Backfill _date for sorting uniformly
     dayTxs.forEach(t => t._date = parseISO(t.transactionDate));
 
-    return [...dayPays, ...dayBills, ...dayTxs];
+    return [...dayPays, ...dayRecurringProj, ...dayBills, ...dayTxs];
   };
 
   const allItems = getAllRangeItems().filter(i => {
@@ -306,7 +320,15 @@ const Calendar: React.FC<CalendarProps> = ({
         })}
       </div>
       ) : (
-        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar relative">
+           <div className="flex justify-end mb-4 sticky top-0 bg-black/40 backdrop-blur-xl py-2 z-10">
+             <button 
+               onClick={() => onDayClick(new Date())}
+               className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+             >
+               <span>+ Add Entry</span>
+             </button>
+           </div>
            {allItems.length === 0 ? (
                <div className="text-center py-12 text-secondary opacity-50 text-sm font-bold border border-dashed border-white/10 rounded-2xl">
                    No scheduled items match your filters for the selected range.

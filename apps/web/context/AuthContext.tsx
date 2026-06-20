@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react'
 import { getApiUrl } from '../utils/api'
-import { StepUpModal } from '../components/auth/StepUpModal'
+
 
 interface AuthContextType {
   user: any
@@ -15,7 +15,6 @@ interface AuthContextType {
   logout: () => void
   setHouseholdId: (id: string) => void
   setPrivacyMode: (active: boolean) => void
-  triggerStepUp: (onResolved: () => void) => void
   secureFetch: (input: string, init?: RequestInit) => Promise<Response>
   refreshProfile: () => Promise<void>
 }
@@ -26,14 +25,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isDev = import.meta.env.DEV;
   const [token, setToken] = useState<string | null>(localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null))
   const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","displayName":"Administrator","email":"admin@example.com"}' : 'null')))
-  const [householdId, setHouseholdId] = useState<string | null>(localStorage.getItem('ledger_householdId') || (isDev ? 'household-abc' : null))
+  const [householdId, setRawHouseholdId] = useState<string | null>(localStorage.getItem('ledger_householdId') || (isDev ? 'household-abc' : null))
   const [globalRole, setGlobalRole] = useState<string | null>(localStorage.getItem('ledger_globalRole') || 'user')
   const [privacyMode, setPrivacyMode] = useState<boolean>(localStorage.getItem('ledger_privacy_mode') === 'true')
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
   const [isAdminVerified, setIsAdminVerified] = useState<boolean>(false)
-  const [stepUpOpen, setStepUpOpen] = useState(false)
-  const [onStepUpResolved, setOnStepUpResolved] = useState<(() => void) | null>(null)
-
   // Session Verification
   React.useEffect(() => {
     if (token) {
@@ -80,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // FORENSIC PRIORITY: Prioritize the householdId from the profile if available
     const hId = newUser.householdId || 'ledger-main-001'
-    setHouseholdId(hId)
+    setRawHouseholdId(hId)
     localStorage.setItem('ledger_householdId', hId)
   }, [])
 
@@ -89,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (window as any)._ledger_is_logging_out = true
     setToken(null)
     setUser(null)
-    setHouseholdId(null)
+    setRawHouseholdId(null)
     setGlobalRole(null)
     setPrivacyMode(false)
     setIsImpersonating(false)
@@ -109,9 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('ledger_privacy_mode', active ? 'true' : 'false')
   }, [])
 
-  const triggerStepUp = React.useCallback((onResolved: () => void) => {
-    setOnStepUpResolved(() => onResolved)
-    setStepUpOpen(true)
+  const handleSetHouseholdId = React.useCallback((id: string) => {
+    localStorage.setItem('ledger_householdId', id)
+    setRawHouseholdId(id)
+    window.location.reload()
   }, [])
 
   const secureFetch = React.useCallback(async (input: string, init?: RequestInit): Promise<Response> => {
@@ -129,18 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const res = (await makeRequest() as any)
 
-    if (res.status === 401 || res.status === 403) {
-      const isStepUp = res.headers.get('X-Step-Up') === 'Required'
-      if (isStepUp) {
-        return new Promise((resolve) => {
-          triggerStepUp(async () => {
-            const retryRes = (await makeRequest() as any)
-            resolve(retryRes)
-          })
-        })
-      }
-      
-      // Standard auth failure
+    if ((res.status === 401 || res.status === 403)) {
       const isLoggingOut = (window as any)._ledger_is_logging_out;
       if (!isLoggingOut) {
         logout()
@@ -148,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return res
-  }, [token, householdId, triggerStepUp, logout])
+  }, [token, householdId, logout])
 
   const refreshProfile = React.useCallback(async () => {
     if (!token) return
@@ -172,29 +158,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const authValue = React.useMemo(() => ({ 
     user, token, householdId, globalRole, privacyMode, isImpersonating, isAdminVerified,
     setAdminVerified: setIsAdminVerified,
-    login, logout, setHouseholdId, setPrivacyMode: handleSetPrivacyMode,
-    triggerStepUp, secureFetch, refreshProfile
-  }), [user, token, householdId, globalRole, privacyMode, isImpersonating, isAdminVerified, login, logout, handleSetPrivacyMode, triggerStepUp, secureFetch, refreshProfile])
-
+    login, logout, setHouseholdId: handleSetHouseholdId, setPrivacyMode: handleSetPrivacyMode,
+    secureFetch, refreshProfile
+  }), [user, token, householdId, globalRole, privacyMode, isImpersonating, isAdminVerified, login, logout, handleSetPrivacyMode, secureFetch, refreshProfile])
 
   return (
     <AuthContext.Provider value={authValue}>
       {children}
-      {token && (
-        <StepUpModal 
-          isOpen={stepUpOpen} 
-          token={token}
-          onClose={() => {
-            setStepUpOpen(false)
-            setOnStepUpResolved(null)
-          }}
-          onSuccess={() => {
-            setStepUpOpen(false)
-            onStepUpResolved?.()
-            setOnStepUpResolved(null)
-          }}
-        />
-      )}
     </AuthContext.Provider>
   )
 }

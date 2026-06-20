@@ -42,7 +42,6 @@ import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from
 import { alias } from 'drizzle-orm/pg-core'
 import { inferTransactionDetails } from '../inference'
 import { ReconciliationService } from '../services/reconciliation.service'
-import { stepUpMiddleware } from '../middlewares/step-up-middleware'
 
 const financials = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -483,7 +482,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
 })
 
 // Transaction Export
-financials.get('/transactions/export', stepUpMiddleware, async (c) => {
+financials.get('/transactions/export', async (c) => {
   const householdId = c.get('householdId')
   const format = c.req.query('format') || 'json'
 

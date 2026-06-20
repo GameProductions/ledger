@@ -8,8 +8,8 @@ if (mode === 'pre-commit') {
   // --- PRE-COMMIT HOOK ---
   // Responsible for version bumping, syncing documentation files, and staging them.
   try {
-    const diff = execSync('git diff --cached').toString();
-    const status = execSync('git status --porcelain').toString();
+    const diff = execSync('git diff --cached', { maxBuffer: 10 * 1024 * 1024 }).toString();
+    const status = execSync('git status --porcelain', { maxBuffer: 10 * 1024 * 1024 }).toString();
 
     const lines = status.split('\n').map(l => l.trim()).filter(Boolean);
     const onlyPkg = lines.length === 1 && lines[0].includes('package.json');

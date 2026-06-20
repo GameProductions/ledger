@@ -20,9 +20,14 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({ view, setView }) => {
           <div className="flex items-center gap-3 sm:gap-6">
             <a href="#/" className="flex items-center gap-2 sm:gap-3 no-underline group">
               <img src={theme.logoUrl} alt="Logo" className="h-6 sm:h-8 group-hover:scale-110 transition-transform" />
-              <h1 className="text-lg sm:text-xl font-black tracking-tighter bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent m-0 hidden md:block">
-                LEDGER
-              </h1>
+              <div className="hidden md:flex flex-col">
+                <h1 className="text-lg sm:text-xl font-black tracking-tighter bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent m-0 leading-none">
+                  LEDGER
+                </h1>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/40 mt-0.5">
+                  v{import.meta.env.VITE_APP_VERSION}
+                </span>
+              </div>
             </a>
             <div className="h-6 w-px bg-glass-border hidden sm:block" />
             <div className="hidden sm:block">

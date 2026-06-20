@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
 import { 
   MoreHorizontal, Shield, Trash2, GitMerge, Info, Activity, Lock, Globe, ExternalLink, X, 
-  Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert, Monitor 
+  Search, Fingerprint, RefreshCw, Edit3, Terminal, ShieldAlert, Monitor, Smartphone, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '../../components/ui/Modal';
@@ -28,6 +28,8 @@ const UserDetailsModal: React.FC<{
   const [showPass, setShowPass] = useState(false);
   const [editingPk, setEditingPk] = useState<any | null>(null);
   const [removingPk, setRemovingPk] = useState<any | null>(null);
+  const [crossDeviceRequests, setCrossDeviceRequests] = useState<any[]>([])
+  const [approvingCrossDevice, setApprovingCrossDevice] = useState<string | null>(null)
 
   const generatePassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
@@ -61,9 +63,52 @@ const UserDetailsModal: React.FC<{
     }
   };
 
+  const fetchCrossDeviceRequests = async () => {
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/admin/users/${userId}/cross-device`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const json = await res.json()
+      if (json.success) {
+        setCrossDeviceRequests(json.data || [])
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch cross-device requests:', err)
+    }
+  }
+
+  const handleAdminApproveCrossDevice = async (requestId: string) => {
+    setApprovingCrossDevice(requestId)
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/admin/users/${userId}/cross-device/${requestId}/approve`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        showToast('Cross-device request approved', 'success')
+        fetchCrossDeviceRequests()
+      } else {
+        const json = await res.json()
+        showToast(json.error || 'Failed to approve', 'error')
+      }
+    } catch (err: any) {
+      showToast('Error approving request', 'error')
+    } finally {
+      setApprovingCrossDevice(null)
+    }
+  }
+
   useEffect(() => {
     fetchDetails();
   }, [userId]);
+
+  useEffect(() => {
+    if (userId) fetchCrossDeviceRequests()
+  }, [userId])
 
   const handleAdminResetPassword = async () => {
     if (!manualPass) return;
@@ -307,6 +352,53 @@ const UserDetailsModal: React.FC<{
                     </div>
                  </div>
               </div>
+          </div>
+
+          {/* Cross-Device Sign-In Requests */}
+          <div className="p-8 space-y-6 bg-black/40 border-t border-white/5 lg:col-span-2">
+            <div className="flex items-center gap-2 text-emerald-500">
+              <Smartphone size={18} />
+              <span className="text-xs font-black uppercase tracking-[0.2em]">Cross-Device Sign-In Requests</span>
+            </div>
+            <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+              {crossDeviceRequests.length === 0 ? (
+                <div className="text-center py-8 text-slate-700 border-2 border-dashed border-white/5 rounded-3xl">
+                  <Smartphone size={28} className="mx-auto mb-2 opacity-20" />
+                  <span className="text-xs font-black uppercase tracking-widest">No Pending Requests</span>
+                </div>
+              ) : (
+                crossDeviceRequests.map((req: any) => {
+                  const deviceInfo = (() => {
+                    try { return JSON.parse(req.deviceInfo) } catch { return {} }
+                  })()
+                  return (
+                    <div key={req.id} className="flex items-center justify-between gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl group hover:border-emerald-500/30 transition-all">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                          <Smartphone className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-200 truncate">{deviceInfo.userAgent?.slice(0, 50) || 'Unknown device'}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">{req.code} · Expires {new Date(req.expiresAt).toLocaleTimeString()}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAdminApproveCrossDevice(req.id)}
+                        disabled={approvingCrossDevice === req.id}
+                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all flex items-center gap-2"
+                      >
+                        {approvingCrossDevice === req.id ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Check className="w-3 h-3" />
+                        )}
+                        Approve
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
           </div>
 
           {/* System Security History */}

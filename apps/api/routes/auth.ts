@@ -145,14 +145,27 @@ auth.post('/login', zValidator('json', z.object({
 
 
 // --- CROSS-DEVICE AUTH ---
-auth.post('/cross-device/initiate', async (c) => {
+auth.post('/cross-device/initiate', zValidator('json', z.object({
+  identifier: z.string().min(1).describe('Username or email of the target user'),
+})), async (c) => {
+  const { identifier } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const [targetUser] = await db.select({ id: users.id })
+    .from(users)
+    .where(or(eq(users.username, identifier), eq(users.email, identifier)))
+    .limit(1)
+
+  if (!targetUser) {
+    throw new HTTPException(404, { message: 'User not found' })
+  }
+
   const code = Math.random().toString(36).slice(2, 8).toUpperCase()
   const pollToken = crypto.randomUUID()
   const preAuthToken = await new AuthService(c.env).generateToken('pending', `cross-${crypto.randomUUID()}`)
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
   const meta = getRequestMetadata(c)
 
-  const db = getDb(c.env)
   const id = crypto.randomUUID()
   await db.insert(crossDeviceAuth).values({
     id,
@@ -160,6 +173,7 @@ auth.post('/cross-device/initiate', async (c) => {
     pollToken,
     authToken: preAuthToken,
     status: 'pending',
+    targetUserId: targetUser.id,
     deviceInfo: JSON.stringify({ userAgent: meta.userAgent, ip: meta.ip }),
     expiresAt,
   })
@@ -230,6 +244,7 @@ auth.post('/cross-device/approve', zValidator('json', z.object({
 })
 
 auth.get('/cross-device/pending', async (c) => {
+  const userId = c.get('userId')
   const db = getDb(c.env)
   const rows = await db.select({
     id: crossDeviceAuth.id,
@@ -239,7 +254,11 @@ auth.get('/cross-device/pending', async (c) => {
     expiresAt: crossDeviceAuth.expiresAt,
     createdAt: crossDeviceAuth.createdAt,
   }).from(crossDeviceAuth)
-    .where(and(eq(crossDeviceAuth.status, 'pending'), isNull(crossDeviceAuth.approvedByUserId)))
+    .where(and(
+      eq(crossDeviceAuth.status, 'pending'),
+      eq(crossDeviceAuth.targetUserId, userId),
+      isNull(crossDeviceAuth.approvedByUserId),
+    ))
 
   return c.json({ success: true, data: rows.filter(r => new Date(r.expiresAt) > new Date()) })
 })

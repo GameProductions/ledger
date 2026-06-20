@@ -31,12 +31,18 @@ const LoginPage: React.FC = () => {
   const [crossDeviceId, setCrossDeviceId] = useState('')
   const [crossDeviceStatus, setCrossDeviceStatus] = useState<'idle' | 'initiating' | 'showing' | 'approved' | 'expired'>('idle')
   const [crossDeviceCopied, setCrossDeviceCopied] = useState(false)
+  const [crossDeviceIdentifier, setCrossDeviceIdentifier] = useState('')
 
   const handleCrossDeviceInitiate = async () => {
+    if (!crossDeviceIdentifier.trim()) return
     setCrossDeviceStatus('initiating')
     try {
       const apiUrl = getApiUrl()
-      const res = await fetch(`${apiUrl}/api/auth/cross-device/initiate`, { method: 'POST' })
+      const res = await fetch(`${apiUrl}/api/auth/cross-device/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: crossDeviceIdentifier.trim() }),
+      })
       if (!res.ok) throw new Error('Initiation failed')
       const json = await res.json() as any
       if (!json.success || !json.data) throw new Error('Invalid response')
@@ -89,6 +95,7 @@ const LoginPage: React.FC = () => {
     setCrossDeviceCode('')
     setCrossDevicePollToken('')
     setCrossDeviceId('')
+    setCrossDeviceIdentifier('')
   }
 
   const handleCopyCode = () => {
@@ -536,19 +543,28 @@ const LoginPage: React.FC = () => {
               Sign in using another device
             </button>
           ) : crossDeviceStatus === 'idle' || crossDeviceStatus === 'initiating' ? (
-            <button
-              type="button"
-              onClick={handleCrossDeviceInitiate}
-              disabled={crossDeviceStatus === 'initiating'}
-              className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all font-black uppercase tracking-widest text-xs text-primary"
-            >
-              {crossDeviceStatus === 'initiating' ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <ExternalLink className="w-4 h-4" />
-              )}
-              Generate Authorization Code
-            </button>
+            <div className="space-y-3">
+              <Input
+                label="Target Username or Email"
+                value={crossDeviceIdentifier}
+                onChange={(e) => setCrossDeviceIdentifier(e.target.value)}
+                placeholder="username or email@example.com"
+                className="bg-white/5 border-white/5"
+              />
+              <button
+                type="button"
+                onClick={handleCrossDeviceInitiate}
+                disabled={crossDeviceStatus === 'initiating' || !crossDeviceIdentifier.trim()}
+                className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all font-black uppercase tracking-widest text-xs text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {crossDeviceStatus === 'initiating' ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4" />
+                )}
+                Generate Authorization Code
+              </button>
+            </div>
           ) : crossDeviceStatus === 'showing' ? (
             <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4 reveal">
               <div className="text-center space-y-1">

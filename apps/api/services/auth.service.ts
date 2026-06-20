@@ -96,12 +96,14 @@ export class AuthService {
   async generateToken(userId: string, sid?: string, householdId?: string, impersonatorId?: string) {
     const db = getDb(this.env)
     
-    // FORENSIC HARDENING: Do not rely on hardcoded defaults for household context
+    const [user] = (await db.select({ globalRole: users.globalRole }).from(users).where(eq(users.id, userId)).limit(1) as any)
+
     let targetHouseholdId = householdId
+    if (!targetHouseholdId && (userId.startsWith('pending') || userId.startsWith('cross-'))) {
+      targetHouseholdId = userId
+    }
     if (!targetHouseholdId) {
-      // @ts-ignore
       const userHh = (await db.select({ householdId: userHouseholds.householdId })
-              // @ts-ignore
               .from(userHouseholds)
               .where(eq(userHouseholds.userId, userId))
               .limit(1) as any)
@@ -110,13 +112,11 @@ export class AuthService {
       if (!targetHouseholdId) {
         targetHouseholdId = 'ledger-main-001'
         try {
-          // Dynamically seed default household if missing
           await db.insert(households).values({
             id: 'ledger-main-001',
             name: 'Primary Household',
             currency: 'USD'
           }).onConflictDoNothing()
-          
           await db.insert(userHouseholds).values({
             userId: userId,
             householdId: 'ledger-main-001',
@@ -127,8 +127,6 @@ export class AuthService {
         }
       }
     }
-
-    const [user] = (await db.select({ globalRole: users.globalRole }).from(users).where(eq(users.id, userId)).limit(1) as any)
 
     const payload: any = {
       sub: userId,

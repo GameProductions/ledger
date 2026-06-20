@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../../types'
 import { CreateUserAdminSchema, UpdateUserAdminSchema } from '@shared/schemas'
 import { getDb } from '#/index'
-import { users, passkeys, userIdentities, userHouseholds, externalConnections, adminInvitations } from '#/schema'
-import { eq, desc, or, and, sql } from 'drizzle-orm'
+import { users, passkeys, userIdentities, userHouseholds, externalConnections, adminInvitations, crossDeviceAuth } from '#/schema'
+import { eq, desc, or, and, sql, isNull } from 'drizzle-orm'
 import { hashPassword } from '../../auth-utils'
 import { EmailService } from '../../services/email.service'
 import { logAudit } from '../../utils'
@@ -194,6 +194,55 @@ userAdmin.get('/invitations', async (c) => {
   const db = getDb(c.env)
   const results = (await db.select().from(adminInvitations).orderBy(desc(adminInvitations.createdAt)) as any)
   return c.json({ success: true, data: results || [] })
+})
+
+userAdmin.get('/:id/cross-device', async (c) => {
+  const userId = c.req.param('id')
+  const db = getDb(c.env)
+  const rows = await db.select({
+    id: crossDeviceAuth.id,
+    code: crossDeviceAuth.code,
+    deviceInfo: crossDeviceAuth.deviceInfo,
+    status: crossDeviceAuth.status,
+    expiresAt: crossDeviceAuth.expiresAt,
+    createdAt: crossDeviceAuth.createdAt,
+  }).from(crossDeviceAuth)
+    .where(and(
+      eq(crossDeviceAuth.targetUserId, userId),
+      isNull(crossDeviceAuth.approvedByUserId),
+    ))
+
+  return c.json({ success: true, data: rows.filter(r => new Date(r.expiresAt) > new Date()) })
+})
+
+userAdmin.post('/:id/cross-device/:requestId/approve', async (c) => {
+  const { id, requestId } = c.req.param()
+  const adminUserId = c.get('userId')
+  const db = getDb(c.env)
+
+  const [record] = await db.select().from(crossDeviceAuth)
+    .where(and(
+      eq(crossDeviceAuth.id, requestId),
+      eq(crossDeviceAuth.targetUserId, id),
+    ))
+    .limit(1)
+
+  if (!record) throw new HTTPException(404, { message: 'Request not found' })
+  if (record.status !== 'pending') throw new HTTPException(400, { message: `Request is already ${record.status}` })
+  if (new Date(record.expiresAt) < new Date()) throw new HTTPException(400, { message: 'Request has expired' })
+
+  const authService = new (await import('../../services/auth.service')).AuthService(c.env)
+  const { createSessionTracker } = await import('../../utils')
+  const sessionId = await createSessionTracker(c, id, false, true)
+  const realToken = await authService.generateToken(id, sessionId)
+
+  await db.update(crossDeviceAuth)
+    .set({ status: 'approved', approvedByUserId: adminUserId, authToken: realToken, approvedAt: new Date().toISOString() })
+    .where(eq(crossDeviceAuth.id, requestId))
+
+  await logAudit(c, 'crossDeviceAuth', requestId, 'ADMIN_APPROVE', null, { targetUserId: id }, {}, true)
+
+  return c.json({ success: true })
 })
 
 export default userAdmin

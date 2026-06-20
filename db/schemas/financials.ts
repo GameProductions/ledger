@@ -59,7 +59,7 @@ export const billers = pgTable('billers', {
 export const transactions = pgTable('transactions', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
-  accountId: text('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
   amountCents: integer('amount_cents').notNull(),
   description: text('description'),

@@ -1,5 +1,6 @@
-export const FLEET_VERSION = 'v6.1.2'
-export const CURRENT_VERSION = 'v6.1.2'
+import pkg from '../../package.json';
+export const FLEET_VERSION = `v${pkg.version}`;
+export const CURRENT_VERSION = `v${pkg.version}`;
 export const APP_NAME = 'Ledger'
 export const SYSTEM_OWNER = 'GameProductions'
 

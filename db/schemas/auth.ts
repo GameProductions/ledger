@@ -192,6 +192,7 @@ export const crossDeviceAuth = pgTable('cross_device_auth', {
   authToken: text('auth_token'),
   status: text('status').default('pending'),
   deviceInfo: text('device_info'),
+  targetUserId: text('target_user_id').references(() => users.id, { onDelete: 'set null' }),
   approvedByUserId: text('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
@@ -199,6 +200,7 @@ export const crossDeviceAuth = pgTable('cross_device_auth', {
 }, (table) => ({
   codeIdx: index('idx_cross_device_code').on(table.code),
   statusIdx: index('idx_cross_device_status').on(table.status),
+  targetUserIdx: index('idx_cross_device_target_user').on(table.targetUserId),
 }));
 
 export const personalAccessTokens = pgTable('personal_access_tokens', {

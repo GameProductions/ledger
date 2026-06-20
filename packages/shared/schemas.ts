@@ -194,7 +194,7 @@ export const PayExceptionSchema = z.object({
 
 export const CreditCardSchema = z.object({
   accountId: z.string(),
-  creditLimitCents: z.number().int().positive(),
+  creditLimitCents: z.number().int().positive().optional().default(0),
   interestRateApy: z.number().optional(),
   statementClosingDay: z.number().int().min(1).max(31),
   paymentDueDay: z.number().int().min(1).max(31)

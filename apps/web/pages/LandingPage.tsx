@@ -18,6 +18,7 @@ import {
   HardDrive
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 
 const GithubIcon = ({ size = 20, className = "" }: { size?: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -28,6 +29,7 @@ const GithubIcon = ({ size = 20, className = "" }: { size?: number, className?: 
 
 const LandingPage: React.FC = () => {
   const { theme } = useTheme()
+  const reduced = useReducedMotion()
 
   const mainFeatures = [
     {
@@ -104,55 +106,94 @@ const LandingPage: React.FC = () => {
         </div>
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
+          {reduced ? (
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+                <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
+                Financial Data Ownership. <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
+                A high-integrity security ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
+                  Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+                <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
+                  <GithubIcon size={18} /> Source Code
+                </a>
+              </div>
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
-              Financial Data Ownership. <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
-              A high-integrity security ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
-                Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
-                <GithubIcon size={18} /> Source Code
-              </a>
-            </div>
-          </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+                <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
+                Financial Data Ownership. <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
+                A high-integrity security ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
+                  Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </a>
+                <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
+                  <GithubIcon size={18} /> Source Code
+                </a>
+              </div>
+            </motion.div>
+          )}
         </div>
       </section>
 
       {/* Main Features */}
       <section className="py-24 px-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mainFeatures.map((feature, idx) => (
-            <motion.div 
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="p-8 bg-white/[0.03] border border-white/5 rounded-[2rem] hover:bg-white/[0.05] hover:border-primary/20 transition-all group"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                {feature.icon}
+          {mainFeatures.map((feature, idx) =>
+            reduced ? (
+              <div
+                key={idx}
+                className="p-8 bg-white/[0.03] border border-white/5 rounded-[2rem] hover:bg-white/[0.05] hover:border-primary/20 transition-all group"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                  {feature.icon}
+                </div>
+                <h3 className="text-lg font-black uppercase tracking-tight mb-4 italic leading-none">{feature.title}</h3>
+                <p className="text-sm text-slate-400 font-bold leading-relaxed opacity-70">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-lg font-black uppercase tracking-tight mb-4 italic leading-none">{feature.title}</h3>
-              <p className="text-sm text-slate-400 font-bold leading-relaxed opacity-70">
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
+            ) : (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className="p-8 bg-white/[0.03] border border-white/5 rounded-[2rem] hover:bg-white/[0.05] hover:border-primary/20 transition-all group"
+              >
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                  {feature.icon}
+                </div>
+                <h3 className="text-lg font-black uppercase tracking-tight mb-4 italic leading-none">{feature.title}</h3>
+                <p className="text-sm text-slate-400 font-bold leading-relaxed opacity-70">
+                  {feature.description}
+                </p>
+              </motion.div>
+            )
+          )}
         </div>
       </section>
 

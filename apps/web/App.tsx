@@ -12,6 +12,12 @@ import { OnboardingTour } from './components/foundation/help/OnboardingTour'
 import { HelpCenter as FoundationHelp } from './components/foundation/help/HelpCenter'
 import { UserManager } from './components/foundation/admin/UserManager'
 import { getApiUrl } from './utils/api'
+import { useReducedMotion, setReducedMotion } from './hooks/useReducedMotion'
+
+const savedReduced = localStorage.getItem('ledger_reduced_motion')
+if (savedReduced !== null) {
+  setReducedMotion(savedReduced === 'true')
+}
 import logo from './assets/logo.svg'
 
 // Lazy load pages for better performance
@@ -62,6 +68,7 @@ const AppContent: React.FC = () => {
   const [isError, setIsError] = useState(false)
   const [isLoadingConfig, setIsLoadingConfig] = useState(true)
   const [retryAttempt, setRetryAttempt] = useState(0)
+  const reduced = useReducedMotion()
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
@@ -261,27 +268,25 @@ const AppContent: React.FC = () => {
   if (isLoadingConfig && isMaintenance) return <MaintenanceView />;
 
   return (
-    <GlobalLayout>
+    <>
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <GlobalLayout>
       <IdentityHead 
         appName="Ledger" 
         appDescription="Secure financial privacy & data ownership and multi-household budget management." 
         appLogo={logo} 
       />
       <Suspense fallback={null}>
-        <div className="relative animate-in fade-in duration-500">
+        <div id="main-content" className="relative animate-in fade-in duration-500">
           {renderView()}
         </div>
       </Suspense>
       <Toaster position="bottom-right" />
       
       {/* Synchronization Telemetry (Fleet Stable Rule) */}
-      <AnimatePresence>
-        {retryAttempt > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-6 z-[100] flex items-center gap-3 px-4 py-2 bg-blue-600 rounded-full shadow-lg border border-blue-400/30"
+      {reduced ? (
+        retryAttempt > 0 && (
+          <div className="fixed bottom-6 left-6 z-[100] flex items-center gap-3 px-4 py-2 bg-blue-600 rounded-full shadow-lg border border-blue-400/30"
           >
             <div className="flex h-4 w-4 shrink-0 items-center justify-center">
               <div className="h-full w-full animate-spin rounded-full border-2 border-white/20 border-t-white" />
@@ -289,12 +294,31 @@ const AppContent: React.FC = () => {
             <span className="text-xs font-bold text-white uppercase tracking-widest leading-none">
               Checking System Status (Attempt {retryAttempt}/3)
             </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {retryAttempt > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-6 left-6 z-[100] flex items-center gap-3 px-4 py-2 bg-blue-600 rounded-full shadow-lg border border-blue-400/30"
+            >
+              <div className="flex h-4 w-4 shrink-0 items-center justify-center">
+                <div className="h-full w-full animate-spin rounded-full border-2 border-white/20 border-t-white" />
+              </div>
+              <span className="text-xs font-bold text-white uppercase tracking-widest leading-none">
+                Checking System Status (Attempt {retryAttempt}/3)
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       <OnboardingTour appId="ledger" />
     </GlobalLayout>
+    </>
   )
 }
 

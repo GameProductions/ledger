@@ -5,9 +5,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   showReveal?: boolean;
+  rightElement?: React.ReactNode;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, className = '', type, showReveal, ...props }) => {
+export const Input: React.FC<InputProps> = ({ label, error, className = '', type, showReveal, rightElement, ...props }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const isPassword = type === 'password';
 
@@ -21,9 +22,14 @@ export const Input: React.FC<InputProps> = ({ label, error, className = '', type
       <div className="relative">
         <input
           type={isPassword && isRevealed ? 'text' : type}
-          className={`w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white placeholder:text-slate-500 focus:border-primary outline-none transition-all font-bold ${isPassword && showReveal ? 'pr-12' : ''} ${className}`}
+          className={`w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white placeholder:text-slate-500 focus:border-primary outline-none transition-all font-bold ${isPassword && showReveal || rightElement ? 'pr-12' : ''} ${className}`}
           {...props}
         />
+        {rightElement && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            {rightElement}
+          </div>
+        )}
         {isPassword && showReveal && (
           <button
             type="button"

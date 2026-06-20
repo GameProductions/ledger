@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { CheckCircle, Circle, Trophy } from 'lucide-react'
 import { useOnboarding } from '../context/OnboardingContext'
 
@@ -12,18 +13,23 @@ const checklistItems = [
 
 export const OnboardingChecklist: React.FC = () => {
   const { completedSteps, isCompleted, startTour, skipTour } = useOnboarding()
+  const reduced = useReducedMotion()
 
   if (isCompleted && (completedSteps || []).length >= checklistItems.length) return null
 
   const progress = Math.round(((completedSteps || []).length / checklistItems.length) * 100)
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card mb-6 reveal"
-      style={{ borderLeft: '4px solid var(--primary)' }}
-    >
+    {reduced ? (
+      <div className="card mb-6 reveal" style={{ borderLeft: '4px solid var(--primary)' }}>
+    ) : (
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="card mb-6 reveal"
+        style={{ borderLeft: '4px solid var(--primary)' }}
+      >
+    )}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Trophy size={18} className="text-primary" />
@@ -31,11 +37,15 @@ export const OnboardingChecklist: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           <div style={{ width: '100px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              style={{ height: '100%', background: 'var(--primary)' }}
-            />
+            {reduced ? (
+              <div style={{ height: '100%', background: 'var(--primary)' }} />
+            ) : (
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                style={{ height: '100%', background: 'var(--primary)' }}
+              />
+            )}
           </div>
           <span className="text-sm font-mono text-primary">{progress}%</span>
         </div>
@@ -88,6 +98,6 @@ export const OnboardingChecklist: React.FC = () => {
           Dismiss Checklist
         </button>
       </div>
-    </motion.div>
+    {reduced ? </div> : </motion.div>}
   )
 }

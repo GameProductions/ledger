@@ -10,6 +10,7 @@ import { Input } from './ui/Input';
 import { formatHumanError } from '../utils/error-handler';
 import { getApiUrl } from '../utils/api';
 import { InlineToast } from './ui/InlineToast';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const API_URL = getApiUrl();
 
@@ -36,6 +37,7 @@ const HouseholdRegistry: React.FC = () => {
 
   const isAdmin = userRole === 'admin' || userRole === 'owner';
   const isOwner = userRole === 'owner';
+  const reduced = useReducedMotion();
 
   const { showToast } = useToast();
   const [isRenaming, setIsRenaming] = useState(false);
@@ -365,28 +367,47 @@ const HouseholdRegistry: React.FC = () => {
               </button>
            </div>
 
-           {inviteUrl && (
-             <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4"
-             >
-                <div className="flex-1 overflow-hidden">
-                   <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Invite Link Active (24h)</p>
-                   <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
+            {inviteUrl && (
+              reduced ? (
+                <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4">
+                   <div className="flex-1 overflow-hidden">
+                      <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Invite Link Active (24h)</p>
+                      <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
+                   </div>
+                   <button 
+                     onClick={() => {
+                       navigator.clipboard.writeText(inviteUrl);
+                       setCopied(true);
+                       setTimeout(() => setCopied(false), 2000);
+                     }}
+                     className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-500 hover:bg-white/10'}`}
+                   >
+                     {copied ? <Check size={18} /> : <Copy size={18} />}
+                   </button>
                 </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(inviteUrl);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-500 hover:bg-white/10'}`}
+              ) : (
+                <motion.div 
+                   initial={{ opacity: 0, y: 10 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4"
                 >
-                  {copied ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-             </motion.div>
-           )}
+                   <div className="flex-1 overflow-hidden">
+                      <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Invite Link Active (24h)</p>
+                      <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
+                   </div>
+                   <button 
+                     onClick={() => {
+                       navigator.clipboard.writeText(inviteUrl);
+                       setCopied(true);
+                       setTimeout(() => setCopied(false), 2000);
+                     }}
+                     className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-500 hover:bg-white/10'}`}
+                   >
+                     {copied ? <Check size={18} /> : <Copy size={18} />}
+                   </button>
+                </motion.div>
+              )
+            )}
         </div>
       </div>
 

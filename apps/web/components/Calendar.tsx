@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { Price } from './Price'
 import { Modal } from './ui/Modal'
 import { 
@@ -52,6 +53,7 @@ const Calendar: React.FC<CalendarProps> = ({
   onDayClick, 
   onItemClick 
 }) => {
+  const reduced = useReducedMotion();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoverItem, setHoverItem] = useState<any>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
@@ -197,9 +199,9 @@ const Calendar: React.FC<CalendarProps> = ({
           <div className="flex gap-2 items-center">
             {rangeType === 'month' && (
                 <>
-                    <button onClick={() => setCurrentDate(new Date())} className="px-3 h-8 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-all text-xs tracking-widest uppercase">Today</button>
-                    <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs"><ChevronLeft size={14} /></button>
-                    <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs"><ChevronRight size={14} /></button>
+                    <button onClick={() => setCurrentDate(new Date())} aria-label="Go to today" className="px-3 h-8 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-all text-xs tracking-widest uppercase">Today</button>
+                    <button onClick={prevMonth} aria-label="Previous month" className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs"><ChevronLeft size={14} /></button>
+                    <button onClick={nextMonth} aria-label="Next month" className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs"><ChevronRight size={14} /></button>
                 </>
             )}
             <button 
@@ -233,9 +235,9 @@ const Calendar: React.FC<CalendarProps> = ({
       </div>
 
       {displayMode === 'calendar' ? (
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid grid-cols-7 gap-3" role="grid" aria-label="Calendar">
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} className="text-center text-xs font-black text-slate-600 tracking-[0.3em] py-2">{d}</div>
+          <div key={d} role="columnheader" className="text-center text-xs font-black text-slate-600 tracking-[0.3em] py-2">{d}</div>
         ))}
         
         {datesToRender.map((dObj, idx) => {
@@ -250,6 +252,8 @@ const Calendar: React.FC<CalendarProps> = ({
           return (
             <div 
               key={`${date.toISOString()}-${idx}`} 
+              role="gridcell"
+              aria-label={isPadding ? '' : `${format(date, 'MMMM d, yyyy')}${dayItems.length > 0 ? `, ${dayItems.length} items` : ''}`}
               onClick={() => !isPadding && onDayClick(date)}
               className={`min-h-[120px] p-3 rounded-3xl border transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${
                 isPadding ? 'opacity-20 cursor-default' :

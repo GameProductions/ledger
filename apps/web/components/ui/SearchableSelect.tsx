@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 export interface SearchableOption {
   value: string;
@@ -26,6 +27,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   className = "",
   icon: LeadingIcon
 }) => {
+  const reduced = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -94,6 +96,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           setIsOpen(!isOpen);
           if (!isOpen) setTimeout(() => inputRef.current?.focus(), 50);
         }}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         className={`flex items-center gap-3 px-4 py-3 bg-black/40 border rounded-xl cursor-pointer transition-all duration-300 group ${
           isOpen ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-white/10 hover:border-white/20'
         }`}
@@ -113,15 +117,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       </div>
 
       {/* Dropdown Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[3000] left-0 right-0 mt-2 bg-[#121212]/95 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden"
-          >
+      {reduced ? (
+        isOpen && (
+          <div className="absolute z-[3000] left-0 right-0 mt-2 bg-[#121212]/95 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden">
             {/* Search Input */}
             <div className="p-3 border-b border-white/5 bg-white/2">
               <div className="relative flex items-center">
@@ -139,7 +137,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </div>
 
             {/* Options List */}
-            <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+            <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option, idx) => {
                   const isActive = idx === activeIndex;
@@ -148,6 +146,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   return (
                     <div
                       key={option.value}
+                      role="option"
+                      aria-selected={isSelected}
                       onClick={(e) => {
                         e.stopPropagation();
                         onChange(option.value);
@@ -177,9 +177,79 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="absolute z-[3000] left-0 right-0 mt-2 bg-[#121212]/95 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden"
+            >
+              {/* Search Input */}
+              <div className="p-3 border-b border-white/5 bg-white/2">
+                <div className="relative flex items-center">
+                  <Search size={14} className="absolute left-3 text-slate-500" />
+                  <input 
+                    ref={inputRef}
+                    type="text" 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Typing to suggest..."
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+
+              {/* Options List */}
+              <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option, idx) => {
+                    const isActive = idx === activeIndex;
+                    const isSelected = option.value === value;
+                    
+                    return (
+                      <div
+                        key={option.value}
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onChange(option.value);
+                          setIsOpen(false);
+                        }}
+                        onMouseEnter={() => setActiveIndex(idx)}
+                        className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-all ${
+                          isActive ? 'bg-white/5' : ''
+                        } ${isSelected ? 'text-amber-500' : 'text-slate-300'}`}
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden">
+                          {option.icon || <div className="text-sm font-black italic">{option.label.charAt(0)}</div>}
+                        </div>
+                        <div className="flex-1 flex flex-col">
+                          <span className="text-sm font-bold tracking-tight">{option.label}</span>
+                          {option.metadata?.email && (
+                            <span className="text-xs text-slate-500 font-medium">{option.metadata.email}</span>
+                          )}
+                        </div>
+                        {isSelected && <Check size={16} className="text-amber-500" />}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-12 text-center">
+                     <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 };

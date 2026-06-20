@@ -3,6 +3,7 @@ import { InlineToast } from './ui/InlineToast'
 import { useCurrency } from '../context/CurrencyContext'
 import { useToast } from '../context/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
@@ -18,6 +19,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { symbol, formatPrice } = useCurrency()
+  const reduced = useReducedMotion()
 
   const lastRefreshRef = React.useRef(refreshTrigger)
   React.useEffect(() => {
@@ -162,14 +164,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           </button>
         </div>
         
-        <AnimatePresence>
-          {selectedIds.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3"
-            >
+        {reduced ? (
+          selectedIds.length > 0 && (
+            <div className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3">
               <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                 Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
                   const item = tracked.find((t: any) => t.id === id)
@@ -202,122 +199,283 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <button 
                   onClick={() => setConfirmBulkDelete(true)}
                   className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  aria-label="Delete selected"
                   title="Delete Selected"
                 >
                   <Trash2 size={14} />
                 </button>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          )
+        ) : (
+          <AnimatePresence>
+            {selectedIds.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3"
+              >
+                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
+                  Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
+                    const item = tracked.find((t: any) => t.id === id)
+                    return sum + (item?.amountCents ?? 0)
+                  }, 0))}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    onClick={() => setIsBulkEditOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                  >
+                    <Edit3 size={12} /> Bulk Edit
+                  </button>
+                  <button 
+                    onClick={() => setIsMoveToLedgerOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                  >
+                    <Send size={12} /> Move to Ledger ({selectedIds.length})
+                  </button>
+                </div>
+                <div className="w-px h-4 bg-white/10 mx-1"></div>
+                {confirmBulkDelete ? (
+                  <InlineToast 
+                    message={`Delete ${selectedIds.length} items?`} 
+                    type="confirm" 
+                    onConfirm={() => handleDelete(selectedIds)} 
+                    onCancel={() => setConfirmBulkDelete(false)} 
+                  />
+                ) : (
+                  <button 
+                    onClick={() => setConfirmBulkDelete(true)}
+                    className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                    aria-label="Delete selected"
+                    title="Delete Selected"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
         {tracked.map((item: any) => (
-          <motion.div 
-            key={item.id}
-            layout
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className={`group relative flex flex-col p-4 rounded-2xl border transition-all ${selectedIds.includes(item.id) ? 'bg-orange-500/10 border-orange-500/40' : 'bg-black/40 border-white/5 hover:border-white/20'}`}
-          >
-            {editingId === item.id ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Description</label>
-                    <input 
-                      type="text" 
-                      value={editForm?.description || ''} 
-                      onChange={e => setEditForm({...editForm, description: e.target.value})}
-                      className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
+          {reduced ? (
+            <div
+              key={item.id}
+              className={`group relative flex flex-col p-4 rounded-2xl border transition-all ${selectedIds.includes(item.id) ? 'bg-orange-500/10 border-orange-500/40' : 'bg-black/40 border-white/5 hover:border-white/20'}`}
+            >
+              {editingId === item.id ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Description</label>
                       <input 
-                        type="number" step="0.01"
-                        value={(editForm?.amountCents || 0) / 100} 
-                        onChange={e => setEditForm({...editForm, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
-                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
+                        type="text" 
+                        value={editForm?.description || ''} 
+                        onChange={e => setEditForm({...editForm, description: e.target.value})}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
                       />
                     </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
+                        <input 
+                          type="number" step="0.01"
+                          value={(editForm?.amountCents || 0) / 100} 
+                          onChange={e => setEditForm({...editForm, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
+                          className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setEditingId(null)} className="p-2 text-secondary hover:text-white transition-colors" aria-label="Cancel editing"><X size={16} /></button>
+                    <button onClick={() => handleUpdate(item.id, editForm)} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors" aria-label="Save changes"><Save size={16} /></button>
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setEditingId(null)} className="p-2 text-secondary hover:text-white transition-colors"><X size={16} /></button>
-                  <button onClick={() => handleUpdate(item.id, editForm)} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"><Save size={16} /></button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => toggleSelect(item.id)}
-                    className="text-secondary hover:text-orange-500 transition-colors"
-                  >
-                    {selectedIds.includes(item.id) ? <CheckSquare size={18} className="text-orange-500" /> : <Square size={18} />}
-                  </button>
-                  <div>
-                    <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="text-[10px] uppercase tracking-widest text-secondary font-black flex items-center gap-1">
-                        <Calendar size={10} /> {new Date(item.createdAt).toLocaleDateString()}
-                      </div>
-                      {item.attentionRequired && (
-                        <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
-                          <Tag size={10} /> Needs Attention
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => toggleSelect(item.id)}
+                      className="text-secondary hover:text-orange-500 transition-colors"
+                      aria-label={selectedIds.includes(item.id) ? `Deselect ${item.description}` : `Select ${item.description}`}
+                    >
+                      {selectedIds.includes(item.id) ? <CheckSquare size={18} className="text-orange-500" /> : <Square size={18} />}
+                    </button>
+                    <div>
+                      <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <div className="text-[10px] uppercase tracking-widest text-secondary font-black flex items-center gap-1">
+                          <Calendar size={10} /> {new Date(item.createdAt).toLocaleDateString()}
                         </div>
+                        {item.attentionRequired && (
+                          <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
+                            <Tag size={10} /> Needs Attention
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <Price amountCents={item.amountCents} className="text-lg font-black text-orange-200" />
+                      <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
+                        Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      {confirmDeleteId === item.id ? (
+                        <InlineToast 
+                          message="Delete item?" 
+                          type="confirm" 
+                          onConfirm={() => handleDelete([item.id])} 
+                          onCancel={() => setConfirmDeleteId(null)} 
+                        />
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => {
+                              setEditingId(item.id)
+                              setEditForm({
+                                description: item.description,
+                                amountCents: item.amountCents,
+                                notes: item.notes
+                              })
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
+                            aria-label={`Edit ${item.description}`}
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => setConfirmDeleteId(item.id)}
+                            className="p-2 hover:bg-red-500/10 rounded-xl transition-all text-secondary hover:text-red-400"
+                            aria-label={`Delete ${item.description}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <Price amountCents={item.amountCents} className="text-lg font-black text-orange-200" />
-                    <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
-                      Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
+              )}
+            </div>
+          ) : (
+            <motion.div 
+              key={item.id}
+              layout
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className={`group relative flex flex-col p-4 rounded-2xl border transition-all ${selectedIds.includes(item.id) ? 'bg-orange-500/10 border-orange-500/40' : 'bg-black/40 border-white/5 hover:border-white/20'}`}
+            >
+              {editingId === item.id ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Description</label>
+                      <input 
+                        type="text" 
+                        value={editForm?.description || ''} 
+                        onChange={e => setEditForm({...editForm, description: e.target.value})}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
+                        <input 
+                          type="number" step="0.01"
+                          value={(editForm?.amountCents || 0) / 100} 
+                          onChange={e => setEditForm({...editForm, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
+                          className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    {confirmDeleteId === item.id ? (
-                      <InlineToast 
-                        message="Delete item?" 
-                        type="confirm" 
-                        onConfirm={() => handleDelete([item.id])} 
-                        onCancel={() => setConfirmDeleteId(null)} 
-                      />
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => {
-                            setEditingId(item.id)
-                            setEditForm({
-                              description: item.description,
-                              amountCents: item.amountCents,
-                              notes: item.notes
-                            })
-                          }}
-                          className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => setConfirmDeleteId(item.id)}
-                          className="p-2 hover:bg-red-500/10 rounded-xl transition-all text-secondary hover:text-red-400"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => setEditingId(null)} className="p-2 text-secondary hover:text-white transition-colors" aria-label="Cancel editing"><X size={16} /></button>
+                    <button onClick={() => handleUpdate(item.id, editForm)} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors" aria-label="Save changes"><Save size={16} /></button>
                   </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => toggleSelect(item.id)}
+                      className="text-secondary hover:text-orange-500 transition-colors"
+                      aria-label={selectedIds.includes(item.id) ? `Deselect ${item.description}` : `Select ${item.description}`}
+                    >
+                      {selectedIds.includes(item.id) ? <CheckSquare size={18} className="text-orange-500" /> : <Square size={18} />}
+                    </button>
+                    <div>
+                      <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <div className="text-[10px] uppercase tracking-widest text-secondary font-black flex items-center gap-1">
+                          <Calendar size={10} /> {new Date(item.createdAt).toLocaleDateString()}
+                        </div>
+                        {item.attentionRequired && (
+                          <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
+                            <Tag size={10} /> Needs Attention
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <Price amountCents={item.amountCents} className="text-lg font-black text-orange-200" />
+                      <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
+                        Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      {confirmDeleteId === item.id ? (
+                        <InlineToast 
+                          message="Delete item?" 
+                          type="confirm" 
+                          onConfirm={() => handleDelete([item.id])} 
+                          onCancel={() => setConfirmDeleteId(null)} 
+                        />
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => {
+                              setEditingId(item.id)
+                              setEditForm({
+                                description: item.description,
+                                amountCents: item.amountCents,
+                                notes: item.notes
+                              })
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
+                            aria-label={`Edit ${item.description}`}
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => setConfirmDeleteId(item.id)}
+                            className="p-2 hover:bg-red-500/10 rounded-xl transition-all text-secondary hover:text-red-400"
+                            aria-label={`Delete ${item.description}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
         ))}
       </div>
     </div>

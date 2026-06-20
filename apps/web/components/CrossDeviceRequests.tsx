@@ -95,6 +95,7 @@ export function CrossDeviceRequests() {
             onClick={handleApprove}
             disabled={approvalCode.length !== 6}
             loading={approving}
+            aria-label="Authorize device sign-in"
             className="px-6"
           >
             <ArrowRight className="w-4 h-4 mr-2" /> Authorize
@@ -106,6 +107,7 @@ export function CrossDeviceRequests() {
             <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Pending Requests</h4>
             <button
               onClick={fetchPending}
+              aria-label="Refresh pending requests"
               className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1"
             >
               <RefreshCw className={`w-3 h-3 ${loadingPending ? 'animate-spin' : ''}`} /> Refresh
@@ -117,7 +119,7 @@ export function CrossDeviceRequests() {
               <p className="text-xs font-bold">No pending authorization requests</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3" aria-live="polite">
               {pendingRequests.map((req) => {
                 const deviceInfo = (() => {
                   try { return JSON.parse(req.deviceInfo) } catch { return {} }

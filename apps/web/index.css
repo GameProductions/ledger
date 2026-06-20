@@ -495,10 +495,110 @@ button.primary:hover {
   }
 }
 
+/* --- TARGET SIZING (44px minimum for touch targets) --- */
+button, a, [onclick], select, input, textarea, label, summary, [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+button:has(span:only-child), a:has(span:only-child) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Landscape: wider grid columns */
+@media (orientation: landscape) and (max-height: 500px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .dashboard-header-wrapper {
+    margin-bottom: 0.75rem;
+  }
+  .card {
+    padding: 0.75rem;
+  }
+}
+
+/* --- OVERFLOW LISTS --- */
+.overflow-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.overflow-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-list::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* --- REDUCED MOTION --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
 /* Ultra-Narrow 'Foldable' (Unfolded) & Smartwatch-adjacent viewports */
 @media (max-width: 320px) {
   html { font-size: 14px; }
   .tab-container { border-radius: 0.75rem; gap: 0.5rem; padding: 0.25rem; }
   .tab-button { padding: 0.5rem 0.75rem; font-size: 0.65rem; border-radius: 0.75rem; }
   .card, .interactive-card { padding: 0.75rem; border-radius: 1rem; }
+}
+
+/* --- SKIP LINK --- */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  width: auto;
+  height: auto;
+  padding: 1rem 2rem;
+  margin: 0;
+  clip: auto;
+  white-space: normal;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useApi, globalMutate } from '../hooks/useApi'
-import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, ShieldCheck, Lock, Palette, Layout } from 'lucide-react'
+import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, ShieldCheck, Lock, Palette, Layout, Eye } from 'lucide-react'
 import { MainLayout } from '../components/layout/MainLayout'
 import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
@@ -20,6 +20,7 @@ import { formatHumanError } from '../utils/error-handler'
 import { sanitizeImageUrl } from '../utils/security'
 import { getApiUrl } from '../utils/api'
 import { SearchableSelect } from '../components/ui/SearchableSelect'
+import { setReducedMotion } from '../hooks/useReducedMotion'
 
 const API_URL = getApiUrl();
 
@@ -587,6 +588,28 @@ const SettingsPage: React.FC = () => {
                         placeholder="Select timezone..."
                       />
                    </div>
+                </section>
+
+                <section className="card p-8">
+                  <div className="space-y-4">
+                    <div 
+                      className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-all group"
+                      onClick={() => setReducedMotion(!(localStorage.getItem('ledger_reduced_motion') === 'true'))}
+                    >
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-black uppercase tracking-widest text-white group-hover:text-primary transition-colors flex items-center gap-2">
+                          <Eye size={14} />
+                          Reduced Motion
+                        </div>
+                        <div className="text-[10px] text-secondary font-bold uppercase tracking-tight opacity-60">
+                          Disable animations and transitions
+                        </div>
+                      </div>
+                      <div className={`w-10 h-6 rounded-full transition-all relative ${localStorage.getItem('ledger_reduced_motion') === 'true' ? 'bg-primary' : 'bg-white/10'}`}>
+                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${localStorage.getItem('ledger_reduced_motion') === 'true' ? 'right-1' : 'left-1'}`} />
+                      </div>
+                    </div>
+                  </div>
                 </section>
 
                 <section className="card p-8">

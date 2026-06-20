@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useApi, globalMutate } from '../hooks/useApi'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import Subscriptions from '../components/Subscriptions'
 import Calendar from '../components/Calendar'
 import BudgetProgress from '../components/BudgetProgress'
@@ -35,7 +36,8 @@ import { PaySchedulesList } from '../components/PaySchedulesList'
 import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
 import { projectPaydays, projectRecurringItems } from '../utils/payCycleUtils'
-import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2 } from 'lucide-react';
+import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2, Mic } from 'lucide-react';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 
 const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
   overview: [
@@ -79,6 +81,41 @@ const DEFAULT_TABS_CONFIG = [
   { id: 'insights', label: 'Advisor', icon: '🤖', visible: true },
 ];
 
+const MicButton: React.FC = () => {
+  const { transcript, isListening, isSupported, start, stop } = useSpeechRecognition()
+
+  React.useEffect(() => {
+    if (transcript) {
+      const input = document.getElementById('qe-desc') as HTMLInputElement
+      if (input) input.value = transcript
+    }
+  }, [transcript])
+
+  if (!isSupported) return null
+
+  return (
+    <button
+      type="button"
+      onClick={isListening ? stop : start}
+      className={`p-4 rounded-xl border transition-all ${
+        isListening
+          ? 'bg-red-500/20 border-red-500/50 text-red-500'
+          : 'bg-white/10 border-glass-border text-secondary hover:text-white'
+      }`}
+      title={isListening ? 'Stop recording' : 'Start voice input'}
+    >
+      {isListening ? (
+        <span className="relative flex items-center justify-center">
+          <span className="absolute w-3 h-3 bg-red-500 rounded-full animate-ping" />
+          <span className="w-3 h-3 bg-red-500 rounded-full" />
+        </span>
+      ) : (
+        <Mic size={18} />
+      )}
+    </button>
+  )
+}
+
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user, token, householdId, logout } = useAuth()
   const apiUrl = getApiUrl();
@@ -101,6 +138,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [filterStatus, setFilterStatus] = useState('all')
   const [linkingTx, setLinkingTx] = useState<any>(null)
   const [_settings, setSettings] = useState<any>({ dashboardLayout: {}, tabConfig: [] })
+  const reduced = useReducedMotion()
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([])
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
@@ -599,7 +637,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   showToast('Failed to add transaction');
                 }
               }}>
-                <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-[2] p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
+                <div className="flex gap-2 flex-[2]">
+                  <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
+                  <MicButton />
+                </div>
                 <div className="flex gap-2 sm:contents">
                   <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
                   <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-xs">Save</button>
@@ -802,15 +843,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   return (
     <MainLayout view={view} setView={setView}>
-      <AnimatePresence>
-        {Array.isArray(announcements) && announcements.length > 0 && (
+      {reduced ? (
+        Array.isArray(announcements) && announcements.length > 0 && (
           <div className="mb-8 space-y-4">
             {announcements.map((ann: any) => (
-              <motion.div 
+              <div 
                 key={ann.id}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
                 className={`p-5 rounded-[2rem] border flex items-start gap-4 shadow-2xl backdrop-blur-2xl ${
                   ann.priority === 'critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
                   ann.priority === 'warning' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
@@ -840,22 +878,70 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     <XCircle size={18} className="opacity-30" />
                   </button>
                 )}
-              </motion.div>
+              </div>
             ))}
           </div>
-        )}
-      </AnimatePresence>
+        )
+      ) : (
+        <AnimatePresence>
+          {Array.isArray(announcements) && announcements.length > 0 && (
+            <div className="mb-8 space-y-4">
+              {announcements.map((ann: any) => (
+                <motion.div 
+                  key={ann.id}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className={`p-5 rounded-[2rem] border flex items-start gap-4 shadow-2xl backdrop-blur-2xl ${
+                    ann.priority === 'critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                    ann.priority === 'warning' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
+                    'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                    ann.priority === 'critical' ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]' :
+                    ann.priority === 'warning' ? 'bg-orange-500 text-black' :
+                    'bg-emerald-500 text-black'
+                  }`}>
+                    {ann.priority === 'critical' ? <AlertTriangle size={24} /> :
+                     ann.priority === 'warning' ? <Bell size={24} /> :
+                     <Info size={24} />}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                    <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
+                      <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
+                    </div>
+                  </div>
+                  {user?.globalRole === 'owner' && (
+                    <button 
+                      onClick={() => mutateAnnouncements()}
+                      className="p-2 hover:bg-white/5 rounded-xl transition-all mt-1"
+                    >
+                      <XCircle size={18} className="opacity-30" />
+                    </button>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+      )}
       <GuidedTour />
-      <div className="reveal">
+      <div className={reduced ? '' : 'reveal'}>
         <OnboardingChecklist />
       </div>
 
       
-      <div className="tab-container mt-8 reveal flex items-center pr-2 overflow-hidden">
+      <div className="tab-container mt-8 reveal flex items-center pr-2 overflow-hidden" role="tablist">
         <div className="flex gap-4 overflow-x-auto scrollbar-hide flex-1 py-1">
           {(tabs || []).filter(t => t.visible).map(tab => (
             <button 
               key={tab.id}
+              role="tab"
+              id={`tab-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`tabpanel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
             >
@@ -872,7 +958,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       </div>
 
 
-      <div className="tab-content relative">
+      <div className="tab-content relative" role="tabpanel" id={`tabpanel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
          <div className="dashboard-grid stagger min-h-[50vh]">
             {(layout[activeTab] || []).filter((w: any) => w.visible).map((w: any) => (
                 <div 

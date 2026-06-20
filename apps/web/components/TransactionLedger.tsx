@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { useApi, globalMutate } from '../hooks/useApi'
@@ -10,6 +11,7 @@ import { QuickAttentionAdd } from './QuickAttentionAdd'
 
 export const TransactionLedger: React.FC = () => {
   const { token, householdId } = useAuth()
+  const reduced = useReducedMotion()
   
   // Filtering & Sorting State
   const [q, setQ] = useState('')
@@ -275,14 +277,9 @@ export const TransactionLedger: React.FC = () => {
         </table>
       </div>
 
-      <AnimatePresence>
-        {selectedIds.length > 0 && (
-          <motion.div 
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-deep/90 backdrop-blur-xl border border-white/20 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50"
-          >
+      {reduced ? (
+        selectedIds.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-deep/90 backdrop-blur-xl border border-white/20 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50">
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-widest opacity-60">Selection Sum ({selectedIds.length} items)</span>
               <span className={`text-xl font-bold ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -304,9 +301,42 @@ export const TransactionLedger: React.FC = () => {
                 Clear Selection
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        )
+      ) : (
+        <AnimatePresence>
+          {selectedIds.length > 0 && (
+            <motion.div 
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-deep/90 backdrop-blur-xl border border-white/20 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50"
+            >
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest opacity-60">Selection Sum ({selectedIds.length} items)</span>
+                <span className={`text-xl font-bold ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <Price amountCents={selectionSumCents} />
+                </span>
+              </div>
+              <div className="w-px h-8 bg-white/20"></div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => bulkReconcile(true)}
+                  className="px-4 py-2 bg-primary text-black font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2"
+                >
+                  <Check size={16} /> Mark Reconciled
+                </button>
+                <button 
+                  onClick={() => setSelectedIds([])}
+                  className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
     <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="Mastering the Ledger">
       <div className="space-y-6 text-sm text-gray-300">

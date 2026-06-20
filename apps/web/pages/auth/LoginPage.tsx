@@ -4,11 +4,12 @@ import { useTheme } from '../../context/ThemeContext'
 import { useToast } from '../../context/ToastContext'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Fingerprint, RefreshCw, Check, Smartphone, Copy, ExternalLink } from 'lucide-react'
+import { Fingerprint, RefreshCw, Check, Smartphone, Copy, ExternalLink, Mic } from 'lucide-react'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { Modal } from '../../components/ui/Modal'
 import { PasswordChecklist } from '../../components/PasswordChecklist'
 import { getApiUrl } from '../../utils/api'
+import { useSpeechRecognition } from '../../hooks/useSpeechRecognition'
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth()
@@ -20,6 +21,8 @@ const LoginPage: React.FC = () => {
   const [mfaRequired, setMfaRequired] = useState(false)
   const [persistent, setPersistent] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [usernameError, setUsernameError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   
   // Cross-Device Auth State
   const [showCrossDevice, setShowCrossDevice] = useState(false)
@@ -164,10 +167,20 @@ const LoginPage: React.FC = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      showToast('Please enter both User ID and Password', 'error')
-      return
+    let hasError = false
+    if (!username) {
+      setUsernameError('User ID is required')
+      hasError = true
+    } else {
+      setUsernameError('')
     }
+    if (!password) {
+      setPasswordError('Password is required')
+      hasError = true
+    } else {
+      setPasswordError('')
+    }
+    if (hasError) return
 
     setLoading(true)
     try {
@@ -352,6 +365,32 @@ const LoginPage: React.FC = () => {
     }
   }
 
+  const MicButton: React.FC = () => {
+    const { transcript, isListening, isSupported, start, stop } = useSpeechRecognition()
+
+    useEffect(() => {
+      if (transcript) {
+        setUsername(transcript)
+      }
+    }, [transcript])
+
+    if (!isSupported) return null
+
+    return (
+      <button
+        type="button"
+        onClick={isListening ? stop : start}
+        className="relative text-secondary hover:text-white transition-colors"
+        title={isListening ? 'Stop listening' : 'Voice input'}
+      >
+        {isListening && (
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        )}
+        <Mic size={18} />
+      </button>
+    )
+  }
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 bg-black">
       <div className="w-full max-w-md reveal">
@@ -387,20 +426,31 @@ const LoginPage: React.FC = () => {
                 type="text" 
                 placeholder="Username or email" 
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => { setUsername(e.target.value); setUsernameError('') }}
                 autoComplete="username webauthn"
+                aria-label="User ID"
+                aria-describedby="username-error"
                 className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold"
+                rightElement={<MicButton />}
               />
+              {usernameError && (
+                <div id="username-error" role="alert" className="text-xs text-red-500 font-bold uppercase tracking-wider">{usernameError}</div>
+              )}
                   <Input 
                     label="Password"
                     type="password" 
                     placeholder="••••••••" 
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setPasswordError('') }}
                     autoComplete="current-password"
+                    aria-label="Password"
+                    aria-describedby="password-error"
                     showReveal={true}
                     className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono tracking-widest text-lg"
                   />
+                  {passwordError && (
+                    <div id="password-error" role="alert" className="text-xs text-red-500 font-bold uppercase tracking-wider">{passwordError}</div>
+                  )}
                 <div className="flex justify-between items-center px-1">
                    <div className="flex items-center gap-3 group cursor-pointer select-none" onClick={() => setPersistent(!persistent)}>
                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${persistent ? 'bg-primary border-primary' : 'bg-transparent border-white/20 group-hover:border-white/40'}`}>

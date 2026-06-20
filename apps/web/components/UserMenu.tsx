@@ -198,8 +198,6 @@ const UserMenu: React.FC<{
                   </div>
                 )}
               </div>
-                  </div>
-                )}
 
                 <div className="border-t border-glass-border mt-2 pt-1">
                   <button 
@@ -213,7 +211,6 @@ const UserMenu: React.FC<{
                   </button>
                 </div>
               </div>
-            </div>
           </>
         )
       ) : (

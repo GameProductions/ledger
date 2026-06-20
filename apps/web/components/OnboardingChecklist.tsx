@@ -19,17 +19,8 @@ export const OnboardingChecklist: React.FC = () => {
 
   const progress = Math.round(((completedSteps || []).length / checklistItems.length) * 100)
 
-  return (
-    {reduced ? (
-      <div className="card mb-6 reveal" style={{ borderLeft: '4px solid var(--primary)' }}>
-    ) : (
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="card mb-6 reveal"
-        style={{ borderLeft: '4px solid var(--primary)' }}
-      >
-    )}
+  const content = (
+    <>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Trophy size={18} className="text-primary" />
@@ -98,6 +89,25 @@ export const OnboardingChecklist: React.FC = () => {
           Dismiss Checklist
         </button>
       </div>
-    {reduced ? </div> : </motion.div>}
+    </>
+  )
+
+  if (reduced) {
+    return (
+      <div className="card mb-6 reveal" style={{ borderLeft: '4px solid var(--primary)' }}>
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card mb-6 reveal"
+      style={{ borderLeft: '4px solid var(--primary)' }}
+    >
+      {content}
+    </motion.div>
   )
 }

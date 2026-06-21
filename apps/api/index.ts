@@ -159,7 +159,7 @@ app.use('/api/*', async (c, next) => {
   const method = c.req.method
   
   // 1. IP Rate Limiting
-  if (path.startsWith('/api/auth')) {
+  if (path.startsWith('/api/auth') || path.startsWith('/api/proxy')) {
     const res = (await ipRateLimit('AUTH')(c, async () => {}) as any)
     if (res instanceof Response) return res
   } else {
@@ -227,6 +227,7 @@ app.get('/openapi.json', (c) => c.json(openApiSpec))
 app.use('/api/admin/*', adminMiddleware)
 // 4. System Routes
 app.route('/api/auth', authRoutes)
+app.route('/api/proxy', authRoutes)
 app.route('/api/financials', financialsRoutes)
 app.route('/api/planning', planningRoutes)
 app.route('/api/user', userRoutes)

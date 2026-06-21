@@ -295,7 +295,7 @@ auth.get('/login/discord', async (c) => {
 
   const persistent = c.req.query('persistent') === 'true'
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/proxy/callback/discord`
   const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin, persistent })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -434,7 +434,7 @@ auth.get('/discord/linked-roles/verify', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/discord`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/proxy/callback/discord`
   const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId: null, targetOrigin, linkedRoles: true })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -477,7 +477,7 @@ auth.get('/login/google', async (c) => {
 
   const persistent = c.req.query('persistent') === 'true'
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/google`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/proxy/callback/google`
   const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin, persistent })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -627,7 +627,7 @@ auth.get('/login/dropbox', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/dropbox`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/proxy/callback/dropbox`
   const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {
@@ -741,7 +741,7 @@ auth.get('/login/onedrive', async (c) => {
   }
 
   const challenge = crypto.randomUUID()
-  const targetOrigin = `${new URL(c.req.url).origin}/api/auth/callback/onedrive`
+  const targetOrigin = `${new URL(c.req.url).origin}/api/proxy/callback/onedrive`
   const state = uint8ArrayToBase64(new TextEncoder().encode(JSON.stringify({ challenge, userId, targetOrigin })))
   
   await setSignedCookie(c, 'oauth_state', state, c.env.JWT_SECRET, {

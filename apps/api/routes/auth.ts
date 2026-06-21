@@ -306,7 +306,7 @@ auth.get('/login/discord', async (c) => {
     maxAge: 300,
   })
   
-  const proxyRedirectUri = `https://sso.gpnet.dev/api/auth/callback/discord`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/discord`
   const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&robot=false&response_type=code&scope=identify%20email&state=${state}`
   return c.redirect(url)
 })
@@ -343,7 +343,7 @@ auth.get('/callback/discord', async (c) => {
         client_secret: c.env.DISCORD_CLIENT_SECRET || '',
         grant_type: 'authorization_code',
         code,
-        redirect_uri: `https://sso.gpnet.dev/api/auth/callback/discord`
+        redirect_uri: `https://sso.gpnet.dev/api/proxy/callback/discord`
       })
     }) as any)
   const tokenData = await tokenRes.json() as any
@@ -446,7 +446,7 @@ auth.get('/discord/linked-roles/verify', async (c) => {
   })
 
   // Bounce through the Unified SSO Foundation router
-  const proxyRedirectUri = `https://sso.gpnet.dev/api/auth/callback/discord`
+  const proxyRedirectUri = `https://sso.gpnet.dev/api/proxy/callback/discord`
   const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(proxyRedirectUri)}&robot=false&response_type=code&scope=identify%20role_connections.write&state=${state}&prompt=consent`
   
   return c.redirect(url)

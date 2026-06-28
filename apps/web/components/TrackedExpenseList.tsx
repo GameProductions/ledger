@@ -9,6 +9,7 @@ import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 interface TrackedExpenseListProps {
   refreshTrigger?: number
@@ -280,13 +281,31 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
                       <div className="relative">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
-                        <input 
-                          type="number" step="0.01"
-                          value={(editForm?.amountCents || 0) / 100} 
-                          onChange={e => setEditForm({...editForm, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
+                        <CurrencyInput 
+                          valueCents={editForm?.amountCents || 0} 
+                          onChangeCents={cents => setEditForm({...editForm, amountCents: cents})}
                           className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
                         />
                       </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Confirmation Number</label>
+                      <input 
+                        type="text" 
+                        value={editForm?.confirmationNumber || ''} 
+                        onChange={e => setEditForm({...editForm, confirmationNumber: e.target.value})}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
+                        placeholder="e.g. TXN-12345"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Notes</label>
+                      <textarea 
+                        value={editForm?.notes || ''} 
+                        onChange={e => setEditForm({...editForm, notes: e.target.value})}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none h-12 resize-none"
+                        placeholder="Additional details..."
+                      />
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
@@ -326,7 +345,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
                       {confirmDeleteId === item.id ? (
                         <InlineToast 
                           message="Delete item?" 
@@ -342,7 +361,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                               setEditForm({
                                 description: item.description,
                                 amountCents: item.amountCents,
-                                notes: item.notes
+                                notes: item.notes,
+                                confirmationNumber: item.confirmationNumber
                               })
                             }}
                             className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"

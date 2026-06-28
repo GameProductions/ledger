@@ -25,9 +25,14 @@ The Payment Orchestrator gives you absolute control over your transaction lifecy
 - **Transaction Timeline**: Click on any transaction to view its full chronological history, including all status changes and persistent notes.
 - **Multi-Note Support**: Add multiple high-fidelity notes to any transaction for granular auditing.
 
-### Receipt & Confirmation Management
+### Receipt, Confirmation & Currency Management
 - **Receipts**: Attach digital receipts (PDF, PNG, JPG) using the 📁 icon.
-- **Confirmation Numbers**: Store and search for transaction confirmation numbers directly in the dashboard.
+- **Confirmation Numbers**: Store and edit transaction confirmation numbers directly in the dashboard when updating tracked expenses or ledger items.
+- **RTL Calculator-Style Currency Fields**: To make data entry fast and natural on both mobile and desktop, currency input fields automatically place decimal points at `.xx` and shift digits from right to left as you type.
+
+### Full Transaction Ledger CRUD
+- **Direct Management**: You have full creation, editing, and deletion (single and bulk) access directly from the **Transaction Ledger** view.
+- **Notes & Audit History**: Modify notes, statuses, and tracking values seamlessly in the expanded detail window of any ledger item.
 
 ## 🛡️ Security & Identity
 

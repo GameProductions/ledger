@@ -31,6 +31,7 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
   amountCents: z.number().int(),
   description: z.string(),
   notes: z.string().optional().nullable(),
+  confirmationNumber: z.string().optional().nullable(),
   attentionRequired: z.boolean().optional(),
   needsBalanceTransfer: z.boolean().optional(),
   transferTiming: z.string().optional().nullable(),
@@ -60,6 +61,7 @@ trackedExpensesRoutes.patch('/bulk', zValidator('json', z.object({
     amountCents: z.number().int().optional(),
     description: z.string().optional(),
     notes: z.string().optional().nullable(),
+    confirmationNumber: z.string().optional().nullable(),
     attentionRequired: z.boolean().optional(),
     needsBalanceTransfer: z.boolean().optional(),
     status: z.string().optional()
@@ -121,6 +123,7 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
       description: item.description,
       transactionDate: transactionDetails.transactionDate || new Date().toISOString().split('T')[0],
       notes: item.notes,
+      confirmationNumber: item.confirmationNumber,
       attentionRequired: item.attentionRequired,
       needsBalanceTransfer: item.needsBalanceTransfer,
       transferTiming: item.transferTiming,

@@ -124,6 +124,7 @@ export const TrackedExpenseSchema = z.object({
   amountCents: z.number().int(),
   description: z.string().min(1).max(1000),
   notes: z.preprocess(val => val === '' ? null : val, z.string().max(1000).optional().nullable()),
+  confirmationNumber: z.preprocess(val => val === '' ? null : val, z.string().max(100).optional().nullable()),
   attentionRequired: z.boolean().optional().default(false),
   needsBalanceTransfer: z.boolean().optional().default(false),
   transferTiming: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),

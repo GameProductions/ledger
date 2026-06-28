@@ -42,4 +42,27 @@ We have successfully completed the final phase of the fleet-wide terminology mig
 > The terminology migration is now **100% COMPLETE**. The fleet is fully aligned with human-first accessibility standards while maintaining the technical stability of the underlying infrastructure.
 
 ---
+
+# Walkthrough: v3.38.0 Interactive Enhancements
+
+We have successfully implemented interactive fixes, mobile adjustments, and database schema updates for v3.38.0 of Ledger.
+
+## Changes Made
+
+### 🗄️ Database & Schema Updates
+- Added `confirmation_number` (text) to the `tracked_expenses` PostgreSQL schema and migrated existing definitions.
+- Propagated confirmation numbers into permanent ledger transaction rows during promotion.
+
+### 🔌 API Routes
+- Added `DELETE /api/financials/transactions/:id` and `DELETE /api/financials/transactions/bulk` endpoints.
+- Expanded the validation schema for tracked expenses PATCH requests to allow notes and confirmation numbers.
+
+### 📱 Frontend Adjustments
+- **Mobile Accessibility**: Scaled layout base font size to `15px` under `768px` to ensure visual stability on smaller devices.
+- **Header Navigation Controls**: Added cycle arrow navigation for `pay_period` ranges in the Calendar header.
+- **RTL Masked Inputs**: Built `<CurrencyInput>` for right-to-left calculator-style currency inputs ensuring consistent two-decimal `.xx` formatting.
+- **Direct Ledger Management**: Added creation, editing, and deletion modals/buttons directly into the `TransactionLedger` component.
+
+---
 *Created by Antigravity*
+

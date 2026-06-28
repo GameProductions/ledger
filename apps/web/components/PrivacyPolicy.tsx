@@ -5,10 +5,11 @@ const PrivacyPolicy: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Privacy Policy</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: May 3, 2026</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Effective Date: June 28, 2026</p>
       
       <section style={{ marginBottom: '2rem' }}>
-        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. We are committed to transparency, login privacy, and total data ownership under our high-level security standard.</p>
+        <h3>1. Overview and Acceptance</h3>
+        <p>This Privacy Policy describes how LEDGER ("we", "us", or "our") collects, uses, and shares your personal information when you use our financial management platform. By creating an account or accessing the Service, you consent to the collection and use of your information as outlined herein. We are committed to transparency, login privacy, and total data ownership under our high-level security standard.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

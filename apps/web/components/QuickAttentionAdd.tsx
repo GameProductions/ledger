@@ -5,6 +5,7 @@ import { useCurrency } from '../context/CurrencyContext'
 import { Flag, ShieldAlert, ArrowRightLeft, HandCoins } from 'lucide-react'
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 interface QuickAttentionAddProps {
   onAdded: () => void;
@@ -15,7 +16,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
   const { symbol } = useCurrency()
 
   const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amountCents, setAmountCents] = useState(0)
   const [categoryId, setCategoryId] = useState('')
   const [attentionRequired, setAttentionRequired] = useState(false)
   const [needsBalanceTransfer, setNeedsBalanceTransfer] = useState(false)
@@ -27,7 +28,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!amount || isNaN(parseFloat(amount))) {
+    if (amountCents <= 0) {
       setLoading(false)
       return
     }
@@ -42,7 +43,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
       },
       body: JSON.stringify({
         description,
-        amountCents: Math.round(parseFloat(amount) * 100),
+        amountCents: amountCents,
         categoryId: categoryId || undefined,
         attentionRequired: attentionRequired,
         needs_balance_transfer: needsBalanceTransfer,
@@ -54,7 +55,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
     setLoading(false)
     setDescription('')
-    setAmount('')
+    setAmountCents(0)
     setCategoryId('')
     setAttentionRequired(false)
     setNeedsBalanceTransfer(false)
@@ -79,9 +80,11 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Amount</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-sm">{symbol}</span>
-              <input 
-                type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)}
-                placeholder="0.00" required 
+              <CurrencyInput 
+                valueCents={amountCents} 
+                onChangeCents={setAmountCents}
+                placeholder="0.00" 
+                required 
                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
               />
             </div>

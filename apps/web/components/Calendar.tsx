@@ -204,6 +204,40 @@ const Calendar: React.FC<CalendarProps> = ({
                     <button onClick={nextMonth} aria-label="Next month" className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-xs"><ChevronRight size={14} /></button>
                 </>
             )}
+            {rangeType === 'pay_period' && (
+                <>
+                    <button 
+                        onClick={() => {
+                            if (payPeriodType === 'current') setPayPeriodType('previous');
+                            else if (payPeriodType === 'next') setPayPeriodType('current');
+                        }} 
+                        disabled={payPeriodType === 'previous'}
+                        aria-label="Previous pay cycle" 
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 disabled:opacity-40 disabled:hover:bg-white/5 transition-all text-xs"
+                    >
+                        <ChevronLeft size={14} />
+                    </button>
+                    <button 
+                        onClick={() => setPayPeriodType('current')} 
+                        disabled={payPeriodType === 'current'}
+                        aria-label="Current pay cycle" 
+                        className="px-3 h-8 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold hover:bg-primary/20 disabled:opacity-40 transition-all text-xs tracking-widest uppercase"
+                    >
+                        Current
+                    </button>
+                    <button 
+                        onClick={() => {
+                            if (payPeriodType === 'current') setPayPeriodType('next');
+                            else if (payPeriodType === 'previous') setPayPeriodType('current');
+                        }} 
+                        disabled={payPeriodType === 'next'}
+                        aria-label="Next pay cycle" 
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 disabled:opacity-40 disabled:hover:bg-white/5 transition-all text-xs"
+                    >
+                        <ChevronRight size={14} />
+                    </button>
+                </>
+            )}
             <button 
                 onClick={() => setIsRangeModalOpen(true)}
                 className="px-4 h-8 flex items-center gap-2 rounded-lg bg-white/10 text-white font-bold hover:bg-white/20 transition-all text-[10px] tracking-widest uppercase border border-white/5 shadow-xl"

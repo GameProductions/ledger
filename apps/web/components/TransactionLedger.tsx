@@ -5,8 +5,9 @@ import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { Price } from './Price'
-import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag } from 'lucide-react'
+import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { CurrencyInput } from './ui/CurrencyInput'
 import { QuickAttentionAdd } from './QuickAttentionAdd'
 
 export const TransactionLedger: React.FC = () => {
@@ -27,6 +28,99 @@ export const TransactionLedger: React.FC = () => {
 
   // Selection & Details State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isAddTxOpen, setIsAddTxOpen] = useState(false)
+  const [editingTx, setEditingTx] = useState<any>(null)
+  const [txForm, setTxForm] = useState<any>({
+    description: '',
+    amountCents: 0,
+    accountId: '',
+    categoryId: '',
+    transactionDate: new Date().toISOString().split('T')[0],
+    notes: '',
+    confirmationNumber: '',
+    status: 'pending'
+  })
+  
+  const handleCreateTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/financials/transactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify(txForm)
+    }) as any);
+    if (res.ok) {
+      setIsAddTxOpen(false);
+      setTxForm({
+        description: '',
+        amountCents: 0,
+        accountId: '',
+        categoryId: '',
+        transactionDate: new Date().toISOString().split('T')[0],
+        notes: '',
+        confirmationNumber: '',
+        status: 'pending'
+      });
+      globalMutate();
+    }
+  };
+
+  const handleUpdateTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/financials/transactions/${editingTx.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify(txForm)
+    }) as any);
+    if (res.ok) {
+      setEditingTx(null);
+      globalMutate();
+    }
+  };
+
+  const handleDeleteTx = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/financials/transactions/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      }
+    }) as any);
+    if (res.ok) {
+      globalMutate();
+    }
+  };
+
+  const handleBulkDeleteTxs = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} transactions?`)) return;
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/financials/transactions/bulk`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ ids: selectedIds })
+    }) as any);
+    if (res.ok) {
+      setSelectedIds([]);
+      globalMutate();
+    }
+  };
+
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<Record<string, any>>({})
@@ -128,8 +222,27 @@ export const TransactionLedger: React.FC = () => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           📖 Transaction Ledger
-          <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary">
+          <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary" title="Help">
             <HelpCircle size={16} />
+          </button>
+          <button 
+            onClick={() => {
+              setTxForm({
+                description: '',
+                amountCents: 0,
+                accountId: accounts[0]?.id || 'default-account',
+                categoryId: '',
+                transactionDate: new Date().toISOString().split('T')[0],
+                notes: '',
+                confirmationNumber: '',
+                status: 'pending'
+              });
+              setIsAddTxOpen(true);
+            }} 
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold uppercase tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md"
+            title="Add Transaction"
+          >
+            <Plus size={12} /> Add Item
           </button>
         </h2>
         
@@ -226,12 +339,36 @@ export const TransactionLedger: React.FC = () => {
                         <div>
                           <p className="mb-1 uppercase tracking-wider font-bold opacity-50">Raw Bank Data</p>
                           <p className="font-mono bg-black/50 p-2 rounded">{tx.raw_description || tx.description}</p>
-                          <div className="mt-3 flex gap-2">
+                           <div className="mt-3 flex gap-2 flex-wrap">
                             <button onClick={() => setActiveSplitTx(tx)} className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded hover:bg-white/20 transition">
                               <SplitSquareVertical size={14} /> Split Transaction
                             </button>
                             <button onClick={() => setActiveLinkTx(tx)} className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded hover:bg-white/20 transition">
                               <LinkIcon size={14} /> Link to Bill/Transfer
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setEditingTx(tx);
+                                setTxForm({
+                                  description: tx.description,
+                                  amountCents: tx.amountCents,
+                                  accountId: tx.accountId || '',
+                                  categoryId: tx.categoryId || '',
+                                  transactionDate: tx.transactionDate,
+                                  notes: tx.notes || '',
+                                  confirmationNumber: tx.confirmationNumber || '',
+                                  status: tx.status || 'pending'
+                                });
+                              }} 
+                              className="flex items-center gap-1 bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded hover:bg-blue-500/20 transition"
+                            >
+                              <Edit3 size={14} /> Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteTx(tx.id)} 
+                              className="flex items-center gap-1 bg-red-500/10 text-red-400 px-3 py-1.5 rounded hover:bg-red-500/20 transition"
+                            >
+                              <Trash2 size={14} /> Delete
                             </button>
                           </div>
                         </div>
@@ -295,6 +432,12 @@ export const TransactionLedger: React.FC = () => {
                 <Check size={16} /> Mark Reconciled
               </button>
               <button 
+                onClick={handleBulkDeleteTxs}
+                className="px-4 py-2 bg-red-500/20 text-red-400 font-bold border border-red-500/30 rounded-xl hover:bg-red-500/35 transition-all flex items-center gap-2"
+              >
+                <Trash2 size={16} /> Delete Selected
+              </button>
+              <button 
                 onClick={() => setSelectedIds([])}
                 className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
               >
@@ -325,6 +468,12 @@ export const TransactionLedger: React.FC = () => {
                   className="px-4 py-2 bg-primary text-black font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2"
                 >
                   <Check size={16} /> Mark Reconciled
+                </button>
+                <button 
+                  onClick={handleBulkDeleteTxs}
+                  className="px-4 py-2 bg-red-500/20 text-red-400 font-bold border border-red-500/30 rounded-xl hover:bg-red-500/35 transition-all flex items-center gap-2"
+                >
+                  <Trash2 size={16} /> Delete Selected
                 </button>
                 <button 
                   onClick={() => setSelectedIds([])}
@@ -384,6 +533,218 @@ export const TransactionLedger: React.FC = () => {
            </select>
            <button onClick={() => { setActiveLinkTx(null); globalMutate(); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
          </div>
+      )}
+    </Modal>
+
+    <Modal isOpen={isAddTxOpen} onClose={() => setIsAddTxOpen(false)} title="Add Transaction">
+      <form onSubmit={handleCreateTx} className="space-y-4">
+        <div>
+          <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Description</label>
+          <input 
+            type="text" 
+            value={txForm.description} 
+            onChange={e => setTxForm({...txForm, description: e.target.value})} 
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+            required 
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Amount</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-black text-sm">{symbol}</span>
+              <CurrencyInput 
+                valueCents={txForm.amountCents} 
+                onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-white focus:outline-none focus:border-primary" 
+                required 
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Date</label>
+            <input 
+              type="date" 
+              value={txForm.transactionDate} 
+              onChange={e => setTxForm({...txForm, transactionDate: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+              required 
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Account</label>
+            <select 
+              value={txForm.accountId} 
+              onChange={e => setTxForm({...txForm, accountId: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
+              required
+            >
+              <option value="">-- Select Account --</option>
+              {accounts.map((a: any) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Category</label>
+            <select 
+              value={txForm.categoryId} 
+              onChange={e => setTxForm({...txForm, categoryId: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
+            >
+              <option value="">-- Uncategorized --</option>
+              {categories.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Confirmation Number</label>
+            <input 
+              type="text" 
+              value={txForm.confirmationNumber} 
+              onChange={e => setTxForm({...txForm, confirmationNumber: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+              placeholder="e.g. REF-12345"
+            />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Status</label>
+            <select 
+              value={txForm.status} 
+              onChange={e => setTxForm({...txForm, status: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
+            >
+              <option value="pending">Pending</option>
+              <option value="reconciled">Reconciled</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Notes</label>
+          <textarea 
+            value={txForm.notes} 
+            onChange={e => setTxForm({...txForm, notes: e.target.value})} 
+            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary h-20 resize-none" 
+            placeholder="Additional notes..."
+          />
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button type="button" onClick={() => setIsAddTxOpen(false)} className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 transition-colors">Cancel</button>
+          <button type="submit" className="px-6 py-3 bg-primary text-black font-bold rounded-xl hover:brightness-110 transition-all">Add Transaction</button>
+        </div>
+      </form>
+    </Modal>
+
+    <Modal isOpen={!!editingTx} onClose={() => setEditingTx(null)} title="Edit Transaction">
+      {editingTx && (
+        <form onSubmit={handleUpdateTx} className="space-y-4">
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Description</label>
+            <input 
+              type="text" 
+              value={txForm.description} 
+              onChange={e => setTxForm({...txForm, description: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+              required 
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Amount</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-black text-sm">{symbol}</span>
+                <CurrencyInput 
+                  valueCents={txForm.amountCents} 
+                  onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-white focus:outline-none focus:border-primary" 
+                  required 
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Date</label>
+              <input 
+                type="date" 
+                value={txForm.transactionDate} 
+                onChange={e => setTxForm({...txForm, transactionDate: e.target.value})} 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+                required 
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Account</label>
+              <select 
+                value={txForm.accountId} 
+                onChange={e => setTxForm({...txForm, accountId: e.target.value})} 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
+                required
+              >
+                <option value="">-- Select Account --</option>
+                {accounts.map((a: any) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Category</label>
+              <select 
+                value={txForm.categoryId} 
+                onChange={e => setTxForm({...txForm, categoryId: e.target.value})} 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
+              >
+                <option value="">-- Uncategorized --</option>
+                {categories.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Confirmation Number</label>
+              <input 
+                type="text" 
+                value={txForm.confirmationNumber} 
+                onChange={e => setTxForm({...txForm, confirmationNumber: e.target.value})} 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+                placeholder="e.g. REF-12345"
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Status</label>
+              <select 
+                value={txForm.status} 
+                onChange={e => setTxForm({...txForm, status: e.target.value})} 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
+              >
+                <option value="pending">Pending</option>
+                <option value="reconciled">Reconciled</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Notes</label>
+            <textarea 
+              value={txForm.notes} 
+              onChange={e => setTxForm({...txForm, notes: e.target.value})} 
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary h-20 resize-none" 
+              placeholder="Additional notes..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button type="button" onClick={() => setEditingTx(null)} className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 transition-colors">Cancel</button>
+            <button type="submit" className="px-6 py-3 bg-primary text-black font-bold rounded-xl hover:brightness-110 transition-all">Save Changes</button>
+          </div>
+        </form>
       )}
     </Modal>
     </>

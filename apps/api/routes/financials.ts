@@ -1271,8 +1271,29 @@ financials.post('/reconciliation/proposals/bulk-action', zValidator('json', z.ob
   return c.json({ success: true })
 })
 
-// --- Tracked Expenses (Moved to dedicated router) ---
+// financials.delete('/transactions/bulk', ...)
+financials.delete('/transactions/bulk', zValidator('json', z.object({
+  ids: z.array(z.string())
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { ids } = c.req.valid('json')
+  const db = getDb(c.env)
+  if (ids.length === 0) return c.json({ success: true })
+  await db.delete(transactions).where(and(eq(transactions.householdId, householdId), inArray(transactions.id, ids)))
+  await logAudit(c, 'transactions', 'bulk', 'DELETE', null, { ids })
+  return c.json({ success: true })
+})
 
+// financials.delete('/transactions/:id', ...)
+financials.delete('/transactions/:id', async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  await db.delete(transactions).where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+  await logAudit(c, 'transactions', id, 'DELETE', null, null)
+  return c.json({ success: true })
+})
 
 export default financials
+
 

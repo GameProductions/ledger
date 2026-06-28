@@ -43,6 +43,7 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   amountCents: integer('amount_cents').notNull(),
   status: text('status').default('pending'), // pending, committed, ignored
   notes: text('notes'),
+  confirmationNumber: text('confirmation_number'),
   attentionRequired: boolean('attention_required').default(false),
   needsBalanceTransfer: boolean('needs_balance_transfer').default(false),
   transferTiming: text('transfer_timing'),

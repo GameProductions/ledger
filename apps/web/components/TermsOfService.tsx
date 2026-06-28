@@ -5,10 +5,11 @@ const TermsOfService: React.FC = () => {
     <div className="card" style={{ maxWidth: '800px', margin: '4rem auto', padding: '3rem', lineHeight: '1.8', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '1rem' }}>
       <button className="primary" onClick={() => window.location.hash = '#/'} style={{ marginBottom: '2rem' }}>← Back to Dashboard</button>
       <h1 style={{ marginBottom: '1rem', fontSize: '2.5rem' }}>Terms of Service</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: May 3, 2026</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Last Updated: June 28, 2026</p>
       
       <section style={{ marginBottom: '2rem' }}>
-        <p>By using the LEDGER platform (the "Service"), you agree to follow these Terms of Service. If you do not agree, please do not use the Service.</p>
+        <h3>1. Acceptance of Terms</h3>
+        <p>By using the LEDGER platform (the "Service"), you agree to follow these Terms of Service. If you do not agree, please do not use the Service. Your continued use of the Service constitutes binding acceptance of any updates or changes to these terms.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

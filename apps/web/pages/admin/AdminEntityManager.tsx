@@ -24,22 +24,22 @@ const adminRequest = async (secureFetch: any, method: string, path: string, body
 type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules'
 
 const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; scope: 'household' | 'user' }[] = [
-  { key: 'categories', label: 'Categories', icon: <Tag size={16} />, scope: 'household' },
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} />, scope: 'household' },
-  { key: 'credit-cards', label: 'Credit Cards', icon: <CreditCard size={16} />, scope: 'household' },
-  { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} />, scope: 'household' },
   { key: 'bills', label: 'Bills', icon: <Banknote size={16} />, scope: 'household' },
+  { key: 'categories', label: 'Categories', icon: <Tag size={16} />, scope: 'household' },
+  { key: 'credit-cards', label: 'Credit Cards', icon: <CreditCard size={16} />, scope: 'household' },
   { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} />, scope: 'household' },
-  { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} />, scope: 'household' },
-  { key: 'pairing-rules', label: 'Pairing Rules', icon: <Link2 size={16} />, scope: 'household' },
-  { key: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} />, scope: 'user' },
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} />, scope: 'user' },
+  { key: 'pairing-rules', label: 'Pairing Rules', icon: <Link2 size={16} />, scope: 'household' },
+  { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} />, scope: 'household' },
+  { key: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} />, scope: 'user' },
+  { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} />, scope: 'household' },
 ]
 
 const AdminEntityManager: React.FC = () => {
   const { secureFetch } = useAuth()
   const { showToast } = useToast()
-  const [activeType, setActiveType] = useState<EntityType>('categories')
+  const [activeType, setActiveType] = useState<EntityType>('accounts')
   const [householdFilter, setHouseholdFilter] = useState('')
   const [userFilter, setUserFilter] = useState('')
   const [search, setSearch] = useState('')

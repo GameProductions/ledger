@@ -37,7 +37,7 @@ auth.get('/verify', (c) => {
 })
 
 
-async function createSessionTracker(c: any, userId: string, passkeyVerified: boolean = false, isPersistent: boolean = false) {
+export async function createSessionTracker(c: any, userId: string, passkeyVerified: boolean = false, isPersistent: boolean = false) {
   const db = getDb(c.env)
   const sessionId = `sess-${crypto.randomUUID()}`
   const meta = getRequestMetadata(c)

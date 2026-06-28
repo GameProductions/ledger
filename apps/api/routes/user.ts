@@ -24,7 +24,7 @@ import {
   passkeys, subscriptions, systemAnnouncements, 
   activityLogs as auditLogs 
 } from '#/schema'
-import { eq, and, sql, desc, or, gt, ne, isNull } from 'drizzle-orm'
+import { eq, and, sql, desc, asc, or, gt, ne, isNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -498,7 +498,7 @@ user.get('/payment-methods', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)
   // Assuming isActive exists via migrations or implicit, skipping if schema didn't include it. 
-  const results = (await db.select().from(userPaymentMethods).where(eq(userPaymentMethods.userId, userId)) as any)
+  const results = (await db.select().from(userPaymentMethods).where(eq(userPaymentMethods.userId, userId)).orderBy(asc(userPaymentMethods.name)) as any)
   return c.json({ success: true, data: results || [] })
 })
 
@@ -683,7 +683,8 @@ user.get('/linked-accounts', async (c) => {
     })
     .from(userLinkedAccounts)
     .innerJoin(serviceProviders, eq(userLinkedAccounts.providerId, serviceProviders.id))
-    .where(eq(userLinkedAccounts.userId, userId)) as any)
+    .where(eq(userLinkedAccounts.userId, userId))
+    .orderBy(asc(serviceProviders.name)) as any)
 
   return c.json({
     success: true,

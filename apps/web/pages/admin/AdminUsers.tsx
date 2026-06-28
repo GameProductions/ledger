@@ -70,7 +70,7 @@ const UserDetailsModal: React.FC<{
       const res = await fetch(`${apiUrl}/api/admin/users/${userId}/cross-device`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      const json = await res.json()
+      const json = (await res.json() as any)
       if (json.success) {
         setCrossDeviceRequests(json.data || [])
       }
@@ -92,7 +92,7 @@ const UserDetailsModal: React.FC<{
         showToast('Cross-device request approved', 'success')
         fetchCrossDeviceRequests()
       } else {
-        const json = await res.json()
+        const json = (await res.json() as any)
         showToast(json.error || 'Failed to approve', 'error')
       }
     } catch (err: any) {

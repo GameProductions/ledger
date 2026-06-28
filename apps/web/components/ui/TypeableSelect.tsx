@@ -34,15 +34,19 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedOption = useMemo(() => options.find(o => o.value === value) || { value, label: value }, [options, value]);
+  const sortedOptions = useMemo(() => {
+    return [...options].sort((a, b) => a.label.localeCompare(b.label));
+  }, [options]);
+
+  const selectedOption = useMemo(() => sortedOptions.find(o => o.value === value) || { value, label: value }, [sortedOptions, value]);
 
   const filteredOptions = useMemo(() => {
-    const filtered = options.filter(opt => 
+    const filtered = sortedOptions.filter(opt => 
       opt.label.toLowerCase().includes(search.toLowerCase())
     );
     
     // Add "custom" option if search doesn't exactly match any label
-    if (search && !options.some(opt => opt.label.toLowerCase() === search.toLowerCase())) {
+    if (search && !sortedOptions.some(opt => opt.label.toLowerCase() === search.toLowerCase())) {
       filtered.unshift({
         value: search,
         label: `Use "${search}"`,
@@ -52,7 +56,7 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
     }
     
     return filtered;
-  }, [options, search]);
+  }, [sortedOptions, search]);
 
   useEffect(() => {
     setActiveIndex(0);

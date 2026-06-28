@@ -50,7 +50,7 @@ financials.get('/categories', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
   try {
-    const results = (await db.select().from(categories).where(eq(categories.householdId, householdId)) as any)
+    const results = (await db.select().from(categories).where(eq(categories.householdId, householdId)).orderBy(asc(categories.name)) as any)
     return c.json({ 
       success: true, 
       data: results.map((row: any) => {
@@ -123,7 +123,7 @@ financials.get('/accounts', async (c) => {
           type: accounts.type,
           balanceCents: accounts.balanceCents,
           currency: accounts.currency
-        }).from(accounts).where(eq(accounts.householdId, householdId)) as any)
+        }).from(accounts).where(eq(accounts.householdId, householdId)).orderBy(asc(accounts.name)) as any)
     
     return c.json({ 
       success: true, 
@@ -188,7 +188,7 @@ financials.delete('/accounts/:id', async (c) => {
 financials.get('/credit-cards', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = (await db.select().from(creditCards).where(eq(creditCards.householdId, householdId)) as any)
+  const results = (await db.select().from(creditCards).where(eq(creditCards.householdId, householdId)).orderBy(asc(creditCards.accountId)) as any)
   return c.json({ 
     success: true, 
     data: results

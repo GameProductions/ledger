@@ -36,20 +36,24 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedOption = useMemo(() => options.find(o => o.value === value), [options, value]);
+  const sortedOptions = useMemo(() => {
+    return [...options].sort((a, b) => a.label.localeCompare(b.label));
+  }, [options]);
+
+  const selectedOption = useMemo(() => sortedOptions.find(o => o.value === value), [sortedOptions, value]);
 
   const showCreateOption = useMemo(() => {
     if (!onCreate || !search.trim()) return false;
-    return !options.some(opt => opt.label.toLowerCase() === search.trim().toLowerCase());
-  }, [options, search, onCreate]);
+    return !sortedOptions.some(opt => opt.label.toLowerCase() === search.trim().toLowerCase());
+  }, [sortedOptions, search, onCreate]);
 
   const filteredOptions = useMemo(() => {
-    if (!search) return options;
-    return options.filter(opt => 
+    if (!search) return sortedOptions;
+    return sortedOptions.filter(opt => 
       opt.label.toLowerCase().includes(search.toLowerCase()) || 
       (opt.metadata?.email && opt.metadata.email.toLowerCase().includes(search.toLowerCase()))
     );
-  }, [options, search]);
+  }, [sortedOptions, search]);
 
   useEffect(() => {
     setActiveIndex(0);

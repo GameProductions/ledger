@@ -33,7 +33,7 @@ import {
   activityLogs as auditLogs
 } from '#/schema'
 import remindersApi from './reminders'
-import { eq, and, desc, like, lte, sql } from 'drizzle-orm'
+import { eq, and, desc, asc, like, lte, sql } from 'drizzle-orm'
 
 const planning = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -43,7 +43,7 @@ planning.get('/subscriptions', async (c) => {
   const user = c.get('user') as any
   const db = getDb(c.env)
   
-  const allSubs = (await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId)) as any)
+  const allSubs = (await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId)).orderBy(asc(subscriptions.name)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'subscription'))) as any)
   
   const results = allSubs.map((sub: any) => {
@@ -144,7 +144,7 @@ planning.get('/bills', async (c) => {
   const user = c.get('user') as any
   const db = getDb(c.env)
 
-  const allBills = (await db.select().from(bills).where(eq(bills.householdId, householdId)) as any)
+  const allBills = (await db.select().from(bills).where(eq(bills.householdId, householdId)).orderBy(asc(bills.name)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'bill'))) as any)
   
   const results = allBills.map((bill: any) => {
@@ -278,7 +278,7 @@ planning.get('/installment-plans', async (c) => {
   const user = c.get('user') as any
   const db = getDb(c.env)
   
-  const allInstallments = (await db.select().from(installmentPlans).where(eq(installmentPlans.householdId, householdId)) as any)
+  const allInstallments = (await db.select().from(installmentPlans).where(eq(installmentPlans.householdId, householdId)).orderBy(asc(installmentPlans.name)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'installment'))) as any)
   
   const results = allInstallments.map((inst: any) => {
@@ -473,7 +473,7 @@ planning.post('/p2p/loans/:id/payments', zValidator('json', z.object({
 planning.get('/pay-schedules', async (c) => {
   const householdId = c.get('householdId')
   const db = getDb(c.env)
-  const results = (await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId)) as any)
+  const results = (await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId)).orderBy(asc(paySchedules.name)) as any)
   return c.json({ success: true, data: results || [] })
 })
 

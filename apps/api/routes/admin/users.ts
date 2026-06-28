@@ -232,7 +232,7 @@ userAdmin.post('/:id/cross-device/:requestId/approve', async (c) => {
   if (new Date(record.expiresAt) < new Date()) throw new HTTPException(400, { message: 'Request has expired' })
 
   const authService = new (await import('../../services/auth.service')).AuthService(c.env)
-  const { createSessionTracker } = await import('../../utils')
+  const { createSessionTracker } = await import('../auth')
   const sessionId = await createSessionTracker(c, id, false, true)
   const realToken = await authService.generateToken(id, sessionId)
 

@@ -29,7 +29,7 @@ admin.route('/webauthn', webauthnRoutes)
 admin.get('/stats', async (c) => {
   const db = getDb(c.env)
   const userCount = (await db.select({ count: count() }).from(users).then(res => res[0].count) as any)
-  const activeToday = (await db.select({ count: count() }).from(users).where(sql`last_active_at > date("now", "-1 day")`).then(res => res[0].count) as any)
+  const activeToday = (await db.select({ count: count() }).from(users).where(sql`cast(last_active_at as timestamp) > now() - interval '1 day'`).then(res => res[0].count) as any)
   const householdCount = (await db.select({ count: count() }).from(households).then(res => res[0].count) as any)
   
   return c.json({

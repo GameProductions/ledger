@@ -24,6 +24,14 @@ const LoginPage: React.FC = () => {
   const [usernameError, setUsernameError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   
+  const { transcript, isListening, isSupported, start, stop } = useSpeechRecognition()
+
+  useEffect(() => {
+    if (transcript) {
+      setUsername(transcript)
+    }
+  }, [transcript])
+  
   // Cross-Device Auth State
   const [showCrossDevice, setShowCrossDevice] = useState(false)
   const [crossDeviceCode, setCrossDeviceCode] = useState('')
@@ -372,32 +380,6 @@ const LoginPage: React.FC = () => {
     }
   }
 
-  const MicButton: React.FC = () => {
-    const { transcript, isListening, isSupported, start, stop } = useSpeechRecognition()
-
-    useEffect(() => {
-      if (transcript) {
-        setUsername(transcript)
-      }
-    }, [transcript])
-
-    if (!isSupported) return null
-
-    return (
-      <button
-        type="button"
-        onClick={isListening ? stop : start}
-        className="relative text-secondary hover:text-white transition-colors"
-        title={isListening ? 'Stop listening' : 'Voice input'}
-      >
-        {isListening && (
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-        )}
-        <Mic size={18} />
-      </button>
-    )
-  }
-
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 bg-black">
       <div className="w-full max-w-md reveal">
@@ -438,7 +420,21 @@ const LoginPage: React.FC = () => {
                 aria-label="User ID"
                 aria-describedby="username-error"
                 className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold"
-                rightElement={<MicButton />}
+                rightElement={
+                  isSupported ? (
+                    <button
+                      type="button"
+                      onClick={isListening ? stop : start}
+                      className="relative text-secondary hover:text-white transition-colors"
+                      title={isListening ? 'Stop listening' : 'Voice input'}
+                    >
+                      {isListening && (
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      )}
+                      <Mic size={18} />
+                    </button>
+                  ) : undefined
+                }
               />
               {usernameError && (
                 <div id="username-error" role="alert" className="text-xs text-red-500 font-bold uppercase tracking-wider">{usernameError}</div>

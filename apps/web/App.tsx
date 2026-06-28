@@ -44,10 +44,8 @@ const AdminData = lazy(() => import('./pages/admin/AdminData'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminHouseholds = lazy(() => import('./pages/admin/AdminHouseholds'))
 const AdminSearch = lazy(() => import('./pages/admin/AdminSearch'))
-const AdminAudit = lazy(() => import('./pages/admin/AdminAudit'))
 const AdminProviders = lazy(() => import('./pages/admin/AdminProviders'))
 const AdminProcessors = lazy(() => import('./pages/admin/AdminProcessors'))
-const AdminBroadcast = lazy(() => import('./pages/admin/AdminBroadcast'))
 const AdminGuide = lazy(() => import('./pages/admin/AdminGuide'))
 const AdminEntityManager = lazy(() => import('./pages/admin/AdminEntityManager'))
 const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
@@ -227,10 +225,8 @@ const AppContent: React.FC = () => {
         if (path === '#/admin/users') return <AdminUsers />
         if (path === '#/admin/households') return <AdminHouseholds />
         if (path === '#/admin/search') return <AdminSearch />
-        if (path === '#/admin/audit') return <AdminAudit />
         if (path === '#/admin/providers') return <AdminProviders />
         if (path === '#/admin/processors') return <AdminProcessors />
-        if (path === '#/admin/broadcast') return <AdminBroadcast />
         if (path === '#/admin/guide') return <AdminGuide />
         if (path === '#/admin/entities') return <AdminEntityManager />
         return <AdminDashboard />

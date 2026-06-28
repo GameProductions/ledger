@@ -238,18 +238,18 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'billers'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'categories', label: 'Categories', icon: <Tag size={16} /> },
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} /> },
+  { key: 'billers', label: 'Billers', icon: <Building2 size={16} /> },
+  { key: 'categories', label: 'Categories', icon: <Tag size={16} /> },
   { key: 'credit-cards', label: 'Credit Cards', icon: <CreditCard size={16} /> },
-  { key: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={16} /> },
+  { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} /> },
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} /> },
   { key: 'pairing-rules', label: 'Pairing Rules', icon: <GitMerge size={16} /> },
-  { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} /> },
-  { key: 'billers', label: 'Billers', icon: <Building2 size={16} /> },
+  { key: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={16} /> },
 ]
 
 const DataManagerPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('categories')
+  const [activeTab, setActiveTab] = useState<TabKey>('accounts')
 
   const renderTab = () => {
     switch (activeTab) {

@@ -249,8 +249,8 @@ const Calendar: React.FC<CalendarProps> = ({
         
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
-               <button onClick={() => setDisplayMode('calendar')} className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}>Grid</button>
-               <button onClick={() => setDisplayMode('list')} className={`px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'list' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}>List</button>
+               <button onClick={() => setDisplayMode('calendar')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><GridIcon size={12} /> Grid</button>
+               <button onClick={() => setDisplayMode('list')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'list' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><ListIcon size={12} /> List</button>
             </div>
             
             <div className="flex gap-2">

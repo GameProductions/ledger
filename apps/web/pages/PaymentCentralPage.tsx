@@ -130,6 +130,59 @@ const PaymentCentralPage: React.FC = () => {
     }
   };
 
+  const handleCreatePaymentMethod = async (name: string): Promise<string> => {
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/user/payment-methods`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ name, type: 'credit_card' })
+    }) as any);
+    const data = (await res.json() as any);
+    fetchData();
+    return data.id;
+  };
+
+  const handleCreateProvider = async (name: string): Promise<string> => {
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/user/service-providers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ name })
+    }) as any);
+    const data = (await res.json() as any);
+    fetchData();
+    return data.id;
+  };
+
+  const handleCreateSubscription = async (name: string): Promise<string> => {
+    const apiUrl = getApiUrl();
+    const res = (await fetch(`${apiUrl}/api/planning/subscriptions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({
+        name,
+        amountCents: 1000,
+        billingCycle: 'monthly',
+        nextBillingDate: new Date().toISOString().split('T')[0]
+      })
+    }) as any);
+    const data = (await res.json() as any);
+    fetchData();
+    return data.id;
+  };
+
   if (loading) return <div className="p-8 text-center animate-pulse lg:pt-32">Securing Payment Channel...</div>;
 
   return (
@@ -239,6 +292,7 @@ const PaymentCentralPage: React.FC = () => {
                         value={newAccount.providerId}
                         onChange={(val) => setNewAccount({ ...newAccount, providerId: val })}
                         placeholder="Choose Provider..."
+                        onCreate={handleCreateProvider}
                       />
                     </div>
                     <div>
@@ -263,6 +317,7 @@ const PaymentCentralPage: React.FC = () => {
                           value={newAccount.paymentMethodId}
                           onChange={(val) => setNewAccount({ ...newAccount, paymentMethodId: val })}
                           placeholder="Choose Method..."
+                          onCreate={handleCreatePaymentMethod}
                         />
                       </div>
                       <div>
@@ -276,6 +331,7 @@ const PaymentCentralPage: React.FC = () => {
                           value={newAccount.subscriptionId}
                           onChange={(val) => setNewAccount({ ...newAccount, subscriptionId: val })}
                           placeholder="Choose Plan..."
+                          onCreate={handleCreateSubscription}
                         />
                       </div>
                     </div>

@@ -567,6 +567,28 @@ user.get('/service-providers', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
+user.post('/service-providers', zValidator('json', z.object({
+  name: z.string().min(1)
+})), async (c) => {
+  const userId = c.get('userId') as string
+  const householdId = c.get('householdId') || null
+  const { name } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const db = getDb(c.env)
+  
+  await db.insert(serviceProviders).values({
+    id,
+    name,
+    visibility: 'household',
+    householdId,
+    createdBy: userId,
+    status: 'active'
+  })
+  
+  await logAudit(c, 'service_providers', id, 'CREATE', null, { name })
+  return c.json({ success: true, id })
+})
+
 user.get('/identities', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)

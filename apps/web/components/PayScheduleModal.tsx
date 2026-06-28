@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
 import { Calendar, DollarSign, Wallet, Shield, Info, Tag, Users, Trash2 } from 'lucide-react';
+import { CurrencyInput } from './ui/CurrencyInput';
 import { useApi } from '../hooks/useApi';
 import { getApiUrl } from '../utils/api';
 
@@ -132,16 +133,11 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
                             <DollarSign size={12} /> Expected Net Pay
                         </label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                value={amountCents ? amountCents / 100 : ''}
-                                onChange={(e) => setAmountCents(e.target.value ? Math.round(parseFloat(e.target.value) * 100) : 0)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 pl-8 text-sm focus:border-primary outline-none transition-all font-bold"
-                                placeholder="0.00"
-                            />
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 font-bold">$</span>
-                        </div>
+                        <CurrencyInput 
+                            valueCents={amountCents}
+                            onChangeCents={setAmountCents}
+                            placeholder="0.00"
+                        />
                     </div>
                 </div>
 
@@ -233,16 +229,12 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <span className="text-[9px] font-bold text-white/40 uppercase">Upcoming Net Pay</span>
-                            <div className="relative">
-                                <input
-                                    type="number"
-                                    value={upcomingAmountCents ? upcomingAmountCents / 100 : ''}
-                                    onChange={(e) => setUpcomingAmountCents(e.target.value ? Math.round(parseFloat(e.target.value) * 100) : 0)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-emerald-500 pl-6"
-                                    placeholder="0.00"
-                                />
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/20 font-bold text-xs">$</span>
-                            </div>
+                            <CurrencyInput 
+                                valueCents={upcomingAmountCents}
+                                onChangeCents={setUpcomingAmountCents}
+                                placeholder="0.00"
+                                className="bg-black/40 border-white/10 focus:border-emerald-500"
+                            />
                         </div>
                         <div className="space-y-1">
                             <span className="text-[9px] font-bold text-white/40 uppercase">Effective Date</span>

@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { SearchableSelect } from './ui/SearchableSelect'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 const TransferForm: React.FC = () => {
   const { data: accounts } = (useApi('/api/financials/accounts') as any)
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
-  const [amount, setAmount] = useState('')
+  const [amountCents, setAmountCents] = useState(0)
   const [loading, setLoading] = useState(false)
 
   const handleCreateAccount = async (name: string): Promise<string> => {
@@ -39,7 +40,7 @@ const TransferForm: React.FC = () => {
       body: JSON.stringify({
         fromAccountId: from,
         toAccountId: to,
-        amountCents: Math.round(parseFloat(amount) * 100),
+        amountCents,
         description: 'Internal Transfer'
       })
     })
@@ -76,7 +77,12 @@ const TransferForm: React.FC = () => {
         </div>
         <div>
           <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Amount</label>
-          <input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
+          <CurrencyInput 
+            valueCents={amountCents} 
+            onChangeCents={setAmountCents} 
+            placeholder="0.00" 
+            className="mt-1"
+          />
         </div>
         <button type="submit" className="primary" disabled={loading || !from || !to || from === to}>
           {loading ? 'Processing...' : 'Transfer Funds'}

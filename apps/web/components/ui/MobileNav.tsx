@@ -1,37 +1,101 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, CreditCard, BarChart3, Settings, MoreHorizontal, HandCoins, Briefcase, Database, List, GitMerge, HelpCircle, X } from 'lucide-react';
 
-interface MobileNavProps {
-  activeView?: string;
-  onViewChange?: (view: string) => void;
-}
+const mainTabs = [
+  { id: 'home', label: 'Home', icon: LayoutDashboard, hash: '#/' },
+  { id: 'payments', label: 'Payments', icon: CreditCard, hash: '#/payments' },
+  { id: 'reports', label: 'Reports', icon: BarChart3, hash: '#/reports' },
+  { id: 'settings', label: 'Settings', icon: Settings, hash: '#/settings' },
+  { id: 'more', label: 'More', icon: MoreHorizontal },
+];
 
-const MobileNav: React.FC<MobileNavProps> = ({ activeView, onViewChange }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Home', icon: '🏠' },
-    { id: 'reports', label: 'Reports', icon: '📊' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
-    { id: 'help', label: 'Help', icon: '❓' },
-  ];
+const overflowItems = [
+  { id: 'loans', label: 'Loans', icon: HandCoins, hash: '#/loans' },
+  { id: 'investments', label: 'Investments', icon: Briefcase, hash: '#/investments' },
+  { id: 'data', label: 'Data Center', icon: Database, hash: '#/data' },
+  { id: 'manage', label: 'Data Manager', icon: List, hash: '#/manage' },
+  { id: 'reconcile', label: 'Reconciliation', icon: GitMerge, hash: '#/reconcile' },
+  { id: 'help', label: 'Help', icon: HelpCircle, hash: '#/help' },
+];
+
+const MobileNav: React.FC = () => {
+  const [showMore, setShowMore] = useState(false);
+  const [currentHash, setCurrentHash] = useState(window.location.hash);
+
+  useEffect(() => {
+    const onHashChange = () => setCurrentHash(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  const isActive = (hash: string) => currentHash === hash;
+
+  const navigate = (hash: string) => {
+    window.location.hash = hash;
+  };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:hidden">
-      <nav className="card flex items-center justify-around py-3 px-6 bg-[#0f172a]/90 backdrop-blur-2xl border border-glass-border rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onViewChange?.(item.id)}
-            className={`flex flex-col items-center gap-1 transition-all ${
-              activeView === item.id 
-                ? 'text-primary scale-110' 
-                : 'text-secondary opacity-60 hover:opacity-100'
-            }`}
+    <>
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-2 pb-3 sm:hidden">
+        <nav className="card flex items-center justify-around py-2 px-1 bg-[#0f172a]/90 backdrop-blur-2xl border border-glass-border rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
+          {mainTabs.map((item) => {
+            const Icon = item.icon;
+            const active = item.hash ? isActive(item.hash) : false;
+            return (
+              <button
+                key={item.id}
+                onClick={() => item.hash ? navigate(item.hash) : setShowMore(true)}
+                className={`flex flex-col items-center gap-0.5 py-1 px-2 transition-all min-w-0 flex-1 ${
+                  active
+                    ? 'text-primary scale-110'
+                    : 'text-secondary opacity-60 hover:opacity-100'
+                }`}
+              >
+                <Icon size={18} />
+                <span className="text-[9px] font-bold uppercase tracking-widest">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {showMore && (
+        <div className="fixed inset-0 z-[60] sm:hidden" onClick={() => setShowMore(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-[#0f172a] border-t border-glass-border rounded-t-3xl p-6 pb-12 slide-up"
+            onClick={e => e.stopPropagation()}
           >
-            <span className="text-xl">{item.icon}</span>
-            <span className="text-xs font-bold uppercase tracking-widest">{item.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-secondary">More</h3>
+              <button onClick={() => setShowMore(false)} className="p-2 hover:bg-white/5 rounded-xl text-secondary transition-all">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {overflowItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.hash);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => { navigate(item.hash); setShowMore(false); }}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${
+                      active
+                        ? 'bg-primary/10 text-primary border border-primary/20'
+                        : 'hover:bg-white/5 text-secondary border border-transparent'
+                    }`}
+                  >
+                    <Icon size={22} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

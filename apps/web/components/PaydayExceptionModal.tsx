@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
 import { getApiUrl } from '../utils/api';
+import { CurrencyInput } from './ui/CurrencyInput';
 import { Calendar, DollarSign, MessageSquare, Trash2, Shield, Info } from 'lucide-react';
 import { Price } from './Price';
 

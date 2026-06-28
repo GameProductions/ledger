@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { Price } from './Price'
-import { useCurrency } from '../context/CurrencyContext'
 import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
@@ -14,7 +13,6 @@ import { QuickAttentionAdd } from './QuickAttentionAdd'
 
 export const TransactionLedger: React.FC = () => {
   const { token, householdId } = useAuth()
-  const { symbol } = useCurrency()
   const reduced = useReducedMotion()
   
   // Filtering & Sorting State
@@ -584,15 +582,11 @@ export const TransactionLedger: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Amount</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-black text-sm">{symbol}</span>
-              <CurrencyInput 
-                valueCents={txForm.amountCents} 
-                onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-white focus:outline-none focus:border-primary" 
-                required 
-              />
-            </div>
+            <CurrencyInput 
+              valueCents={txForm.amountCents} 
+              onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
+              required 
+            />
           </div>
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Date</label>
@@ -683,15 +677,11 @@ export const TransactionLedger: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Amount</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-black text-sm">{symbol}</span>
-                <CurrencyInput 
-                  valueCents={txForm.amountCents} 
-                  onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-8 text-white focus:outline-none focus:border-primary" 
-                  required 
-                />
-              </div>
+              <CurrencyInput 
+                valueCents={txForm.amountCents} 
+                onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
+                required 
+              />
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Date</label>

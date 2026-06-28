@@ -2,6 +2,7 @@ import React from 'react'
 import { Price } from './Price'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 const API_URL = getApiUrl()
 
@@ -13,7 +14,7 @@ const SavingsBuckets: React.FC = () => {
 
   const handleCreate = async () => {
     if (!name || !amount) return
-    const targetCents = Math.round(parseFloat(amount) * 100)
+    const targetCents = parseInt(amount) || 0
     await fetch(`${API_URL}/api/financials/buckets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('ledger_token')}` },
@@ -50,10 +51,13 @@ const SavingsBuckets: React.FC = () => {
         {isAdding ? (
           <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl mt-2 border border-white/10">
             <input type="text" placeholder="Bucket Name" value={name} onChange={e => setName(e.target.value)} className="bg-black/50 text-white text-sm px-3 py-2 rounded-lg border-none" />
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-slate-400">$</span>
-              <input type="number" placeholder="Target Goal" value={amount} onChange={e => setAmount(e.target.value)} className="bg-black/50 text-white text-sm pl-7 pr-3 py-2 rounded-lg border-none w-full" />
-            </div>
+            <CurrencyInput 
+              valueCents={parseInt(amount) || 0} 
+              onChangeCents={cents => setAmount(cents.toString())}
+              placeholder="Target Goal"
+              showSymbol={true}
+              className="bg-black/50 text-sm"
+            />
             <div className="flex gap-2 mt-1">
               <button onClick={handleCreate} className="flex-1 bg-emerald-500/20 text-emerald-500 font-bold py-1.5 rounded-lg text-xs hover:bg-emerald-500/30">Save</button>
               <button onClick={() => setIsAdding(false)} className="flex-1 bg-white/5 text-slate-400 font-bold py-1.5 rounded-lg text-xs hover:bg-white/10">Cancel</button>

@@ -343,60 +343,6 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className={`p-8 rounded-3xl border transition-all relative overflow-hidden group ${
-          maintenanceEnabled 
-            ? 'bg-amber-500/10 border-amber-500/30' 
-            : 'bg-emerald-500/10 border-emerald-500/20'
-        }`}>
-          <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl rounded-full ${
-            maintenanceEnabled ? 'bg-amber-500/20' : 'bg-emerald-500/20'
-          }`} />
-          <h3 className="text-lg font-bold mb-4 relative flex items-center gap-2">
-            {maintenanceEnabled ? <Lock className="text-amber-500 animate-pulse" size={20} /> : <Unlock className="text-emerald-500" size={20} />}
-            Maintenance Mode
-          </h3>
-          <div className="space-y-4 relative">
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Status</div>
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${maintenanceEnabled ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                <span className="text-sm font-black uppercase tracking-wider">
-                  {maintenanceEnabled ? 'Maintenance Mode Active' : 'Public Access Allowed'}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-normal">
-                {maintenanceEnabled 
-                  ? 'All non-owner users are locked out of the platform. A maintenance message is shown globally.' 
-                  : 'The platform is open to all users. Standard authentication and ledger features are fully active.'}
-              </p>
-            </div>
-
-            <button 
-              onClick={handleToggleMaintenance}
-              disabled={loadingMaintenance}
-              className={`w-full p-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all border relative overflow-hidden ${
-                maintenanceEnabled 
-                ? 'bg-emerald-500 text-black hover:bg-emerald-400 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
-                : 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20'
-              }`}
-            >
-              {loadingMaintenance && (
-                <div className="absolute inset-0 bg-inherit flex items-center justify-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current/20 border-t-current" />
-                  <span>Updating status...</span>
-                </div>
-              )}
-              <span className={loadingMaintenance ? 'opacity-0' : ''}>
-                {maintenanceEnabled ? 'Deactivate Maintenance Mode' : 'Activate Maintenance Mode'}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* System Communications & Controls (Moved from Broadcast Page) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        {/* Announcements Section */}
         <div className="p-8 rounded-3xl bg-white/5 border border-white/5 space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 uppercase tracking-tighter">
             <Megaphone size={22} className="text-primary" />
@@ -470,6 +416,58 @@ const AdminDashboard: React.FC = () => {
                 </div>
               )) : <p className="text-center text-xs text-slate-600 italic py-4">No active messages</p>}
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        <div className={`p-8 rounded-3xl border transition-all relative overflow-hidden group ${
+          maintenanceEnabled 
+            ? 'bg-amber-500/10 border-amber-500/30' 
+            : 'bg-emerald-500/10 border-emerald-500/20'
+        }`}>
+          <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl rounded-full ${
+            maintenanceEnabled ? 'bg-amber-500/20' : 'bg-emerald-500/20'
+          }`} />
+          <h3 className="text-lg font-bold mb-4 relative flex items-center gap-2">
+            {maintenanceEnabled ? <Lock className="text-amber-500 animate-pulse" size={20} /> : <Unlock className="text-emerald-500" size={20} />}
+            Maintenance Mode
+          </h3>
+          <div className="space-y-4 relative">
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Status</div>
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${maintenanceEnabled ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                <span className="text-sm font-black uppercase tracking-wider">
+                  {maintenanceEnabled ? 'Maintenance Mode Active' : 'Public Access Allowed'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-normal">
+                {maintenanceEnabled 
+                  ? 'All non-owner users are locked out of the platform. A maintenance message is shown globally.' 
+                  : 'The platform is open to all users. Standard authentication and ledger features are fully active.'}
+              </p>
+            </div>
+
+            <button 
+              onClick={handleToggleMaintenance}
+              disabled={loadingMaintenance}
+              className={`w-full p-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all border relative overflow-hidden ${
+                maintenanceEnabled 
+                ? 'bg-emerald-500 text-black hover:bg-emerald-400 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                : 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20'
+              }`}
+            >
+              {loadingMaintenance && (
+                <div className="absolute inset-0 bg-inherit flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current/20 border-t-current" />
+                  <span>Updating status...</span>
+                </div>
+              )}
+              <span className={loadingMaintenance ? 'opacity-0' : ''}>
+                {maintenanceEnabled ? 'Deactivate Maintenance Mode' : 'Activate Maintenance Mode'}
+              </span>
+            </button>
           </div>
         </div>
 

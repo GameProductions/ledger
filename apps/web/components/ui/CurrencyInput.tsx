@@ -1,54 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import { parseToCents, formatCentsToDecimal } from '../../utils/currencyUtils';
+import React from 'react';
 
 interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
   valueCents: number;
   onChangeCents: (cents: number) => void;
+  showSymbol?: boolean;
 }
 
 export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   valueCents,
   onChangeCents,
-  className,
+  showSymbol = true,
+  className = '',
   ...props
 }) => {
-  const [displayValue, setDisplayValue] = useState(formatCentsToDecimal(valueCents));
-
-  useEffect(() => {
-    setDisplayValue(formatCentsToDecimal(valueCents));
-  }, [valueCents]);
+  const displayValue = (valueCents / 100).toFixed(2);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawVal = e.target.value;
-    const cents = parseToCents(rawVal);
-    onChangeCents(cents);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && valueCents === 0) {
-      e.preventDefault();
+    const val = parseFloat(e.target.value);
+    if (isNaN(val)) {
+      onChangeCents(0);
+      return;
     }
-  };
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    // Delay slightly to ensure browser focus event has finished setting selection
-    setTimeout(() => {
-      e.target.setSelectionRange(val.length, val.length);
-    }, 0);
+    onChangeCents(Math.round(val * 100));
   };
 
   return (
-    <input
-      type="text"
-      inputMode="numeric"
-      value={displayValue}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      onFocus={handleFocus}
-      className={className}
-      {...props}
-    />
+    <div className="relative">
+      {showSymbol && (
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-black text-sm pointer-events-none">
+          $
+        </span>
+      )}
+      <input
+        type="number"
+        step="0.01"
+        value={displayValue}
+        onChange={handleChange}
+        className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 ${showSymbol ? 'pl-8' : ''} text-white focus:outline-none focus:border-primary transition-colors ${className}`}
+        {...props}
+      />
+    </div>
   );
 };
 export default CurrencyInput;

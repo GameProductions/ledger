@@ -20,7 +20,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: tracked = [], mutate } = (useApi('/api/tracked-expenses') as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
-  const { symbol, formatPrice } = useCurrency()
+  const { formatPrice } = useCurrency()
   const reduced = useReducedMotion()
 
   const lastRefreshRef = React.useRef(refreshTrigger)
@@ -310,14 +310,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     </div>
                     <div>
                       <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
-                      <div className="relative">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-xs">{symbol}</span>
-                        <CurrencyInput 
-                          valueCents={editForm?.amountCents || 0} 
-                          onChangeCents={cents => setEditForm({...editForm, amountCents: cents})}
-                          className="w-full bg-black/60 border border-white/10 rounded-xl p-2 pl-6 text-sm text-white focus:border-orange-500/50 outline-none"
-                        />
-                      </div>
+                      <CurrencyInput 
+                        valueCents={editForm?.amountCents || 0} 
+                        onChangeCents={cents => setEditForm({...editForm, amountCents: cents})}
+                        className="focus:border-orange-500/50 p-2 text-sm"
+                      />
                     </div>
                     <div>
                       <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Confirmation Number</label>
@@ -518,15 +515,12 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 block">New Amount (Optional)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-200/50 font-black text-sm">{symbol}</span>
-                <input 
-                  type="number" step="0.01" 
-                  placeholder="0.00"
-                  onChange={e => setBulkUpdates({...bulkUpdates, amountCents: Math.round(parseFloat(e.target.value) * 100)})}
-                  className="w-full bg-black/60 border border-white/10 rounded-xl p-3 pl-8 text-sm text-white focus:border-orange-500/50 outline-none"
-                />
-              </div>
+              <CurrencyInput 
+                valueCents={bulkUpdates.amountCents ?? 0} 
+                onChangeCents={cents => setBulkUpdates({...bulkUpdates, amountCents: cents})}
+                placeholder="0.00"
+                className="focus:border-orange-500/50"
+              />
             </div>
 
             <div>

@@ -7,6 +7,7 @@ import { getApiUrl } from '../utils/api'
 import { ArrowRightLeft, Plus, Trash2, Handshake, Users } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 interface SharedBalance {
   id: string
@@ -39,13 +40,13 @@ export default function SharedBalances() {
   const { data: members = [] } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any)
   
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newIOU, setNewIOU] = useState({ toUserId: '', amount: '', description: '' })
+  const [newIOU, setNewIOU] = useState({ toUserId: '', amountCents: 0, description: '' })
   const [adding, setAdding] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [confirmSettleUserId, setConfirmSettleUserId] = useState<string | null>(null)
 
   const createIOU = async () => {
-    if (!newIOU.toUserId || !newIOU.amount) return
+    if (!newIOU.toUserId || !newIOU.amountCents) return
     setAdding(true)
     try {
       const apiUrl = getApiUrl()
@@ -58,14 +59,14 @@ export default function SharedBalances() {
               },
               body: JSON.stringify({
                 toUserId: newIOU.toUserId,
-                amountCents: Math.round(parseFloat(newIOU.amount) * 100),
+                amountCents: newIOU.amountCents,
                 description: newIOU.description || undefined
               })
             }) as any)
       if (res.ok) {
         showToast('IOU recorded', 'success')
         setShowAddModal(false)
-        setNewIOU({ toUserId: '', amount: '', description: '' })
+        setNewIOU({ toUserId: '', amountCents: 0, description: '' })
         mutateBalances()
         mutateSummary()
       } else {
@@ -258,7 +259,7 @@ export default function SharedBalances() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button variant="primary" onClick={createIOU} disabled={adding || !newIOU.toUserId || !newIOU.amount}>
+            <Button variant="primary" onClick={createIOU} disabled={adding || !newIOU.toUserId || !newIOU.amountCents}>
               {adding ? 'Recording...' : 'Record IOU'}
             </Button>
           </>
@@ -279,15 +280,12 @@ export default function SharedBalances() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Amount ($)</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={newIOU.amount}
-              onChange={(e) => setNewIOU({ ...newIOU, amount: e.target.value })}
+            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Amount</label>
+            <CurrencyInput 
+              valueCents={newIOU.amountCents || 0} 
+              onChangeCents={cents => setNewIOU({ ...newIOU, amountCents: cents })}
               placeholder="0.00"
-              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm font-bold outline-none focus:border-violet-500/50 transition-all"
+              className="focus:border-violet-500/50"
             />
           </div>
           <div>

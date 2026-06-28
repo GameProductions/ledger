@@ -34,6 +34,10 @@ The Payment Orchestrator gives you absolute control over your transaction lifecy
 - **Direct Management**: You have full creation, editing, and deletion (single and bulk) access directly from the **Transaction Ledger** view.
 - **Notes & Audit History**: Modify notes, statuses, and tracking values seamlessly in the expanded detail window of any ledger item.
 
+### ⚡ Searchable Dropdowns & Inline Creation
+- **Searchable Selectors**: Dropdown selectors for Accounts, Categories, Providers, Payment Methods, and Subscriptions feature instant text filtering.
+- **Inline Value Creation**: When adding or editing transactions, you can type a new category or account name and click "+ Create [name]" directly in the dropdown menu. This will instantly create the entity in the database and pre-select it in the field.
+
 ## 🛡️ Security & Identity
 
 ### Security Keys & Passkeys

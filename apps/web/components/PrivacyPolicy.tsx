@@ -20,7 +20,7 @@ const PrivacyPolicy: React.FC = () => {
         <ul>
           <li><strong>Passkeys</strong>: When you set up a Passkey, we store secure keys and basic information (such as your device type). <strong>Your actual fingerprints or FaceID data never leaves your device and we cannot see it.</strong></li>
           <li><strong>Profile Information</strong>: We update your display name and profile picture from your connected Discord or Google accounts. You can choose to keep or remove this info if you disconnect your account.</li>
-          <li><strong>Financial Profiles</strong>: Your accounts and budgets are stored in a secure database.</li>
+          <li><strong>Financial Profiles</strong>: Your accounts, categories, tracked expenses (including confirmation numbers and custom notes), and budgets are stored in a secure database.</li>
           <li><strong>Backups</strong>: Encrypted backups can be sent to your personal cloud storage (Google Drive, Dropbox, or OneDrive).</li>
         </ul>
         </p>

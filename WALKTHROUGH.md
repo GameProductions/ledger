@@ -43,9 +43,9 @@ We have successfully completed the final phase of the fleet-wide terminology mig
 
 ---
 
-# Walkthrough: v3.41.1 Interactive Enhancements
+# Walkthrough: v3.42.0 Interactive Enhancements
 
-We have successfully implemented interactive fixes, mobile adjustments, and database schema updates for v3.41.1 of Ledger.
+We have successfully implemented interactive fixes, mobile adjustments, and database schema updates for v3.42.0 of Ledger.
 
 ## Changes Made
 
@@ -62,6 +62,8 @@ We have successfully implemented interactive fixes, mobile adjustments, and data
 - **Header Navigation Controls**: Added cycle arrow navigation for `pay_period` ranges in the Calendar header.
 - **RTL Masked Inputs**: Built `<CurrencyInput>` for right-to-left calculator-style currency inputs ensuring consistent two-decimal `.xx` formatting.
 - **Direct Ledger Management**: Added creation, editing, and deletion modals/buttons directly into the `TransactionLedger` component.
+- **Searchable Selectors & Inline Creation**: Upgraded dropdown menus (Categories, Accounts, Providers, Payment Methods, Subscriptions) to be fully text-searchable with dynamic `+ Create` options to add missing entities inline.
+- **Casing Audit Corrections**: Standardized transaction and tracked expense property keys to camelCase (e.g. `needsBalanceTransfer`, `accountedFor`, `rawDescription`) to prevent silent database insertion failures.
 
 ---
 *Created by Antigravity*

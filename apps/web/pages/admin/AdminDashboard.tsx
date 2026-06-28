@@ -364,23 +364,33 @@ const AdminDashboard: React.FC = () => {
               className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-sm font-bold focus:border-primary transition-all resize-none"
             />
             <div className="space-y-4">
-              <div className="flex gap-2">
+              <div className="space-y-1">
                 {[
-                  { value: 'info', label: 'Standard Info' },
-                  { value: 'warning', label: 'System Warning' },
-                  { value: 'critical', label: 'Critical/Maintenance' }
+                  { value: 'info', label: 'Standard Info', desc: 'General system notification', dot: 'bg-blue-500' },
+                  { value: 'warning', label: 'System Warning', desc: 'Upcoming changes or downtime', dot: 'bg-amber-500' },
+                  { value: 'critical', label: 'Critical/Maintenance', desc: 'Active outage or maintenance', dot: 'bg-red-500' }
                 ].map((item) => (
                   <button
                     key={item.value}
                     type="button"
                     onClick={() => setNewAnnouncement({...newAnnouncement, priority: item.value})}
-                    className={`flex-1 p-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                    className={`w-full text-left p-4 rounded-xl border transition-all ${
                       newAnnouncement.priority === item.value 
-                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
-                      : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                      ? 'bg-primary/10 border-primary/30 border-l-4 border-l-primary text-white' 
+                      : 'bg-black/40 border-white/5 text-slate-400 hover:bg-white/5 hover:border-white/10'
                     }`}
                   >
-                    {item.label}
+                    <div className="flex items-center gap-3">
+                      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                        newAnnouncement.priority === item.value ? item.dot : 'bg-slate-600'
+                      }`} />
+                      <div>
+                        <div className={`text-[11px] font-black uppercase tracking-widest ${
+                          newAnnouncement.priority === item.value ? 'text-primary' : 'text-slate-300'
+                        }`}>{item.label}</div>
+                        <div className="text-[10px] opacity-60 mt-0.5">{item.desc}</div>
+                      </div>
+                    </div>
                   </button>
                 ))}
               </div>

@@ -175,7 +175,7 @@ export const TransactionLedger: React.FC = () => {
                             'Authorization': `Bearer ${token}`,
                             'x-household-id': householdId || ''
                           },
-                          body: JSON.stringify({ raw_description: tx.description })
+                          body: JSON.stringify({ rawDescription: tx.description })
                         }) as any);
             const data = (await res.json() as any);
             if (data.suggestions) {
@@ -226,7 +226,7 @@ export const TransactionLedger: React.FC = () => {
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ accounted_for: true })
+      body: JSON.stringify({ accountedFor: true })
     })
     globalMutate()
   }
@@ -322,7 +322,7 @@ export const TransactionLedger: React.FC = () => {
           </thead>
           <tbody>
             {!transactions ? <tr><td colSpan={6} className="text-center py-8">Loading ledger...</td></tr> : 
-              transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accounted_for : true).map((tx: any) => (
+              transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accountedFor : true).map((tx: any) => (
               <React.Fragment key={tx.id}>
                 <tr className={`border-b border-white/5 hover:bg-white/5 transition-colors ${selectedIds.includes(tx.id) ? 'bg-primary/5' : ''}`}>
                   <td className="py-2 pl-2">
@@ -331,7 +331,7 @@ export const TransactionLedger: React.FC = () => {
                   <td className="py-2 opacity-80 whitespace-nowrap">{tx.transactionDate}</td>
                   <td className="py-2 font-medium flex items-center gap-2">
                     {tx.description}
-                    {tx.attentionRequired && !tx.accounted_for && (
+                    {tx.attentionRequired && !tx.accountedFor && (
                        <Flag size={14} className="text-orange-500" />
                     )}
                   </td>
@@ -371,7 +371,7 @@ export const TransactionLedger: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4 text-xs opacity-80">
                         <div>
                           <p className="mb-1 uppercase tracking-wider font-bold opacity-50">Raw Bank Data</p>
-                          <p className="font-mono bg-black/50 p-2 rounded">{tx.raw_description || tx.description}</p>
+                           <p className="font-mono bg-black/50 p-2 rounded">{tx.rawDescription || tx.description}</p>
                            <div className="mt-3 flex gap-2 flex-wrap">
                             <button onClick={() => setActiveSplitTx(tx)} className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded hover:bg-white/20 transition">
                               <SplitSquareVertical size={14} /> Split Transaction
@@ -420,13 +420,13 @@ export const TransactionLedger: React.FC = () => {
                           </div>
                       </div>
 
-                      {tx.attentionRequired && !tx.accounted_for && (
+                      {tx.attentionRequired && !tx.accountedFor && (
                         <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                            <div className="flex items-center justify-between">
                               <div className="space-y-1">
                                 <h4 className="text-orange-400 font-bold uppercase tracking-widest text-xs flex items-center gap-1"><Flag size={12} /> Attention Required</h4>
-                                {tx.needs_balance_transfer && <p className="text-sm">🔄 Balance Transfer timing: <span className="text-white font-bold">{tx.transfer_timing === 'same_day' ? 'Same Day' : 'Future'}</span></p>}
-                                {tx.is_borrowed && <p className="text-sm">💸 Borrowed Funds Source: <span className="text-white font-bold">{tx.borrow_source || 'Not specified'}</span></p>}
+                                {tx.needsBalanceTransfer && <p className="text-sm">🔄 Balance Transfer timing: <span className="text-white font-bold">{tx.transferTiming === 'same_day' ? 'Same Day' : 'Future'}</span></p>}
+                                {tx.isBorrowed && <p className="text-sm">💸 Borrowed Funds Source: <span className="text-white font-bold">{tx.borrowSource || 'Not specified'}</span></p>}
                               </div>
                               <button 
                                 onClick={() => resolveAttention(tx.id)}

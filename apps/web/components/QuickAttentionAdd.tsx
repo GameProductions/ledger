@@ -46,10 +46,10 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
         amountCents: amountCents,
         categoryId: categoryId || undefined,
         attentionRequired: attentionRequired,
-        needs_balance_transfer: needsBalanceTransfer,
-        transfer_timing: needsBalanceTransfer ? transferTiming : null,
-        is_borrowed: isBorrowed,
-        borrow_source: isBorrowed ? borrowSource : null,
+        needsBalanceTransfer: needsBalanceTransfer,
+        transferTiming: needsBalanceTransfer ? transferTiming : null,
+        isBorrowed: isBorrowed,
+        borrowSource: isBorrowed ? borrowSource : null,
       })
     })
 

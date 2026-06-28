@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, Check } from 'lucide-react';
+import { Search, ChevronDown, Check, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
@@ -17,6 +17,7 @@ interface SearchableSelectProps {
   placeholder?: string;
   className?: string;
   icon?: React.ReactNode;
+  onCreate?: (search: string) => Promise<string | void> | string | void;
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({ 
@@ -25,7 +26,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   onChange, 
   placeholder = "Select option...", 
   className = "",
-  icon: LeadingIcon
+  icon: LeadingIcon,
+  onCreate
 }) => {
   const reduced = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +37,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedOption = useMemo(() => options.find(o => o.value === value), [options, value]);
+
+  const showCreateOption = useMemo(() => {
+    if (!onCreate || !search.trim()) return false;
+    return !options.some(opt => opt.label.toLowerCase() === search.trim().toLowerCase());
+  }, [options, search, onCreate]);
 
   const filteredOptions = useMemo(() => {
     if (!search) return options;
@@ -138,6 +145,28 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
             {/* Options List */}
             <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
+              {showCreateOption && (
+                <div
+                  role="option"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const newId = await onCreate!(search.trim());
+                    if (newId) {
+                      onChange(newId);
+                    }
+                    setSearch('');
+                    setIsOpen(false);
+                  }}
+                  className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-white/5 text-amber-500 font-bold"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 overflow-hidden">
+                    <Plus size={16} className="text-amber-500" />
+                  </div>
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-sm font-bold tracking-tight">Create "{search.trim()}"</span>
+                  </div>
+                </div>
+              )}
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option, idx) => {
                   const isActive = idx === activeIndex;
@@ -207,6 +236,28 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
               {/* Options List */}
               <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
+                {showCreateOption && (
+                  <div
+                    role="option"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const newId = await onCreate!(search.trim());
+                      if (newId) {
+                        onChange(newId);
+                      }
+                      setSearch('');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-white/5 text-amber-500 font-bold"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 overflow-hidden">
+                      <Plus size={16} className="text-amber-500" />
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <span className="text-sm font-bold tracking-tight">Create "{search.trim()}"</span>
+                    </div>
+                  </div>
+                )}
                 {filteredOptions.length > 0 ? (
                   filteredOptions.map((option, idx) => {
                     const isActive = idx === activeIndex;

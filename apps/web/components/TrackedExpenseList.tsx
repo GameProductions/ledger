@@ -9,6 +9,7 @@ import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 
 interface TrackedExpenseListProps {
@@ -102,6 +103,36 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       setIsMoveToLedgerOpen(false)
     }
   }
+
+  const handleCreateCategory = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_householdId') || ''
+      },
+      body: JSON.stringify({ name })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
+  };
+
+  const handleCreateAccount = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/accounts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_householdId') || ''
+      },
+      body: JSON.stringify({ name, type: 'checking', balanceCents: 0 })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
+  };
 
   const handleUpdate = async (id: string, updates: any) => {
     const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
@@ -417,27 +448,25 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 flex items-center gap-1.5">
                 <CreditCard size={14} className="text-orange-500" /> Select Account
               </label>
-              <select 
+              <SearchableSelect 
+                options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
                 value={ledgerDetails.accountId}
-                onChange={e => setLedgerDetails({...ledgerDetails, accountId: e.target.value})}
-                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none appearance-none"
-              >
-                <option value="">Choose Account...</option>
-                {accounts.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
+                onChange={val => setLedgerDetails({...ledgerDetails, accountId: val})}
+                placeholder="Choose Account..."
+                onCreate={handleCreateAccount}
+              />
             </div>
             <div>
               <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 flex items-center gap-1.5">
                 <Tag size={14} className="text-orange-500" /> Select Category
               </label>
-              <select 
+              <SearchableSelect 
+                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                 value={ledgerDetails.categoryId}
-                onChange={e => setLedgerDetails({...ledgerDetails, categoryId: e.target.value})}
-                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none appearance-none"
-              >
-                <option value="">Choose Category...</option>
-                {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+                onChange={val => setLedgerDetails({...ledgerDetails, categoryId: val})}
+                placeholder="Choose Category..."
+                onCreate={handleCreateCategory}
+              />
             </div>
           </div>
           

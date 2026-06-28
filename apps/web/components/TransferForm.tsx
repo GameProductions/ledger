@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { useApi } from '../hooks/useApi'
+import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
+import { SearchableSelect } from './ui/SearchableSelect'
 
 const TransferForm: React.FC = () => {
   const { data: accounts } = (useApi('/api/financials/accounts') as any)
@@ -8,6 +9,21 @@ const TransferForm: React.FC = () => {
   const [to, setTo] = useState('')
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const handleCreateAccount = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/accounts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_householdId') || ''
+      },
+      body: JSON.stringify({ name, type: 'checking', balanceCents: 0 })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
+  };
 
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,18 +54,24 @@ const TransferForm: React.FC = () => {
       <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>From</label>
-            <select value={from} onChange={(e) => setFrom(e.target.value)} required>
-              <option value="">Select Account</option>
-              {accounts?.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>From</label>
+            <SearchableSelect 
+              options={(accounts || []).map((a: any) => ({ value: a.id, label: a.name }))}
+              value={from}
+              onChange={setFrom}
+              placeholder="Select Account"
+              onCreate={handleCreateAccount}
+            />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>To</label>
-            <select value={to} onChange={(e) => setTo(e.target.value)} required>
-              <option value="">Select Account</option>
-              {accounts?.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>To</label>
+            <SearchableSelect 
+              options={(accounts || []).map((a: any) => ({ value: a.id, label: a.name }))}
+              value={to}
+              onChange={setTo}
+              placeholder="Select Account"
+              onCreate={handleCreateAccount}
+            />
           </div>
         </div>
         <div>

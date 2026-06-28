@@ -8,6 +8,7 @@ import { Price } from './Price'
 import { useCurrency } from '../context/CurrencyContext'
 import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { QuickAttentionAdd } from './QuickAttentionAdd'
 
@@ -121,6 +122,36 @@ export const TransactionLedger: React.FC = () => {
       setSelectedIds([]);
       globalMutate();
     }
+  };
+
+  const handleCreateCategory = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ name })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
+  };
+
+  const handleCreateAccount = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/accounts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ name, type: 'checking', balanceCents: 0 })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
   };
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -577,30 +608,23 @@ export const TransactionLedger: React.FC = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Account</label>
-            <select 
+            <SearchableSelect 
+              options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
               value={txForm.accountId} 
-              onChange={e => setTxForm({...txForm, accountId: e.target.value})} 
-              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
-              required
-            >
-              <option value="">-- Select Account --</option>
-              {accounts.map((a: any) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
+              onChange={val => setTxForm({...txForm, accountId: val})} 
+              placeholder="Select Account..."
+              onCreate={handleCreateAccount}
+            />
           </div>
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Category</label>
-            <select 
+            <SearchableSelect 
+              options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
               value={txForm.categoryId} 
-              onChange={e => setTxForm({...txForm, categoryId: e.target.value})} 
-              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
-            >
-              <option value="">-- Uncategorized --</option>
-              {categories.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+              onChange={val => setTxForm({...txForm, categoryId: val})} 
+              placeholder="Uncategorized..."
+              onCreate={handleCreateCategory}
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -683,30 +707,23 @@ export const TransactionLedger: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Account</label>
-              <select 
+              <SearchableSelect 
+                options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
                 value={txForm.accountId} 
-                onChange={e => setTxForm({...txForm, accountId: e.target.value})} 
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
-                required
-              >
-                <option value="">-- Select Account --</option>
-                {accounts.map((a: any) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
+                onChange={val => setTxForm({...txForm, accountId: val})} 
+                placeholder="Select Account..."
+                onCreate={handleCreateAccount}
+              />
             </div>
             <div>
               <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Category</label>
-              <select 
+              <SearchableSelect 
+                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                 value={txForm.categoryId} 
-                onChange={e => setTxForm({...txForm, categoryId: e.target.value})} 
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary"
-              >
-                <option value="">-- Uncategorized --</option>
-                {categories.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+                onChange={val => setTxForm({...txForm, categoryId: val})} 
+                placeholder="Uncategorized..."
+                onCreate={handleCreateCategory}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

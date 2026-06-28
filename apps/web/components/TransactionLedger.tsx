@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { Price } from './Price'
+import { useCurrency } from '../context/CurrencyContext'
 import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -12,6 +13,7 @@ import { QuickAttentionAdd } from './QuickAttentionAdd'
 
 export const TransactionLedger: React.FC = () => {
   const { token, householdId } = useAuth()
+  const { symbol } = useCurrency()
   const reduced = useReducedMotion()
   
   // Filtering & Sorting State

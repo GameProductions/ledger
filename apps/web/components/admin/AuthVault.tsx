@@ -120,7 +120,7 @@ export const AuthVault: React.FC = () => {
             </div>
             <div>
               <h2 className="text-2xl font-black text-white tracking-tight">Authentication Vault</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">Fleet Security Standard v6.1 • Biometric Isolation</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">Security Standard v6.1 • Biometric Isolation</p>
             </div>
           </div>
           <button 

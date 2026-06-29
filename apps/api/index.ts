@@ -255,7 +255,7 @@ app.get('/api/config', async (c) => {
     const cached = (await c.env.FLEET_SECURITY_CACHE?.get('API_CONFIG', 'json') as any)
     if (cached) return c.json({ success: true, data: cached })
 
-    // --- System Configuration (Fleet Security v6.1 Filtered) ---
+    // --- System Configuration (Filtered) ---
     const PUBLIC_CONFIG_KEYS = ['OG_TITLE', 'OG_DESCRIPTION', 'OG_IMAGE_URL', 'MAINTENANCE_MODE', 'VERSION'];
     const db = getDb(c.env)
     

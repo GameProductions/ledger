@@ -27,7 +27,7 @@ export class AuthService {
       throw new HTTPException(401, { message: 'Invalid credentials' })
     }
 
-    // --- LOCKOUT CHECK (Fleet Security v2.1) ---
+    // --- LOCKOUT CHECK ---
     if (user.lockoutUntil) {
       const lockoutDate = new Date(user.lockoutUntil);
       if (lockoutDate > new Date()) {

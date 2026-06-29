@@ -2,7 +2,7 @@ import { Context, Next, MiddlewareHandler } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 
 /**
- * 🛡️ Fleet Security Standard: Security Orchestration
+ * 🛡️ Security Standard: Security Orchestration
  * Standardizes dynamic nonces and Content Security Policy across the fleet.
  */
 

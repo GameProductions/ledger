@@ -96,7 +96,7 @@ app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
             success: true,
             data: results,
             purgedPats: (patPurge as any).meta?.changes || 0,
-            message: 'Fleet Security v6.1 Offload Complete. Legacy plaintext material purged.'
+            message: 'Security Offload Complete. Legacy plaintext material purged.'
         });
     } catch (err: any) {
         console.error('[Vault Offload Error]', err);

@@ -458,7 +458,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
       await insertTx
     }
     
-    // EXECUTE RULE ENGINE (Fleet Security Smart Billing)
+    // EXECUTE RULE ENGINE (Smart Billing)
     const reconService = new ReconciliationService(db, c.env)
     await reconService.applyRules(householdId, [id])
     
@@ -851,7 +851,7 @@ financials.post('/transactions/import/confirm', zValidator('json', z.object({
     await db.batch(chunk as any)
   }
   
-  // EXECUTE RULE ENGINE (Fleet Security Smart Billing)
+  // EXECUTE RULE ENGINE (Smart Billing)
   const txIds = inserts.map((ins: any) => ins.values.id)
   const reconService = new ReconciliationService(db, c.env)
   await reconService.applyRules(householdId, txIds)

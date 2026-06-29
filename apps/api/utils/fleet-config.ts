@@ -2,8 +2,8 @@ import { MiddlewareHandler } from 'hono';
 
 /**
  * 🛰️ Fleet Configuration Engine
- * Fetches project-specific overrides from Fleet Security KV.
- * Allows Foundation to control feature flags and identity source of truth.
+ * Fetches project-specific overrides.
+ * Allows control of feature flags and identity source of truth.
  */
 export const fleetConfig = (): MiddlewareHandler => {
   return async (c, next) => {

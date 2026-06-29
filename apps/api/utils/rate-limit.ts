@@ -21,7 +21,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
   return async (c, next) => {
     const kv = (c.env as any).FLEET_SECURITY_CACHE;
     if (!kv) {
-      console.warn(`[Fleet Security] FLEET_SECURITY_CACHE binding missing for Ledger. Falling back to passthrough.`);
+      console.warn(`[Security] FLEET_SECURITY_CACHE binding missing for Ledger. Falling back to passthrough.`);
       return await next();
     }
 
@@ -33,8 +33,8 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
     if (isBlocked) {
       return c.json({ 
         error: 'Security Shield Active', 
-        message: 'Fleet Security has restricted this IP due to fleet-wide policy violations.',
-        security_v: 'Fleet Security v6.1'
+        message: 'Access restricted due to security policy violations.',
+        security_v: 'Security v6.1'
       }, 429);
     }
 
@@ -48,7 +48,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
       LAST_WRITE.set(k, now);
       const p = kv.put(k, v, o).catch((err: any) => {
         if (err.message?.includes('429')) return; // Suppress KV rate limit logs
-        console.error(`[Fleet Security] KV Write Failed: ${err.message}`);
+        console.error(`[Security] KV Write Failed: ${err.message}`);
       });
       
       if (c.executionCtx) c.executionCtx.waitUntil(p);
@@ -73,7 +73,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
           safePut(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
         } else if (current.count >= limit) {
           // 🚨 BLOCK TRIGGERED
-          console.error(`[Fleet Security] 🛑 Rate limit exceeded for ${ip} on ${botName} (${tier})`);
+          console.error(`[Security] 🛑 Rate limit exceeded for ${ip} on ${botName} (${tier})`);
           
           // Log block for Foundation Monitoring
           await safePut(`fs:block:${ip}`, JSON.stringify({
@@ -87,7 +87,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
           return c.json({ 
             error: 'Security Shield Active', 
             message: 'You are making too many requests. Please wait a moment and try again.',
-            security_v: 'Fleet Security v6.1'
+            security_v: 'Security v6.1'
           }, 429);
         } else {
           // Increment
@@ -98,7 +98,7 @@ export const ipRateLimit = (tier: RateLimitTier = 'API'): MiddlewareHandler => {
         safePut(key, JSON.stringify({ count: 1, reset: Date.now() + (window * 1000) }), { expirationTtl: window + 60 });
       }
     } catch (error: any) {
-      console.error(`[Fleet Security] Critical failure in middleware:`, error);
+      console.error(`[Security] Critical failure in middleware:`, error);
       // Fail-open to ensure service availability
     }
 

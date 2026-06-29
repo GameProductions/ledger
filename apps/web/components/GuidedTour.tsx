@@ -8,12 +8,12 @@ const steps = [
   {
     id: 'welcome',
     title: 'Welcome to LEDGER v6.1',
-    content: 'The Fleet Security Security update is here. We’ve overhauled our core architecture to ensure your financial data is more secure than ever.',
+    content: 'The Security update is here. We’ve overhauled our core architecture to ensure your financial data is more secure than ever.',
     target: null
   },
   {
     id: 'security',
-    title: 'Fleet Security Security',
+    title: 'Security Enhancements',
     content: 'Legacy TOTP (Authenticator Apps) has been decommissioned. Enroll your biometric Passkeys (TouchID/FaceID) for a passwordless, highly secure experience. If biometrics are unavailable, use your 8-character recovery codes.',
     target: '#user-profile-button'
   },

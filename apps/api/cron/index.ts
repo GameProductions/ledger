@@ -2,7 +2,7 @@ import { Bindings } from '../types'
 import { SchedulingService } from '../services/scheduling.service'
 import { decrypt } from '../utils'
 import { getDb } from '#/index'
-import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, activityLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills, userHouseholds } from '#/schema'
+import { accounts, creditCards, investmentHoldings, installmentPlans, privacyCards, externalConnections, activityLogs, schedules, subscriptions, transactions, categories, households, scheduleHistory, reminders, userIdentities, paySchedules, bills, userHouseholds, users, passkeys } from '#/schema'
 import { eq, sql, lte, and } from 'drizzle-orm'
 import { VaultService } from '../utils/vault.service'
 
@@ -368,11 +368,19 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
       ctx.waitUntil((async () => {
         try {
           const db = getDb(env);
-          const tables = ['users', 'households', 'user_households', 'accounts', 'transactions', 'subscriptions', 'passkeys'];
+          const tables = [
+            { name: 'users', schema: users },
+            { name: 'households', schema: households },
+            { name: 'user_households', schema: userHouseholds },
+            { name: 'accounts', schema: accounts },
+            { name: 'transactions', schema: transactions },
+            { name: 'subscriptions', schema: subscriptions },
+            { name: 'passkeys', schema: passkeys }
+          ];
           const dump: Record<string, any[]> = {};
           for (const table of tables) {
-            const results = (await db.execute(sql.raw(`SELECT * FROM ${table}`)) as any);
-            dump[table] = results;
+            const results = await db.select().from(table.schema);
+            dump[table.name] = results;
           }
           const payload = JSON.stringify({ version: 'Stable', timestamp: nowIso, data: dump });
           const filename = `ledger_automated_backup_${nowIso.split('T')[0]}.json`;

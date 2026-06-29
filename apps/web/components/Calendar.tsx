@@ -69,6 +69,14 @@ const Calendar: React.FC<CalendarProps> = ({
   const [customRange, setCustomRange] = useState({ start: format(new Date(), 'yyyy-MM-dd'), end: format(addDays(new Date(), 30), 'yyyy-MM-dd') });
   const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
 
+  // Totals Panel States
+  const [showTotalsPanel, setShowTotalsPanel] = useState(false);
+  const [includeProjected, setIncludeProjected] = useState(true);
+  const [totalsScope, setTotalsScope] = useState<'all' | 'debits' | 'deposits' | 'category' | 'account' | 'search'>('all');
+  const [totalsCategoryId, setTotalsCategoryId] = useState('');
+  const [totalsAccountId, setTotalsAccountId] = useState('');
+  const [totalsSearch, setTotalsSearch] = useState('');
+
   const resolvedRange = useMemo(() => {
     const today = startOfDay(new Date());
     if (rangeType === 'month') {
@@ -80,7 +88,6 @@ const Calendar: React.FC<CalendarProps> = ({
     } else if (rangeType === 'pay_period') {
         const range = getPayPeriodRange(paySchedules, selectedScheduleId, payPeriodType, today);
         if (range) return { start: range.start, end: range.end, isMonthMode: false };
-        // Fallback to month if no pay period found
         return { start: startOfMonth(today), end: endOfMonth(today), isMonthMode: true };
     } else {
         return { start: parseISO(customRange.start), end: parseISO(customRange.end), isMonthMode: false };
@@ -97,6 +104,92 @@ const Calendar: React.FC<CalendarProps> = ({
         return [];
     }
   }, [resolvedRange]);
+
+  const uniqueCategories = useMemo(() => {
+    const catsMap = new Map<string, string>();
+    transactions.forEach(t => {
+      if (t.categoryId && t.categoryName) catsMap.set(t.categoryId, t.categoryName);
+      else if (t.category?.id && t.category?.name) catsMap.set(t.category.id, t.category.name);
+    });
+    bills.forEach(b => {
+      if (b.categoryId && b.categoryName) catsMap.set(b.categoryId, b.categoryName);
+      else if (b.category?.id && b.category?.name) catsMap.set(b.category.id, b.category.name);
+    });
+    subscriptions.forEach(s => {
+      if (s.categoryId && s.categoryName) catsMap.set(s.categoryId, s.categoryName);
+      else if (s.category?.id && s.category?.name) catsMap.set(s.category.id, s.category.name);
+    });
+    return Array.from(catsMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [transactions, bills, subscriptions]);
+
+  const uniqueAccounts = useMemo(() => {
+    const acctsMap = new Map<string, string>();
+    transactions.forEach(t => {
+      if (t.accountId && t.accountName) acctsMap.set(t.accountId, t.accountName);
+      else if (t.account?.id && t.account?.name) acctsMap.set(t.account.id, t.account.name);
+    });
+    bills.forEach(b => {
+      if (b.accountId && b.accountName) acctsMap.set(b.accountId, b.accountName);
+      else if (b.account?.id && b.account?.name) acctsMap.set(b.account.id, b.account.name);
+    });
+    subscriptions.forEach(s => {
+      if (s.accountId && s.accountName) acctsMap.set(s.accountId, s.accountName);
+      else if (s.account?.id && s.account?.name) acctsMap.set(s.account.id, s.account.name);
+    });
+    return Array.from(acctsMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [transactions, bills, subscriptions]);
+
+  const rangeTotals = useMemo(() => {
+    let items = getAllRangeItems();
+    if (!includeProjected) {
+      items = items.filter(item => item.type === 'transaction');
+    }
+
+    let depositSum = 0;
+    let debitSum = 0;
+    let matchedSum = 0;
+    let matchCount = 0;
+
+    items.forEach(item => {
+      const amount = item.amountCents || 0;
+      const isDeposit = item.type === 'pay_schedule' || (item.type === 'transaction' && amount > 0);
+      
+      if (isDeposit) {
+        depositSum += Math.abs(amount);
+      } else {
+        debitSum += Math.abs(amount);
+      }
+
+      let matches = false;
+      if (totalsScope === 'all') {
+        matches = true;
+      } else if (totalsScope === 'debits') {
+        matches = !isDeposit;
+      } else if (totalsScope === 'deposits') {
+        matches = isDeposit;
+      } else if (totalsScope === 'category') {
+        matches = (item.categoryId === totalsCategoryId || item.category?.id === totalsCategoryId);
+      } else if (totalsScope === 'account') {
+        matches = (item.accountId === totalsAccountId || item.account?.id === totalsAccountId);
+      } else if (totalsScope === 'search') {
+        matches = item.description?.toLowerCase().includes(totalsSearch.toLowerCase()) ||
+                  item.notes?.toLowerCase().includes(totalsSearch.toLowerCase());
+      }
+
+      if (matches) {
+        matchedSum += amount;
+        matchCount++;
+      }
+    });
+
+    return {
+      depositSum,
+      debitSum,
+      netFlow: depositSum - debitSum,
+      matchedSum,
+      matchCount
+    };
+  }, [datesToRender, transactions, subscriptions, bills, installments, recurringProjections, paySchedules, includeProjected, totalsScope, totalsCategoryId, totalsAccountId, totalsSearch]);
 
   const monthName = format(currentDate, 'MMMM');
   const year = format(currentDate, 'yyyy');
@@ -244,13 +337,19 @@ const Calendar: React.FC<CalendarProps> = ({
             >
                 <Settings2 size={12} className="text-primary" /> Range
             </button>
+            <button 
+                onClick={() => setShowTotalsPanel(!showTotalsPanel)}
+                className={`px-4 h-8 flex items-center gap-2 rounded-lg font-bold transition-all text-[10px] tracking-widest uppercase border border-white/5 shadow-xl ${showTotalsPanel ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
+            >
+                📊 Totals
+            </button>
           </div>
         </div>
         
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
-               <button onClick={() => setDisplayMode('calendar')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><GridIcon size={12} /> Grid</button>
-               <button onClick={() => setDisplayMode('list')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'list' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><ListIcon size={12} /> List</button>
+                <button onClick={() => setDisplayMode('calendar')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><GridIcon size={12} /> Grid</button>
+                <button onClick={() => setDisplayMode('list')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'list' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><ListIcon size={12} /> List</button>
             </div>
             
             <div className="flex gap-2">
@@ -267,6 +366,118 @@ const Calendar: React.FC<CalendarProps> = ({
             </div>
           </div>
       </div>
+
+      {showTotalsPanel && (
+        <div className="mb-8 p-6 bg-white/[0.02] border border-white/5 rounded-3xl animate-in slide-in-from-top-4 duration-300 relative z-10 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Deposits / Income</span>
+              <div className="text-2xl font-black text-emerald-400 mt-1">
+                <Price amountCents={rangeTotals.depositSum} />
+              </div>
+            </div>
+            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Debits / Expenses</span>
+              <div className="text-2xl font-black text-rose-400 mt-1">
+                <Price amountCents={rangeTotals.debitSum} />
+              </div>
+            </div>
+            <div className="p-4 bg-white/5 border border-white/5 rounded-2xl">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Net Flow</span>
+              <div className={`text-2xl font-black mt-1 ${rangeTotals.netFlow >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <Price amountCents={rangeTotals.netFlow} />
+              </div>
+            </div>
+            <div className="p-4 bg-primary/10 border border-primary/20 rounded-2xl flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Matched Filter Total</span>
+                <div className="text-2xl font-black text-white mt-1">
+                  <Price amountCents={rangeTotals.matchedSum} />
+                </div>
+              </div>
+              <span className="text-[9px] font-bold text-slate-400 mt-2">
+                {rangeTotals.matchCount} matching items in range
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+            <div className="flex items-center gap-3">
+              <input 
+                type="checkbox"
+                id="includeProjected"
+                checked={includeProjected}
+                onChange={(e) => setIncludeProjected(e.target.checked)}
+                className="w-4 h-4 accent-primary rounded"
+              />
+              <label htmlFor="includeProjected" className="text-xs font-black uppercase tracking-widest text-secondary cursor-pointer">
+                Include Projected Items
+              </label>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Totals Filter Scope</label>
+              <select
+                value={totalsScope}
+                onChange={(e: any) => setTotalsScope(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 text-xs font-bold px-3 py-2 rounded-xl text-white outline-none focus:border-primary"
+              >
+                <option value="all">All Items</option>
+                <option value="debits">Debits / Expenses</option>
+                <option value="deposits">Deposits / Income</option>
+                <option value="category">Specific Category</option>
+                <option value="account">Specific Account</option>
+                <option value="search">Keyword Search</option>
+              </select>
+            </div>
+
+            {totalsScope === 'category' && (
+              <div className="space-y-1 animate-in fade-in duration-300">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Select Category</label>
+                <select
+                  value={totalsCategoryId}
+                  onChange={(e: any) => setTotalsCategoryId(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 text-xs font-bold px-3 py-2 rounded-xl text-white outline-none focus:border-primary font-bold"
+                >
+                  <option value="">Choose category...</option>
+                  {uniqueCategories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {totalsScope === 'account' && (
+              <div className="space-y-1 animate-in fade-in duration-300">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Select Account</label>
+                <select
+                  value={totalsAccountId}
+                  onChange={(e: any) => setTotalsAccountId(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 text-xs font-bold px-3 py-2 rounded-xl text-white outline-none focus:border-primary font-bold"
+                >
+                  <option value="">Choose account...</option>
+                  {uniqueAccounts.map(a => (
+                    <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {totalsScope === 'search' && (
+              <div className="space-y-1 animate-in fade-in duration-300">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Search Keyword</label>
+                <input
+                  type="text"
+                  placeholder="Filter by description..."
+                  value={totalsSearch}
+                  onChange={(e) => setTotalsSearch(e.target.value)}
+                  className="w-full p-2 bg-white/5 border border-white/10 rounded-xl text-white text-xs font-bold outline-none focus:border-primary font-bold"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {displayMode === 'calendar' ? (
       <div className="grid grid-cols-7 gap-3" role="grid" aria-label="Calendar">

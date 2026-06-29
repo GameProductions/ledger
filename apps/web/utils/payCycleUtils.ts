@@ -136,7 +136,7 @@ export const projectRecurringItems = (
 ): RecurringProjection[] => {
   const instances: RecurringProjection[] = [];
 
-  const projectDates = (startDateStr: string, frequency: string, maxCount: number = Infinity): string[] => {
+  const projectDates = (startDateStr: string, frequency: string, maxCount: number = Infinity, endDateStr?: string | null): string[] => {
     const dates: string[] = [];
     let current = parseISO(startDateStr);
     let iterations = 0;
@@ -155,8 +155,12 @@ export const projectRecurringItems = (
 
     iterations = 0;
     while (isBefore(current, viewEnd) && iterations < maxIterations && dates.length < maxCount) {
+      const curDateStr = format(current, 'yyyy-MM-dd');
+      if (endDateStr && curDateStr > endDateStr) {
+        break;
+      }
       if (!isBefore(current, viewStart)) {
-        dates.push(format(current, 'yyyy-MM-dd'));
+        dates.push(curDateStr);
       }
 
       if (frequency === 'weekly') current = addDays(current, 7);
@@ -171,7 +175,7 @@ export const projectRecurringItems = (
         current = addMonths(current, 3);
         current = setDate(current, Math.min(day, getDaysInMonth(current)));
       }
-      else if (frequency === 'annually') {
+      else if (frequency === 'annually' || frequency === 'yearly') {
         const day = current.getDate();
         current = addMonths(current, 12);
         current = setDate(current, Math.min(day, getDaysInMonth(current)));
@@ -185,7 +189,8 @@ export const projectRecurringItems = (
 
   subscriptions.forEach(sub => {
     if (!sub.nextBillingDate || !sub.billingCycle || sub.billingCycle === 'manual' || sub.billingCycle === 'one-time') return;
-    const dates = projectDates(sub.nextBillingDate, sub.billingCycle);
+    const maxCount = sub.maxOccurrences || Infinity;
+    const dates = projectDates(sub.nextBillingDate, sub.billingCycle, maxCount, sub.endDate);
     dates.forEach(date => {
       instances.push({
         id: `sub-proj-${sub.id}-${date}`,
@@ -203,7 +208,8 @@ export const projectRecurringItems = (
 
   bills.forEach(bill => {
     if (!bill.dueDate || !bill.frequency || bill.frequency === 'manual' || bill.frequency === 'one-time') return;
-    const dates = projectDates(bill.dueDate, bill.frequency);
+    const maxCount = bill.maxOccurrences || Infinity;
+    const dates = projectDates(bill.dueDate, bill.frequency, maxCount, bill.endDate);
     dates.forEach(date => {
       instances.push({
         id: `bill-proj-${bill.id}-${date}`,

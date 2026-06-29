@@ -27,6 +27,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [semiMonthlyDay1, setSemiMonthlyDay1] = useState(initialData?.semiMonthlyDay1 || 1);
   const [semiMonthlyDay2, setSemiMonthlyDay2] = useState(initialData?.semiMonthlyDay2 || 15);
   const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring || false);
+  const [billEndDate, setBillEndDate] = useState(initialData?.endDate || '');
+  const [billMaxOccurrences, setBillMaxOccurrences] = useState(initialData?.maxOccurrences ? initialData.maxOccurrences.toString() : '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [showTimeline, setShowTimeline] = useState(false);
   const [upcomingAmount, setUpcomingAmount] = useState(initialData?.upcomingAmountCents ? (initialData.upcomingAmountCents / 100).toString() : '');
@@ -59,7 +61,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         status: status,
         notes: notes,
         isRecurring: isRecurring,
-        frequency: isRecurring ? 'monthly' : null
+        frequency: isRecurring ? (frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency) : null,
+        endDate: isRecurring && billEndDate ? billEndDate : null,
+        maxOccurrences: isRecurring && billMaxOccurrences ? parseInt(billMaxOccurrences) : null
       });
     } else {
       onSave({
@@ -242,17 +246,56 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               )}
 
               {type === 'bill' && (
-                <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
-                    <input 
-                      type="checkbox" 
-                      id="isRecurring"
-                      checked={isRecurring}
-                      onChange={(e) => setIsRecurring(e.target.checked)}
-                      className="w-5 h-5 accent-amber-500"
-                    />
-                    <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
-                        This is a recurring monthly bill
-                    </label>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+                      <input 
+                        type="checkbox" 
+                        id="isRecurring"
+                        checked={isRecurring}
+                        onChange={(e) => setIsRecurring(e.target.checked)}
+                        className="w-5 h-5 accent-amber-500"
+                      />
+                      <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
+                          This is a recurring bill
+                      </label>
+                  </div>
+                  {isRecurring && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white/5 border border-glass-border rounded-2xl animate-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                        <TypeableSelect 
+                          options={[
+                            { value: 'weekly', label: 'WEEKLY' },
+                            { value: 'biweekly', label: 'BIWEEKLY' },
+                            { value: 'monthly', label: 'MONTHLY' },
+                            { value: 'quarterly', label: 'QUARTERLY' },
+                            { value: 'annually', label: 'ANNUALLY' }
+                          ]}
+                          value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
+                          onChange={(val) => setFrequency(val)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">End Date</label>
+                        <input 
+                          type="date"
+                          value={billEndDate}
+                          onChange={(e) => setBillEndDate(e.target.value)}
+                          className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Max Occurrences</label>
+                        <input 
+                          type="number"
+                          placeholder="Unlimited"
+                          value={billMaxOccurrences}
+                          onChange={(e) => setBillMaxOccurrences(e.target.value)}
+                          className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -494,17 +537,56 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                )}
 
                {type === 'bill' && (
-                 <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
-                     <input 
-                       type="checkbox" 
-                       id="isRecurring"
-                       checked={isRecurring}
-                       onChange={(e) => setIsRecurring(e.target.checked)}
-                       className="w-5 h-5 accent-amber-500"
-                     />
-                     <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
-                         This is a recurring monthly bill
-                     </label>
+                 <div className="space-y-4">
+                   <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+                       <input 
+                         type="checkbox" 
+                         id="isRecurring"
+                         checked={isRecurring}
+                         onChange={(e) => setIsRecurring(e.target.checked)}
+                         className="w-5 h-5 accent-amber-500"
+                       />
+                       <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
+                           This is a recurring bill
+                       </label>
+                   </div>
+                   {isRecurring && (
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white/5 border border-glass-border rounded-2xl animate-in slide-in-from-top-2 duration-300">
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                         <TypeableSelect 
+                           options={[
+                             { value: 'weekly', label: 'WEEKLY' },
+                             { value: 'biweekly', label: 'BIWEEKLY' },
+                             { value: 'monthly', label: 'MONTHLY' },
+                             { value: 'quarterly', label: 'QUARTERLY' },
+                             { value: 'annually', label: 'ANNUALLY' }
+                           ]}
+                           value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
+                           onChange={(val) => setFrequency(val)}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">End Date</label>
+                         <input 
+                           type="date"
+                           value={billEndDate}
+                           onChange={(e) => setBillEndDate(e.target.value)}
+                           className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Max Occurrences</label>
+                         <input 
+                           type="number"
+                           placeholder="Unlimited"
+                           value={billMaxOccurrences}
+                           onChange={(e) => setBillMaxOccurrences(e.target.value)}
+                           className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
+                         />
+                       </div>
+                     </div>
+                   )}
                  </div>
                )}
 

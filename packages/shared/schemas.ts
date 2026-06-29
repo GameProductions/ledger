@@ -135,8 +135,10 @@ export const TrackedExpenseSchema = z.object({
 export const SubscriptionSchema = z.object({
   name: z.string().min(1).max(100),
   amountCents: z.number().int().positive(),
-  billingCycle: z.enum(['weekly', 'monthly', 'yearly']),
+  billingCycle: z.enum(['weekly', 'biweekly', 'monthly', 'quarterly', 'annually', 'yearly']),
   nextBillingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  maxOccurrences: z.number().int().positive().optional().nullable(),
   accountId: z.string().optional(),
   paymentMode: z.enum(['manual', 'autopay']).optional(),
   ownerId: z.string().optional(),
@@ -146,7 +148,8 @@ export const SubscriptionSchema = z.object({
 
 export const PayScheduleSchema = z.object({
   name: z.string().min(1).max(100),
-  frequency: z.enum(['weekly', 'biweekly', 'semi-monthly', 'monthly', 'quarterly', 'annually', 'manual']),
+  amountCents: z.number().int().positive(),
+  frequency: z.string(), // SINGLE, RECURRING, CRON
   nextPayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   estimatedAmountCents: z.number().int().positive().optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
@@ -167,6 +170,8 @@ export const BillSchema = z.object({
   accountId: z.string().optional().nullable(),
   isRecurring: z.boolean().optional().default(false),
   frequency: z.string().optional().nullable(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  maxOccurrences: z.number().int().positive().optional().nullable(),
   ownerId: z.string().optional(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),

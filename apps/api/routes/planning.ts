@@ -91,6 +91,8 @@ planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c
     amountCents: data.amountCents,
     billingCycle: data.billingCycle,
     nextBillingDate: data.nextBillingDate,
+    endDate: data.endDate || null,
+    maxOccurrences: data.maxOccurrences || null,
     accountId: data.accountId || null,
     paymentMode: data.paymentMode || 'manual',
     ownerId: data.ownerId || c.get('userId'),
@@ -117,6 +119,8 @@ planning.patch('/subscriptions/:id', zValidator('json', SubscriptionSchema.parti
   if (data.amountCents !== undefined) updates.amountCents = data.amountCents
   if (data.billingCycle !== undefined) updates.billingCycle = data.billingCycle
   if (data.nextBillingDate !== undefined) updates.nextBillingDate = data.nextBillingDate
+  if (data.endDate !== undefined) updates.endDate = data.endDate
+  if (data.maxOccurrences !== undefined) updates.maxOccurrences = data.maxOccurrences
   if (data.accountId !== undefined) updates.accountId = data.accountId
   if (data.paymentMode !== undefined) updates.paymentMode = data.paymentMode
   if (data.upcomingAmountCents !== undefined) updates.upcomingAmountCents = data.upcomingAmountCents
@@ -196,6 +200,8 @@ planning.post('/bills', zValidator('json', BillSchema), async (c) => {
     accountId: data.accountId || null,
     isRecurring: data.isRecurring || false,
     frequency: data.frequency || null,
+    endDate: data.endDate || null,
+    maxOccurrences: data.maxOccurrences || null,
     ownerId: data.ownerId || c.get('userId'),
     upcomingAmountCents: data.upcomingAmountCents || null,
     upcomingEffectiveDate: data.upcomingEffectiveDate || null
@@ -225,6 +231,8 @@ planning.patch('/bills/:id', zValidator('json', BillSchema.partial()), async (c)
   if (data.accountId !== undefined) updates.accountId = data.accountId
   if (data.isRecurring !== undefined) updates.isRecurring = data.isRecurring
   if (data.frequency !== undefined) updates.frequency = data.frequency
+  if (data.endDate !== undefined) updates.endDate = data.endDate
+  if (data.maxOccurrences !== undefined) updates.maxOccurrences = data.maxOccurrences
   if (data.ownerId !== undefined) updates.ownerId = data.ownerId
   if (data.upcomingAmountCents !== undefined) updates.upcomingAmountCents = data.upcomingAmountCents
   if (data.upcomingEffectiveDate !== undefined) updates.upcomingEffectiveDate = data.upcomingEffectiveDate

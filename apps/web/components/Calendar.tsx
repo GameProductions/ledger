@@ -105,6 +105,66 @@ const Calendar: React.FC<CalendarProps> = ({
     }
   }, [resolvedRange]);
 
+  // Consolidate all items for the range
+  const getAllRangeItems = () => {
+    let all: any[] = [];
+    datesToRender.forEach(d => {
+        if (!d.isPadding) {
+            all = [...all, ...getItemsForDate(d.date)];
+        }
+    });
+    return all;
+  };
+
+  const getItemsForDate = (dateToCheck: Date) => {
+    const dateStr = format(dateToCheck, 'yyyy-MM-dd');
+    const dayTxs = (Array.isArray(transactions) ? transactions : []).filter(tx => {
+      return tx.transactionDate === dateStr;
+    }).map(tx => ({ ...tx, type: 'transaction' }));
+
+    const dayRecurringProj = (Array.isArray(recurringProjections) ? recurringProjections : [])
+      .filter(rp => rp.date === dateStr)
+      .map(rp => ({
+          ...rp.originalData,
+          id: rp.id,
+          type: rp.type,
+          description: rp.description,
+          amountCents: rp.amountCents,
+          _date: parseISO(rp.date),
+      }));
+
+    const dayBills = (Array.isArray(subscriptions) ? subscriptions : [])
+      .concat(Array.isArray(bills) ? bills : [])
+      .concat(Array.isArray(installments) ? installments : [])
+      .filter(sub => {
+        if (sub.frequency || sub.billingCycle) return false;
+        const subDateStr = sub.nextBillingDate || sub.dueDate || sub.nextPayDate;
+        return subDateStr === dateStr;
+    }).map(sub => ({ 
+        ...sub, 
+        type: sub.dueDate ? 'bill' : sub.nextPayDate ? 'installment' : 'subscription', 
+        description: sub.name, 
+        amountCents: sub.amountCents || sub.installmentAmountCents,
+        _date: parseISO(sub.nextBillingDate || sub.dueDate || sub.nextPayDate)
+    }));
+
+    const dayPays = (Array.isArray(paySchedules) ? paySchedules : []).filter(pay => {
+      const payDateStr = pay.date || pay.nextPayDate;
+      return payDateStr === dateStr;
+    }).map(pay => ({ 
+        ...pay, 
+        type: 'pay_schedule', 
+        description: `${pay.name}`, 
+        amountCents: pay.amountCents || pay.estimatedAmountCents || 0,
+        _date: parseISO(pay.date || pay.nextPayDate)
+    }));
+
+    // Backfill _date for sorting uniformly
+    dayTxs.forEach(t => t._date = parseISO(t.transactionDate));
+
+    return [...dayPays, ...dayRecurringProj, ...dayBills, ...dayTxs];
+  };
+
   const uniqueCategories = useMemo(() => {
     const catsMap = new Map<string, string>();
     transactions.forEach(t => {
@@ -197,65 +257,7 @@ const Calendar: React.FC<CalendarProps> = ({
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(addMonths(currentDate, -1));
   
-  // Consolidate all items for the range
-  const getAllRangeItems = () => {
-    let all: any[] = [];
-    datesToRender.forEach(d => {
-        if (!d.isPadding) {
-            all = [...all, ...getItemsForDate(d.date)];
-        }
-    });
-    return all;
-  };
 
-  const getItemsForDate = (dateToCheck: Date) => {
-    const dateStr = format(dateToCheck, 'yyyy-MM-dd');
-    const dayTxs = (Array.isArray(transactions) ? transactions : []).filter(tx => {
-      return tx.transactionDate === dateStr;
-    }).map(tx => ({ ...tx, type: 'transaction' }));
-
-    const dayRecurringProj = (Array.isArray(recurringProjections) ? recurringProjections : [])
-      .filter(rp => rp.date === dateStr)
-      .map(rp => ({
-          ...rp.originalData,
-          id: rp.id,
-          type: rp.type,
-          description: rp.description,
-          amountCents: rp.amountCents,
-          _date: parseISO(rp.date),
-      }));
-
-    const dayBills = (Array.isArray(subscriptions) ? subscriptions : [])
-      .concat(Array.isArray(bills) ? bills : [])
-      .concat(Array.isArray(installments) ? installments : [])
-      .filter(sub => {
-        if (sub.frequency || sub.billingCycle) return false;
-        const subDateStr = sub.nextBillingDate || sub.dueDate || sub.nextPayDate;
-        return subDateStr === dateStr;
-    }).map(sub => ({ 
-        ...sub, 
-        type: sub.dueDate ? 'bill' : sub.nextPayDate ? 'installment' : 'subscription', 
-        description: sub.name, 
-        amountCents: sub.amountCents || sub.installmentAmountCents,
-        _date: parseISO(sub.nextBillingDate || sub.dueDate || sub.nextPayDate)
-    }));
-
-    const dayPays = (Array.isArray(paySchedules) ? paySchedules : []).filter(pay => {
-      const payDateStr = pay.date || pay.nextPayDate;
-      return payDateStr === dateStr;
-    }).map(pay => ({ 
-        ...pay, 
-        type: 'pay_schedule', 
-        description: `${pay.name}`, 
-        amountCents: pay.amountCents || pay.estimatedAmountCents || 0,
-        _date: parseISO(pay.date || pay.nextPayDate)
-    }));
-
-    // Backfill _date for sorting uniformly
-    dayTxs.forEach(t => t._date = parseISO(t.transactionDate));
-
-    return [...dayPays, ...dayRecurringProj, ...dayBills, ...dayTxs];
-  };
 
   const allItems = getAllRangeItems().filter(i => {
       if (filterType === 'all') return true;

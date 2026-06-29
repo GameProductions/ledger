@@ -53,7 +53,7 @@ export const TransactionOutputSchema = z.object({
   id: z.string(),
   amountCents: z.number().int(),
   description: z.string(),
-  accountId: z.string(),
+  accountId: z.string().nullable(),
   categoryId: z.string().nullable(),
   transactionDate: z.string(),
   ownerId: z.string().nullable(),

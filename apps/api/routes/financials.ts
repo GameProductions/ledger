@@ -446,6 +446,8 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
       borrowSource: data.borrowSource || null,
       accountedFor: data.accountedFor,
       source: data.source || 'manual',
+      payScheduleId: data.payScheduleId || null,
+      paycheckDate: data.paycheckDate || null,
     })
 
     if (data.categoryId) {
@@ -763,6 +765,8 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.isBorrowed !== undefined) updates.isBorrowed = data.isBorrowed
   if (data.borrowSource !== undefined) updates.borrowSource = data.borrowSource
   if (data.accountedFor !== undefined) updates.accountedFor = data.accountedFor
+  if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
+  if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
   
   if (Object.keys(updates).length > 0) {
     const db = getDb(c.env)

@@ -77,6 +77,42 @@ const Calendar: React.FC<CalendarProps> = ({
   const [totalsAccountId, setTotalsAccountId] = useState('');
   const [totalsSearch, setTotalsSearch] = useState('');
 
+  const [alignBillerName, setAlignBillerName] = useState('');
+  const [isAligning, setIsAligning] = useState(false);
+
+  const handleReevaluate = async (scope: 'all' | 'biller', biller?: string) => {
+    setIsAligning(true);
+    try {
+      const response = await fetch('/api/planning/re-evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scope,
+          billerName: biller || null,
+          rangeStart: format(resolvedRange.start, 'yyyy-MM-dd'),
+          rangeEnd: format(resolvedRange.end, 'yyyy-MM-dd')
+        })
+      });
+      const data = (await response.json() as any);
+      if (data.success) {
+        alert(`Successfully aligned ${data.updatedCount} occurrences to the paycheck dates!`);
+        window.location.reload();
+      } else {
+        alert(data.error || 'Failed to align pay schedule');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Error aligning pay schedule');
+    } finally {
+      setIsAligning(false);
+    }
+  };
+
+  const getAssignedPaycheckName = (item: any) => {
+    if (!item.payScheduleId) return null;
+    const ps = (payScheduleDefinitions || []).find(p => p.id === item.payScheduleId);
+    return ps ? ps.name : null;
+  };
+
   const resolvedRange = useMemo(() => {
     const today = startOfDay(new Date());
     if (rangeType === 'month') {
@@ -478,6 +514,39 @@ const Calendar: React.FC<CalendarProps> = ({
               </div>
             )}
           </div>
+
+          <div className="pt-6 border-t border-white/5 space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">📅 Paycheck Alignment Controls</h4>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                disabled={isAligning}
+                onClick={() => handleReevaluate('all')}
+                className="px-4 py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
+              >
+                {isAligning ? 'Aligning...' : '⚡ Align All Range Bills to Paychecks'}
+              </button>
+
+              <div className="flex items-center gap-2 bg-white/5 border border-white/5 p-1 rounded-xl">
+                <input
+                  type="text"
+                  placeholder="Biller name (e.g. Netflix)"
+                  value={alignBillerName}
+                  onChange={(e) => setAlignBillerName(e.target.value)}
+                  className="bg-transparent text-xs font-bold px-3 py-1.5 text-white outline-none placeholder:text-slate-600"
+                />
+                <button
+                  disabled={isAligning || !alignBillerName}
+                  onClick={() => handleReevaluate('biller', alignBillerName)}
+                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                >
+                  Align Biller
+                </button>
+              </div>
+            </div>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+              Note: This aligns the due dates of future occurrences to match the closest paycheck date before the due date.
+            </p>
+          </div>
         </div>
       )}
 
@@ -607,8 +676,13 @@ const Calendar: React.FC<CalendarProps> = ({
                             </div>
                             <div>
                                 <h4 className="font-bold text-sm">{item.description}</h4>
-                                <p className="text-[10px] uppercase tracking-widest font-black opacity-50 mt-1">
-                                    {item.type.replace('_', ' ')} • {format(item._date, 'MMM d, yyyy')}
+                                <p className="text-[10px] uppercase tracking-widest font-black opacity-50 mt-1 flex flex-wrap items-center gap-1">
+                                    <span>{item.type.replace('_', ' ')} • {format(item._date, 'MMM d, yyyy')}</span>
+                                    {getAssignedPaycheckName(item) && (
+                                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-black text-[8px] uppercase tracking-widest ml-1 border border-blue-500/10">
+                                        💸 {getAssignedPaycheckName(item)}
+                                      </span>
+                                    )}
                                 </p>
                             </div>
                         </div>

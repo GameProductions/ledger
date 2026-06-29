@@ -1187,6 +1187,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         onDelete={handleCalendarDelete}
         initialData={selectedCalendarItem}
         date={selectedCalendarDate}
+        paySchedules={paySchedules}
       />
 
       {/* Confirmation Modals */}

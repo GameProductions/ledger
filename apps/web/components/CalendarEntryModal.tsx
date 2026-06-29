@@ -12,10 +12,11 @@ interface CalendarEntryModalProps {
   onDelete?: (id: string, type: string) => void;
   initialData?: any;
   date?: Date;
+  paySchedules?: any[];
 }
 
 export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({ 
-  isOpen, onClose, onSave, onDelete, initialData, date 
+  isOpen, onClose, onSave, onDelete, initialData, date, paySchedules = []
 }) => {
   const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
@@ -33,6 +34,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [showTimeline, setShowTimeline] = useState(false);
   const [upcomingAmount, setUpcomingAmount] = useState(initialData?.upcomingAmountCents ? (initialData.upcomingAmountCents / 100).toString() : '');
   const [upcomingDate, setUpcomingDate] = useState(initialData?.upcomingEffectiveDate || '');
+  const [payScheduleId, setPayScheduleId] = useState(initialData?.payScheduleId || '');
+  const [paycheckDate, setPaycheckDate] = useState(initialData?.paycheckDate || '');
   const reduced = useReducedMotion();
 
   if (!isOpen) return null;
@@ -63,7 +66,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         isRecurring: isRecurring,
         frequency: isRecurring ? (frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency) : null,
         endDate: isRecurring && billEndDate ? billEndDate : null,
-        maxOccurrences: isRecurring && billMaxOccurrences ? parseInt(billMaxOccurrences) : null
+        maxOccurrences: isRecurring && billMaxOccurrences ? parseInt(billMaxOccurrences) : null,
+        payScheduleId: payScheduleId || null,
+        paycheckDate: paycheckDate || null
       });
     } else {
       onSave({
@@ -73,7 +78,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         amountCents: Math.round(parseFloat(amount) * 100),
         transactionDate: currentDate,
         status,
-        confirmationNumber: confirmationNumber
+        confirmationNumber: confirmationNumber,
+        payScheduleId: payScheduleId || null,
+        paycheckDate: paycheckDate || null
       });
     }
   };
@@ -323,6 +330,22 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                     />
                  </div>
               </div>
+
+              {(type === 'bill' || type === 'charge') && paySchedules && paySchedules.length > 0 && (
+                <div className="space-y-2 animate-in fade-in duration-300">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Assign to Paycheck</label>
+                  <select
+                    value={payScheduleId}
+                    onChange={(e) => setPayScheduleId(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                  >
+                    <option value="">Do not assign</option>
+                    {paySchedules.map(ps => (
+                      <option key={ps.id} value={ps.id}>{ps.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {initialData?.id && (
                 <div className="pt-4 border-t border-white/5">
@@ -614,6 +637,22 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                      />
                   </div>
                </div>
+
+              {(type === 'bill' || type === 'charge') && paySchedules && paySchedules.length > 0 && (
+                <div className="space-y-2 animate-in fade-in duration-300">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Assign to Paycheck</label>
+                  <select
+                    value={payScheduleId}
+                    onChange={(e) => setPayScheduleId(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                  >
+                    <option value="">Do not assign</option>
+                    {paySchedules.map(ps => (
+                      <option key={ps.id} value={ps.id}>{ps.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
                {initialData?.id && (
                  <div className="pt-4 border-t border-white/5">

@@ -45,6 +45,8 @@ export const TransactionSchema = z.object({
   borrowSource: z.string().optional().nullable(),
   accountedFor: z.boolean().optional().default(false),
   source: z.string().optional().default('manual'),
+  payScheduleId: z.string().optional().nullable(),
+  paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 })
 
 export const TransactionOutputSchema = z.object({
@@ -144,6 +146,8 @@ export const SubscriptionSchema = z.object({
   ownerId: z.string().optional(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  payScheduleId: z.string().optional().nullable(),
+  paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 })
 
 export const PayScheduleSchema = z.object({
@@ -175,6 +179,8 @@ export const BillSchema = z.object({
   ownerId: z.string().optional(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  payScheduleId: z.string().optional().nullable(),
+  paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 })
 
 export const LiabilitySplitSchema = z.object({

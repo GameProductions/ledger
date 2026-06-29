@@ -83,6 +83,8 @@ export const transactions = pgTable('transactions', {
   borrowSource: text('borrow_source'),
   accountedFor: boolean('accounted_for').default(false),
   source: text('source').default('manual'),
+  payScheduleId: text('pay_schedule_id'),
+  paycheckDate: text('paycheck_date'),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
   accountIdx: index('idx_transactions_account').on(table.accountId),
@@ -124,6 +126,8 @@ export const bills = pgTable('bills', {
   maxOccurrences: integer('max_occurrences'),
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
+  payScheduleId: text('pay_schedule_id'),
+  paycheckDate: text('paycheck_date'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
@@ -148,6 +152,8 @@ export const subscriptions = pgTable('subscriptions', {
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
+  payScheduleId: text('pay_schedule_id'),
+  paycheckDate: text('paycheck_date'),
 }, (table) => ({
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));

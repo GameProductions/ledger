@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { HTTPException } from 'hono/http-exception'
+import { parseISO, format, addDays, addMonths, isBefore, isAfter, setDate, getDaysInMonth } from 'date-fns'
 import { Bindings, Variables } from '../types'
 import { 
   SubscriptionSchema, 
@@ -97,7 +98,9 @@ planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c
     paymentMode: data.paymentMode || 'manual',
     ownerId: data.ownerId || c.get('userId'),
     upcomingAmountCents: data.upcomingAmountCents || null,
-    upcomingEffectiveDate: data.upcomingEffectiveDate || null
+    upcomingEffectiveDate: data.upcomingEffectiveDate || null,
+    payScheduleId: data.payScheduleId || null,
+    paycheckDate: data.paycheckDate || null
   })
   
   await logAudit(c, 'subscriptions', id, 'create', null, data)
@@ -125,6 +128,8 @@ planning.patch('/subscriptions/:id', zValidator('json', SubscriptionSchema.parti
   if (data.paymentMode !== undefined) updates.paymentMode = data.paymentMode
   if (data.upcomingAmountCents !== undefined) updates.upcomingAmountCents = data.upcomingAmountCents
   if (data.upcomingEffectiveDate !== undefined) updates.upcomingEffectiveDate = data.upcomingEffectiveDate
+  if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
+  if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
   
   if (Object.keys(updates).length > 0) {
     await db.update(subscriptions).set(updates).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId)))
@@ -204,7 +209,9 @@ planning.post('/bills', zValidator('json', BillSchema), async (c) => {
     maxOccurrences: data.maxOccurrences || null,
     ownerId: data.ownerId || c.get('userId'),
     upcomingAmountCents: data.upcomingAmountCents || null,
-    upcomingEffectiveDate: data.upcomingEffectiveDate || null
+    upcomingEffectiveDate: data.upcomingEffectiveDate || null,
+    payScheduleId: data.payScheduleId || null,
+    paycheckDate: data.paycheckDate || null
   })
   
   await logAudit(c, 'bills', id, 'create', null, data)
@@ -236,6 +243,8 @@ planning.patch('/bills/:id', zValidator('json', BillSchema.partial()), async (c)
   if (data.ownerId !== undefined) updates.ownerId = data.ownerId
   if (data.upcomingAmountCents !== undefined) updates.upcomingAmountCents = data.upcomingAmountCents
   if (data.upcomingEffectiveDate !== undefined) updates.upcomingEffectiveDate = data.upcomingEffectiveDate
+  if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
+  if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
   
   if (Object.keys(updates).length > 0) {
     await db.update(bills).set(updates).where(and(eq(bills.id, id), eq(bills.householdId, householdId)))
@@ -896,6 +905,127 @@ planning.delete('/schedules/:id', async (c) => {
   const db = getDb(c.env)
   await db.delete(schedules).where(and(eq(schedules.id, id), eq(schedules.householdId, householdId)))
   return c.json({ success: true })
+})
+
+function projectPaydaysBackend(schedules: any[], start: Date, end: Date): { payScheduleId: string; date: string }[] {
+  const dates: { payScheduleId: string; date: string }[] = [];
+  
+  schedules.forEach(schedule => {
+    if (!schedule.nextPayDate) return;
+    let current = parseISO(schedule.nextPayDate);
+    const frequency = schedule.frequency;
+
+    while (isAfter(current, start)) {
+      if (frequency === 'weekly') current = addDays(current, -7);
+      else if (frequency === 'biweekly') current = addDays(current, -14);
+      else if (frequency === 'monthly') {
+        const day = current.getDate();
+        current = addMonths(current, -1);
+        current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      } else break;
+    }
+
+    let iteration = 0;
+    while (isBefore(current, end) && iteration < 100) {
+      if (!isBefore(current, start)) {
+        dates.push({ payScheduleId: schedule.id, date: format(current, 'yyyy-MM-dd') });
+      }
+      
+      if (frequency === 'weekly') current = addDays(current, 7);
+      else if (frequency === 'biweekly') current = addDays(current, 14);
+      else if (frequency === 'monthly') {
+        const day = current.getDate();
+        current = addMonths(current, 1);
+        current = setDate(current, Math.min(day, getDaysInMonth(current)));
+      } else if (frequency === 'semi-monthly') {
+        const d1 = schedule.semiMonthlyDay1 || 1;
+        const d2 = schedule.semiMonthlyDay2 || 15;
+        const year = current.getFullYear();
+        const month = current.getMonth();
+        const date1 = new Date(year, month, d1);
+        const date2 = new Date(year, month, d2);
+        if (!isBefore(date1, start) && isBefore(date1, end)) dates.push({ payScheduleId: schedule.id, date: format(date1, 'yyyy-MM-dd') });
+        if (!isBefore(date2, start) && isBefore(date2, end)) dates.push({ payScheduleId: schedule.id, date: format(date2, 'yyyy-MM-dd') });
+        current = addMonths(current, 1);
+      } else break;
+      iteration++;
+    }
+  });
+
+  return dates.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+planning.post('/re-evaluate', zValidator('json', z.object({
+  scope: z.enum(['all', 'biller', 'single']),
+  billId: z.string().optional().nullable(),
+  billerName: z.string().optional().nullable(),
+  rangeStart: z.string().optional().nullable(),
+  rangeEnd: z.string().optional().nullable()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { scope, billId, billerName, rangeStart, rangeEnd } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const schedulesList = await db.select().from(paySchedules).where(eq(paySchedules.householdId, householdId))
+  if (schedulesList.length === 0) {
+    return c.json({ error: 'No pay schedules found. Please set up a pay schedule first.' }, 400)
+  }
+
+  const start = new Date()
+  const end = addDays(start, 365)
+  const paychecks = projectPaydaysBackend(schedulesList, start, end)
+  if (paychecks.length === 0) {
+    return c.json({ error: 'No paychecks projected.' }, 400)
+  }
+
+  let activeBills = await db.select().from(bills).where(eq(bills.householdId, householdId))
+  let activeSubs = await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId))
+
+  if (scope === 'single' && billId) {
+    activeBills = activeBills.filter(b => b.id === billId)
+    activeSubs = activeSubs.filter(s => s.id === billId)
+  } else if (scope === 'biller' && billerName) {
+    const term = billerName.toLowerCase()
+    activeBills = activeBills.filter(b => b.name.toLowerCase().includes(term))
+    activeSubs = activeSubs.filter(s => s.name.toLowerCase().includes(term))
+  }
+
+  if (rangeStart) {
+    activeBills = activeBills.filter(b => b.dueDate >= rangeStart)
+    activeSubs = activeSubs.filter(s => s.nextBillingDate !== null && s.nextBillingDate >= rangeStart)
+  }
+  if (rangeEnd) {
+    activeBills = activeBills.filter(b => b.dueDate <= rangeEnd)
+    activeSubs = activeSubs.filter(s => s.nextBillingDate !== null && s.nextBillingDate <= rangeEnd)
+  }
+
+  let updatedCount = 0
+
+  for (const bill of activeBills) {
+    const paycheck = paychecks.filter(p => p.date <= bill.dueDate).pop() || paychecks[0]
+    if (paycheck && paycheck.date !== bill.dueDate) {
+      await db.update(bills).set({
+        dueDate: paycheck.date,
+        payScheduleId: paycheck.payScheduleId,
+        paycheckDate: paycheck.date
+      }).where(eq(bills.id, bill.id))
+      updatedCount++
+    }
+  }
+
+  for (const sub of activeSubs) {
+    const paycheck = paychecks.filter(p => p.date <= (sub.nextBillingDate || '')).pop() || paychecks[0]
+    if (paycheck && paycheck.date !== sub.nextBillingDate) {
+      await db.update(subscriptions).set({
+        nextBillingDate: paycheck.date,
+        payScheduleId: paycheck.payScheduleId,
+        paycheckDate: paycheck.date
+      }).where(eq(subscriptions.id, sub.id))
+      updatedCount++
+    }
+  }
+
+  return c.json({ success: true, updatedCount })
 })
 
 export default planning

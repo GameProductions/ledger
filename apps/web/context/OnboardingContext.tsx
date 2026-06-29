@@ -76,10 +76,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             }) as any)
       if (res.ok) {
         const envelope = (await res.json() as any)
-        if (envelope.success && envelope.data) {
-          const data = envelope.data
-          setCompletedSteps(data.completedSteps || [])
-          setIsCompleted(data.isCompleted || false)
+        if (envelope.success) {
+          setCompletedSteps(envelope.completedSteps || [])
+          setIsCompleted(envelope.isCompleted || false)
           if (isLast) setActiveStep(null)
         }
       }

@@ -3,6 +3,7 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
 import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { Briefcase, Plus, Trash2, LineChart, TrendingUp, Landmark, Coins, Diamond } from 'lucide-react';
 import { InlineToast } from '../components/ui/InlineToast';
 import { Price } from '../components/Price';
@@ -160,30 +161,22 @@ const InvestmentPortfolioPage: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Total Cost Basis (Cents)</label>
-               <input 
-                  type="number"
-                  required
-                  value={newInv.costBasisCents || ''}
-                  onChange={e => {
-                    const val = parseInt(e.target.value);
-                    setNewInv({...newInv, costBasisCents: isNaN(val) ? 0 : val});
-                  }}
-                  className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all"
-                />
+              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Total Cost Basis</label>
+              <CurrencyInput
+                valueCents={newInv.costBasisCents || 0}
+                onChangeCents={cents => setNewInv({...newInv, costBasisCents: cents})}
+                placeholder="0.00"
+                className="bg-black/40 border-glass-border focus:border-emerald-500"
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Current Evaluation (Cents)</label>
-               <input 
-                  type="number"
-                  required
-                  value={newInv.current_valuation_cents || ''}
-                  onChange={e => {
-                    const val = parseInt(e.target.value);
-                    setNewInv({...newInv, current_valuation_cents: isNaN(val) ? 0 : val});
-                  }}
-                  className="w-full bg-black/40 border border-glass-border rounded-xl p-4 text-sm font-bold focus:border-emerald-500 transition-all"
-                />
+              <label className="text-[10px] font-black uppercase tracking-widest text-secondary opacity-60 ml-1">Current Evaluation</label>
+              <CurrencyInput
+                valueCents={newInv.current_valuation_cents || 0}
+                onChangeCents={cents => setNewInv({...newInv, current_valuation_cents: cents})}
+                placeholder="0.00"
+                className="bg-black/40 border-glass-border focus:border-emerald-500"
+              />
             </div>
             <div className="flex items-end">
               <button type="submit" className="w-full py-4 bg-white text-black font-black uppercase text-xs rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-xl">Secure Asset</button>

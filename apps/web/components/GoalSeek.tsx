@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 const GoalSeek: React.FC = () => {
-  const [target, setTarget] = useState(5000)
+  const [targetCents, setTargetCents] = useState(500000)
   const [months, setMonths] = useState(6)
 
-  const monthlyRequired = Math.round(target / months)
+  const monthlyRequired = Math.round(targetCents / 100 / months)
 
   return (
     <section className="card">
@@ -12,7 +13,7 @@ const GoalSeek: React.FC = () => {
       <div style={{ display: 'grid', gap: '1rem' }}>
         <div>
           <label style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>Savings Goal ($)</label>
-          <input type="number" value={target} onChange={(e) => setTarget(Number(e.target.value))} />
+          <CurrencyInput valueCents={targetCents} onChangeCents={setTargetCents} />
         </div>
         <div>
           <label style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>Timeframe (Months)</label>

@@ -130,12 +130,11 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                             <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
                                 <DollarSign size={12} /> Override Amount
                             </label>
-                            <input
-                                type="number"
-                                value={overrideAmountCents ? overrideAmountCents / 100 : ''}
-                                onChange={(e) => setOverrideAmountCents(e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm focus:border-indigo-500/50 outline-none transition-all"
+                            <CurrencyInput
+                                valueCents={overrideAmountCents || 0}
+                                onChangeCents={cents => setOverrideAmountCents(cents || null)}
                                 placeholder="Optional"
+                                className="bg-black/40 border-white/10 focus:border-indigo-500/50"
                             />
                         </div>
 

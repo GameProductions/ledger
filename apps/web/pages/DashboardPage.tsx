@@ -13,6 +13,7 @@ import SpendingChart from '../components/SpendingChart'
 import SmartInsights from '../components/SmartInsights'
 import InviteManager from '../components/InviteManager'
 import TransferForm from '../components/TransferForm'
+import { CurrencyInput } from '../components/ui/CurrencyInput'
 import SpendingHeatmap from '../components/SpendingHeatmap'
 import HealthScore from '../components/HealthScore'
 import AICoach from '../components/AICoach'
@@ -148,13 +149,15 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const { data: budgetsData, mutate: mutateBudgets } = (useApi('/api/planning/budgets') as any)
   const [showFundModal, setShowFundModal] = useState(false)
-  const [fundAmount, setFundAmount] = useState('')
+  const [fundAmountCents, setFundAmountCents] = useState(0)
   const [fundCategoryId, setFundCategoryId] = useState('')
   const [isRolloverModalOpen, setIsRolloverModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [deletePending, setDeletePending] = useState<{ id: string, type: string } | null>(null)
   const [showDepositModal, setShowDepositModal] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('')
+  const [depositAmountCents, setDepositAmountCents] = useState(0)
+  const [qeAmountCents, setQeAmountCents] = useState(0)
+  const [qeDesc, setQeDesc] = useState('')
 
   const [layout, setLayout] = useState(DEFAULT_LAYOUT);
   const [tabConfig, setTabConfig] = useState(DEFAULT_TABS_CONFIG);
@@ -251,12 +254,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ amountCents: parseFloat(depositAmount) * 100 })
+      body: JSON.stringify({ amountCents: depositAmountCents })
     })
     mutateBudgets()
     globalMutate()
     setShowDepositModal(false)
-    setDepositAmount('')
+    setDepositAmountCents(0)
     showToast('Deposit Successful')
   }
 
@@ -271,13 +274,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       },
       body: JSON.stringify({ 
         categoryId: fundCategoryId,
-        amountCents: parseFloat(fundAmount) * 100 
+        amountCents: fundAmountCents 
       })
     })
     mutateBudgets()
     globalMutate()
     setShowFundModal(false)
-    setFundAmount('')
+    setFundAmountCents(0)
     showToast('Envelope Funded')
   }
 
@@ -596,10 +599,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   <button 
                     key={tpl.id} 
                     onClick={() => {
-                      const descInput = document.getElementById('qe-desc') as HTMLInputElement
-                      const amountInput = document.getElementById('qe-amount') as HTMLInputElement
-                      if (descInput) descInput.value = tpl.name
-                      if (amountInput) amountInput.value = (tpl.amountCents / 100).toFixed(2)
+                       if (tpl.name) setQeDesc(tpl.name)
+                       if (tpl.amountCents) setQeAmountCents(tpl.amountCents)
                     }}
                     className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
                   >
@@ -610,9 +611,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
               <form className="flex flex-col sm:flex-row gap-2 sm:gap-4" onSubmit={async (e) => { 
                 e.preventDefault(); 
-                const descInput = document.getElementById('qe-desc') as HTMLInputElement;
-                const amountInput = document.getElementById('qe-amount') as HTMLInputElement;
-                if(!descInput.value || !amountInput.value) return;
+                if(!qeDesc || !qeAmountCents) return;
                 try {
                     await fetch(`${apiUrl}/api/financials/transactions`, {
                       method: 'POST',
@@ -622,27 +621,27 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         'x-household-id': householdId || ''
                       },
                       body: JSON.stringify({ 
-                        description: descInput.value, 
-                        amountCents: Math.round(parseFloat(amountInput.value) * 100), 
+                        description: qeDesc, 
+                        amountCents: qeAmountCents, 
                         transactionDate: new Date().toISOString().split('T')[0], 
                         status: 'none' 
                       })
                   });
                   mutateTx();
                   globalMutate();
-                  descInput.value = '';
-                  amountInput.value = '';
+                  setQeDesc('');
+                  setQeAmountCents(0);
                   showToast('Transaction Added');
                 } catch(err: any) {
                   showToast('Failed to add transaction');
                 }
               }}>
                 <div className="flex gap-2 flex-[2]">
-                  <input id="qe-desc" name="description" placeholder="Description (e.g. Coffee)" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
+                  <input value={qeDesc} onChange={e => setQeDesc(e.target.value)} placeholder="Description (e.g. Coffee)" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
                   <MicButton />
                 </div>
                 <div className="flex gap-2 sm:contents">
-                  <input id="qe-amount" name="amount" type="number" step="0.01" placeholder="0.00" className="flex-1 p-4 bg-white/10 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" required />
+                  <CurrencyInput valueCents={qeAmountCents} onChangeCents={setQeAmountCents} placeholder="0.00" className="bg-white/10 border-glass-border" />
                   <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-xs">Save</button>
                 </div>
               </form>
@@ -1113,7 +1112,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
       {showFundModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4" onClick={() => setShowFundModal(false)}>
-          <div className="card w-full max-w-md p-8 reveal space-y-6" onClick={e => e.stopPropagation()}>
+          <div className="card w-full max-w-md p-8 reveal space-y-6overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Add Money to Category</h3>
               <p className="text-xs text-secondary uppercase font-bold opacity-60">Allocate balance from unallocated pool</p>
@@ -1135,13 +1134,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 <a href="#/settings" className="text-[10px] sm:text-xs text-primary font-black uppercase tracking-widest hover:underline mt-2 inline-block ml-1">Manage Categories &rarr;</a>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>
-                <input 
-                  type="number" 
-                  value={fundAmount}
-                  onChange={(e) => setFundAmount(e.target.value)}
+                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                <CurrencyInput
+                  valueCents={fundAmountCents}
+                  onChangeCents={setFundAmountCents}
                   placeholder="0.00"
-                  className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold"
                 />
               </div>
               <div className="flex gap-4 pt-4">
@@ -1155,20 +1152,18 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
       {showDepositModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-modal flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
-          <div className="card w-full max-w-md p-8 reveal space-y-6" onClick={e => e.stopPropagation()}>
+          <div className="card w-full max-w-md p-8 reveal space-y-6 overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Add to Unallocated</h3>
               <p className="text-xs text-secondary uppercase font-bold opacity-60">Add funds to unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>
-                <input 
-                  type="number" 
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
+                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                <CurrencyInput
+                  valueCents={depositAmountCents}
+                  onChangeCents={setDepositAmountCents}
                   placeholder="0.00"
-                  className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold"
                 />
               </div>
               <div className="flex gap-4 pt-4">

@@ -3,6 +3,7 @@ import { X, Trash2, CheckCircle2, Hash, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TypeableSelect } from './ui/TypeableSelect';
 import { TransactionTimeline } from './TransactionTimeline';
+import { CurrencyInput } from './ui/CurrencyInput';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface CalendarEntryModalProps {
@@ -20,7 +21,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 }) => {
   const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
-  const [amount, setAmount] = useState(initialData?.amountCents ? (initialData.amountCents / 100).toString() : initialData?.estimatedAmountCents ? (initialData.estimatedAmountCents / 100).toString() : '');
+  const [amountCents, setAmountCents] = useState(initialData?.amountCents || initialData?.estimatedAmountCents || 0);
   const [currentDate, setCurrentDate] = useState(initialData?.transactionDate || initialData?.nextBillingDate || initialData?.nextPayDate || date?.toISOString().split('T')[0] || '');
   const [status, setStatus] = useState(initialData?.status || 'unpaid');
   const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmationNumber || '');
@@ -32,7 +33,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [billMaxOccurrences, setBillMaxOccurrences] = useState(initialData?.maxOccurrences ? initialData.maxOccurrences.toString() : '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [showTimeline, setShowTimeline] = useState(false);
-  const [upcomingAmount, setUpcomingAmount] = useState(initialData?.upcomingAmountCents ? (initialData.upcomingAmountCents / 100).toString() : '');
+  const [upcomingAmountCents, setUpcomingAmountCents] = useState(initialData?.upcomingAmountCents || 0);
   const [upcomingDate, setUpcomingDate] = useState(initialData?.upcomingEffectiveDate || '');
   const [payScheduleId, setPayScheduleId] = useState(initialData?.payScheduleId || '');
   const [paycheckDate, setPaycheckDate] = useState(initialData?.paycheckDate || '');
@@ -47,7 +48,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type,
         name: description,
-        estimatedAmountCents: Math.round(parseFloat(amount) * 100),
+        estimatedAmountCents: amountCents,
         nextPayDate: currentDate,
         frequency,
         semiMonthlyDay1: frequency === 'semi-monthly' ? semiMonthlyDay1 : null,
@@ -59,7 +60,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type: 'bill',
         name: description,
-        amountCents: Math.round(parseFloat(amount) * 100),
+        amountCents: amountCents,
         dueDate: currentDate,
         status: status,
         notes: notes,
@@ -75,7 +76,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         id: initialData?.id,
         type: 'charge',
         description,
-        amountCents: Math.round(parseFloat(amount) * 100),
+        amountCents: amountCents,
         transactionDate: currentDate,
         status,
         confirmationNumber: confirmationNumber,
@@ -228,16 +229,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                        <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
-                       <div className="relative">
-                        <input 
-                          type="number" step="0.01"
-                          value={upcomingAmount}
-                          onChange={(e) => setUpcomingAmount(e.target.value)}
+                        <CurrencyInput
+                          valueCents={upcomingAmountCents}
+                          onChangeCents={setUpcomingAmountCents}
                           placeholder="0.00"
-                          className="w-full p-3 pl-8 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
+                          className="bg-black/40 border-white/5"
                         />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 font-bold text-xs">$</span>
-                       </div>
                     </div>
                     <div className="space-y-2">
                        <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
@@ -308,16 +305,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>
-                    <input 
-                      required
-                      type="number" 
-                      step="0.01"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
-                    />
+                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                     <CurrencyInput 
+                       valueCents={amountCents}
+                       onChangeCents={setAmountCents}
+                       placeholder="0.00"
+                     />
                  </div>
                  <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Entry Date</label>
@@ -535,16 +528,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    <div className="grid grid-cols-2 gap-4">
                      <div className="space-y-2">
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
-                        <div className="relative">
-                         <input 
-                           type="number" step="0.01"
-                           value={upcomingAmount}
-                           onChange={(e) => setUpcomingAmount(e.target.value)}
-                           placeholder="0.00"
-                           className="w-full p-3 pl-8 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
-                         />
-                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 font-bold text-xs">$</span>
-                        </div>
+                        <CurrencyInput
+                          valueCents={upcomingAmountCents}
+                          onChangeCents={setUpcomingAmountCents}
+                          placeholder="0.00"
+                          className="bg-black/40 border-white/5"
+                        />
                      </div>
                      <div className="space-y-2">
                         <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
@@ -615,15 +604,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount ($)</label>
-                     <input 
-                       required
-                       type="number" 
-                       step="0.01"
-                       value={amount}
-                       onChange={(e) => setAmount(e.target.value)}
+                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                     <CurrencyInput 
+                       valueCents={amountCents}
+                       onChangeCents={setAmountCents}
                        placeholder="0.00"
-                       className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                       showSymbol={true}
                      />
                   </div>
                   <div className="space-y-2">

@@ -69,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
           </button>
         </div>
         
-        <div className="p-8">
+        <div className="p-8 overflow-y-auto max-h-[calc(100vh-200px)]">
           {children}
         </div>
         

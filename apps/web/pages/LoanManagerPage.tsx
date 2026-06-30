@@ -3,6 +3,7 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { useAuth } from '../context/AuthContext';
 import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
+import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { getApiUrl } from '../utils/api';
 import { HandCoins, Plus, Trash2, Calendar, User, Phone, BadgeDollarSign, Receipt } from 'lucide-react';
 import { Price } from '../components/Price';
@@ -169,20 +170,12 @@ const LoanManagerPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Principal Amount</label>
-              <div className="relative">
-                <BadgeDollarSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary opacity-40" />
-                <input 
-                  type="number"
-                  required
-                  value={newLoan.totalAmountCents > 0 ? newLoan.totalAmountCents / 100 : ''}
-                  onChange={e => {
-                    const val = parseFloat(e.target.value);
-                    setNewLoan({...newLoan, totalAmountCents: isNaN(val) ? 0 : Math.round(val * 100)});
-                  }}
-                  className="w-full bg-black/40 border border-glass-border rounded-xl py-4 pl-12 pr-4 text-sm font-bold focus:border-amber-500 transition-all"
-                  placeholder="0.00"
-                />
-              </div>
+              <CurrencyInput
+                valueCents={newLoan.totalAmountCents}
+                onChangeCents={cents => setNewLoan({...newLoan, totalAmountCents: cents})}
+                placeholder="0.00"
+                className="bg-black/40 border-glass-border focus:border-amber-500"
+              />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60 ml-1">Interest Rate (APY %)</label>

@@ -157,6 +157,10 @@ export const TransactionLedger: React.FC = () => {
   const [suggestions, setSuggestions] = useState<Record<string, any>>({})
   const [activeSplitTx, setActiveSplitTx] = useState<any>(null)
   const [activeLinkTx, setActiveLinkTx] = useState<any>(null)
+  const [split1Cents, setSplit1Cents] = useState(0)
+  const [split2Cents, setSplit2Cents] = useState(0)
+  const [split1Desc, setSplit1Desc] = useState('')
+  const [split2Desc, setSplit2Desc] = useState('')
   
   // Suggestion Engine
   useEffect(() => {
@@ -242,6 +246,31 @@ export const TransactionLedger: React.FC = () => {
     })
     globalMutate()
     setSelectedIds([])
+  }
+
+  const handleExecuteSplit = async () => {
+    if (!activeSplitTx || !split1Cents || !split2Cents) return
+    const apiUrl = getApiUrl()
+    await fetch(`${apiUrl}/api/financials/transactions/${activeSplitTx.id}/split`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({
+        splits: [
+          { amountCents: split1Cents, description: split1Desc || 'Split 1' },
+          { amountCents: split2Cents, description: split2Desc || 'Split 2' }
+        ]
+      })
+    })
+    setActiveSplitTx(null)
+    setSplit1Cents(0)
+    setSplit2Cents(0)
+    setSplit1Desc('')
+    setSplit2Desc('')
+    globalMutate()
   }
 
   return (
@@ -540,16 +569,18 @@ export const TransactionLedger: React.FC = () => {
         <div className="space-y-4">
            <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amountCents={activeSplitTx.amountCents} /></span></p>
            <div className="grid grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                  <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 1 Amount</label>
-                 <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
+                 <CurrencyInput valueCents={split1Cents} onChangeCents={setSplit1Cents} placeholder="Enter amount" className="bg-white/5 border-white/10" />
+                 <input value={split1Desc} onChange={e => setSplit1Desc(e.target.value)} placeholder="Description" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm" />
               </div>
-              <div>
+              <div className="space-y-2">
                  <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 2 Amount</label>
-                 <input type="number" placeholder="Enter amount" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white" />
+                 <CurrencyInput valueCents={split2Cents} onChangeCents={setSplit2Cents} placeholder="Enter amount" className="bg-white/5 border-white/10" />
+                 <input value={split2Desc} onChange={e => setSplit2Desc(e.target.value)} placeholder="Description" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm" />
               </div>
            </div>
-           <button onClick={() => { setActiveSplitTx(null); globalMutate(); }} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
+           <button onClick={handleExecuteSplit} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
          </div>
       )}
     </Modal>

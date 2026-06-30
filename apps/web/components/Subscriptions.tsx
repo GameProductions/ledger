@@ -9,6 +9,7 @@ import { Price } from './Price'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { ReminderManager } from './ReminderManager'
 import { LiabilitySplitter } from './LiabilitySplitter'
+import { CurrencyInput } from './ui/CurrencyInput'
 
 const Subscriptions: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -17,6 +18,14 @@ const Subscriptions: React.FC = () => {
   const { data: linkedAccounts = [] } = (useApi('/api/user/linked-accounts') as any)
   const [showAdd, setShowAdd] = useState(false)
   const [reminderTarget, setReminderTarget] = useState<{id: string, name: string} | null>(null)
+  const [subName, setSubName] = useState('')
+  const [subAmountCents, setSubAmountCents] = useState(0)
+  const [subCycle, setSubCycle] = useState('monthly')
+  const [subDate, setSubDate] = useState('')
+  const [subTrialDate, setSubTrialDate] = useState('')
+  const [subLinkedAccount, setSubLinkedAccount] = useState('')
+  const [subUpcomingAmountCents, setSubUpcomingAmountCents] = useState(0)
+  const [subUpcomingDate, setSubUpcomingDate] = useState('')
 
   const handleTogglePublic = async (targetId: string, isPublic: boolean) => {
     if (!token) return;
@@ -60,11 +69,11 @@ const Subscriptions: React.FC = () => {
       </div>
 
       {showAdd && (
-        <form style={{ marginBottom: '1.5rem', display: 'grid', gap: '0.8rem' }} className="p-4 rounded-xl bg-white/2 border border-white/5" onSubmit={(e) => {
+        <form style={{ marginBottom: '1.5rem', display: 'grid', gap: '0.8rem' }} className="p-4 rounded-xl bg-white/2 border border-white/5" onSubmit={async (e) => {
           e.preventDefault()
-          const formData = new FormData(e.currentTarget)
+          if (!subName || !subAmountCents || !subDate) return
           const apiUrl = getApiUrl().replace(/\/$/, '')
-          fetch(`${apiUrl}/api/planning/subscriptions`, {
+          await fetch(`${apiUrl}/api/planning/subscriptions`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
@@ -72,45 +81,48 @@ const Subscriptions: React.FC = () => {
               'x-household-id': householdId || ''
             },
             body: JSON.stringify({
-              name: formData.get('name'),
-              amountCents: Math.round(parseFloat(formData.get('amount') as string) * 100),
-              billingCycle: formData.get('cycle'),
-              nextBillingDate: formData.get('date'),
-              trialEndDate: formData.get('trialDate') || null,
-              isTrial: !!formData.get('trialDate'),
-              providerAccountId: formData.get('linkedAccount') || null,
-              upcomingAmountCents: formData.get('upcomingAmount') ? Math.round(parseFloat(formData.get('upcomingAmount') as string) * 100) : null,
-              upcomingEffectiveDate: formData.get('upcomingDate') || null
+              name: subName,
+              amountCents: subAmountCents,
+              billingCycle: subCycle,
+              nextBillingDate: subDate,
+              trialEndDate: subTrialDate || null,
+              isTrial: !!subTrialDate,
+              providerAccountId: subLinkedAccount || null,
+              upcomingAmountCents: subUpcomingAmountCents || null,
+              upcomingEffectiveDate: subUpcomingDate || null
             })
-          }).then(() => {
-            showToast('Subscription added!', 'success')
-            setShowAdd(false)
-            mutate();
-            globalMutate();
           })
+          showToast('Subscription added!', 'success')
+          setShowAdd(false)
+          setSubName('')
+          setSubAmountCents(0)
+          setSubCycle('monthly')
+          setSubDate('')
+          setSubTrialDate('')
+          setSubLinkedAccount('')
+          setSubUpcomingAmountCents(0)
+          setSubUpcomingDate('')
+          mutate();
+          globalMutate();
         }}>
           <div className="grid grid-cols-2 gap-3">
-             <input name="name" placeholder="Service Name (Netflix, etc)" required className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+             <input value={subName} onChange={e => setSubName(e.target.value)} placeholder="Service Name (Netflix, etc)" required className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
              <div className="relative">
-               <SearchableSelect 
-                  options={linkedAccounts?.map((acc: any) => ({
-                    value: acc.id,
-                    label: acc.providerName,
-                    metadata: { email: acc.emailAttached }
-                  })) || []}
-                  value="" 
-                  onChange={(val) => {
-                    const hiddenInput = document.getElementById('hidden-linked-account') as HTMLInputElement;
-                    if (hiddenInput) hiddenInput.value = val;
-                  }}
-                  placeholder="Link Account..."
-               />
-               <input type="hidden" name="linkedAccount" id="hidden-linked-account" />
+                <SearchableSelect 
+                   options={linkedAccounts?.map((acc: any) => ({
+                     value: acc.id,
+                     label: acc.providerName,
+                     metadata: { email: acc.emailAttached }
+                   })) || []}
+                   value={subLinkedAccount}
+                   onChange={(val) => setSubLinkedAccount(val)}
+                   placeholder="Link Account..."
+                />
              </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input name="amount" type="number" step="0.01" placeholder="Amount" required style={{ flex: 1, padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
-            <select name="cycle" required style={{ flex: 1, padding: '0.5rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', color: 'white' }}>
+            <CurrencyInput valueCents={subAmountCents} onChangeCents={setSubAmountCents} placeholder="Amount" className="bg-black/40 border-white/10" />
+            <select value={subCycle} onChange={e => setSubCycle(e.target.value)} required style={{ flex: 1, padding: '0.5rem', background: 'var(--bg-dark)', border: '1px solid var(--glass-border)', color: 'white' }}>
               <option value="monthly">Monthly</option>
               <option value="annual">Annual</option>
             </select>
@@ -118,11 +130,11 @@ const Subscriptions: React.FC = () => {
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>Next Billing</label>
-              <input name="date" type="date" required style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+              <input value={subDate} onChange={e => setSubDate(e.target.value)} type="date" required style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>Trial Ends (Optional)</label>
-              <input name="trialDate" type="date" style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
+              <input value={subTrialDate} onChange={e => setSubTrialDate(e.target.value)} type="date" style={{ width: '100%', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'white' }} />
             </div>
           </div>
 
@@ -131,11 +143,11 @@ const Subscriptions: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Upcoming Amount</label>
-                <input name="upcomingAmount" type="number" step="0.01" placeholder="0.00" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+                <CurrencyInput valueCents={subUpcomingAmountCents} onChangeCents={setSubUpcomingAmountCents} placeholder="0.00" className="bg-black/40 border-white/10" />
               </div>
               <div>
                 <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Effective Date</label>
-                <input name="upcomingDate" type="date" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
+                <input value={subUpcomingDate} onChange={e => setSubUpcomingDate(e.target.value)} type="date" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
               </div>
             </div>
           </div>

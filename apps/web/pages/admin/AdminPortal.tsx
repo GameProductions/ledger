@@ -112,7 +112,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="fixed top-[88px] left-8 bottom-8 w-64 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-4 hidden xl:block overflow-hidden">
+      <aside className="fixed top-[88px] left-8 bottom-8 w-64 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-4 hidden xl:block overflow-y-auto custom-scrollbar">
          <div className="flex flex-col h-full">
             <div className="flex-1 space-y-1">
                {navItems.map((item) => {
@@ -147,7 +147,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
        </aside>
 
        {/* Main Content Area */}
-       <main className="pt-32 pb-20 px-8 xl:pl-[320px] xl:pr-12 max-w-[1700px] mx-auto min-h-screen text-[18px]">
+       <main className="pt-32 pb-20 px-8 xl:pl-[320px] xl:pr-12 max-w-[1700px] mx-auto h-[calc(100vh-88px)] overflow-y-auto custom-scrollbar text-[18px]">
          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
            {children}
          </div>

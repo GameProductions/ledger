@@ -132,29 +132,30 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       }
     }
 
-    // If NOT owner, verify User belongs to this household
-    if (globalRole !== 'owner') {
-      if (!verifyMembershipQuery) {
-        verifyMembershipQuery = db.select({ role: userHouseholds.role })
-          .from(userHouseholds)
-          .where(and(eq(userHouseholds.userId, sql.placeholder('userId')), eq(userHouseholds.householdId, sql.placeholder('householdId'))))
-          .limit(1)
-          .prepare('verify_membership_query')
-      }
-      const uhResult = (await verifyMembershipQuery.execute({ userId: String(userId), householdId: String(activeHouseholdId) }) as any)
-      
-      if (!uhResult[0]) {
+    // Verify membership
+    if (!verifyMembershipQuery) {
+      verifyMembershipQuery = db.select({ role: userHouseholds.role })
+        .from(userHouseholds)
+        .where(and(eq(userHouseholds.userId, sql.placeholder('userId')), eq(userHouseholds.householdId, sql.placeholder('householdId'))))
+        .limit(1)
+        .prepare('verify_membership_query')
+    }
+    const uhResult = (await verifyMembershipQuery.execute({ userId: String(userId), householdId: String(activeHouseholdId) }) as any)
+    const isMember = !!uhResult[0]
+
+    if (!isMember) {
+      if (globalRole === 'owner') {
+        // Owner Bypass Logging
+        const auditReason = c.req.header('x-audit-reason')
+        if (!auditReason) {
+          throw new HTTPException(403, { message: 'Owner access requires x-audit-reason header' })
+        }
+        console.warn(`[Administrative Override] Owner ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId}). Reason: ${auditReason}`)
+        logAudit(c, 'households', String(activeHouseholdId), 'ADMIN_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId })
+      } else {
         console.warn(`[Auth] Access Denied: User ${userId} is not a member of Household ${activeHouseholdId}`)
         throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
-    } else if (globalRole === 'owner' && activeHouseholdId !== payload.householdId) {
-       // Owner Bypass Logging
-       const auditReason = c.req.header('x-audit-reason')
-       if (!auditReason) {
-         throw new HTTPException(403, { message: 'Owner access requires x-audit-reason header' })
-       }
-       console.warn(`[Administrative Override] Owner ${userId} accessing Household ${activeHouseholdId} (Source: ${payload.householdId}). Reason: ${auditReason}`)
-       logAudit(c, 'households', String(activeHouseholdId), 'ADMIN_BYPASS_ACCESS', null, { reason: auditReason, sourceHouseholdId: payload.householdId })
     }
     
     c.set('userId', userId)

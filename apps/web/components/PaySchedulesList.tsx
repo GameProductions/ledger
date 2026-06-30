@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
 import { Price } from './Price';
-import { Wallet, Plus, Edit3, Trash2, Calendar, User, TrendingUp } from 'lucide-react';
+import { Wallet, Plus, Edit3, Trash2, Calendar, User, TrendingUp, ChevronDown } from 'lucide-react';
 import { PayScheduleModal } from './PayScheduleModal';
 
 export const PaySchedulesList: React.FC = () => {
@@ -15,6 +15,7 @@ export const PaySchedulesList: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<any>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!token) return;
@@ -88,65 +89,81 @@ export const PaySchedulesList: React.FC = () => {
 
             <div className="space-y-3">
                 {schedules?.map((s: any) => (
-                    <div key={s.id} className="group relative flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] hover:border-white/10 transition-all">
-                        <div className="flex items-center gap-4">
-                            <div className="w-2 h-8 rounded-full bg-blue-500/20 group-hover:bg-blue-500 transition-all" />
-                            <div>
-                                <h4 className="font-bold text-white group-hover:text-primary transition-colors">{s.name}</h4>
-                                <div className="flex flex-wrap items-center gap-3 mt-1">
-                                    <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/30">
-                                        <Calendar size={10} /> {s.frequency}
-                                    </div>
-                                    {s.userId && (
-                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary/60">
-                                            <User size={10} /> Assigned
+                    <div key={s.id} className="group relative flex flex-col p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] hover:border-white/10 transition-all">
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-4">
+                                <div className="w-2 h-8 rounded-full bg-blue-500/20 group-hover:bg-blue-500 transition-all" />
+                                <div>
+                                    <h4 className="font-bold text-white group-hover:text-primary transition-colors">{s.name}</h4>
+                                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/30">
+                                            <Calendar size={10} /> {s.frequency}
                                         </div>
-                                    )}
+                                        {s.userId && (
+                                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary/60">
+                                                <User size={10} /> Assigned
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                {(s.upcomingEffectiveDate || s.upcomingAmountCents) && (
+                                    <div className="hidden lg:flex flex-col items-end px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-right-2">
+                                        <div className="text-[8px] font-black uppercase tracking-widest text-emerald-500/60">Planned Adjustment</div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Price amountCents={s.upcomingAmountCents} className="text-[10px] font-black text-emerald-500" />
+                                            <span className="text-[8px] text-emerald-500/40 font-bold">@ {s.upcomingEffectiveDate}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="text-right">
+                                    <Price amountCents={s.estimatedAmountCents} className="text-lg font-black tracking-tighter" />
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                    <button 
+                                        onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                                        className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
+                                        aria-label={expandedId === s.id ? `Collapse ${s.name}` : `Expand ${s.name}`}
+                                    >
+                                        <ChevronDown size={18} className={`transition-transform duration-200 ${expandedId === s.id ? 'rotate-180' : ''}`} />
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
-                            {(s.upcomingEffectiveDate || s.upcomingAmountCents) && (
-                                <div className="hidden lg:flex flex-col items-end px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-right-2">
-                                    <div className="text-[8px] font-black uppercase tracking-widest text-emerald-500/60">Planned Adjustment</div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Price amountCents={s.upcomingAmountCents} className="text-[10px] font-black text-emerald-500" />
-                                        <span className="text-[8px] text-emerald-500/40 font-bold">@ {s.upcomingEffectiveDate}</span>
-                                    </div>
-                                </div>
-                            )}
-                            <div className="text-right">
-                                <Price amountCents={s.estimatedAmountCents} className="text-lg font-black tracking-tighter" />
-                                <div className="text-[9px] font-black uppercase tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
-                            </div>
-                            
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {confirmDeleteId === s.id ? (
-                                    <InlineToast 
-                                        message="Remove?" 
-                                        type="confirm" 
-                                        onConfirm={() => handleDelete(s.id)} 
-                                        onCancel={() => setConfirmDeleteId(null)} 
-                                    />
-                                ) : (
-                                    <>
-                                        <button 
-                                            onClick={() => { setEditingSchedule(s); setIsModalOpen(true); }}
-                                            className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"
-                                        >
-                                            <Edit3 size={14} />
-                                        </button>
+                        {expandedId === s.id && (
+                            <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center w-full animate-in fade-in slide-in-from-top-1">
+                                <div>
+                                    {confirmDeleteId === s.id ? (
+                                        <InlineToast 
+                                            message="Remove schedule?" 
+                                            type="confirm" 
+                                            onConfirm={() => handleDelete(s.id)} 
+                                            onCancel={() => setConfirmDeleteId(null)} 
+                                        />
+                                    ) : (
                                         <button 
                                             onClick={() => setConfirmDeleteId(s.id)}
-                                            className="p-2 hover:bg-red-500/20 rounded-lg text-white/40 hover:text-red-500 transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs transition-colors"
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={14} /> Delete
                                         </button>
-                                    </>
-                                )}
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => { setEditingSchedule(s); setIsModalOpen(true); }}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg text-xs hover:bg-white/10 transition-colors"
+                                    >
+                                        <Edit3 size={14} /> Edit details
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 ))}
 

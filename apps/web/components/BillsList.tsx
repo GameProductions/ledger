@@ -216,7 +216,7 @@ export const BillsList: React.FC = () => {
                             </div>
                             <button 
                                 onClick={() => handleDelete(bill.id)}
-                                className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all opacity-0 group-hover:opacity-100"
+                                className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all"
                             >
                                 <Trash2 size={16} />
                             </button>

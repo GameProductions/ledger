@@ -7,7 +7,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
-import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight } from 'lucide-react'
+import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -340,9 +340,28 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       />
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => setEditingId(null)} className="p-2 text-secondary hover:text-white transition-colors" aria-label="Cancel editing"><X size={16} /></button>
-                    <button onClick={() => handleUpdate(item.id, editForm)} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors" aria-label="Save changes"><Save size={16} /></button>
+                  <div className="flex justify-between items-center mt-2 border-t border-white/5 pt-2">
+                    <div>
+                      {confirmDeleteId === item.id ? (
+                        <InlineToast 
+                          message="Delete item?" 
+                          type="confirm" 
+                          onConfirm={() => handleDelete([item.id])} 
+                          onCancel={() => setConfirmDeleteId(null)} 
+                        />
+                      ) : (
+                        <button 
+                          onClick={() => setConfirmDeleteId(item.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs transition-colors"
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setEditingId(null)} className="p-2 text-secondary hover:text-white transition-colors" aria-label="Cancel editing"><X size={16} /></button>
+                      <button onClick={() => handleUpdate(item.id, editForm)} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors" aria-label="Save changes"><Save size={16} /></button>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -377,40 +396,22 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all">
-                      {confirmDeleteId === item.id ? (
-                        <InlineToast 
-                          message="Delete item?" 
-                          type="confirm" 
-                          onConfirm={() => handleDelete([item.id])} 
-                          onCancel={() => setConfirmDeleteId(null)} 
-                        />
-                      ) : (
-                        <>
-                          <button 
-                            onClick={() => {
-                              setEditingId(item.id)
-                              setEditForm({
-                                description: item.description,
-                                amountCents: item.amountCents,
-                                notes: item.notes,
-                                confirmationNumber: item.confirmationNumber
-                              })
-                            }}
-                            className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
-                            aria-label={`Edit ${item.description}`}
-                          >
-                            <Edit3 size={14} />
-                          </button>
-                          <button 
-                            onClick={() => setConfirmDeleteId(item.id)}
-                            className="p-2 hover:bg-red-500/10 rounded-xl transition-all text-secondary hover:text-red-400"
-                            aria-label={`Delete ${item.description}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      )}
+                    <div className="flex items-center">
+                      <button 
+                        onClick={() => {
+                          setEditingId(item.id)
+                          setEditForm({
+                            description: item.description,
+                            amountCents: item.amountCents,
+                            notes: item.notes,
+                            confirmationNumber: item.confirmationNumber
+                          })
+                        }}
+                        className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
+                        aria-label={`Expand and edit ${item.description}`}
+                      >
+                        <ChevronDown size={18} />
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -240,7 +240,7 @@ export default function SharedBalances() {
                   ) : (
                     <button
                       onClick={() => setConfirmDeleteId(b.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-500/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                      className="p-1.5 rounded-lg text-red-500/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

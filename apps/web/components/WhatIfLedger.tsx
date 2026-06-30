@@ -21,9 +21,9 @@ const WhatIfLedger: React.FC = () => {
 
   return (
     <section className="card">
-      <h3>Savings Simulator</h3>
-      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-        Simulate changes to your recurring expenses to see potential savings.
+      <h3 className="mb-1">Savings Simulator</h3>
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+        Uncheck subscriptions or bills to see how much money you would save each month if you cancelled them, along with your new estimated balance.
       </p>
       
       <div style={{ display: 'grid', gap: '0.8rem' }}>

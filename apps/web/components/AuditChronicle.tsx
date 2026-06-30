@@ -6,7 +6,8 @@ const AuditChronicle: React.FC = () => {
 
   return (
     <section className="card" style={{ gridColumn: 'span 1' }}>
-      <h3 style={{ marginBottom: '1.5rem' }}>📖 Household Activity</h3>
+      <h3 style={{ marginBottom: '0.25rem' }}>📖 Household Activity</h3>
+      <p className="text-xs text-secondary font-medium mb-6">A private timeline showing changes made in your household, such as added, modified, or deleted budget items and settings. Helpful for tracking changes in shared budgets.</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
         {Array.isArray(logs) && logs.map((log: any) => (
           <div key={log.id} style={{ paddingLeft: '1rem', borderLeft: '2px solid var(--primary)', position: 'relative' }}>

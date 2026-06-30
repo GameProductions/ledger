@@ -38,7 +38,8 @@ const AICoach: React.FC = () => {
 
   return (
     <section className="card" style={{ gridColumn: 'span 1', display: 'flex', flexDirection: 'column', height: '400px' }}>
-      <h3 style={{ marginBottom: '1rem' }}>💬 AI Financial Coach</h3>
+      <h3 style={{ marginBottom: '0.25rem' }}>💬 AI Financial Coach</h3>
+      <p className="text-xs text-secondary font-medium mb-4">Chat with our secure, offline AI to get personalized financial advice, budgeting suggestions, or help organizing your household cash flow.</p>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.8rem', paddingRight: '0.5rem' }}>
         {messages?.map((m, i) => (
           <div key={i} style={{ 

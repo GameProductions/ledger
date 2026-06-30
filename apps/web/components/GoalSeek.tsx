@@ -9,7 +9,8 @@ const GoalSeek: React.FC = () => {
 
   return (
     <section className="card">
-      <h3 style={{ marginBottom: '1.5rem' }}>🎯 Goal-Seek Engine</h3>
+      <h3 style={{ marginBottom: '0.25rem' }}>🎯 Goal-Seek Engine</h3>
+      <p className="text-xs text-secondary font-medium mb-6">Enter a savings goal and how many months you want to reach it in. The simulator calculates the exact monthly amount you need to save to meet your target.</p>
       <div style={{ display: 'grid', gap: '1rem' }}>
         <div>
           <label style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>Savings Goal ($)</label>

@@ -10,11 +10,14 @@ const BudgetProgress: React.FC = () => {
 
   return (
     <section className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h3 style={{ margin: 0 }}>Budget Progress</h3>
-        <span style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', background: 'var(--bg-dark)', borderRadius: '1rem', color: 'var(--primary)' }}>
-          ${((data?.unallocatedBalanceCents || 0) / 100).toFixed(2)} Unallocated
-        </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>Budget Progress</h3>
+          <span style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', background: 'var(--bg-dark)', borderRadius: '1rem', color: 'var(--primary)' }}>
+            ${((data?.unallocatedBalanceCents || 0) / 100).toFixed(2)} Unallocated
+          </span>
+        </div>
+        <p className="text-xs text-secondary font-medium">Track your category envelope spending against monthly allowances. The progress bar shows how much you have spent relative to your total budgeted limit.</p>
       </div>
       <div style={{ display: 'grid', gap: '1.5rem' }}>
         {budgets?.map((budget: any) => {

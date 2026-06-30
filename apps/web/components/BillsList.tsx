@@ -78,10 +78,11 @@ export const BillsList: React.FC = () => {
 
     return (
         <section className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+            <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
                     <CalendarIcon size={14} className="text-amber-500" /> Active Bills
                 </h3>
+                <p className="text-xs text-secondary font-medium">Keep track of your regular, non-subscription household bills (like electricity, rent, or water). You can view due dates, track payment status, split bills with other household members, and set planned adjustments.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3">

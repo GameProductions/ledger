@@ -51,7 +51,8 @@ const TransferForm: React.FC = () => {
 
   return (
     <section className="card">
-      <h3>Internal Transfer</h3>
+      <h3 className="mb-1">Internal Transfer</h3>
+      <p className="text-xs text-secondary font-medium">Transfer funds between your checking, savings, or virtual accounts. Simply select the source and target accounts, enter the amount, and tap submit.</p>
       <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <div style={{ flex: 1 }}>

@@ -57,10 +57,11 @@ export const InstallmentsList: React.FC = () => {
 
     return (
         <section className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+            <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
                     <Layers size={14} className="text-indigo-500" /> Installment Plans
                 </h3>
+                <p className="text-xs text-secondary font-medium">Manage finite payment agreements (like financing a phone, a car loan, or furniture store installment plans). This lists how many payments are left, your progress, and automatically removes the plan from your budget once paid in full.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3">

@@ -61,11 +61,14 @@ const Subscriptions: React.FC = () => {
           onClose={() => setReminderTarget(null)} 
         />
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscriptions</h3>
-        <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
-          {showAdd ? 'Cancel' : '+ New Strategy'}
-        </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscriptions</h3>
+          <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
+            {showAdd ? 'Cancel' : '+ New Strategy'}
+          </button>
+        </div>
+        <p className="text-xs text-secondary font-medium">Manage your recurring memberships and auto-renewing services (like Netflix, Spotify, or gym memberships). You can set trial end date alerts to cancel before being charged.</p>
       </div>
 
       {showAdd && (

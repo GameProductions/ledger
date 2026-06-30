@@ -135,6 +135,7 @@ export default function SharedBalances() {
           <div>
             <h3 className="text-lg font-bold text-white">Shared Balances</h3>
             <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Track IOUs and settle debts with household members</p>
+            <p className="text-xs text-secondary font-medium mt-1 pr-6">Keep track of informal debts and shared costs with other members of your household. You can record IOUs and mark them as settled when paid back.</p>
           </div>
         </div>
         <button 

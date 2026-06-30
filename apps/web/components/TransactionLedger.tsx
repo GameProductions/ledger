@@ -279,8 +279,8 @@ export const TransactionLedger: React.FC = () => {
       
       <QuickAttentionAdd onAdded={() => globalMutate()} />
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold flex items-center gap-2 mb-1">
           📖 Transaction Ledger
           <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary" title="Help">
             <HelpCircle size={16} />
@@ -305,7 +305,10 @@ export const TransactionLedger: React.FC = () => {
             <Plus size={12} /> Add Item
           </button>
         </h2>
-        
+        <p className="text-xs text-secondary font-medium">A complete list of your historical purchases and deposits. Search, filter, and edit transactions, or map them to categories to keep your budget accurate.</p>
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3 ml-auto">
           <div className="relative group/search">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary group-focus-within/search:text-primary transition-colors" />

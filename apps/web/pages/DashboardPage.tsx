@@ -406,6 +406,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     switch(id) {
       case 'calendar': return (
             <section key="calendar" className="card relative h-auto">
+              <h3 className="text-lg font-bold mb-1">Financial Calendar</h3>
+              <p className="text-xs text-secondary font-medium mb-6">Interactive planning grid. Click on any date to record a new charge, bill, or payday. Click on an existing item to review or modify details.</p>
               <Calendar 
                   transactions={transactions || []} 
                   subscriptions={subscriptions || []} 
@@ -435,8 +437,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       )
       case 'safe-to-spend': return (
             <section key="safe-to-spend" className="card">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Safe-to-Spend Balance</h3>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="text-lg font-bold">Safe-to-Spend Balance</h3>
+                  <p className="text-xs text-secondary font-medium mt-1">This shows how much money you can safely spend right now, after accounting for all your upcoming bills, subscriptions, and savings goals within the selected timeframe.</p>
+                </div>
                 <SearchableSelect 
                   options={[
                     { value: 'paycheck', label: 'Until Payday' },
@@ -448,19 +453,22 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   className="min-w-[140px]"
                 />
               </div>
-              <div className="safe-to-spend-container">
+              <div className="safe-to-spend-container mt-4">
                 <Price amountCents={analysis?.safe_to_spend_cents || analysis?.safety_number_cents || 0} />
               </div>
-              <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60">Spendable cash for selected window</p>
+              <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60 mt-2">Spendable cash for selected window</p>
             </section>
       );
       case 'future-balance': return (
             <section key="future-balance" className="card">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">Future Balance</h3>
-                <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black">6-Month Forecast</div>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="text-lg font-bold">Future Balance</h3>
+                  <p className="text-xs text-secondary font-medium mt-1">A forecast of your cash balance over the next 6 months, helping you visualize your savings growth and see if you have enough to cover upcoming expenses.</p>
+                </div>
+                <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black min-w-[110px] text-center">6-Month Forecast</div>
               </div>
-              <div className="text-3xl font-black text-white mb-2">
+              <div className="text-3xl font-black text-white mb-2 mt-4">
                 <Price amountCents={Array.isArray(forecast) ? (forecast.at(-1)?.balance_cents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
               <div className="flex items-center gap-2 mb-4">
@@ -481,8 +489,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       );
       case 'recent-activity': return (
             <section key="recent-activity" className="card animate-in fade-in zoom-in duration-500">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold">Recent Activity</h3>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-lg font-bold">Recent Activity</h3>
+                  <p className="text-xs text-secondary font-medium mt-1 pr-4">A log of your recent purchases and deposits. Check the boxes to match them with your bills or categorize them for budgeting.</p>
+                </div>
                 <div className="flex items-center gap-4">
                   <div className="flex bg-white/5 p-1 rounded-xl border border-glass-border">
                      <input 
@@ -578,13 +589,15 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       );
       case 'spending-trend': return (
               <section key="spending-trend" className="card animate-in fade-in zoom-in duration-500">
-                <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-4">Spending Trend</div>
+                <h3 className="text-lg font-bold mb-1">Spending Trend</h3>
+                <p className="text-xs text-secondary font-medium mb-4">A visual chart tracking your daily spending habits over time so you can spot spikes and control your budget.</p>
                 <SpendingChart data={transactions || []} />
               </section>
       );
       case 'activity-heatmap': return (
               <section key="activity-heatmap" className="card animate-in fade-in zoom-in duration-500 delay-75">
-                <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-4">Activity Heatmap</div>
+                <h3 className="text-lg font-bold mb-1">Activity Heatmap</h3>
+                <p className="text-xs text-secondary font-medium mb-4">A calendar grid showing which days of the week you tend to spend the most money, helping you recognize weekly spending patterns.</p>
                 <SpendingHeatmap transactions={transactions || []} />
               </section>
       );
@@ -592,7 +605,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       case 'add-transaction': return (
             <section key="add-transaction" className="card bg-primary/5 border-primary/20 animate-in fade-in zoom-in duration-500 delay-150">
               <h3 className="text-lg font-bold mb-1">Add Transaction</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60 mb-6">Instantly record new entries</p>
+              <p className="text-xs text-secondary uppercase font-bold opacity-60 mb-2">Instantly record new entries</p>
+              <p className="text-xs text-secondary font-medium mb-6">Quickly record a purchase or income. Tap a template button below to auto-fill common items, or type the name and amount manually.</p>
               
               <div className="flex flex-wrap gap-2 mb-6">
                 {Array.isArray(templates) ? templates.map((tpl: any) => (
@@ -649,15 +663,18 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       );
       case 'budget-categories': return (
               <section key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                  <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
-                  <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-2">
+                  <div>
+                    <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
+                    <p className="text-xs text-secondary font-medium mt-1 pr-4">Your envelope budgeting center. Allocate funds to different envelopes (like Groceries or Rent) to stay within your limits, and use the 'Roll Over' button to carry leftover funds to the next month.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 min-w-[220px] justify-end">
                     <button onClick={handleRollover} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
                     <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
                     <button onClick={() => setShowFundModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
                   </div>
                 </div>
-                <div className="text-3xl font-black text-primary mb-1">
+                <div className="text-3xl font-black text-primary mb-1 mt-6">
                   <Price amountCents={budgetsData?.unallocatedBalanceCents || 0} />
                 </div>
                 <div className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
@@ -707,7 +724,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       case 'shared-balances': return <SharedBalances key="shared-balances" />;
       case 'financial-health': return (
             <section key="financial-health" className="card animate-in fade-in zoom-in duration-500">
-              <h3 className="text-lg font-bold mb-6">Financial Health</h3>
+              <h3 className="text-lg font-bold mb-1">Financial Health</h3>
+              <p className="text-xs text-secondary font-medium mb-6">An overall score evaluating your budgeting habits, bill payment punctuality, and savings rate. Keep your spending under budget to raise your score!</p>
               <HealthScore score={analysis?.healthScore || 0} />
               <button 
                 onClick={() => window.open(`${apiUrl}/api/data/history/summary`, '_blank')}

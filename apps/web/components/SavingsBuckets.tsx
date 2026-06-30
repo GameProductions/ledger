@@ -29,7 +29,8 @@ const SavingsBuckets: React.FC = () => {
 
   return (
     <section className="card">
-      <h3 style={{ marginBottom: '1.5rem' }}>📥 Virtual Savings Buckets</h3>
+      <h3 style={{ marginBottom: '0.25rem' }}>📥 Virtual Savings Buckets</h3>
+      <p className="text-xs text-secondary font-medium mb-6">Create sub-savings goals within your main account. Virtual buckets let you allocate parts of your savings balance to specific goals (like a vacation or emergency fund) without opening new bank accounts.</p>
       <div style={{ display: 'grid', gap: '1rem' }}>
         {Array.isArray(buckets) && buckets.map((b: any) => {
           const percent = b.target_cents > 0 ? Math.round((b.current_cents / b.target_cents) * 100) : 0;

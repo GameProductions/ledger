@@ -57,6 +57,7 @@ export const PaySchedulesList: React.FC = () => {
                     <div>
                         <h3 className="text-lg font-bold uppercase tracking-tight italic">Income Pipeline</h3>
                         <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Active Pay Schedules</p>
+                        <p className="text-xs text-secondary font-medium mt-1 pr-6">Set up your recurring paychecks here (e.g., weekly or bi-weekly). This helps the system forecast your cash flow and calculate your budget intervals.</p>
                     </div>
                 </div>
                 <button 

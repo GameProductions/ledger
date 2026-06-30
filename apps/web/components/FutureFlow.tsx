@@ -5,7 +5,8 @@ const FutureFlow: React.FC = () => {
 
   return (
     <section className="card" style={{ gridColumn: 'span 2' }}>
-      <h3 style={{ marginBottom: '1rem' }}>🔮 Future Flow (180-Day Projection)</h3>
+      <h3 style={{ marginBottom: '0.25rem' }}>🔮 Future Flow (180-Day Projection)</h3>
+      <p className="text-xs text-secondary font-medium mb-4">A visual bar chart forecasting your account balance over the next 180 days. This aggregates your income schedules and scheduled bills to show your estimated cash trajectory.</p>
       <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', gap: '5%', padding: '1rem 0' }}>
         {Array.isArray(projection) && projection.map((p: any) => {
           const height = Math.min(100, Math.max(10, (p.balanceCents / (projection[0]?.balanceCents || 1)) * 100))

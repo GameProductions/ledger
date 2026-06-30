@@ -7,33 +7,33 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 const steps = [
   {
     id: 'welcome',
-    title: 'Welcome to LEDGER v6.1',
-    content: 'The Security update is here. We’ve overhauled our core architecture to ensure your financial data is more secure than ever.',
+    title: 'Welcome to LEDGER',
+    content: 'Ledger is a private and secure tool designed to help you track personal expenses, manage budgets, and plan your financial future.',
     target: null
   },
   {
-    id: 'security',
-    title: 'Security Enhancements',
-    content: 'Legacy TOTP (Authenticator Apps) has been decommissioned. Enroll your biometric Passkeys (TouchID/FaceID) for a passwordless, highly secure experience. If biometrics are unavailable, use your 8-character recovery codes.',
-    target: '#user-profile-button'
-  },
-  {
-    id: 'vault',
-    title: 'Identity Vault',
-    content: 'Your PII and sensitive data are now stored in an encrypted hardware-backed vault. Initialize your vault to enable advanced security features.',
-    target: '#vault-init-button'
-  },
-  {
     id: 'dashboard',
-    title: 'Consolidated Command Center',
-    content: 'Manage your entire financial fleet from one place. Overview, Activity, and Planning have been unified for a seamless experience.',
+    title: 'Your Command Center',
+    content: 'Get a clear view of your financial health at a glance. Access your balance charts, monthly forecasts, and category budgets all in one place.',
     target: '#dashboard-tabs'
   },
   {
-    id: 'accounts',
-    title: 'Smart Synchronization',
-    content: 'Connect your banks or crypto wallets. Our new matching engine automatically categorizes transactions with 99% accuracy.',
-    target: '#add-account-button'
+    id: 'calendar',
+    title: 'Financial Calendar',
+    content: 'Plan your bills and paydays visually. Tap on any date to log a new charge or paycheck, or review existing upcoming payments.',
+    target: '#calendar-card'
+  },
+  {
+    id: 'budgeting',
+    title: 'Envelope Budgeting',
+    content: 'Allocate your money to categories (like Groceries or Utilities). Track your spending envelopes in real-time to keep your budget balanced.',
+    target: '#budget-categories-card'
+  },
+  {
+    id: 'privacy',
+    title: '100% Private & Yours',
+    content: 'Your financial data is encrypted and synced directly to your personal Google Drive, Dropbox, or OneDrive. No third-party servers ever touch your files.',
+    target: null
   }
 ]
 

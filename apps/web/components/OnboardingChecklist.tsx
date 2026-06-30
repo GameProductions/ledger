@@ -5,10 +5,11 @@ import { CheckCircle, Circle, Trophy } from 'lucide-react'
 import { useOnboarding } from '../context/OnboardingContext'
 
 const checklistItems = [
-  { id: 'welcome', label: 'Welcome Tour' },
-  { id: 'security', label: 'Security Setup' },
-  { id: 'vault', label: 'Vault Setup' },
-  { id: 'accounts', label: 'Add First Account' }
+  { id: 'welcome', label: 'Welcome Introduction' },
+  { id: 'dashboard', label: 'Explore Command Center' },
+  { id: 'calendar', label: 'Verify Financial Calendar' },
+  { id: 'budgeting', label: 'Review Budget Envelopes' },
+  { id: 'privacy', label: 'Confirm Private Sync' }
 ]
 
 export const OnboardingChecklist: React.FC = () => {

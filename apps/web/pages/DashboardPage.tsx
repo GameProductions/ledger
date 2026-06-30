@@ -405,7 +405,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const renderWidget = (id: string) => {
     switch(id) {
       case 'calendar': return (
-            <section key="calendar" className="card relative h-auto">
+            <section id="calendar-card" key="calendar" className="card relative h-auto">
               <h3 className="text-lg font-bold mb-1">Financial Calendar</h3>
               <p className="text-xs text-secondary font-medium mb-6">Interactive planning grid. Click on any date to record a new charge, bill, or payday. Click on an existing item to review or modify details.</p>
               <Calendar 
@@ -662,7 +662,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
             </section>
       );
       case 'budget-categories': return (
-              <section key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
+              <section id="budget-categories-card" key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-2">
                   <div>
                     <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>

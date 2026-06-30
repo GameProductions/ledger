@@ -189,7 +189,7 @@ user.get('/onboarding', async (c) => {
     success: true,
     data: {
       completedSteps: completedSteps,
-      isCompleted: completedSteps.length >= 4,
+      isCompleted: completedSteps.includes('skip') || completedSteps.includes('privacy') || completedSteps.length >= 4,
       updates: recentUpdates,
       currentVersion: CURRENT_VERSION
     }
@@ -229,7 +229,7 @@ user.post('/onboarding/step', zValidator('json', z.object({
   return c.json({
     success: true,
     completedSteps: completedSteps,
-    isCompleted: isLast || completedSteps.length >= 4
+    isCompleted: isLast || completedSteps.includes('skip') || completedSteps.includes('privacy') || completedSteps.length >= 4
   })
 })
 

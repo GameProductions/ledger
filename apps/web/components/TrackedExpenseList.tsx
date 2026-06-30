@@ -179,25 +179,29 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   return (
     <>
       <div className="mt-4 border-t border-white/5 pt-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-200/60 flex items-center gap-2">
+        <div className="mb-4">
+          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-200/60 flex items-center gap-2 mb-1">
             <ChevronRight size={14} className="text-orange-500" />
             Pending Tracked Expenses ({tracked.length})
             <span className="ml-2 px-2 py-0.5 bg-orange-500/10 rounded-full text-orange-400 border border-orange-500/10">
               {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amountCents ?? 0), 0))}
             </span>
           </h4>
-          <button 
-            onClick={toggleSelectAll}
-            className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-colors"
-          >
-            {selectedIds.length === tracked.length ? 'Deselect All' : 'Select All'}
-          </button>
+          <p className="text-xs text-secondary font-medium">Pending expenses tracked automatically from your accounts. You can review them here, bulk edit them, or match/promote them to the main ledger.</p>
         </div>
-        
-        {reduced ? (
-          selectedIds.length > 0 && (
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={toggleSelectAll}
+              className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-colors"
+            >
+              {selectedIds.length === tracked.length ? 'Deselect All' : 'Select All'}
+            </button>
+          </div>
+          
+          {reduced ? (
+            selectedIds.length > 0 && (
             <div className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3">
               <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                 Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {

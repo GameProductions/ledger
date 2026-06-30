@@ -308,26 +308,27 @@ const Calendar: React.FC<CalendarProps> = ({
   });
 
   return (
-    <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500 relative overflow-hidden">
-      <div className="calendar-header flex flex-col md:flex-row items-start md:items-center justify-between mb-8 px-4 gap-4 relative z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          <div className="flex flex-col">
-            <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap">
-              {rangeType === 'month' ? (
-                  <>{monthName} <span className="text-primary">{year}</span></>
-              ) : rangeType === 'relative' ? (
-                  <>Next <span className="text-primary">{rangeValue}</span> Days</>
-              ) : rangeType === 'pay_period' ? (
-                  <>Pay <span className="text-primary">Cycle</span></>
-              ) : (
-                  <>Custom <span className="text-primary">Range</span></>
-              )}
-            </h2>
-            <p className="text-[10px] font-black tracking-[0.2em] uppercase text-secondary opacity-60 mt-1">
-                {format(resolvedRange.start, 'MMM d')} — {format(resolvedRange.end, 'MMM d, yyyy')}
-            </p>
-          </div>
-          <div className="flex gap-2 items-center">
+    <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500 relative">
+      <div className="calendar-header flex flex-col gap-6 mb-8 px-4 relative z-10">
+        <div className="flex flex-col">
+          <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap">
+            {rangeType === 'month' ? (
+                <>{monthName} <span className="text-primary">{year}</span></>
+            ) : rangeType === 'relative' ? (
+                <>Next <span className="text-primary">{rangeValue}</span> Days</>
+            ) : rangeType === 'pay_period' ? (
+                <>Pay <span className="text-primary">Cycle</span></>
+            ) : (
+                <>Custom <span className="text-primary">Range</span></>
+            )}
+          </h2>
+          <p className="text-[10px] font-black tracking-[0.2em] uppercase text-secondary opacity-60 mt-1">
+              {format(resolvedRange.start, 'MMM d')} — {format(resolvedRange.end, 'MMM d, yyyy')}
+          </p>
+        </div>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full pt-4 border-t border-white/5">
+          <div className="flex flex-wrap gap-2 items-center">
             {rangeType === 'month' && (
                 <>
                     <button onClick={() => setCurrentDate(new Date())} aria-label="Go to today" className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-primary/10 text-primary font-bold hover:bg-primary/20 transition-all text-xs tracking-widest uppercase"><CalendarIcon size={12} /> Today</button>
@@ -382,8 +383,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 📊 Totals
             </button>
           </div>
-        </div>
-        
+
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
                 <button onClick={() => setDisplayMode('calendar')} className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${displayMode === 'calendar' ? 'bg-primary text-white shadow-xl' : 'text-secondary hover:text-white'}`}><GridIcon size={12} /> Grid</button>
@@ -403,6 +403,7 @@ const Calendar: React.FC<CalendarProps> = ({
               </select>
             </div>
           </div>
+        </div>
       </div>
 
       {showTotalsPanel && (

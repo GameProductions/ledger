@@ -33,40 +33,40 @@ const LandingPage: React.FC = () => {
 
   const mainFeatures = [
     {
-      title: 'AI Liquidity Intelligence',
-      description: 'Predictive forecasting and intelligent categorization powered by localized AI analysis of spending patterns.',
+      title: 'Smart Expense Insights',
+      description: 'See where your money goes with automatic categorization and simple forecasts of your future bills and spending.',
       icon: <Cpu className="text-primary" size={32} />,
     },
     {
-      title: 'Multi-Cloud Redundancy',
-      description: 'Encrypted state synchronization across Google Drive, Dropbox, and Microsoft OneDrive for total Data Ownership.',
+      title: 'Your Own Cloud Sync',
+      description: 'Keep your data synced across your devices using your personal Google Drive, Dropbox, or Microsoft OneDrive account.',
       icon: <Cloud className="text-secondary" size={32} />,
     },
     {
-      title: 'Security Audit Logs',
-      description: 'Every state change is cryptographically logged and auditable, ensuring immutable financial integrity.',
+      title: 'Complete Privacy',
+      description: 'Every transaction is encrypted directly on your device. Your financial logs are locked so only you can see them.',
       icon: <Shield className="text-emerald-500" size={32} />,
     },
     {
-      title: 'Self-Hosted Freedom',
-      description: 'Deploy on your own infrastructure with our official Docker and Docker-Compose distributions.',
+      title: 'Fully Offline Option',
+      description: 'No internet? No problem. Run the application locally on your own computer to keep your financial life 100% private.',
       icon: <Terminal className="text-blue-500" size={32} />,
     }
   ]
 
   const exhaustiveFeatures = [
-    { name: 'AI Forecasts', icon: <Activity className="text-primary" />, desc: 'Predictive cash-flow modeling' },
-    { name: 'Biometric Check', icon: <Fingerprint className="text-secondary" />, desc: 'Passwordless FIDO2 security' },
-    { name: 'Multi-Household', icon: <Users className="text-emerald-500" />, desc: 'Secure family member isolation' },
-    { name: 'PWA Offline', icon: <Zap className="text-amber-500" />, desc: 'Native app feel on every device' },
-    { name: 'Luxury UI', icon: <Layout className="text-purple-500" />, desc: 'Professional custom skin engine' },
-    { name: 'Multi-Currency', icon: <Wallet className="text-pink-500" />, desc: 'Global financial tracking' },
-    { name: 'Docker Ready', icon: <Server className="text-blue-400" />, desc: 'Official containerized builds' },
-    { name: 'Audit Timelines', icon: <Layers className="text-slate-400" />, desc: 'Historical integrity tracking' },
-    { name: 'Cloud Sync', icon: <HardDrive className="text-cyan-400" />, desc: 'Google Drive, Dropbox, OneDrive' },
-    { name: '1Password Vault', icon: <Shield className="text-blue-400" />, desc: 'Biometric secret management' },
-    { name: 'Cloudflare Edge', icon: <Cloud className="text-orange-400" />, desc: 'Global high-performance delivery' },
-    { name: 'Discord Identity', icon: <FileCode className="text-indigo-400" />, desc: 'Integrated identity service' }
+    { name: 'Future Forecasts', icon: <Activity className="text-primary" />, desc: 'Simple cash-flow projections' },
+    { name: 'Secure Sign-In', icon: <Fingerprint className="text-secondary" />, desc: 'Log in safely with your fingerprint' },
+    { name: 'Family Budgets', icon: <Users className="text-emerald-500" />, desc: 'Manage shared household expenses' },
+    { name: 'Works Offline', icon: <Zap className="text-amber-500" />, desc: 'Access your budget without internet' },
+    { name: 'Beautiful Design', icon: <Layout className="text-purple-500" />, desc: 'Customize with your favorite colors' },
+    { name: 'Any Currency', icon: <Wallet className="text-pink-500" />, desc: 'Track your money in any currency' },
+    { name: 'Local Install', icon: <Server className="text-blue-400" />, desc: 'Run locally on your own machine' },
+    { name: 'Change History', icon: <Layers className="text-slate-400" />, desc: 'Trace changes to your transactions' },
+    { name: 'Cloud Backup', icon: <HardDrive className="text-cyan-400" />, desc: 'Backup to Google Drive, Dropbox, OneDrive' },
+    { name: 'Secure Vault', icon: <Shield className="text-blue-400" />, desc: 'Securely store credentials' },
+    { name: 'Fast Load Times', icon: <Cloud className="text-orange-400" />, desc: 'Lightweight app that opens instantly' },
+    { name: 'Social Login', icon: <FileCode className="text-indigo-400" />, desc: 'Optional sign-in with your online account' }
   ]
 
   const integrations = [
@@ -110,14 +110,14 @@ const LandingPage: React.FC = () => {
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
                 <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Secure Personal Budgeting</span>
               </div>
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
-                Financial Data Ownership. <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
+                Your Money. Your Budget. <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Fully Private.</span>
               </h1>
               <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
-                A high-integrity security ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
+                A simple, secure, and private tool to track your personal expenses, manage budgets, and plan your family finances—with no third-party companies owning your data.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
@@ -136,14 +136,14 @@ const LandingPage: React.FC = () => {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
                 <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Open Secure Service</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Secure Personal Budgeting</span>
               </div>
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
-                Financial Data Ownership. <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Decoupled.</span>
+                Your Money. Your Budget. <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-emerald-400 to-secondary">Fully Private.</span>
               </h1>
               <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl mx-auto mb-12 leading-relaxed opacity-80">
-                A high-integrity security ledger built for total data ownership, AI forecasting, and multi-cloud redundancy.
+                A simple, secure, and private tool to track your personal expenses, manage budgets, and plan your family finances—with no third-party companies owning your data.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
@@ -201,8 +201,8 @@ const LandingPage: React.FC = () => {
       <section className="py-32 px-6 bg-white/[0.01] border-y border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic uppercase">Identity & Backup Connection</h2>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Trusted services for secure status check</p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic uppercase">Your Personal Cloud Connections</h2>
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Pick where your private data is stored</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 items-center justify-items-center mb-32">
@@ -222,19 +222,19 @@ const LandingPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <div className="p-10 bg-[#020617] rounded-[3rem] border border-white/5">
-               <h4 className="text-xl font-black italic uppercase mb-4">Privacy & Data Ownership</h4>
+               <h4 className="text-xl font-black italic uppercase mb-4">Complete Data Ownership</h4>
                <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80">
-                 We connect to your Google Drive, Dropbox, and OneDrive to ensure your data never lives on our servers. Your financial snapshots are encrypted and synced directly to your personal cloud, giving you 100% ownership and portability.
+                 We connect directly to your Google Drive, Dropbox, or OneDrive so your data never lives on our servers. Your budgets and transactions are encrypted and stored in your own personal cloud, giving you 100% control over your files.
                </p>
             </div>
             <div className="p-10 bg-[#020617] rounded-[3rem] border border-white/5 relative overflow-hidden group">
                <div className="relative z-10">
-                 <h4 className="text-xl font-black italic uppercase mb-4">Docker Self-Hosting</h4>
+                 <h4 className="text-xl font-black italic uppercase mb-4">Run Offline locally</h4>
                  <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80 mb-6">
-                   Run the entire LEDGER ecosystem on your own hardware. Available as containerized distributions on Docker Hub for total control over your financial stack.
+                   Prefer to keep your finances completely offline? You can run the entire app locally on your own computer. You don't need any complex infrastructure to get started.
                  </p>
-                 <a href="https://hub.docker.com/r/morenicano/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-colors">
-                   View Docker Hub <ArrowRight size={12} />
+                 <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-colors">
+                   View Source Code <ArrowRight size={12} />
                  </a>
                </div>
                <Server className="absolute -bottom-6 -right-6 text-white/[0.03] w-32 h-32" />
@@ -246,8 +246,8 @@ const LandingPage: React.FC = () => {
       {/* Features */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-24">
-          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Status</h2>
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Complete feature audit of the service engine</p>
+          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Simple & Powerful Features</h2>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Everything you need to manage your personal finances</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -265,23 +265,23 @@ const LandingPage: React.FC = () => {
       <section className="py-40 px-6 max-w-7xl mx-auto border-t border-white/5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
           <div>
-            <div className="text-xs font-black uppercase tracking-[0.5em] text-primary mb-8">Hardened Security Design</div>
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-12 italic leading-[0.9]">Encrypted. <br/> Resilient. <br/> Private.</h2>
+            <div className="text-xs font-black uppercase tracking-[0.5em] text-primary mb-8">Built with Privacy First</div>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-12 italic leading-[0.9]">Safe. <br/> Private. <br/> Yours.</h2>
             <p className="text-slate-400 font-medium mb-12 leading-relaxed opacity-80">
-              LEDGER utilizes military-grade AES-256-GCM encryption for all client-side state. Your session is protected by FIDO2/WebAuthn biometrics and secure OAuth isolation.
+              LEDGER uses secure, device-level encryption to safeguard all your budget files. Your transactions, account balances, and personal details remain entirely private.
             </p>
             <div className="flex gap-10">
                <div>
-                  <div className="text-3xl font-black italic mb-1">256</div>
-                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">AES Bit-Depth</div>
+                  <div className="text-3xl font-black italic mb-1">Secure</div>
+                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Encryption</div>
                </div>
                <div>
                   <div className="text-3xl font-black italic mb-1">0%</div>
-                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Centralized Storage</div>
+                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Third-party Servers</div>
                </div>
                <div>
                   <div className="text-3xl font-black italic mb-1">100%</div>
-                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Self-Hostable</div>
+                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Private Data</div>
                </div>
             </div>
           </div>
@@ -289,8 +289,8 @@ const LandingPage: React.FC = () => {
              <div className="aspect-square bg-[#020617] rounded-[4.9rem] flex items-center justify-center">
                 <div className="text-center p-12">
                    <Fingerprint size={80} className="text-primary mx-auto mb-8 animate-pulse" />
-                   <h3 className="text-2xl font-black uppercase italic mb-4">Biometric Identity</h3>
-                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Biometric Identity Protocol</p>
+                   <h3 className="text-2xl font-black uppercase italic mb-4">Secure Sign-In</h3>
+                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Biometric Login Ready</p>
                 </div>
              </div>
           </div>

@@ -23,6 +23,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
   const [borrowSource, setBorrowSource] = useState('')
   const [loading, setLoading] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [showInfo, setShowInfo] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,37 +68,48 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     <div className="card mb-6 border-l-4 border-l-orange-500 overflow-hidden relative">
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full"></div>
       
-      <div className="flex items-center gap-2 mb-3">
-        <Flag className="text-orange-500" size={18} />
-        <h3 className="font-bold text-white uppercase tracking-widest text-sm text-orange-100">Add Tracked Expense</h3>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <Flag className="text-orange-500" size={18} />
+          <h3 className="font-bold text-white uppercase tracking-widest text-sm text-orange-100">Add Tracked Expense</h3>
+        </div>
+        <button 
+          type="button"
+          onClick={() => setShowInfo(!showInfo)}
+          className="text-[10px] font-black uppercase tracking-widest text-orange-400 hover:text-white px-2.5 py-1 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 transition-all border border-orange-500/20"
+        >
+          {showInfo ? 'Hide Guide' : 'Show Guide'}
+        </button>
       </div>
 
-      <div className="mb-5 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl text-xs space-y-2.5 leading-relaxed text-orange-200/80">
-        <p className="font-bold text-orange-400">
-          💡 What are Tracked Expenses?
-        </p>
-        <p>
-          Tracked Expenses serve as a "staging area" to draft pending items, log upcoming bills, or flag transactions that require verification before committing them permanently to the main ledger.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div className="space-y-1">
-            <span className="font-black uppercase tracking-wider text-[9px] text-orange-300">Use Cases</span>
-            <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
-              <li>Logging borrowed funds needing repayment.</li>
-              <li>Staging items requiring a balance transfer.</li>
-              <li>Drafting quick payments to audit/reconcile later.</li>
-            </ul>
-          </div>
-          <div className="space-y-1">
-            <span className="font-black uppercase tracking-wider text-[9px] text-orange-300">Quick Guide</span>
-            <ul className="list-decimal pl-4 space-y-0.5 text-[11px]">
-              <li>Enter the Amount and Description.</li>
-              <li>Toggle optional flags (attention, borrow, transfer).</li>
-              <li>Click Add to place it in the Pending Staging List.</li>
-            </ul>
+      {showInfo && (
+        <div className="mb-5 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl text-xs space-y-2.5 leading-relaxed text-orange-200/80 animate-in slide-in-from-top-2 duration-300">
+          <p className="font-bold text-orange-400">
+            💡 What are Tracked Expenses?
+          </p>
+          <p>
+            Tracked Expenses serve as a "staging area" to draft pending items, log upcoming bills, or flag transactions that require verification before committing them permanently to the main ledger.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="space-y-1">
+              <span className="font-black uppercase tracking-wider text-[9px] text-orange-300">Use Cases</span>
+              <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                <li>Logging borrowed funds needing repayment.</li>
+                <li>Staging items requiring a balance transfer.</li>
+                <li>Drafting quick payments to audit/reconcile later.</li>
+              </ul>
+            </div>
+            <div className="space-y-1">
+              <span className="font-black uppercase tracking-wider text-[9px] text-orange-300">Quick Guide</span>
+              <ul className="list-decimal pl-4 space-y-0.5 text-[11px]">
+                <li>Enter the Amount and Description.</li>
+                <li>Toggle optional flags (attention, borrow, transfer).</li>
+                <li>Click Add to place it in the Pending Staging List.</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

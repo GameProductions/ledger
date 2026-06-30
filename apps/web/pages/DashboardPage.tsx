@@ -1176,6 +1176,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       )}
 
       <CalendarEntryModal 
+        key={`${isCalendarModalOpen}-${selectedCalendarItem?.id || 'new'}-${selectedCalendarDate?.toISOString() || ''}`}
         isOpen={isCalendarModalOpen}
         onClose={() => setIsCalendarModalOpen(false)}
         onSave={handleCalendarSave}

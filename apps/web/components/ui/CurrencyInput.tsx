@@ -16,12 +16,13 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   const displayValue = (valueCents / 100).toFixed(2);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    if (isNaN(val)) {
+    const digits = e.target.value.replace(/\D/g, '');
+    if (!digits) {
       onChangeCents(0);
       return;
     }
-    onChangeCents(Math.round(val * 100));
+    const cents = parseInt(digits, 10);
+    onChangeCents(cents);
   };
 
   return (
@@ -32,8 +33,8 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
         </span>
       )}
       <input
-        type="number"
-        step="0.01"
+        type="text"
+        inputMode="numeric"
         value={displayValue}
         onChange={handleChange}
         className={`w-full bg-black/40 border border-white/10 rounded-xl p-3 ${showSymbol ? 'pl-8' : ''} text-white focus:outline-none focus:border-primary transition-colors ${className}`}

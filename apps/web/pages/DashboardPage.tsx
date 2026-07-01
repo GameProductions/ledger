@@ -203,8 +203,22 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
              setLayout(merged);
          }
        } catch(e: any) {}
-    }
-  }, [user])
+     }
+   }, [user])
+
+  useEffect(() => {
+    const handleSetTab = (e: Event) => {
+      const tabId = (e as CustomEvent).detail;
+      if (tabId) setActiveTab(tabId);
+    };
+    window.addEventListener('set-dashboard-tab', handleSetTab);
+    return () => window.removeEventListener('set-dashboard-tab', handleSetTab);
+  }, []);
+
+  useEffect(() => {
+    const event = new CustomEvent('dashboard-tab-changed', { detail: activeTab });
+    window.dispatchEvent(event);
+  }, [activeTab]);
 
   const saveLayout = async (newLayout: any, newTabConfig: any = tabConfig) => {
     setLayout(newLayout);

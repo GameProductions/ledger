@@ -5,6 +5,7 @@ import { Flag, ShieldAlert, ArrowRightLeft, HandCoins } from 'lucide-react'
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { Checkbox } from './ui/Checkbox'
 
 interface QuickAttentionAddProps {
   onAdded: () => void;
@@ -68,7 +69,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     <div className="card mb-6 border-l-4 border-l-orange-500 overflow-hidden relative">
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full"></div>
       
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center justify-between gap-2 mb-3 relative z-20">
         <div className="flex items-center gap-2">
           <Flag className="text-orange-500" size={18} />
           <h3 className="font-bold text-white uppercase tracking-widest text-sm text-orange-100">Add Tracked Expense</h3>
@@ -135,11 +136,10 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
         <div className="flex items-center gap-4 py-2 border-y border-white/5">
           <label className="flex items-center gap-2 cursor-pointer group">
-            <input 
-              type="checkbox" 
+            <Checkbox 
               checked={attentionRequired} 
-              onChange={e => setAttentionRequired(e.target.checked)} 
-              className="w-4 h-4 rounded text-orange-500 focus:ring-0 focus:ring-offset-0 bg-black border-white/20"
+              onChange={setAttentionRequired} 
+              iconClassName="text-orange-500"
             />
             <span className="text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
               <ShieldAlert size={14} className={attentionRequired ? "text-orange-400" : ""} />
@@ -160,10 +160,10 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                 
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer flex-1">
-                    <input 
-                      type="checkbox" 
+                    <Checkbox 
                       checked={needsBalanceTransfer} 
-                      onChange={e => setNeedsBalanceTransfer(e.target.checked)}
+                      onChange={setNeedsBalanceTransfer}
+                      iconClassName="text-orange-500"
                     />
                     <span className="text-sm flex items-center gap-1.5 text-orange-200">
                       <ArrowRightLeft size={16} /> Requires Balance Transfer
@@ -186,10 +186,10 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer flex-1">
-                    <input 
-                      type="checkbox" 
+                    <Checkbox 
                       checked={isBorrowed} 
-                      onChange={e => setIsBorrowed(e.target.checked)}
+                      onChange={setIsBorrowed}
+                      iconClassName="text-orange-500"
                     />
                     <span className="text-sm flex items-center gap-1.5 text-orange-200">
                       <HandCoins size={16} /> Funds were Borrowed

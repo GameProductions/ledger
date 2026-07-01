@@ -292,8 +292,43 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(addMonths(currentDate, -1));
-  
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      if (rangeType === 'month') {
+        nextMonth();
+      } else if (rangeType === 'pay_period') {
+        if (payPeriodType === 'current') setPayPeriodType('next');
+        else if (payPeriodType === 'previous') setPayPeriodType('current');
+      }
+    } else if (isRightSwipe) {
+      if (rangeType === 'month') {
+        prevMonth();
+      } else if (rangeType === 'pay_period') {
+        if (payPeriodType === 'current') setPayPeriodType('previous');
+        else if (payPeriodType === 'next') setPayPeriodType('current');
+      }
+    }
+  };
 
   const allItems = getAllRangeItems().filter(i => {
       if (filterType === 'all') return true;
@@ -308,7 +343,12 @@ const Calendar: React.FC<CalendarProps> = ({
   });
 
   return (
-    <div className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500 relative">
+    <div 
+      className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500 relative"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <div className="calendar-header flex flex-col gap-6 mb-8 px-4 relative z-10">
         <div className="flex flex-col">
           <h2 className="text-3xl font-black italic tracking-tighter uppercase whitespace-nowrap">

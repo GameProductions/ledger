@@ -313,7 +313,7 @@ app.get('/api/theme/broadcast', async (c) => {
   }
 })
 
-app.post('/api/theme/broadcast', authMiddleware, async (c) => {
+app.post('/api/theme/broadcast', authMiddleware, adminMiddleware, async (c) => {
   const { themeId } = (await c.req.json() as any)
   const db = getDb(c.env)
   

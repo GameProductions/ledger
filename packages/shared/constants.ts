@@ -7,7 +7,7 @@ export const SYSTEM_OWNER = 'GameProductions'
 export const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY']
 
 export const ROLES = {
-  SUPER_ADMIN: 'owner',
+  OWNER: 'owner',
   ADMIN: 'admin',
   OPERATOR: 'operator',
   USER: 'user'

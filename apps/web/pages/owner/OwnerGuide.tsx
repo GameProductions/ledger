@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import AdminPortal from './AdminPortal';
+import OwnerPortal from './OwnerPortal';
 import { Shield, Lock, Activity, Zap, Terminal, Key, Calendar, List, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../context/AuthContext';
@@ -43,7 +43,7 @@ const AdminGuide: React.FC = () => {
   }, [token]);
 
   return (
-    <AdminPortal activePath="#/admin/guide">
+    <OwnerPortal activePath="#/admin/guide">
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -170,7 +170,7 @@ const AdminGuide: React.FC = () => {
                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-3 shadow-xl hover:border-purple-500/30 transition-all group/card">
                   <div className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover/card:text-purple-400">Access_05</div>
                   <h4 className="text-sm font-bold text-white uppercase">Account Access Tracking</h4>
-                  <p className="text-sm text-slate-500 leading-relaxed">Account access is recorded with both super admin and target user context for absolute accountability.</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">Account access is recorded with both owner and target user context for absolute accountability.</p>
                 </div>
             </div>
         </div>
@@ -182,7 +182,7 @@ const AdminGuide: React.FC = () => {
             <Lock size={48} />
         </div>
       </div>
-    </AdminPortal>
+    </OwnerPortal>
   );
 };
 

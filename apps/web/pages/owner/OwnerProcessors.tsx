@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminPortal from './AdminPortal';
+import OwnerPortal from './OwnerPortal';
 import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink, ShieldAlert } from 'lucide-react';
 import { InlineToast } from '../../components/ui/InlineToast';
 import { getApiUrl } from '../../utils/api';
@@ -103,10 +103,10 @@ const AdminProcessors: React.FC = () => {
     }
   };
 
-  if (loading) return <AdminPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></AdminPortal>;
+  if (loading) return <OwnerPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></OwnerPortal>;
 
   return (
-    <AdminPortal activePath="#/admin/processors">
+    <OwnerPortal activePath="#/admin/processors">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
@@ -272,7 +272,7 @@ const AdminProcessors: React.FC = () => {
           </div>
         )}
       </div>
-    </AdminPortal>
+    </OwnerPortal>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminPortal from './AdminPortal';
+import OwnerPortal from './OwnerPortal';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { InlineToast } from '../../components/ui/InlineToast';
@@ -117,13 +117,13 @@ const AdminConfig: React.FC = () => {
     }
   };
 
-  if (loading) return <AdminPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></AdminPortal>;
+  if (loading) return <OwnerPortal activePath="#/admin/config"><div className="animate-pulse">Loading settings...</div></OwnerPortal>;
 
   const defaultTimezoneCfg = configs.find(c => c.configKey === 'DEFAULT_TIMEZONE');
   const defaultLocaleCfg = configs.find(c => c.configKey === 'DEFAULT_LOCALE');
 
   return (
-    <AdminPortal activePath="#/admin/config">
+    <OwnerPortal activePath="#/admin/config">
       <div className="space-y-12">
         {/* Maintenance / Self-Heal */}
         <section className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/20 relative overflow-hidden">
@@ -288,7 +288,7 @@ const AdminConfig: React.FC = () => {
           </div>
         </section>
       </div>
-    </AdminPortal>
+    </OwnerPortal>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import AdminPortal from './AdminPortal';
+import OwnerPortal from './OwnerPortal';
 import { useAuth } from '../../context/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { InlineToast } from '../../components/ui/InlineToast';
@@ -171,7 +171,7 @@ const AdminDashboard: React.FC = () => {
     setSeedingDemo(false);
   };
 
-  if (loading) return <AdminPortal activePath="#/admin/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></AdminPortal>;
+  if (loading) return <OwnerPortal activePath="#/admin/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></OwnerPortal>;
 
   const statCards = [
     { label: 'Total Users', value: stats?.totalUsers || 0, color: 'emerald' },
@@ -181,7 +181,7 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <AdminPortal activePath="#/admin/dashboard">
+    <OwnerPortal activePath="#/admin/dashboard">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {statCards.map((stat) => (
           <div key={stat.label} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative">
@@ -587,7 +587,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminPortal>
+    </OwnerPortal>
   );
 };
 

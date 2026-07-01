@@ -677,7 +677,7 @@ const LoginPage: React.FC = () => {
         <div className="space-y-6">
            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
               <RefreshCw className="text-blue-500 mt-1 animate-spin-slow" size={20} />
-              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">A super admin has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
+              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">An owner has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
            </div>
            <div className="relative">
              <Input 

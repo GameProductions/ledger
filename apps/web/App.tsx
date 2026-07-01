@@ -38,16 +38,16 @@ const SupportPortal = lazy(() => import('./pages/help/SupportPortal').then(m => 
 const ToursPage = lazy(() => import('./pages/help/ToursPage').then(m => ({ default: m.ToursPage })))
 const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./components/TermsOfService'))
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
-const AdminConfig = lazy(() => import('./pages/admin/AdminConfig'))
-const AdminData = lazy(() => import('./pages/admin/AdminData'))
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
-const AdminHouseholds = lazy(() => import('./pages/admin/AdminHouseholds'))
-const AdminSearch = lazy(() => import('./pages/admin/AdminSearch'))
-const AdminProviders = lazy(() => import('./pages/admin/AdminProviders'))
-const AdminProcessors = lazy(() => import('./pages/admin/AdminProcessors'))
-const AdminGuide = lazy(() => import('./pages/admin/AdminGuide'))
-const AdminEntityManager = lazy(() => import('./pages/admin/AdminEntityManager'))
+const OwnerDashboard = lazy(() => import('./pages/owner/OwnerDashboard'))
+const OwnerConfig = lazy(() => import('./pages/owner/OwnerConfig'))
+const OwnerData = lazy(() => import('./pages/owner/OwnerData'))
+const OwnerUsers = lazy(() => import('./pages/owner/OwnerUsers'))
+const OwnerHouseholds = lazy(() => import('./pages/owner/OwnerHouseholds'))
+const OwnerSearch = lazy(() => import('./pages/owner/OwnerSearch'))
+const OwnerProviders = lazy(() => import('./pages/owner/OwnerProviders'))
+const OwnerProcessors = lazy(() => import('./pages/owner/OwnerProcessors'))
+const OwnerGuide = lazy(() => import('./pages/owner/OwnerGuide'))
+const OwnerEntityManager = lazy(() => import('./pages/owner/OwnerEntityManager'))
 const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
@@ -214,27 +214,27 @@ const AppContent: React.FC = () => {
     // 3. Auth Guard
     if (!user) return <LoginPage />
 
-    // 3. Owner Portal - Super-Admin Only
+    // 3. Owner Portal - Owner Only
     if (isAdminPath) {
       if (globalRole !== 'owner' && localStorage.getItem('ledger_globalRole') !== 'owner') return <DashboardPage view={view} setView={setView} />
       
-      const renderAdmin = () => {
-        if (path === '#/admin/dashboard') return <AdminDashboard />
-        if (path === '#/admin/config') return <AdminConfig />
-        if (path === '#/admin/registry') return <AdminData />
-        if (path === '#/admin/users') return <AdminUsers />
-        if (path === '#/admin/households') return <AdminHouseholds />
-        if (path === '#/admin/search') return <AdminSearch />
-        if (path === '#/admin/providers') return <AdminProviders />
-        if (path === '#/admin/processors') return <AdminProcessors />
-        if (path === '#/admin/guide') return <AdminGuide />
-        if (path === '#/admin/entities') return <AdminEntityManager />
-        return <AdminDashboard />
+      const renderOwner = () => {
+        if (path === '#/admin/dashboard') return <OwnerDashboard />
+        if (path === '#/admin/config') return <OwnerConfig />
+        if (path === '#/admin/registry') return <OwnerData />
+        if (path === '#/admin/users') return <OwnerUsers />
+        if (path === '#/admin/households') return <OwnerHouseholds />
+        if (path === '#/admin/search') return <OwnerSearch />
+        if (path === '#/admin/providers') return <OwnerProviders />
+        if (path === '#/admin/processors') return <OwnerProcessors />
+        if (path === '#/admin/guide') return <OwnerGuide />
+        if (path === '#/admin/entities') return <OwnerEntityManager />
+        return <OwnerDashboard />
       }
 
       return (
         <PasskeyChallenge onSuccess={() => {}} appName="LEDGER Secure Center">
-          {renderAdmin()}
+          {renderOwner()}
         </PasskeyChallenge>
       )
     }

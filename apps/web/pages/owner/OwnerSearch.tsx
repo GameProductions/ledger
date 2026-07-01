@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AdminPortal from './AdminPortal';
+import OwnerPortal from './OwnerPortal';
 import { Price } from '../../components/Price';
 import { getApiUrl } from '../../utils/api';
 
@@ -28,7 +28,7 @@ const AdminSearch: React.FC = () => {
   };
 
   return (
-    <AdminPortal activePath="#/admin/search">
+    <OwnerPortal activePath="#/admin/search">
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSearch} className="relative mb-12">
           <input 
@@ -110,7 +110,7 @@ const AdminSearch: React.FC = () => {
           </div>
         )}
       </div>
-    </AdminPortal>
+    </OwnerPortal>
   );
 };
 

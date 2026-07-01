@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/api';
 
 interface ImportReviewProps {
@@ -24,9 +25,27 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   const [analyzing, setAnalyzing] = useState(false);
   const [committing, setCommitting] = useState(false);
   const { showToast } = useToast();
+  const { user, globalRole } = useAuth() as any;
+  const householdId = localStorage.getItem('ledger_householdId');
   
-  // Available Household Members for Mapping
-  const { data: members } = (useApi<any[]>('/api/admin/users') as any);
+  // Fetch household memberships to identify household role
+  const { data: householdMemberships } = (useApi<any[]>('/api/user/households') as any);
+  const currentMembership = (householdMemberships || []).find((h: any) => h.id === householdId);
+  const isHouseholdOwner = currentMembership?.role === 'owner';
+  const isPlatformOwner = globalRole === 'owner';
+
+  // Select source endpoint for mapping members
+  let membersUrl = '';
+  if (isPlatformOwner) {
+    membersUrl = '/api/admin/users';
+  } else if (isHouseholdOwner && householdId && scope === 'household') {
+    membersUrl = `/api/user/households/${householdId}/members`;
+  }
+
+  const { data: rawMembers } = (useApi<any>(membersUrl ? membersUrl : null) as any);
+  const members = Array.isArray(rawMembers)
+    ? rawMembers
+    : (rawMembers?.data && Array.isArray(rawMembers.data) ? rawMembers.data : []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -294,16 +313,22 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                         </td>
                         <td className="px-8 py-6 text-center">
                            <div className="relative inline-block group/owner">
-                              <select 
-                                value={item.ownerId || ''}
-                                onChange={(e) => handleMapUser(idx, e.target.value)}
-                                className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest outline-none focus:border-emerald-500/50 appearance-none min-w-[120px]"
-                              >
-                                <option value="">Auto ({item.ownerName || 'Generic'})</option>
-                                {members?.map((m: any) => (
-                                  <option key={m.id} value={m.id}>{m.displayName}</option>
-                                ))}
-                              </select>
+                              {(isPlatformOwner || isHouseholdOwner) ? (
+                                <select 
+                                  value={item.ownerId || ''}
+                                  onChange={(e) => handleMapUser(idx, e.target.value)}
+                                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest outline-none focus:border-emerald-500/50 appearance-none min-w-[120px] text-white"
+                                >
+                                  <option value="">Auto ({item.ownerName || 'Generic'})</option>
+                                  {members?.map((m: any) => (
+                                    <option key={m.id} value={m.id} className="text-black">{m.displayName || m.username}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/5 border border-white/5 rounded-lg px-3 py-2">
+                                  {user?.displayName || user?.username || 'Me'} (Locked)
+                                </span>
+                              )}
                            </div>
                         </td>
                         <td className="px-8 py-6 text-right">

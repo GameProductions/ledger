@@ -486,9 +486,19 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
 // Transaction Export
 financials.get('/transactions/export', async (c) => {
   const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const globalRole = c.get('globalRole')
   const format = c.req.query('format') || 'json'
 
   const db = getDb(c.env)
+  
+  let whereClause;
+  if (globalRole === 'owner') {
+    whereClause = eq(transactions.householdId, householdId)
+  } else {
+    whereClause = and(eq(transactions.householdId, householdId), eq(transactions.ownerId, userId))
+  }
+
   const results = (await db.select({
       id: transactions.id,
       householdId: transactions.householdId,
@@ -503,7 +513,7 @@ financials.get('/transactions/export', async (c) => {
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
     .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-    .where(eq(transactions.householdId, householdId)) as any)
+    .where(whereClause) as any)
 
   if (format === 'csv') {
     if (results.length === 0) return c.text('')

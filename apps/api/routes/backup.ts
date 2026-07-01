@@ -41,6 +41,9 @@ const backup = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 // 🛑 EXPORT: Data Backup (Full JSON Account Export)
 backup.get('/export', async (c) => {
   const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const globalRole = c.get('globalRole')
+  const isPlatformOwner = globalRole === 'owner'
   
   const tables = [
     'households',
@@ -68,7 +71,15 @@ backup.get('/export', async (c) => {
   for (const table of tables) {
     const tableObj = SCHEMA_MAP[table]
     if (tableObj) {
-      const results = (await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)) as any)
+      const conditions = [eq(tableObj.householdId, householdId)]
+      if (!isPlatformOwner) {
+        if ('ownerId' in tableObj) {
+          conditions.push(eq(tableObj.ownerId, userId))
+        } else if ('userId' in tableObj) {
+          conditions.push(eq(tableObj.userId, userId))
+        }
+      }
+      const results = (await db.select().from(tableObj).where(and(...conditions)) as any)
       dump[table] = results
     } else {
       throw new Error('Unsupported dynamic table select')
@@ -195,12 +206,22 @@ backup.post('/cloud/:provider', async (c) => {
   }
 
   // 2. Generate the backup payload (Same as /export)
+  const globalRole = c.get('globalRole')
+  const isPlatformOwner = globalRole === 'owner'
   const tables = ['households', 'accounts', 'categories', 'transactions', 'subscriptions']
   const dump: Record<string, any[]> = {}
   for (const table of tables) {
     const tableObj = SCHEMA_MAP[table]
     if (tableObj) {
-      const results = (await db.select().from(tableObj).where(eq(tableObj.householdId, householdId)) as any)
+      const conditions = [eq(tableObj.householdId, householdId)]
+      if (!isPlatformOwner) {
+        if ('ownerId' in tableObj) {
+          conditions.push(eq(tableObj.ownerId, userId))
+        } else if ('userId' in tableObj) {
+          conditions.push(eq(tableObj.userId, userId))
+        }
+      }
+      const results = (await db.select().from(tableObj).where(and(...conditions)) as any)
       dump[table] = results
     }
   }

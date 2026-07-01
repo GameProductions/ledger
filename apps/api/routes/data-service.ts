@@ -234,24 +234,45 @@ data.post('/import/confirm', zValidator('json', z.object({
     ownerId: z.string().optional()
   }))
 })), async (c) => {
-  const userId = c.get('userId')
+  const userId = c.get('userId') as string
+  const globalRole = c.get('globalRole') as string
   const reqData = c.req.valid('json')
-  const householdId = reqData.scope === 'private' ? `personal-${userId}` : c.get('householdId')
+  const householdId = reqData.scope === 'private' ? `personal-${userId}` : c.get('householdId') as string
   const { type, data: items } = reqData
   const db = getDb(c.env)
 
+  // Check if caller is platform Owner
+  const isPlatformOwner = globalRole === 'owner'
+
+  // Check if caller is Household Owner
+  let isHouseholdOwner = false
+  if (!isPlatformOwner && reqData.scope !== 'private') {
+    const membership = await db.select({ role: userHouseholds.role })
+      .from(userHouseholds)
+      .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+      .limit(1)
+      .then(res => res[0]) as any;
+    isHouseholdOwner = membership?.role === 'owner'
+  }
+
   if (type === 'transactions') {
-    const db = getDb(c.env)
-    // Audit Phase 4: Identity Guarding
-    // Verify that all ownerIds in the import belong to the current household
     const distinctOwners = [...new Set(items.map(i => i.ownerId).filter(Boolean))] as string[]
     
     let authorizedOwners: string[] = []
-    if (distinctOwners.length > 0) {
-      const validMembers = (await db.select({ userId: userHouseholds.userId })
-              .from(userHouseholds)
-              .where(and(eq(userHouseholds.householdId, householdId), inArray(userHouseholds.userId, distinctOwners))) as any)
-      authorizedOwners = validMembers.map((m: any) => m.userId)
+    if (isPlatformOwner) {
+      // Platform owners can import for anyone
+      authorizedOwners = distinctOwners
+    } else if (isHouseholdOwner) {
+      // Household owners can import for anyone in their household
+      if (distinctOwners.length > 0) {
+        const validMembers = (await db.select({ userId: userHouseholds.userId })
+                .from(userHouseholds)
+                .where(and(eq(userHouseholds.householdId, householdId), inArray(userHouseholds.userId, distinctOwners))) as any)
+        authorizedOwners = validMembers.map((m: any) => m.userId)
+      }
+    } else {
+      // Regular users or private imports can ONLY import for themselves
+      authorizedOwners = [userId]
     }
 
     const records = items.map(item => ({

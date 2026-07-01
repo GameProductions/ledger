@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import OwnerPortal from './OwnerPortal';
+import AdminPortal from './AdminPortal';
 import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
@@ -79,16 +79,16 @@ const AdminHouseholds: React.FC = () => {
   );
 
   if (loading) return (
-    <OwnerPortal activePath="#/admin/households">
+    <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
         <div className="text-xs font-black uppercase tracking-[0.3em]">Loading household registry...</div>
       </div>
-    </OwnerPortal>
+    </AdminPortal>
   );
 
   return (
-    <OwnerPortal activePath="#/admin/households">
+    <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
           <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
@@ -194,7 +194,7 @@ const AdminHouseholds: React.FC = () => {
           </motion.div>
         ))}
       </div>
-    </OwnerPortal>
+    </AdminPortal>
   );
 };
 

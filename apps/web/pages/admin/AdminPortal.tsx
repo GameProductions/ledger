@@ -3,12 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import UserMenu from '../../components/UserMenu';
 import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock, Globe, Zap, Menu, X } from 'lucide-react';
 
-interface OwnerPortalProps {
+interface AdminPortalProps {
   children: React.ReactNode;
   activePath: string;
 }
 
-const OwnerPortal: React.FC<OwnerPortalProps> = ({ children, activePath }) => {
+const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
@@ -75,7 +75,7 @@ const OwnerPortal: React.FC<OwnerPortalProps> = ({ children, activePath }) => {
             <Shield size={16} className="text-emerald-500" />
             <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Secure Connection Active</span>
           </div>
-          <UserMenu isOwnerPortal={true} />
+          <UserMenu isAdminPortal={true} />
         </div>
       </header>
 
@@ -168,4 +168,4 @@ const OwnerPortal: React.FC<OwnerPortalProps> = ({ children, activePath }) => {
   );
 };
 
-export default OwnerPortal;
+export default AdminPortal;

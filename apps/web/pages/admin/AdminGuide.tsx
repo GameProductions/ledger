@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import OwnerPortal from './OwnerPortal';
+import AdminPortal from './AdminPortal';
 import { Shield, Lock, Activity, Zap, Terminal, Key, Calendar, List, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../context/AuthContext';
@@ -43,7 +43,7 @@ const AdminGuide: React.FC = () => {
   }, [token]);
 
   return (
-    <OwnerPortal activePath="#/admin/guide">
+    <AdminPortal activePath="#/admin/guide">
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -182,7 +182,7 @@ const AdminGuide: React.FC = () => {
             <Lock size={48} />
         </div>
       </div>
-    </OwnerPortal>
+    </AdminPortal>
   );
 };
 

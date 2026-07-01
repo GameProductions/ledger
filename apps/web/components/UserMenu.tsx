@@ -11,8 +11,8 @@ import { sanitizeImageUrl } from '../utils/security'
 const UserMenu: React.FC<{ 
   view?: string, 
   setView?: (v: 'list'|'calendar') => void,
-  isOwnerPortal?: boolean 
-}> = ({ view, setView, isOwnerPortal = false }) => {
+  isAdminPortal?: boolean 
+}> = ({ view, setView, isAdminPortal = false }) => {
   const { user, logout, globalRole, isImpersonating } = useAuth() as any
   const { data: profile } = (useApi('/api/user/profile') as any)
   const [isOpen, setIsOpen] = useState(false)
@@ -37,7 +37,7 @@ const UserMenu: React.FC<{
     }
   }
 
-  const menuItems = isOwnerPortal ? [
+  const menuItems = isAdminPortal ? [
     { icon: LayoutDashboard, label: 'Owner Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
     { icon: Cpu, label: 'System Configuration', hash: '#/admin/config', color: 'text-blue-400' },
     { icon: Database, label: 'Master Registry', hash: '#/admin/registry', color: 'text-orange-400' },
@@ -114,7 +114,7 @@ const UserMenu: React.FC<{
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="min-w-0">
                   <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                    {isOwnerPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
+                    {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
                   </div>
                   <Masked>
                     <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
@@ -123,7 +123,7 @@ const UserMenu: React.FC<{
               </div>
 
               <div className="space-y-1">
-                {isOwnerPortal ? (
+                {isAdminPortal ? (
                   <button 
                     role="menuitem"
                     onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
@@ -160,7 +160,7 @@ const UserMenu: React.FC<{
                   </button>
                 ))}
                 
-                {!isOwnerPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
+                {!isAdminPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
                   <button 
                     role="menuitem"
                     onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
@@ -172,7 +172,7 @@ const UserMenu: React.FC<{
                   </button>
                 )}
 
-                {!isOwnerPortal && setView && isHome && (
+                {!isAdminPortal && setView && isHome && (
                   <div className="px-3 py-2 border-t border-glass-border mt-2">
                     <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
                     <div className="grid grid-cols-2 gap-2">
@@ -229,7 +229,7 @@ const UserMenu: React.FC<{
                 <div className="px-3 py-2 border-b border-glass-border mb-2">
                   <div className="min-w-0">
                     <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
-                      {isOwnerPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
+                      {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
                     </div>
                     <Masked>
                       <div className="text-sm text-white font-medium truncate opacity-80">{profile?.email || user?.email}</div>
@@ -238,7 +238,7 @@ const UserMenu: React.FC<{
                 </div>
 
                 <div className="space-y-1">
-                  {isOwnerPortal ? (
+                  {isAdminPortal ? (
                     <button 
                       role="menuitem"
                       onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
@@ -274,7 +274,7 @@ const UserMenu: React.FC<{
                       <span>{item.label}</span>
                     </button>
                   ))}
-                  {!isOwnerPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
+                  {!isAdminPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
                     <button 
                       role="menuitem"
                       onClick={() => { window.location.hash = '#/admin/dashboard'; setIsOpen(false); }}
@@ -286,7 +286,7 @@ const UserMenu: React.FC<{
                     </button>
                   )}
 
-                    {!isOwnerPortal && setView && isHome && (
+                    {!isAdminPortal && setView && isHome && (
                     <div className="px-3 py-2 border-t border-glass-border mt-2">
                       <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
                       <div className="grid grid-cols-2 gap-2">

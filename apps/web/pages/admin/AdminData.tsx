@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import OwnerPortal from './OwnerPortal';
+import AdminPortal from './AdminPortal';
 import { getApiUrl } from '../../utils/api';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { useToast } from '../../context/ToastContext';
@@ -80,10 +80,10 @@ const AdminData: React.FC = () => {
     }
   };
 
-  if (loading) return <OwnerPortal activePath="#/admin/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></OwnerPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/registry"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading data...</div></AdminPortal>;
 
   return (
-    <OwnerPortal activePath="#/admin/registry">
+    <AdminPortal activePath="#/admin/registry">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-primary/50 underline-offset-8">System Data</h2>
@@ -200,7 +200,7 @@ const AdminData: React.FC = () => {
           </div>
         )}
       </div>
-    </OwnerPortal>
+    </AdminPortal>
   );
 };
 

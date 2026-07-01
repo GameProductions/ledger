@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import OwnerPortal from './OwnerPortal';
+import AdminPortal from './AdminPortal';
 import { Building2, Globe, Plus, Trash2, Edit2, Zap, Server, ShieldAlert } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
@@ -115,10 +115,10 @@ const AdminProviders: React.FC = () => {
     }
   };
 
-  if (loading) return <OwnerPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></OwnerPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></AdminPortal>;
 
   return (
-    <OwnerPortal activePath="#/admin/providers">
+    <AdminPortal activePath="#/admin/providers">
       <div className="flex items-center justify-between mb-12">
         <div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>
@@ -308,7 +308,7 @@ const AdminProviders: React.FC = () => {
           </div>
         )}
       </div>
-    </OwnerPortal>
+    </AdminPortal>
   );
 };
 

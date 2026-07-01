@@ -313,7 +313,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                      />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Entry Date</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due / Scheduled Date</label>
                     <input 
                       required
                       type="date" 
@@ -613,7 +613,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                      />
                   </div>
                   <div className="space-y-2">
-                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Entry Date</label>
+                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due / Scheduled Date</label>
                      <input 
                        required
                        type="date" 

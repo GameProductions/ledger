@@ -11,6 +11,7 @@ import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, Credi
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { Checkbox } from './ui/Checkbox'
 
 interface TrackedExpenseListProps {
   refreshTrigger?: number
@@ -367,13 +368,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               ) : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => toggleSelect(item.id)}
-                      className="text-secondary hover:text-orange-500 transition-colors"
-                      aria-label={selectedIds.includes(item.id) ? `Deselect ${item.description}` : `Select ${item.description}`}
-                    >
-                      {selectedIds.includes(item.id) ? <CheckSquare size={18} className="text-orange-500" /> : <Square size={18} />}
-                    </button>
+                    <Checkbox 
+                      checked={selectedIds.includes(item.id)} 
+                      onChange={() => toggleSelect(item.id)} 
+                      iconClassName="text-orange-500"
+                    />
                     <div>
                       <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
                       <div className="flex items-center gap-3 mt-1">

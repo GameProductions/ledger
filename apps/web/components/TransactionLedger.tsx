@@ -9,6 +9,7 @@ import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, C
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { Checkbox } from './ui/Checkbox'
 import { QuickAttentionAdd } from './QuickAttentionAdd'
 
 export const TransactionLedger: React.FC = () => {
@@ -373,7 +374,10 @@ export const TransactionLedger: React.FC = () => {
           <thead>
             <tr className="border-b border-white/10 text-gray-400">
               <th className="py-2 pl-2 w-10">
-                <input type="checkbox" onChange={toggleSelectAll} checked={transactions && transactions.length > 0 && selectedIds.length === transactions?.length} />
+                <Checkbox 
+                  checked={!!(transactions && transactions.length > 0 && selectedIds.length === transactions?.length)} 
+                  onChange={toggleSelectAll} 
+                />
               </th>
               <th className="py-2 cursor-pointer hover:text-white" onClick={() => toggleSort('date')}>
                 Date {sortBy === 'date' && (sortDir === 'asc' ? '↑' : '↓')}
@@ -392,7 +396,10 @@ export const TransactionLedger: React.FC = () => {
               <React.Fragment key={tx.id}>
                 <tr className={`border-b border-white/5 hover:bg-white/5 transition-colors ${selectedIds.includes(tx.id) ? 'bg-primary/5' : ''}`}>
                   <td className="py-2 pl-2">
-                    <input type="checkbox" checked={selectedIds.includes(tx.id)} onChange={() => toggleSelect(tx.id)} />
+                    <Checkbox 
+                      checked={selectedIds.includes(tx.id)} 
+                      onChange={() => toggleSelect(tx.id)} 
+                    />
                   </td>
                   <td className="py-2 opacity-80 whitespace-nowrap">{tx.transactionDate}</td>
                   <td className="py-2 font-medium flex items-center gap-2">

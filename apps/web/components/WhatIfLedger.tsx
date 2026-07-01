@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react'
 import { Price } from './Price'
 import { useApi } from '../hooks/useApi'
 
+import { Checkbox } from './ui/Checkbox'
+
 const WhatIfLedger: React.FC = () => {
   const { data: subs } = (useApi('/api/planning/subscriptions') as any)
   const [disabledSubs, setDisabledSubs] = useState<string[]>([])
@@ -30,8 +32,7 @@ const WhatIfLedger: React.FC = () => {
                 {Array.isArray(subs) && (subs as any[]).map((sub: any) => (
           <label key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.5rem', background: disabledSubs.includes(sub.id) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', borderRadius: '0.4rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input 
-                type="checkbox" 
+              <Checkbox 
                 checked={!disabledSubs.includes(sub.id)} 
                 onChange={() => {
                   if (disabledSubs.includes(sub.id)) {

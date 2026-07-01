@@ -608,3 +608,62 @@ html.reduced-motion *::after {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* Custom Checkboxes */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  width: 1.125rem;
+  height: 1.125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  vertical-align: middle;
+  outline: none;
+}
+
+input[type="checkbox"]:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* For orange accent indicators (like tracked staging cards) */
+input[type="checkbox"].accent-orange:checked,
+.border-l-orange-500 input[type="checkbox"]:checked {
+  background-color: #f97316 !important;
+  border-color: #f97316 !important;
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 8px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  position: absolute;
+  top: 1px;
+  left: 5px;
+}
+
+[data-theme='luxury'] input[type="checkbox"]:checked::after,
+[data-theme='professional'] input[type="checkbox"]:checked::after,
+[data-theme='sapphire'] input[type="checkbox"]:checked::after,
+[data-theme='ruby'] input[type="checkbox"]:checked::after,
+[data-theme='carbon'] input[type="checkbox"]:checked::after,
+[data-theme='ember'] input[type="checkbox"]:checked::after,
+[data-theme='blood'] input[type="checkbox"]:checked::after {
+  border-color: #fff;
+}

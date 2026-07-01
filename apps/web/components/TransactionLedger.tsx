@@ -280,32 +280,68 @@ export const TransactionLedger: React.FC = () => {
       <QuickAttentionAdd onAdded={() => globalMutate()} />
 
       <div className="mb-6">
-        <h2 className="text-xl font-bold flex items-center gap-2 mb-1">
-          📖 Transaction Ledger
-          <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary" title="Help">
-            <HelpCircle size={16} />
-          </button>
-          <button 
-            onClick={() => {
-              setTxForm({
-                description: '',
-                amountCents: 0,
-                accountId: accounts[0]?.id || 'default-account',
-                categoryId: '',
-                transactionDate: new Date().toISOString().split('T')[0],
-                notes: '',
-                confirmationNumber: '',
-                status: 'pending'
-              });
-              setIsAddTxOpen(true);
-            }} 
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold uppercase tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md"
-            title="Add Transaction"
-          >
-            <Plus size={12} /> Add Item
-          </button>
-        </h2>
-        <p className="text-xs text-secondary font-medium">A complete list of your historical purchases and deposits. Search, filter, and edit transactions, or map them to categories to keep your budget accurate.</p>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-1">
+              📖 Transaction Ledger
+              <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary" title="Help">
+                <HelpCircle size={16} />
+              </button>
+              <button 
+                onClick={() => {
+                  setTxForm({
+                    description: '',
+                    amountCents: 0,
+                    accountId: accounts[0]?.id || 'default-account',
+                    categoryId: '',
+                    transactionDate: new Date().toISOString().split('T')[0],
+                    notes: '',
+                    confirmationNumber: '',
+                    status: 'pending'
+                  });
+                  setIsAddTxOpen(true);
+                }} 
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold uppercase tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md"
+                title="Add Transaction"
+              >
+                <Plus size={12} /> Add Item
+              </button>
+            </h2>
+            <p className="text-xs text-secondary font-medium">A complete list of your historical purchases and deposits. Search, filter, and edit transactions, or map them to categories to keep your budget accurate.</p>
+          </div>
+
+          {selectedIds.length > 0 && (
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full lg:w-auto animate-in slide-in-from-top-2 duration-300">
+              <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-widest opacity-60 font-bold">Selected ({selectedIds.length} items)</span>
+                <span className={`text-md font-black tracking-tighter ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <Price amountCents={selectionSumCents} />
+                </span>
+              </div>
+              <div className="hidden sm:block w-px h-8 bg-white/10"></div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button 
+                  onClick={() => bulkReconcile(true)}
+                  className="px-2.5 py-1.5 bg-primary text-black font-black uppercase tracking-widest text-[9px] rounded-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+                >
+                  <Check size={10} /> Reconcile
+                </button>
+                <button 
+                  onClick={handleBulkDeleteTxs}
+                  className="px-2.5 py-1.5 bg-red-500/20 text-red-400 font-black border border-red-500/30 uppercase tracking-widest text-[9px] rounded-lg hover:bg-red-500/35 transition-all flex items-center gap-1"
+                >
+                  <Trash2 size={10} /> Delete
+                </button>
+                <button 
+                  onClick={() => setSelectedIds([])}
+                  className="px-2.5 py-1.5 bg-white/10 text-white font-black uppercase tracking-widest text-[9px] rounded-lg hover:bg-white/20 transition-all"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between mb-4">
@@ -477,78 +513,7 @@ export const TransactionLedger: React.FC = () => {
         </table>
       </div>
 
-      {reduced ? (
-        selectedIds.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-deep/90 backdrop-blur-xl border border-white/20 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50">
-            <div className="flex flex-col">
-              <span className="text-xs uppercase tracking-widest opacity-60">Selection Sum ({selectedIds.length} items)</span>
-              <span className={`text-xl font-bold ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                <Price amountCents={selectionSumCents} />
-              </span>
-            </div>
-            <div className="w-px h-8 bg-white/20"></div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => bulkReconcile(true)}
-                className="px-4 py-2 bg-primary text-black font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2"
-              >
-                <Check size={16} /> Mark Reconciled
-              </button>
-              <button 
-                onClick={handleBulkDeleteTxs}
-                className="px-4 py-2 bg-red-500/20 text-red-400 font-bold border border-red-500/30 rounded-xl hover:bg-red-500/35 transition-all flex items-center gap-2"
-              >
-                <Trash2 size={16} /> Delete Selected
-              </button>
-              <button 
-                onClick={() => setSelectedIds([])}
-                className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
-              >
-                Clear Selection
-              </button>
-            </div>
-          </div>
-        )
-      ) : (
-        <AnimatePresence>
-          {selectedIds.length > 0 && (
-            <motion.div 
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-deep/90 backdrop-blur-xl border border-white/20 p-4 rounded-3xl shadow-2xl flex items-center gap-6 z-50"
-            >
-              <div className="flex flex-col">
-                <span className="text-xs uppercase tracking-widest opacity-60">Selection Sum ({selectedIds.length} items)</span>
-                <span className={`text-xl font-bold ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  <Price amountCents={selectionSumCents} />
-                </span>
-              </div>
-              <div className="w-px h-8 bg-white/20"></div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => bulkReconcile(true)}
-                  className="px-4 py-2 bg-primary text-black font-bold rounded-xl hover:scale-105 transition-transform flex items-center gap-2"
-                >
-                  <Check size={16} /> Mark Reconciled
-                </button>
-                <button 
-                  onClick={handleBulkDeleteTxs}
-                  className="px-4 py-2 bg-red-500/20 text-red-400 font-bold border border-red-500/30 rounded-xl hover:bg-red-500/35 transition-all flex items-center gap-2"
-                >
-                  <Trash2 size={16} /> Delete Selected
-                </button>
-                <button 
-                  onClick={() => setSelectedIds([])}
-                  className="px-4 py-2 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
-                >
-                  Clear Selection
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
+
     </div>
     <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="Mastering the Ledger">
       <div className="space-y-6 text-sm text-gray-300">

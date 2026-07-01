@@ -50,10 +50,15 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setUpdates(data.updates || [])
           setCurrentVersion(data.currentVersion || CURRENT_VERSION)
           
-          if ((data.updates?.length || 0) > 0) {
-            setActiveStep('welcome')
-          } else if (!data.isCompleted && Array.isArray(data.completedSteps) && data.completedSteps.length === 0) {
-            setActiveStep('welcome')
+          const tourVersion = data.currentVersion || CURRENT_VERSION
+          const isTourOptedOut = localStorage.getItem(`ledger_show_tour_${tourVersion}`) === 'false'
+          
+          if (!isTourOptedOut) {
+            if ((data.updates?.length || 0) > 0) {
+              setActiveStep('welcome')
+            } else if (!data.isCompleted && Array.isArray(data.completedSteps) && data.completedSteps.length === 0) {
+              setActiveStep('welcome')
+            }
           }
         }
       }

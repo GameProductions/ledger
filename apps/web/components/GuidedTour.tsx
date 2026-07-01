@@ -41,6 +41,7 @@ export const GuidedTour: React.FC = () => {
   const { activeStep, completeStep, skipTour, updates, currentVersion } = useOnboarding()
   const reduced = useReducedMotion()
   const [currentIdx, setCurrentIdx] = useState(0)
+  const [showConfirmSkip, setShowConfirmSkip] = useState(false)
 
   useEffect(() => {
     const idx = steps.findIndex(s => s.id === activeStep)
@@ -55,6 +56,7 @@ export const GuidedTour: React.FC = () => {
 
   const handleNext = () => {
     if (isLast) {
+      localStorage.setItem(`ledger_show_tour_${currentVersion}`, 'false')
       completeStep(step.id, true, currentVersion)
     } else {
       completeStep(step.id)
@@ -66,11 +68,85 @@ export const GuidedTour: React.FC = () => {
     if (currentIdx > 0) setCurrentIdx(prev => prev - 1)
   }
 
+  const handleSkipClick = () => {
+    setShowConfirmSkip(true)
+  }
+
+  const handleConfirmSkipShowAgain = () => {
+    localStorage.setItem(`ledger_show_tour_${currentVersion}`, 'true')
+    skipTour()
+    setShowConfirmSkip(false)
+  }
+
+  const handleConfirmSkipNoMore = () => {
+    localStorage.setItem(`ledger_show_tour_${currentVersion}`, 'false')
+    skipTour()
+    setShowConfirmSkip(false)
+  }
+
+  if (showConfirmSkip) {
+    const confirmContent = (
+      <div className="pt-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-4">
+          <Trophy size={28} />
+        </div>
+        <h2 className="text-xl font-bold text-white mb-2">Guided Tour Preference</h2>
+        <p className="text-secondary text-sm mb-6 leading-relaxed">
+          Would you like to be prompted with the Guided Tour again on future visits? You can always access tours from the Help Center.
+        </p>
+        <div className="flex flex-col gap-2">
+          <button 
+            onClick={handleConfirmSkipShowAgain}
+            className="w-full py-2.5 bg-primary text-black font-black uppercase tracking-widest text-xs rounded-xl hover:brightness-110 transition-all cursor-pointer"
+          >
+            Yes, prompt me next time
+          </button>
+          <button 
+            onClick={handleConfirmSkipNoMore}
+            className="w-full py-2.5 bg-white/10 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-white/20 transition-all border border-white/5 cursor-pointer"
+          >
+            No, don't show this tour again
+          </button>
+        </div>
+      </div>
+    );
+
+    if (reduced) {
+      return (
+        <div className="fixed inset-0 z-modal flex items-center justify-center bg-overlay backdrop-blur p-4">
+          <div className="card max-w-md w-full relative p-6" style={{ background: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--primary)' }}>
+            {confirmContent}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-modal flex items-center justify-center bg-overlay backdrop-blur p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            className="card max-w-md w-full relative p-6"
+            style={{ background: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--primary)' }}
+          >
+            {confirmContent}
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   const content = (
     <>
       <div
         className="fixed inset-0 z-modal flex items-center justify-center bg-overlay backdrop-blur p-4"
-        onClick={skipTour}
+        onClick={handleSkipClick}
       >
         <div
           onClick={(e) => e.stopPropagation()}
@@ -86,8 +162,8 @@ export const GuidedTour: React.FC = () => {
           </div>
 
           <button 
-            onClick={skipTour}
-            className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
+            onClick={handleSkipClick}
+            className="absolute top-4 right-4 text-secondary hover:text-white transition-colors cursor-pointer"
             style={{ background: 'none', border: 'none' }}
           >
             <X size={20} />
@@ -154,7 +230,7 @@ export const GuidedTour: React.FC = () => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-modal flex items-center justify-center bg-overlay backdrop-blur p-4"
-        onClick={skipTour}
+        onClick={handleSkipClick}
       >
         <motion.div
           onClick={(e) => e.stopPropagation()}
@@ -173,8 +249,8 @@ export const GuidedTour: React.FC = () => {
           </div>
 
           <button 
-            onClick={skipTour}
-            className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
+            onClick={handleSkipClick}
+            className="absolute top-4 right-4 text-secondary hover:text-white transition-colors cursor-pointer"
             style={{ background: 'none', border: 'none' }}
           >
             <X size={20} />

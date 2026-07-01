@@ -186,7 +186,14 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
               body: JSON.stringify({ 
                  type: 'transactions',
                  scope, 
-                 data: reviewItems 
+                 data: reviewItems.map(i => ({
+                   description: i.description || 'Unknown Transaction',
+                   amount: Number(i.amount) || 0,
+                   date: i.date || new Date().toISOString().split('T')[0],
+                   category: i.category || undefined,
+                   notes: i.notes || undefined,
+                   ownerId: i.ownerId || undefined
+                 }))
               })
             }) as any);
       if (res.ok) {

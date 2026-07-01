@@ -229,9 +229,9 @@ data.post('/import/confirm', zValidator('json', z.object({
     description: z.string(),
     amount: z.number(),
     date: z.string(),
-    category: z.string().optional(),
-    notes: z.string().optional(),
-    ownerId: z.string().optional()
+    category: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    ownerId: z.string().nullable().optional()
   }))
 })), async (c) => {
   const userId = c.get('userId') as string

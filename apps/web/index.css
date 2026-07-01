@@ -466,6 +466,7 @@ button.primary:hover {
   align-items: center;
   gap: 0.5rem;
   scroll-snap-align: start;
+  flex-shrink: 0;
 }
 
 .tab-button:hover {

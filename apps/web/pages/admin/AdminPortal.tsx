@@ -43,37 +43,37 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070707] text-slate-100 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#070707] text-slate-100 font-sans selection:bg-emerald-500/30 text-sm">
       {/* Universal Command Header */}
-      <header className="fixed top-0 left-0 right-0 z-[1000] border-b border-white/5 bg-black/80 backdrop-blur-2xl px-8 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <header className="fixed top-0 left-0 right-0 z-[1000] border-b border-white/5 bg-black/80 backdrop-blur-2xl px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
           {/* Mobile menu toggle */}
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+            className="xl:hidden p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
             aria-label="Toggle Navigation Menu"
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] border border-white/10">
                S
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight uppercase italic">SUPER <span className="text-emerald-500">ADMIN</span></h1>
-                <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-black font-black tracking-[0.2em] uppercase animate-pulse">Authorized</span>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base font-black tracking-tight uppercase italic">SUPER <span className="text-emerald-500">ADMIN</span></h1>
+                <span className="px-1.5 py-0.5 rounded text-[8px] bg-emerald-500 text-black font-black tracking-widest uppercase animate-pulse">Auth</span>
               </div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-[0.4em] font-black">Administrative Access</p>
+              <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black">Admin Access</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-8">
-          <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-            <Shield size={16} className="text-emerald-500" />
-            <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Secure Connection Active</span>
+        <div className="flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
+            <Shield size={14} className="text-emerald-500" />
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Secure Connection</span>
           </div>
           <UserMenu isAdminPortal={true} />
         </div>
@@ -86,7 +86,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
           onClick={() => setMobileMenuOpen(false)}
         >
           <aside 
-            className="absolute top-[88px] left-4 right-4 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-3xl p-4 space-y-1 max-h-[calc(100vh-120px)] overflow-y-auto animate-in slide-in-from-top-4 duration-300"
+            className="absolute top-[64px] left-4 right-4 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto animate-in slide-in-from-top-4 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
              {navItems.map((item) => {
@@ -96,14 +96,14 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                   key={item.name}
                   href={item.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group ${
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group ${
                     isActive 
                       ? 'bg-emerald-500 text-black font-black' 
                       : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                   }`}
                  >
-                   <item.icon size={18} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
-                   <span className="text-sm uppercase tracking-widest">{item.name}</span>
+                   <item.icon size={16} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
+                   <span className="text-xs uppercase tracking-wider">{item.name}</span>
                  </a>
                );
              })}
@@ -112,7 +112,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="fixed top-[88px] left-8 bottom-8 w-64 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-4 hidden xl:block overflow-y-auto custom-scrollbar">
+      <aside className="fixed top-[72px] left-6 bottom-6 w-56 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-3 hidden xl:block overflow-y-auto custom-scrollbar">
          <div className="flex flex-col h-full">
             <div className="flex-1 space-y-1">
                {navItems.map((item) => {
@@ -121,49 +121,49 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                    <a 
                     key={item.name}
                     href={item.path}
-                    className={`flex items-center gap-4 px-6 py-4 rounded-3xl transition-all group ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all group ${
                       isActive 
-                        ? 'bg-emerald-500 text-black font-black shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                        ? 'bg-emerald-500 text-black font-black shadow-[0_0_15px_rgba(16,185,129,0.15)]' 
                         : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'
                     }`}
                    >
-                     <item.icon size={18} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
-                     <span className="text-sm uppercase tracking-widest">{item.name}</span>
+                     <item.icon size={16} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
+                     <span className="text-xs uppercase tracking-wider">{item.name}</span>
                    </a>
                  );
                })}
             </div>
             
-            <div className="p-6 border-t border-white/5">
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
-                   <Lock size={16} className="text-blue-500" />
+            <div className="p-3 border-t border-white/5">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2">
+                   <Lock size={14} className="text-blue-500" />
                    <div className="flex flex-col">
-                       <span className="text-sm font-black uppercase text-slate-600">Level</span>
-                       <span className="text-sm font-black text-blue-500 uppercase italic">OWNER_ACCESS</span>
+                       <span className="text-[10px] font-black uppercase text-slate-600">Level</span>
+                       <span className="text-[10px] font-black text-blue-500 uppercase italic">OWNER_ACCESS</span>
                    </div>
                  </div>
-             </div>
+              </div>
           </div>
        </aside>
 
-       {/* Main Content Area */}
-       <main className="pt-32 pb-20 px-8 xl:pl-[320px] xl:pr-12 max-w-[1700px] mx-auto h-[calc(100vh-88px)] overflow-y-auto custom-scrollbar text-[18px]">
-         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
-           {children}
-         </div>
-       </main>
+        {/* Main Content Area */}
+        <main className="pt-24 pb-12 px-4 sm:px-6 xl:pl-[270px] xl:pr-8 max-w-[1500px] mx-auto h-[calc(100vh-72px)] overflow-y-auto custom-scrollbar">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+            {children}
+          </div>
+        </main>
 
-       {/* Status Footer */}
-       <footer className="fixed bottom-0 left-0 right-0 py-2 px-12 z-[500] pointer-events-none">
-         <div className="flex items-center justify-between opacity-30">
-           <div className="text-sm text-slate-600 font-mono uppercase tracking-[0.3em]">
-             Session ID: {user.id.slice(0, 24)}... | Security Verified
-           </div>
-           <div className="text-sm text-emerald-500 font-mono uppercase tracking-[0.3em]">
-             System: {window.location.hostname}
-           </div>
-         </div>
-       </footer>
+        {/* Status Footer */}
+        <footer className="fixed bottom-0 left-0 right-0 py-1.5 px-8 z-[500] pointer-events-none">
+          <div className="flex items-center justify-between opacity-25">
+            <div className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">
+              Session: {user.id.slice(0, 16)}... | Secure
+            </div>
+            <div className="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">
+              Host: {window.location.hostname}
+            </div>
+          </div>
+        </footer>
     </div>
   );
 };

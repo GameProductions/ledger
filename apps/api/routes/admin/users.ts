@@ -213,7 +213,7 @@ userAdmin.get('/:id/cross-device', async (c) => {
   }).from(crossDeviceAuth)
     .where(and(
       eq(crossDeviceAuth.targetUserId, userId),
-      isNull(crossDeviceAuth.approvedByUserId),
+      eq(crossDeviceAuth.status, 'pending'),
     ))
 
   return c.json({ success: true, data: rows.filter(r => new Date(r.expiresAt) > new Date()) })

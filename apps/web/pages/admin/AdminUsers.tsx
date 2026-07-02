@@ -22,6 +22,50 @@ const getInitials = (displayName?: string, username?: string, email?: string) =>
   return name.slice(0, 2).toUpperCase();
 };
 
+const getProviderBrand = (provider: string) => {
+  const p = provider.toLowerCase();
+  if (p.includes('google')) {
+    return {
+      colorClass: 'bg-[#ea4335]/10 border-[#ea4335]/25 text-[#ea4335]',
+      label: 'Google',
+      icon: '🔍'
+    };
+  }
+  if (p.includes('discord')) {
+    return {
+      colorClass: 'bg-[#5865f2]/10 border-[#5865f2]/25 text-[#5865f2]',
+      label: 'Discord',
+      icon: '💬'
+    };
+  }
+  if (p.includes('github')) {
+    return {
+      colorClass: 'bg-white/10 border-white/20 text-white',
+      label: 'GitHub',
+      icon: '🐙'
+    };
+  }
+  if (p.includes('dropbox')) {
+    return {
+      colorClass: 'bg-[#0061ff]/10 border-[#0061ff]/25 text-[#0061ff]',
+      label: 'Dropbox',
+      icon: '📦'
+    };
+  }
+  if (p.includes('microsoft') || p.includes('onedrive') || p.includes('office')) {
+    return {
+      colorClass: 'bg-[#0078d4]/10 border-[#0078d4]/25 text-[#0078d4]',
+      label: 'Microsoft',
+      icon: '🪟'
+    };
+  }
+  return {
+    colorClass: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+    label: provider,
+    icon: '🌐'
+  };
+};
+
 // --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ 
   userId: string; 
@@ -180,45 +224,45 @@ const UserDetailsModal: React.FC<{
   );
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/80 backdrop-blur-md p-4 lg:p-12 overflow-y-auto">
+    <div className="fixed inset-0 z-[2000] flex items-start justify-center bg-black/80 backdrop-blur-md p-3 sm:p-6 lg:p-8 overflow-y-auto">
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-5xl bg-[#0d0d0d] border border-white/10 rounded-[2rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden"
+        className="relative w-full max-w-5xl bg-[#0d0d0d] border border-white/10 rounded-[1.5rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] overflow-hidden"
       >
         {/* Header */}
-        <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-emerald-500/10 via-transparent to-blue-500/10">
-          <div className="flex items-center gap-6">
+        <div className="p-5 sm:p-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-emerald-500/10 via-transparent to-blue-500/10">
+          <div className="flex items-center gap-4">
             <div className="relative">
                {details?.profile?.avatarUrl ? (
                   <img 
                     src={details?.profile?.avatarUrl} 
-                    className="w-24 h-24 rounded-[1.5rem] border-4 border-white/5 shadow-2xl object-cover" 
+                    className="w-16 h-16 rounded-xl border-2 border-white/5 shadow-2xl object-cover" 
                     alt="User"
                   />
                ) : (
-                  <div className="w-24 h-24 rounded-[1.5rem] bg-emerald-500/10 border-4 border-emerald-500/20 text-emerald-400 font-black text-2xl flex items-center justify-center tracking-widest uppercase shadow-2xl">
+                  <div className="w-16 h-16 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-400 font-black text-xl flex items-center justify-center tracking-widest uppercase shadow-2xl">
                     {getInitials(details?.profile?.displayName, details?.profile?.username, details?.profile?.email)}
                   </div>
                )}
-               <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-black border-4 border-[#0d0d0d]">
-                  <Shield size={16} />
+               <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded bg-emerald-500 flex items-center justify-center text-black border-2 border-[#0d0d0d]">
+                  <Shield size={12} />
                </div>
             </div>
             <div>
-              <div className="flex items-center gap-4">
-                <h2 className="text-3xl font-black tracking-tighter uppercase italic">{details?.profile?.displayName || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
-                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic">{details?.profile?.displayName || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                    {details?.profile?.status || 'Unknown'}
                 </span>
               </div>
-              <p className="text-slate-500 font-mono text-sm mt-1 opacity-60 tracking-tight">
+              <p className="text-slate-500 font-mono text-xs mt-0.5 opacity-60 tracking-tight">
                 <Masked>{details?.profile?.email || 'No Email'}</Masked> • ID: {userId}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-2xl transition-all text-white shadow-xl border border-white/20">
-            <X size={24} />
+          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-all text-white shadow-md border border-white/15 cursor-pointer">
+            <X size={20} />
           </button>
         </div>
 
@@ -253,15 +297,18 @@ const UserDetailsModal: React.FC<{
               </div>
             </div>
 
-            <div className="pt-8 border-t border-white/5">
-                <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-4">Linked Accounts</label>
+            <div className="pt-6 border-t border-white/5">
+                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-3">Linked Accounts</label>
                 <div className="flex flex-wrap gap-2">
-                   {(details?.socialLinks || []).length > 0 ? (details?.socialLinks || []).map((link: any) => (
-                      <div key={link.provider} title={link.provider} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-black uppercase text-blue-400">
-                         <Globe size={14} />
-                         <span>{link.provider}</span>
-                      </div>
-                   )) : <span className="text-xs text-slate-700 italic font-bold">No Linked Accounts</span>}
+                   {(details?.socialLinks || []).length > 0 ? (details?.socialLinks || []).map((link: any) => {
+                      const brand = getProviderBrand(link.provider);
+                      return (
+                        <div key={link.provider} title={brand.label} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-black uppercase tracking-wider transition-all shadow-sm ${brand.colorClass}`}>
+                           <span className="text-sm leading-none">{brand.icon}</span>
+                           <span>{brand.label}</span>
+                        </div>
+                      );
+                   }) : <span className="text-xs text-slate-700 italic font-bold">No Linked Accounts</span>}
                 </div>
             </div>
           </div>

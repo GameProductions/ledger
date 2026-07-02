@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge, Lock } from 'lucide-react'
 import { Masked } from './ui/Masked'
 import { sanitizeImageUrl } from '../utils/security'
 
@@ -39,12 +39,11 @@ const UserMenu: React.FC<{
 
   const menuItems = isAdminPortal ? [
     { icon: LayoutDashboard, label: 'Owner Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
-    { icon: Cpu, label: 'System Configuration', hash: '#/admin/config', color: 'text-blue-400' },
-    { icon: Database, label: 'Master Registry', hash: '#/admin/registry', color: 'text-orange-400' },
     { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
-    { icon: Megaphone, label: 'Global Broadcast', hash: '#/admin/broadcast', color: 'text-rose-500' },
-    { icon: Activity, label: 'Safety Vault', hash: '#/admin/audit', color: 'text-secondary' },
-    { icon: Shield, label: 'Owner Portal', hash: '#/admin/entities', color: 'text-amber-500' },
+    { icon: Shield, label: 'Household Registry', hash: '#/admin/households', color: 'text-emerald-400' },
+    { icon: Database, label: 'Entity Manager', hash: '#/admin/entities', color: 'text-orange-400' },
+    { icon: Cpu, label: 'Platform Settings', hash: '#/admin/config', color: 'text-blue-400' },
+    { icon: Lock, label: 'Exit Owner Portal', hash: '#/', color: 'text-amber-500' },
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },

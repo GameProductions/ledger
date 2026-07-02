@@ -101,7 +101,7 @@ const AdminEntityManager: React.FC = () => {
             <Shield size={24} className="text-emerald-500" />
           </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight">Owner</h2>
+            <h2 className="text-2xl font-black tracking-tight">Entity Manager</h2>
             <p className="text-xs text-white/40 font-medium">Platform-wide CRUD access across all households and users. All actions are audited.</p>
           </div>
         </div>

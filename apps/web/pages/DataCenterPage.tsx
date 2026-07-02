@@ -24,7 +24,7 @@ import { openDropboxPicker, openOneDrivePicker, downloadCloudFile, CloudFileResu
 const API_URL = getApiUrl();
 
 const DataCenterPage: React.FC = () => {
-  const [importScope, setImportScope] = useState<'private' | 'private'>('household');
+  const [importScope, setImportScope] = useState<'household' | 'private'>('household');
   const [activeTab, setActiveTab] = useState<'upload' | 'cloud' | 'url'>('upload');
   const [url, setUrl] = useState('');
   const [scanning, setScanning] = useState(false);

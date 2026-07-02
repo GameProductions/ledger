@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { Bindings, Variables } from '../../types'
 import { CreateUserAdminSchema, UpdateUserAdminSchema } from '@shared/schemas'
 import { getDb } from '#/index'
-import { users, passkeys, userIdentities, userHouseholds, externalConnections, adminInvitations, crossDeviceAuth } from '#/schema'
+import { users, passkeys, userIdentities, userHouseholds, externalConnections, adminInvitations, crossDeviceAuth, activityLogs } from '#/schema'
 import { eq, desc, or, and, sql, isNull } from 'drizzle-orm'
 import { hashPassword } from '../../auth-utils'
 import { EmailService } from '../../services/email.service'
@@ -18,11 +18,13 @@ userAdmin.get('/', async (c) => {
   const results = (await db.select({
       id: users.id,
       email: users.email,
+      username: users.username,
       displayName: users.displayName,
       globalRole: users.globalRole,
       status: users.status,
       createdAt: users.createdAt,
-      lastActiveAt: users.lastActiveAt
+      lastActiveAt: users.lastActiveAt,
+      avatarUrl: users.avatarUrl
     }).from(users).orderBy(desc(users.createdAt)) as any)
   return c.json({ success: true, data: results || [] })
 })
@@ -73,6 +75,7 @@ userAdmin.get('/:id', async (c) => {
     ) as any)
   const socialLinks = (await db.select().from(userIdentities).where(eq(userIdentities.userId, userId)) as any)
   const userPasskeys = (await db.select().from(passkeys).where(eq(passkeys.userId, userId)) as any)
+  const activity = (await db.select().from(activityLogs).where(eq(activityLogs.actorId, userId)).orderBy(desc(activityLogs.createdAt)).limit(20) as any)
   
   return c.json({
     success: true,
@@ -80,7 +83,8 @@ userAdmin.get('/:id', async (c) => {
       profile: userFields,
       connections,
       socialLinks,
-      passkeys: userPasskeys
+      passkeys: userPasskeys,
+      activity
     }
   })
 })

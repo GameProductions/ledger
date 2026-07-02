@@ -9,8 +9,18 @@ import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Masked } from '../../components/ui/Masked';
+import { Checkbox } from '../../components/ui/Checkbox';
 import { useToast } from '../../context/ToastContext';
 import { getApiUrl } from '../../utils/api';
+
+const getInitials = (displayName?: string, username?: string, email?: string) => {
+  const name = displayName || username || email || '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
 
 // --- SUB-COMPONENT: User Details Modal ---
 const UserDetailsModal: React.FC<{ 
@@ -180,11 +190,17 @@ const UserDetailsModal: React.FC<{
         <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-emerald-500/10 via-transparent to-blue-500/10">
           <div className="flex items-center gap-6">
             <div className="relative">
-               <img 
-                 src={details?.profile?.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${details?.profile?.id || userId}`} 
-                 className="w-24 h-24 rounded-[1.5rem] border-4 border-white/5 shadow-2xl" 
-                 alt="User"
-               />
+               {details?.profile?.avatarUrl ? (
+                  <img 
+                    src={details?.profile?.avatarUrl} 
+                    className="w-24 h-24 rounded-[1.5rem] border-4 border-white/5 shadow-2xl object-cover" 
+                    alt="User"
+                  />
+               ) : (
+                  <div className="w-24 h-24 rounded-[1.5rem] bg-emerald-500/10 border-4 border-emerald-500/20 text-emerald-400 font-black text-2xl flex items-center justify-center tracking-widest uppercase shadow-2xl">
+                    {getInitials(details?.profile?.displayName, details?.profile?.username, details?.profile?.email)}
+                  </div>
+               )}
                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-black border-4 border-[#0d0d0d]">
                   <Shield size={16} />
                </div>
@@ -240,9 +256,10 @@ const UserDetailsModal: React.FC<{
             <div className="pt-8 border-t border-white/5">
                 <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-4">Linked Accounts</label>
                 <div className="flex flex-wrap gap-2">
-                   {(details?.identities || []).length > 0 ? (details?.identities || []).map((link: any) => (
-                      <div key={link.provider} title={link.provider} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400">
-                         <Globe size={18} />
+                   {(details?.socialLinks || []).length > 0 ? (details?.socialLinks || []).map((link: any) => (
+                      <div key={link.provider} title={link.provider} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-black uppercase text-blue-400">
+                         <Globe size={14} />
+                         <span>{link.provider}</span>
                       </div>
                    )) : <span className="text-xs text-slate-700 italic font-bold">No Linked Accounts</span>}
                 </div>
@@ -256,11 +273,11 @@ const UserDetailsModal: React.FC<{
                    <Fingerprint size={18} />
                    <span className="text-xs font-black uppercase tracking-[0.2em]">Security Keys & Passkeys</span>
                  </div>
-                 <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-black">{details?.security?.passkeys?.length || 0} Registered</span>
+                 <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-black">{details?.passkeys?.length || 0} Registered</span>
               </div>
 
               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                 {(details?.security?.passkeys || []).length > 0 ? (details?.security?.passkeys || []).map((pk: any) => (
+                 {(details?.passkeys || []).length > 0 ? (details?.passkeys || []).map((pk: any) => (
                     <div key={pk.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all">
                        <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary">
@@ -276,13 +293,13 @@ const UserDetailsModal: React.FC<{
                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => setEditingPk({ id: pk.id, newName: pk.name })}
-                            className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all"
+                            className="p-2 hover:bg-white/10 rounded-lg text-slate-500 hover:text-white transition-all cursor-pointer"
                           >
                              <Edit3 size={14} />
                           </button>
                           <button 
                             onClick={() => setRemovingPk({ id: pk.id, name: pk.name })}
-                            className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-all"
+                            className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-500 transition-all cursor-pointer"
                           >
                              <Trash2 size={14} />
                           </button>
@@ -305,7 +322,7 @@ const UserDetailsModal: React.FC<{
                      </div>
                      <button 
                        onClick={generatePassword}
-                       className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-widest hover:text-orange-400 transition-colors"
+                       className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-widest hover:text-orange-400 transition-colors cursor-pointer"
                      >
                        <RefreshCw size={12} />
                        Generate
@@ -325,27 +342,30 @@ const UserDetailsModal: React.FC<{
                        <button
                         type="button"
                         onClick={() => setShowPass(!showPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors cursor-pointer"
                        >
                         {showPass ? <RefreshCw size={14} /> : <Fingerprint size={14} />}
                        </button>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                       <label className="flex items-center gap-2 cursor-pointer group">
-                          <input 
-                            type="checkbox" 
+                       <div className="flex items-center gap-2 cursor-pointer group">
+                          <Checkbox 
                             checked={isTemp} 
-                            onChange={(e) => setIsTemp(e.target.checked)}
-                            className="accent-orange-500"
+                            onChange={(checked) => setIsTemp(checked)}
                           />
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">Temporary Password</span>
-                       </label>
+                          <span 
+                            onClick={() => setIsTemp(!isTemp)}
+                            className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors select-none"
+                          >
+                            Temporary Password
+                          </span>
+                       </div>
                        
                        <button 
                         onClick={handleAdminResetPassword}
                         disabled={resetting || !manualPass}
-                        className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all"
+                        className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all cursor-pointer"
                        >
                          Reset Password
                        </button>
@@ -409,11 +429,11 @@ const UserDetailsModal: React.FC<{
             </div>
             
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {(details?.history || []).length > 0 ? (details?.history || []).map((log: any, idx: number) => (
+              {(details?.activity || []).length > 0 ? (details?.activity || []).map((log: any, idx: number) => (
                 <div key={idx} className="relative pl-5 border-l border-white/10 py-1 hover:border-emerald-500 transition-colors">
                   <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-white/10" />
                   <div className="text-xs font-black uppercase text-slate-300 tracking-tight">{log.action?.replace(/_/g, ' ')?.replace('ADMIN ', '') || 'OPERATION'}</div>
-                  <div className="text-[12px] text-slate-600 font-mono mt-1">{new Date(log.createdAt).toLocaleString()}</div>
+                  <div className="text-[12px] text-slate-600 font-mono mt-1">{new Date(log.createdAt || log.timestamp).toLocaleString()}</div>
                 </div>
               )) : (
                 <div className="text-center py-12 opacity-10 italic text-xs font-black uppercase tracking-widest">No Activity History</div>
@@ -694,6 +714,10 @@ const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -790,11 +814,27 @@ const AdminUsers: React.FC = () => {
   };
 
 
-  const filteredUsers = users.filter(u => 
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.id?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
+  const filteredUsers = (users || [])
+    .filter(u => {
+      const matchSearch = 
+        u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.id?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchRole = !roleFilter || u.globalRole === roleFilter;
+      const matchStatus = !statusFilter || u.status === statusFilter;
+      return matchSearch && matchRole && matchStatus;
+    })
+    .sort((a, b) => {
+      let valA = a[sortBy] || '';
+      let valB = b[sortBy] || '';
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+      
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   if (loading) return (
     <AdminPortal activePath="#/admin/users">
@@ -826,38 +866,96 @@ const AdminUsers: React.FC = () => {
         </div>
         <button 
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all"
+          className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all cursor-pointer"
         >
           <Shield size={16} />
           Create New User
         </button>
       </div>
 
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-white/5 text-xs font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
-              <th className="px-8 py-6">User Profile</th>
-              <th className="px-8 py-6">Access Role</th>
-              <th className="px-8 py-6">Account Status</th>
-              <th className="px-8 py-6 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {(filteredUsers || []).map(u => (
-              <tr key={u.id} className="hover:bg-white/[0.03] transition-colors group relative">
-                <td className="px-8 py-6">
-                  <div className="flex items-center gap-4">
+      {/* Filtering and Sorting Row */}
+      <div className="flex flex-wrap items-center gap-4 mb-8 bg-white/2 p-4 rounded-2xl border border-white/5">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Role:</span>
+          <select 
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-emerald-500/50"
+          >
+            <option value="">All Roles</option>
+            <option value="owner">Owner</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Status:</span>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-emerald-500/50"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Sort By:</span>
+          <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-emerald-500/50"
+          >
+            <option value="displayName">Name</option>
+            <option value="email">Email</option>
+            <option value="createdAt">Created At</option>
+            <option value="lastActiveAt">Last Active</option>
+          </select>
+        </div>
+
+        <button 
+          onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all cursor-pointer"
+        >
+          Order: {sortOrder.toUpperCase()}
+        </button>
+      </div>
+
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="bg-white/5 text-xs font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
+            <th className="px-8 py-6">User Profile</th>
+            <th className="px-8 py-6">Access Role</th>
+            <th className="px-8 py-6">Account Status</th>
+            <th className="px-8 py-6 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-white/5">
+          {(filteredUsers || []).map(u => (
+            <tr key={u.id} className="hover:bg-white/[0.03] transition-colors group relative">
+              <td className="px-8 py-6">
+                <div className="flex items-center gap-4">
+                  {u.avatarUrl ? (
                     <img 
-                      src={u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} 
-                      className="w-10 h-10 rounded-xl border border-white/10 group-hover:border-emerald-500/50 transition-all" 
+                      src={u.avatarUrl} 
+                      className="w-10 h-10 rounded-xl border border-white/10 group-hover:border-emerald-500/50 transition-all object-cover" 
                       alt="Avatar"
                     />
-                    <div>
-                      <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.displayName || u.username || u.email || 'System User'}</div>
-                      <div className="text-xs text-slate-500 font-mono tracking-tighter">{u.email}</div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center tracking-widest uppercase">
+                      {getInitials(u.displayName, u.username, u.email)}
                     </div>
+                  )}
+                  <div>
+                    <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.displayName || u.username || u.email || 'System User'}</div>
+                    <div className="text-xs text-slate-500 font-mono tracking-tighter">{u.email}</div>
                   </div>
-                </td>
+                </div>
+              </td>
                 <td className="px-8 py-6">
                   <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${u.globalRole === 'owner' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
                     {u.globalRole}

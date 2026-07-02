@@ -4,7 +4,8 @@ import {
   ShieldCheck, 
   Building,
   Layers,
-  StickyNote
+  StickyNote,
+  Trash2
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
@@ -47,6 +48,10 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     ? rawMembers
     : (rawMembers?.data && Array.isArray(rawMembers.data) ? rawMembers.data : []);
 
+  // Fetch categories list for dropdown selection
+  const { data: categoriesList = [] } = (useApi<any[]>('/api/financials/categories') as any);
+  const categories = Array.isArray(categoriesList) ? categoriesList : [];
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const uploadedFile = e.target.files[0];
@@ -82,7 +87,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     
     const finalizeData = (rows: any[]) => {
       setReviewItems((rows || []).map((r, i) => ({
-        id: `rev-${i}`,
+        id: `rev-${i}-${crypto.randomUUID().slice(0, 8)}`,
         description: r.description || 'Unknown Transaction',
         amount: r.amount || 0,
         date: r.date || new Date().toISOString().split('T')[0],
@@ -186,14 +191,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
               body: JSON.stringify({ 
                  type: 'transactions',
                  scope, 
-                 data: reviewItems.map(i => ({
-                   description: i.description || 'Unknown Transaction',
-                   amount: Number(i.amount) || 0,
-                   date: i.date || new Date().toISOString().split('T')[0],
-                   category: i.category || undefined,
-                   notes: i.notes || undefined,
-                   ownerId: i.ownerId || undefined
-                 }))
+                 data: reviewItems 
               })
             }) as any);
       if (res.ok) {
@@ -211,6 +209,32 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     const updated = [...reviewItems];
     updated[rowIndex].ownerId = userId;
     setReviewItems(updated);
+  };
+
+  const handleUpdateField = (rowIndex: number, field: string, value: any) => {
+    const updated = [...reviewItems];
+    updated[rowIndex] = { ...updated[rowIndex], [field]: value };
+    setReviewItems(updated);
+  };
+
+  const handleAddRow = () => {
+    setReviewItems([
+      {
+        id: `manual-${crypto.randomUUID()}`,
+        description: 'New Transaction',
+        amount: 0,
+        date: new Date().toISOString().split('T')[0],
+        category: 'Uncategorized',
+        notes: '',
+        ownerId: null,
+        ownerName: ''
+      },
+      ...reviewItems
+    ]);
+  };
+
+  const handleDeleteRow = (rowIndex: number) => {
+    setReviewItems(reviewItems.filter((_, i) => i !== rowIndex));
   };
 
   return (
@@ -268,7 +292,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
       {reviewItems.length > 0 && (
         <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
-          <div className="flex justify-between items-center p-6 bg-white/5 rounded-[2rem] border border-white/10 backdrop-blur-xl">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 bg-white/5 rounded-[2rem] border border-white/10 backdrop-blur-xl">
              <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                    <ShieldCheck size={20} />
@@ -278,13 +302,21 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Target: {scope === 'household' ? 'Shared Ledger' : 'Personal Hub'}</p>
                 </div>
              </div>
-             <button 
-               onClick={handleCommit}
-               disabled={committing}
-               className="px-8 py-3 bg-emerald-500 text-black font-black text-xs uppercase rounded-xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20"
-             >
-               {committing ? 'Saving Histroy...' : 'Finish Import'}
-             </button>
+             <div className="flex items-center gap-3 w-full sm:w-auto">
+               <button 
+                 onClick={handleAddRow}
+                 className="flex-1 sm:flex-none px-5 py-3 bg-white/5 border border-white/10 text-white font-black text-xs uppercase rounded-xl hover:bg-white/10 transition-all cursor-pointer"
+               >
+                 + Add Record
+               </button>
+               <button 
+                 onClick={handleCommit}
+                 disabled={committing}
+                 className="flex-1 sm:flex-none px-8 py-3 bg-emerald-500 text-black font-black text-xs uppercase rounded-xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
+               >
+                 {committing ? 'Saving History...' : 'Finish Import'}
+               </button>
+             </div>
           </div>
 
           <div className="rounded-[2.5rem] border border-white/5 bg-black/40 overflow-hidden shadow-2xl">
@@ -294,8 +326,9 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                     <tr className="border-b border-white/5 bg-white/2">
                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Details & Notes</th>
                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">Owner/Person</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Amount</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Amount ($)</th>
                        <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Date</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center w-16">Remove</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -306,15 +339,31 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                               <div className="w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center text-slate-600 group-hover:text-emerald-500 transition-all mt-1">
                                  <Building size={14} />
                               </div>
-                              <div>
-                                 <p className="font-bold text-sm tracking-tight text-white">{item.description}</p>
-                                 <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">{item.category}</p>
-                                 {item.notes && (
-                                   <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 rounded-lg text-blue-400 border border-blue-500/10 max-w-xs">
-                                      <StickyNote size={10} />
-                                      <span className="text-[10px] font-bold leading-tight line-clamp-2">{item.notes}</span>
-                                   </div>
-                                 )}
+                              <div className="flex-1 space-y-1 min-w-[200px]">
+                                 <input 
+                                   type="text" 
+                                   value={item.description}
+                                   onChange={(e) => handleUpdateField(idx, 'description', e.target.value)}
+                                   className="font-bold text-sm tracking-tight text-white bg-transparent border-b border-transparent hover:border-white/10 focus:border-emerald-500/50 outline-none w-full py-0.5 transition-all"
+                                 />
+                                 <div className="flex items-center gap-2">
+                                   <select
+                                     value={item.category || ''}
+                                     onChange={(e) => handleUpdateField(idx, 'category', e.target.value)}
+                                     className="text-[10px] text-slate-500 uppercase font-black tracking-widest bg-transparent border border-transparent hover:border-white/10 focus:border-emerald-500/50 outline-none py-0.5 cursor-pointer max-w-[120px] transition-all"
+                                   >
+                                     <option value="Uncategorized" className="text-black">Uncategorized</option>
+                                     {(categories || []).map((c: any) => (
+                                       <option key={c.id} value={c.name} className="text-black">{c.name}</option>
+                                     ))}
+                                   </select>
+                                   {item.notes && (
+                                     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-500/10 rounded text-blue-400 border border-blue-500/10 max-w-[150px]">
+                                        <StickyNote size={8} />
+                                        <span className="text-[9px] font-bold leading-tight line-clamp-1">{item.notes}</span>
+                                     </div>
+                                   )}
+                                 </div>
                               </div>
                            </div>
                         </td>
@@ -339,10 +388,30 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                            </div>
                         </td>
                         <td className="px-8 py-6 text-right">
-                           <span className="font-black text-sm italic tracking-tighter text-emerald-400">${Math.abs(item.amount).toFixed(2)}</span>
+                           <input 
+                             type="number" 
+                             step="0.01"
+                             value={item.amount}
+                             onChange={(e) => handleUpdateField(idx, 'amount', parseFloat(e.target.value) || 0)}
+                             className="font-black text-sm italic tracking-tighter text-emerald-400 bg-transparent border-b border-transparent hover:border-white/10 focus:border-emerald-500/50 outline-none text-right w-24 py-0.5 transition-all"
+                           />
                         </td>
                         <td className="px-8 py-6 text-right">
-                           <span className="text-xs text-slate-500 font-bold tracking-tight">{item.date}</span>
+                           <input 
+                             type="date"
+                             value={item.date}
+                             onChange={(e) => handleUpdateField(idx, 'date', e.target.value)}
+                             className="text-xs text-slate-500 font-bold tracking-tight bg-transparent border-b border-transparent hover:border-white/10 focus:border-emerald-500/50 outline-none text-right py-0.5 transition-all"
+                           />
+                        </td>
+                        <td className="px-8 py-6 text-center">
+                           <button 
+                             onClick={() => handleDeleteRow(idx)}
+                             className="p-2 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-lg transition-all cursor-pointer"
+                             title="Remove Record"
+                           >
+                              <Trash2 size={14} />
+                           </button>
                         </td>
                       </tr>
                     ))}

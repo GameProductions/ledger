@@ -11,6 +11,7 @@ import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/api';
+import { Modal } from './ui/Modal';
 
 interface ImportReviewProps {
   onImportComplete: () => void;
@@ -51,6 +52,11 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     date: ''
   });
   const [additionalFields, setAdditionalFields] = useState<{ fieldName: string; column: string; pattern: string }[]>([]);
+
+  // Preview Limit & Modal States
+  const [previewLimit, setPreviewLimit] = useState<string>('5');
+  const [rawTextContent, setRawTextContent] = useState<string>('');
+  const [showFullDoc, setShowFullDoc] = useState(false);
 
   // Template States
   const [savedTemplates, setSavedTemplates] = useState<Record<string, any>>(() => {
@@ -151,6 +157,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       
       if (uploadedFile.name.endsWith('.xlsx')) {
         setAnalyzing(true);
+        setRawTextContent('');
         try {
           const ExcelJS = (await import('exceljs')).default;
           const wb = new ExcelJS.Workbook();
@@ -170,6 +177,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         // Load JSON immediately to preview
         try {
           const text = await uploadedFile.text();
+          setRawTextContent(text);
           const parsed = JSON.parse(text);
           const rows = Array.isArray(parsed) ? parsed : [parsed];
           if (rows.length > 0) {
@@ -190,6 +198,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         }
       } else if (uploadedFile.name.endsWith('.pdf')) {
         // Fallback for PDF
+        setRawTextContent('');
         setHeaders(['description', 'amount', 'date']);
         setRawRows([{ description: 'PDF Transaction Extraction', amount: 125.50, date: '2026-03-25' }]);
         setColumnMapping({ description: 'description', amount: 'amount', date: 'date', category: '', notes: '' });
@@ -197,6 +206,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       } else {
         // Parse CSV Papa Parse
         try {
+          const text = await uploadedFile.text();
+          setRawTextContent(text);
           const Papa = (await import('papaparse')).default;
           Papa.parse(uploadedFile, {
             header: true,
@@ -741,9 +752,31 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
             {/* Right Side: Raw File Data Preview */}
             <div className="lg:col-span-7 space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="text-xs font-black text-emerald-400 uppercase tracking-widest">Raw File Data Preview</div>
-                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Showing first {Math.min(5, rawRows.length)} rows</span>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                  <div className="text-xs font-black text-emerald-400 uppercase tracking-widest">Raw File Data Preview</div>
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                    Showing {previewLimit === 'all' ? `all ${rawRows.length}` : `first ${Math.min(parseInt(previewLimit), rawRows.length)}`} of {rawRows.length} rows
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={previewLimit}
+                    onChange={(e) => setPreviewLimit(e.target.value)}
+                    className="bg-black/40 border border-white/10 rounded-lg px-2.5 py-1 text-[10px] text-white outline-none focus:border-emerald-500/50"
+                  >
+                    <option value="5">Show 5 Rows</option>
+                    <option value="10">Show 10 Rows</option>
+                    <option value="25">Show 25 Rows</option>
+                    <option value="all">Show All Rows</option>
+                  </select>
+                  <button 
+                    onClick={() => setShowFullDoc(true)}
+                    className="px-3 py-1 bg-white/5 border border-white/10 text-white font-black text-[9px] uppercase rounded-lg hover:bg-white/10 transition-all cursor-pointer"
+                  >
+                    View Full Doc
+                  </button>
+                </div>
               </div>
 
               <div className="border border-white/5 rounded-[2rem] bg-black/60 overflow-hidden shadow-inner">
@@ -757,7 +790,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 font-mono text-[10px] text-slate-300">
-                      {rawRows.slice(0, 5).map((row, idx) => (
+                      {rawRows.slice(0, previewLimit === 'all' ? rawRows.length : parseInt(previewLimit)).map((row, idx) => (
                         <tr key={idx} className="hover:bg-white/2">
                           {headers.map(h => (
                             <td key={h} className="px-4 py-2.5 truncate max-w-[150px]" title={String(row[h] ?? '')}>
@@ -934,6 +967,48 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           </div>
         </div>
       )}
+      {/* Full Document View Modal */}
+      <Modal 
+        isOpen={showFullDoc} 
+        onClose={() => setShowFullDoc(false)} 
+        title={`Full Document View: ${file?.name}`}
+      >
+        <div className="space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar pr-1">
+          <div className="border border-white/5 rounded-2xl bg-black/60 overflow-hidden shadow-inner">
+            <div className="overflow-auto max-h-[300px] custom-scrollbar">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/5 sticky top-0 z-10">
+                    {headers.map(h => (
+                      <th key={h} className="px-4 py-3 font-black uppercase text-slate-400 tracking-wider whitespace-nowrap bg-black/80">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 font-mono text-[10px] text-slate-300">
+                  {rawRows.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-white/2">
+                      {headers.map(h => (
+                        <td key={h} className="px-4 py-2.5 truncate max-w-[200px]" title={String(row[h] ?? '')}>
+                          {String(row[h] ?? '')}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {rawTextContent && (
+            <div className="space-y-2 pt-4 border-t border-white/5">
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Raw File Stream</div>
+              <pre className="p-4 bg-black/40 border border-white/10 rounded-xl font-mono text-[10px] text-slate-400 overflow-auto max-h-60 custom-scrollbar whitespace-pre-wrap">
+                {rawTextContent}
+              </pre>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

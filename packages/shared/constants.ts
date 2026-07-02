@@ -63,6 +63,8 @@ export const AUTH_EXCLUSIONS = [
   '/api/proxy/callback/dropbox',
   '/api/proxy/login/onedrive',
   '/api/proxy/callback/onedrive',
+  '/api/auth/discord/linked-roles/verify',
+  '/api/proxy/discord/linked-roles/verify',
   '/api/support/webhook/github',
   '/api/theme/broadcast',
   '/api/health',

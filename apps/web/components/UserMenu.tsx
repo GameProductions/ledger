@@ -237,28 +237,16 @@ const UserMenu: React.FC<{
                 </div>
 
                 <div className="space-y-1">
-                  {isAdminPortal ? (
+                  {!isAdminPortal && !isHome && (
                     <button 
                       role="menuitem"
                       onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-emerald-400 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
                       style={{ background: 'none', border: 'none' }}
                     >
-                      <LayoutDashboard size={18} className="text-emerald-500" />
-                      <span>Exit Owner</span>
+                      <LayoutDashboard size={18} className="text-primary" />
+                      <span>Return to Dashboard</span>
                     </button>
-                  ) : (
-                    !isHome && (
-                      <button 
-                        role="menuitem"
-                        onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left"
-                        style={{ background: 'none', border: 'none' }}
-                      >
-                        <LayoutDashboard size={18} className="text-primary" />
-                        <span>Return to Dashboard</span>
-                      </button>
-                    )
                   )}
 
                   {menuItems.map((item) => (

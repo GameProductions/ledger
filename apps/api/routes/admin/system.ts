@@ -35,6 +35,24 @@ system.get('/config', async (c) => {
     });
     needsReFetch = true;
   }
+
+  if (!keys.has('ALLOWED_DOMAINS')) {
+    await db.insert(systemConfig).values({
+      id: crypto.randomUUID(),
+      configKey: 'ALLOWED_DOMAINS',
+      configValue: '*.gpnet.dev, *.glosonproductions.com, localhost, 127.0.0.1'
+    });
+    needsReFetch = true;
+  }
+
+  if (!keys.has('BLOCKED_DOMAINS')) {
+    await db.insert(systemConfig).values({
+      id: crypto.randomUUID(),
+      configKey: 'BLOCKED_DOMAINS',
+      configValue: ''
+    });
+    needsReFetch = true;
+  }
   
   if (needsReFetch) {
     results = (await db.select().from(systemConfig).orderBy(systemConfig.configKey) as any);

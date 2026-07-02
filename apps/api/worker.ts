@@ -110,13 +110,69 @@ app.use('*', fleetSecurity());
 app.use("*", logger());
 
 app.use("*", cors({
-  origin: (origin) => {
+  origin: async (origin, c) => {
     if (!origin) return "*";
-    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-    const isAllowedDomain = origin.endsWith(".gpnet.dev") || origin.endsWith(".glosonproductions.com");
-    if (isLocalhost || isAllowedDomain) {
-      return origin;
+    
+    let allowedStr = '*.gpnet.dev, *.glosonproductions.com, localhost, 127.0.0.1';
+    let blockedStr = '';
+    
+    try {
+      const cache = c.env.CACHE || c.env.FLEET_SECURITY_CACHE;
+      let cachedConfigs: Record<string, string> | null = null;
+      if (cache && typeof cache.get === 'function') {
+        cachedConfigs = await cache.get('API_CONFIG', 'json');
+      }
+      
+      if (cachedConfigs && cachedConfigs.ALLOWED_DOMAINS !== undefined) {
+        allowedStr = cachedConfigs.ALLOWED_DOMAINS;
+        blockedStr = cachedConfigs.BLOCKED_DOMAINS || '';
+      } else {
+        const { getDb } = (await import('#/index') as any);
+        const { systemConfig } = (await import('#/schema') as any);
+        const { or, eq } = (await import('drizzle-orm') as any);
+        
+        const db = getDb(c.env);
+        const configs = (await db.select().from(systemConfig).where(
+          or(
+            eq(systemConfig.configKey, 'ALLOWED_DOMAINS'),
+            eq(systemConfig.configKey, 'BLOCKED_DOMAINS')
+          )
+        ) as any);
+        
+        const allowedItem = configs.find((cf: any) => cf.configKey === 'ALLOWED_DOMAINS');
+        const blockedItem = configs.find((cf: any) => cf.configKey === 'BLOCKED_DOMAINS');
+        if (allowedItem) allowedStr = allowedItem.configValue || '';
+        if (blockedItem) blockedStr = blockedItem.configValue || '';
+      }
+    } catch (e) {
+      // Fallback
     }
+
+    const parseToRegex = (pattern: string) => {
+      const escaped = pattern.trim().replace(/[-\/\\^$+.()|[\]{}]/g, '\\$&').replace(/\\\*/g, '.*');
+      return new RegExp(`^https?:\\/\\/${escaped}(:\\d+)?$`, 'i');
+    };
+
+    const allowedPatterns = allowedStr.split(',').map(s => s.trim()).filter(Boolean);
+    const blockedPatterns = blockedStr.split(',').map(s => s.trim()).filter(Boolean);
+
+    // 1. Check blacklist first
+    for (const pattern of blockedPatterns) {
+      const rx = parseToRegex(pattern);
+      if (rx.test(origin)) {
+        return "https://ledger.gpnet.dev";
+      }
+    }
+
+    // 2. Check whitelist
+    for (const pattern of allowedPatterns) {
+      if (pattern === '*') return '*';
+      const rx = parseToRegex(pattern);
+      if (rx.test(origin)) {
+        return origin;
+      }
+    }
+
     return "https://ledger.gpnet.dev";
   },
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

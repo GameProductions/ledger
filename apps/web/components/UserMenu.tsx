@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge, Lock } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge, Lock, Globe, Zap, FileText, Search } from 'lucide-react'
 import { Masked } from './ui/Masked'
 import { sanitizeImageUrl } from '../utils/security'
 
@@ -42,7 +42,12 @@ const UserMenu: React.FC<{
     { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
     { icon: Shield, label: 'Household Registry', hash: '#/admin/households', color: 'text-emerald-400' },
     { icon: Database, label: 'Entity Manager', hash: '#/admin/entity-manager', color: 'text-orange-400' },
-    { icon: Cpu, label: 'Platform Settings', hash: '#/admin/config', color: 'text-blue-400' },
+    { icon: Globe, label: 'Service Providers', hash: '#/admin/providers', color: 'text-cyan-400' },
+    { icon: Zap, label: 'Payment Networks', hash: '#/admin/processors', color: 'text-rose-500' },
+    { icon: FileText, label: 'Master Records', hash: '#/admin/registry', color: 'text-blue-500' },
+    { icon: Search, label: 'Global Search', hash: '#/admin/search', color: 'text-slate-400' },
+    { icon: Cpu, label: 'Platform Settings', hash: '#/admin/config', color: 'text-yellow-500' },
+    { icon: FileText, label: 'Owner Guide', hash: '#/admin/guide', color: 'text-indigo-400' },
     { icon: Lock, label: 'Exit Owner Portal', hash: '#/', color: 'text-amber-500' },
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },

@@ -48,15 +48,6 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
       {/* Universal Command Header */}
       <header className="fixed top-0 left-0 right-0 z-[9999] border-b border-white/10 bg-zinc-950/95 shadow-[0_4px_30px_rgba(0,0,0,0.8)] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {/* Mobile menu toggle */}
-          <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-1.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all"
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] border border-white/10">
                S
@@ -80,37 +71,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
         </div>
       </header>
 
-      {/* Mobile Drawer Navigation */}
-      {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 z-[999] xl:hidden bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          <aside 
-            className="absolute top-[64px] left-4 right-4 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl p-3 space-y-1 max-h-[calc(100vh-100px)] overflow-y-auto animate-in slide-in-from-top-4 duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-             {navItems.map((item) => {
-               const isActive = activePath === item.path;
-               return (
-                 <a 
-                  key={item.name}
-                  href={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group ${
-                    isActive 
-                      ? 'bg-emerald-500 text-black font-black' 
-                      : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                  }`}
-                 >
-                   <item.icon size={16} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
-                   <span className="text-xs uppercase tracking-wider">{item.name}</span>
-                 </a>
-               );
-             })}
-          </aside>
-        </div>
-      )}
+
 
       {/* Sidebar Navigation */}
       <aside className="fixed top-[72px] left-6 bottom-6 w-56 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-3 hidden xl:block overflow-y-auto custom-scrollbar">

@@ -40,6 +40,41 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     notes: ''
   });
   const [showMapping, setShowMapping] = useState(false);
+
+  // Template States
+  const [savedTemplates, setSavedTemplates] = useState<Record<string, any>>(() => {
+    try {
+      const stored = localStorage.getItem('ledger_import_templates');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [templateName, setTemplateName] = useState('');
+
+  const handleSaveTemplate = () => {
+    if (!templateName.trim()) {
+      showToast('Please enter a template name', 'error');
+      return;
+    }
+    const updated = {
+      ...savedTemplates,
+      [templateName.trim()]: { ...columnMapping }
+    };
+    setSavedTemplates(updated);
+    localStorage.setItem('ledger_import_templates', JSON.stringify(updated));
+    showToast(`Template "${templateName.trim()}" saved`, 'success');
+    setTemplateName('');
+  };
+
+  const handleDeleteTemplate = (name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = { ...savedTemplates };
+    delete updated[name];
+    setSavedTemplates(updated);
+    localStorage.setItem('ledger_import_templates', JSON.stringify(updated));
+    showToast(`Template "${name}" deleted`, 'success');
+  };
   
   // Fetch household memberships to identify household role
   const { data: householdMemberships } = (useApi<any[]>('/api/user/households') as any);
@@ -326,6 +361,48 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Side: Mapping Fields */}
             <div className="lg:col-span-5 space-y-5 bg-white/2 p-6 rounded-[2rem] border border-white/5">
+              {/* Templates Configuration */}
+              <div className="space-y-3 border-b border-white/5 pb-4">
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Templates</div>
+                {Object.keys(savedTemplates).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.keys(savedTemplates).map(name => (
+                      <div 
+                        key={name}
+                        onClick={() => setColumnMapping({ ...savedTemplates[name] })}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-wider cursor-pointer transition-all"
+                        title="Click to apply template mappings"
+                      >
+                        <span>📁 {name}</span>
+                        <button 
+                          onClick={(e) => handleDeleteTemplate(name, e)}
+                          className="hover:text-red-400 font-extrabold text-[8px] ml-1 p-0.5"
+                          title="Delete template"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="New Template Name" 
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] text-white outline-none focus:border-emerald-500/50"
+                  />
+                  <button 
+                    onClick={handleSaveTemplate}
+                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[9px] uppercase rounded-lg transition-all"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+
               <div className="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-white/5 pb-2">Schema Fields</div>
               
               <div className="space-y-4">

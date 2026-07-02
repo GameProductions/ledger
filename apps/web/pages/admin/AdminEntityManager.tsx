@@ -3,6 +3,7 @@ import { useApi, globalMutate } from '../../hooks/useApi'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { Modal } from '../../components/ui/Modal'
+import AdminPortal from './AdminPortal'
 import { getApiUrl } from '../../utils/api'
 import { 
   Shield, Tag, Wallet, CreditCard, Link2, CalendarClock, Receipt, Clock, Banknote,
@@ -92,7 +93,7 @@ const AdminEntityManager: React.FC = () => {
   }
 
   return (
-    <div>
+    <AdminPortal activePath="#/admin/entities">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -253,7 +254,7 @@ const AdminEntityManager: React.FC = () => {
     }>
       <p className="text-white/60 text-sm">This action will be permanently logged in the admin audit trail. Continue?</p>
       </Modal>
-    </div>
+    </AdminPortal>
   )
 }
 

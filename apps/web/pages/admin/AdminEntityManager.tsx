@@ -47,7 +47,7 @@ const AdminEntityManager: React.FC = () => {
 
   // Audit log
   const [showAudit, setShowAudit] = useState(false)
-  const { data: auditLog = [] } = (useApi(showAudit ? '/api/admin/entities/audit/report' : '') as any)
+  const { data: auditLog = [] } = (useApi(showAudit ? '/api/admin/entity-manager/audit/report' : '') as any)
 
   // Build query
   const activeMeta = ENTITY_TYPES.find(e => e.key === activeType)!
@@ -57,7 +57,7 @@ const AdminEntityManager: React.FC = () => {
     ? `?userId=${userFilter}`
     : ''
 
-  const { data: items = [], loading, mutate } = (useApi(`/api/admin/entities/${activeType}${qs}`) as any)
+  const { data: items = [], loading, mutate } = (useApi(`/api/admin/entity-manager/${activeType}${qs}`) as any)
   const { data: allHouseholds = [] } = (useApi('/api/admin/households?limit=200') as any)
 
   // Edit state
@@ -71,7 +71,7 @@ const AdminEntityManager: React.FC = () => {
 
   const handleSave = async () => {
     if (!editing) return
-    await adminRequest(secureFetch, 'PATCH', `/api/admin/entities/${activeType}/${editing.id}`, editData)
+    await adminRequest(secureFetch, 'PATCH', `/api/admin/entity-manager/${activeType}/${editing.id}`, editData)
     showToast('Record updated via Owner', 'success')
     setEditing(null)
     setEditData({})
@@ -80,7 +80,7 @@ const AdminEntityManager: React.FC = () => {
   }
 
   const handleDelete = async (id: string) => {
-    await adminRequest(secureFetch, 'DELETE', `/api/admin/entities/${activeType}/${id}`)
+    await adminRequest(secureFetch, 'DELETE', `/api/admin/entity-manager/${activeType}/${id}`)
     showToast('Record removed via Owner', 'success')
     setDeleting(null)
     mutate();
@@ -93,7 +93,7 @@ const AdminEntityManager: React.FC = () => {
   }
 
   return (
-    <AdminPortal activePath="#/admin/entities">
+    <AdminPortal activePath="#/admin/entity-manager">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

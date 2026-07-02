@@ -34,7 +34,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
     { name: 'Owner Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
     { name: 'User Directory', path: '#/admin/users', icon: Users },
     { name: 'Household Registry', path: '#/admin/households', icon: Shield },
-    { name: 'Entity Manager', path: '#/admin/entities', icon: Database },
+    { name: 'Entity Manager', path: '#/admin/entity-manager', icon: Database },
     { name: 'Service Providers', path: '#/admin/providers', icon: Globe },
     { name: 'Payment Networks', path: '#/admin/processors', icon: Zap },
     { name: 'Master Records', path: '#/admin/registry', icon: FileText },

@@ -228,7 +228,7 @@ const AppContent: React.FC = () => {
         if (path === '#/admin/providers') return <AdminProviders />
         if (path === '#/admin/processors') return <AdminProcessors />
         if (path === '#/admin/guide') return <AdminGuide />
-        if (path === '#/admin/entities') return <AdminEntityManager />
+        if (path === '#/admin/entity-manager') return <AdminEntityManager />
         return <AdminDashboard />
       }
 

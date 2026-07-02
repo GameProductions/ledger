@@ -6,7 +6,7 @@ import systemRoutes from './admin/system'
 import billingRoutes from './admin/billing'
 import householdRoutes from './admin/households'
 import communicationRoutes from './admin/communications'
-import entityRoutes from './admin/entities'
+import entityRoutes from './admin/entity-manager'
 import webauthnRoutes from './admin/webauthn'
 import demoRoutes from './admin/demo'
 import { getDb } from '#/index'
@@ -23,7 +23,7 @@ admin.route('/system', systemRoutes)
 admin.route('/billing', billingRoutes)
 admin.route('/households', householdRoutes)
 admin.route('/communications', communicationRoutes)
-admin.route('/entities', entityRoutes)
+admin.route('/entity-manager', entityRoutes)
 admin.route('/webauthn', webauthnRoutes)
 admin.route('/demo', demoRoutes)
 

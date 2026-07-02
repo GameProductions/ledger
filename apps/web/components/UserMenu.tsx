@@ -41,7 +41,7 @@ const UserMenu: React.FC<{
     { icon: LayoutDashboard, label: 'Owner Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
     { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
     { icon: Shield, label: 'Household Registry', hash: '#/admin/households', color: 'text-emerald-400' },
-    { icon: Database, label: 'Entity Manager', hash: '#/admin/entities', color: 'text-orange-400' },
+    { icon: Database, label: 'Entity Manager', hash: '#/admin/entity-manager', color: 'text-orange-400' },
     { icon: Cpu, label: 'Platform Settings', hash: '#/admin/config', color: 'text-blue-400' },
     { icon: Lock, label: 'Exit Owner Portal', hash: '#/', color: 'text-amber-500' },
   ] : [

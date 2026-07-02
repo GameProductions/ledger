@@ -103,16 +103,16 @@ const DataCenterPage: React.FC = () => {
           {/* Scope Selector */}
           <div className="p-1 bg-white/5 rounded-2xl border border-white/10 flex gap-1">
              <button 
-               onClick={() => setImportScope('household')}
-               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-xs transition-all ${importScope === 'household' ? 'bg-white text-black shadow-xl' : 'text-slate-500 hover:text-white'}`}
-             >
-               <Users size={14} /> Shared
-             </button>
-             <button 
                onClick={() => setImportScope('private')}
                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-xs transition-all ${importScope === 'private' ? 'bg-emerald-500 text-black shadow-xl' : 'text-slate-500 hover:text-white'}`}
              >
                <Lock size={14} /> Just for Me
+             </button>
+             <button 
+               onClick={() => setImportScope('household')}
+               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase text-xs transition-all ${importScope === 'household' ? 'bg-white text-black shadow-xl' : 'text-slate-500 hover:text-white'}`}
+             >
+               <Users size={14} /> Household
              </button>
           </div>
         </header>

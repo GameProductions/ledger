@@ -112,7 +112,9 @@ app.use("*", logger());
 app.use("*", cors({
   origin: (origin) => {
     if (!origin) return "*";
-    if (origin.endsWith(".gpnet.dev") || origin.endsWith(".glosonproductions.com") || origin.includes("localhost") || origin.includes("127.0.0.1")) {
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    const isAllowedDomain = origin.endsWith(".gpnet.dev") || origin.endsWith(".glosonproductions.com");
+    if (isLocalhost || isAllowedDomain) {
       return origin;
     }
     return "https://ledger.gpnet.dev";

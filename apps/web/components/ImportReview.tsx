@@ -41,6 +41,17 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   });
   const [showMapping, setShowMapping] = useState(false);
 
+  // Advanced Mapping Configuration States
+  const [layoutMode, setLayoutMode] = useState<'rows' | 'cells'>('rows');
+  const [staticTargetUser, setStaticTargetUser] = useState<string>('');
+  const [staticDate, setStaticDate] = useState<string>('');
+  const [fieldPatterns, setFieldPatterns] = useState<Record<string, string>>({
+    description: '',
+    amount: '',
+    date: ''
+  });
+  const [additionalFields, setAdditionalFields] = useState<{ fieldName: string; column: string; pattern: string }[]>([]);
+
   // Template States
   const [savedTemplates, setSavedTemplates] = useState<Record<string, any>>(() => {
     try {
@@ -220,43 +231,137 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     }
   };
 
+  const parseCellCoordinate = (coord: string) => {
+    const match = coord.toUpperCase().match(/^([A-Z]+)([0-9]+)$/);
+    if (!match) return null;
+    const colStr = match[1];
+    const rowStr = match[2];
+    
+    let colIdx = 0;
+    for (let i = 0; i < colStr.length; i++) {
+      colIdx = colIdx * 26 + (colStr.charCodeAt(i) - 64);
+    }
+    colIdx -= 1; // 0-indexed
+    const rowIdx = parseInt(rowStr) - 1; // 0-indexed
+    return { colIdx, rowIdx };
+  };
+
   const handleAnalyze = () => {
     if (rawRows.length === 0) return;
     setAnalyzing(true);
+
+    const applyPattern = (val: string, pattern: string) => {
+      if (!pattern) return val;
+      try {
+        const rx = new RegExp(pattern);
+        const match = val.match(rx);
+        if (match) {
+          return match[1] || match[0];
+        }
+      } catch (e) {
+        // Ignore bad regex
+      }
+      return val;
+    };
+
+    const getCellValue = (coord: string) => {
+      if (!coord) return '';
+      if (file?.name.endsWith('.xlsx') && workbook) {
+        const ws = workbook.getWorksheet(selectedSheet);
+        if (ws) {
+          const cell = ws.getCell(coord);
+          return cell ? String(cell.value ?? '') : '';
+        }
+      }
+      const parsed = parseCellCoordinate(coord);
+      if (!parsed) return '';
+      const row = rawRows[parsed.rowIdx];
+      if (!row) return '';
+      const keys = Object.keys(row as any);
+      const key = keys[parsed.colIdx];
+      return key ? String(row[key] ?? '') : '';
+    };
     
     try {
-      const mapped = rawRows.map((r: any, i: number) => {
-        const rawAmount = r[columnMapping.amount];
-        const parsedAmount = typeof rawAmount === 'number' 
-          ? rawAmount 
-          : parseFloat(String(rawAmount || '0').replace(/[^0-9.-]/g, '')) || 0;
-        
-        let rawDate = r[columnMapping.date];
-        let parsedDate = '';
-        if (rawDate instanceof Date) {
-          parsedDate = rawDate.toISOString().split('T')[0];
-        } else if (rawDate) {
-          parsedDate = String(rawDate).split('T')[0];
-        } else {
-          parsedDate = new Date().toISOString().split('T')[0];
-        }
-        
-        return {
-          id: `rev-${i}-${crypto.randomUUID().slice(0, 8)}`,
-          description: String(r[columnMapping.description] || 'Unknown Transaction'),
+      if (layoutMode === 'cells') {
+        // Parse coordinate mapping
+        let rawDesc = getCellValue(columnMapping.description);
+        rawDesc = applyPattern(rawDesc, fieldPatterns.description);
+
+        let rawAmtStr = getCellValue(columnMapping.amount);
+        rawAmtStr = applyPattern(rawAmtStr, fieldPatterns.amount);
+        const parsedAmount = parseFloat(rawAmtStr.replace(/[^0-9.-]/g, '')) || 0;
+
+        let rawDateStr = getCellValue(columnMapping.date);
+        rawDateStr = applyPattern(rawDateStr, fieldPatterns.date);
+        const parsedDate = rawDateStr || staticDate || new Date().toISOString().split('T')[0];
+
+        let notesParts = [columnMapping.notes ? getCellValue(columnMapping.notes) : ''];
+        additionalFields.forEach(f => {
+          if (f.column) {
+            let fVal = getCellValue(f.column);
+            if (f.pattern) fVal = applyPattern(fVal, f.pattern);
+            if (fVal) notesParts.push(`${f.fieldName}: ${fVal}`);
+          }
+        });
+
+        const record = {
+          id: `rev-0-${crypto.randomUUID().slice(0, 8)}`,
+          description: rawDesc || 'Cell Extraction Record',
           amount: parsedAmount,
           date: parsedDate,
-          category: columnMapping.category ? String(r[columnMapping.category] || 'Uncategorized') : 'Uncategorized',
-          notes: columnMapping.notes ? String(r[columnMapping.notes] || '') : '',
-          ownerId: null,
+          category: columnMapping.category ? getCellValue(columnMapping.category) : 'Uncategorized',
+          notes: notesParts.filter(Boolean).join(' | '),
+          ownerId: staticTargetUser || null,
           ownerName: ''
         };
-      });
-      
-      setReviewItems(mapped);
-      setShowMapping(false);
+
+        setReviewItems([record]);
+        setShowMapping(false);
+      } else {
+        // Tabular rows mode
+        const mapped = rawRows.map((r: any, i: number) => {
+          let rawDesc = String(r[columnMapping.description] || 'Unknown Transaction');
+          rawDesc = applyPattern(rawDesc, fieldPatterns.description);
+
+          const rawAmount = r[columnMapping.amount];
+          let amtStr = typeof rawAmount === 'number' ? String(rawAmount) : String(rawAmount || '0');
+          amtStr = applyPattern(amtStr, fieldPatterns.amount);
+          const parsedAmount = parseFloat(amtStr.replace(/[^0-9.-]/g, '')) || 0;
+          
+          let rawDate = r[columnMapping.date];
+          let dateStr = rawDate instanceof Date 
+            ? rawDate.toISOString().split('T')[0] 
+            : String(rawDate || '');
+          dateStr = applyPattern(dateStr, fieldPatterns.date);
+          const parsedDate = dateStr || staticDate || new Date().toISOString().split('T')[0];
+          
+          let notesParts = [columnMapping.notes ? String(r[columnMapping.notes] || '') : ''];
+          additionalFields.forEach(f => {
+            if (f.column) {
+              let fVal = String(r[f.column] || '');
+              if (f.pattern) fVal = applyPattern(fVal, f.pattern);
+              if (fVal) notesParts.push(`${f.fieldName}: ${fVal}`);
+            }
+          });
+
+          return {
+            id: `rev-${i}-${crypto.randomUUID().slice(0, 8)}`,
+            description: rawDesc,
+            amount: parsedAmount,
+            date: parsedDate,
+            category: columnMapping.category ? String(r[columnMapping.category] || 'Uncategorized') : 'Uncategorized',
+            notes: notesParts.filter(Boolean).join(' | '),
+            ownerId: staticTargetUser || null,
+            ownerName: ''
+          };
+        });
+        
+        setReviewItems(mapped);
+        setShowMapping(false);
+      }
     } catch (e) {
-      showToast('Error mapping file columns. Please check your config.', 'error');
+      showToast('Error mapping file. Please check cell coordinates or column config.', 'error');
     } finally {
       setAnalyzing(false);
     }
@@ -408,68 +513,229 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
               <div className="space-y-4">
                 {/* Description Column */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Description / Merchant *</label>
-                  <select 
-                    value={columnMapping.description}
-                    onChange={(e) => setColumnMapping({ ...columnMapping, description: e.target.value })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="">-- Select Column --</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Description / Merchant *</label>
+                    <span className="text-[8px] text-slate-500 font-bold uppercase">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {layoutMode === 'cells' ? (
+                      <input 
+                        type="text" 
+                        placeholder="e.g. A1"
+                        value={columnMapping.description}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, description: e.target.value })}
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                      />
+                    ) : (
+                      <select 
+                        value={columnMapping.description}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, description: e.target.value })}
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                      >
+                        <option value="">-- Select Column --</option>
+                        {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    )}
+                    <input 
+                      type="text" 
+                      placeholder="Regex Pattern"
+                      value={fieldPatterns.description}
+                      onChange={(e) => setFieldPatterns({ ...fieldPatterns, description: e.target.value })}
+                      className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
                 </div>
 
                 {/* Amount Column */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Amount / Price *</label>
-                  <select 
-                    value={columnMapping.amount}
-                    onChange={(e) => setColumnMapping({ ...columnMapping, amount: e.target.value })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="">-- Select Column --</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Amount / Price *</label>
+                    <span className="text-[8px] text-slate-500 font-bold uppercase">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {layoutMode === 'cells' ? (
+                      <input 
+                        type="text" 
+                        placeholder="e.g. B1"
+                        value={columnMapping.amount}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, amount: e.target.value })}
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                      />
+                    ) : (
+                      <select 
+                        value={columnMapping.amount}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, amount: e.target.value })}
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                      >
+                        <option value="">-- Select Column --</option>
+                        {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    )}
+                    <input 
+                      type="text" 
+                      placeholder="Regex Pattern"
+                      value={fieldPatterns.amount}
+                      onChange={(e) => setFieldPatterns({ ...fieldPatterns, amount: e.target.value })}
+                      className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
                 </div>
 
                 {/* Date Column */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Transaction Date *</label>
-                  <select 
-                    value={columnMapping.date}
-                    onChange={(e) => setColumnMapping({ ...columnMapping, date: e.target.value })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="">-- Select Column --</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Transaction Date *</label>
+                    <span className="text-[8px] text-slate-500 font-bold uppercase">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {layoutMode === 'cells' ? (
+                      <input 
+                        type="text" 
+                        placeholder="e.g. C1"
+                        value={columnMapping.date}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, date: e.target.value })}
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                      />
+                    ) : (
+                      <select 
+                        value={columnMapping.date}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, date: e.target.value })}
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                      >
+                        <option value="">-- Select Column --</option>
+                        {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                      </select>
+                    )}
+                    <input 
+                      type="text" 
+                      placeholder="Regex Pattern"
+                      value={fieldPatterns.date}
+                      onChange={(e) => setFieldPatterns({ ...fieldPatterns, date: e.target.value })}
+                      className="w-1/2 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
                 </div>
 
                 {/* Category Column (Optional) */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Category (Optional)</label>
-                  <select 
-                    value={columnMapping.category}
-                    onChange={(e) => setColumnMapping({ ...columnMapping, category: e.target.value })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="">-- Ignore Column --</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
+                  {layoutMode === 'cells' ? (
+                    <input 
+                      type="text" 
+                      placeholder="e.g. D1"
+                      value={columnMapping.category}
+                      onChange={(e) => setColumnMapping({ ...columnMapping, category: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
+                    />
+                  ) : (
+                    <select 
+                      value={columnMapping.category}
+                      onChange={(e) => setColumnMapping({ ...columnMapping, category: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
+                    >
+                      <option value="">-- Ignore Column --</option>
+                      {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  )}
                 </div>
 
                 {/* Notes Column (Optional) */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Notes / Memo (Optional)</label>
-                  <select 
-                    value={columnMapping.notes}
-                    onChange={(e) => setColumnMapping({ ...columnMapping, notes: e.target.value })}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
-                  >
-                    <option value="">-- Ignore Column --</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
+                  {layoutMode === 'cells' ? (
+                    <input 
+                      type="text" 
+                      placeholder="e.g. E1"
+                      value={columnMapping.notes}
+                      onChange={(e) => setColumnMapping({ ...columnMapping, notes: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
+                    />
+                  ) : (
+                    <select 
+                      value={columnMapping.notes}
+                      onChange={(e) => setColumnMapping({ ...columnMapping, notes: e.target.value })}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-500/50"
+                    >
+                      <option value="">-- Ignore Column --</option>
+                      {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                  )}
                 </div>
+              </div>
+
+              {/* Additional Fields */}
+              <div className="space-y-3 pt-4 border-t border-white/5">
+                <div className="flex justify-between items-center">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Additional Fields</div>
+                  <button 
+                    onClick={() => setAdditionalFields([...additionalFields, { fieldName: 'Field Name', column: '', pattern: '' }])}
+                    className="text-[9px] font-black uppercase text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
+                  >
+                    + Add Field
+                  </button>
+                </div>
+                {additionalFields.length > 0 && (
+                  <div className="space-y-3 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                    {additionalFields.map((f, idx) => (
+                      <div key={idx} className="flex gap-1.5 items-center bg-black/20 p-2 rounded-xl border border-white/5">
+                        <input 
+                          type="text" 
+                          placeholder="Name" 
+                          value={f.fieldName}
+                          onChange={(e) => {
+                            const updated = [...additionalFields];
+                            updated[idx].fieldName = e.target.value;
+                            setAdditionalFields(updated);
+                          }}
+                          className="w-1/4 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white"
+                        />
+                        {layoutMode === 'cells' ? (
+                          <input 
+                            type="text" 
+                            placeholder="Coord" 
+                            value={f.column}
+                            onChange={(e) => {
+                              const updated = [...additionalFields];
+                              updated[idx].column = e.target.value;
+                              setAdditionalFields(updated);
+                            }}
+                            className="w-1/4 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white"
+                          />
+                        ) : (
+                          <select 
+                            value={f.column}
+                            onChange={(e) => {
+                              const updated = [...additionalFields];
+                              updated[idx].column = e.target.value;
+                              setAdditionalFields(updated);
+                            }}
+                            className="w-1/3 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white"
+                          >
+                            <option value="">-- Column --</option>
+                            {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                        )}
+                        <input 
+                          type="text" 
+                          placeholder="Regex Pattern" 
+                          value={f.pattern}
+                          onChange={(e) => {
+                            const updated = [...additionalFields];
+                            updated[idx].pattern = e.target.value;
+                            setAdditionalFields(updated);
+                          }}
+                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white"
+                        />
+                        <button 
+                          onClick={() => setAdditionalFields(additionalFields.filter((_, i) => i !== idx))}
+                          className="text-red-400 hover:text-red-300 font-extrabold text-xs px-1 cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

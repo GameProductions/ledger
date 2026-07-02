@@ -141,15 +141,25 @@ const AdminEntityManager: React.FC = () => {
               <button
                 key={et.key}
                 onClick={() => { setActiveType(et.key); setSearch('') }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
                   activeType === et.key
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-                    : 'text-white/50 hover:text-white/80 hover:bg-white/5 border border-transparent'
+                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                    : 'text-slate-400 border-transparent hover:text-white hover:bg-white/5'
                 }`}
               >
-                {et.icon}
-                {et.label}
-                <span className="ml-auto text-[9px] font-black uppercase tracking-widest text-white/20">{et.scope}</span>
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-5 h-5 flex items-center justify-center shrink-0 ${activeType === et.key ? 'text-emerald-400' : 'text-slate-400'}`}>
+                    {et.icon}
+                  </div>
+                  <span className="truncate">{et.label}</span>
+                </div>
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${
+                  et.scope === 'household'
+                    ? 'bg-purple-500/10 text-purple-400 border-purple-500/25'
+                    : 'bg-blue-500/10 text-blue-400 border-blue-500/25'
+                }`}>
+                  {et.scope}
+                </span>
               </button>
             ))}
           </nav>

@@ -63,10 +63,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-base font-black tracking-tight uppercase italic">SUPER <span className="text-emerald-500">ADMIN</span></h1>
+                <h1 className="text-base font-black tracking-tight uppercase italic">SYSTEM <span className="text-emerald-500">OWNER</span></h1>
                 <span className="px-1.5 py-0.5 rounded text-[8px] bg-emerald-500 text-black font-black tracking-widest uppercase animate-pulse">Auth</span>
               </div>
-              <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black">Admin Access</p>
+              <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black">Owner Access</p>
             </div>
           </div>
         </div>

@@ -45,7 +45,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   return (
     <div className="min-h-screen bg-[#070707] text-slate-100 font-sans selection:bg-emerald-500/30 text-sm">
       {/* Universal Command Header */}
-      <header className="fixed top-0 left-0 right-0 z-[1000] border-b border-white/5 bg-black/80 backdrop-blur-2xl px-6 py-3 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-[9999] border-b border-white/10 bg-zinc-950/95 shadow-[0_4px_30px_rgba(0,0,0,0.8)] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {/* Mobile menu toggle */}
           <button 

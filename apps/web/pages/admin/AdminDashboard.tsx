@@ -219,8 +219,8 @@ const AdminDashboard: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 p-8 rounded-3xl bg-white/5 border border-white/5 flex flex-col h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 p-5 rounded-2xl bg-white/5 border border-white/5 flex flex-col h-[600px]">
           <h3 className="text-lg font-bold mb-4">Activity & Safety Vault Logs</h3>
           
           <div className="space-y-3 mb-6">
@@ -392,7 +392,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-8 rounded-3xl bg-white/5 border border-white/5 space-y-6">
+        <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 uppercase tracking-tighter">
             <Megaphone size={22} className="text-primary" />
             System Broadcast Messages
@@ -479,8 +479,8 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        <div className={`p-8 rounded-3xl border transition-all relative overflow-hidden group ${
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className={`p-5 rounded-2xl border transition-all relative overflow-hidden group ${
           maintenanceEnabled 
             ? 'bg-amber-500/10 border-amber-500/30' 
             : 'bg-emerald-500/10 border-emerald-500/20'
@@ -531,7 +531,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Invitations Section */}
-        <div className="p-8 rounded-3xl bg-white/5 border border-white/5 space-y-6">
+        <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 uppercase tracking-tighter">
             <Ticket size={22} className="text-secondary" />
             Owner Invitations

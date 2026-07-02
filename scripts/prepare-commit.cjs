@@ -2,6 +2,10 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const mode = process.argv[2]; // 'pre-commit', or the commit message file path
 
 if (mode === 'pre-commit') {
@@ -50,7 +54,7 @@ if (mode === 'pre-commit') {
       const filePath = path.join(rootDir, file);
       if (fs.existsSync(filePath)) {
         let content = fs.readFileSync(filePath, 'utf8');
-        const versionRegex = new RegExp(`v?${currentVersion.replace(/\./g, '\\.')}`, 'g');
+        const versionRegex = new RegExp(`v?${escapeRegExp(currentVersion)}`, 'g');
         let updated = false;
 
         if (versionRegex.test(content)) {

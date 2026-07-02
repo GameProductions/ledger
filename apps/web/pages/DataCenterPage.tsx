@@ -97,7 +97,7 @@ const DataCenterPage: React.FC = () => {
                <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Data Center</p>
             </div>
             <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white uppercase underline decoration-emerald-500/50 underline-offset-8">Import & Export Hub</h1>
-            <p className="mt-4 text-slate-400 font-medium max-w-xl">Move your records between providers, local files, and secure cloud storage with absolute simplicity.</p>
+            <p className="mt-4 text-slate-400 font-medium max-w-xl">Easily import your transaction documents, back up your financial records, or sync your data with cloud storage securely.</p>
           </div>
 
           {/* Scope Selector */}

@@ -281,10 +281,25 @@ data.post('/import/confirm', zValidator('json', z.object({
       .limit(1)
       .then(res => res[0]?.id || null)
 
+    let accountIdToUse = firstAccount
+    if (!accountIdToUse) {
+      const newAccountId = crypto.randomUUID()
+      await db.insert(accounts).values({
+        id: newAccountId,
+        householdId,
+        name: 'Default Import Account',
+        type: 'checking',
+        balanceCents: 0,
+        currency: 'USD',
+        status: 'active'
+      })
+      accountIdToUse = newAccountId
+    }
+
     const records = items.map(item => ({
       id: crypto.randomUUID(),
       householdId,
-      accountId: firstAccount,
+      accountId: accountIdToUse,
       description: item.description,
       amountCents: Math.round(item.amount * 100),
       transactionDate: item.date,

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import AdminPortal from './AdminPortal';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { InlineToast } from '../../components/ui/InlineToast';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
+import { X, Plus } from 'lucide-react';
 
 const timezones = [
   { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
@@ -34,6 +35,183 @@ const locales = [
   { value: 'ru-RU', label: 'Русский (Россия)' }
 ];
 
+/** Parses a comma-separated config value into a deduplicated, trimmed chip array. */
+function parseDomains(value: string): string[] {
+  if (!value) return [];
+  return value.split(',').map(d => d.trim()).filter(Boolean);
+}
+
+/** Serializes a chip array back to a comma-separated config value string. */
+function serializeDomains(domains: string[]): string {
+  return domains.join(', ');
+}
+
+// ─────────────────────────────────────────────────────────
+// DomainChipEditor — full CRUD chip UI for domain lists
+// ─────────────────────────────────────────────────────────
+interface DomainChipEditorProps {
+  label: string;
+  description: string;
+  accentColor: 'emerald' | 'red';
+  configId: string;
+  initialValue: string;
+  onSave: (id: string, value: string) => Promise<void>;
+}
+
+const DomainChipEditor: React.FC<DomainChipEditorProps> = ({
+  label,
+  description,
+  accentColor,
+  configId,
+  initialValue,
+  onSave,
+}) => {
+  const [domains, setDomains] = useState<string[]>(() => parseDomains(initialValue));
+  const [inputValue, setInputValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const accent = accentColor === 'red'
+    ? { text: 'text-red-400', border: 'border-red-500/20', bg: 'bg-red-500/10', chip: 'bg-red-500/15 border-red-500/30 text-red-300', focus: 'focus:border-red-500/50', hover: 'hover:bg-red-500/20' }
+    : { text: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/10', chip: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300', focus: 'focus:border-emerald-500/50', hover: 'hover:bg-emerald-500/20' };
+
+  const isValidDomain = (d: string) =>
+    /^(\*\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$|^localhost$|^127\.\d+\.\d+\.\d+$/.test(d.trim());
+
+  const commitDomain = async (raw: string) => {
+    const trimmed = raw.trim().toLowerCase();
+    if (!trimmed) return;
+    if (!isValidDomain(trimmed)) {
+      setError(`"${trimmed}" is not a valid domain.`);
+      return;
+    }
+    if (domains.includes(trimmed)) {
+      setError(`"${trimmed}" is already in the list.`);
+      return;
+    }
+
+    const next = [...domains, trimmed];
+    setDomains(next);
+    setInputValue('');
+    setError(null);
+
+    setSaving(true);
+    try {
+      await onSave(configId, serializeDomains(next));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeDomain = async (domain: string) => {
+    const next = domains.filter(d => d !== domain);
+    setDomains(next);
+    setSaving(true);
+    try {
+      await onSave(configId, serializeDomains(next));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+      e.preventDefault();
+      commitDomain(inputValue);
+    } else if (e.key === 'Backspace' && !inputValue && domains.length > 0) {
+      removeDomain(domains[domains.length - 1]);
+    } else if (e.key === 'Escape') {
+      setInputValue('');
+      setError(null);
+    }
+  };
+
+  return (
+    <div className={`p-6 rounded-2xl bg-white/5 border ${accent.border} transition-all flex flex-col gap-4 md:col-span-2`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className={`font-bold ${accent.text} mb-1 leading-none text-sm`}>{label}</p>
+          <p className="text-sm text-gray-500">{description}</p>
+        </div>
+        <span className={`shrink-0 text-xs px-2 py-0.5 rounded font-black uppercase tracking-widest border ${accent.border} ${accent.bg} ${accent.text}`}>
+          {domains.length} domain{domains.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Chips */}
+      <div
+        className={`min-h-[52px] flex flex-wrap gap-2 p-3 rounded-xl bg-black/30 border border-white/10 cursor-text ${saving ? 'opacity-70' : ''}`}
+        onClick={() => inputRef.current?.focus()}
+      >
+        {domains.map(domain => (
+          <span
+            key={domain}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-mono font-semibold ${accent.chip} group`}
+          >
+            {domain}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); removeDomain(domain); }}
+              aria-label={`Remove ${domain}`}
+              className={`rounded-full p-0.5 opacity-50 group-hover:opacity-100 transition-opacity ${accent.hover}`}
+            >
+              <X size={10} strokeWidth={3} />
+            </button>
+          </span>
+        ))}
+
+        {/* Inline add input */}
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => { setInputValue(e.target.value); setError(null); }}
+          onKeyDown={handleKeyDown}
+          onBlur={() => { if (inputValue.trim()) commitDomain(inputValue); }}
+          placeholder={domains.length === 0 ? 'Type a domain and press Enter or comma…' : ''}
+          className="flex-1 min-w-[180px] bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none font-mono"
+        />
+      </div>
+
+      {/* Add button + validation error */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {error && (
+            <p className="text-xs text-red-400 font-semibold">{error}</p>
+          )}
+          {saving && (
+            <p className="text-xs text-gray-500 animate-pulse">Saving…</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => commitDomain(inputValue)}
+          disabled={!inputValue.trim() || saving}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed ${accent.bg} ${accent.text} border ${accent.border} hover:opacity-90`}
+        >
+          <Plus size={12} strokeWidth={3} />
+          Add Domain
+        </button>
+      </div>
+
+      <p className="text-[11px] text-gray-600 leading-snug">
+        Press <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[10px]">Enter</kbd> or{' '}
+        <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[10px]">,</kbd> to add.{' '}
+        <kbd className="px-1 py-0.5 rounded bg-white/10 font-mono text-[10px]">Backspace</kbd> to remove last.
+        Supports wildcards (e.g.{' '}
+        <span className="font-mono text-gray-400">*.example.com</span>).
+      </p>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────
+// AdminConfig page
+// ─────────────────────────────────────────────────────────
+const DOMAIN_LIST_KEYS = ['ALLOWED_DOMAINS', 'BLOCKED_DOMAINS'];
+const NON_GRID_KEYS = ['DEFAULT_TIMEZONE', 'DEFAULT_LOCALE', ...DOMAIN_LIST_KEYS];
+
 const AdminConfig: React.FC = () => {
   const { showConfirm } = useToast();
   const [configs, setConfigs] = useState<any[]>([]);
@@ -49,13 +227,13 @@ const AdminConfig: React.FC = () => {
         const token = localStorage.getItem('ledger_token');
         const apiUrl = getApiUrl();
         const [configRes, featureRes] = (await Promise.all([
-                  fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                  fetch(`${apiUrl}/api/admin/system/features`, { headers: { 'Authorization': `Bearer ${token}` } })
-                ]) as any);
-        
+          fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${apiUrl}/api/admin/system/features`, { headers: { 'Authorization': `Bearer ${token}` } })
+        ]) as any);
+
         const configData = (await configRes.json() as any);
         const featureData = (await featureRes.json() as any);
-        
+
         setConfigs(configData.data || []);
         setFeatures(featureData.data || []);
       } catch (err: any) {
@@ -90,21 +268,19 @@ const AdminConfig: React.FC = () => {
   };
 
   const handleSelfHeal = async () => {
-    
     setHealing(true);
     setHealResult(null);
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
       const res = (await fetch(`${apiUrl}/api/admin/system/self-heal`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-            }) as any);
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }) as any);
       const data = (await res.json() as any);
       setHealResult({ success: data.success, message: data.message || (data.success ? "System tables healed successfully." : "Heal failed.") });
       setConfirmHeal(false);
-      
-      // Refresh config if successful
+
       if (data.success) {
         const configRes = (await fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }) as any);
         const configData = (await configRes.json() as any);
@@ -121,6 +297,8 @@ const AdminConfig: React.FC = () => {
 
   const defaultTimezoneCfg = configs.find(c => c.configKey === 'DEFAULT_TIMEZONE');
   const defaultLocaleCfg = configs.find(c => c.configKey === 'DEFAULT_LOCALE');
+  const allowedDomainsCfg = configs.find(c => c.configKey === 'ALLOWED_DOMAINS');
+  const blockedDomainsCfg = configs.find(c => c.configKey === 'BLOCKED_DOMAINS');
 
   return (
     <AdminPortal activePath="#/admin/config">
@@ -139,14 +317,14 @@ const AdminConfig: React.FC = () => {
               If the platform is experiencing 500 errors or missing configuration keys, run self-healing to re-verify the database schema and restore missing system tables.
             </p>
             {confirmHeal ? (
-              <InlineToast 
-                message="Run system self-heal?" 
-                type="confirm" 
-                onConfirm={handleSelfHeal} 
-                onCancel={() => setConfirmHeal(false)} 
+              <InlineToast
+                message="Run system self-heal?"
+                type="confirm"
+                onConfirm={handleSelfHeal}
+                onCancel={() => setConfirmHeal(false)}
               />
             ) : (
-              <button 
+              <button
                 onClick={() => setConfirmHeal(true)}
                 disabled={healing}
                 className={`px-8 py-3 rounded-2xl font-black uppercase tracking-tighter italic transition-all ${healing ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}
@@ -154,7 +332,7 @@ const AdminConfig: React.FC = () => {
                 {healing ? "Healing System..." : "Run Self-Heal"}
               </button>
             )}
-            
+
             {healResult && (
               <div className={`mt-6 p-4 rounded-xl text-sm font-bold ${healResult.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
                 {healResult.success ? "✅ " : "❌ "} {healResult.message}
@@ -166,23 +344,24 @@ const AdminConfig: React.FC = () => {
           </div>
         </section>
 
-        {/* System Overrides */}
+        {/* Platform Settings */}
         <section>
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Platform Settings</h2>
             <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Settings</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(configs || []).filter(cfg => cfg.configKey !== 'DEFAULT_TIMEZONE' && cfg.configKey !== 'DEFAULT_LOCALE').map(cfg => (
+            {/* Generic text-input configs (exclude domain lists, timezone, locale) */}
+            {(configs || []).filter(cfg => !NON_GRID_KEYS.includes(cfg.configKey)).map(cfg => (
               <div key={cfg.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
                 <div className="mb-4">
-                  <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.configKey || cfg.configKey}</p>
+                  <p className="font-bold text-emerald-400 mb-1 leading-none">{cfg.configKey}</p>
                   <p className="text-sm text-gray-500">{cfg.description || 'No description provided.'}</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
-                  <input 
-                    type="text" 
-                    value={cfg.configValue ?? cfg.configValue ?? ''} 
+                  <input
+                    type="text"
+                    value={cfg.configValue ?? ''}
                     onChange={(e) => handleUpdateConfig(cfg.id, e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
                   />
@@ -219,8 +398,8 @@ const AdminConfig: React.FC = () => {
                   <p className="text-sm text-gray-500">The default fallback language and regional display format.</p>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
-                  <select 
-                    value={defaultLocaleCfg.configValue ?? 'en-US'} 
+                  <select
+                    value={defaultLocaleCfg.configValue ?? 'en-US'}
                     onChange={(e) => handleUpdateConfig(defaultLocaleCfg.id, e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all text-white"
                   >
@@ -232,8 +411,8 @@ const AdminConfig: React.FC = () => {
                 </div>
               </div>
             )}
-            
-            {/* Rule 231: Session Persistence Toggle */}
+
+            {/* Session Persistence Toggle */}
             <div className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-all flex flex-col justify-between">
               <div className="mb-4">
                 <p className="font-bold text-blue-400 mb-1 leading-none">GLOBAL_SESSION_PERSISTENCE</p>
@@ -242,8 +421,8 @@ const AdminConfig: React.FC = () => {
               <div className="flex items-center justify-between mt-4">
                 <span className="text-xs text-gray-600 uppercase font-black">Boolean</span>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="sr-only peer"
                     checked={configs.find(c => c.configKey === 'DEFAULT_STAY_SIGNED_IN')?.configValue === 'true'}
                     onChange={(e) => {
@@ -258,6 +437,36 @@ const AdminConfig: React.FC = () => {
           </div>
         </section>
 
+        {/* Domain Lists */}
+        <section>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-violet-500/50 underline-offset-8">Domain Access Control</h2>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Security</span>
+          </div>
+          <div className="grid grid-cols-1 gap-4">
+            {allowedDomainsCfg && (
+              <DomainChipEditor
+                label="ALLOWED_DOMAINS"
+                description="Domains permitted to access this platform. Supports wildcards (e.g. *.example.com), localhost, and IP addresses."
+                accentColor="emerald"
+                configId={allowedDomainsCfg.id}
+                initialValue={allowedDomainsCfg.configValue ?? ''}
+                onSave={handleUpdateConfig}
+              />
+            )}
+            {blockedDomainsCfg && (
+              <DomainChipEditor
+                label="BLOCKED_DOMAINS"
+                description="Domains that are explicitly denied access. Blocked domains take precedence over the allowed list."
+                accentColor="red"
+                configId={blockedDomainsCfg.id}
+                initialValue={blockedDomainsCfg.configValue ?? ''}
+                onSave={handleUpdateConfig}
+              />
+            )}
+          </div>
+        </section>
+
         {/* Feature Flags */}
         <section>
           <div className="flex items-center justify-between mb-8">
@@ -268,20 +477,20 @@ const AdminConfig: React.FC = () => {
             {(features || []).map(feat => (
               <div key={feat.id} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/20 transition-all">
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabledGlobally || feat.enabledGlobally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${feat.enabledGlobally ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-gray-600 grayscale'}`}>
                     🚀
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="sr-only peer"
-                      checked={!!(feat.enabledGlobally || feat.enabledGlobally)}
+                      checked={!!feat.enabledGlobally}
                       onChange={(e) => handleToggleFeature(feat.id, e.target.checked)}
                     />
                     <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 cursor-pointer"></div>
                   </label>
                 </div>
-                <h4 className="font-bold text-sm mb-1">{feat.featureKey || feat.featureKey}</h4>
+                <h4 className="font-bold text-sm mb-1">{feat.featureKey}</h4>
                 <p className="text-sm text-gray-500 line-clamp-2">{feat.description}</p>
               </div>
             ))}

@@ -12,6 +12,7 @@ import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
+import { DateTimeInput } from './ui/DateTimeInput'
 
 interface TrackedExpenseListProps {
   refreshTrigger?: number
@@ -21,6 +22,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: tracked = [], mutate } = (useApi('/api/tracked-expenses') as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
+  const { data: paymentMethodsData } = (useApi('/api/user/payment-methods') as any)
+  const paymentMethods: any[] = paymentMethodsData?.data ?? []
   const { formatPrice } = useCurrency()
   const reduced = useReducedMotion()
 
@@ -133,6 +136,22 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     const data = (await res.json() as any);
     globalMutate();
     return data.id;
+  };
+
+  /** Creates a payment method and returns its name (borrowSource stores names, not IDs) */
+  const handleCreatePaymentMethod = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/user/payment-methods`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_householdId') || ''
+      },
+      body: JSON.stringify({ name, type: 'other' })
+    }) as any);
+    if (res.ok) globalMutate();
+    // Return the name itself — borrowSource is free-text, not an ID reference
+    return name;
   };
 
   const handleUpdate = async (id: string, updates: any) => {
@@ -383,24 +402,24 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       {editForm?.needsBalanceTransfer && (
                         <div>
                           <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
-                          <input
-                            type="text"
+                          <DateTimeInput
                             value={editForm?.transferTiming || ''}
-                            onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
-                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-blue-400/50 outline-none"
-                            placeholder="e.g. Next payday, End of month"
+                            onChange={v => setEditForm({...editForm, transferTiming: v})}
                           />
                         </div>
                       )}
                       {editForm?.isBorrowed && (
                         <div>
                           <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Borrow Source</label>
-                          <input
-                            type="text"
+                          <SearchableSelect
+                            options={paymentMethods.map((pm: any) => ({
+                              value: pm.name,
+                              label: pm.name + (pm.lastFour ? ` ···${pm.lastFour}` : '')
+                            }))}
                             value={editForm?.borrowSource || ''}
-                            onChange={e => setEditForm({...editForm, borrowSource: e.target.value})}
-                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-purple-400/50 outline-none"
-                            placeholder="e.g. Savings account, Credit card"
+                            onChange={v => setEditForm({...editForm, borrowSource: v})}
+                            placeholder="Select payment method..."
+                            onCreate={handleCreatePaymentMethod}
                           />
                         </div>
                       )}
@@ -452,7 +471,14 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         )}
                         {item.needsBalanceTransfer && (
                           <div className="text-[10px] uppercase tracking-widest text-blue-400 font-black flex items-center gap-1">
-                            <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${item.transferTiming}` : ''}
+                            <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${(() => {
+                              const v = item.transferTiming
+                              if (v.includes('T')) {
+                                const [d, t] = v.split('T')
+                                return `${d} @ ${t}`
+                              }
+                              return v
+                            })()}` : ''}
                           </div>
                         )}
                         {item.isBorrowed && (

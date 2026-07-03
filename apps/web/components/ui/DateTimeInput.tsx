@@ -65,6 +65,7 @@ export const DateTimeInput: React.FC<DateTimeInputProps> = ({
           value={date}
           onChange={e => handleDateChange(e.target.value)}
           required={required}
+          style={{ colorScheme: 'dark' }}
           className={`flex-1 ${baseInput}`}
         />
         <button
@@ -85,6 +86,7 @@ export const DateTimeInput: React.FC<DateTimeInputProps> = ({
           type="time"
           value={time}
           onChange={e => handleTimeChange(e.target.value)}
+          style={{ colorScheme: 'dark' }}
           className={`w-full ${baseInput}`}
           placeholder="HH:MM (optional)"
         />

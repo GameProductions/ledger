@@ -218,7 +218,15 @@ const AdminConfig: React.FC = () => {
   const [features, setFeatures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [healing, setHealing] = useState(false);
-  const [healResult, setHealResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [healResult, setHealResult] = useState<{
+    success: boolean;
+    message: string;
+    report?: {
+      configKeys: { checked: number; restored: string[] };
+      featureFlags: { checked: number; restored: string[] };
+      errors: string[];
+    };
+  } | null>(null);
   const [confirmHeal, setConfirmHeal] = useState(false);
 
   useEffect(() => {
@@ -278,16 +286,24 @@ const AdminConfig: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }) as any);
       const data = (await res.json() as any);
-      setHealResult({ success: data.success, message: data.message || (data.success ? "System tables healed successfully." : "Heal failed.") });
+      setHealResult({
+        success: data.success,
+        message: data.message || (data.success ? 'System tables healed successfully.' : 'Heal failed.'),
+        report: data.report,
+      });
       setConfirmHeal(false);
 
-      if (data.success) {
-        const configRes = (await fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }) as any);
-        const configData = (await configRes.json() as any);
-        setConfigs(configData.data || []);
-      }
+      // Always refresh configs + features after a heal attempt
+      const [configRes, featureRes] = await Promise.all([
+        fetch(`${apiUrl}/api/admin/system/config`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${apiUrl}/api/admin/system/features`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      ]) as any[];
+      const configData = (await configRes.json() as any);
+      const featureData = (await featureRes.json() as any);
+      setConfigs(configData.data || []);
+      setFeatures(featureData.data || []);
     } catch (err: any) {
-      setHealResult({ success: false, message: "Network error during self-heal." });
+      setHealResult({ success: false, message: 'Network error during self-heal.' });
     } finally {
       setHealing(false);
     }
@@ -334,8 +350,71 @@ const AdminConfig: React.FC = () => {
             )}
 
             {healResult && (
-              <div className={`mt-6 p-4 rounded-xl text-sm font-bold ${healResult.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                {healResult.success ? "✅ " : "❌ "} {healResult.message}
+              <div className={`mt-6 rounded-2xl border overflow-hidden ${
+                healResult.success ? 'border-emerald-500/20' : 'border-red-500/20'
+              }`}>
+                {/* Header */}
+                <div className={`px-5 py-3 flex items-center gap-3 ${
+                  healResult.success ? 'bg-emerald-500/10' : 'bg-red-500/10'
+                }`}>
+                  <span className="text-lg">{healResult.success ? '✅' : '❌'}</span>
+                  <p className={`text-sm font-bold ${
+                    healResult.success ? 'text-emerald-400' : 'text-red-400'
+                  }`}>{healResult.message}</p>
+                </div>
+
+                {/* Structured Report */}
+                {healResult.report && (
+                  <div className="p-5 space-y-4 bg-black/20">
+                    {/* Config Keys */}
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                        Config Keys — {healResult.report.configKeys.checked} checked
+                      </p>
+                      {healResult.report.configKeys.restored.length === 0 ? (
+                        <p className="text-xs text-gray-600 font-mono">All keys present — no action needed.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {healResult.report.configKeys.restored.map(k => (
+                            <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono">
+                              ＋ {k}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Feature Flags */}
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                        Feature Flags — {healResult.report.featureFlags.checked} checked
+                      </p>
+                      {healResult.report.featureFlags.restored.length === 0 ? (
+                        <p className="text-xs text-gray-600 font-mono">All flags present — no action needed.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {healResult.report.featureFlags.restored.map(k => (
+                            <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-blue-300 text-[11px] font-mono">
+                              ＋ {k}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Errors */}
+                    {healResult.report.errors.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-red-500 mb-2">Errors</p>
+                        <ul className="space-y-1">
+                          {healResult.report.errors.map((e, i) => (
+                            <li key={i} className="text-xs text-red-400 font-mono">• {e}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -3,7 +3,7 @@ import AdminPortal from './AdminPortal';
 import { useAuth } from '../../context/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { InlineToast } from '../../components/ui/InlineToast';
-import { Megaphone, Ticket, Plus, Trash2, Send, Clock, ShieldCheck, Lock, Unlock, FlaskConical } from 'lucide-react';
+import { Megaphone, Ticket, Plus, Trash2, Send, Clock, ShieldCheck, Lock, Unlock, FlaskConical, RotateCcw } from 'lucide-react';
 
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
@@ -150,6 +150,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const [seedingDemo, setSeedingDemo] = useState(false);
+  const [resettingDemo, setResettingDemo] = useState(false);
   const [demoCredentials, setDemoCredentials] = useState<any>(null);
 
   const handleSeedDemo = async () => {
@@ -169,6 +170,24 @@ const AdminDashboard: React.FC = () => {
       showToast('Failed to seed demo data', 'error');
     }
     setSeedingDemo(false);
+  };
+
+  const handleResetDemo = async () => {
+    setResettingDemo(true);
+    try {
+      const res = await fetch(`${getApiUrl()}/api/admin/demo/reset`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        if (data.credentials) setDemoCredentials(data.credentials);
+        showToast(data.message, 'success');
+      }
+    } catch {
+      showToast('Failed to reset demo environment', 'error');
+    }
+    setResettingDemo(false);
   };
 
   if (loading) return <AdminPortal activePath="#/admin/dashboard"><div className="animate-pulse text-sm">Loading Platform Command Center...</div></AdminPortal>;
@@ -193,22 +212,41 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       <div className="mb-12">
-        <button
-          onClick={handleSeedDemo}
-          disabled={seedingDemo}
-          className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative w-full text-left"
-        >
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-emerald-500/10 blur-3xl" />
-          <div className="flex items-center gap-4">
-            <FlaskConical size={24} className="text-emerald-500" />
-            <div>
-              <p className="text-gray-400 text-sm font-medium uppercase tracking-widest">Demo Sandbox</p>
-              <p className="text-lg font-black mt-1">
-                {seedingDemo ? 'Seeding...' : 'Create Demo Environment'}
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <button
+            onClick={handleSeedDemo}
+            disabled={seedingDemo}
+            className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative text-left"
+          >
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-emerald-500/10 blur-3xl" />
+            <div className="flex items-center gap-4">
+              <FlaskConical size={24} className="text-emerald-500" />
+              <div>
+                <p className="text-gray-400 text-sm font-medium uppercase tracking-widest">Demo Sandbox</p>
+                <p className="text-base font-black mt-1">
+                  {seedingDemo ? 'Seeding...' : 'Create Demo Environment'}
+                </p>
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
+
+          <button
+            onClick={handleResetDemo}
+            disabled={resettingDemo}
+            className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-amber-500/20 transition-all group overflow-hidden relative text-left"
+          >
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-amber-500/10 blur-3xl" />
+            <div className="flex items-center gap-4">
+              <RotateCcw size={24} className="text-amber-500" />
+              <div>
+                <p className="text-gray-400 text-sm font-medium uppercase tracking-widest">Reset Sandbox</p>
+                <p className="text-base font-black mt-1">
+                  {resettingDemo ? 'Resetting...' : 'Reset Demo Environment'}
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
         {demoCredentials && (
           <div className="mt-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
             <p className="text-xs font-black uppercase tracking-widest text-emerald-500">Demo Credentials</p>

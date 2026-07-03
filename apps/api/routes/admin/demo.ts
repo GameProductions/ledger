@@ -1,26 +1,27 @@
 import { Hono } from 'hono'
 import { Bindings, Variables } from '../../types'
 import { getDb } from '#/index'
-import { users, households, userHouseholds, accounts, categories, transactions, systemConfig } from '#/schema'
-import { eq, and } from 'drizzle-orm'
+import { users, households, userHouseholds, accounts, categories, transactions } from '#/schema'
+import { eq } from 'drizzle-orm'
 import { hashPassword } from '../../auth-utils'
-import { HTTPException } from 'hono/http-exception'
 
 const demo = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-demo.post('/seed', async (c) => {
-  const db = getDb(c.env)
-
+async function seedSandbox(db: any) {
   const demoHouseholdId = 'demo-household-001'
   const demoUserId = 'demo-user-001'
   const demoAccountId = 'demo-account-001'
   const demoPassword = 'Demo123!'
 
-  const existing = await db.select({ id: households.id }).from(households).where(eq(households.id, demoHouseholdId)).limit(1)
-  if (existing.length > 0) {
-    return c.json({ success: true, message: 'Demo data already exists. Use demo credentials:', credentials: { username: 'demo', password: demoPassword } })
-  }
+  // Clean existing demo data first to ensure clean state
+  await db.delete(transactions).where(eq(transactions.householdId, demoHouseholdId))
+  await db.delete(categories).where(eq(categories.householdId, demoHouseholdId))
+  await db.delete(accounts).where(eq(accounts.householdId, demoHouseholdId))
+  await db.delete(userHouseholds).where(eq(userHouseholds.householdId, demoHouseholdId))
+  await db.delete(users).where(eq(users.id, demoUserId))
+  await db.delete(households).where(eq(households.id, demoHouseholdId))
 
+  // Seed household
   await db.insert(households).values({
     id: demoHouseholdId,
     name: 'Demo Sandbox',
@@ -30,6 +31,7 @@ demo.post('/seed', async (c) => {
     status: 'active'
   })
 
+  // Seed user
   const passwordHash = await hashPassword(demoPassword)
   await db.insert(users).values({
     id: demoUserId,
@@ -109,14 +111,39 @@ demo.post('/seed', async (c) => {
     })
   }
 
-  return c.json({
+  return {
     success: true,
-    message: 'Demo sandbox created successfully',
+    message: 'Demo sandbox initialized successfully',
     credentials: {
       username: 'demo',
       password: demoPassword,
       householdId: demoHouseholdId
     }
+  }
+}
+
+demo.post('/seed', async (c) => {
+  const db = getDb(c.env)
+  const demoHouseholdId = 'demo-household-001'
+  const existing = await db.select({ id: households.id }).from(households).where(eq(households.id, demoHouseholdId)).limit(1)
+  if (existing.length > 0) {
+    return c.json({ 
+      success: true, 
+      message: 'Demo data already exists.', 
+      credentials: { username: 'demo', password: 'Demo123!' } 
+    })
+  }
+
+  const result = await seedSandbox(db)
+  return c.json(result)
+})
+
+demo.post('/reset', async (c) => {
+  const db = getDb(c.env)
+  const result = await seedSandbox(db)
+  return c.json({
+    ...result,
+    message: 'Demo sandbox environment reset to default values successfully.'
   })
 })
 

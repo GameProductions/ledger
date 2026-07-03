@@ -7,7 +7,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
-import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown } from 'lucide-react'
+import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -341,6 +341,72 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       />
                     </div>
                   </div>
+
+                  {/* --- Flags --- */}
+                  <div className="border-t border-white/5 pt-4">
+                    <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-3 block">Flags</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+                      {/* Needs Attention */}
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={editForm?.attentionRequired ?? false}
+                          onChange={v => setEditForm({...editForm, attentionRequired: v})}
+                          iconClassName="text-orange-500"
+                        />
+                        <span className="text-xs font-bold text-secondary flex items-center gap-1"><AlertTriangle size={12} className="text-orange-400" /> Needs Attention</span>
+                      </div>
+
+                      {/* Needs Balance Transfer */}
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={editForm?.needsBalanceTransfer ?? false}
+                          onChange={v => setEditForm({...editForm, needsBalanceTransfer: v})}
+                          iconClassName="text-blue-400"
+                        />
+                        <span className="text-xs font-bold text-secondary flex items-center gap-1"><ArrowLeftRight size={12} className="text-blue-400" /> Balance Transfer</span>
+                      </div>
+
+                      {/* Is Borrowed */}
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={editForm?.isBorrowed ?? false}
+                          onChange={v => setEditForm({...editForm, isBorrowed: v})}
+                          iconClassName="text-purple-400"
+                        />
+                        <span className="text-xs font-bold text-secondary flex items-center gap-1"><Wallet size={12} className="text-purple-400" /> Borrowed</span>
+                      </div>
+                    </div>
+
+                    {/* Conditional sub-fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                      {editForm?.needsBalanceTransfer && (
+                        <div>
+                          <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
+                          <input
+                            type="text"
+                            value={editForm?.transferTiming || ''}
+                            onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
+                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-blue-400/50 outline-none"
+                            placeholder="e.g. Next payday, End of month"
+                          />
+                        </div>
+                      )}
+                      {editForm?.isBorrowed && (
+                        <div>
+                          <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Borrow Source</label>
+                          <input
+                            type="text"
+                            value={editForm?.borrowSource || ''}
+                            onChange={e => setEditForm({...editForm, borrowSource: e.target.value})}
+                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-purple-400/50 outline-none"
+                            placeholder="e.g. Savings account, Credit card"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex justify-between items-center mt-2 border-t border-white/5 pt-2">
                     <div>
                       {confirmDeleteId === item.id ? (
@@ -381,7 +447,17 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         </div>
                         {item.attentionRequired && (
                           <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
-                            <Tag size={10} /> Needs Attention
+                            <AlertTriangle size={10} /> Needs Attention
+                          </div>
+                        )}
+                        {item.needsBalanceTransfer && (
+                          <div className="text-[10px] uppercase tracking-widest text-blue-400 font-black flex items-center gap-1">
+                            <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${item.transferTiming}` : ''}
+                          </div>
+                        )}
+                        {item.isBorrowed && (
+                          <div className="text-[10px] uppercase tracking-widest text-purple-400 font-black flex items-center gap-1">
+                            <Wallet size={10} /> Borrowed{item.borrowSource ? ` from ${item.borrowSource}` : ''}
                           </div>
                         )}
                       </div>
@@ -403,7 +479,12 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             description: item.description,
                             amountCents: item.amountCents,
                             notes: item.notes,
-                            confirmationNumber: item.confirmationNumber
+                            confirmationNumber: item.confirmationNumber,
+                            attentionRequired: item.attentionRequired ?? false,
+                            needsBalanceTransfer: item.needsBalanceTransfer ?? false,
+                            transferTiming: item.transferTiming || '',
+                            isBorrowed: item.isBorrowed ?? false,
+                            borrowSource: item.borrowSource || ''
                           })
                         }}
                         className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
@@ -535,6 +616,36 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 onChange={e => setBulkUpdates({...bulkUpdates, description: e.target.value})}
                 className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none"
               />
+            </div>
+
+            <div className="border-t border-white/5 pt-4">
+              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-3 block">Flags (Optional — applies to all selected)</label>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={bulkUpdates.attentionRequired ?? false}
+                    onChange={v => setBulkUpdates({...bulkUpdates, attentionRequired: v})}
+                    iconClassName="text-orange-500"
+                  />
+                  <span className="text-xs font-bold text-secondary flex items-center gap-1.5"><AlertTriangle size={12} className="text-orange-400" /> Mark as Needs Attention</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={bulkUpdates.needsBalanceTransfer ?? false}
+                    onChange={v => setBulkUpdates({...bulkUpdates, needsBalanceTransfer: v})}
+                    iconClassName="text-blue-400"
+                  />
+                  <span className="text-xs font-bold text-secondary flex items-center gap-1.5"><ArrowLeftRight size={12} className="text-blue-400" /> Mark as Balance Transfer Needed</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={bulkUpdates.isBorrowed ?? false}
+                    onChange={v => setBulkUpdates({...bulkUpdates, isBorrowed: v})}
+                    iconClassName="text-purple-400"
+                  />
+                  <span className="text-xs font-bold text-secondary flex items-center gap-1.5"><Wallet size={12} className="text-purple-400" /> Mark as Borrowed</span>
+                </div>
+              </div>
             </div>
           </div>
 

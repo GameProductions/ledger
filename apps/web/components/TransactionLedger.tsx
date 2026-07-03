@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { Price } from './Price'
-import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag, Plus, Trash2, Edit3, Save, X } from 'lucide-react'
+import { Search, Filter, HelpCircle, ChevronDown, ChevronUp, Link as LinkIcon, Check, SplitSquareVertical, Flag, Plus, Trash2, Edit3, Save, X, Hash } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -162,6 +162,27 @@ export const TransactionLedger: React.FC = () => {
   const [split2Cents, setSplit2Cents] = useState(0)
   const [split1Desc, setSplit1Desc] = useState('')
   const [split2Desc, setSplit2Desc] = useState('')
+
+  // Inline confirmation number editing state for linked (transfer) transactions
+  const [transferConfirmEditing, setTransferConfirmEditing] = useState<string | null>(null)
+  const [transferConfirmValue, setTransferConfirmValue] = useState('')
+
+  const handleSaveTransferConfirmation = async (txId: string) => {
+    const apiUrl = getApiUrl()
+    const res = (await fetch(`${apiUrl}/api/financials/transactions/${txId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-household-id': householdId || ''
+      },
+      body: JSON.stringify({ confirmationNumber: transferConfirmValue })
+    }) as any)
+    if (res.ok) {
+      setTransferConfirmEditing(null)
+      globalMutate()
+    }
+  }
   
   // Suggestion Engine
   useEffect(() => {
@@ -511,6 +532,66 @@ export const TransactionLedger: React.FC = () => {
                         </div>
                       )}
 
+                      {tx.linkedTransactionId && (
+                        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <h4 className="text-blue-400 font-bold uppercase tracking-widest text-xs flex items-center gap-1 mb-2">
+                                <Hash size={12} /> Transfer Confirmation
+                              </h4>
+                              {transferConfirmEditing === tx.id ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    autoFocus
+                                    type="text"
+                                    value={transferConfirmValue}
+                                    onChange={e => setTransferConfirmValue(e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') handleSaveTransferConfirmation(tx.id)
+                                      if (e.key === 'Escape') setTransferConfirmEditing(null)
+                                    }}
+                                    placeholder="e.g. REF-12345"
+                                    className="flex-1 bg-black/60 border border-blue-500/40 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-400"
+                                  />
+                                  <button
+                                    onClick={() => handleSaveTransferConfirmation(tx.id)}
+                                    className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                    aria-label="Save confirmation number"
+                                  >
+                                    <Save size={14} />
+                                  </button>
+                                  <button
+                                    onClick={() => setTransferConfirmEditing(null)}
+                                    className="p-1.5 text-secondary hover:text-white transition-colors"
+                                    aria-label="Cancel"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-3">
+                                  <span className="font-mono text-sm text-white/80">
+                                    {tx.confirmationNumber || <span className="text-white/30 italic text-xs">No confirmation number set</span>}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setTransferConfirmEditing(tx.id)
+                                      setTransferConfirmValue(tx.confirmationNumber || '')
+                                    }}
+                                    className="text-[10px] uppercase tracking-widest font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                                  >
+                                    <Edit3 size={10} /> {tx.confirmationNumber ? 'Edit' : 'Add'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-widest text-blue-400/60 font-bold whitespace-nowrap pt-0.5">
+                              Linked Transfer
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                     </td>
                   </tr>
                 )}
@@ -723,16 +804,24 @@ export const TransactionLedger: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Confirmation Number</label>
+            <div className={editingTx?.linkedTransactionId ? 'col-span-2' : ''}>
+              <label className={`text-xs uppercase tracking-widest block mb-1 flex items-center gap-1.5 ${editingTx?.linkedTransactionId ? 'text-blue-400 font-black' : 'text-secondary'}`}>
+                {editingTx?.linkedTransactionId && <Hash size={12} />}
+                Confirmation Number{editingTx?.linkedTransactionId ? ' (Transfer)' : ''}
+              </label>
               <input 
                 type="text" 
                 value={txForm.confirmationNumber} 
                 onChange={e => setTxForm({...txForm, confirmationNumber: e.target.value})} 
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
+                className={`w-full bg-black/40 border rounded-xl p-3 text-white focus:outline-none ${editingTx?.linkedTransactionId ? 'border-blue-500/40 focus:border-blue-400' : 'border-white/10 focus:border-primary'}`}
                 placeholder="e.g. REF-12345"
               />
+              {editingTx?.linkedTransactionId && (
+                <p className="text-[10px] text-blue-400/70 mt-1">This transaction is linked to a transfer. Adding a confirmation number helps track the transfer.
+                </p>
+              )}
             </div>
+            {!editingTx?.linkedTransactionId && (
             <div>
               <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Status</label>
               <select 
@@ -745,6 +834,7 @@ export const TransactionLedger: React.FC = () => {
                 <option value="none">None</option>
               </select>
             </div>
+            )}
           </div>
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Notes</label>

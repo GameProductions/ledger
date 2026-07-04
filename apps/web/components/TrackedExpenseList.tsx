@@ -341,6 +341,17 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       />
                     </div>
                     <div>
+                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transaction date</label>
+                      <input 
+                        type="date" 
+                        value={editForm?.createdAt ? editForm.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]} 
+                        onChange={e => setEditForm({...editForm, createdAt: new Date(e.target.value).toISOString()})}
+                        style={{ colorScheme: 'dark' }}
+                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
                       <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Confirmation Number</label>
                       <input 
                         type="text" 
@@ -350,7 +361,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         placeholder="e.g. TXN-12345"
                       />
                     </div>
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Notes</label>
                       <textarea 
                         value={editForm?.notes || ''} 
@@ -402,10 +413,14 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       {editForm?.needsBalanceTransfer && (
                         <div>
                           <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
-                          <DateTimeInput
-                            value={editForm?.transferTiming || ''}
-                            onChange={v => setEditForm({...editForm, transferTiming: v})}
-                          />
+                          <select 
+                            value={editForm?.transferTiming || 'future'} 
+                            onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
+                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-orange-500/50 outline-none"
+                          >
+                            <option value="same_day">Must do Same Day</option>
+                            <option value="future">Can do in Future</option>
+                          </select>
                         </div>
                       )}
                       {editForm?.isBorrowed && (
@@ -510,7 +525,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             needsBalanceTransfer: item.needsBalanceTransfer ?? false,
                             transferTiming: item.transferTiming || '',
                             isBorrowed: item.isBorrowed ?? false,
-                            borrowSource: item.borrowSource || ''
+                            borrowSource: item.borrowSource || '',
+                            createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
                           })
                         }}
                         className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"

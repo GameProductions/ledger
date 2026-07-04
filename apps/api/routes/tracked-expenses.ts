@@ -36,7 +36,8 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
   needsBalanceTransfer: z.boolean().optional(),
   transferTiming: z.string().optional().nullable(),
   isBorrowed: z.boolean().optional(),
-  borrowSource: z.string().optional().nullable()
+  borrowSource: z.string().optional().nullable(),
+  createdAt: z.string().optional()
 })), async (c) => {
   const householdId = c.get('householdId')
   const data = (c.req.valid('json') as any)
@@ -64,6 +65,10 @@ trackedExpensesRoutes.patch('/bulk', zValidator('json', z.object({
     confirmationNumber: z.string().optional().nullable(),
     attentionRequired: z.boolean().optional(),
     needsBalanceTransfer: z.boolean().optional(),
+    transferTiming: z.string().optional().nullable(),
+    isBorrowed: z.boolean().optional(),
+    borrowSource: z.string().optional().nullable(),
+    createdAt: z.string().optional(),
     status: z.string().optional()
   })
 })), async (c) => {

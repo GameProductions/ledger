@@ -132,6 +132,7 @@ export const TrackedExpenseSchema = z.object({
   transferTiming: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
   isBorrowed: z.boolean().optional().default(false),
   borrowSource: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
+  createdAt: z.string().optional(),
 })
 
 export const SubscriptionSchema = z.object({

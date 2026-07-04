@@ -22,6 +22,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
   const [transferTiming, setTransferTiming] = useState('future')
   const [isBorrowed, setIsBorrowed] = useState(false)
   const [borrowSource, setBorrowSource] = useState('')
+  const [createdAt, setCreatedAt] = useState(() => new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showInfo, setShowInfo] = useState(false)
@@ -50,6 +51,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
         transferTiming: needsBalanceTransfer ? transferTiming : null,
         isBorrowed: isBorrowed,
         borrowSource: isBorrowed ? borrowSource : null,
+        createdAt: new Date(createdAt).toISOString(),
       })
     })
 
@@ -61,6 +63,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     setNeedsBalanceTransfer(false)
     setIsBorrowed(false)
     setBorrowSource('')
+    setCreatedAt(new Date().toISOString().split('T')[0])
     setRefreshTrigger(prev => prev + 1)
     onAdded()
   }
@@ -113,7 +116,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Amount</label>
             <CurrencyInput 
@@ -122,6 +125,17 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
               placeholder="0.00" 
               required 
               className="focus:border-orange-500/50"
+            />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Transaction date</label>
+            <input 
+              type="date" 
+              value={createdAt} 
+              onChange={e => setCreatedAt(e.target.value)}
+              style={{ colorScheme: 'dark' }}
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+              required
             />
           </div>
           <div className="md:col-span-2">

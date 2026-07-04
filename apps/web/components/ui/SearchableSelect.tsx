@@ -130,7 +130,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {/* Dropdown Menu */}
       {reduced ? (
         isOpen && (
-          <div className="absolute z-[3000] left-0 right-0 mt-2 bg-zinc-950 border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden">
+          <div className="absolute z-[3000] left-0 right-0 mt-2 bg-bg-dark border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden">
             {/* Search Input */}
             <div className="p-3 border-b border-white/5 bg-white/2">
               <div className="relative flex items-center">
@@ -220,7 +220,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute z-[3000] left-0 right-0 mt-2 bg-zinc-950 border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden"
+              className="absolute z-[3000] left-0 right-0 mt-2 bg-bg-dark border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden"
             >
               {/* Search Input */}
               <div className="p-3 border-b border-white/5 bg-white/2">

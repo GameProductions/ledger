@@ -7,7 +7,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
-import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet } from 'lucide-react'
+import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -52,9 +52,63 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
   const [bulkUpdates, setBulkUpdates] = useState<any>({})
 
+  // Duplicate State
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
+  const [duplicateCopies, setDuplicateCopies] = useState(1)
+  const [isDuplicating, setIsDuplicating] = useState(false)
+
   // Inline Confirmation State
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+
+  const handleBulkDuplicate = async () => {
+    if (duplicateCopies <= 0 || selectedIds.length === 0) return
+    setIsDuplicating(true)
+    const promises: Promise<Response>[] = []
+
+    selectedIds.forEach(id => {
+      const item = tracked.find((t: any) => t.id === id)
+      if (!item) return
+
+      for (let i = 0; i < duplicateCopies; i++) {
+        promises.push(
+          fetch(`${getApiUrl()}/api/tracked-expenses`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+              'x-household-id': localStorage.getItem('ledger_householdId') || ''
+            },
+            body: JSON.stringify({
+              description: item.description,
+              amountCents: item.amountCents,
+              notes: item.notes,
+              confirmationNumber: item.confirmationNumber,
+              attentionRequired: item.attentionRequired ?? false,
+              needsBalanceTransfer: item.needsBalanceTransfer ?? false,
+              transferTiming: item.transferTiming,
+              isBorrowed: item.isBorrowed ?? false,
+              borrowSource: item.borrowSource,
+              createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
+            })
+          })
+        )
+      }
+    })
+
+    try {
+      await Promise.all(promises)
+      showToast(`Successfully duplicated ${selectedIds.length} items (${duplicateCopies} copies each)`, 'success')
+      globalMutate()
+      setSelectedIds([])
+      setIsDuplicateModalOpen(false)
+      setDuplicateCopies(1)
+    } catch (err) {
+      showToast('Some duplicates failed to create', 'error')
+    } finally {
+      setIsDuplicating(false)
+    }
+  }
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
@@ -232,13 +286,19 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               <div className="flex items-center gap-1.5">
                 <button 
                   onClick={() => setIsBulkEditOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <Edit3 size={12} /> Bulk Edit
                 </button>
                 <button 
+                  onClick={() => { setDuplicateCopies(1); setIsDuplicateModalOpen(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <Copy size={12} /> Duplicate
+                </button>
+                <button 
                   onClick={() => setIsMoveToLedgerOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
                 >
                   <Send size={12} /> Move to Ledger ({selectedIds.length})
                 </button>
@@ -254,7 +314,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               ) : (
                 <button 
                   onClick={() => setConfirmBulkDelete(true)}
-                  className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                   aria-label="Delete selected"
                   title="Delete Selected"
                 >
@@ -281,13 +341,19 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <div className="flex items-center gap-1.5">
                   <button 
                     onClick={() => setIsBulkEditOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <Edit3 size={12} /> Bulk Edit
                   </button>
                   <button 
+                    onClick={() => { setDuplicateCopies(1); setIsDuplicateModalOpen(true); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    <Copy size={12} /> Duplicate
+                  </button>
+                  <button 
                     onClick={() => setIsMoveToLedgerOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
                   >
                     <Send size={12} /> Move to Ledger ({selectedIds.length})
                   </button>
@@ -697,6 +763,46 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           >
             Apply Bulk Updates
           </button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isDuplicateModalOpen} onClose={() => setIsDuplicateModalOpen(false)} title="Duplicate Tracked Expenses">
+        <div className="space-y-6 p-1">
+          <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
+            <p className="text-sm text-orange-200/80 font-medium">
+              You are about to duplicate {selectedIds.length} selected transaction(s).
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 block">
+              Number of copies to make (per transaction)
+            </label>
+            <input 
+              type="number"
+              min="1"
+              max="50"
+              value={duplicateCopies}
+              onChange={e => setDuplicateCopies(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none font-bold"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setIsDuplicateModalOpen(false)}
+              className="flex-1 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleBulkDuplicate}
+              disabled={isDuplicating}
+              className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+            >
+              {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+            </button>
+          </div>
         </div>
       </Modal>
     </>

@@ -43,6 +43,7 @@ self.addEventListener('fetch', (event) => {
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }
+        return new Response('Asset not available offline', { status: 404, statusText: 'Offline Match Failed' });
       });
     })
   );

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,10 +29,11 @@ interface SearchableSelectProps {
 
 interface DropdownPortalProps {
   triggerRef: React.RefObject<HTMLDivElement | null>;
+  portalRef: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 }
 
-const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, children }) => {
+const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, portalRef, children }) => {
   const [style, setStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
@@ -64,7 +65,8 @@ const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, children })
   }, [triggerRef]);
 
   return createPortal(
-    <div style={style}>{children}</div>,
+    // Attach the portalRef so the parent can detect clicks inside the portal
+    <div style={style} ref={portalRef}>{children}</div>,
     document.body
   );
 };
@@ -103,7 +105,10 @@ const DropdownContent: React.FC<DropdownContentProps> = ({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Typing to suggest..."
           className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
+          // prevent the input click from bubbling up to the trigger toggle
           onClick={(e) => e.stopPropagation()}
+          // prevent mousedown from triggering the outside-click handler
+          onMouseDown={(e) => e.stopPropagation()}
         />
       </div>
     </div>
@@ -113,6 +118,7 @@ const DropdownContent: React.FC<DropdownContentProps> = ({
       {showCreateOption && (
         <div
           role="option"
+          onMouseDown={(e) => e.preventDefault()} // keep focus on input, prevent outside-click
           onClick={async (e) => {
             e.stopPropagation();
             const newId = await onCreate!(search.trim());
@@ -140,8 +146,11 @@ const DropdownContent: React.FC<DropdownContentProps> = ({
               key={option.value}
               role="option"
               aria-selected={isSelected}
-              onClick={(e) => {
-                e.stopPropagation();
+              // Use onMouseDown + preventDefault to register the selection
+              // BEFORE the document mousedown outside-click handler fires,
+              // without losing focus or closing the dropdown prematurely.
+              onMouseDown={(e) => {
+                e.preventDefault(); // prevents focus loss & outside-click
                 onChange(option.value);
                 setIsOpen(false);
               }}
@@ -193,6 +202,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const triggerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Ref to the portal wrapper div — used to detect clicks inside the portal
+  const portalRef = useRef<HTMLDivElement>(null);
 
   const sortedOptions = useMemo(() => [...options].sort((a, b) => a.label.localeCompare(b.label)), [options]);
   const selectedOption = useMemo(() => sortedOptions.find(o => o.value === value), [sortedOptions, value]);
@@ -212,19 +223,26 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   useEffect(() => { setActiveIndex(0); }, [search]);
 
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
-        // Also check if click target is inside the portal dropdown
-        const portalRoot = document.getElementById('searchable-select-portal');
-        if (portalRoot && portalRoot.contains(e.target as Node)) return;
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  // Close on outside click — correctly excludes clicks inside the portal
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    const target = e.target as Node;
+    // If click is inside the trigger or inside the portal dropdown, ignore
+    if (triggerRef.current?.contains(target)) return;
+    if (portalRef.current?.contains(target)) return;
+    setIsOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, handleClickOutside]);
+
+  // Clear search when closed
+  useEffect(() => {
+    if (!isOpen) setSearch('');
+  }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
@@ -290,11 +308,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
       {/* Portal dropdown — escapes all ancestor stacking contexts */}
       {isOpen && (
-        <DropdownPortal triggerRef={triggerRef}>
+        <DropdownPortal triggerRef={triggerRef} portalRef={portalRef}>
           {reduced ? (
             <div
               className={DROPDOWN_CLASSES}
-              style={{ backfaceVisibility: 'hidden', transform: 'translate3d(0,0,0)' }}
+              style={{ backfaceVisibility: 'hidden' }}
             >
               <DropdownContent {...contentProps} />
             </div>

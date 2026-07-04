@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -20,26 +21,180 @@ interface SearchableSelectProps {
   onCreate?: (search: string) => Promise<string | void> | string | void;
 }
 
-export const SearchableSelect: React.FC<SearchableSelectProps> = ({ 
-  options, 
-  value, 
-  onChange, 
-  placeholder = "Select option...", 
-  className = "",
+// ─────────────────────────────────────────────────────────
+// Portal-based dropdown — renders into document.body so it
+// cannot be clipped or stacked-under by any ancestor transform,
+// overflow:hidden, or stacking context.
+// ─────────────────────────────────────────────────────────
+
+interface DropdownPortalProps {
+  triggerRef: React.RefObject<HTMLDivElement | null>;
+  children: React.ReactNode;
+}
+
+const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, children }) => {
+  const [style, setStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    const position = () => {
+      if (!triggerRef.current) return;
+      const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const dropdownHeight = 380; // approximate max-height
+      const above = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+      setStyle({
+        position: 'fixed',
+        zIndex: 9999,
+        left: rect.left,
+        width: rect.width,
+        ...(above
+          ? { bottom: window.innerHeight - rect.top + 4 }
+          : { top: rect.bottom + 4 }),
+      });
+    };
+
+    position();
+    window.addEventListener('scroll', position, true);
+    window.addEventListener('resize', position);
+    return () => {
+      window.removeEventListener('scroll', position, true);
+      window.removeEventListener('resize', position);
+    };
+  }, [triggerRef]);
+
+  return createPortal(
+    <div style={style}>{children}</div>,
+    document.body
+  );
+};
+
+// ─────────────────────────────────────────────────────────
+// Shared dropdown content (used in both animated/reduced branches)
+// ─────────────────────────────────────────────────────────
+
+interface DropdownContentProps {
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  search: string;
+  setSearch: (v: string) => void;
+  filteredOptions: SearchableOption[];
+  showCreateOption: boolean;
+  activeIndex: number;
+  setActiveIndex: (i: number) => void;
+  value: string;
+  onChange: (v: string) => void;
+  setIsOpen: (v: boolean) => void;
+  onCreate?: SearchableSelectProps['onCreate'];
+}
+
+const DropdownContent: React.FC<DropdownContentProps> = ({
+  inputRef, search, setSearch, filteredOptions, showCreateOption,
+  activeIndex, setActiveIndex, value, onChange, setIsOpen, onCreate,
+}) => (
+  <>
+    {/* Search Input */}
+    <div className="p-3 border-b border-white/5 bg-white/2">
+      <div className="relative flex items-center">
+        <Search size={14} className="absolute left-3 text-slate-500" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Typing to suggest..."
+          className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    </div>
+
+    {/* Options List */}
+    <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
+      {showCreateOption && (
+        <div
+          role="option"
+          onClick={async (e) => {
+            e.stopPropagation();
+            const newId = await onCreate!(search.trim());
+            if (newId) onChange(newId);
+            setSearch('');
+            setIsOpen(false);
+          }}
+          className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-white/5 text-amber-500 font-bold"
+        >
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 overflow-hidden">
+            <Plus size={16} className="text-amber-500" />
+          </div>
+          <div className="flex-1 flex flex-col">
+            <span className="text-sm font-bold tracking-tight">Create "{search.trim()}"</span>
+          </div>
+        </div>
+      )}
+
+      {filteredOptions.length > 0 ? (
+        filteredOptions.map((option, idx) => {
+          const isActive = idx === activeIndex;
+          const isSelected = option.value === value;
+          return (
+            <div
+              key={option.value}
+              role="option"
+              aria-selected={isSelected}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              onMouseEnter={() => setActiveIndex(idx)}
+              className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-all ${
+                isActive ? 'bg-white/5' : ''
+              } ${isSelected ? 'text-amber-500' : 'text-slate-300'}`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden">
+                {option.icon || <div className="text-sm font-black italic">{option.label.charAt(0)}</div>}
+              </div>
+              <div className="flex-1 flex flex-col">
+                <span className="text-sm font-bold tracking-tight">{option.label}</span>
+                {option.metadata?.email && (
+                  <span className="text-xs text-slate-500 font-medium">{option.metadata.email}</span>
+                )}
+              </div>
+              {isSelected && <Check size={16} className="text-amber-500" />}
+            </div>
+          );
+        })
+      ) : (
+        <div className="p-12 text-center">
+          <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
+        </div>
+      )}
+    </div>
+  </>
+);
+
+// ─────────────────────────────────────────────────────────
+// Main SearchableSelect component
+// ─────────────────────────────────────────────────────────
+
+const DROPDOWN_CLASSES = 'bg-bg-dark border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden';
+
+export const SearchableSelect: React.FC<SearchableSelectProps> = ({
+  options,
+  value,
+  onChange,
+  placeholder = 'Select option...',
+  className = '',
   icon: LeadingIcon,
-  onCreate
+  onCreate,
 }) => {
   const reduced = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const sortedOptions = useMemo(() => {
-    return [...options].sort((a, b) => a.label.localeCompare(b.label));
-  }, [options]);
-
+  const sortedOptions = useMemo(() => [...options].sort((a, b) => a.label.localeCompare(b.label)), [options]);
   const selectedOption = useMemo(() => sortedOptions.find(o => o.value === value), [sortedOptions, value]);
 
   const showCreateOption = useMemo(() => {
@@ -49,19 +204,21 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   const filteredOptions = useMemo(() => {
     if (!search) return sortedOptions;
-    return sortedOptions.filter(opt => 
-      opt.label.toLowerCase().includes(search.toLowerCase()) || 
+    return sortedOptions.filter(opt =>
+      opt.label.toLowerCase().includes(search.toLowerCase()) ||
       (opt.metadata?.email && opt.metadata.email.toLowerCase().includes(search.toLowerCase()))
     );
   }, [sortedOptions, search]);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [search]);
+  useEffect(() => { setActiveIndex(0); }, [search]);
 
+  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
+        // Also check if click target is inside the portal dropdown
+        const portalRoot = document.getElementById('searchable-select-portal');
+        if (portalRoot && portalRoot.contains(e.target as Node)) return;
         setIsOpen(false);
       }
     };
@@ -71,12 +228,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
-      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-        setIsOpen(true);
-      }
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') setIsOpen(true);
       return;
     }
-
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -99,10 +253,15 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   };
 
+  const contentProps: DropdownContentProps = {
+    inputRef, search, setSearch, filteredOptions, showCreateOption,
+    activeIndex, setActiveIndex, value, onChange, setIsOpen, onCreate,
+  };
+
   return (
-    <div className={`relative ${className}`} ref={containerRef} onKeyDown={handleKeyDown}>
-      {/* Trigger */}
-      <div 
+    <div className={`relative ${className}`} ref={triggerRef} onKeyDown={handleKeyDown}>
+      {/* Trigger button */}
+      <div
         onClick={() => {
           setIsOpen(!isOpen);
           if (!isOpen) setTimeout(() => inputRef.current?.focus(), 50);
@@ -114,200 +273,46 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         }`}
       >
         <div className="flex-1 flex items-center gap-3 overflow-hidden">
-           {selectedOption?.icon || LeadingIcon || <Search size={16} className="text-slate-500 group-hover:text-amber-500/50 transition-colors" />}
-           <div className="flex flex-col overflow-hidden">
-              <span className={`text-sm tracking-tight truncate ${selectedOption ? 'text-white font-medium' : 'text-slate-500'}`}>
-                {selectedOption ? selectedOption.label : placeholder}
+          {selectedOption?.icon || LeadingIcon || <Search size={16} className="text-slate-500 group-hover:text-amber-500/50 transition-colors" />}
+          <div className="flex flex-col overflow-hidden">
+            <span className={`text-sm tracking-tight truncate ${selectedOption ? 'text-white font-medium' : 'text-slate-500'}`}>
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
+            {selectedOption?.metadata?.subtext && (
+              <span className="text-[12px] text-slate-500 font-black uppercase tracking-widest truncate">
+                {selectedOption.metadata.subtext}
               </span>
-              {selectedOption?.metadata?.subtext && (
-                 <span className="text-[12px] text-slate-500 font-black uppercase tracking-widest truncate">{selectedOption.metadata.subtext}</span>
-              )}
-           </div>
+            )}
+          </div>
         </div>
         <ChevronDown size={16} className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
-      {/* Dropdown Menu */}
-      {reduced ? (
-        isOpen && (
-          <div 
-            className="absolute z-[3000] left-0 right-0 mt-2 bg-bg-dark border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden"
-            style={{ backfaceVisibility: 'hidden', transform: 'translate3d(0,0,0)' }}
-          >
-            {/* Search Input */}
-            <div className="p-3 border-b border-white/5 bg-white/2">
-              <div className="relative flex items-center">
-                <Search size={14} className="absolute left-3 text-slate-500" />
-                <input 
-                  ref={inputRef}
-                  type="text" 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Typing to suggest..."
-                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-
-            {/* Options List */}
-            <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
-              {showCreateOption && (
-                <div
-                  role="option"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    const newId = await onCreate!(search.trim());
-                    if (newId) {
-                      onChange(newId);
-                    }
-                    setSearch('');
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-white/5 text-amber-500 font-bold"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 overflow-hidden">
-                    <Plus size={16} className="text-amber-500" />
-                  </div>
-                  <div className="flex-1 flex flex-col">
-                    <span className="text-sm font-bold tracking-tight">Create "{search.trim()}"</span>
-                  </div>
-                </div>
-              )}
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option, idx) => {
-                  const isActive = idx === activeIndex;
-                  const isSelected = option.value === value;
-                  
-                  return (
-                    <div
-                      key={option.value}
-                      role="option"
-                      aria-selected={isSelected}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onChange(option.value);
-                        setIsOpen(false);
-                      }}
-                      onMouseEnter={() => setActiveIndex(idx)}
-                      className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-all ${
-                        isActive ? 'bg-white/5' : ''
-                      } ${isSelected ? 'text-amber-500' : 'text-slate-300'}`}
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden">
-                        {option.icon || <div className="text-sm font-black italic">{option.label.charAt(0)}</div>}
-                      </div>
-                      <div className="flex-1 flex flex-col">
-                        <span className="text-sm font-bold tracking-tight">{option.label}</span>
-                        {option.metadata?.email && (
-                          <span className="text-xs text-slate-500 font-medium">{option.metadata.email}</span>
-                        )}
-                      </div>
-                      {isSelected && <Check size={16} className="text-amber-500" />}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="p-12 text-center">
-                   <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      ) : (
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute z-[3000] left-0 right-0 mt-2 bg-bg-dark border border-white/10 rounded-[1.5rem] shadow-2xl overflow-hidden"
+      {/* Portal dropdown — escapes all ancestor stacking contexts */}
+      {isOpen && (
+        <DropdownPortal triggerRef={triggerRef}>
+          {reduced ? (
+            <div
+              className={DROPDOWN_CLASSES}
               style={{ backfaceVisibility: 'hidden', transform: 'translate3d(0,0,0)' }}
             >
-              {/* Search Input */}
-              <div className="p-3 border-b border-white/5 bg-white/2">
-                <div className="relative flex items-center">
-                  <Search size={14} className="absolute left-3 text-slate-500" />
-                  <input 
-                    ref={inputRef}
-                    type="text" 
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Typing to suggest..."
-                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </div>
-
-              {/* Options List */}
-              <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
-                {showCreateOption && (
-                  <div
-                    role="option"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const newId = await onCreate!(search.trim());
-                      if (newId) {
-                        onChange(newId);
-                      }
-                      setSearch('');
-                      setIsOpen(false);
-                    }}
-                    className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all hover:bg-white/5 text-amber-500 font-bold"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 overflow-hidden">
-                      <Plus size={16} className="text-amber-500" />
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                      <span className="text-sm font-bold tracking-tight">Create "{search.trim()}"</span>
-                    </div>
-                  </div>
-                )}
-                {filteredOptions.length > 0 ? (
-                  filteredOptions.map((option, idx) => {
-                    const isActive = idx === activeIndex;
-                    const isSelected = option.value === value;
-                    
-                    return (
-                      <div
-                        key={option.value}
-                        role="option"
-                        aria-selected={isSelected}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onChange(option.value);
-                          setIsOpen(false);
-                        }}
-                        onMouseEnter={() => setActiveIndex(idx)}
-                        className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-all ${
-                          isActive ? 'bg-white/5' : ''
-                        } ${isSelected ? 'text-amber-500' : 'text-slate-300'}`}
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden">
-                          {option.icon || <div className="text-sm font-black italic">{option.label.charAt(0)}</div>}
-                        </div>
-                        <div className="flex-1 flex flex-col">
-                          <span className="text-sm font-bold tracking-tight">{option.label}</span>
-                          {option.metadata?.email && (
-                            <span className="text-xs text-slate-500 font-medium">{option.metadata.email}</span>
-                          )}
-                        </div>
-                        {isSelected && <Check size={16} className="text-amber-500" />}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-12 text-center">
-                     <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              <DropdownContent {...contentProps} />
+            </div>
+          ) : (
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className={DROPDOWN_CLASSES}
+                style={{ backfaceVisibility: 'hidden' }}
+              >
+                <DropdownContent {...contentProps} />
+              </motion.div>
+            </AnimatePresence>
           )}
-        </AnimatePresence>
+        </DropdownPortal>
       )}
     </div>
   );

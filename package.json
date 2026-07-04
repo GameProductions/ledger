@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.92.2",
+  "version": "3.93.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

@@ -89,7 +89,7 @@ const SettingsPage: React.FC = () => {
 
   // -------------- HANDLERS --------------
 
-  const updateProfile = async () => {
+  const updateProfile = async (specificUpdates?: any) => {
     if (!token) return
     setSaving(true)
     try {
@@ -106,7 +106,8 @@ const SettingsPage: React.FC = () => {
                 email: email,
                 avatarUrl: avatar || null,
                 timezone: timezone,
-                locale: locale
+                locale: locale,
+                ...specificUpdates
               })
             }) as any)
       if (!res.ok) {
@@ -583,7 +584,7 @@ const SettingsPage: React.FC = () => {
                         value={timezone}
                         onChange={(v) => {
                           setTimezone(v);
-                          updateProfile()
+                          updateProfile({ timezone: v })
                         }}
                         placeholder="Select timezone..."
                       />

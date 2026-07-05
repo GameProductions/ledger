@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Modal } from './ui/Modal';
@@ -6,6 +6,7 @@ import { Calendar, DollarSign, Wallet, Shield, Info, Tag, Users, Trash2 } from '
 import { CurrencyInput } from './ui/CurrencyInput';
 import { useApi } from '../hooks/useApi';
 import { getApiUrl } from '../utils/api';
+import { SearchableSelect } from './ui/SearchableSelect';
 
 interface PayScheduleModalProps {
     isOpen: boolean;
@@ -18,10 +19,58 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
     const { token, householdId } = useAuth();
     const { showToast, showConfirm } = useToast();
     const { data: household } = (useApi('/api/user/households/current') as any);
+    const { data: paySchedules = [] } = (useApi('/api/planning/pay-schedules') as any);
     const [loading, setLoading] = React.useState(false);
 
+    const payScheduleNames = useMemo(() => {
+        const names = new Set<string>();
+        if (Array.isArray(paySchedules)) {
+            paySchedules.forEach((ps: any) => {
+                if (ps.name) {
+                    const match = ps.name.match(/^(.+?)\s*\((.+?)\)$/);
+                    names.add(match ? match[1] : ps.name);
+                }
+            });
+        }
+        names.add('Salary');
+        names.add('Freelance');
+        names.add('Investment');
+        names.add('Bonus');
+        names.add('Gift');
+        names.add('Tax Refund');
+        names.add('Other Income');
+        return Array.from(names).map(name => ({ value: name, label: name }));
+    }, [paySchedules]);
+
+    const paySourceNameOptions = useMemo(() => {
+        const names = new Set<string>();
+        if (Array.isArray(paySchedules)) {
+            paySchedules.forEach((ps: any) => {
+                if (ps.name) {
+                    const match = ps.name.match(/^(.+?)\s*\((.+?)\)$/);
+                    if (match) {
+                        names.add(match[2]);
+                    }
+                }
+            });
+        }
+        return Array.from(names).map(name => ({ value: name, label: name }));
+    }, [paySchedules]);
+
+    const parseInitialSource = (fullName: string) => {
+        if (!fullName) return { type: '', name: '' };
+        const match = fullName.match(/^(.+?)\s*\((.+?)\)$/);
+        if (match) {
+            return { type: match[1], name: match[2] };
+        }
+        return { type: fullName, name: '' };
+    };
+
+    const initialSource = parseInitialSource(schedule?.name || '');
+
     // Form State
-    const [name, setName] = React.useState(schedule?.name || '');
+    const [sourceType, setSourceType] = React.useState(initialSource.type || 'Salary');
+    const [sourceName, setSourceName] = React.useState(initialSource.name);
     const [amountCents, setAmountCents] = React.useState(schedule?.estimatedAmountCents || 0);
     const [frequency, setFrequency] = React.useState(schedule?.frequency || 'biweekly');
     const [nextPayDate, setNextPayDate] = React.useState(schedule?.nextPayDate || new Date().toISOString().split('T')[0]);
@@ -34,7 +83,9 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
     React.useEffect(() => {
         if (schedule) {
-            setName(schedule.name);
+            const parsed = parseInitialSource(schedule.name || '');
+            setSourceType(parsed.type || 'Salary');
+            setSourceName(parsed.name);
             setAmountCents(schedule.estimatedAmountCents || 0);
             setFrequency(schedule.frequency);
             setNextPayDate(schedule.nextPayDate);
@@ -74,8 +125,10 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
         if (!token) return;
         setLoading(true);
 
+        const combinedName = sourceName?.trim() ? `${sourceType.trim()} (${sourceName.trim()})` : sourceType.trim();
+
         const payload = {
-            name,
+            name: combinedName,
             frequency,
             estimatedAmountCents: amountCents,
             nextPayDate: nextPayDate,
@@ -114,19 +167,41 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
         <Modal isOpen={isOpen} onClose={onClose} title={schedule ? 'Edit Income Source' : 'Add Income Source'}>
             <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Name */}
+                    {/* Source Type & Name */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
-                            <Tag size={12} /> Source Name
+                            <Tag size={12} /> Source Type
                         </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-primary outline-none transition-all font-bold"
-                            placeholder="e.g. Main Salary, Rental Income"
+                        <SearchableSelect
+                            options={payScheduleNames}
+                            value={sourceType}
+                            onChange={(v) => setSourceType(v)}
+                            placeholder="Select source type..."
+                            onCreate={(v) => {
+                                setSourceType(v);
+                                return v;
+                            }}
                         />
                     </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                            <Tag size={12} /> Source Name (e.g. Company)
+                        </label>
+                        <SearchableSelect
+                            options={paySourceNameOptions}
+                            value={sourceName}
+                            onChange={(v) => setSourceName(v)}
+                            placeholder="Select or type company name..."
+                            onCreate={(v) => {
+                                setSourceName(v);
+                                return v;
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     {/* Amount */}
                     <div className="space-y-2">

@@ -43,6 +43,21 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
     return Array.from(names).map(name => ({ value: name, label: name }));
   }, [paySchedules]);
 
+  const paySourceNameOptions = useMemo(() => {
+    const names = new Set<string>();
+    if (Array.isArray(paySchedules)) {
+      paySchedules.forEach(ps => {
+        if (ps.name) {
+          const match = ps.name.match(/^(.+?)\s*\((.+?)\)$/);
+          if (match) {
+            names.add(match[2]);
+          }
+        }
+      });
+    }
+    return Array.from(names).map(name => ({ value: name, label: name }));
+  }, [paySchedules]);
+
   const parseInitialSource = (fullName: string) => {
     if (!fullName) return { type: '', name: '' };
     const match = fullName.match(/^(.+?)\s*\((.+?)\)$/);
@@ -202,12 +217,15 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   </div>
                   <div className="space-y-2">
                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Name (e.g. Company)</label>
-                     <input 
-                       type="text" 
+                     <SearchableSelect
+                       options={paySourceNameOptions}
                        value={sourceName}
-                       onChange={(e) => setSourceName(e.target.value)}
-                       placeholder="e.g. Google, Stripe"
-                       className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
+                       onChange={(v) => setSourceName(v)}
+                       placeholder="Select or type company name..."
+                       onCreate={(v) => {
+                         setSourceName(v);
+                         return v;
+                       }}
                      />
                   </div>
                 </div>

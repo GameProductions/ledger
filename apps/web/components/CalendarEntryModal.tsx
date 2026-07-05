@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Trash2, CheckCircle2, Hash, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TypeableSelect } from './ui/TypeableSelect';
 import { TransactionTimeline } from './TransactionTimeline';
 import { CurrencyInput } from './ui/CurrencyInput';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { SearchableSelect } from './ui/SearchableSelect';
 
 interface CalendarEntryModalProps {
   isOpen: boolean;
@@ -19,6 +20,26 @@ interface CalendarEntryModalProps {
 export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({ 
   isOpen, onClose, onSave, onDelete, initialData, date, paySchedules = []
 }) => {
+  const payScheduleNames = useMemo(() => {
+    const names = new Set<string>();
+    if (Array.isArray(paySchedules)) {
+      paySchedules.forEach(ps => {
+        if (ps.name) names.add(ps.name);
+      });
+    }
+    
+    // Add default user-friendly fallback paycheck / income sources
+    names.add('Salary / Regular Paycheck');
+    names.add('Freelance / Contract Income');
+    names.add('Investment / Dividend');
+    names.add('Bonus / Commission');
+    names.add('Gift / Allowance');
+    names.add('Tax Refund');
+    names.add('Other Income');
+
+    return Array.from(names).map(name => ({ value: name, label: name }));
+  }, [paySchedules]);
+
   const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
   const [amountCents, setAmountCents] = useState(initialData?.amountCents || initialData?.estimatedAmountCents || 0);
@@ -147,17 +168,33 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-             <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Label / Description</label>
-                <input 
-                  required
-                  type="text" 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g. Amazon Web Services"
-                  className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
-                />
-             </div>
+              {type === 'pay_schedule' ? (
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source</label>
+                   <SearchableSelect
+                     options={payScheduleNames}
+                     value={description}
+                     onChange={(v) => setDescription(v)}
+                     placeholder="Select or type income source..."
+                     onCreate={(v) => {
+                       setDescription(v);
+                       return v;
+                     }}
+                   />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Label / Description</label>
+                   <input 
+                     required
+                     type="text" 
+                     value={description}
+                     onChange={(e) => setDescription(e.target.value)}
+                     placeholder="e.g. Amazon Web Services"
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                   />
+                </div>
+              )}
 
               {type !== 'pay_schedule' ? (
                 <div className="grid grid-cols-2 gap-4">
@@ -195,6 +232,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                        <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
                        <TypeableSelect 
                          options={[
+                           { value: 'manual', label: 'JUST ONCE' },
                            { value: 'weekly', label: 'WEEKLY' },
                            { value: 'biweekly', label: 'BIWEEKLY' },
                            { value: 'semi-monthly', label: 'SEMI-MONTHLY' },

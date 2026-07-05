@@ -280,7 +280,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     <div className={`relative ${className}`} ref={triggerRef} onKeyDown={handleKeyDown}>
       {/* Trigger button */}
       <div
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           setIsOpen(!isOpen);
           if (!isOpen) setTimeout(() => inputRef.current?.focus(), 50);
         }}

@@ -158,7 +158,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl overflow-y-auto" onClick={onClose}>
       {reduced ? (
         <div 
           className="card w-full max-w-2xl p-8 reveal space-y-8 overflow-y-auto max-h-[90vh]"

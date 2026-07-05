@@ -531,17 +531,48 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                 <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Label / Description</label>
-                 <input 
-                   required
-                   type="text" 
-                   value={description}
-                   onChange={(e) => setDescription(e.target.value)}
-                   placeholder="e.g. Amazon Web Services"
-                   className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
-                 />
-              </div>
+              {type === 'pay_schedule' ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Type</label>
+                     <SearchableSelect
+                       options={payScheduleNames}
+                       value={sourceType}
+                       onChange={(v) => setSourceType(v)}
+                       placeholder="Select source type..."
+                       onCreate={(v) => {
+                         setSourceType(v);
+                         return v;
+                       }}
+                     />
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Name (e.g. Company)</label>
+                     <SearchableSelect
+                       options={paySourceNameOptions}
+                       value={sourceName}
+                       onChange={(v) => setSourceName(v)}
+                       placeholder="Select or type company name..."
+                       onCreate={(v) => {
+                         setSourceName(v);
+                         return v;
+                       }}
+                     />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Label / Description</label>
+                   <input 
+                     required
+                     type="text" 
+                     value={description}
+                     onChange={(e) => setDescription(e.target.value)}
+                     placeholder="e.g. Amazon Web Services"
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                   />
+                </div>
+              )}
 
                {type !== 'pay_schedule' ? (
                  <div className="grid grid-cols-2 gap-4">

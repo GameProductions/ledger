@@ -30,6 +30,19 @@ export const projectPaydays = (
     const notes = schedule.notes || '';
     const frequency = schedule.frequency;
 
+    // Parse end date and skipped dates from notes if present
+    let endDateStr: string | null = null;
+    const endDateMatch = notes.match(/__END_DATE__:([\d\-]+)/);
+    if (endDateMatch) {
+      endDateStr = endDateMatch[1];
+    }
+
+    const isPaydayDateSkipped = (dateStr: string): boolean => {
+      const match = notes.match(/__SKIPPED__:([\d,\-]+)/);
+      if (!match) return false;
+      return match[1].split(',').includes(dateStr);
+    };
+
     // Backtrack to find occurrences that might fall in the current view
     // (Simple logic: backtrack 3 months to be safe)
     if (isAfter(current, viewStart)) {
@@ -52,19 +65,27 @@ export const projectPaydays = (
     while (isBefore(current, viewEnd) && iteration < maxIterations) {
       if (!isBefore(current, viewStart)) {
         const dateStr = format(current, 'yyyy-MM-dd');
-        const exception = safeExceptions.find(ex => ex.payScheduleId === schedule.id && ex.originalDate === dateStr);
         
-        instances.push({
-          id: exception?.id,
-          payScheduleId: schedule.id,
-          date: exception?.overrideDate || dateStr,
-          originalDate: dateStr,
-          name: schedule.name,
-          amountCents: exception?.overrideAmountCents ?? amount,
-          notes: exception?.note || notes,
-          type: 'pay_schedule',
-          isOverride: !!exception
-        });
+        if (endDateStr && dateStr > endDateStr) {
+          break;
+        }
+
+        const exception = safeExceptions.find(ex => ex.payScheduleId === schedule.id && ex.originalDate === dateStr);
+        const isDeleted = exception?.overrideAmountCents === -1 || isPaydayDateSkipped(dateStr);
+
+        if (!isDeleted) {
+          instances.push({
+            id: exception?.id,
+            payScheduleId: schedule.id,
+            date: exception?.overrideDate || dateStr,
+            originalDate: dateStr,
+            name: schedule.name,
+            amountCents: exception?.overrideAmountCents ?? amount,
+            notes: exception?.note || notes,
+            type: 'pay_schedule',
+            isOverride: !!exception
+          });
+        }
       }
 
       if (frequency === 'weekly') current = addDays(current, 7);

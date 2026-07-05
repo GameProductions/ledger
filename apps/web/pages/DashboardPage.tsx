@@ -357,52 +357,82 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         body: JSON.stringify(payload)
       })
 
-    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription')) {
-      // 1. Update the parent's notes to skip this date
-      const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
-      const cleanNotes = oldNotes.replace(/__SKIPPED__:[\d,\-]+/, '').trim()
-      const existingSkippedMatch = oldNotes.match(/__SKIPPED__:([\d,\-]+)/)
-      const skippedList = existingSkippedMatch ? existingSkippedMatch[1].split(',') : []
-      if (!skippedList.includes(data.originalDate)) {
-        skippedList.push(data.originalDate)
-      }
-      const newNotes = `${cleanNotes}\n__SKIPPED__:${skippedList.join(',')}`.trim()
-      
-      await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { notes: newNotes })
+    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule')) {
+      if (data.type === 'pay_schedule') {
+        // Save paycheck override/exception
+        await fetchApi('/api/planning/pay-exceptions', 'POST', {
+          payScheduleId: data.id,
+          originalDate: data.originalDate,
+          overrideDate: data.nextPayDate !== data.originalDate ? data.nextPayDate : null,
+          overrideAmountCents: data.estimatedAmountCents,
+          note: data.notes || null
+        })
+      } else {
+        // 1. Update the parent's notes to skip this date
+        const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
+        const cleanNotes = oldNotes.replace(/__SKIPPED__:[\d,\-]+/, '').trim()
+        const existingSkippedMatch = oldNotes.match(/__SKIPPED__:([\d,\-]+)/)
+        const skippedList = existingSkippedMatch ? existingSkippedMatch[1].split(',') : []
+        if (!skippedList.includes(data.originalDate)) {
+          skippedList.push(data.originalDate)
+        }
+        const newNotes = `${cleanNotes}\n__SKIPPED__:${skippedList.join(',')}`.trim()
+        
+        await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { notes: newNotes })
 
-      // 2. Create a new one-off bill on the rescheduled date
-      const oneOffPayload = {
-        name: data.name,
-        amountCents: data.amountCents,
-        dueDate: data.dueDate,
-        status: data.status || 'unpaid',
-        notes: data.notes || '',
-        isRecurring: false,
-        categoryId: selectedCalendarItem?.originalData?.categoryId || null,
-        accountId: selectedCalendarItem?.originalData?.accountId || null
+        // 2. Create a new one-off bill on the rescheduled date
+        const oneOffPayload = {
+          name: data.name,
+          amountCents: data.amountCents,
+          dueDate: data.dueDate,
+          status: data.status || 'unpaid',
+          notes: data.notes || '',
+          isRecurring: false,
+          categoryId: selectedCalendarItem?.originalData?.categoryId || null,
+          accountId: selectedCalendarItem?.originalData?.accountId || null
+        }
+        await fetchApi(endpoint, 'POST', oneOffPayload)
       }
-      await fetchApi(endpoint, 'POST', oneOffPayload)
       
-    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription')) {
-      // 1. End the old schedule the day before this occurrence
-      const dayBefore = getDayBefore(data.originalDate)
-      await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { endDate: dayBefore })
+    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule')) {
+      if (data.type === 'pay_schedule') {
+        // 1. End the old schedule the day before this occurrence
+        const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
+        const cleanNotes = oldNotes.replace(/__END_DATE__:[\d\-]+/, '').trim()
+        const dayBefore = getDayBefore(data.originalDate)
+        const newNotes = `${cleanNotes}\n__END_DATE__:${dayBefore}`.trim()
+        await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { notes: newNotes })
 
-      // 2. Start a new recurring schedule from the selected date
-      const newSchedulePayload = {
-        name: data.name,
-        amountCents: data.amountCents,
-        dueDate: data.dueDate,
-        status: data.status || 'unpaid',
-        notes: data.notes || '',
-        isRecurring: true,
-        frequency: data.frequency,
-        endDate: data.endDate || null,
-        maxOccurrences: data.maxOccurrences || null,
-        categoryId: selectedCalendarItem?.originalData?.categoryId || null,
-        accountId: selectedCalendarItem?.originalData?.accountId || null
+        // 2. Start a new recurring schedule from the selected date
+        const newPaySchedulePayload = {
+          name: data.name,
+          frequency: data.frequency,
+          estimatedAmountCents: data.estimatedAmountCents,
+          nextPayDate: data.nextPayDate,
+          notes: data.notes
+        }
+        await fetchApi('/api/planning/pay-schedules', 'POST', newPaySchedulePayload)
+      } else {
+        // 1. End the old schedule the day before this occurrence
+        const dayBefore = getDayBefore(data.originalDate)
+        await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { endDate: dayBefore })
+
+        // 2. Start a new recurring schedule from the selected date
+        const newSchedulePayload = {
+          name: data.name,
+          amountCents: data.amountCents,
+          dueDate: data.dueDate,
+          status: data.status || 'unpaid',
+          notes: data.notes || '',
+          isRecurring: true,
+          frequency: data.frequency,
+          endDate: data.endDate || null,
+          maxOccurrences: data.maxOccurrences || null,
+          categoryId: selectedCalendarItem?.originalData?.categoryId || null,
+          accountId: selectedCalendarItem?.originalData?.accountId || null
+        }
+        await fetchApi(endpoint, 'POST', newSchedulePayload)
       }
-      await fetchApi(endpoint, 'POST', newSchedulePayload)
 
     } else {
       // Normal Save: Create or Update All Occurrences
@@ -451,8 +481,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const handleCalendarDelete = async (id: string, type: string, recurrenceScope?: 'one' | 'future' | 'all', selectedDate?: string) => {
-    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription')) {
-      const endpoint = type === 'bill' ? '/api/planning/bills' : '/api/planning/subscriptions'
+    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription' || type === 'pay_schedule')) {
+      const endpoint = type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/planning/pay-schedules'
       
       const fetchApi = (url: string, method: string, payload: any) => 
         fetch(`${apiUrl}${url}`, {
@@ -465,37 +495,69 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           body: JSON.stringify(payload)
         })
 
-      if (recurrenceScope === 'one') {
-        // Skip only this occurrence
-        const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
-        const cleanNotes = oldNotes.replace(/__SKIPPED__:[\d,\-]+/, '').trim()
-        const existingSkippedMatch = oldNotes.match(/__SKIPPED__:([\d,\-]+)/)
-        const skippedList = existingSkippedMatch ? existingSkippedMatch[1].split(',') : []
-        if (!skippedList.includes(selectedDate)) {
-          skippedList.push(selectedDate)
+      if (type === 'pay_schedule') {
+        if (recurrenceScope === 'one') {
+          // Write a paycheck exception with overrideAmountCents = -1 to delete this occurrence
+          await fetchApi('/api/planning/pay-exceptions', 'POST', {
+            payScheduleId: id,
+            originalDate: selectedDate,
+            overrideAmountCents: -1,
+            note: 'Deleted occurrence'
+          })
+          showToast('Paycheck Occurrence Deleted')
+        } else if (recurrenceScope === 'future') {
+          // End the schedule starting today by updating notes
+          const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
+          const cleanNotes = oldNotes.replace(/__END_DATE__:[\d\-]+/, '').trim()
+          const dayBefore = getDayBefore(selectedDate)
+          const newNotes = `${cleanNotes}\n__END_DATE__:${dayBefore}`.trim()
+          await fetchApi(`${endpoint}/${id}`, 'PATCH', { notes: newNotes })
+          showToast('Future Paychecks Deleted')
+        } else {
+          // Delete paycheck definition completely
+          await fetch(`${apiUrl}${endpoint}/${id}`, {
+            method: 'DELETE',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'x-household-id': householdId || ''
+            }
+          })
+          showToast('Paycheck Schedule Deleted')
         }
-        const newNotes = `${cleanNotes}\n__SKIPPED__:${skippedList.join(',')}`.trim()
-        
-        await fetchApi(`${endpoint}/${id}`, 'PATCH', { notes: newNotes })
-        showToast('Occurrence Deleted')
-      } else if (recurrenceScope === 'future') {
-        // End the schedule starting today
-        const dayBefore = getDayBefore(selectedDate)
-        await fetchApi(`${endpoint}/${id}`, 'PATCH', { endDate: dayBefore })
-        showToast('Future Occurrences Deleted')
       } else {
-        // Delete all
-        await fetch(`${apiUrl}${endpoint}/${id}`, {
-          method: 'DELETE',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'x-household-id': householdId || ''
+        if (recurrenceScope === 'one') {
+          // Skip only this occurrence
+          const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
+          const cleanNotes = oldNotes.replace(/__SKIPPED__:[\d,\-]+/, '').trim()
+          const existingSkippedMatch = oldNotes.match(/__SKIPPED__:([\d,\-]+)/)
+          const skippedList = existingSkippedMatch ? existingSkippedMatch[1].split(',') : []
+          if (!skippedList.includes(selectedDate)) {
+            skippedList.push(selectedDate)
           }
-        })
-        showToast('Recurring Schedule Deleted')
+          const newNotes = `${cleanNotes}\n__SKIPPED__:${skippedList.join(',')}`.trim()
+          
+          await fetchApi(`${endpoint}/${id}`, 'PATCH', { notes: newNotes })
+          showToast('Occurrence Deleted')
+        } else if (recurrenceScope === 'future') {
+          // End the schedule starting today
+          const dayBefore = getDayBefore(selectedDate)
+          await fetchApi(`${endpoint}/${id}`, 'PATCH', { endDate: dayBefore })
+          showToast('Future Occurrences Deleted')
+        } else {
+          // Delete all
+          await fetch(`${apiUrl}${endpoint}/${id}`, {
+            method: 'DELETE',
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'x-household-id': householdId || ''
+            }
+          })
+          showToast('Recurring Schedule Deleted')
+        }
       }
       
-      if (type === 'bill') mutateBills()
+      if (type === 'pay_schedule') mutateSchedules()
+      else if (type === 'bill') mutateBills()
       else mutateSubs()
       setIsCalendarModalOpen(false)
       globalMutate()
@@ -551,12 +613,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     setIsCalendarModalOpen(true)
                   }}
                   onItemClick={(item) => {
-                    if (item.type === 'pay_schedule') {
-                      setSelectedPayday(item);
-                    } else {
-                      setSelectedCalendarItem(item)
-                      setIsCalendarModalOpen(true)
-                    }
+                    setSelectedCalendarItem(item)
+                    setIsCalendarModalOpen(true)
                   }}
                 />
             </section>

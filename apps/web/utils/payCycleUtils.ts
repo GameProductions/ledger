@@ -32,13 +32,13 @@ export const projectPaydays = (
 
     // Parse end date and skipped dates from notes if present
     let endDateStr: string | null = null;
-    const endDateMatch = notes.match(/__END_DATE__:([\d\-]+)/);
+    const endDateMatch = notes.match(/__END_DATE__:([\d-]+)/);
     if (endDateMatch) {
       endDateStr = endDateMatch[1];
     }
 
     const isPaydayDateSkipped = (dateStr: string): boolean => {
-      const match = notes.match(/__SKIPPED__:([\d,\-]+)/);
+      const match = notes.match(/__SKIPPED__:([\d,-]+)/);
       if (!match) return false;
       return match[1].split(',').includes(dateStr);
     };
@@ -210,7 +210,7 @@ export const projectRecurringItems = (
 
   const isDateSkipped = (notes: string | null | undefined, dateStr: string): boolean => {
     if (!notes) return false;
-    const match = notes.match(/__SKIPPED__:([\d,\-]+)/);
+    const match = notes.match(/__SKIPPED__:([\d,-]+)/);
     if (!match) return false;
     const skipped = match[1].split(',');
     return skipped.includes(dateStr);

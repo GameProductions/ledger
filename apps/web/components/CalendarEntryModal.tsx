@@ -24,24 +24,40 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
     const names = new Set<string>();
     if (Array.isArray(paySchedules)) {
       paySchedules.forEach(ps => {
-        if (ps.name) names.add(ps.name);
+        if (ps.name) {
+          const match = ps.name.match(/^(.+?)\s*\((.+?)\)$/);
+          names.add(match ? match[1] : ps.name);
+        }
       });
     }
     
-    // Add default user-friendly fallback paycheck / income sources
-    names.add('Salary / Regular Paycheck');
-    names.add('Freelance / Contract Income');
-    names.add('Investment / Dividend');
-    names.add('Bonus / Commission');
-    names.add('Gift / Allowance');
+    // Add default user-friendly fallback paycheck / income source types
+    names.add('Salary');
+    names.add('Freelance');
+    names.add('Investment');
+    names.add('Bonus');
+    names.add('Gift');
     names.add('Tax Refund');
     names.add('Other Income');
 
     return Array.from(names).map(name => ({ value: name, label: name }));
   }, [paySchedules]);
 
+  const parseInitialSource = (fullName: string) => {
+    if (!fullName) return { type: '', name: '' };
+    const match = fullName.match(/^(.+?)\s*\((.+?)\)$/);
+    if (match) {
+      return { type: match[1], name: match[2] };
+    }
+    return { type: fullName, name: '' };
+  };
+
+  const initialSource = parseInitialSource(initialData?.description || initialData?.name || '');
+
   const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
+  const [sourceType, setSourceType] = useState(initialSource.type || 'Salary');
+  const [sourceName, setSourceName] = useState(initialSource.name);
   const [amountCents, setAmountCents] = useState(initialData?.amountCents || initialData?.estimatedAmountCents || 0);
   const [currentDate, setCurrentDate] = useState(initialData?.transactionDate || initialData?.nextBillingDate || initialData?.nextPayDate || date?.toISOString().split('T')[0] || '');
   const [status, setStatus] = useState(initialData?.status || 'unpaid');
@@ -73,10 +89,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const submitForm = (scope?: 'one' | 'future' | 'all') => {
     const id = initialData?.originalId || initialData?.id;
     if (type === 'pay_schedule') {
+      const combinedName = sourceName?.trim() ? `${sourceType.trim()} (${sourceName.trim()})` : sourceType.trim();
       onSave({
         id,
         type,
-        name: description,
+        name: combinedName,
         estimatedAmountCents: amountCents,
         nextPayDate: currentDate,
         frequency,
@@ -169,18 +186,30 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
               {type === 'pay_schedule' ? (
-                <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source</label>
-                   <SearchableSelect
-                     options={payScheduleNames}
-                     value={description}
-                     onChange={(v) => setDescription(v)}
-                     placeholder="Select or type income source..."
-                     onCreate={(v) => {
-                       setDescription(v);
-                       return v;
-                     }}
-                   />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Type</label>
+                     <SearchableSelect
+                       options={payScheduleNames}
+                       value={sourceType}
+                       onChange={(v) => setSourceType(v)}
+                       placeholder="Select source type..."
+                       onCreate={(v) => {
+                         setSourceType(v);
+                         return v;
+                       }}
+                     />
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Name (e.g. Company)</label>
+                     <input 
+                       type="text" 
+                       value={sourceName}
+                       onChange={(e) => setSourceName(e.target.value)}
+                       placeholder="e.g. Google, Stripe"
+                       className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
+                     />
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">

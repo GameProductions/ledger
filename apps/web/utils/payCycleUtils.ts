@@ -187,11 +187,20 @@ export const projectRecurringItems = (
     return dates;
   };
 
+  const isDateSkipped = (notes: string | null | undefined, dateStr: string): boolean => {
+    if (!notes) return false;
+    const match = notes.match(/__SKIPPED__:([\d,\-]+)/);
+    if (!match) return false;
+    const skipped = match[1].split(',');
+    return skipped.includes(dateStr);
+  };
+
   subscriptions.forEach(sub => {
     if (!sub.nextBillingDate || !sub.billingCycle || sub.billingCycle === 'manual' || sub.billingCycle === 'one-time') return;
     const maxCount = sub.maxOccurrences || Infinity;
     const dates = projectDates(sub.nextBillingDate, sub.billingCycle, maxCount, sub.endDate);
     dates.forEach(date => {
+      if (isDateSkipped(sub.notes, date)) return;
       instances.push({
         id: `sub-proj-${sub.id}-${date}`,
         originalId: sub.id,
@@ -211,6 +220,7 @@ export const projectRecurringItems = (
     const maxCount = bill.maxOccurrences || Infinity;
     const dates = projectDates(bill.dueDate, bill.frequency, maxCount, bill.endDate);
     dates.forEach(date => {
+      if (isDateSkipped(bill.notes, date)) return;
       instances.push({
         id: `bill-proj-${bill.id}-${date}`,
         originalId: bill.id,

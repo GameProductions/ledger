@@ -331,50 +331,114 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     showToast('Transaction Updated')
   }
 
-  const handleCalendarSave = async (data: any) => {
+  const getDayBefore = (dateStr: string): string => {
+    try {
+      const d = new Date(dateStr + 'T12:00:00')
+      d.setDate(d.getDate() - 1)
+      return d.toISOString().split('T')[0]
+    } catch {
+      return dateStr
+    }
+  }
+
+  const handleCalendarSave = async (data: any, recurrenceScope?: 'one' | 'future' | 'all') => {
     const isNew = !data.id
     const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/bills' : data.type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
-    const method = isNew ? 'POST' : 'PATCH'
-    const url = isNew ? endpoint : `${endpoint}/${data.id}`
     
-    // Map fields for backend
-    let payload = {}
-    if (data.type === 'pay_schedule') {
-        payload = {
-            name: data.name,
-            frequency: data.frequency,
-            estimatedAmountCents: data.estimatedAmountCents,
-            nextPayDate: data.nextPayDate,
-            notes: data.notes
-        }
-    } else if (data.type === 'bill') {
-        payload = {
-            name: data.name,
-            amountCents: data.amountCents,
-            dueDate: data.dueDate,
-            status: data.status,
-            notes: data.notes,
-            isRecurring: data.isRecurring,
-            frequency: data.frequency
-        }
-    } else {
-        payload = {
-            description: data.description,
-            amountCents: data.amountCents,
-            transactionDate: data.date,
-            status: 'none'
-        }
-    }
+    // Helper to perform simple headers fetch
+    const fetchApi = (url: string, method: string, payload: any) => 
+      fetch(`${apiUrl}${url}`, {
+        method,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'x-household-id': householdId || ''
+        },
+        body: JSON.stringify(payload)
+      })
 
-    await fetch(`${apiUrl}${url}`, {
-      method,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'x-household-id': householdId || ''
-      },
-      body: JSON.stringify(payload)
-    })
+    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription')) {
+      // 1. Update the parent's notes to skip this date
+      const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
+      const cleanNotes = oldNotes.replace(/__SKIPPED__:[\d,\-]+/, '').trim()
+      const existingSkippedMatch = oldNotes.match(/__SKIPPED__:([\d,\-]+)/)
+      const skippedList = existingSkippedMatch ? existingSkippedMatch[1].split(',') : []
+      if (!skippedList.includes(data.originalDate)) {
+        skippedList.push(data.originalDate)
+      }
+      const newNotes = `${cleanNotes}\n__SKIPPED__:${skippedList.join(',')}`.trim()
+      
+      await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { notes: newNotes })
+
+      // 2. Create a new one-off bill on the rescheduled date
+      const oneOffPayload = {
+        name: data.name,
+        amountCents: data.amountCents,
+        dueDate: data.dueDate,
+        status: data.status || 'unpaid',
+        notes: data.notes || '',
+        isRecurring: false,
+        categoryId: selectedCalendarItem?.originalData?.categoryId || null,
+        accountId: selectedCalendarItem?.originalData?.accountId || null
+      }
+      await fetchApi(endpoint, 'POST', oneOffPayload)
+      
+    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription')) {
+      // 1. End the old schedule the day before this occurrence
+      const dayBefore = getDayBefore(data.originalDate)
+      await fetchApi(`${endpoint}/${data.id}`, 'PATCH', { endDate: dayBefore })
+
+      // 2. Start a new recurring schedule from the selected date
+      const newSchedulePayload = {
+        name: data.name,
+        amountCents: data.amountCents,
+        dueDate: data.dueDate,
+        status: data.status || 'unpaid',
+        notes: data.notes || '',
+        isRecurring: true,
+        frequency: data.frequency,
+        endDate: data.endDate || null,
+        maxOccurrences: data.maxOccurrences || null,
+        categoryId: selectedCalendarItem?.originalData?.categoryId || null,
+        accountId: selectedCalendarItem?.originalData?.accountId || null
+      }
+      await fetchApi(endpoint, 'POST', newSchedulePayload)
+
+    } else {
+      // Normal Save: Create or Update All Occurrences
+      const method = isNew ? 'POST' : 'PATCH'
+      const url = isNew ? endpoint : `${endpoint}/${data.id}`
+      let payload = {}
+      if (data.type === 'pay_schedule') {
+        payload = {
+          name: data.name,
+          frequency: data.frequency,
+          estimatedAmountCents: data.estimatedAmountCents,
+          nextPayDate: data.nextPayDate,
+          notes: data.notes
+        }
+      } else if (data.type === 'bill' || data.type === 'subscription') {
+        payload = {
+          name: data.name,
+          amountCents: data.amountCents,
+          dueDate: data.dueDate,
+          status: data.status,
+          notes: data.notes,
+          isRecurring: data.isRecurring,
+          frequency: data.frequency,
+          endDate: data.endDate || null,
+          maxOccurrences: data.maxOccurrences || null
+        }
+      } else {
+        payload = {
+          description: data.description,
+          amountCents: data.amountCents,
+          transactionDate: data.transactionDate || data.date,
+          status: data.status || 'none'
+        }
+      }
+      await fetchApi(url, method, payload)
+    }
     
     if (data.type === 'pay_schedule') mutateSchedules()
     else if (data.type === 'bill') mutateBills()
@@ -386,9 +450,60 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     showToast(isNew ? 'Entry Created' : 'Entry Updated')
   }
 
-  const handleCalendarDelete = async (id: string, type: string) => {
-    setDeletePending({ id, type })
-    setIsDeleteModalOpen(true)
+  const handleCalendarDelete = async (id: string, type: string, recurrenceScope?: 'one' | 'future' | 'all', selectedDate?: string) => {
+    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription')) {
+      const endpoint = type === 'bill' ? '/api/planning/bills' : '/api/planning/subscriptions'
+      
+      const fetchApi = (url: string, method: string, payload: any) => 
+        fetch(`${apiUrl}${url}`, {
+          method,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          },
+          body: JSON.stringify(payload)
+        })
+
+      if (recurrenceScope === 'one') {
+        // Skip only this occurrence
+        const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
+        const cleanNotes = oldNotes.replace(/__SKIPPED__:[\d,\-]+/, '').trim()
+        const existingSkippedMatch = oldNotes.match(/__SKIPPED__:([\d,\-]+)/)
+        const skippedList = existingSkippedMatch ? existingSkippedMatch[1].split(',') : []
+        if (!skippedList.includes(selectedDate)) {
+          skippedList.push(selectedDate)
+        }
+        const newNotes = `${cleanNotes}\n__SKIPPED__:${skippedList.join(',')}`.trim()
+        
+        await fetchApi(`${endpoint}/${id}`, 'PATCH', { notes: newNotes })
+        showToast('Occurrence Deleted')
+      } else if (recurrenceScope === 'future') {
+        // End the schedule starting today
+        const dayBefore = getDayBefore(selectedDate)
+        await fetchApi(`${endpoint}/${id}`, 'PATCH', { endDate: dayBefore })
+        showToast('Future Occurrences Deleted')
+      } else {
+        // Delete all
+        await fetch(`${apiUrl}${endpoint}/${id}`, {
+          method: 'DELETE',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'x-household-id': householdId || ''
+          }
+        })
+        showToast('Recurring Schedule Deleted')
+      }
+      
+      if (type === 'bill') mutateBills()
+      else mutateSubs()
+      setIsCalendarModalOpen(false)
+      globalMutate()
+    } else {
+      // Normal Delete trigger (opens confirmation modal)
+      setDeletePending({ id, type })
+      setIsDeleteModalOpen(true)
+    }
   }
 
   const confirmCalendarDelete = async () => {

@@ -9,8 +9,8 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 interface CalendarEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any) => void;
-  onDelete?: (id: string, type: string) => void;
+  onSave: (data: any, recurrenceScope?: 'one' | 'future' | 'all') => void;
+  onDelete?: (id: string, type: string, recurrenceScope?: 'one' | 'future' | 'all', selectedDate?: string) => void;
   initialData?: any;
   date?: Date;
   paySchedules?: any[];
@@ -28,7 +28,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [frequency, setFrequency] = useState(initialData?.frequency || 'biweekly');
   const [semiMonthlyDay1, setSemiMonthlyDay1] = useState(initialData?.semiMonthlyDay1 || 1);
   const [semiMonthlyDay2, setSemiMonthlyDay2] = useState(initialData?.semiMonthlyDay2 || 15);
-  const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring || false);
+  const [isRecurring, setIsRecurring] = useState(initialData?.isRecurring || initialData?.originalData?.isRecurring || initialData?.type === 'subscription' || false);
   const [billEndDate, setBillEndDate] = useState(initialData?.endDate || '');
   const [billMaxOccurrences, setBillMaxOccurrences] = useState(initialData?.maxOccurrences ? initialData.maxOccurrences.toString() : '');
   const [notes, setNotes] = useState(initialData?.notes || '');
@@ -37,15 +37,23 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [upcomingDate, setUpcomingDate] = useState(initialData?.upcomingEffectiveDate || '');
   const [payScheduleId, setPayScheduleId] = useState(initialData?.payScheduleId || '');
   const [paycheckDate, setPaycheckDate] = useState(initialData?.paycheckDate || '');
+  const [scopeConfirmState, setScopeConfirmState] = useState<'edit' | 'delete' | null>(null);
   const reduced = useReducedMotion();
+
+  const isItemRecurring = !!initialData && (
+    initialData.isRecurring || 
+    initialData.originalData?.isRecurring || 
+    initialData.type === 'subscription' || 
+    initialData.type === 'pay_schedule'
+  );
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitForm = (scope?: 'one' | 'future' | 'all') => {
+    const id = initialData?.originalId || initialData?.id;
     if (type === 'pay_schedule') {
       onSave({
-        id: initialData?.id,
+        id,
         type,
         name: description,
         estimatedAmountCents: amountCents,
@@ -54,10 +62,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         semiMonthlyDay1: frequency === 'semi-monthly' ? semiMonthlyDay1 : null,
         semiMonthlyDay2: frequency === 'semi-monthly' ? semiMonthlyDay2 : null,
         notes
-      });
+      }, scope);
     } else if (type === 'bill') {
       onSave({
-        id: initialData?.id,
+        id,
         type: 'bill',
         name: description,
         amountCents: amountCents,
@@ -69,11 +77,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         endDate: isRecurring && billEndDate ? billEndDate : null,
         maxOccurrences: isRecurring && billMaxOccurrences ? parseInt(billMaxOccurrences) : null,
         payScheduleId: payScheduleId || null,
-        paycheckDate: paycheckDate || null
-      });
+        paycheckDate: paycheckDate || null,
+        originalDate: initialData?.date
+      }, scope);
     } else {
       onSave({
-        id: initialData?.id,
+        id,
         type: 'charge',
         description,
         amountCents: amountCents,
@@ -82,7 +91,16 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         confirmationNumber: confirmationNumber,
         payScheduleId: payScheduleId || null,
         paycheckDate: paycheckDate || null
-      });
+      }, scope);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isItemRecurring) {
+      setScopeConfirmState('edit');
+    } else {
+      submitForm();
     }
   };
 
@@ -676,15 +694,21 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                {initialData && onDelete && (
                  <button 
                   type="button"
-                  onClick={() => onDelete(initialData.id, initialData.type)}
-                  className="w-14 h-14 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500/20 transition-all"
+                  onClick={() => {
+                    if (isItemRecurring) {
+                      setScopeConfirmState('delete');
+                    } else {
+                      onDelete(initialData.id, initialData.type);
+                    }
+                  }}
+                  className="w-14 h-14 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500/20 transition-all cursor-pointer"
                  >
                    <Trash2 size={24} />
                  </button>
                )}
                <button 
                 type="submit"
-                className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20 hover:scale-[1.02]' : type === 'charge' ? 'bg-emerald-500 text-black shadow-emerald-500/20 hover:scale-[1.02]' : 'bg-amber-500 text-black shadow-amber-500/20 hover:scale-[1.02]'}`}
+                className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20 hover:scale-[1.02]' : type === 'charge' ? 'bg-emerald-500 text-black shadow-emerald-500/20 hover:scale-[1.02]' : 'bg-amber-500 text-black shadow-amber-500/20 hover:scale-[1.02]'}`}
                >
                  <CheckCircle2 size={18} />
                  {initialData ? 'Save Changes' : 'Create Entry'}
@@ -692,6 +716,73 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             </div>
           </form>
         </motion.div>
+      )}
+
+      {scopeConfirmState && (
+        <div 
+          className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+          onClick={() => setScopeConfirmState(null)}
+        >
+          <div 
+            className="card w-full max-w-md p-8 space-y-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-xl font-black italic tracking-tighter uppercase text-amber-500">
+                Confirm {scopeConfirmState === 'edit' ? 'Update' : 'Delete'} Scope
+              </h3>
+              <p className="text-xs text-secondary font-bold uppercase tracking-widest mt-1">
+                This is a recurring {type === 'pay_schedule' ? 'income schedule' : 'bill'}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  id: 'one' as const,
+                  title: 'Just this time',
+                  desc: `Only ${scopeConfirmState === 'edit' ? 'change' : 'delete'} this occurrence on ${initialData?.date || currentDate}. Other instances in this schedule won't change.`
+                },
+                {
+                  id: 'future' as const,
+                  title: 'From now on',
+                  desc: `Apply this ${scopeConfirmState === 'edit' ? 'change' : 'deletion'} to this occurrence and all upcoming ones. Past history remains unchanged.`
+                },
+                {
+                  id: 'all' as const,
+                  title: 'All payments',
+                  desc: `Apply this ${scopeConfirmState === 'edit' ? 'change' : 'deletion'} to all instances (past, present, and future) in this schedule.`
+                }
+              ].map(opt => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    const cleanId = initialData.originalId || initialData.id;
+                    if (scopeConfirmState === 'edit') {
+                      submitForm(opt.id);
+                    } else {
+                      if (onDelete) onDelete(cleanId, initialData.type, opt.id, initialData.date);
+                    }
+                    setScopeConfirmState(null);
+                  }}
+                  className="w-full p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-amber-500/30 text-left transition-all flex flex-col gap-1 hover:bg-white/[0.08] cursor-pointer"
+                >
+                  <div className="text-sm font-black text-white">{opt.title}</div>
+                  <div className="text-xs text-secondary leading-relaxed font-medium">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setScopeConfirmState(null)}
+              className="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

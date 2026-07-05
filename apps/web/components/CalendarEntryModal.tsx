@@ -158,11 +158,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-modal flex items-center justify-center p-4 overflow-y-auto">
+      {/* Absolute background overlay to handle close clicks without capturing bubbled clicks from portal dropdowns */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-xl -z-10" onClick={onClose} />
       {reduced ? (
         <div 
           className="card w-full max-w-2xl p-8 reveal space-y-8 overflow-y-auto max-h-[90vh]"
-          onClick={e => e.stopPropagation()}
         >
         <div className="flex justify-between items-center">
            <div>
@@ -493,7 +494,6 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           className="card w-full max-w-2xl p-8 reveal space-y-8 overflow-y-auto max-h-[90vh]"
-          onClick={e => e.stopPropagation()}
         >
           <div className="flex justify-between items-center">
              <div>

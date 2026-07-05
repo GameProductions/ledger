@@ -21,7 +21,7 @@
     "@simplewebauthn/server": "^13.3.2",
     "agents": "^0.17.3",
     "agents-sdk": "^1.0.0",
-    "ai": "^6.0.185",
+    "ai": "^7.0.15",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
@@ -41,11 +41,11 @@
     "react-markdown": "^10.1.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
-    "workers-ai-provider": "^3.3.0",
+    "workers-ai-provider": "^3.3.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.17.0",
+    "@cloudflare/vitest-pool-workers": "^0.18.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.2",

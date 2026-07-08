@@ -11,7 +11,7 @@ import webauthnRoutes from './admin/webauthn'
 import demoRoutes from './admin/demo'
 import { getDb } from '#/index'
 import { users, households, systemRegistry, transactions } from '#/schema'
-import { count, sql, or, like, desc, eq } from 'drizzle-orm'
+import { count, sql, or, ilike, desc, eq } from 'drizzle-orm'
 import { CURRENT_VERSION } from '@shared/constants'
 
 const admin = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -55,13 +55,13 @@ admin.get('/search/global', async (c) => {
       id: users.id,
       email: users.email,
       displayName: users.displayName
-    }).from(users).where(or(like(users.email, `%${q}%`), like(users.displayName, `%${q}%`))).limit(10) as any)
+    }).from(users).where(or(ilike(users.email, `%${q}%`), ilike(users.displayName, `%${q}%`))).limit(10) as any)
 
   const registryRes = (await db.select({
       id: systemRegistry.id,
       name: systemRegistry.name,
       itemType: systemRegistry.itemType
-    }).from(systemRegistry).where(like(systemRegistry.name, `%${q}%`)).limit(10) as any)
+    }).from(systemRegistry).where(ilike(systemRegistry.name, `%${q}%`)).limit(10) as any)
 
   const transactionsRes = (await db.select({
       id: transactions.id,
@@ -74,8 +74,8 @@ admin.get('/search/global', async (c) => {
     .from(transactions)
     .innerJoin(households, eq(transactions.householdId, households.id))
     .where(or(
-      like(transactions.description, `%${q}%`),
-      like(transactions.id, `%${q}%`)
+      ilike(transactions.description, `%${q}%`),
+      ilike(transactions.id, `%${q}%`)
     ))
     .limit(10) as any)
 

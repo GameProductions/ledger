@@ -1139,7 +1139,14 @@ financials.get('/shared-balances/summary', async (c) => {
     .leftJoin(u1, eq(sharedBalances.fromUserId, u1.id))
     .leftJoin(u2, eq(sharedBalances.toUserId, u2.id))
     .where(eq(sharedBalances.householdId, householdId))
-    .groupBy(sharedBalances.fromUserId, sharedBalances.toUserId)
+    .groupBy(
+      sharedBalances.fromUserId,
+      sharedBalances.toUserId,
+      u1.displayName,
+      u1.avatarUrl,
+      u2.displayName,
+      u2.avatarUrl
+    )
     .having(sql`SUM(${sharedBalances.amountCents}) != 0`) as any)
   
   return c.json({ success: true, data: results || [] })

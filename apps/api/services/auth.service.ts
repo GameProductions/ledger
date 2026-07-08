@@ -16,8 +16,12 @@ export class AuthService {
     // Login attempt
     
     const db = getDb(this.env)
+    const lowerIdentifier = identifier.toLowerCase()
     const result = (await db.select().from(users).where(
-          or(eq(users.username, identifier), eq(users.email, identifier))
+          or(
+            eq(sql`LOWER(${users.username})`, lowerIdentifier),
+            eq(sql`LOWER(${users.email})`, lowerIdentifier)
+          )
         ).limit(1) as any)
     
     const user = result[0]

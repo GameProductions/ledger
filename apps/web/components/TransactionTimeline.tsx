@@ -34,7 +34,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
               }
             }) as any);
       const data = (await res.json() as any);
-      setEntries(Array.isArray(data) ? data : []);
+      setEntries(data?.success && Array.isArray(data.data) ? data.data : []);
     } catch (e: any) {
       console.error('Timeline fetch failed', e);
     } finally {
@@ -88,7 +88,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
           onChange={(e) => setNewNote(e.target.value)}
           placeholder="Add a persistent note or confirmation #..."
           onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
-          className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-24 py-4 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all font-medium"
+          className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-44 py-4 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all font-medium"
         />
         <MessageSquare size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-amber-500/50 transition-colors" />
         
@@ -103,9 +103,9 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
            <button 
              onClick={() => handleAddNote('note')}
              disabled={isSubmitting || !newNote.trim()}
-             className="w-8 h-8 flex items-center justify-center bg-amber-500 text-black rounded-lg hover:scale-105 transition-transform disabled:opacity-50"
+             className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black border border-amber-500/20 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all disabled:opacity-50"
            >
-             <Send size={14} />
+             + Note
            </button>
         </div>
       </div>

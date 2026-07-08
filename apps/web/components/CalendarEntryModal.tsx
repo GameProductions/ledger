@@ -447,7 +447,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
-              {initialData?.id && (
+              {initialData?.id && !initialData.id.startsWith('bill-proj-') && !initialData.id.startsWith('pay-proj-') && !initialData.isProjected && (
                 <div className="pt-4 border-t border-white/5">
                    <button 
                      type="button"
@@ -769,7 +769,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
-               {initialData?.id && (
+               {initialData?.id && !initialData.id.startsWith('bill-proj-') && !initialData.id.startsWith('pay-proj-') && !initialData.isProjected && (
                  <div className="pt-4 border-t border-white/5">
                     <button 
                       type="button"

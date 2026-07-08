@@ -46,7 +46,7 @@ const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, portalRef, 
 
       setStyle({
         position: 'fixed',
-        zIndex: 9999,
+        zIndex: 50000,
         left: rect.left,
         width: rect.width,
         ...(above

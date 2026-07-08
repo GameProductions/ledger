@@ -7,7 +7,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
-import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy } from 'lucide-react'
+import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy, Check, CheckCircle2 } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -429,7 +429,14 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       <input 
                         type="text" 
                         value={editForm?.confirmationNumber || ''} 
-                        onChange={e => setEditForm({...editForm, confirmationNumber: e.target.value})}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const updates: any = { confirmationNumber: val };
+                          if (val.trim() && editForm?.needsBalanceTransfer) {
+                            updates.transferReconciled = true;
+                          }
+                          setEditForm({...editForm, ...updates});
+                        }}
                         className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
                         placeholder="e.g. TXN-12345"
                       />
@@ -464,7 +471,13 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={editForm?.needsBalanceTransfer ?? false}
-                          onChange={v => setEditForm({...editForm, needsBalanceTransfer: v})}
+                          onChange={v => {
+                            const updates: any = { needsBalanceTransfer: v };
+                            if (v && editForm?.confirmationNumber?.trim()) {
+                              updates.transferReconciled = true;
+                            }
+                            setEditForm({...editForm, ...updates});
+                          }}
                           iconClassName="text-blue-400"
                         />
                         <span className="text-xs font-bold text-secondary flex items-center gap-1"><ArrowLeftRight size={12} className="text-blue-400" /> Balance Transfer</span>
@@ -484,16 +497,28 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     {/* Conditional sub-fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                       {editForm?.needsBalanceTransfer && (
-                        <div>
-                          <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
-                          <select 
-                            value={editForm?.transferTiming || 'future'} 
-                            onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
-                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-orange-500/50 outline-none"
-                          >
-                            <option value="same_day">Must do Same Day</option>
-                            <option value="future">Can do in Future</option>
-                          </select>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
+                            <select 
+                              value={editForm?.transferTiming || 'future'} 
+                              onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
+                              className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-orange-500/50 outline-none"
+                            >
+                              <option value="same_day">Must do Same Day</option>
+                              <option value="future">Can do in Future</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={editForm?.transferReconciled ?? false}
+                              onChange={v => setEditForm({...editForm, transferReconciled: v})}
+                              iconClassName="text-emerald-500"
+                            />
+                            <span className="text-xs font-bold text-secondary flex items-center gap-1">
+                              <CheckCircle2 size={12} className="text-emerald-400" /> Transfer Reconciled
+                            </span>
+                          </div>
                         </div>
                       )}
                       {editForm?.isBorrowed && (
@@ -569,15 +594,26 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                           </div>
                         )}
                         {item.needsBalanceTransfer && (
-                          <div className="text-[10px] uppercase tracking-widest text-blue-400 font-black flex items-center gap-1">
-                            <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${(() => {
-                              const v = item.transferTiming
-                              if (v.includes('T')) {
-                                const [d, t] = v.split('T')
-                                return `${d} @ ${t}`
-                              }
-                              return v
-                            })()}` : ''}
+                          <div className="flex items-center gap-2">
+                            <div className="text-[10px] uppercase tracking-widest text-blue-400 font-black flex items-center gap-1">
+                              <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${(() => {
+                                const v = item.transferTiming
+                                if (v.includes('T')) {
+                                  const [d, t] = v.split('T')
+                                  return `${d} @ ${t}`
+                                }
+                                return v
+                              })()}` : ''}
+                            </div>
+                            {item.transferReconciled ? (
+                              <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                                <Check size={8} /> Reconciled
+                              </div>
+                            ) : (
+                              <div className="px-1.5 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                                Pending
+                              </div>
+                            )}
                           </div>
                         )}
                         {item.isBorrowed && (
@@ -618,6 +654,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             confirmationNumber: item.confirmationNumber,
                             attentionRequired: item.attentionRequired ?? false,
                             needsBalanceTransfer: item.needsBalanceTransfer ?? false,
+                            transferReconciled: item.transferReconciled ?? false,
                             transferTiming: item.transferTiming || '',
                             isBorrowed: item.isBorrowed ?? false,
                             borrowSource: item.borrowSource || '',

@@ -46,6 +46,7 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   confirmationNumber: text('confirmation_number'),
   attentionRequired: boolean('attention_required').default(false),
   needsBalanceTransfer: boolean('needs_balance_transfer').default(false),
+  transferReconciled: boolean('transfer_reconciled').default(false),
   transferTiming: text('transfer_timing'),
   isBorrowed: boolean('is_borrowed').default(false),
   borrowSource: text('borrow_source'),

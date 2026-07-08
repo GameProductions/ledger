@@ -10,8 +10,8 @@ import entityRoutes from './admin/entity-manager'
 import webauthnRoutes from './admin/webauthn'
 import demoRoutes from './admin/demo'
 import { getDb } from '#/index'
-import { users, households, systemRegistry } from '#/schema'
-import { count, sql, or, like, desc } from 'drizzle-orm'
+import { users, households, systemRegistry, transactions } from '#/schema'
+import { count, sql, or, like, desc, eq } from 'drizzle-orm'
 import { CURRENT_VERSION } from '@shared/constants'
 
 const admin = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -46,9 +46,9 @@ admin.get('/stats', async (c) => {
 })
 
 // Global Search
-admin.get('/search', async (c) => {
+admin.get('/search/global', async (c) => {
   const q = c.req.query('q') || ''
-  if (q.length < 2) return c.json({ success: true, data: { users: [], registry: [] } })
+  if (q.length < 2) return c.json({ success: true, data: { users: [], registry: [], transactions: [] } })
   const db = getDb(c.env)
 
   const usersRes = (await db.select({
@@ -63,7 +63,23 @@ admin.get('/search', async (c) => {
       itemType: systemRegistry.itemType
     }).from(systemRegistry).where(like(systemRegistry.name, `%${q}%`)).limit(10) as any)
 
-  return c.json({ success: true, data: { users: usersRes, registry: registryRes } })
+  const transactionsRes = (await db.select({
+      id: transactions.id,
+      description: transactions.description,
+      amountCents: transactions.amountCents,
+      transactionDate: transactions.transactionDate,
+      reconciliationStatus: transactions.reconciliationStatus,
+      householdName: households.name
+    })
+    .from(transactions)
+    .innerJoin(households, eq(transactions.householdId, households.id))
+    .where(or(
+      like(transactions.description, `%${q}%`),
+      like(transactions.id, `%${q}%`)
+    ))
+    .limit(10) as any)
+
+  return c.json({ success: true, data: { users: usersRes, registry: registryRes, transactions: transactionsRes } })
 })
 
 export default admin

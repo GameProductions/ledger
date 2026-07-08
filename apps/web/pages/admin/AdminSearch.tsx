@@ -19,7 +19,7 @@ const AdminSearch: React.FC = () => {
               headers: { 'Authorization': `Bearer ${token}` }
             }) as any);
       const data = (await res.json() as any);
-      setResults(data);
+      setResults(data?.success ? data.data : null);
     } catch (err: any) {
       console.error('PCC Search failed:', err);
     } finally {
@@ -85,7 +85,7 @@ const AdminSearch: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                {results.users.length === 0 && <p className="text-gray-600 italic text-sm">No user identity found matching query.</p>}
+                {results.users?.length === 0 && <p className="text-gray-600 italic text-sm">No user identity found matching query.</p>}
               </div>
             </section>
 
@@ -104,7 +104,7 @@ const AdminSearch: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                {results.registry.length === 0 && <p className="text-gray-600 italic text-sm">No registry items found matching query.</p>}
+                {results.registry?.length === 0 && <p className="text-gray-600 italic text-sm">No registry items found matching query.</p>}
               </div>
             </section>
           </div>

@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.107.0",
+  "version": "3.108.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -21,7 +21,7 @@
     "@simplewebauthn/server": "^13.3.2",
     "agents": "^0.17.3",
     "agents-sdk": "^1.0.0",
-    "ai": "^7.0.15",
+    "ai": "^6.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",

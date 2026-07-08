@@ -100,7 +100,7 @@ webauthn.post('/generate-registration', async (c) => {
       attestationType: 'none',
       authenticatorSelection: {
         residentKey: 'required',
-        userVerification: 'required',
+        userVerification: 'preferred',
       },
     }) as any)
 
@@ -126,7 +126,7 @@ webauthn.post('/verify-registration', async (c) => {
       expectedChallenge,
       expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
       expectedRPID: getRpID(c),
-      requireUserVerification: true
+      requireUserVerification: false
     }) as any)
 
   if (verification.verified && verification.registrationInfo) {
@@ -217,7 +217,7 @@ webauthn.post('/generate-auth', async (c) => {
   const options = (await generateAuthenticationOptions({
       rpID: getRpID(c),
       allowCredentials: allowCredentials.filter((c: any): c is { id: string, type: 'public-key' } => c !== null),
-      userVerification: 'required',
+      userVerification: 'preferred',
     }) as any)
 
   await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
@@ -255,7 +255,7 @@ webauthn.post('/verify-auth', zValidator('json', z.object({
       expectedChallenge,
       expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
       expectedRPID: getRpID(c),
-      requireUserVerification: true,
+      requireUserVerification: false,
       credential: {
         id: rawCredentialId,
         publicKey: base64ToUint8Array(publicKeyB64) as any,

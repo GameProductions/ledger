@@ -910,7 +910,7 @@ async function handleRegisterOptions(c: any) {
       excludeCredentials,
       authenticatorSelection: {
         residentKey: 'required',
-        userVerification: 'required',
+        userVerification: 'preferred',
       },
     }) as any)
 
@@ -939,6 +939,7 @@ async function handleRegisterVerify(c: any) {
       expectedChallenge,
       expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
       expectedRPID: getRpID(c),
+      requireUserVerification: false,
     }) as any)
 
   if (verification.verified && verification.registrationInfo) {
@@ -1070,7 +1071,7 @@ auth.post('/passkeys/login/options', async (c) => {
   const options = (await generateAuthenticationOptions({
       rpID: getRpID(c),
       allowCredentials: [], // Allow any credential for this RP
-      userVerification: 'required',
+      userVerification: 'preferred',
     }) as any)
 
   await setSignedCookie(c, 'webauthn_challenge', options.challenge, c.env.JWT_SECRET, {
@@ -1125,7 +1126,7 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
       expectedChallenge,
       expectedOrigin: c.env.WEB_URL || c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
       expectedRPID: getRpID(c),
-      requireUserVerification: true,
+      requireUserVerification: false,
       credential: {
         id: rawCredentialId,
         publicKey: base64ToUint8Array(publicKeyB64) as any,
@@ -1220,7 +1221,7 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
       expectedChallenge,
       expectedOrigin: c.env.WEB_URL || c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173'),
       expectedRPID: getRpID(c),
-      requireUserVerification: true,
+      requireUserVerification: false,
       credential: {
         id: rawCredentialId,
         publicKey: base64ToUint8Array(publicKeyB64) as any,

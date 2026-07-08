@@ -6,6 +6,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 export interface TypeableOption {
   value: string;
   label: string;
+  description?: string;
   icon?: React.ReactNode;
   metadata?: any;
 }
@@ -160,6 +161,7 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                       key={option.value}
                       role="option"
                       aria-selected={isSelected}
+                      title={option.description}
                       onClick={(e) => {
                         e.stopPropagation();
                         onChange(option.value);
@@ -176,6 +178,9 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                       </div>
                       <div className="flex-1 flex flex-col">
                         <span className={`text-sm font-black uppercase tracking-tight ${option.metadata?.isCustom ? 'italic text-amber-500/80' : ''}`}>{option.label}</span>
+                        {option.description && (
+                          <span className="text-[10px] text-slate-500 font-medium tracking-tight mt-0.5 leading-normal">{option.description}</span>
+                        )}
                       </div>
                       {isSelected && <Check size={16} className="text-amber-500" />}
                     </div>
@@ -227,6 +232,7 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                         key={option.value}
                         role="option"
                         aria-selected={isSelected}
+                        title={option.description}
                         onClick={(e) => {
                           e.stopPropagation();
                           onChange(option.value);
@@ -243,6 +249,9 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                         </div>
                         <div className="flex-1 flex flex-col">
                           <span className={`text-sm font-black uppercase tracking-tight ${option.metadata?.isCustom ? 'italic text-amber-500/80' : ''}`}>{option.label}</span>
+                          {option.description && (
+                            <span className="text-[10px] text-slate-500 font-medium tracking-tight mt-0.5 leading-normal">{option.description}</span>
+                          )}
                         </div>
                         {isSelected && <Check size={16} className="text-amber-500" />}
                       </div>

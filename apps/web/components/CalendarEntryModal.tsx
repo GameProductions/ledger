@@ -18,6 +18,16 @@ interface CalendarEntryModalProps {
   paySchedules?: any[];
 }
 
+const FREQUENCY_OPTIONS = [
+  { value: 'weekly', label: 'WEEKLY', description: 'Occurs once a week (52 times a year)' },
+  { value: 'biweekly', label: 'BIWEEKLY', description: 'Occurs every two weeks (26 times a year)' },
+  { value: 'monthly', label: 'MONTHLY', description: 'Occurs once a month (12 times a year)' },
+  { value: 'quarterly', label: 'QUARTERLY', description: 'Occurs every three months (4 times a year)' },
+  { value: 'biannual', label: 'BIANNUAL', description: 'Occurs twice a year (every 6 months)' },
+  { value: 'annually', label: 'ANNUALLY', description: 'Occurs once a year' },
+  { value: 'biennial', label: 'BIENNIAL', description: 'Occurs once every two years' }
+];
+
 export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({ 
   isOpen, onClose, onSave, onDelete, initialData, date, paySchedules = []
 }) => {
@@ -371,13 +381,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
                         <TypeableSelect 
-                          options={[
-                            { value: 'weekly', label: 'WEEKLY' },
-                            { value: 'biweekly', label: 'BIWEEKLY' },
-                            { value: 'monthly', label: 'MONTHLY' },
-                            { value: 'quarterly', label: 'QUARTERLY' },
-                            { value: 'annually', label: 'ANNUALLY' }
-                          ]}
+                          options={FREQUENCY_OPTIONS}
                           value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
                           onChange={(val) => setFrequency(val)}
                         />
@@ -698,13 +702,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                        <div className="space-y-2">
                          <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
                          <TypeableSelect 
-                           options={[
-                             { value: 'weekly', label: 'WEEKLY' },
-                             { value: 'biweekly', label: 'BIWEEKLY' },
-                             { value: 'monthly', label: 'MONTHLY' },
-                             { value: 'quarterly', label: 'QUARTERLY' },
-                             { value: 'annually', label: 'ANNUALLY' }
-                           ]}
+                           options={FREQUENCY_OPTIONS}
                            value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
                            onChange={(val) => setFrequency(val)}
                          />

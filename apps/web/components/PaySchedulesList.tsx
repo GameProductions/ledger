@@ -42,7 +42,9 @@ export const PaySchedulesList: React.FC = () => {
             case 'semi-monthly': return acc + (amount * 2);
             case 'monthly': return acc + amount;
             case 'quarterly': return acc + (amount / 3);
+            case 'biannual': return acc + (amount / 6);
             case 'annually': return acc + (amount / 12);
+            case 'biennial': return acc + (amount / 24);
             default: return acc;
         }
     }, 0) || 0;

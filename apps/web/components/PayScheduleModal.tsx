@@ -7,6 +7,19 @@ import { CurrencyInput } from './ui/CurrencyInput';
 import { useApi } from '../hooks/useApi';
 import { getApiUrl } from '../utils/api';
 import { SearchableSelect } from './ui/SearchableSelect';
+import { TypeableSelect } from './ui/TypeableSelect';
+
+const FREQUENCY_OPTIONS = [
+  { value: 'weekly', label: 'WEEKLY', description: 'Occurs once a week (52 times a year)' },
+  { value: 'biweekly', label: 'BIWEEKLY', description: 'Occurs every two weeks (26 times a year)' },
+  { value: 'semi-monthly', label: 'SEMI-MONTHLY', description: 'Occurs twice a month (e.g. 1st & 15th, 24 times a year)' },
+  { value: 'monthly', label: 'MONTHLY', description: 'Occurs once a month (12 times a year)' },
+  { value: 'quarterly', label: 'QUARTERLY', description: 'Occurs every three months (4 times a year)' },
+  { value: 'biannual', label: 'BIANNUAL', description: 'Occurs twice a year (every 6 months)' },
+  { value: 'annually', label: 'ANNUALLY', description: 'Occurs once a year (1 time a year)' },
+  { value: 'biennial', label: 'BIENNIAL', description: 'Occurs once every two years' },
+  { value: 'manual', label: 'MANUAL / ONE-OFF', description: 'Occurs manually / as a one-off single entry' }
+];
 
 interface PayScheduleModalProps {
     isOpen: boolean;
@@ -222,19 +235,12 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                         <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
                             <Wallet size={12} /> Pay Frequency
                         </label>
-                        <select
+                        <TypeableSelect
+                            options={FREQUENCY_OPTIONS}
                             value={frequency}
-                            onChange={(e) => setFrequency(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:border-primary outline-none transition-all font-bold appearance-none cursor-pointer"
-                        >
-                            <option value="weekly">Weekly</option>
-                            <option value="biweekly">Bi-Weekly</option>
-                            <option value="semi-monthly">Semi-Monthly (e.g. 1st & 15th)</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="quarterly">Quarterly</option>
-                            <option value="annually">Annually</option>
-                            <option value="manual">Manual / One-Off</option>
-                        </select>
+                            onChange={setFrequency}
+                            icon={<Wallet size={16} />}
+                        />
                     </div>
 
                     {/* Next Pay Date */}

@@ -721,13 +721,11 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
               </div>
 
               <div className="flex items-center gap-3 ml-1">
-                <input 
-                  type="checkbox" 
+                <Checkbox 
                   checked={formData.forcePasswordChange}
-                  onChange={e => setFormData({ ...formData, forcePasswordChange: e.target.checked })}
-                  className="accent-emerald-500"
+                  onChange={checked => setFormData({ ...formData, forcePasswordChange: checked })}
                 />
-                <label className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer">Require Password Change on First Login</label>
+                <label onClick={() => setFormData({ ...formData, forcePasswordChange: !formData.forcePasswordChange })} className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer select-none">Require Password Change on First Login</label>
               </div>
 
               {error && <p className="text-red-500 text-xs font-black text-center uppercase tracking-widest">{error}</p>}

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { Price } from './Price'
 import { Modal } from './ui/Modal'
+import { Checkbox } from './ui/Checkbox'
 import { 
   Filter, 
   Calendar as CalendarIcon, 
@@ -482,14 +483,14 @@ const Calendar: React.FC<CalendarProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5">
             <div className="flex items-center gap-3">
-              <input 
-                type="checkbox"
-                id="includeProjected"
+              <Checkbox 
                 checked={includeProjected}
-                onChange={(e) => setIncludeProjected(e.target.checked)}
-                className="w-4 h-4 accent-primary rounded"
+                onChange={setIncludeProjected}
               />
-              <label htmlFor="includeProjected" className="text-xs font-black uppercase tracking-widest text-secondary cursor-pointer">
+              <label 
+                onClick={() => setIncludeProjected(!includeProjected)} 
+                className="text-xs font-black uppercase tracking-widest text-secondary cursor-pointer select-none"
+              >
                 Include Projected Items
               </label>
             </div>

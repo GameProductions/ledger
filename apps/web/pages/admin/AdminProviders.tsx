@@ -5,6 +5,7 @@ import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { InlineToast } from '../../components/ui/InlineToast';
+import { Checkbox } from '../../components/ui/Checkbox';
 
 const AdminProviders: React.FC = () => {
   const [providers, setProviders] = useState<any[]>([]);
@@ -184,14 +185,11 @@ const AdminProviders: React.FC = () => {
                     />
                   </div>
                    <div className="flex items-center gap-3 pt-6">
-                    <input 
-                      type="checkbox" 
-                      id="is3rdPartyCapable"
-                      checked={newItem.is3rdPartyCapable} 
-                      onChange={(e) => setNewItem({ ...newItem, is3rdPartyCapable: e.target.checked })}
-                      className="w-5 h-5 rounded bg-black/40 border border-white/10 text-emerald-500 accent-emerald-500"
-                    />
-                    <label htmlFor="is3rdPartyCapable" className="text-xs font-black uppercase tracking-widest text-slate-400">3rd Party Ready</label>
+                     <Checkbox 
+                       checked={newItem.is3rdPartyCapable} 
+                       onChange={(checked) => setNewItem({ ...newItem, is3rdPartyCapable: checked })}
+                     />
+                     <label onClick={() => setNewItem({ ...newItem, is3rdPartyCapable: !newItem.is3rdPartyCapable })} className="text-xs font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none">3rd Party Ready</label>
                   </div>
               </div>
             </div>

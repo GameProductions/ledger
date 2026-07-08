@@ -36,6 +36,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   }, [refreshTrigger, mutate])
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [singlePromoteId, setSinglePromoteId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isMoveToLedgerOpen, setIsMoveToLedgerOpen] = useState(false)
   const [ledgerDetails, setLedgerDetails] = useState({
@@ -143,6 +144,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   }
 
   const handleMoveToLedger = async () => {
+    const idsToPromote = singlePromoteId ? [singlePromoteId] : selectedIds
     const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/promote`, {
           method: 'POST',
           headers: {
@@ -151,13 +153,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             'x-household-id': localStorage.getItem('ledger_householdId') || ''
           },
           body: JSON.stringify({
-            ids: selectedIds,
+            ids: idsToPromote,
             transactionDetails: ledgerDetails
           })
         }) as any)
     if (res.ok) {
       globalMutate()
-      setSelectedIds([])
+      if (singlePromoteId) {
+        setSelectedIds(prev => prev.filter(id => id !== singlePromoteId))
+        setSinglePromoteId(null)
+      } else {
+        setSelectedIds([])
+      }
       setIsMoveToLedgerOpen(false)
     }
   }
@@ -264,7 +271,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           <p className="text-xs text-secondary font-medium">Pending expenses tracked automatically from your accounts. You can review them here, bulk edit them, or match/promote them to the main ledger.</p>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <button 
               onClick={toggleSelectAll}
@@ -276,14 +283,14 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           
           {reduced ? (
             selectedIds.length > 0 && (
-            <div className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3">
+            <div className="flex flex-wrap items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-2 sm:pr-3 w-full sm:w-auto">
               <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                 Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
                   const item = tracked.find((t: any) => t.id === id)
                   return sum + (item?.amountCents ?? 0)
                 }, 0))}
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button 
                   onClick={() => setIsBulkEditOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
@@ -303,7 +310,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                   <Send size={12} /> Move to Ledger ({selectedIds.length})
                 </button>
               </div>
-              <div className="w-px h-4 bg-white/10 mx-1"></div>
+              <div className="w-px h-4 bg-white/10 mx-1 hidden sm:block"></div>
               {confirmBulkDelete ? (
                 <InlineToast 
                   message={`Delete ${selectedIds.length} items?`} 
@@ -330,7 +337,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="flex items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-3"
+                className="flex flex-wrap items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-2 sm:pr-3 w-full sm:w-auto"
               >
                 <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                   Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
@@ -338,7 +345,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     return sum + (item?.amountCents ?? 0)
                   }, 0))}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button 
                     onClick={() => setIsBulkEditOpen(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
@@ -358,7 +365,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <Send size={12} /> Move to Ledger ({selectedIds.length})
                   </button>
                 </div>
-                <div className="w-px h-4 bg-white/10 mx-1"></div>
+                <div className="w-px h-4 bg-white/10 mx-1 hidden sm:block"></div>
                 {confirmBulkDelete ? (
                   <InlineToast 
                     message={`Delete ${selectedIds.length} items?`} 
@@ -517,12 +524,23 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                           onCancel={() => setConfirmDeleteId(null)} 
                         />
                       ) : (
-                        <button 
-                          onClick={() => setConfirmDeleteId(item.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs transition-colors"
-                        >
-                          <Trash2 size={14} /> Delete
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setConfirmDeleteId(item.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg text-xs transition-colors"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSinglePromoteId(item.id)
+                              setIsMoveToLedgerOpen(true)
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs transition-colors font-bold"
+                          >
+                            <Send size={14} /> Move to Ledger
+                          </button>
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-2">
@@ -578,7 +596,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
                       </div>
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSinglePromoteId(item.id)
+                          setIsMoveToLedgerOpen(true)
+                        }}
+                        className="p-2 hover:bg-orange-500/10 rounded-xl transition-all text-orange-400 hover:text-orange-300 flex items-center justify-center cursor-pointer"
+                        aria-label="Move to ledger"
+                        title="Move to ledger"
+                      >
+                        <Send size={16} />
+                      </button>
                       <button 
                         onClick={() => {
                           setEditingId(item.id)
@@ -627,10 +656,10 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         })}
       </div>
     </div>
-    <Modal isOpen={isMoveToLedgerOpen} onClose={() => setIsMoveToLedgerOpen(false)} title="Add to Main Ledger">
+    <Modal isOpen={isMoveToLedgerOpen} onClose={() => { setIsMoveToLedgerOpen(false); setSinglePromoteId(null); }} title="Add to Main Ledger">
         <div className="space-y-6 p-1">
           <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
-            <p className="text-sm text-orange-200/80 font-medium">Moving {selectedIds.length} items to the transaction ledger.</p>
+            <p className="text-sm text-orange-200/80 font-medium">Moving {singlePromoteId ? 1 : selectedIds.length} item(s) to the transaction ledger.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

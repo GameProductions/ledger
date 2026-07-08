@@ -30,6 +30,7 @@ import { Modal } from '../components/ui/Modal';
 import { GuidedTour } from '../components/GuidedTour';
 import { OnboardingChecklist } from '../components/OnboardingChecklist';
 import { SearchableSelect } from '../components/ui/SearchableSelect'
+import { Checkbox } from '../components/ui/Checkbox'
 import { CalendarEntryModal } from '../components/CalendarEntryModal'
 import { BillsList } from '../components/BillsList'
 import { InstallmentsList } from '../components/InstallmentsList'
@@ -717,14 +718,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 }).map((tx: any) => (
                   <div key={tx.id} className="flex items-center justify-between p-4 bg-white/5 border border-transparent hover:border-glass-border rounded-xl transition-all group">
                     <div className="flex items-center gap-4 flex-1">
-                      <input 
-                        type="checkbox" 
+                      <Checkbox 
                         checked={selectedTxIds.includes(tx.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) setSelectedTxIds([...selectedTxIds, tx.id])
+                        onChange={(checked) => {
+                          if (checked) setSelectedTxIds([...selectedTxIds, tx.id])
                           else setSelectedTxIds(selectedTxIds.filter(id => id !== tx.id))
                         }}
-                        className="w-5 h-5 rounded-lg bg-white/5 border-glass-border text-primary focus:ring-primary cursor-pointer"
                       />
                       <div>
                         <div className="font-bold flex items-center gap-3">

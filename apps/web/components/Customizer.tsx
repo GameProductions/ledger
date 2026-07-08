@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Checkbox } from './ui/Checkbox'
 
 interface CustomizerProps {
   settings: any
@@ -57,8 +58,7 @@ const Customizer: React.FC<CustomizerProps> = ({ settings, onUpdate }) => {
               {widgets.map(w => (
                 <label key={w.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.3rem 0' }}>
                   <span style={{ fontSize: '0.9rem' }}>{w.name}</span>
-                  <input 
-                    type="checkbox" 
+                  <Checkbox 
                     checked={settings.dashboardLayout?.[w.id] !== false} 
                     onChange={() => toggleWidget(w.id)}
                   />

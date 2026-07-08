@@ -43,9 +43,9 @@ We have successfully completed the final phase of the fleet-wide terminology mig
 
 ---
 
-# Walkthrough: v3.103.2 Interactive Enhancements
+# Walkthrough: v3.104.0 Interactive Enhancements
 
-We have successfully implemented interactive fixes, mobile adjustments, and database schema updates for v3.103.2 of Ledger.
+We have successfully implemented interactive fixes, mobile adjustments, and database schema updates for v3.104.0 of Ledger.
 
 ## Changes Made
 

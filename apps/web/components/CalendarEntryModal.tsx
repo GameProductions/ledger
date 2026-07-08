@@ -6,6 +6,7 @@ import { TransactionTimeline } from './TransactionTimeline';
 import { CurrencyInput } from './ui/CurrencyInput';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { SearchableSelect } from './ui/SearchableSelect';
+import { Checkbox } from './ui/Checkbox';
 
 interface CalendarEntryModalProps {
   isOpen: boolean;
@@ -356,14 +357,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               {type === 'bill' && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
-                      <input 
-                        type="checkbox" 
-                        id="isRecurring"
-                        checked={isRecurring}
-                        onChange={(e) => setIsRecurring(e.target.checked)}
-                        className="w-5 h-5 accent-amber-500"
+                      <Checkbox 
+                        checked={isRecurring} 
+                        onChange={setIsRecurring} 
+                        iconClassName="text-amber-500"
                       />
-                      <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
+                      <label onClick={() => setIsRecurring(!isRecurring)} className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer select-none">
                           This is a recurring bill
                       </label>
                   </div>
@@ -685,14 +684,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                {type === 'bill' && (
                  <div className="space-y-4">
                    <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
-                       <input 
-                         type="checkbox" 
-                         id="isRecurring"
-                         checked={isRecurring}
-                         onChange={(e) => setIsRecurring(e.target.checked)}
-                         className="w-5 h-5 accent-amber-500"
+                       <Checkbox 
+                         checked={isRecurring} 
+                         onChange={setIsRecurring} 
+                         iconClassName="text-amber-500"
                        />
-                       <label htmlFor="isRecurring" className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer">
+                       <label onClick={() => setIsRecurring(!isRecurring)} className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer select-none">
                            This is a recurring bill
                        </label>
                    </div>

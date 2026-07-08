@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { Users, Percent, DollarSign, CheckCircle2 } from 'lucide-react';
 import { Price } from './Price';
 import { getApiUrl } from '../utils/api';
+import { Checkbox } from './ui/Checkbox';
 
 interface LiabilitySplitterProps {
     targetId: string;
@@ -131,7 +132,7 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
                    <div className="text-[10px] uppercase font-black tracking-widest text-primary">Public Master Ledger</div>
                    <div className="text-[9px] font-medium text-white/50 w-4/5 leading-tight mt-1">Allow assignees to view the master tracker showing everyone's progress.</div>
                 </div>
-                <input type="checkbox" checked={isMasterPublic} onChange={(e) => setIsMasterPublic(e.target.checked)} className="w-4 h-4 rounded appearance-none border border-primary/40 bg-black/50 checked:bg-primary checked:border-primary transition-colors cursor-pointer relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[4.5px] after:top-[2px] after:w-[5px] after:h-[9px] after:border-solid after:border-black after:border-r-2 after:border-b-2 after:rotate-45" />
+                <Checkbox checked={isMasterPublic} onChange={setIsMasterPublic} />
             </label>
 
             <button 

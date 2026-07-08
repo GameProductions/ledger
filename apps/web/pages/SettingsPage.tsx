@@ -5,6 +5,7 @@ import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, 
 import { MainLayout } from '../components/layout/MainLayout'
 import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
+import { Checkbox } from '../components/ui/Checkbox'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PasswordChecklist } from '../components/PasswordChecklist'
@@ -742,11 +743,9 @@ const SettingsPage: React.FC = () => {
             <p className="text-secondary font-medium tracking-tight">Are you sure you want to disconnect this account? Syncing for this account will be terminated.</p>
             
             <label className="flex items-start gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-all">
-               <input 
-                type="checkbox" 
+               <Checkbox 
                 checked={keepSettingsOnUnlink}
-                onChange={(e) => setKeepSettingsOnUnlink(e.target.checked)}
-                className="mt-1 accent-primary"
+                onChange={setKeepSettingsOnUnlink}
                />
                <div className="space-y-1">
                   <p className="text-sm font-bold tracking-tight text-white">Retain Profile Assets</p>

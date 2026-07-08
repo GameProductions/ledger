@@ -73,10 +73,17 @@ const AppContent: React.FC = () => {
     window.addEventListener('hashchange', handleHashChange)
 
     // [FLEET-RESILIENCE] Asset Recovery Protocol
-    // Detects 404 errors on critical hashed assets (JS/CSS) which typically
-    // happen after a new deployment when the PWA cache is stale.
-    const handleAssetError = (e: ErrorEvent | PromiseRejectionEvent) => {
-      const target = e instanceof ErrorEvent ? e.target : null;
+    // Detects 404 errors on critical hashed assets (JS/CSS) or dynamic import failures
+    // which typically happen after a new deployment when the cache is stale.
+    const handleAssetError = (e: ErrorEvent) => {
+      const message = e.message || '';
+      if (message.includes('Failed to fetch dynamically imported module') || message.includes('dynamically imported module')) {
+        console.warn('[Asset Recovery] Dynamic import failure detected. Reloading page...', message);
+        window.location.reload();
+        return;
+      }
+
+      const target = e.target;
       if (target && (target instanceof HTMLScriptElement || target instanceof HTMLLinkElement)) {
         const src = (target as any).src || (target as any).href;
         if (src && src.includes('/assets/')) {
@@ -87,11 +94,21 @@ const AppContent: React.FC = () => {
       }
     };
 
+    const handleRejection = (e: PromiseRejectionEvent) => {
+      const message = e.reason?.message || '';
+      if (message.includes('Failed to fetch dynamically imported module') || message.includes('dynamically imported module')) {
+        console.warn('[Asset Recovery] Unhandled rejection: failed dynamic import. Reloading page...', message);
+        window.location.reload();
+      }
+    };
+
     window.addEventListener('error', handleAssetError, true);
+    window.addEventListener('unhandledrejection', handleRejection);
     
     return () => {
       window.removeEventListener('hashchange', handleHashChange)
       window.removeEventListener('error', handleAssetError, true)
+      window.removeEventListener('unhandledrejection', handleRejection)
     }
   }, [])
 

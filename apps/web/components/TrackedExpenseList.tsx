@@ -664,26 +664,28 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 flex items-center gap-1.5">
-                <CreditCard size={14} className="text-orange-500" /> Select Account
+              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
+                <CreditCard size={14} className="text-orange-500" /> Payment Account
               </label>
+              <p className="text-[10px] text-slate-500 font-bold mb-2">The account used for payment. Type a name to create a new one.</p>
               <SearchableSelect 
                 options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
                 value={ledgerDetails.accountId}
                 onChange={val => setLedgerDetails({...ledgerDetails, accountId: val})}
-                placeholder="Choose Account..."
+                placeholder="Choose or create Account..."
                 onCreate={handleCreateAccount}
               />
             </div>
             <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 flex items-center gap-1.5">
-                <Tag size={14} className="text-orange-500" /> Select Category
+              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
+                <Tag size={14} className="text-orange-500" /> Budget Category
               </label>
+              <p className="text-[10px] text-slate-500 font-bold mb-2">Category for expense reports. Type a name to create a new one.</p>
               <SearchableSelect 
                 options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                 value={ledgerDetails.categoryId}
                 onChange={val => setLedgerDetails({...ledgerDetails, categoryId: val})}
-                placeholder="Choose Category..."
+                placeholder="Choose or create Category..."
                 onCreate={handleCreateCategory}
               />
             </div>
@@ -691,28 +693,34 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 flex items-center gap-1.5">
-                <Calendar size={14} className="text-orange-500" /> Effective Date
+              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
+                <Calendar size={14} className="text-orange-500" /> Transaction Date
               </label>
+              <p className="text-[10px] text-slate-500 font-bold mb-2">The date the transaction cleared or occurred.</p>
               <input 
                 type="date"
                 value={ledgerDetails.transactionDate}
                 onChange={e => setLedgerDetails({...ledgerDetails, transactionDate: e.target.value})}
-                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none"
+                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none font-bold"
               />
             </div>
             <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 flex items-center gap-1.5">
-                Initial Status
+              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
+                Reconciliation Status
               </label>
+              <p className="text-[10px] text-slate-500 font-bold mb-2">Set whether this transaction has settled in your account.</p>
               <div className="flex gap-2">
-                {['paid', 'pending'].map(s => (
+                {[
+                  { value: 'paid', label: 'Paid / Cleared' },
+                  { value: 'pending', label: 'Pending / Uncleared' }
+                ].map(s => (
                   <button
-                    key={s}
-                    onClick={() => setLedgerDetails({...ledgerDetails, status: s})}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${ledgerDetails.status === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/40 border-white/10 text-secondary'}`}
+                    key={s.value}
+                    type="button"
+                    onClick={() => setLedgerDetails({...ledgerDetails, status: s.value})}
+                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${ledgerDetails.status === s.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/40 border-white/10 text-secondary'}`}
                   >
-                    {s}
+                    {s.label}
                   </button>
                 ))}
               </div>

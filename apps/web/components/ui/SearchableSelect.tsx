@@ -137,7 +137,12 @@ const DropdownContent: React.FC<DropdownContentProps> = ({
         </div>
       )}
 
-      {filteredOptions.length > 0 ? (
+      {options.length === 0 && !search ? (
+        <div className="p-8 text-center text-slate-400">
+          <p className="text-xs font-black uppercase tracking-widest text-amber-500/80 mb-1.5">No options created yet</p>
+          <p className="text-[11px] text-slate-500 font-bold leading-normal">Type a name in the search box above to create one dynamically!</p>
+        </div>
+      ) : filteredOptions.length > 0 ? (
         filteredOptions.map((option, idx) => {
           const isActive = idx === activeIndex;
           const isSelected = option.value === value;

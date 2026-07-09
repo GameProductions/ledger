@@ -1,5 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "a5b3081992c9b5b608c5a39fea5a18d0",
   "name": "ledger",
   "main": "apps/api/worker.ts",
   "compatibility_date": "2026-05-01",

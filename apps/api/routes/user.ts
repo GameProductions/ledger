@@ -568,25 +568,107 @@ user.get('/service-providers', async (c) => {
 })
 
 user.post('/service-providers', zValidator('json', z.object({
-  name: z.string().min(1)
+  name: z.string().min(1),
+  visibility: z.enum(['private', 'household', 'public']).optional(),
+  defaultCategoryId: z.string().nullable().optional(),
+  defaultDueDate: z.string().nullable().optional()
 })), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') || null
-  const { name } = c.req.valid('json')
+  const { name, visibility, defaultCategoryId, defaultDueDate } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   
+  let targetVisibility = visibility || 'household'
+  if (targetVisibility === 'household' && householdId) {
+    const membership = await db.select({ role: userHouseholds.role })
+      .from(userHouseholds)
+      .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+      .limit(1)
+      .then(res => res[0]) as any;
+    if (!membership || membership.role === 'viewer') {
+      targetVisibility = 'private'
+    }
+  } else if (targetVisibility === 'household' && !householdId) {
+    targetVisibility = 'private'
+  }
+
   await db.insert(serviceProviders).values({
     id,
     name,
-    visibility: 'household',
-    householdId,
+    visibility: targetVisibility,
+    householdId: targetVisibility === 'household' ? householdId : null,
     createdBy: userId,
+    defaultCategoryId: defaultCategoryId || null,
+    defaultDueDate: defaultDueDate || null,
     status: 'active'
   })
   
-  await logAudit(c, 'service_providers', id, 'CREATE', null, { name })
+  await logAudit(c, 'service_providers', id, 'CREATE', null, { name, visibility: targetVisibility })
   return c.json({ success: true, id })
+})
+
+user.patch('/service-providers/:id', zValidator('json', z.object({
+  name: z.string().optional(),
+  visibility: z.enum(['private', 'household']).optional(),
+  defaultCategoryId: z.string().nullable().optional(),
+  defaultDueDate: z.string().nullable().optional()
+})), async (c) => {
+  const userId = c.get('userId') as string
+  const householdId = c.get('householdId') || null
+  const id = c.req.param('id')
+  const updates = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const provider = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id)).limit(1).then(res => res[0]) as any
+  if (!provider) {
+    throw new HTTPException(404, { message: 'Provider not found' })
+  }
+
+  if (provider.visibility === 'public') {
+    throw new HTTPException(403, { message: 'Cannot modify platform public registry' })
+  }
+
+  if (provider.visibility === 'private' && provider.createdBy !== userId) {
+    throw new HTTPException(403, { message: 'Access denied' })
+  }
+
+  if (provider.visibility === 'household') {
+    const membership = await db.select({ role: userHouseholds.role })
+      .from(userHouseholds)
+      .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, provider.householdId)))
+      .limit(1)
+      .then(res => res[0]) as any;
+    if (!membership || membership.role === 'viewer') {
+      throw new HTTPException(403, { message: 'Access denied: Household view-only' })
+    }
+  }
+
+  const valuesToSet: any = {}
+  if (updates.name !== undefined) valuesToSet.name = updates.name
+  if (updates.visibility !== undefined) {
+    let targetVisibility = updates.visibility
+    if (targetVisibility === 'household' && householdId) {
+      const membership = await db.select({ role: userHouseholds.role })
+        .from(userHouseholds)
+        .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+        .limit(1)
+        .then(res => res[0]) as any;
+      if (!membership || membership.role === 'viewer') {
+        targetVisibility = 'private'
+      }
+    } else if (targetVisibility === 'household' && !householdId) {
+      targetVisibility = 'private'
+    }
+    valuesToSet.visibility = targetVisibility
+    valuesToSet.householdId = targetVisibility === 'household' ? householdId : null
+  }
+  if (updates.defaultCategoryId !== undefined) valuesToSet.defaultCategoryId = updates.defaultCategoryId
+  if (updates.defaultDueDate !== undefined) valuesToSet.defaultDueDate = updates.defaultDueDate
+
+  await db.update(serviceProviders).set(valuesToSet).where(eq(serviceProviders.id, id))
+  await logAudit(c, 'service_providers', id, 'UPDATE', null, valuesToSet)
+  return c.json({ success: true })
 })
 
 user.get('/identities', async (c) => {

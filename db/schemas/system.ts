@@ -76,6 +76,8 @@ export const serviceProviders = pgTable('service_providers', {
   createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
   status: text('status').default('active'),
   iconUrl: text('icon_url'),
+  defaultCategoryId: text('default_category_id'),
+  defaultDueDate: text('default_due_date'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_providers_household').on(table.householdId),

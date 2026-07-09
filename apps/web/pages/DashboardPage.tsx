@@ -389,8 +389,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           status: data.status || 'unpaid',
           notes: data.notes || '',
           isRecurring: false,
-          categoryId: selectedCalendarItem?.originalData?.categoryId || null,
-          accountId: selectedCalendarItem?.originalData?.accountId || null
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null
         }
         await fetchApi(endpoint, 'POST', oneOffPayload)
       }
@@ -429,8 +429,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           frequency: data.frequency,
           endDate: data.endDate || null,
           maxOccurrences: data.maxOccurrences || null,
-          categoryId: selectedCalendarItem?.originalData?.categoryId || null,
-          accountId: selectedCalendarItem?.originalData?.accountId || null
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null
         }
         await fetchApi(endpoint, 'POST', newSchedulePayload)
       }
@@ -458,14 +458,23 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           isRecurring: data.isRecurring,
           frequency: data.frequency,
           endDate: data.endDate || null,
-          maxOccurrences: data.maxOccurrences || null
+          maxOccurrences: data.maxOccurrences || null,
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null,
+          payScheduleId: data.payScheduleId || null,
+          paycheckDate: data.paycheckDate || null
         }
       } else {
         payload = {
-          description: data.description,
+          description: data.description || data.name,
           amountCents: data.amountCents,
-          transactionDate: data.transactionDate || data.date,
-          status: data.status || 'none'
+          transactionDate: data.transactionDate || data.dueDate || data.date,
+          status: data.status || 'none',
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null,
+          confirmationNumber: data.confirmationNumber || null,
+          payScheduleId: data.payScheduleId || null,
+          paycheckDate: data.paycheckDate || null
         }
       }
       await fetchApi(url, method, payload)

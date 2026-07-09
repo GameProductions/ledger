@@ -68,6 +68,7 @@ export const TransactionLedger: React.FC = () => {
         confirmationNumber: '',
         status: 'pending'
       });
+      mutateTx();
       globalMutate();
     }
   };
@@ -86,6 +87,7 @@ export const TransactionLedger: React.FC = () => {
     }) as any);
     if (res.ok) {
       setEditingTx(null);
+      mutateTx();
       globalMutate();
     }
   };
@@ -101,6 +103,7 @@ export const TransactionLedger: React.FC = () => {
       }
     }) as any);
     if (res.ok) {
+      mutateTx();
       globalMutate();
     }
   };
@@ -120,6 +123,7 @@ export const TransactionLedger: React.FC = () => {
     }) as any);
     if (res.ok) {
       setSelectedIds([]);
+      mutateTx();
       globalMutate();
     }
   };

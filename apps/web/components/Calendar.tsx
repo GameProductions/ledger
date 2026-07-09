@@ -164,6 +164,8 @@ const Calendar: React.FC<CalendarProps> = ({
       .map(rp => ({
           ...rp.originalData,
           id: rp.id,
+          originalId: rp.originalId,
+          date: rp.date,
           type: rp.type,
           description: rp.description,
           amountCents: rp.amountCents,

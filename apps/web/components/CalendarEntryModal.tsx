@@ -80,7 +80,13 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
   const initialSource = parseInitialSource(initialData?.description || initialData?.name || '');
 
-  const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(initialData?.type === 'pay_schedule' ? 'pay_schedule' : initialData?.type === 'subscription' ? 'bill' : 'charge');
+  const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(
+    initialData?.type === 'pay_schedule' 
+      ? 'pay_schedule' 
+      : (initialData?.type === 'subscription' || initialData?.type === 'bill') 
+        ? 'bill' 
+        : 'charge'
+  );
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
   const [sourceType, setSourceType] = useState(initialSource.type || 'Salary');
   const [sourceName, setSourceName] = useState(initialSource.name);

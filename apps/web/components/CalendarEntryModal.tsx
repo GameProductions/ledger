@@ -770,144 +770,83 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
     return null;
   };
 
+  const ModalContainer = reduced ? 'div' : motion.div;
+  const containerProps = reduced ? {} : {
+    initial: { opacity: 0, scale: 0.9, y: 20 },
+    animate: { opacity: 1, scale: 1, y: 0 }
+  };
+
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4 overflow-y-auto">
       {/* Absolute background overlay */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
       
-      {reduced ? (
-        // REDUCED MOTION LAYOUT
-        <div className="card w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden reveal p-0 relative z-10">
-          <div className="p-8 pb-4 flex justify-between items-center border-b border-white/5">
-             <div>
-                <h3 className="text-2xl font-black italic tracking-tighter uppercase">{initialData ? 'Update' : 'New'} <span className="text-primary">Entry</span></h3>
-                <p className="text-xs text-secondary uppercase font-bold tracking-widest mt-1">Calendar Ledger Management</p>
-             </div>
-             <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
-               <X size={24} />
-             </button>
-          </div>
-
-          <div className="px-8 pt-4">
-            <div className="flex bg-white/5 p-1 rounded-2xl border border-glass-border">
-              <button 
-                type="button"
-                onClick={() => setType('pay_schedule')}
-                className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
-              >
-                Pay
-              </button>
-              <button 
-                type="button"
-                onClick={() => setType(isRecurring ? 'bill' : 'charge')}
-                className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type !== 'pay_schedule' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
-              >
-                Bills & Charges
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-              {renderFormContent()}
-              {renderTimelineLogs()}
-            </div>
-
-            <div className="p-8 pt-4 border-t border-white/5 bg-black/40 flex gap-4">
-               {initialData && onDelete && (
-                 <button 
-                  type="button"
-                  onClick={() => {
-                    if (isItemRecurring) {
-                      setScopeConfirmState('delete');
-                    } else {
-                      onDelete(initialData.id, initialData.type);
-                    }
-                  }}
-                  className="w-14 h-14 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500/20 transition-all cursor-pointer"
-                 >
-                   <Trash2 size={24} />
-                 </button>
-               )}
-               <button 
-                type="submit"
-                className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
-               >
-                 <CheckCircle2 size={18} />
-                 {initialData ? 'Save Changes' : 'Create Entry'}
-               </button>
-            </div>
-          </form>
+      {/* @ts-ignore */}
+      <ModalContainer 
+        {...containerProps} 
+        className="card w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden reveal p-0 relative z-10"
+      >
+        <div className="p-8 pb-4 flex justify-between items-center border-b border-white/5">
+           <div>
+              <h3 className="text-2xl font-black italic tracking-tighter uppercase">{initialData ? 'Update' : 'New'} <span className="text-primary">Entry</span></h3>
+              <p className="text-xs text-secondary uppercase font-bold tracking-widest mt-1">Calendar Ledger Management</p>
+           </div>
+           <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
+             <X size={24} />
+           </button>
         </div>
-      ) : (
-        // STANDARD ANIMATED LAYOUT (MOTION.DIV)
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="card w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden reveal p-0 relative z-10"
-        >
-          <div className="p-8 pb-4 flex justify-between items-center border-b border-white/5">
-             <div>
-                <h3 className="text-2xl font-black italic tracking-tighter uppercase">{initialData ? 'Update' : 'New'} <span className="text-primary">Entry</span></h3>
-                <p className="text-xs text-secondary uppercase font-bold tracking-widest mt-1">Calendar Ledger Management</p>
-             </div>
-             <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
-               <X size={24} />
+
+        <div className="px-8 pt-4">
+          <div className="flex bg-white/5 p-1 rounded-2xl border border-glass-border">
+            <button 
+              type="button"
+              onClick={() => setType('pay_schedule')}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
+            >
+              Pay
+            </button>
+            <button 
+              type="button"
+              onClick={() => setType(isRecurring ? 'bill' : 'charge')}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type !== 'pay_schedule' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
+            >
+              Bills & Charges
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            {renderFormContent()}
+            {renderTimelineLogs()}
+          </div>
+
+          <div className="p-8 pt-4 border-t border-white/5 bg-black/40 flex gap-4">
+             {initialData && onDelete && (
+               <button 
+                type="button"
+                onClick={() => {
+                  if (isItemRecurring) {
+                    setScopeConfirmState('delete');
+                  } else {
+                    onDelete(initialData.id, initialData.type);
+                  }
+                }}
+                className="w-14 h-14 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500/20 transition-all cursor-pointer"
+               >
+                 <Trash2 size={24} />
+               </button>
+             )}
+             <button 
+              type="submit"
+              className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
+             >
+               <CheckCircle2 size={18} />
+               {initialData ? 'Save Changes' : 'Create Entry'}
              </button>
           </div>
-
-          <div className="px-8 pt-4">
-            <div className="flex bg-white/5 p-1 rounded-2xl border border-glass-border">
-              <button 
-                type="button"
-                onClick={() => setType('pay_schedule')}
-                className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
-              >
-                Pay
-              </button>
-              <button 
-                type="button"
-                onClick={() => setType(isRecurring ? 'bill' : 'charge')}
-                className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type !== 'pay_schedule' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
-              >
-                Bills & Charges
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-              {renderFormContent()}
-              {renderTimelineLogs()}
-            </div>
-
-            <div className="p-8 pt-4 border-t border-white/5 bg-black/40 flex gap-4">
-               {initialData && onDelete && (
-                 <button 
-                  type="button"
-                  onClick={() => {
-                    if (isItemRecurring) {
-                      setScopeConfirmState('delete');
-                    } else {
-                      onDelete(initialData.id, initialData.type);
-                    }
-                  }}
-                  className="w-14 h-14 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500/20 transition-all cursor-pointer"
-                 >
-                   <Trash2 size={24} />
-                 </button>
-               )}
-               <button 
-                type="submit"
-                className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
-               >
-                 <CheckCircle2 size={18} />
-                 {initialData ? 'Save Changes' : 'Create Entry'}
-               </button>
-            </div>
-          </form>
-        </motion.div>
-      )}
+        </form>
+      </ModalContainer>
 
       {scopeConfirmState && (
         <div 

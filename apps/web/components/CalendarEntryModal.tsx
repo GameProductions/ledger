@@ -105,6 +105,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [upcomingAmountCents, setUpcomingAmountCents] = useState(initialData?.upcomingAmountCents || 0);
   const [upcomingDate, setUpcomingDate] = useState(initialData?.upcomingEffectiveDate || '');
   const [payScheduleId, setPayScheduleId] = useState(initialData?.payScheduleId || '');
+  const [showRateAdjustment, setShowRateAdjustment] = useState(!!(initialData?.upcomingAmountCents || initialData?.upcomingEffectiveDate));
   const [paycheckDate, setPaycheckDate] = useState(initialData?.paycheckDate || '');
   const [scopeConfirmState, setScopeConfirmState] = useState<'edit' | 'delete' | null>(null);
   const reduced = useReducedMotion();
@@ -198,26 +199,27 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             onClick={() => setType('pay_schedule')}
             className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
           >
-            Payday
+            Pay
           </button>
           <button 
             type="button"
             onClick={() => setType('bill')}
             className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'bill' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
           >
-            Future Bill
+            Bills
           </button>
           <button 
             type="button"
             onClick={() => setType('charge')}
             className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'charge' ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-white'}`}
           >
-            Charge
+            One-time charges
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
+              {/* 1. Label / Description (Bills/Charges) or Source (Payday) */}
               {type === 'pay_schedule' ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -261,7 +263,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
-              {type !== 'pay_schedule' ? (
+              {/* 2. Status, confirmation # (Bills/Charges only) */}
+              {type !== 'pay_schedule' && (
                 <div className="grid grid-cols-2 gap-4">
                    <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
@@ -288,6 +291,30 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                         />
                         <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
                       </div>
+                   </div>
+                </div>
+              )}
+
+              {/* 3. Amount, Due / Scheduled date (Bills/Charges) or Payday Frequency/Notes (Payday) */}
+              {type !== 'pay_schedule' ? (
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                       <CurrencyInput 
+                         valueCents={amountCents}
+                         onChangeCents={setAmountCents}
+                         placeholder="0.00"
+                       />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due / Scheduled Date</label>
+                      <input 
+                        required
+                        type="date" 
+                        value={currentDate}
+                        onChange={(e) => setCurrentDate(e.target.value)}
+                        className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg appearance-none"
+                      />
                    </div>
                 </div>
               ) : (
@@ -344,32 +371,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
-              {(type === 'bill' || type === 'pay_schedule') && (
-                <div className={`p-4 border rounded-2xl space-y-4 animate-in zoom-in-95 duration-300 ${type === 'pay_schedule' ? 'bg-blue-500/5 border-blue-500/10' : 'bg-amber-500/5 border-amber-500/10'}`}>
-                  <div className={`text-[10px] font-black uppercase tracking-widest ${type === 'pay_schedule' ? 'text-blue-500' : 'text-amber-500'}`}>Planned Rate Adjustment (Optional)</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
-                        <CurrencyInput
-                          valueCents={upcomingAmountCents}
-                          onChangeCents={setUpcomingAmountCents}
-                          placeholder="0.00"
-                          className="bg-black/40 border-white/5"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
-                       <input 
-                        type="date"
-                        value={upcomingDate}
-                        onChange={(e) => setUpcomingDate(e.target.value)}
-                        className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
-                       />
-                    </div>
-                  </div>
-                </div>
-              )}
-
+              {/* 4. This is a recurring bill (Bills only) */}
               {type === 'bill' && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
@@ -416,27 +418,43 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
-                     <CurrencyInput 
-                       valueCents={amountCents}
-                       onChangeCents={setAmountCents}
-                       placeholder="0.00"
-                     />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due / Scheduled Date</label>
-                    <input 
-                      required
-                      type="date" 
-                      value={currentDate}
-                      onChange={(e) => setCurrentDate(e.target.value)}
-                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg appearance-none"
-                    />
-                 </div>
-              </div>
+              {/* 5. Planned Rate Adjustment (Bills / Paydays only) */}
+              {(type === 'bill' || type === 'pay_schedule') && (
+                <div className={`p-4 border rounded-2xl space-y-4 animate-in zoom-in-95 duration-300 ${type === 'pay_schedule' ? 'bg-blue-500/5 border-blue-500/10' : 'bg-amber-500/5 border-amber-500/10'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setShowRateAdjustment(!showRateAdjustment)}
+                    className="w-full flex items-center justify-between outline-none cursor-pointer"
+                  >
+                    <div className={`text-[10px] font-black uppercase tracking-widest ${type === 'pay_schedule' ? 'text-blue-500' : 'text-amber-500'}`}>Planned Rate Adjustment (Optional)</div>
+                    <span className="text-xs text-slate-500">{showRateAdjustment ? '▼' : '▶'}</span>
+                  </button>
+                  {showRateAdjustment && (
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                         <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
+                         <CurrencyInput
+                           valueCents={upcomingAmountCents}
+                           onChangeCents={setUpcomingAmountCents}
+                           placeholder="0.00"
+                           className="bg-black/40 border-white/5"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
+                         <input 
+                          type="date"
+                          value={upcomingDate}
+                          onChange={(e) => setUpcomingDate(e.target.value)}
+                          className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
+                         />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
+              {/* 6. Assign to Paycheck */}
               {(type === 'bill' || type === 'charge') && paySchedules && paySchedules.length > 0 && (
                 <div className="space-y-2 animate-in fade-in duration-300">
                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Assign to Paycheck</label>
@@ -452,33 +470,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   </select>
                 </div>
               )}
+          </div>
 
-              {initialData?.id && !initialData.id.startsWith('bill-proj-') && !initialData.id.startsWith('pay-proj-') && !initialData.isProjected && (
-                <div className="pt-4 border-t border-white/5">
-                   <button 
-                     type="button"
-                     onClick={() => setShowTimeline(!showTimeline)}
-                     className="w-full py-3 px-4 rounded-xl flex items-center justify-between bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
-                   >
-                     <div className="flex items-center gap-3">
-                        <Activity size={16} className="text-amber-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Privacy & Data Ownership Audit History</span>
-                     </div>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-amber-500 transition-colors">
-                       {showTimeline ? 'Close Logs' : 'View Logs'}
-                     </span>
-                   </button>
-                   
-                    {showTimeline && (
-                      <div className="overflow-hidden mt-6">
-                        <TransactionTimeline transactionId={initialData.id} />
-                      </div>
-                    )}
-                 </div>
-               )}
-           </div>
-
-           <div className="pt-4 flex gap-4">
+<div className="pt-4 flex gap-4">
               {initialData && onDelete && (
                 <button 
                  type="button"
@@ -496,7 +490,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 {initialData ? 'Save Changes' : 'Create Entry'}
               </button>
            </div>
-         </form>
+         
+</form>
        </div>
       ) : (
         <motion.div 
@@ -520,26 +515,27 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               onClick={() => setType('pay_schedule')}
               className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
             >
-              Payday
+              Pay
             </button>
             <button 
               type="button"
               onClick={() => setType('bill')}
               className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'bill' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
             >
-              Future Bill
+              Bills
             </button>
             <button 
               type="button"
               onClick={() => setType('charge')}
               className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'charge' ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'text-slate-500 hover:text-white'}`}
             >
-              Charge
+              One-time charges
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-4">
+              {/* 1. Label / Description (Bills/Charges) or Source (Payday) */}
               {type === 'pay_schedule' ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -583,182 +579,198 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 </div>
               )}
 
-               {type !== 'pay_schedule' ? (
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
-                       <TypeableSelect 
-                         options={[
-                           { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
-                           { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
-                           { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
-                           { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
-                         ]}
-                         value={status}
-                         onChange={(val) => setStatus(val)}
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Confirmation #</label>
-                       <div className="relative">
-                         <input 
-                           type="text" 
-                           value={confirmationNumber}
-                           onChange={(e) => setConfirmationNumber(e.target.value)}
-                           placeholder="Optional..."
-                           className="w-full p-4 pl-12 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
-                         />
-                         <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                       </div>
-                    </div>
-                 </div>
-               ) : (
-                 <div className="space-y-4">
-                   <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
-                        <TypeableSelect 
-                          options={[
-                            { value: 'weekly', label: 'WEEKLY' },
-                            { value: 'biweekly', label: 'BIWEEKLY' },
-                            { value: 'semi-monthly', label: 'SEMI-MONTHLY' },
-                            { value: 'monthly', label: 'MONTHLY' }
-                          ]}
-                          value={frequency}
-                          onChange={(val) => setFrequency(val)}
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Internal Notes</label>
+              {/* 2. Status, confirmation # (Bills/Charges only) */}
+              {type !== 'pay_schedule' && (
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
+                      <TypeableSelect 
+                        options={[
+                          { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
+                          { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
+                          { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
+                          { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
+                        ]}
+                        value={status}
+                        onChange={(val) => setStatus(val)}
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Confirmation #</label>
+                      <div className="relative">
                         <input 
                           type="text" 
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder="e.g. Include bonus"
-                          className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
+                          value={confirmationNumber}
+                          onChange={(e) => setConfirmationNumber(e.target.value)}
+                          placeholder="Optional..."
+                          className="w-full p-4 pl-12 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
                         />
-                     </div>
+                        <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                      </div>
                    </div>
+                </div>
+              )}
 
-                   {frequency === 'semi-monthly' && (
-                     <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">First Day of Month</label>
-                          <input 
-                            type="number" min="1" max="31"
-                            value={semiMonthlyDay1}
-                            onChange={(e) => setSemiMonthlyDay1(Number(e.target.value))}
-                            className="w-full p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-white font-bold"
-                          />
-                       </div>
-                       <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">Second Day of Month</label>
-                          <input 
-                            type="number" min="1" max="31"
-                            value={semiMonthlyDay2}
-                            onChange={(e) => setSemiMonthlyDay2(Number(e.target.value))}
-                            className="w-full p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-white font-bold"
-                          />
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               )}
-
-               {(type === 'bill' || type === 'pay_schedule') && (
-                 <div className={`p-4 border rounded-2xl space-y-4 animate-in zoom-in-95 duration-300 ${type === 'pay_schedule' ? 'bg-blue-500/5 border-blue-500/10' : 'bg-amber-500/5 border-amber-500/10'}`}>
-                   <div className={`text-[10px] font-black uppercase tracking-widest ${type === 'pay_schedule' ? 'text-blue-500' : 'text-amber-500'}`}>Planned Rate Adjustment (Optional)</div>
-                   <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
-                        <CurrencyInput
-                          valueCents={upcomingAmountCents}
-                          onChangeCents={setUpcomingAmountCents}
-                          placeholder="0.00"
-                          className="bg-black/40 border-white/5"
-                        />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
-                        <input 
-                         type="date"
-                         value={upcomingDate}
-                         onChange={(e) => setUpcomingDate(e.target.value)}
-                         className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
-                        />
-                     </div>
-                   </div>
-                 </div>
-               )}
-
-               {type === 'bill' && (
-                 <div className="space-y-4">
-                   <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
-                       <Checkbox 
-                         checked={isRecurring} 
-                         onChange={setIsRecurring} 
-                         iconClassName="text-amber-500"
+              {/* 3. Amount, Due / Scheduled date (Bills/Charges) or Payday Frequency/Notes (Payday) */}
+              {type !== 'pay_schedule' ? (
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                       <CurrencyInput 
+                         valueCents={amountCents}
+                         onChangeCents={setAmountCents}
+                         placeholder="0.00"
                        />
-                       <label onClick={() => setIsRecurring(!isRecurring)} className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer select-none">
-                           This is a recurring bill
-                       </label>
                    </div>
-                   {isRecurring && (
-                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white/5 border border-glass-border rounded-2xl animate-in slide-in-from-top-2 duration-300">
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
-                         <TypeableSelect 
-                           options={FREQUENCY_OPTIONS}
-                           value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
-                           onChange={(val) => setFrequency(val)}
-                         />
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">End Date</label>
-                         <input 
-                           type="date"
-                           value={billEndDate}
-                           onChange={(e) => setBillEndDate(e.target.value)}
-                           className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
-                         />
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Max Occurrences</label>
-                         <input 
-                           type="number"
-                           placeholder="Unlimited"
-                           value={billMaxOccurrences}
-                           onChange={(e) => setBillMaxOccurrences(e.target.value)}
-                           className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
-                         />
-                       </div>
-                     </div>
-                   )}
-                 </div>
-               )}
-
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
-                     <CurrencyInput 
-                       valueCents={amountCents}
-                       onChangeCents={setAmountCents}
-                       placeholder="0.00"
-                       showSymbol={true}
-                     />
+                   <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due / Scheduled Date</label>
+                      <input 
+                        required
+                        type="date" 
+                        value={currentDate}
+                        onChange={(e) => setCurrentDate(e.target.value)}
+                        className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg appearance-none"
+                      />
+                   </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                       <TypeableSelect 
+                         options={[
+                           { value: 'manual', label: 'JUST ONCE' },
+                           { value: 'weekly', label: 'WEEKLY' },
+                           { value: 'biweekly', label: 'BIWEEKLY' },
+                           { value: 'semi-monthly', label: 'SEMI-MONTHLY' },
+                           { value: 'monthly', label: 'MONTHLY' }
+                         ]}
+                         value={frequency}
+                         onChange={(val) => setFrequency(val)}
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Internal Notes</label>
+                       <input 
+                         type="text" 
+                         value={notes}
+                         onChange={(e) => setNotes(e.target.value)}
+                         placeholder="e.g. Include bonus"
+                         className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-blue-500 transition-all font-bold text-lg"
+                       />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                     <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due / Scheduled Date</label>
-                     <input 
-                       required
-                       type="date" 
-                       value={currentDate}
-                       onChange={(e) => setCurrentDate(e.target.value)}
-                       className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg appearance-none"
-                     />
-                  </div>
-               </div>
 
+                  {frequency === 'semi-monthly' && (
+                    <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">First Day of Month</label>
+                         <input 
+                           type="number" min="1" max="31"
+                           value={semiMonthlyDay1}
+                           onChange={(e) => setSemiMonthlyDay1(Number(e.target.value))}
+                           className="w-full p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-white font-bold"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">Second Day of Month</label>
+                         <input 
+                           type="number" min="1" max="31"
+                           value={semiMonthlyDay2}
+                           onChange={(e) => setSemiMonthlyDay2(Number(e.target.value))}
+                           className="w-full p-3 bg-blue-500/5 border border-blue-500/20 rounded-xl text-white font-bold"
+                         />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. This is a recurring bill (Bills only) */}
+              {type === 'bill' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+                      <Checkbox 
+                        checked={isRecurring} 
+                        onChange={setIsRecurring} 
+                        iconClassName="text-amber-500"
+                      />
+                      <label onClick={() => setIsRecurring(!isRecurring)} className="text-xs font-black uppercase tracking-widest text-amber-500/80 cursor-pointer select-none">
+                          This is a recurring bill
+                      </label>
+                  </div>
+                  {isRecurring && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-white/5 border border-glass-border rounded-2xl animate-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                        <TypeableSelect 
+                          options={FREQUENCY_OPTIONS}
+                          value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
+                          onChange={(val) => setFrequency(val)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">End Date</label>
+                        <input 
+                          type="date"
+                          value={billEndDate}
+                          onChange={(e) => setBillEndDate(e.target.value)}
+                          className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Max Occurrences</label>
+                        <input 
+                          type="number"
+                          placeholder="Unlimited"
+                          value={billMaxOccurrences}
+                          onChange={(e) => setBillMaxOccurrences(e.target.value)}
+                          className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 5. Planned Rate Adjustment (Bills / Paydays only) */}
+              {(type === 'bill' || type === 'pay_schedule') && (
+                <div className={`p-4 border rounded-2xl space-y-4 animate-in zoom-in-95 duration-300 ${type === 'pay_schedule' ? 'bg-blue-500/5 border-blue-500/10' : 'bg-amber-500/5 border-amber-500/10'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setShowRateAdjustment(!showRateAdjustment)}
+                    className="w-full flex items-center justify-between outline-none cursor-pointer"
+                  >
+                    <div className={`text-[10px] font-black uppercase tracking-widest ${type === 'pay_schedule' ? 'text-blue-500' : 'text-amber-500'}`}>Planned Rate Adjustment (Optional)</div>
+                    <span className="text-xs text-slate-500">{showRateAdjustment ? '▼' : '▶'}</span>
+                  </button>
+                  {showRateAdjustment && (
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                      <div className="space-y-2">
+                         <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
+                         <CurrencyInput
+                           valueCents={upcomingAmountCents}
+                           onChangeCents={setUpcomingAmountCents}
+                           placeholder="0.00"
+                           className="bg-black/40 border-white/5"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
+                         <input 
+                          type="date"
+                          value={upcomingDate}
+                          onChange={(e) => setUpcomingDate(e.target.value)}
+                          className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
+                         />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 6. Assign to Paycheck */}
               {(type === 'bill' || type === 'charge') && paySchedules && paySchedules.length > 0 && (
                 <div className="space-y-2 animate-in fade-in duration-300">
                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Assign to Paycheck</label>
@@ -774,40 +786,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   </select>
                 </div>
               )}
+          </div>
 
-               {initialData?.id && !initialData.id.startsWith('bill-proj-') && !initialData.id.startsWith('pay-proj-') && !initialData.isProjected && (
-                 <div className="pt-4 border-t border-white/5">
-                    <button 
-                      type="button"
-                      onClick={() => setShowTimeline(!showTimeline)}
-                      className="w-full py-3 px-4 rounded-xl flex items-center justify-between bg-white/5 border border-white/5 hover:bg-white/10 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                         <Activity size={16} className="text-amber-500" />
-                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Privacy & Data Ownership Audit History</span>
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-amber-500 transition-colors">
-                        {showTimeline ? 'Close Logs' : 'View Logs'}
-                      </span>
-                    </button>
-                    
-                    <AnimatePresence>
-                      {showTimeline && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden mt-6"
-                        >
-                          <TransactionTimeline transactionId={initialData.id} />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                 </div>
-               )}
-            </div>
-
-            <div className="pt-4 flex gap-4">
+<div className="pt-4 flex gap-4">
                {initialData && onDelete && (
                  <button 
                   type="button"
@@ -831,7 +812,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                  {initialData ? 'Save Changes' : 'Create Entry'}
                </button>
             </div>
-          </form>
+          
+</form>
         </motion.div>
       )}
 

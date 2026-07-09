@@ -11,6 +11,7 @@ import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { QuickAttentionAdd } from './QuickAttentionAdd'
+import { TransactionTimeline } from './TransactionTimeline'
 
 export const TransactionLedger: React.FC = () => {
   const { token, householdId } = useAuth()
@@ -499,19 +500,22 @@ export const TransactionLedger: React.FC = () => {
                             </button>
                           </div>
                         </div>
-                        <div>
+                        <div className="space-y-3">
                           <p className="mb-1 uppercase tracking-wider font-bold opacity-50">Audit History</p>
-                          <ul className="space-y-1">
-                            <li>Created: {tx.createdAt || 'N/A'}</li>
-                            <li>Status: {tx.reconciliation_status}</li>
+                          <div className="max-h-40 overflow-y-auto bg-black/25 border border-white/5 rounded-xl p-3">
+                            <TransactionTimeline transactionId={tx.id} />
+                          </div>
+                          <ul className="space-y-1 text-xs">
+                            <li>Created: {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'N/A'}</li>
+                            <li>Status: {tx.reconciliationStatus || 'unreconciled'}</li>
                             {tx.ownerId && <li>Owner ID: {tx.ownerId}</li>}
                           </ul>
-                            {tx.notes && (
-                              <div className="mt-2 bg-yellow-500/10 border border-yellow-500/20 p-2 rounded text-yellow-500">
-                                Note: {tx.notes}
-                              </div>
-                            )}
-                          </div>
+                          {tx.notes && (
+                            <div className="mt-2 bg-yellow-500/10 border border-yellow-500/20 p-2 rounded text-yellow-500 text-xs">
+                              Note: {tx.notes}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {tx.attentionRequired && !tx.accountedFor && (

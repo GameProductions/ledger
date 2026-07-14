@@ -38,7 +38,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const reduced = useReducedMotion();
 
   // Load API resources
-  const { data: providers, mutate: mutateProviders } = useApi('/api/user/service-providers') as any;
+  const { data: providers = [], mutate: mutateProviders } = useApi('/api/user/service-providers') as any;
 
   const { data: categories = [] } = useApi('/api/financials/categories') as any;
   const { data: accounts = [] } = useApi('/api/financials/accounts') as any;

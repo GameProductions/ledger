@@ -238,7 +238,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
-type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'billers' | 'providers'
+type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'billers' | 'lenders'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} /> },
@@ -249,7 +249,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} /> },
   { key: 'pairing-rules', label: 'Pairing Rules', icon: <GitMerge size={16} /> },
   { key: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={16} /> },
-  { key: 'providers', label: 'Providers', icon: <Building2 size={16} /> },
+  { key: 'lenders', label: 'Lenders', icon: <Building2 size={16} /> },
 ]
 
 const DataManagerPage: React.FC = () => {
@@ -504,10 +504,10 @@ const DataManagerPage: React.FC = () => {
           />
         )
 
-      case 'providers':
+      case 'lenders':
         return (
           <EntityManager
-            title="Providers"
+            title="Lenders"
             icon={<Building2 size={18} />}
             apiPath="/api/user/service-providers"
             scope="household"

@@ -136,6 +136,17 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [totalInstallments, setTotalInstallments] = useState(initialData?.totalInstallments || 4);
   const [remainingInstallments, setRemainingInstallments] = useState(initialData?.remainingInstallments || initialData?.totalInstallments || 4);
   const [nextPaymentDate, setNextPaymentDate] = useState(initialData?.nextPaymentDate || initialData?.nextPayDate || date?.toISOString().split('T')[0] || '');
+  const [lender, setLender] = useState(initialData?.type === 'installment' ? (initialData?.name || '') : '');
+  const [merchant, setMerchant] = useState('');
+  const [interestRateApr, setInterestRateApr] = useState(0);
+  useEffect(() => {
+    if (initialData?.type === 'installment' && initialData?.notes) {
+      const m = initialData.notes.match(/Merchant:\s*(.+)/);
+      if (m) setMerchant(m[1].trim());
+      const a = initialData.notes.match(/APR:\s*([\d.]+)/);
+      if (a) setInterestRateApr(parseFloat(a[1]));
+    }
+  }, [initialData]);
 
   // New Category and Account selection states
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || initialData?.originalData?.categoryId || '');
@@ -265,10 +276,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         notes
       }, scope);
     } else if (type === 'installment') {
+      const instNotes = [notes, merchant ? `Merchant: ${merchant}` : '', interestRateApr > 0 ? `APR: ${interestRateApr}` : ''].filter(Boolean).join('\n');
       onSave({
         id,
         type: 'installment',
-        name: description,
+        name: lender || 'BNPL',
         totalAmountCents,
         installmentAmountCents,
         totalInstallments,
@@ -276,8 +288,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         frequency,
         nextPaymentDate,
         accountId: accountId || null,
-        categoryId: categoryId || null,
-        status: status || 'active'
+        categoryId: null,
+        status: status || 'active',
+        notes: instNotes
       }, scope);
     } else {
       if (isRecurring) {
@@ -334,33 +347,43 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           // BNPL Tab Layout
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Buy Now, Pay Later</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Buy Now, Pay Later</div>
+                <div className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400">Category: Buy Now, Pay Later</div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Provider Name</label>
-                  <SearchableSelect
-                    options={providerOptions}
-                    value={description}
-                    onChange={(v) => { setDescription(v); handleProviderChange(v) }}
-                    placeholder="Search or enter provider..."
-                    onCreate={(val) => { handleProviderChange(val); return val }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Category</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Lender</label>
                   <select
-                    value={categoryId}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    value={lender}
+                    onChange={(e) => setLender(e.target.value)}
                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
                   >
-                    <option value="">Select Category...</option>
-                    {categories.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
-                    ))}
+                    <option value="">Select lender...</option>
+                    <option value="Affirm">Affirm</option>
+                    <option value="Afterpay">Afterpay</option>
+                    <option value="Klarna">Klarna</option>
+                    <option value="PayPal Pay in 4">PayPal Pay in 4</option>
+                    <option value="Sezzle">Sezzle</option>
+                    <option value="Zip">Zip</option>
+                    <option value="Apple Pay Later">Apple Pay Later</option>
+                    <option value="Splitit">Splitit</option>
+                    <option value="Synchrony">Synchrony</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Merchant</label>
+                  <input 
+                    type="text"
+                    value={merchant}
+                    onChange={(e) => setMerchant(e.target.value)}
+                    placeholder="e.g. Best Buy"
+                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-2">
                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Total Amount</label>
                    <CurrencyInput 
@@ -385,6 +408,16 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                      type="number" min="1" max="99"
                      value={totalInstallments}
                      onChange={(e) => { const v = Number(e.target.value); setTotalInstallments(v); setRemainingInstallments(v) }}
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">APR (%)</label>
+                   <input 
+                     type="number" min="0" max="100" step="0.01"
+                     value={interestRateApr}
+                     onChange={(e) => setInterestRateApr(parseFloat(e.target.value) || 0)}
+                     placeholder="0.00"
                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
                    />
                 </div>
@@ -430,7 +463,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               </div>
             </div>
 
-            {/* Remaining Installments */}
+            {/* Remaining Installments & Status */}
             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Progress</div>
               <div className="grid grid-cols-2 gap-4">

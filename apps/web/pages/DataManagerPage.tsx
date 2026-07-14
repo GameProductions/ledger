@@ -125,9 +125,12 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
     globalMutate();
   }
 
-  const filtered = search
+  const sortItems = (list: any[]) =>
+    [...list].sort((a, b) => (a.name || a.pattern || '').localeCompare(b.name || b.pattern || ''))
+
+  const filtered = sortItems(search
     ? (items || []).filter((item: any) => JSON.stringify(item).toLowerCase().includes(search.toLowerCase()))
-    : items || []
+    : items || [])
 
   return (
     <>

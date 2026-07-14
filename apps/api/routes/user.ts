@@ -671,6 +671,41 @@ user.patch('/service-providers/:id', zValidator('json', z.object({
   return c.json({ success: true })
 })
 
+user.delete('/service-providers/:id', async (c) => {
+  const userId = c.get('userId') as string
+  const householdId = c.get('householdId') || null
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+
+  const provider = await db.select().from(serviceProviders).where(eq(serviceProviders.id, id)).limit(1).then(res => res[0]) as any
+  if (!provider) {
+    throw new HTTPException(404, { message: 'Provider not found' })
+  }
+
+  if (provider.visibility === 'public') {
+    throw new HTTPException(403, { message: 'Cannot modify platform public registry' })
+  }
+
+  if (provider.visibility === 'private' && provider.createdBy !== userId) {
+    throw new HTTPException(403, { message: 'Access denied' })
+  }
+
+  if (provider.visibility === 'household') {
+    const membership = await db.select({ role: userHouseholds.role })
+      .from(userHouseholds)
+      .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, provider.householdId)))
+      .limit(1)
+      .then(res => res[0]) as any;
+    if (!membership || membership.role === 'viewer') {
+      throw new HTTPException(403, { message: 'Access denied: Household view-only' })
+    }
+  }
+
+  await db.delete(serviceProviders).where(eq(serviceProviders.id, id))
+  await logAudit(c, 'service_providers', id, 'DELETE', provider, null)
+  return c.json({ success: true })
+})
+
 user.get('/identities', async (c) => {
   const userId = c.get('userId') as string
   const db = getDb(c.env)

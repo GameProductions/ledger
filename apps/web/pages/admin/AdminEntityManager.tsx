@@ -6,7 +6,7 @@ import { Modal } from '../../components/ui/Modal'
 import AdminPortal from './AdminPortal'
 import { getApiUrl } from '../../utils/api'
 import { 
-  Shield, Tag, Wallet, CreditCard, Link2, CalendarClock, Receipt, Clock, Banknote,
+  Shield, Tag, Wallet, CreditCard, Link2, CalendarClock, Receipt, Clock, Banknote, Building2,
   Plus, Pencil, Trash2, Search, Check, Filter, Eye, FileText, ChevronDown
 } from 'lucide-react'
 
@@ -22,7 +22,7 @@ const adminRequest = async (secureFetch: any, method: string, path: string, body
   return res.json()
 }
 
-type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules'
+type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules' | 'providers'
 
 const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; scope: 'household' | 'user' }[] = [
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} />, scope: 'household' },
@@ -35,6 +35,7 @@ const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; sco
   { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} />, scope: 'household' },
   { key: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} />, scope: 'user' },
   { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} />, scope: 'household' },
+  { key: 'providers', label: 'Providers', icon: <Building2 size={16} />, scope: 'household' },
 ]
 
 const AdminEntityManager: React.FC = () => {

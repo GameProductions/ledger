@@ -235,7 +235,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
-type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'billers'
+type TabKey = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'billers' | 'providers'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} /> },
@@ -246,6 +246,7 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} /> },
   { key: 'pairing-rules', label: 'Pairing Rules', icon: <GitMerge size={16} /> },
   { key: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={16} /> },
+  { key: 'providers', label: 'Providers', icon: <Building2 size={16} /> },
 ]
 
 const DataManagerPage: React.FC = () => {
@@ -494,6 +495,49 @@ const DataManagerPage: React.FC = () => {
                 <div className="font-bold text-sm">{plan.name}</div>
                 <div className="text-[10px] text-white/40 font-medium">
                   <Price amountCents={plan.installmentAmountCents} />/installment · {plan.remainingInstallments}/{plan.totalInstallments} remaining · {plan.frequency} · Next: {plan.nextPayDate}
+                </div>
+              </div>
+            )}
+          />
+        )
+
+      case 'providers':
+        return (
+          <EntityManager
+            title="Providers"
+            icon={<Building2 size={18} />}
+            apiPath="/api/user/service-providers"
+            scope="household"
+            fields={[
+              { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Netflix' },
+              { key: 'status', label: 'Status', type: 'select', options: [
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' }
+              ]},
+              { key: 'visibility', label: 'Visibility', type: 'select', options: [
+                { value: 'private', label: 'Private' },
+                { value: 'household', label: 'Household' },
+                { value: 'public', label: 'Public' }
+              ]},
+              { key: 'defaultCategoryId', label: 'Default Category ID', type: 'text', placeholder: 'Category UUID (optional)' },
+            ]}
+            displayFn={(p: any) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center overflow-hidden">
+                  {p.iconUrl ? <img src={p.iconUrl} className="w-full h-full object-cover" /> : <Building2 size={14} className="text-blue-400" />}
+                </div>
+                <div>
+                  <div className="font-bold text-sm flex items-center gap-2">
+                    {p.name}
+                    {p.status === 'active' ? (
+                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Active</span>
+                    ) : (
+                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Inactive</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-white/40 font-medium">
+                    {p.visibility} · {p.defaultCategoryId ? `Category: ${p.defaultCategoryId.slice(0, 8)}...` : 'No default category'}
+                  </div>
                 </div>
               </div>
             )}

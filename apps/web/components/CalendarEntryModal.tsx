@@ -354,23 +354,16 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Lender</label>
-                  <select
+                  <SearchableSelect
+                    options={providerOptions}
                     value={lender}
-                    onChange={(e) => setLender(e.target.value)}
-                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
-                  >
-                    <option value="">Select lender...</option>
-                    <option value="Affirm">Affirm</option>
-                    <option value="Afterpay">Afterpay</option>
-                    <option value="Klarna">Klarna</option>
-                    <option value="PayPal Pay in 4">PayPal Pay in 4</option>
-                    <option value="Sezzle">Sezzle</option>
-                    <option value="Zip">Zip</option>
-                    <option value="Apple Pay Later">Apple Pay Later</option>
-                    <option value="Splitit">Splitit</option>
-                    <option value="Synchrony">Synchrony</option>
-                    <option value="Other">Other</option>
-                  </select>
+                    onChange={setLender}
+                    placeholder="Search or enter lender..."
+                    onCreate={(val) => {
+                      setLender(val);
+                      return val;
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Merchant</label>

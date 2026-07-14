@@ -99,12 +99,14 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
   const initialSource = parseInitialSource(initialData?.description || initialData?.name || '');
 
-  const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule'>(
+  const [type, setType] = useState<'charge' | 'bill' | 'pay_schedule' | 'installment'>(
     initialData?.type === 'pay_schedule' 
       ? 'pay_schedule' 
-      : (initialData?.type === 'subscription' || initialData?.type === 'bill') 
-        ? 'bill' 
-        : 'charge'
+      : initialData?.type === 'installment'
+        ? 'installment'
+        : (initialData?.type === 'subscription' || initialData?.type === 'bill') 
+          ? 'bill' 
+          : 'charge'
   );
 
   const [description, setDescription] = useState(initialData?.description || initialData?.name || '');
@@ -127,6 +129,13 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [payScheduleId, setPayScheduleId] = useState(initialData?.payScheduleId || '');
   const [showRateAdjustment, setShowRateAdjustment] = useState(!!(initialData?.upcomingAmountCents || initialData?.upcomingEffectiveDate));
   const [scopeConfirmState, setScopeConfirmState] = useState<'edit' | 'delete' | null>(null);
+
+  // BNPL / Installment-specific fields
+  const [totalAmountCents, setTotalAmountCents] = useState(initialData?.totalAmountCents || 0);
+  const [installmentAmountCents, setInstallmentAmountCents] = useState(initialData?.installmentAmountCents || initialData?.amountCents || 0);
+  const [totalInstallments, setTotalInstallments] = useState(initialData?.totalInstallments || 4);
+  const [remainingInstallments, setRemainingInstallments] = useState(initialData?.remainingInstallments || initialData?.totalInstallments || 4);
+  const [nextPaymentDate, setNextPaymentDate] = useState(initialData?.nextPaymentDate || initialData?.nextPayDate || date?.toISOString().split('T')[0] || '');
 
   // New Category and Account selection states
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || initialData?.originalData?.categoryId || '');
@@ -201,7 +210,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
     initialData.isRecurring || 
     initialData.originalData?.isRecurring || 
     initialData.type === 'subscription' || 
-    initialData.type === 'pay_schedule'
+    initialData.type === 'pay_schedule' || 
+    initialData.type === 'installment'
   );
 
   if (!isOpen) return null;
@@ -254,6 +264,21 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
         semiMonthlyDay2: frequency === 'semi-monthly' ? semiMonthlyDay2 : null,
         notes
       }, scope);
+    } else if (type === 'installment') {
+      onSave({
+        id,
+        type: 'installment',
+        name: description,
+        totalAmountCents,
+        installmentAmountCents,
+        totalInstallments,
+        remainingInstallments: remainingInstallments || totalInstallments,
+        frequency,
+        nextPaymentDate,
+        accountId: accountId || null,
+        categoryId: categoryId || null,
+        status: status || 'active'
+      }, scope);
     } else {
       if (isRecurring) {
         onSave({
@@ -305,7 +330,135 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const renderFormContent = () => {
     return (
       <div className="space-y-6">
-        {type === 'pay_schedule' ? (
+        {type === 'installment' ? (
+          // BNPL Tab Layout
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Buy Now, Pay Later</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Provider Name</label>
+                  <SearchableSelect
+                    options={providerOptions}
+                    value={description}
+                    onChange={(v) => { setDescription(v); handleProviderChange(v) }}
+                    placeholder="Search or enter provider..."
+                    onCreate={(val) => { handleProviderChange(val); return val }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Category</label>
+                  <select
+                    value={categoryId}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                  >
+                    <option value="">Select Category...</option>
+                    {categories.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Total Amount</label>
+                   <CurrencyInput 
+                     valueCents={totalAmountCents}
+                     onChangeCents={setTotalAmountCents}
+                     placeholder="0.00"
+                     showSymbol={true}
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Installment Amount</label>
+                   <CurrencyInput 
+                     valueCents={installmentAmountCents}
+                     onChangeCents={setInstallmentAmountCents}
+                     placeholder="0.00"
+                     showSymbol={true}
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1"># of Payments</label>
+                   <input 
+                     type="number" min="1" max="99"
+                     value={totalInstallments}
+                     onChange={(e) => { const v = Number(e.target.value); setTotalInstallments(v); setRemainingInstallments(v) }}
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                   />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                   <select
+                     value={frequency}
+                     onChange={(e) => setFrequency(e.target.value)}
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                   >
+                     <option value="weekly">Weekly</option>
+                     <option value="biweekly">Biweekly</option>
+                     <option value="monthly">Monthly</option>
+                     <option value="quarterly">Quarterly</option>
+                     <option value="yearly">Yearly</option>
+                   </select>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Next Payment Date</label>
+                   <input 
+                     required
+                     type="date" 
+                     value={nextPaymentDate}
+                     onChange={(e) => setNextPaymentDate(e.target.value)}
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-md"
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Account</label>
+                   <select
+                     value={accountId}
+                     onChange={(e) => setAccountId(e.target.value)}
+                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                   >
+                     <option value="">Select Account...</option>
+                     {accounts.map((a: any) => (
+                       <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>
+                     ))}
+                   </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Remaining Installments */}
+            <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Progress</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Installments Paid</label>
+                  <input 
+                    type="number" min="0"
+                    value={totalInstallments - remainingInstallments}
+                    onChange={(e) => setRemainingInstallments(totalInstallments - Number(e.target.value))}
+                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-lg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                  >
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : type === 'pay_schedule' ? (
           // Pay Tab Layout
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -807,9 +960,16 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             <button 
               type="button"
               onClick={() => setType(isRecurring ? 'bill' : 'charge')}
-              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type !== 'pay_schedule' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type !== 'pay_schedule' && type !== 'installment' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
             >
               Bills & Charges
+            </button>
+            <button 
+              type="button"
+              onClick={() => setType('installment')}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'installment' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-slate-500 hover:text-white'}`}
+            >
+              BNPL
             </button>
           </div>
         </div>
@@ -838,7 +998,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
              )}
              <button 
               type="submit"
-              className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
+               className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : type === 'installment' ? 'bg-violet-500 text-white shadow-violet-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
              >
                <CheckCircle2 size={18} />
                {initialData ? 'Save Changes' : 'Create Entry'}
@@ -861,7 +1021,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 Confirm {scopeConfirmState === 'edit' ? 'Update' : 'Delete'} Scope
               </h3>
               <p className="text-xs text-secondary font-bold uppercase tracking-widest mt-1">
-                This is a recurring {type === 'pay_schedule' ? 'income schedule' : 'bill'}
+                This is a recurring {type === 'pay_schedule' ? 'income schedule' : type === 'installment' ? 'BNPL installment plan' : 'bill'}
               </p>
             </div>
 

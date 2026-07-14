@@ -344,7 +344,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const handleCalendarSave = async (data: any, recurrenceScope?: 'one' | 'future' | 'all') => {
     const isNew = !data.id
-    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/bills' : data.type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/bills' : data.type === 'subscription' ? '/api/planning/subscriptions' : data.type === 'installment' ? '/api/planning/installment-plans' : '/api/financials/transactions'
     
     // Helper to perform simple headers fetch
     const fetchApi = (url: string, method: string, payload: any) => 
@@ -358,7 +358,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         body: JSON.stringify(payload)
       })
 
-    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule')) {
+    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule' || data.type === 'installment')) {
       if (data.type === 'pay_schedule') {
         // Save paycheck override/exception
         await fetchApi('/api/planning/pay-exceptions', 'POST', {
@@ -395,7 +395,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         await fetchApi(endpoint, 'POST', oneOffPayload)
       }
       
-    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule')) {
+    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule' || data.type === 'installment')) {
       if (data.type === 'pay_schedule') {
         // 1. End the old schedule the day before this occurrence
         const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
@@ -464,6 +464,19 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           payScheduleId: data.payScheduleId || null,
           paycheckDate: data.paycheckDate || null
         }
+      } else if (data.type === 'installment') {
+        payload = {
+          name: data.name || data.description,
+          totalAmountCents: data.totalAmountCents,
+          installmentAmountCents: data.installmentAmountCents,
+          totalInstallments: data.totalInstallments,
+          remainingInstallments: data.remainingInstallments || data.totalInstallments,
+          frequency: data.frequency,
+          nextPaymentDate: data.nextPaymentDate,
+          accountId: data.accountId || null,
+          categoryId: data.categoryId || null,
+          status: data.status || 'active'
+        }
       } else {
         payload = {
           description: data.description || data.name,
@@ -483,6 +496,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (data.type === 'pay_schedule') mutateSchedules()
     else if (data.type === 'bill') mutateBills()
     else if (data.type === 'subscription') mutateSubs()
+    else if (data.type === 'installment') mutateInstallments()
     else mutateTx()
     
     setIsCalendarModalOpen(false)
@@ -491,8 +505,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const handleCalendarDelete = async (id: string, type: string, recurrenceScope?: 'one' | 'future' | 'all', selectedDate?: string) => {
-    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription' || type === 'pay_schedule')) {
-      const endpoint = type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/planning/pay-schedules'
+    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription' || type === 'pay_schedule' || type === 'installment')) {
+      const endpoint = type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : type === 'pay_schedule' ? '/api/planning/pay-schedules' : '/api/planning/installment-plans'
       
       const fetchApi = (url: string, method: string, payload: any) => 
         fetch(`${apiUrl}${url}`, {
@@ -568,6 +582,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       
       if (type === 'pay_schedule') mutateSchedules()
       else if (type === 'bill') mutateBills()
+      else if (type === 'installment') mutateInstallments()
       else mutateSubs()
       setIsCalendarModalOpen(false)
       globalMutate()
@@ -581,7 +596,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const confirmCalendarDelete = async () => {
     if (!deletePending) return
     const { id, type } = deletePending
-    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : type === 'installment' ? '/api/planning/installment-plans' : '/api/financials/transactions'
     
     await fetch(`${apiUrl}${endpoint}/${id}`, {
       method: 'DELETE',
@@ -594,6 +609,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (type === 'pay_schedule') mutateSchedules()
     else if (type === 'bill') mutateBills()
     else if (type === 'subscription') mutateSubs()
+    else if (type === 'installment') mutateInstallments()
     else mutateTx()
     
     globalMutate()

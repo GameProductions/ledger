@@ -90,7 +90,6 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               transferTiming: item.transferTiming,
               isBorrowed: item.isBorrowed ?? false,
               borrowSource: item.borrowSource,
-              transactionDate: item.transactionDate ? new Date(item.transactionDate).toISOString().split('T')[0] : null,
               createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
             })
           })
@@ -153,14 +152,10 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     })
     if (itemId) {
       const item = tracked.find((t: any) => t.id === itemId)
-      if (item) {
+      if (item && item.createdAt) {
         setLedgerDetails(prev => ({
           ...prev,
-          transactionDate: item.transactionDate
-            ? new Date(item.transactionDate).toISOString().split('T')[0]
-            : item.createdAt
-              ? new Date(item.createdAt).toISOString().split('T')[0]
-              : new Date().toISOString().split('T')[0]
+          transactionDate: new Date(item.createdAt).toISOString().split('T')[0]
         }))
       }
       setSinglePromoteId(itemId)
@@ -243,6 +238,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   };
 
   const handleUpdate = async (id: string, updates: any) => {
+    const { transactionDate: _td, ...clean } = updates
     const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
           method: 'PATCH',
           headers: {
@@ -252,7 +248,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           },
           body: JSON.stringify({
             ids: [id],
-            updates
+            updates: clean
           })
         }) as any)
     if (res.ok) {

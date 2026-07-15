@@ -95,7 +95,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             transferTiming: inst.needsBalanceTransfer ? inst.transferTiming : null,
             isBorrowed: inst.isBorrowed,
             borrowSource: inst.isBorrowed ? inst.borrowSource : null,
-            transactionDate: new Date(inst.transactionDate).toISOString().split('T')[0],
+            createdAt: new Date(inst.transactionDate).toISOString(),
           })
         })
       );

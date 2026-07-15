@@ -714,9 +714,24 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     </div>
     <Modal isOpen={isMoveToLedgerOpen} onClose={() => { setIsMoveToLedgerOpen(false); setSinglePromoteId(null); }} title="Add to Main Ledger">
         <div className="space-y-6 p-1">
-          <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
-            <p className="text-sm text-orange-200/80 font-medium">Moving {singlePromoteId ? 1 : selectedIds.length} item(s) to the transaction ledger.</p>
-          </div>
+          {(() => {
+            const promoItem = singlePromoteId ? tracked.find((t: any) => t.id === singlePromoteId) : null
+            return promoItem ? (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{promoItem.description}</p>
+                  <p className="text-[10px] text-secondary font-medium mt-0.5">Pending tracked expense</p>
+                </div>
+                <div className="text-right flex-shrink-0 ml-4">
+                  <Price amountCents={promoItem.amountCents} className="text-lg font-black text-orange-300" />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4">
+                <p className="text-sm text-orange-200/80 font-medium">Moving {selectedIds.length} items to the transaction ledger.</p>
+              </div>
+            )
+          })()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

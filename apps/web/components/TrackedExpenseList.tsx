@@ -382,7 +382,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <Copy size={12} /> Duplicate
                   </button>
                   <button 
-                    onClick={() => setIsMoveToLedgerOpen(true)}
+                    onClick={() => openMoveToLedger()}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
                   >
                     <Send size={12} /> Move to Ledger ({selectedIds.length})
@@ -441,7 +441,10 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       <input 
                         type="date" 
                         value={editForm?.transactionDate ? editForm.transactionDate.split('T')[0] : new Date().toISOString().split('T')[0]} 
-                        onChange={e => setEditForm({...editForm, transactionDate: new Date(e.target.value).toISOString()})}
+                        onChange={e => {
+                          const iso = new Date(e.target.value).toISOString()
+                          setEditForm({...editForm, transactionDate: iso, createdAt: iso})
+                        }}
                         style={{ colorScheme: 'dark' }}
                         className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
                         required
@@ -654,10 +657,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
-                          setSinglePromoteId(item.id)
-                          setIsMoveToLedgerOpen(true)
-                        }}
+                        onClick={() => openMoveToLedger(item.id)}
                         className="p-2 hover:bg-orange-500/10 rounded-xl transition-all text-orange-400 hover:text-orange-300 flex items-center justify-center cursor-pointer"
                         aria-label="Move to ledger"
                         title="Move to ledger"

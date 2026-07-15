@@ -234,7 +234,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                 <div className="md:col-span-2 pr-16">
                   <label className="text-xs tracking-widest text-secondary mb-1 flex">Charge Descriptor</label>
                   <EntityManagerSelect
-                    type="charge-descriptors"
+                    entityType="charge-descriptors"
                     value={inst.chargeDescriptorId}
                     onChange={(val, item) => handleUpdate(index, { chargeDescriptorId: val, description: (item as any)?.name || inst.description })}
                     placeholder="Choose or create descriptor..."

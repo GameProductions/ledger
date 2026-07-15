@@ -440,7 +440,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <div className="md:col-span-2">
                       <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Charge Descriptor</label>
                       <EntityManagerSelect
-                        type="charge-descriptors"
+                        entityType="charge-descriptors"
                         value={editForm?.chargeDescriptorId || ''}
                         onChange={(val, item) => {
                           setEditForm({...editForm, chargeDescriptorId: val, description: (item as any)?.name || editForm?.description || ''})

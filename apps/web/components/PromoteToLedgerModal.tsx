@@ -9,61 +9,52 @@ interface LedgerDetails {
   categoryId: string
   transactionDate: string
   status: string
-  chargeDescriptorId?: string
+  chargeDescriptorId: string
 }
 
 interface PromoteToLedgerModalProps {
   isOpen: boolean
   onClose: () => void
-  singlePromoteId: string | null
-  selectedIds: string[]
-  tracked: any[]
+  items: any[]
   ledgerDetails: LedgerDetails
-  setLedgerDetails: (d: LedgerDetails | ((prev: LedgerDetails) => LedgerDetails)) => void
+  setLedgerDetails: React.Dispatch<React.SetStateAction<LedgerDetails>>
   handleCreateAccount: (name: string) => Promise<string>
   handleCreateCategory: (name: string) => Promise<string>
   handleCreateChargeDescriptor: (name: string) => Promise<string>
-  handleMoveToLedger: () => Promise<void>
+  onSubmit: () => Promise<void>
 }
 
 export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
   isOpen,
   onClose,
-  singlePromoteId,
-  selectedIds,
-  tracked,
+  items,
   ledgerDetails,
   setLedgerDetails,
   handleCreateAccount,
   handleCreateCategory,
   handleCreateChargeDescriptor,
-  handleMoveToLedger,
+  onSubmit,
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add to Main Ledger">
       <div className="space-y-6 p-1">
-        {(() => {
-          const promoItem = singlePromoteId
-            ? tracked.find((t: any) => t.id === singlePromoteId)
-            : null
-          return promoItem ? (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate">{promoItem.description}</p>
-                <p className="text-[10px] text-secondary font-medium mt-0.5">Pending tracked expense</p>
-              </div>
-              <div className="text-right flex-shrink-0 ml-4">
-                <Price amountCents={promoItem.amountCents} className="text-lg font-black text-orange-300" />
-              </div>
+        {items.length === 1 ? (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white truncate">{items[0].description}</p>
+              <p className="text-[10px] text-secondary font-medium mt-0.5">Pending tracked expense</p>
             </div>
-          ) : (
-            <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4">
-              <p className="text-sm text-orange-200/80 font-medium">
-                Moving {selectedIds.length} items to the transaction ledger.
-              </p>
+            <div className="text-right flex-shrink-0 ml-4">
+              <Price amountCents={items[0].amountCents} className="text-lg font-black text-orange-300" />
             </div>
-          )
-        })()}
+          </div>
+        ) : (
+          <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4">
+            <p className="text-sm text-orange-200/80 font-medium">
+              Moving {items.length} items to the transaction ledger.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4">
           <div>
@@ -165,7 +156,7 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
         </div>
 
         <button
-          onClick={handleMoveToLedger}
+          onClick={onSubmit}
           disabled={!ledgerDetails.accountId}
           className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black tracking-widest py-4 rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
         >

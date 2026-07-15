@@ -10,6 +10,7 @@ import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy, Check, CheckCircle2 } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { SearchableSelect } from './ui/SearchableSelect'
 import { EntityManagerSelect } from './ui/EntityManagerSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
@@ -151,7 +152,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       accountId: '',
       categoryId: '',
       transactionDate: toLocalDate(),
-      status: 'paid'
+      status: 'paid',
+      chargeDescriptorId: ''
     })
     if (itemId) {
       const item = tracked.find((t: any) => t.id === itemId)
@@ -750,8 +752,6 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             ? tracked.filter((t: any) => t.id === singlePromoteId)
             : selectedIds.map((id: string) => tracked.find((t: any) => t.id === id)).filter(Boolean)
         }
-        accounts={accounts}
-        categories={categories}
         ledgerDetails={ledgerDetails}
         setLedgerDetails={setLedgerDetails}
         onSubmit={handleMoveToLedger}

@@ -22,12 +22,13 @@ const adminRequest = async (secureFetch: any, method: string, path: string, body
   return res.json()
 }
 
-type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules' | 'lenders'
+type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'charge-descriptors' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules' | 'lenders'
 
 const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; scope: 'household' | 'user' }[] = [
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} />, scope: 'household' },
   { key: 'bills', label: 'Bills', icon: <Banknote size={16} />, scope: 'household' },
   { key: 'categories', label: 'Categories', icon: <Tag size={16} />, scope: 'household' },
+  { key: 'charge-descriptors', label: 'Charge Descriptors', icon: <FileText size={16} />, scope: 'household' },
   { key: 'credit-cards', label: 'Credit Cards', icon: <CreditCard size={16} />, scope: 'household' },
   { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} />, scope: 'household' },
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} />, scope: 'user' },

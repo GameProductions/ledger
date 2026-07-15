@@ -9,5 +9,12 @@
       "tag": "0000_add_confirmation_number_to_tracked_expenses",
       "breakpoints": true
     },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784149200000,
+      "tag": "0001_charge_descriptors",
+      "breakpoints": true
+    }
   ]
 }

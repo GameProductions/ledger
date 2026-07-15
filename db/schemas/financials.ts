@@ -47,6 +47,18 @@ export const categories = pgTable('categories', {
   householdIdx: index('idx_categories_household').on(table.householdId),
 }));
 
+export const chargeDescriptors = pgTable('charge_descriptors', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  defaultCategoryId: text('default_category_id'),
+  isActive: boolean('is_active').default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_charge_descriptors_household').on(table.householdId),
+}));
+
 export const billers = pgTable('billers', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -86,6 +98,7 @@ export const transactions = pgTable('transactions', {
   source: text('source').default('manual'),
   payScheduleId: text('pay_schedule_id'),
   paycheckDate: text('paycheck_date'),
+  chargeDescriptorId: text('charge_descriptor_id'),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
   accountIdx: index('idx_transactions_account').on(table.accountId),

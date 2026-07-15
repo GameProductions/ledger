@@ -48,6 +48,7 @@ export const TransactionSchema = z.object({
   source: z.string().optional().default('manual'),
   payScheduleId: z.string().optional().nullable(),
   paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  chargeDescriptorId: z.string().optional().nullable(),
 })
 
 export const TransactionOutputSchema = z.object({
@@ -124,6 +125,13 @@ export const InstallmentPlanSchema = z.object({
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
+export const ChargeDescriptorSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().optional().nullable(),
+  defaultCategoryId: z.string().optional().nullable(),
+  isActive: z.boolean().optional().default(true),
+})
+
 export const TrackedExpenseSchema = z.object({
   amountCents: z.number().int(),
   description: z.string().min(1).max(1000),
@@ -134,6 +142,7 @@ export const TrackedExpenseSchema = z.object({
   transferTiming: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
   isBorrowed: z.boolean().optional().default(false),
   borrowSource: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
+  chargeDescriptorId: z.string().optional().nullable(),
   createdAt: z.string().optional(),
 })
 

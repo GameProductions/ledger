@@ -15,7 +15,8 @@ import {
   CategorySchema,
   AccountSchema,
   TransactionPairingRuleSchema,
-  BillerSchema
+  BillerSchema,
+  ChargeDescriptorSchema
 } from '@shared/schemas'
 import { dispatchWebhook } from '../services/webhook-service'
 import { logAudit, apiError } from '../utils'
@@ -35,7 +36,8 @@ import {
   transactionPairingRules,
   trackedExpenses,
   activityLogs,
-  users
+  users,
+  chargeDescriptors
 } from '#/schema'
 import { billers, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
@@ -182,6 +184,22 @@ financials.delete('/accounts/:id', async (c) => {
   await db.update(accounts).set({ status: 'closed' }).where(and(eq(accounts.id, id), eq(accounts.householdId, householdId)))
   await logAudit(c, 'accounts', id, 'ARCHIVE')
   return c.json({ success: true })
+})
+
+// Charge Descriptors
+financials.post('/charge-descriptors', zValidator('json', ChargeDescriptorSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const data = (c.req.valid('json') as any)
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(chargeDescriptors).values({
+    id, householdId, name: data.name,
+    description: data.description || null,
+    defaultCategoryId: data.defaultCategoryId || null,
+    isActive: data.isActive ?? true,
+  })
+  await logAudit(c, 'charge_descriptors', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
 })
 
 // Credit Cards

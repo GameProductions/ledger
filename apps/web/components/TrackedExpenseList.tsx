@@ -10,10 +10,11 @@ import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy, Check, CheckCircle2 } from 'lucide-react'
 import { Modal } from './ui/Modal'
-import { SearchableSelect } from './ui/SearchableSelect'
+import { EntityManagerSelect } from './ui/EntityManagerSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { DateTimeInput } from './ui/DateTimeInput'
+import { PromoteToLedgerModal } from './PromoteToLedgerModal'
 
 interface TrackedExpenseListProps {
   refreshTrigger?: number
@@ -44,7 +45,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     accountId: '',
     categoryId: '',
     transactionDate: toLocalDate(),
-    status: 'paid'
+    status: 'paid',
+    chargeDescriptorId: ''
   })
 
   // Single Item Edit State
@@ -216,6 +218,21 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         'x-household-id': localStorage.getItem('ledger_householdId') || ''
       },
       body: JSON.stringify({ name, type: 'checking', balanceCents: 0 })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
+  };
+
+  const handleCreateChargeDescriptor = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/charge-descriptors`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_householdId') || ''
+      },
+      body: JSON.stringify({ name })
     }) as any);
     const data = (await res.json() as any);
     globalMutate();
@@ -420,6 +437,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               {editingId === item.id ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Charge Descriptor</label>
+                      <EntityManagerSelect
+                        type="charge-descriptors"
+                        value={editForm?.chargeDescriptorId || ''}
+                        onChange={(val, item) => {
+                          setEditForm({...editForm, chargeDescriptorId: val, description: (item as any)?.name || editForm?.description || ''})
+                        }}
+                        placeholder="Choose or create descriptor..."
+                        onCreate={handleCreateChargeDescriptor}
+                      />
+                    </div>
                     <div>
                       <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Description</label>
                       <input 
@@ -674,6 +703,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             needsBalanceTransfer: item.needsBalanceTransfer ?? false,
                             transferReconciled: item.transferReconciled ?? false,
                             transferTiming: item.transferTiming || '',
+                            chargeDescriptorId: item.chargeDescriptorId || '',
                             isBorrowed: item.isBorrowed ?? false,
                             borrowSource: item.borrowSource || '',
                             transactionDate: toLocalDate(item.transactionDate || item.createdAt),
@@ -712,102 +742,23 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         })}
       </div>
     </div>
-    <Modal isOpen={isMoveToLedgerOpen} onClose={() => { setIsMoveToLedgerOpen(false); setSinglePromoteId(null); }} title="Add to Main Ledger">
-        <div className="space-y-6 p-1">
-          {(() => {
-            const promoItem = singlePromoteId ? tracked.find((t: any) => t.id === singlePromoteId) : null
-            return promoItem ? (
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{promoItem.description}</p>
-                  <p className="text-[10px] text-secondary font-medium mt-0.5">Pending tracked expense</p>
-                </div>
-                <div className="text-right flex-shrink-0 ml-4">
-                  <Price amountCents={promoItem.amountCents} className="text-lg font-black text-orange-300" />
-                </div>
-              </div>
-            ) : (
-              <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4">
-                <p className="text-sm text-orange-200/80 font-medium">Moving {selectedIds.length} items to the transaction ledger.</p>
-              </div>
-            )
-          })()}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                <CreditCard size={14} className="text-orange-500" /> Payment Account
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">The account used for payment. Type a name to create a new one.</p>
-              <SearchableSelect 
-                options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
-                value={ledgerDetails.accountId}
-                onChange={val => setLedgerDetails({...ledgerDetails, accountId: val})}
-                placeholder="Choose or create Account..."
-                onCreate={handleCreateAccount}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                <Tag size={14} className="text-orange-500" /> Budget Category
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">Category for expense reports. Type a name to create a new one.</p>
-              <SearchableSelect 
-                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                value={ledgerDetails.categoryId}
-                onChange={val => setLedgerDetails({...ledgerDetails, categoryId: val})}
-                placeholder="Choose or create Category..."
-                onCreate={handleCreateCategory}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                <Calendar size={14} className="text-orange-500" /> Transaction Date
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">The date the transaction cleared or occurred.</p>
-              <input 
-                type="date"
-                value={ledgerDetails.transactionDate}
-                onChange={e => setLedgerDetails({...ledgerDetails, transactionDate: e.target.value})}
-                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none font-bold"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                Reconciliation Status
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">Set whether this transaction has settled in your account.</p>
-              <div className="flex gap-2">
-                {[
-                  { value: 'paid', label: 'Paid / Cleared' },
-                  { value: 'pending', label: 'Pending / Uncleared' }
-                ].map(s => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => setLedgerDetails({...ledgerDetails, status: s.value})}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all border ${ledgerDetails.status === s.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/40 border-white/10 text-secondary'}`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={handleMoveToLedger}
-            disabled={!ledgerDetails.accountId}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black tracking-widest py-4 rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
-          >
-            <Send size={18} />
-            Move to Ledger
-          </button>
-        </div>
-      </Modal>
+    <PromoteToLedgerModal
+        isOpen={isMoveToLedgerOpen}
+        onClose={() => { setIsMoveToLedgerOpen(false); setSinglePromoteId(null); }}
+        items={
+          singlePromoteId
+            ? tracked.filter((t: any) => t.id === singlePromoteId)
+            : selectedIds.map((id: string) => tracked.find((t: any) => t.id === id)).filter(Boolean)
+        }
+        accounts={accounts}
+        categories={categories}
+        ledgerDetails={ledgerDetails}
+        setLedgerDetails={setLedgerDetails}
+        onSubmit={handleMoveToLedger}
+        handleCreateAccount={handleCreateAccount}
+        handleCreateCategory={handleCreateCategory}
+        handleCreateChargeDescriptor={handleCreateChargeDescriptor}
+      />
 
       <Modal isOpen={isBulkEditOpen} onClose={() => setIsBulkEditOpen(false)} title="Bulk Edit Tracked Expenses">
         <div className="space-y-6 p-1">

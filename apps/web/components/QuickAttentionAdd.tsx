@@ -5,6 +5,7 @@ import { Flag, ShieldAlert, ArrowRightLeft, HandCoins, Copy, Trash2, Plus } from
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { EntityManagerSelect } from './ui/EntityManagerSelect'
 import { Checkbox } from './ui/Checkbox'
 
 interface QuickAttentionAddProps {
@@ -15,6 +16,7 @@ interface FormInstance {
   id: string;
   description: string;
   amountCents: number;
+  chargeDescriptorId: string;
   attentionRequired: boolean;
   needsBalanceTransfer: boolean;
   transferTiming: string;
@@ -31,6 +33,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     id: Math.random().toString(36).substr(2, 9),
     description: '',
     amountCents: 0,
+    chargeDescriptorId: '',
     attentionRequired: false,
     needsBalanceTransfer: false,
     transferTiming: 'future',
@@ -90,6 +93,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
           body: JSON.stringify({
             description: inst.description,
             amountCents: inst.amountCents,
+            chargeDescriptorId: inst.chargeDescriptorId || null,
             attentionRequired: inst.attentionRequired,
             needsBalanceTransfer: inst.needsBalanceTransfer,
             transferTiming: inst.needsBalanceTransfer ? inst.transferTiming : null,
@@ -225,6 +229,15 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                     style={{ colorScheme: 'dark' }}
                     className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors animate-in"
                     required
+                  />
+                </div>
+                <div className="md:col-span-2 pr-16">
+                  <label className="text-xs tracking-widest text-secondary mb-1 flex">Charge Descriptor</label>
+                  <EntityManagerSelect
+                    type="charge-descriptors"
+                    value={inst.chargeDescriptorId}
+                    onChange={(val, item) => handleUpdate(index, { chargeDescriptorId: val, description: (item as any)?.name || inst.description })}
+                    placeholder="Choose or create descriptor..."
                   />
                 </div>
                 <div className="md:col-span-2 pr-16">

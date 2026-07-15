@@ -23,7 +23,8 @@ const getTable = (type: string) => {
     'installment-plans': schema.installmentPlans,
     'pay-schedules': schema.paySchedules,
     'pairing-rules': schema.transactionPairingRules,
-    'lenders': schema.serviceProviders
+    'lenders': schema.serviceProviders,
+    'charge-descriptors': schema.chargeDescriptors
   }
   return mapping[type]
 }

@@ -452,7 +452,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
 
     if (data.categoryId) {
       const updateCat = db.update(categories)
-        .set({ envelopeBalanceCents: sql`envelopeBalanceCents - ${data.amountCents}` })
+        .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amountCents}` })
         .where(and(eq(categories.id, data.categoryId), eq(categories.householdId, householdId)))
       
       await db.batch([insertTx, updateCat])
@@ -936,8 +936,8 @@ financials.post('/transfers', zValidator('json', TransferSchema, (result, c) => 
 
   const id = crypto.randomUUID()
   
-  const u1 = db.update(accounts).set({ balanceCents: sql`balanceCents - ${amountCents}` }).where(and(eq(accounts.id, fromAccountId), eq(accounts.householdId, householdId)))
-  const u2 = db.update(accounts).set({ balanceCents: sql`balanceCents + ${amountCents}` }).where(and(eq(accounts.id, toAccountId), eq(accounts.householdId, householdId)))
+  const u1 = db.update(accounts).set({ balanceCents: sql`balance_cents - ${amountCents}` }).where(and(eq(accounts.id, fromAccountId), eq(accounts.householdId, householdId)))
+  const u2 = db.update(accounts).set({ balanceCents: sql`balance_cents + ${amountCents}` }).where(and(eq(accounts.id, toAccountId), eq(accounts.householdId, householdId)))
   
   await db.batch([u1, u2])
   

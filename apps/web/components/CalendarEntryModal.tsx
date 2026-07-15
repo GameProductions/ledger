@@ -348,12 +348,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Buy Now, Pay Later</div>
-                <div className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400">Category: Buy Now, Pay Later</div>
+                <div className="text-[10px] font-black tracking-widest text-slate-500">Buy Now, Pay Later</div>
+                <div className="text-[9px] font-black tracking-widest px-2 py-1 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400">Category: Buy Now, Pay Later</div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Lender</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Lender</label>
                   <SearchableSelect
                     options={providerOptions}
                     value={lender}
@@ -366,7 +366,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Merchant</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Merchant</label>
                   <input 
                     type="text"
                     value={merchant}
@@ -378,7 +378,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Total Amount</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Total Amount</label>
                    <CurrencyInput 
                      valueCents={totalAmountCents}
                      onChangeCents={setTotalAmountCents}
@@ -387,7 +387,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Installment Amount</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Installment Amount</label>
                    <CurrencyInput 
                      valueCents={installmentAmountCents}
                      onChangeCents={setInstallmentAmountCents}
@@ -396,7 +396,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1"># of Payments</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1"># of Payments</label>
                    <input 
                      type="number" min="1" max="99"
                      value={totalInstallments}
@@ -405,7 +405,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">APR (%)</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">APR (%)</label>
                    <input 
                      type="number" min="0" max="100" step="0.01"
                      value={interestRateApr}
@@ -417,7 +417,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Frequency</label>
                    <select
                      value={frequency}
                      onChange={(e) => setFrequency(e.target.value)}
@@ -431,7 +431,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    </select>
                 </div>
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Next Payment Date</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Next Payment Date</label>
                    <input 
                      required
                      type="date" 
@@ -441,7 +441,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Account</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Account</label>
                    <select
                      value={accountId}
                      onChange={(e) => setAccountId(e.target.value)}
@@ -458,10 +458,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
             {/* Remaining Installments & Status */}
             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Progress</div>
+              <div className="text-[10px] font-black tracking-widest text-slate-500 mb-2">Progress</div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Installments Paid</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Installments Paid</label>
                   <input 
                     type="number" min="0"
                     value={totalInstallments - remainingInstallments}
@@ -470,7 +470,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
@@ -489,7 +489,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                 <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Type</label>
+                 <label className="text-xs font-black tracking-widest text-secondary ml-1">Source Type</label>
                  <SearchableSelect
                    options={payScheduleNames}
                    value={sourceType}
@@ -502,7 +502,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                  />
               </div>
               <div className="space-y-2">
-                 <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Source Name (e.g. Company)</label>
+                 <label className="text-xs font-black tracking-widest text-secondary ml-1">Source Name (e.g. Company)</label>
                  <SearchableSelect
                    options={paySourceNameOptions}
                    value={sourceName}
@@ -518,7 +518,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                 <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                 <label className="text-xs font-black tracking-widest text-secondary ml-1">Frequency</label>
                  <TypeableSelect 
                    options={[
                      { value: 'weekly', label: 'WEEKLY' },
@@ -531,7 +531,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                  />
               </div>
               <div className="space-y-2">
-                 <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Internal Notes</label>
+                 <label className="text-xs font-black tracking-widest text-secondary ml-1">Internal Notes</label>
                  <input 
                    type="text" 
                    value={notes}
@@ -545,7 +545,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             {frequency === 'semi-monthly' && (
               <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">First Day of Month</label>
+                   <label className="text-[10px] font-black tracking-widest text-blue-500/60 ml-1">First Day of Month</label>
                    <input 
                      type="number" min="1" max="31"
                      value={semiMonthlyDay1}
@@ -554,7 +554,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-blue-500/60 ml-1">Second Day of Month</label>
+                   <label className="text-[10px] font-black tracking-widest text-blue-500/60 ml-1">Second Day of Month</label>
                    <input 
                      type="number" min="1" max="31"
                      value={semiMonthlyDay2}
@@ -567,7 +567,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Estimated Net Amount</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Estimated Net Amount</label>
                   <CurrencyInput 
                     valueCents={amountCents}
                     onChangeCents={setAmountCents}
@@ -576,7 +576,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   />
                </div>
                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Next Pay Date</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Next Pay Date</label>
                   <input 
                     required
                     type="date" 
@@ -594,13 +594,13 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 onClick={() => setShowRateAdjustment(!showRateAdjustment)}
                 className="w-full flex items-center justify-between outline-none cursor-pointer"
               >
-                <div className="text-[10px] font-black uppercase tracking-widest text-blue-500">Planned Rate Adjustment (Optional)</div>
+                <div className="text-[10px] font-black tracking-widest text-blue-500">Planned Rate Adjustment (Optional)</div>
                 <span className="text-xs text-slate-500">{showRateAdjustment ? '▼' : '▶'}</span>
               </button>
               {showRateAdjustment && (
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div className="space-y-2">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
+                     <label className="text-[9px] font-black tracking-widest text-white/30 ml-1">Upcoming Amount</label>
                      <CurrencyInput
                        valueCents={upcomingAmountCents}
                        onChangeCents={setUpcomingAmountCents}
@@ -609,7 +609,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                      />
                   </div>
                   <div className="space-y-2">
-                     <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
+                     <label className="text-[9px] font-black tracking-widest text-white/30 ml-1">Effective Date</label>
                      <input 
                       type="date"
                       value={upcomingDate}
@@ -627,12 +627,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             
             {/* GROUP 1: PRIORITY FIELDS (Provider, Category, Amount, Due Date, Pay Date) */}
             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Core Entry Information</div>
+              <div className="text-[10px] font-black tracking-widest text-slate-500 mb-2">Core Entry Information</div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Provider Dropdown (Linked to Service Providers registry) */}
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Provider / Description</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Provider / Description</label>
                   <SearchableSelect
                     options={providerOptions}
                     value={description}
@@ -647,7 +647,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
                 {/* Category Dropdown */}
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Category</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Category</label>
                   <select
                     value={categoryId}
                     onChange={(e) => handleCategoryChange(e.target.value)}
@@ -664,7 +664,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Amount */}
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Amount</label>
                    <CurrencyInput 
                      valueCents={amountCents}
                      onChangeCents={setAmountCents}
@@ -675,7 +675,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
                 {/* Due Date */}
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Due Date</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Due Date</label>
                    <input 
                      required
                      type="date" 
@@ -687,7 +687,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
                 {/* Pay/Payment Date */}
                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Pay Date</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Pay Date</label>
                    <input 
                      required
                      type="date" 
@@ -700,7 +700,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
               {/* Account Dropdown */}
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Pay From Account</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Pay From Account</label>
                 <select
                   value={accountId}
                   onChange={(e) => setAccountId(e.target.value)}
@@ -723,13 +723,13 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                     onChange={setSaveToRegistry} 
                     iconClassName="text-primary"
                   />
-                  <label onClick={() => setSaveToRegistry(!saveToRegistry)} className="text-xs font-black uppercase tracking-widest text-primary/90 cursor-pointer select-none">
+                  <label onClick={() => setSaveToRegistry(!saveToRegistry)} className="text-xs font-black tracking-widest text-primary/90 cursor-pointer select-none">
                     Save defaults to provider registry?
                   </label>
                 </div>
                 {saveToRegistry && (
                   <div className="pl-7 space-y-2 animate-in fade-in duration-150">
-                    <div className="text-[10px] text-secondary font-bold uppercase tracking-wider">Save scope / visibility:</div>
+                    <div className="text-[10px] text-secondary font-bold tracking-wider">Save scope / visibility:</div>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 text-xs font-semibold text-white cursor-pointer">
                         <input 
@@ -761,12 +761,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
             {/* GROUP 2: SECONDARY LOGICAL FIELDS (Status, Recurrence, Rate Adj, Paycheck Alignment) */}
             <div className="p-5 bg-white/[0.01] border border-white/5 rounded-2xl space-y-5">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Status & Scheduling Details</div>
+              <div className="text-[10px] font-black tracking-widest text-slate-600 mb-1">Status & Scheduling Details</div>
 
               {/* Status & Confirmation Number */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Status</label>
+                    <label className="text-xs font-black tracking-widest text-secondary ml-1">Status</label>
                     <TypeableSelect 
                       options={[
                         { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
@@ -779,7 +779,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                     />
                  </div>
                  <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Confirmation #</label>
+                    <label className="text-xs font-black tracking-widest text-secondary ml-1">Confirmation #</label>
                     <div className="relative">
                       <input 
                         type="text" 
@@ -806,7 +806,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                       onChange={setIsRecurring} 
                       iconClassName="text-amber-500"
                     />
-                    <span className="text-xs font-black uppercase tracking-widest text-secondary">
+                    <span className="text-xs font-black tracking-widest text-secondary">
                       Make this a recurring bill
                     </span>
                   </div>
@@ -815,7 +815,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 {isRecurring && (
                   <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Frequency</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Frequency</label>
                       <TypeableSelect 
                         options={FREQUENCY_OPTIONS}
                         value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
@@ -823,7 +823,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">End Date</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary ml-1">End Date</label>
                       <input 
                         type="date"
                         value={billEndDate}
@@ -832,7 +832,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Max Occurrences</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Max Occurrences</label>
                       <input 
                         type="number"
                         placeholder="Unlimited"
@@ -852,13 +852,13 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   onClick={() => setShowRateAdjustment(!showRateAdjustment)}
                   className="w-full flex items-center justify-between outline-none cursor-pointer"
                 >
-                  <div className="text-[10px] font-black uppercase tracking-widest text-amber-500">Planned Rate Adjustment (Optional)</div>
+                  <div className="text-[10px] font-black tracking-widest text-amber-500">Planned Rate Adjustment (Optional)</div>
                   <span className="text-xs text-slate-500">{showRateAdjustment ? '▼' : '▶'}</span>
                 </button>
                 {showRateAdjustment && (
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div className="space-y-2">
-                       <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Upcoming Amount</label>
+                       <label className="text-[9px] font-black tracking-widest text-white/30 ml-1">Upcoming Amount</label>
                        <CurrencyInput
                          valueCents={upcomingAmountCents}
                          onChangeCents={setUpcomingAmountCents}
@@ -867,7 +867,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                        />
                     </div>
                     <div className="space-y-2">
-                       <label className="text-[9px] font-black uppercase tracking-widest text-white/30 ml-1">Effective Date</label>
+                       <label className="text-[9px] font-black tracking-widest text-white/30 ml-1">Effective Date</label>
                        <input 
                         type="date"
                         value={upcomingDate}
@@ -882,7 +882,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               {/* Assign to Paycheck alignment options */}
               {paySchedules && paySchedules.length > 0 && (
                 <div className="space-y-3">
-                  <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Assign to Paycheck</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Assign to Paycheck</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <select
                       value={payScheduleId}
@@ -923,9 +923,9 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           >
             <div className="flex items-center gap-3">
                <Activity size={16} className="text-amber-500" />
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Privacy & Data Ownership Audit History</span>
+               <span className="text-[10px] font-black tracking-widest text-slate-400 group-hover:text-white transition-colors">Privacy & Data Ownership Audit History</span>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-amber-500 transition-colors">
+            <span className="text-[10px] font-black tracking-widest text-slate-600 group-hover:text-amber-500 transition-colors">
               {showTimeline ? 'Close Logs' : 'View Logs'}
             </span>
           </button>
@@ -966,8 +966,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
       >
         <div className="p-8 pb-4 flex justify-between items-center border-b border-white/5">
            <div>
-              <h3 className="text-2xl font-black italic tracking-tighter uppercase">{initialData ? 'Update' : 'New'} <span className="text-primary">Entry</span></h3>
-              <p className="text-xs text-secondary uppercase font-bold tracking-widest mt-1">Calendar Ledger Management</p>
+              <h3 className="text-2xl font-black italic tracking-tighter">{initialData ? 'Update' : 'New'} <span className="text-primary">Entry</span></h3>
+              <p className="text-xs text-secondary font-bold tracking-widest mt-1">Calendar Ledger Management</p>
            </div>
            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
              <X size={24} />
@@ -979,21 +979,21 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             <button 
               type="button"
               onClick={() => setType('pay_schedule')}
-              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black tracking-widest transition-all ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-white'}`}
             >
               Pay
             </button>
             <button 
               type="button"
               onClick={() => setType(isRecurring ? 'bill' : 'charge')}
-              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type !== 'pay_schedule' && type !== 'installment' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black tracking-widest transition-all ${type !== 'pay_schedule' && type !== 'installment' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-white'}`}
             >
               Bills & Charges
             </button>
             <button 
               type="button"
               onClick={() => setType('installment')}
-              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${type === 'installment' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-slate-500 hover:text-white'}`}
+              className={`flex-1 flex justify-center items-center py-3 px-2 rounded-xl text-[10px] sm:text-xs font-black tracking-widest transition-all ${type === 'installment' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/20' : 'text-slate-500 hover:text-white'}`}
             >
               BNPL
             </button>
@@ -1024,7 +1024,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
              )}
              <button 
               type="submit"
-               className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : type === 'installment' ? 'bg-violet-500 text-white shadow-violet-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
+               className={`flex-1 py-4 px-6 rounded-2xl text-xs font-black tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl cursor-pointer ${type === 'pay_schedule' ? 'bg-blue-500 text-white shadow-blue-500/20' : type === 'installment' ? 'bg-violet-500 text-white shadow-violet-500/20' : 'bg-amber-500 text-black shadow-amber-500/20'}`}
              >
                <CheckCircle2 size={18} />
                {initialData ? 'Save Changes' : 'Create Entry'}
@@ -1043,10 +1043,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             onClick={e => e.stopPropagation()}
           >
             <div>
-              <h3 className="text-xl font-black italic tracking-tighter uppercase text-amber-500">
+              <h3 className="text-xl font-black italic tracking-tighter text-amber-500">
                 Confirm {scopeConfirmState === 'edit' ? 'Update' : 'Delete'} Scope
               </h3>
-              <p className="text-xs text-secondary font-bold uppercase tracking-widest mt-1">
+              <p className="text-xs text-secondary font-bold tracking-widest mt-1">
                 This is a recurring {type === 'pay_schedule' ? 'income schedule' : type === 'installment' ? 'BNPL installment plan' : 'bill'}
               </p>
             </div>
@@ -1092,7 +1092,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             <button
               type="button"
               onClick={() => setScopeConfirmState(null)}
-              className="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+              className="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-black tracking-widest transition-all cursor-pointer"
             >
               Go Back
             </button>

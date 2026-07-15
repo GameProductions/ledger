@@ -97,13 +97,13 @@ export const GuidedTour: React.FC = () => {
         <div className="flex flex-col gap-2">
           <button 
             onClick={handleConfirmSkipShowAgain}
-            className="w-full py-2.5 bg-primary text-black font-black uppercase tracking-widest text-xs rounded-xl hover:brightness-110 transition-all cursor-pointer"
+            className="w-full py-2.5 bg-primary text-black font-black tracking-widest text-xs rounded-xl hover:brightness-110 transition-all cursor-pointer"
           >
             Yes, prompt me next time
           </button>
           <button 
             onClick={handleConfirmSkipNoMore}
-            className="w-full py-2.5 bg-white/10 text-white font-black uppercase tracking-widest text-xs rounded-xl hover:bg-white/20 transition-all border border-white/5 cursor-pointer"
+            className="w-full py-2.5 bg-white/10 text-white font-black tracking-widest text-xs rounded-xl hover:bg-white/20 transition-all border border-white/5 cursor-pointer"
           >
             No, don't show this tour again
           </button>

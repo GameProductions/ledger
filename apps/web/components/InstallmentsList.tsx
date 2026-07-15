@@ -53,12 +53,12 @@ export const InstallmentsList: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-8 text-xs font-black uppercase tracking-[0.2em] text-white/30">Calculating Installment Amortization...</div>;
+    if (loading) return <div className="text-center py-8 text-xs font-black tracking-[0.2em] text-white/30">Calculating Installment Amortization...</div>;
 
     return (
         <section className="space-y-4">
             <div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-black tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
                     <Layers size={14} className="text-indigo-500" /> Installment Plans
                 </h3>
                 <p className="text-xs text-secondary font-medium">Manage finite payment agreements (like financing a phone, a car loan, or furniture store installment plans). This lists how many payments are left, your progress, and automatically removes the plan from your budget once paid in full.</p>
@@ -76,7 +76,7 @@ export const InstallmentsList: React.FC = () => {
                         <div key={inst.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-indigo-500/30 overflow-hidden">
                             {inst.upcomingEffectiveDate && (
                                 <div className="absolute top-0 right-0 bg-indigo-500/10 border-b border-l border-indigo-500/20 px-3 py-1 rounded-bl-xl">
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                                    <div className="text-[11px] font-bold tracking-widest text-indigo-400 flex items-center gap-1.5">
                                         <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
                                         Rate Change: <Price amountCents={inst.upcomingAmountCents} /> on {inst.upcomingEffectiveDate}
                                     </div>
@@ -84,25 +84,25 @@ export const InstallmentsList: React.FC = () => {
                             )}
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <h4 className="font-black text-lg tracking-tighter uppercase italic">{inst.name}</h4>
+                                    <h4 className="font-black text-lg tracking-tighter italic">{inst.name}</h4>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-400`}>
+                                        <span className={`text-xs font-bold tracking-widest px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-400`}>
                                             {paidPayments} OF {totalPayments} PAID
                                         </span>
-                                        <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
+                                        <span className="text-xs font-bold text-white/30 tracking-widest">
                                             Next: {inst.nextPayDate}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <Price amountCents={inst.installmentAmountCents} className="text-xl font-black tracking-tighter" />
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-white/30 mt-0.5">Per {inst.frequency}</div>
+                                    <div className="text-[11px] font-bold tracking-widest text-white/30 mt-0.5">Per {inst.frequency}</div>
                                 </div>
                             </div>
 
                             {/* Progress Section */}
                             <div className="space-y-2 mb-4">
-                                <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
+                                <div className="flex justify-between text-[11px] font-bold tracking-widest">
                                     <span className="text-white/40">Total Progress</span>
                                     <div className="flex gap-2">
                                         <span className="text-white/40 italic">Paid <Price amountCents={paidAmountCents} /></span>
@@ -119,7 +119,7 @@ export const InstallmentsList: React.FC = () => {
 
                             {inst.isSplitPortion && (
                                 <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 mb-4">
-                                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-400">
+                                    <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-indigo-400">
                                         <Share2 size={12} /> Assigned Split Portion
                                     </div>
                                 </div>
@@ -135,14 +135,14 @@ export const InstallmentsList: React.FC = () => {
                                         <div className="flex items-center justify-between w-full">
                                             <div className="flex items-center gap-2">
                                                 <ShieldCheck size={14} className="text-primary group-hover/tracker:scale-110 transition-transform" />
-                                                <span className="text-xs uppercase font-bold tracking-widest text-primary">Master Split Ledger</span>
+                                                <span className="text-xs font-bold tracking-widest text-primary">Master Split Ledger</span>
                                             </div>
-                                            <span className="text-xs uppercase font-bold text-white/40">{openTrackerId === inst.id ? 'Close' : 'View Stats'}</span>
+                                            <span className="text-xs font-bold text-white/40">{openTrackerId === inst.id ? 'Close' : 'View Stats'}</span>
                                         </div>
                                         {openTrackerId === inst.id && (
                                             <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
                                                 <div className="flex items-center justify-between px-2 py-1 bg-white/5 rounded-lg border border-white/5 mb-2">
-                                                    <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">Broadcasting Status</span>
+                                                    <span className="text-[11px] font-bold tracking-widest text-white/40">Broadcasting Status</span>
                                                     <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
                                                         <input 
                                                             type="checkbox" 
@@ -157,12 +157,10 @@ export const InstallmentsList: React.FC = () => {
                                                     <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
                                                         <div className="flex items-center gap-2">
                                                             <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
-                                                            <span className="text-xs font-bold uppercase tracking-widest text-white/60">Portion</span>
+                                                            <span className="text-xs font-bold tracking-widest text-white/60">Portion</span>
                                                         </div>
                                                         <div className="flex items-center gap-3">
-                                                            <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                                                                split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
-                                                            }`}>
+                                                            <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${ split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500' }`}>
                                                                 {split.status}
                                                             </span>
                                                             <Price amountCents={split.calculatedAmountCents} className="text-xs font-bold tracking-widest" />
@@ -178,7 +176,7 @@ export const InstallmentsList: React.FC = () => {
                             <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                 <div className="flex gap-2">
                                     <button 
-                                        className="text-xs font-bold uppercase tracking-widest bg-white/5 text-white/40 px-4 py-2 rounded-xl cursor-not-allowed border border-white/5"
+                                        className="text-xs font-bold tracking-widest bg-white/5 text-white/40 px-4 py-2 rounded-xl cursor-not-allowed border border-white/5"
                                         disabled
                                     >
                                         Payment Logic Pending
@@ -186,7 +184,7 @@ export const InstallmentsList: React.FC = () => {
                                     {!inst.isSplitOriginator && !inst.isSplitPortion && (
                                         <button 
                                             onClick={() => setOpenSplitterId(openSplitterId === inst.id ? null : inst.id)}
-                                            className="text-xs font-bold uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-2 rounded-xl hover:bg-indigo-500/20 transition-all flex items-center gap-2"
+                                            className="text-xs font-bold tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-2 rounded-xl hover:bg-indigo-500/20 transition-all flex items-center gap-2"
                                         >
                                             <Share2 size={14} /> Split Bill
                                         </button>
@@ -219,7 +217,7 @@ export const InstallmentsList: React.FC = () => {
                 }) : (
                     <div className="py-12 text-center border border-dashed border-white/10 rounded-[2rem]">
                         <AlertCircle size={24} className="mx-auto text-white/20 mb-3" />
-                        <p className="text-xs font-black uppercase tracking-widest text-white/20">No active installment plans found</p>
+                        <p className="text-xs font-black tracking-widest text-white/20">No active installment plans found</p>
                     </div>
                 )}
             </div>

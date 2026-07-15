@@ -669,7 +669,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div className="safe-to-spend-container mt-4">
                 <Price amountCents={analysis?.safe_to_spend_cents || analysis?.safety_number_cents || 0} />
               </div>
-              <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60 mt-2">Spendable cash for selected window</p>
+              <p className="text-sm text-secondary tracking-widest font-bold opacity-60 mt-2">Spendable cash for selected window</p>
             </section>
       );
       case 'future-balance': return (
@@ -679,14 +679,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   <h3 className="text-lg font-bold">Future Balance</h3>
                   <p className="text-xs text-secondary font-medium mt-1">A forecast of your cash balance over the next 6 months, helping you visualize your savings growth and see if you have enough to cover upcoming expenses.</p>
                 </div>
-                <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black min-w-[110px] text-center">6-Month Forecast</div>
+                <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black min-w-[110px] text-center">6-Month Forecast</div>
               </div>
               <div className="text-3xl font-black text-white mb-2 mt-4">
                 <Price amountCents={Array.isArray(forecast) ? (forecast.at(-1)?.balance_cents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
               <div className="flex items-center gap-2 mb-4">
                  <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
-                 <span className="text-xs text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Available Money</span>
+                 <span className="text-xs text-secondary font-bold tracking-widest opacity-60">Estimated Available Money</span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
                 {Array.isArray(forecast) && forecast.slice(0, 6).map((p: any, i: number) => (
@@ -718,14 +718,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       />
                   </div>
                   <div className="flex gap-4 items-center mr-4">
-                    <a href="#/data" className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-all no-underline">
+                    <a href="#/data" className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary hover:text-white transition-all no-underline">
                       <span>📥</span> Import & Export
                     </a>
                     {['all', 'unmatched', 'matched'].map(s => (
                       <button 
                         key={s}
                         onClick={() => setFilterStatus(s)}
-                        className={`text-[12px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
+                        className={`text-[12px] font-black tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
                       >
                         {s}
                       </button>
@@ -754,22 +754,22 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <div className="font-bold flex items-center gap-3">
                           {tx.description}
                           {tx.status === 'paid' && (
-                            <span className="text-xs font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase border border-emerald-500/20">Paid</span>
+                            <span className="text-xs font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full border border-emerald-500/20">Paid</span>
                           )}
                           {tx.status === 'pending' && (
-                            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase border border-amber-500/20">Pending</span>
+                            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">Pending</span>
                           )}
                           {tx.status === 'scheduled' && (
-                            <span className="text-xs font-bold bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase border border-blue-500/20">Scheduled</span>
+                            <span className="text-xs font-bold bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full border border-blue-500/20">Scheduled</span>
                           )}
                           {(tx.status === 'unpaid' || !tx.status) && (
-                            <span className="text-xs font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase border border-red-500/20">Unpaid</span>
+                            <span className="text-xs font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">Unpaid</span>
                           )}
                           {tx.reconciliationStatus === 'reconciled' && (
-                            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Cleared</span>
+                            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Cleared</span>
                           )}
                         </div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60 flex items-center gap-2">
+                        <div className="text-xs text-secondary font-bold opacity-60 flex items-center gap-2">
                            {tx.transactionDate}
                            {tx.confirmationNumber && <span className="text-slate-500 pr-2 border-r border-white/10">#{tx.confirmationNumber}</span>}
                         </div>
@@ -787,7 +787,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         </button>
                         <button 
                           onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
-                          className={`px-3 py-2 text-xs font-bold uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
+                          className={`px-3 py-2 text-xs font-bold tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
                         >
                           {tx.status === 'reconciled' ? '✓' : 'Match'}
                         </button>
@@ -816,7 +816,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       case 'add-transaction': return (
             <section key="add-transaction" className="card bg-primary/5 border-primary/20 animate-in fade-in zoom-in duration-500 delay-150">
               <h3 className="text-lg font-bold mb-1">Add Transaction</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60 mb-2">Instantly record new entries</p>
+              <p className="text-xs text-secondary font-bold opacity-60 mb-2">Instantly record new entries</p>
               <p className="text-xs text-secondary font-medium mb-6">Quickly record a purchase or income. Tap a template button below to auto-fill common items, or type the name and amount manually.</p>
               
               <div className="flex flex-wrap gap-2 mb-6">
@@ -827,7 +827,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                        if (tpl.name) setQeDesc(tpl.name)
                        if (tpl.amountCents) setQeAmountCents(tpl.amountCents)
                     }}
-                    className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
+                    className="text-xs font-bold tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
                   >
                     {tpl.name}
                   </button>
@@ -867,7 +867,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
                 <div className="flex gap-2 sm:contents">
                   <CurrencyInput valueCents={qeAmountCents} onChangeCents={setQeAmountCents} placeholder="0.00" className="bg-white/10 border-glass-border" />
-                  <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-xs">Save</button>
+                  <button type="submit" className="px-8 bg-primary rounded-xl font-black tracking-widest text-xs">Save</button>
                 </div>
               </form>
             </section>
@@ -876,19 +876,19 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <section id="budget-categories-card" key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-2">
                   <div>
-                    <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
+                    <h3 className="text-lg font-bold tracking-tight italic">Budget Categories</h3>
                     <p className="text-xs text-secondary font-medium mt-1 pr-4">Your envelope budgeting center. Allocate funds to different envelopes (like Groceries or Rent) to stay within your limits, and use the 'Roll Over' button to carry leftover funds to the next month.</p>
                   </div>
                   <div className="flex flex-wrap gap-2 min-w-[220px] justify-end">
-                    <button onClick={handleRollover} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
-                    <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
-                    <button onClick={() => setShowFundModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
+                    <button onClick={handleRollover} className="text-xs font-bold tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
+                    <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
+                    <button onClick={() => setShowFundModal(true)} className="text-xs font-bold tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
                   </div>
                 </div>
                 <div className="text-3xl font-black text-primary mb-1 mt-6">
                   <Price amountCents={budgetsData?.unallocatedBalanceCents || 0} />
                 </div>
-                <div className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
+                <div className="text-xs text-secondary tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
                 
                 <div className="space-y-2">
                   {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
@@ -898,7 +898,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">{b.icon}</div>
                              <div>
                                 <h4 className="font-bold text-sm leading-none">{b.name}</h4>
-                                <p className="text-xs text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
+                                <p className="text-xs text-secondary opacity-40 tracking-widest mt-1 hide-on-narrow">Active Category</p>
                              </div>
                           </div>
                           <div className={`text-xl font-black tracking-tighter ${((b.envelopeBalanceCents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
@@ -907,7 +907,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                        </div>
                        
                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                          <div className="flex justify-between text-xs font-bold tracking-widest">
                              <span className="text-secondary opacity-60">Activity</span>
                              <span className="text-white opacity-80"><Price amountCents={b.spend_cents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthlyBudgetCents || 0} /></span></span>
                           </div>
@@ -940,7 +940,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <HealthScore score={analysis?.healthScore || 0} />
               <button 
                 onClick={() => window.open(`${apiUrl}/api/data/history/summary`, '_blank')}
-                className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-xs font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
+                className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-xs font-black tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
               >
                 📥 Download Statement Summary
               </button>
@@ -961,14 +961,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         <div className="card w-full max-w-lg p-8 max-h-[80vh] overflow-y-auto space-y-6" onClick={(e) => e.stopPropagation()}>
           <div className="flex justify-between items-center bg-deep sticky top-0 pb-4 z-10 border-b border-white/5">
               <div>
-                  <h3 className="text-xl font-black uppercase tracking-tighter italic m-0">Customize Layout</h3>
-                  <p className="text-xs text-secondary font-bold uppercase tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
+                  <h3 className="text-xl font-black tracking-tighter italic m-0">Customize Layout</h3>
+                  <p className="text-xs text-secondary font-bold tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
               </div>
               <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2">✕</button>
           </div>
 
           <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation</h4>
+            <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation</h4>
             <Reorder.Group 
                 axis="y" 
                 values={tabConfig} 
@@ -1007,7 +1007,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           </div>
 
           <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Tab Configuration</h4>
+            <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Tab Configuration</h4>
             <Reorder.Group 
                 axis="y" 
                 values={layout[activeTab] || []} 
@@ -1024,7 +1024,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     >
                         <div className="flex items-center gap-3">
                             <GripVertical size={16} className="text-secondary/50" />
-                            <span className="text-xs font-black uppercase tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
+                            <span className="text-xs font-black tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
                         </div>
                         <button 
                             onClick={(e) => {
@@ -1044,7 +1044,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           
           <div className="pt-6 border-t border-white/5 flex gap-4 sticky bottom-0 bg-deep pt-4">
               <button 
-                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold tracking-widest hover:bg-white/10 transition-all"
                   onClick={() => {
                     // Reset to saved state on cancel
                     if (user?.settingsJson) {
@@ -1058,7 +1058,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   Cancel
               </button>
               <button 
-                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all transition-all"
+                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-xs font-bold tracking-widest hover:brightness-110 transition-all transition-all"
                   onClick={() => { saveLayout(layout, tabConfig); setIsCustomizing(false); }}
               >
                   Save Global Layout
@@ -1093,7 +1093,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                    <Info size={24} />}
                 </div>
                 <div className="flex-1 pt-1">
-                  <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                  <h4 className="text-sm font-black tracking-[0.2em] mb-1.5">{ann.title}</h4>
                   <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
                     <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
                   </div>
@@ -1136,7 +1136,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                      <Info size={24} />}
                   </div>
                   <div className="flex-1 pt-1">
-                    <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                    <h4 className="text-sm font-black tracking-[0.2em] mb-1.5">{ann.title}</h4>
                     <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
                       <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
                     </div>
@@ -1179,7 +1179,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         </div>
         <button 
           onClick={() => setIsCustomizing(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ml-4 whitespace-nowrap"
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-xs font-bold tracking-widest transition-all ml-4 whitespace-nowrap"
         >
           <Settings2 size={14} className="text-secondary hover:text-white" /> Customize View
         </button>
@@ -1206,7 +1206,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       {selectedTxIds.length > 0 && (
         <div className="fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-[100] p-1 bg-[#0f172a]/95 backdrop-blur-2xl border border-secondary rounded-2xl shadow-2xl reveal flex items-center gap-3 sm:gap-6 min-w-[300px] sm:min-w-[400px]">
           <div className="flex items-center gap-2 sm:gap-4 pl-4 sm:pl-6">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
+            <span className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
             <div className="h-4 w-px bg-glass-border" />
             <span className="text-lg sm:text-xl font-black tracking-tighter">
               <Price amountCents={(Array.isArray(transactions) ? transactions : []).filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + (t.amountCents || 0), 0)} />
@@ -1214,7 +1214,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           </div>
           <button 
             onClick={() => setSelectedTxIds([])}
-            className="ml-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[12px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap"
+            className="ml-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[12px] sm:text-xs font-black tracking-widest whitespace-nowrap"
           >
             Clear
           </button>
@@ -1236,7 +1236,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
             <div className="space-y-6">
               <div>
-                <div className="text-xs text-primary font-black uppercase tracking-[0.2em] mb-3">Matches</div>
+                <div className="text-xs text-primary font-black tracking-[0.2em] mb-3">Matches</div>
                 <div className="space-y-2">
                   {Array.isArray(smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates) && 
                   smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates?.map((t: any) => (
@@ -1275,7 +1275,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
 
               <div>
-                <div className="text-xs text-secondary font-black uppercase tracking-[0.2em] mb-3">All Transactions</div>
+                <div className="text-xs text-secondary font-black tracking-[0.2em] mb-3">All Transactions</div>
                 <div className="space-y-2">
                   {Array.isArray(transactions) && transactions.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
                     <div 
@@ -1299,12 +1299,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     >
                       <div>
                         <div className="font-bold group-hover:text-primary transition-colors">{t.description}</div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{t.transactionDate}</div>
+                        <div className="text-xs text-secondary font-bold opacity-60">{t.transactionDate}</div>
                       </div>
                       <div className="text-right">
                         <div className="font-black tracking-tighter text-lg">${(t.amountCents / 100).toFixed(2)}</div>
                         {Math.abs(t.amountCents) === Math.abs(linkingTx.amountCents) && (
-                          <span className="text-[10px] text-primary font-black uppercase">Exact Match</span>
+                          <span className="text-[10px] text-primary font-black">Exact Match</span>
                         )}
                       </div>
                     </div>
@@ -1330,7 +1330,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   setLinkingTx(null)
                   showToast('Links Reset')
                 }}
-                className="mt-8 w-full py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                className="mt-8 w-full py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-black tracking-widest hover:bg-red-500/20 transition-all"
               >
                 Reset All Links
               </button>
@@ -1344,11 +1344,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="card w-full max-w-md p-8 reveal space-y-6overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Add Money to Category</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60">Allocate balance from unallocated pool</p>
+              <p className="text-xs text-secondary font-bold opacity-60">Allocate balance from unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Select Category</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Select Category</label>
                 <SearchableSelect 
                   options={Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => ({
                     value: b.id,
@@ -1360,10 +1360,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   onChange={(val) => setFundCategoryId(val)}
                   placeholder="Choose a category..."
                 />
-                <a href="#/settings" className="text-[10px] sm:text-xs text-primary font-black uppercase tracking-widest hover:underline mt-2 inline-block ml-1">Manage Categories &rarr;</a>
+                <a href="#/settings" className="text-[10px] sm:text-xs text-primary font-black tracking-widest hover:underline mt-2 inline-block ml-1">Manage Categories &rarr;</a>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Amount</label>
                 <CurrencyInput
                   valueCents={fundAmountCents}
                   onChangeCents={setFundAmountCents}
@@ -1371,8 +1371,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
               </div>
               <div className="flex gap-4 pt-4">
-                <button onClick={() => setShowFundModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black uppercase text-xs">Cancel</button>
-                <button className="flex-1 py-4 bg-primary rounded-xl font-black uppercase text-xs" onClick={handleFund}>Allocate Funds</button>
+                <button onClick={() => setShowFundModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black text-xs">Cancel</button>
+                <button className="flex-1 py-4 bg-primary rounded-xl font-black text-xs" onClick={handleFund}>Allocate Funds</button>
               </div>
             </div>
           </div>
@@ -1384,11 +1384,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="card w-full max-w-md p-8 reveal space-y-6 overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Add to Unallocated</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60">Add funds to unallocated pool</p>
+              <p className="text-xs text-secondary font-bold opacity-60">Add funds to unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Amount</label>
                 <CurrencyInput
                   valueCents={depositAmountCents}
                   onChangeCents={setDepositAmountCents}
@@ -1396,8 +1396,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
               </div>
               <div className="flex gap-4 pt-4">
-                <button onClick={() => setShowDepositModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black uppercase text-xs">Cancel</button>
-                <button className="flex-1 py-4 bg-primary rounded-xl font-black uppercase text-xs" onClick={handleDeposit}>Deposit</button>
+                <button onClick={() => setShowDepositModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black text-xs">Cancel</button>
+                <button className="flex-1 py-4 bg-primary rounded-xl font-black text-xs" onClick={handleDeposit}>Deposit</button>
               </div>
             </div>
           </div>
@@ -1422,8 +1422,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         title="Confirm Budget Rollover"
         footer={
           <>
-            <button onClick={() => setIsRolloverModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Cancel</button>
-            <button onClick={confirmRollover} className="px-6 py-2 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">Continue</button>
+            <button onClick={() => setIsRolloverModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black tracking-widest transition-all">Cancel</button>
+            <button onClick={confirmRollover} className="px-6 py-2 bg-primary text-white rounded-xl text-xs font-black tracking-widest transition-all">Continue</button>
           </>
         }
       >
@@ -1436,8 +1436,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         title="Delete Entry?"
         footer={
           <>
-            <button onClick={() => setIsDeleteModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Cancel</button>
-            <button onClick={confirmCalendarDelete} className="px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all font-bold">Delete Forever</button>
+            <button onClick={() => setIsDeleteModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black tracking-widest transition-all">Cancel</button>
+            <button onClick={confirmCalendarDelete} className="px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-black tracking-widest transition-all font-bold">Delete Forever</button>
           </>
         }
       >

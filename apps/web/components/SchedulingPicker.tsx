@@ -32,7 +32,7 @@ const SchedulingPicker: React.FC<SchedulingPickerProps> = ({ value, onChange }) 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Frequency Type */}
         <div className="space-y-2">
-          <label className="text-xs uppercase tracking-widest font-black text-secondary flex items-center gap-2">
+          <label className="text-xs tracking-widest font-black text-secondary flex items-center gap-2">
             <RotateCcw size={12} className="text-primary" />
             Frequency
           </label>
@@ -49,7 +49,7 @@ const SchedulingPicker: React.FC<SchedulingPickerProps> = ({ value, onChange }) 
 
         {/* Interval */}
         <div className="space-y-2">
-          <label className="text-xs uppercase tracking-widest font-black text-secondary flex items-center gap-2">
+          <label className="text-xs tracking-widest font-black text-secondary flex items-center gap-2">
             <Clock size={12} className="text-secondary" />
             Every X Intervals
           </label>
@@ -67,7 +67,7 @@ const SchedulingPicker: React.FC<SchedulingPickerProps> = ({ value, onChange }) 
       {/* Monthly specific options */}
       {value.frequency_type === 'monthly' && (
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
-          <label className="text-xs uppercase tracking-widest font-black text-primary mb-3 block">Day of the Month</label>
+          <label className="text-xs tracking-widest font-black text-primary mb-3 block">Day of the Month</label>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
               <button
@@ -90,7 +90,7 @@ const SchedulingPicker: React.FC<SchedulingPickerProps> = ({ value, onChange }) 
       {/* Weekly/Bi-Weekly specific options */}
       {(value.frequency_type === 'weekly' || value.frequency_type === 'biweekly') && (
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
-          <label className="text-xs uppercase tracking-widest font-black text-primary mb-3 block">Days of the Week</label>
+          <label className="text-xs tracking-widest font-black text-primary mb-3 block">Days of the Week</label>
           <div className="flex flex-wrap gap-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
               <button

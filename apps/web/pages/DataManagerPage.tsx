@@ -141,10 +141,10 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">{icon}</div>
           <div>
             <h3 className="text-lg font-black tracking-tight">{title}</h3>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{filtered.length} record{filtered.length !== 1 ? 's' : ''}</span>
+            <span className="text-[10px] font-bold tracking-widest text-white/40">{filtered.length} record{filtered.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true) }} className="flex items-center gap-2 px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-xs font-black uppercase tracking-widest text-primary hover:bg-primary/30 transition-all">
+        <button onClick={() => { resetForm(); setShowForm(true) }} className="flex items-center gap-2 px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-xs font-black tracking-widest text-primary hover:bg-primary/30 transition-all">
           <Plus size={14} /> Add
         </button>
       </div>
@@ -189,7 +189,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
           const formVal = getSafeValue(formData, f.key);
           return (
             <div key={f.key}>
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1.5">{f.label}</label>
+              <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1.5">{f.label}</label>
               {f.type === 'select' ? (
                 <select value={formVal ?? ''} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
                   <option value="">Select...</option>
@@ -306,13 +306,13 @@ const DataManagerPage: React.FC = () => {
             ]}
             displayFn={(acc: any) => (
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black uppercase ${acc.status === 'closed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${acc.status === 'closed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
                   {acc.type?.slice(0, 2) || '??'}
                 </div>
                 <div>
                   <div className="font-bold text-sm flex items-center gap-2">
                     {acc.name}
-                    {acc.status === 'closed' && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Closed</span>}
+                    {acc.status === 'closed' && <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Closed</span>}
                   </div>
                   <div className="text-[10px] text-white/40 font-medium">
                     <Price amountCents={acc.balance_cents} /> · {acc.type} · {acc.currency || 'USD'}
@@ -533,9 +533,9 @@ const DataManagerPage: React.FC = () => {
                   <div className="font-bold text-sm flex items-center gap-2">
                     {p.name}
                     {p.status === 'active' ? (
-                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Active</span>
+                      <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Active</span>
                     ) : (
-                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Inactive</span>
+                      <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Inactive</span>
                     )}
                   </div>
                   <div className="text-[10px] text-white/40 font-medium">
@@ -554,7 +554,7 @@ const DataManagerPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 max-w-7xl mx-auto">
         {/* Sidebar Nav */}
         <nav className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 h-fit lg:sticky lg:top-6">
-          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 px-3 py-2">Entity Types</div>
+          <div className="text-[9px] font-black tracking-[0.2em] text-white/30 px-3 py-2">Entity Types</div>
           <div className="space-y-1">
             {TABS.map(tab => (
               <button

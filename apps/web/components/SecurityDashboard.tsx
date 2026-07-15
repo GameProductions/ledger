@@ -99,12 +99,12 @@ export function SecurityDashboard() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Session</span>
+              <span className="text-[10px] font-black text-slate-500 tracking-widest">Current Session</span>
             </div>
           </div>
           <button 
             onClick={() => setShowLegend(!showLegend)}
-            className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+            className="text-[10px] font-black text-slate-500 hover:text-white tracking-widest flex items-center gap-1.5 transition-colors"
           >
             Security Legend
           </button>
@@ -114,14 +114,14 @@ export function SecurityDashboard() {
           <div className="mx-5 mb-5 p-5 rounded-2xl bg-white/[0.02] border border-white/5 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-1.5 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider">Persistent</span>
+                <span className="px-1.5 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-500 text-[9px] font-black tracking-wider">Persistent</span>
                 <span className="text-xs font-bold text-slate-200">30 Day Multi-Device Session</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">Standard "Remember Me" session. Survives browser restarts and system reboots.</p>
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-wider">Temporary</span>
+                <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black tracking-wider">Temporary</span>
                 <span className="text-xs font-bold text-slate-200">24 Hour Volatile Session</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">Single-use secure session. Automatically purged after 24 hours of inactivity.</p>
@@ -178,14 +178,14 @@ export function SecurityDashboard() {
                       {s.deviceName} ({s.browser})
                     </h3>
                     {idx === 0 && (
-                      <span className="px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.3)]">
                         Current
                       </span>
                     )}
                     {s.isPersistent ? (
-                      <span className="px-1.5 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider">Persistent</span>
+                      <span className="px-1.5 py-0.5 rounded-[4px] bg-emerald-500/10 text-emerald-500 text-[9px] font-black tracking-wider">Persistent</span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-wider">Temporary</span>
+                      <span className="px-1.5 py-0.5 rounded-[4px] bg-amber-500/10 text-amber-500 text-[9px] font-black tracking-wider">Temporary</span>
                     )}
                   </div>
                    <div className="flex flex-col gap-0.5">
@@ -204,7 +204,7 @@ export function SecurityDashboard() {
                         
                         return ips.map((ip, idx) => (
                           <span key={idx} className={idx > 0 ? 'ml-3' : ''}>
-                            <span className="text-slate-400 font-black uppercase tracking-tighter mr-1">{ip.label}:</span>
+                            <span className="text-slate-400 font-black tracking-tighter mr-1">{ip.label}:</span>
                             <span className="font-mono">{ip.value}</span>
                           </span>
                         ));

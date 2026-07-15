@@ -235,15 +235,15 @@ const HouseholdRegistry: React.FC = () => {
                           onKeyDown={e => e.key === 'Enter' && handleRename()}
                           autoFocus
                         />
-                        <button onClick={handleRename} className="px-3 py-1 bg-emerald-500 text-black text-xs font-black uppercase rounded hover:scale-105 transition-all">Save</button>
+                        <button onClick={handleRename} className="px-3 py-1 bg-emerald-500 text-black text-xs font-black rounded hover:scale-105 transition-all">Save</button>
                         <button onClick={() => {
                           setHouseholdName(currentHousehold?.name || '');
                           setIsRenaming(false);
-                        }} className="px-3 py-1 bg-white/10 text-white text-xs font-black uppercase rounded hover:bg-white/20 transition-all">Cancel</button>
+                        }} className="px-3 py-1 bg-white/10 text-white text-xs font-black rounded hover:bg-white/20 transition-all">Cancel</button>
                       </div>
                     ) : (
                       <>
-                        <h3 className="text-2xl font-black italic tracking-tight uppercase leading-none">{currentHousehold?.name || 'Personal Account'}</h3>
+                        <h3 className="text-2xl font-black italic tracking-tight leading-none">{currentHousehold?.name || 'Personal Account'}</h3>
                         {isAdmin && (
                           <button onClick={() => setIsRenaming(true)} className="text-slate-500 hover:text-emerald-500">
                             <Edit3 size={16} />
@@ -252,12 +252,12 @@ const HouseholdRegistry: React.FC = () => {
                       </>
                     )}
                  </div>
-                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/60 mt-1">Current Household</p>
+                 <p className="text-[10px] font-black tracking-[0.3em] text-emerald-500/60 mt-1">Current Household</p>
               </div>
            </div>
            <button 
              onClick={() => setIsCreateModalOpen(true)}
-             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest text-secondary transition-all"
+             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black tracking-widest text-secondary transition-all"
            >
               <Plus size={14} />
               New Household
@@ -268,7 +268,7 @@ const HouseholdRegistry: React.FC = () => {
         <div className="space-y-4 pt-6 border-t border-white/5 mb-8">
            <div className="flex items-center justify-between mb-4">
               <div>
-                <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-sm font-black tracking-widest flex items-center gap-2">
                    <Users size={14} className="text-emerald-500" />
                    Household Members
                 </h4>
@@ -287,12 +287,8 @@ const HouseholdRegistry: React.FC = () => {
                        />
                        <div>
                           <div className="flex items-center gap-2">
-                             <p className="text-sm font-black uppercase tracking-tight">{m.displayName || 'System User'}</p>
-                             <span className={`text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest ${
-                               m.role === 'owner' ? 'bg-emerald-500 text-black' :
-                               m.role === 'admin' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                               'bg-white/5 text-slate-400'
-                             }`}>
+                             <p className="text-sm font-black tracking-tight">{m.displayName || 'System User'}</p>
+                             <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-widest ${ m.role === 'owner' ? 'bg-emerald-500 text-black' : m.role === 'admin' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-white/5 text-slate-400' }`}>
                                 {m.role}
                              </span>
                           </div>
@@ -303,7 +299,7 @@ const HouseholdRegistry: React.FC = () => {
                     {isAdmin && m.id !== profile?.id && m.role !== 'owner' && (
                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                           <select 
-                            className="bg-black border border-white/10 rounded-lg text-[10px] font-black uppercase py-1 px-2 outline-none hover:border-emerald-500/30 transition-all"
+                            className="bg-black border border-white/10 rounded-lg text-[10px] font-black py-1 px-2 outline-none hover:border-emerald-500/30 transition-all"
                             value={m.role}
                             onChange={(e) => updateMemberRole(m.id, e.target.value)}
                             disabled={updatingRole === m.id}
@@ -341,7 +337,7 @@ const HouseholdRegistry: React.FC = () => {
         <div className="space-y-4 pt-6 border-t border-white/5">
            <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-sm font-black tracking-widest flex items-center gap-2">
                    <UserCheck size={14} className="text-emerald-500" />
                    Invite New Member
                 </h4>
@@ -360,7 +356,7 @@ const HouseholdRegistry: React.FC = () => {
               <button 
                 onClick={generateInvite}
                 disabled={loading || !isAdmin}
-                className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale text-black font-black uppercase tracking-widest text-xs rounded-2xl transition-all flex items-center gap-3 shadow-lg shadow-emerald-500/20"
+                className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale text-black font-black tracking-widest text-xs rounded-2xl transition-all flex items-center gap-3 shadow-lg shadow-emerald-500/20"
               >
                 {loading ? <Plus className="animate-spin" /> : <Send size={16} />}
                 {inviteEmail ? 'Send Invite' : 'Generate Link'}
@@ -371,7 +367,7 @@ const HouseholdRegistry: React.FC = () => {
               reduced ? (
                 <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4">
                    <div className="flex-1 overflow-hidden">
-                      <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Invite Link Active (24h)</p>
+                      <p className="text-[10px] text-emerald-500 font-black tracking-widest mb-1">Invite Link Active (24h)</p>
                       <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
                    </div>
                    <button 
@@ -392,7 +388,7 @@ const HouseholdRegistry: React.FC = () => {
                    className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4"
                 >
                    <div className="flex-1 overflow-hidden">
-                      <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest mb-1">Invite Link Active (24h)</p>
+                      <p className="text-[10px] text-emerald-500 font-black tracking-widest mb-1">Invite Link Active (24h)</p>
                       <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
                    </div>
                    <button 
@@ -419,13 +415,13 @@ const HouseholdRegistry: React.FC = () => {
                  <ShieldAlert size={24} />
               </div>
               <div>
-                 <h3 className="text-xl font-black italic tracking-tight uppercase">Danger Zone</h3>
-                 <p className="text-xs font-bold text-red-500/60 uppercase tracking-widest">Permanent household deactivation</p>
+                 <h3 className="text-xl font-black italic tracking-tight">Danger Zone</h3>
+                 <p className="text-xs font-bold text-red-500/60 tracking-widest">Permanent household deactivation</p>
               </div>
            </div>
            <button 
              onClick={() => setIsArchiveModalOpen(true)}
-             className="px-6 py-3 border border-red-500/30 hover:bg-red-500 text-red-500 hover:text-black font-black uppercase tracking-widest text-[10px] rounded-xl transition-all"
+             className="px-6 py-3 border border-red-500/30 hover:bg-red-500 text-red-500 hover:text-black font-black tracking-widest text-[10px] rounded-xl transition-all"
            >
               Archive Household
            </button>

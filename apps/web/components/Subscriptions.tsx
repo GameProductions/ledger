@@ -63,8 +63,8 @@ const Subscriptions: React.FC = () => {
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 className="text-lg font-black tracking-tighter uppercase italic underline decoration-primary/40 underline-offset-4">Subscriptions</h3>
-          <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black uppercase tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
+          <h3 className="text-lg font-black tracking-tighter italic underline decoration-primary/40 underline-offset-4">Subscriptions</h3>
+          <button onClick={() => setShowAdd(!showAdd)} className="text-xs font-black tracking-widest px-3 py-1 bg-white/5 border border-white/5 rounded-full hover:bg-white/10 transition-all">
             {showAdd ? 'Cancel' : '+ New Strategy'}
           </button>
         </div>
@@ -142,20 +142,20 @@ const Subscriptions: React.FC = () => {
           </div>
 
           <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl space-y-2">
-            <div className="text-[10px] font-black uppercase tracking-widest text-primary">Planned Rate Change (Optional)</div>
+            <div className="text-[10px] font-black tracking-widest text-primary">Planned Rate Change (Optional)</div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Upcoming Amount</label>
+                <label className="text-[9px] font-bold text-white/40 block mb-1">Upcoming Amount</label>
                 <CurrencyInput valueCents={subUpcomingAmountCents} onChangeCents={setSubUpcomingAmountCents} placeholder="0.00" className="bg-black/40 border-white/10" />
               </div>
               <div>
-                <label className="text-[9px] font-bold text-white/40 uppercase block mb-1">Effective Date</label>
+                <label className="text-[9px] font-bold text-white/40 block mb-1">Effective Date</label>
                 <input value={subUpcomingDate} onChange={e => setSubUpcomingDate(e.target.value)} type="date" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-sm" />
               </div>
             </div>
           </div>
 
-          <button type="submit" className="primary py-3 font-black uppercase text-xs tracking-widest mt-2">Activate Subscription Tracking</button>
+          <button type="submit" className="primary py-3 font-black text-xs tracking-widest mt-2">Activate Subscription Tracking</button>
         </form>
       )}
 
@@ -164,7 +164,7 @@ const Subscriptions: React.FC = () => {
           <div key={sub.id} className="relative bg-white/[0.03] rounded-xl border border-white/5 p-4 space-y-4 overflow-hidden">
             {sub.upcomingEffectiveDate && (
                <div className="absolute top-0 right-0 bg-primary/20 border-b border-l border-primary/20 px-3 py-1 rounded-bl-xl">
-                 <div className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+                 <div className="text-[9px] font-black tracking-widest text-primary flex items-center gap-1.5">
                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
                    Rate Change: <Price amountCents={sub.upcomingAmountCents} /> on {sub.upcomingEffectiveDate}
                  </div>
@@ -184,15 +184,15 @@ const Subscriptions: React.FC = () => {
                 </div>
                 <div className="flex gap-2 mt-2">
                   {sub.providerAccountId && (
-                    <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-amber-500 w-fit">
+                    <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-black tracking-widest text-amber-500 w-fit">
                       <Link size={10} /> Account Linked
                     </div>
                   )}
-                  <button onClick={() => setReminderTarget({ id: sub.id, name: sub.name })} className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-primary transition-colors">
+                  <button onClick={() => setReminderTarget({ id: sub.id, name: sub.name })} className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 rounded text-[10px] font-black tracking-widest text-primary transition-colors">
                     <Bell size={10} /> Alerts
                   </button>
                   {!sub.isSplitOriginator && !sub.isSplitPortion && (
-                      <button onClick={() => setOpenSplitterId(openSplitterId === sub.id ? null : sub.id)} className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest text-emerald-500 transition-colors">
+                      <button onClick={() => setOpenSplitterId(openSplitterId === sub.id ? null : sub.id)} className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-black tracking-widest text-emerald-500 transition-colors">
                         <Share2 size={10} /> Split
                       </button>
                   )}
@@ -200,12 +200,12 @@ const Subscriptions: React.FC = () => {
               </div>
               <div className="flex flex-col items-end">
                 <Price amountCents={sub.amountCents} className="font-black tracking-tighter text-lg" />
-                <div className="text-[12px] text-secondary uppercase font-black tracking-widest opacity-40 italic">{sub.billingCycle}</div>
+                <div className="text-[12px] text-secondary font-black tracking-widest opacity-40 italic">{sub.billingCycle}</div>
               </div>
             </div>
 
             {sub.isSplitPortion && (
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80 bg-white/5 border border-white/10 rounded-lg p-2 w-fit">
+                <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary/80 bg-white/5 border border-white/10 rounded-lg p-2 w-fit">
                     <Share2 size={12} /> Assigned Split Portion
                 </div>
             )}
@@ -220,14 +220,14 @@ const Subscriptions: React.FC = () => {
                         <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-2">
                                 <ShieldCheck size={14} className="text-primary group-hover/tracker:scale-110 transition-transform" />
-                                <span className="text-[10px] uppercase font-black tracking-widest text-primary">Master Split Ledger</span>
+                                <span className="text-[10px] font-black tracking-widest text-primary">Master Split Ledger</span>
                             </div>
-                            <span className="text-[10px] uppercase font-black text-white/40">{openTrackerId === sub.id ? 'Close' : 'View Stats'}</span>
+                            <span className="text-[10px] font-black text-white/40">{openTrackerId === sub.id ? 'Close' : 'View Stats'}</span>
                         </div>
                         {openTrackerId === sub.id && (
                             <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center justify-between px-2 py-1 bg-white/5 rounded-lg border border-white/5 mb-2">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Broadcasting Status</span>
+                                    <span className="text-[9px] font-black tracking-widest text-white/40">Broadcasting Status</span>
                                     <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
                                         <input 
                                             type="checkbox" 
@@ -242,10 +242,10 @@ const Subscriptions: React.FC = () => {
                                     <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
                                         <div className="flex items-center gap-2">
                                             <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Portion</span>
+                                            <span className="text-[10px] font-bold tracking-widest text-white/60">Portion</span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                                            <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${
                                                 split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
                                             }`}>
                                                 {split.status}

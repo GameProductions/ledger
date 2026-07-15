@@ -272,13 +272,13 @@ const DeveloperSettings: React.FC = () => {
         <h4 style={{ marginBottom: '1.5rem' }}>📦 Data Migration & Safety</h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           <div className="p-4 bg-white/5 rounded-2xl border border-glass-border">
-            <h5 className="text-secondary uppercase tracking-widest text-[10px] mb-3">Backup Engine</h5>
+            <h5 className="text-secondary tracking-widest text-[10px] mb-3">Backup Engine</h5>
             <p className="text-xs opacity-60 mb-4">Export your entire transaction history as a portable JSON file.</p>
             <button onClick={exportData} className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-bold py-3 transition-all">Download .JSON Export</button>
           </div>
 
           <div className="p-4 bg-white/5 rounded-2xl border border-glass-border">
-            <h5 className="text-secondary uppercase tracking-widest text-[10px] mb-3">Data Import</h5>
+            <h5 className="text-secondary tracking-widest text-[10px] mb-3">Data Import</h5>
             <p className="text-xs opacity-60 mb-4">Import a file to restore records. <span className="text-red-400 font-bold">Overwrites existing IDs.</span></p>
             <div className="flex gap-2">
               <input 
@@ -309,7 +309,7 @@ const DeveloperSettings: React.FC = () => {
           </div>
 
           <div className="p-4 bg-white/5 rounded-2xl border border-glass-border">
-            <h5 className="text-secondary uppercase tracking-widest text-[10px] mb-3">Cloud Backups</h5>
+            <h5 className="text-secondary tracking-widest text-[10px] mb-3">Cloud Backups</h5>
             <p className="text-xs opacity-60 mb-4">Configure automated backups to secure cloud providers.</p>
             <div className="flex gap-2">
               <select 

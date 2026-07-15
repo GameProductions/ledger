@@ -182,7 +182,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Source Type & Name */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                             <Tag size={12} /> Source Type
                         </label>
                         <SearchableSelect
@@ -198,7 +198,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                             <Tag size={12} /> Source Name (e.g. Company)
                         </label>
                         <SearchableSelect
@@ -218,7 +218,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
                     {/* Amount */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                             <DollarSign size={12} /> Expected Net Pay
                         </label>
                         <CurrencyInput 
@@ -232,7 +232,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Frequency */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                             <Wallet size={12} /> Pay Frequency
                         </label>
                         <TypeableSelect
@@ -245,7 +245,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
                     {/* Next Pay Date */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                             <Calendar size={12} /> {frequency === 'manual' ? 'Pay Day' : 'Next Pay Day'}
                         </label>
                         <input
@@ -260,14 +260,14 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                 {/* Semi-Monthly Options */}
                 {frequency === 'semi-monthly' && (
                     <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl animate-in slide-in-from-top-2 duration-300">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Semi-Monthly Days</div>
+                        <div className="text-[10px] font-black tracking-widest text-primary mb-3">Semi-Monthly Days</div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <span className="text-[9px] font-bold text-white/40 uppercase">First Day</span>
+                                <span className="text-[9px] font-bold text-white/40">First Day</span>
                                 <input type="number" min="1" max="31" value={d1} onChange={(e) => setD1(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-primary" />
                             </div>
                             <div className="space-y-1">
-                                <span className="text-[9px] font-bold text-white/40 uppercase">Second Day</span>
+                                <span className="text-[9px] font-bold text-white/40">Second Day</span>
                                 <input type="number" min="1" max="31" value={d2} onChange={(e) => setD2(parseInt(e.target.value))} className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm outline-none focus:border-primary" />
                             </div>
                         </div>
@@ -276,7 +276,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
                 {/* Ownership */}
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                    <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                         <Users size={12} /> Income Earner
                     </label>
                     <select
@@ -293,7 +293,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
                 {/* Notes */}
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                    <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                         <Info size={12} /> Notes
                     </label>
                     <textarea
@@ -306,10 +306,10 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
 
                 {/* Upcoming Adjustment */}
                 <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-4">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Planned Pay Adjustment (Optional)</div>
+                    <div className="text-[10px] font-black tracking-widest text-emerald-500">Planned Pay Adjustment (Optional)</div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <span className="text-[9px] font-bold text-white/40 uppercase">Upcoming Net Pay</span>
+                            <span className="text-[9px] font-bold text-white/40">Upcoming Net Pay</span>
                             <CurrencyInput 
                                 valueCents={upcomingAmountCents}
                                 onChangeCents={setUpcomingAmountCents}
@@ -318,7 +318,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                             />
                         </div>
                         <div className="space-y-1">
-                            <span className="text-[9px] font-bold text-white/40 uppercase">Effective Date</span>
+                            <span className="text-[9px] font-bold text-white/40">Effective Date</span>
                             <input
                                 type="date"
                                 value={upcomingEffectiveDate}
@@ -334,7 +334,7 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                         <button
                             onClick={handleDelete}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="flex items-center gap-2 px-4 py-2 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-xl text-[10px] font-black tracking-widest transition-all"
                         >
                             <Trash2 size={14} /> Remove Source
                         </button>
@@ -342,14 +342,14 @@ export const PayScheduleModal: React.FC<PayScheduleModalProps> = ({ isOpen, onCl
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                        className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 transition-all"
+                        className="px-6 py-2 rounded-xl text-[10px] font-black tracking-widest text-white/40 hover:bg-white/5 transition-all"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-8 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                        className="px-8 py-2 bg-primary text-white rounded-xl text-[10px] font-black tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
                     >
                         {loading ? 'Saving...' : (schedule ? 'Update Income' : 'Add Income Source')}
                     </button>

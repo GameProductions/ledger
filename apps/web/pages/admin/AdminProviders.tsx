@@ -116,14 +116,14 @@ const AdminProviders: React.FC = () => {
     }
   };
 
-  if (loading) return <AdminPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading providers...</div></AdminPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/providers"><div className="animate-pulse p-12 text-center text-slate-500 font-black tracking-widest italic">Loading providers...</div></AdminPortal>;
 
   return (
     <AdminPortal activePath="#/admin/providers">
       <div className="flex items-center justify-between mb-12">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>
-          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Manage Service Providers</p>
+          <h2 className="text-3xl font-black italic tracking-tighter underline decoration-emerald-500/50 underline-offset-8">Service Providers</h2>
+          <p className="text-xs text-slate-500 tracking-[0.4em] font-black mt-2">Manage Service Providers</p>
         </div>
         <button 
           onClick={() => {
@@ -133,7 +133,7 @@ const AdminProviders: React.FC = () => {
             }
             setShowAdd(!showAdd);
           }}
-          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-emerald-500 text-black'} font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
+          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-emerald-500 text-black'} font-black text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
           {showAdd ? 'Cancel' : <><Plus size={16} /> Add Provider</>}
         </button>
@@ -145,12 +145,12 @@ const AdminProviders: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                <ShieldAlert size={20} />
             </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Edit Provider' : 'Add Provider'}</h3>
+            <h3 className="text-xl font-black italic tracking-tight">{editingId ? 'Edit Provider' : 'Add Provider'}</h3>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Provider Name</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Provider Name</label>
                 <input 
                   type="text" 
                   value={newItem.name} 
@@ -161,7 +161,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Billing Processor</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Billing Processor</label>
                 <SearchableSelect 
                    options={(processors || []).map(proc => ({ 
                      value: proc.id, 
@@ -175,7 +175,7 @@ const AdminProviders: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                    <div>
-                    <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Logo URL</label>
+                    <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Logo URL</label>
                     <input 
                       type="url" 
                       value={newItem.logoUrl} 
@@ -189,13 +189,13 @@ const AdminProviders: React.FC = () => {
                        checked={newItem.is3rdPartyCapable} 
                        onChange={(checked) => setNewItem({ ...newItem, is3rdPartyCapable: checked })}
                      />
-                     <label onClick={() => setNewItem({ ...newItem, is3rdPartyCapable: !newItem.is3rdPartyCapable })} className="text-xs font-black uppercase tracking-widest text-slate-400 cursor-pointer select-none">3rd Party Ready</label>
+                     <label onClick={() => setNewItem({ ...newItem, is3rdPartyCapable: !newItem.is3rdPartyCapable })} className="text-xs font-black tracking-widest text-slate-400 cursor-pointer select-none">3rd Party Ready</label>
                   </div>
               </div>
             </div>
             <div className="space-y-6">
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Website</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Website</label>
                 <input 
                   type="url" 
                   value={newItem.websiteUrl} 
@@ -205,7 +205,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support Email</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Support Email</label>
                 <input 
                   type="email" 
                   value={newItem.support_email} 
@@ -215,7 +215,7 @@ const AdminProviders: React.FC = () => {
                 />
               </div>
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Privacy Policy</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Privacy Policy</label>
                 <input 
                   type="url" 
                   value={newItem.privacy_policy_url} 
@@ -224,7 +224,7 @@ const AdminProviders: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-emerald-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20">
+              <button type="submit" className="w-full py-4 bg-emerald-500 text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20">
                 {editingId ? 'Save Changes' : 'Add Provider'}
               </button>
             </div>
@@ -245,9 +245,9 @@ const AdminProviders: React.FC = () => {
             
             <div className="flex-1">
               <div className="flex items-center gap-4">
-                <h3 className="font-black text-2xl tracking-tighter italic uppercase underline underline-offset-4 decoration-white/10">{provider.name}</h3>
+                <h3 className="font-black text-2xl tracking-tighter italic underline underline-offset-4 decoration-white/10">{provider.name}</h3>
                 {provider.is3rdPartyCapable && (
-                  <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-black text-[12px] uppercase tracking-[0.2em] border border-blue-500/20">3rd Party SDK Ready</span>
+                  <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 font-black text-[12px] tracking-[0.2em] border border-blue-500/20">3rd Party SDK Ready</span>
                 )}
               </div>
               <div className="flex items-center gap-6 mt-3 text-slate-500 text-sm">
@@ -257,7 +257,7 @@ const AdminProviders: React.FC = () => {
                     </a>
                 )}
                 {provider.billingProcessorName && (
-                    <span className="flex items-center gap-2 opacity-60 font-black uppercase text-xs tracking-widest text-emerald-500">
+                    <span className="flex items-center gap-2 opacity-60 font-black text-xs tracking-widest text-emerald-500">
                         <Zap size={14} /> Powered by {provider.billingProcessorName}
                     </span>
                 )}
@@ -266,8 +266,8 @@ const AdminProviders: React.FC = () => {
 
             <div className="hidden md:flex items-center gap-12">
                <div className="text-right space-y-1">
-                  <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Status</p>
-                  <p className="text-xs font-black text-slate-300 uppercase flex items-center gap-2 justify-end">
+                  <p className="text-[10px] font-black text-slate-600 tracking-widest">Status</p>
+                  <p className="text-xs font-black text-slate-300 flex items-center gap-2 justify-end">
                     <Server size={12} className="text-emerald-500" /> Identity Verified
                   </p>
                </div>
@@ -301,7 +301,7 @@ const AdminProviders: React.FC = () => {
 
         {providers.length === 0 && (
           <div className="py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
-            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Providers Registered</h4>
+            <h4 className="text-xl font-black text-slate-500 tracking-widest">No Providers Registered</h4>
             <p className="text-sm text-slate-600 mt-2">Setup the provider registry to allow users to track their bills.</p>
           </div>
         )}

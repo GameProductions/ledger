@@ -54,7 +54,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
             <ShieldAlert className="h-10 w-10 text-blue-400" />
         </div>
 
-        <h1 className="mb-2 text-3xl font-bold tracking-tight text-white uppercase">
+        <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">
           Security Maintenance
         </h1>
         <p className="mb-8 text-lg font-medium text-slate-400">
@@ -65,7 +65,7 @@ export const MaintenanceView: React.FC<MaintenanceViewProps> = ({ onRestore }) =
         <div className="mb-8 w-full rounded-2xl border border-white/5 bg-white/[0.03] p-6 backdrop-blur-xl">
           <div className="mb-4 flex items-center gap-3">
              <div className="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
-             <span className="text-sm font-semibold text-slate-300 uppercase tracking-wider">System Status</span>
+             <span className="text-sm font-semibold text-slate-300 tracking-wider">System Status</span>
           </div>
           <div className="space-y-4">
              <div className="flex items-center justify-between text-sm">

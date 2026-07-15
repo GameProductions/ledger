@@ -74,12 +74,12 @@ export const BillsList: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-8 text-xs font-black uppercase tracking-[0.2em] text-white/30">Analyzing Ledger Liquidity...</div>;
+    if (loading) return <div className="text-center py-8 text-xs font-black tracking-[0.2em] text-white/30">Analyzing Ledger Liquidity...</div>;
 
     return (
         <section className="space-y-4">
             <div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-black tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
                     <CalendarIcon size={14} className="text-amber-500" /> Active Bills
                 </h3>
                 <p className="text-xs text-secondary font-medium">Keep track of your regular, non-subscription household bills (like electricity, rent, or water). You can view due dates, track payment status, split bills with other household members, and set planned adjustments.</p>
@@ -90,7 +90,7 @@ export const BillsList: React.FC = () => {
                     <div key={bill.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-amber-500/30 overflow-hidden">
                         {bill.upcomingEffectiveDate && (
                             <div className="absolute top-0 right-0 bg-amber-500/10 border-b border-l border-amber-500/20 px-3 py-1 rounded-bl-xl">
-                                <div className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
+                                <div className="text-[9px] font-black tracking-widest text-amber-500 flex items-center gap-1.5">
                                     <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
                                     Planned Adjustment: <Price amountCents={bill.upcomingAmountCents} /> on {bill.upcomingEffectiveDate}
                                 </div>
@@ -98,16 +98,12 @@ export const BillsList: React.FC = () => {
                         )}
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h4 className="font-black text-lg tracking-tighter uppercase italic">{bill.name}</h4>
+                                <h4 className="font-black text-lg tracking-tighter italic">{bill.name}</h4>
                                 <div className="flex items-center gap-2 mt-1">
-                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                                        bill.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' :
-                                        bill.status === 'pending' ? 'bg-amber-500/20 text-amber-500' :
-                                        'bg-red-500/20 text-red-500'
-                                    }`}>
+                                    <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${ bill.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : bill.status === 'pending' ? 'bg-amber-500/20 text-amber-500' : 'bg-red-500/20 text-red-500' }`}>
                                         {bill.status}
                                     </span>
-                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                                    <span className="text-[10px] font-bold text-white/30 tracking-widest">
                                         Due: {bill.dueDate}
                                     </span>
                                 </div>
@@ -115,7 +111,7 @@ export const BillsList: React.FC = () => {
                             <div className="text-right">
                                 <Price amountCents={bill.amountCents} className="text-xl font-black tracking-tighter" />
                                 {bill.isRecurring && (
-                                    <div className="text-[9px] font-black uppercase tracking-widest text-primary/60 mt-0.5">Recurring Monthly</div>
+                                    <div className="text-[9px] font-black tracking-widest text-primary/60 mt-0.5">Recurring Monthly</div>
                                 )}
                             </div>
                         </div>
@@ -123,7 +119,7 @@ export const BillsList: React.FC = () => {
                         {(bill.notes || bill.isSplitPortion) && (
                             <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 to-transparent border border-white/10 rounded-xl p-3 mb-4 flex flex-col gap-2">
                                 {bill.isSplitPortion && (
-                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
+                                    <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary/80">
                                         <Share2 size={12} /> Assigned Split Portion
                                     </div>
                                 )}
@@ -145,14 +141,14 @@ export const BillsList: React.FC = () => {
                                     <div className="flex items-center justify-between w-full">
                                         <div className="flex items-center gap-2">
                                             <ShieldCheck size={14} className="text-primary group-hover/tracker:scale-110 transition-transform" />
-                                            <span className="text-[10px] uppercase font-black tracking-widest text-primary">Master Split Ledger</span>
+                                            <span className="text-[10px] font-black tracking-widest text-primary">Master Split Ledger</span>
                                         </div>
-                                        <span className="text-[10px] uppercase font-black text-white/40">{openTrackerId === bill.id ? 'Close' : 'View Stats'}</span>
+                                        <span className="text-[10px] font-black text-white/40">{openTrackerId === bill.id ? 'Close' : 'View Stats'}</span>
                                     </div>
                                     {openTrackerId === bill.id && (
                                         <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
                                             <div className="flex items-center justify-between px-2 py-1 bg-white/5 rounded-lg border border-white/5 mb-2">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Broadcasting Status</span>
+                                                <span className="text-[9px] font-black tracking-widest text-white/40">Broadcasting Status</span>
                                                 <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
                                                     <input 
                                                         type="checkbox" 
@@ -167,12 +163,10 @@ export const BillsList: React.FC = () => {
                                                 <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
                                                     <div className="flex items-center gap-2">
                                                         <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Portion</span>
+                                                        <span className="text-[10px] font-bold tracking-widest text-white/60">Portion</span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                                                            split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
-                                                        }`}>
+                                                        <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${ split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500' }`}>
                                                             {split.status}
                                                         </span>
                                                         <Price amountCents={split.calculatedAmountCents} className="text-[11px] font-black tracking-widest" />
@@ -191,14 +185,14 @@ export const BillsList: React.FC = () => {
                                     <>
                                         <button 
                                             onClick={() => handleStatusUpdate(bill.id, 'paid')}
-                                            className="text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-black px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg shadow-emerald-500/20"
+                                            className="text-[10px] font-black tracking-widest bg-emerald-500 text-black px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg shadow-emerald-500/20"
                                         >
                                             Mark Paid
                                         </button>
                                         {!bill.isSplitOriginator && !bill.isSplitPortion && (
                                             <button 
                                                 onClick={() => setOpenSplitterId(openSplitterId === bill.id ? null : bill.id)}
-                                                className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all"
+                                                className="text-[10px] font-black tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all"
                                             >
                                                 <Share2 size={14} />
                                             </button>
@@ -208,7 +202,7 @@ export const BillsList: React.FC = () => {
                                 {bill.status === 'paid' && (
                                     <button 
                                         onClick={() => handleStatusUpdate(bill.id, 'pending')}
-                                        className="text-[10px] font-black uppercase tracking-widest border border-white/10 text-white/60 px-4 py-2 rounded-xl hover:bg-white/5 transition-all"
+                                        className="text-[10px] font-black tracking-widest border border-white/10 text-white/60 px-4 py-2 rounded-xl hover:bg-white/5 transition-all"
                                     >
                                         Revert to Pending
                                     </button>
@@ -241,7 +235,7 @@ export const BillsList: React.FC = () => {
                 )) : (
                     <div className="py-12 text-center border border-dashed border-white/10 rounded-[2rem]">
                         <AlertCircle size={24} className="mx-auto text-white/20 mb-3" />
-                        <p className="text-xs font-black uppercase tracking-widest text-white/20">No active bills in this lifecycle</p>
+                        <p className="text-xs font-black tracking-widest text-white/20">No active bills in this lifecycle</p>
                     </div>
                 )}
             </div>

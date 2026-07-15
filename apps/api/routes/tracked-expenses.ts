@@ -38,6 +38,7 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
   transferTiming: z.string().optional().nullable(),
   isBorrowed: z.boolean().optional(),
   borrowSource: z.string().optional().nullable(),
+  transactionDate: z.string().optional(),
   createdAt: z.string().optional()
 })), async (c) => {
   const householdId = c.get('householdId')
@@ -70,6 +71,7 @@ trackedExpensesRoutes.patch('/bulk', zValidator('json', z.object({
     transferTiming: z.string().optional().nullable(),
     isBorrowed: z.boolean().optional(),
     borrowSource: z.string().optional().nullable(),
+    transactionDate: z.string().optional(),
     createdAt: z.string().optional(),
     status: z.string().optional()
   })
@@ -128,7 +130,7 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
       categoryId: transactionDetails.categoryId || null,
       amountCents: item.amountCents,
       description: item.description,
-      transactionDate: transactionDetails.transactionDate || new Date().toISOString().split('T')[0],
+      transactionDate: transactionDetails.transactionDate || item.transactionDate || new Date().toISOString().split('T')[0],
       notes: item.notes,
       confirmationNumber: item.confirmationNumber,
       attentionRequired: item.attentionRequired,

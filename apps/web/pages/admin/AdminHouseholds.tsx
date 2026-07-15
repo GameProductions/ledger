@@ -82,7 +82,7 @@ const AdminHouseholds: React.FC = () => {
     <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-        <div className="text-xs font-black uppercase tracking-[0.3em]">Loading household registry...</div>
+        <div className="text-xs font-black tracking-[0.3em]">Loading household registry...</div>
       </div>
     </AdminPortal>
   );
@@ -91,10 +91,10 @@ const AdminHouseholds: React.FC = () => {
     <AdminPortal activePath="#/admin/households">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
-          <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
+          <h2 className="text-4xl font-black italic tracking-tighter leading-none">
             Household <span className="text-emerald-500">Registry</span>
           </h2>
-          <p className="text-sm text-slate-500 mt-2 uppercase tracking-widest font-bold">Manage households and memberships</p>
+          <p className="text-sm text-slate-500 mt-2 tracking-widest font-bold">Manage households and memberships</p>
         </div>
         <div className="relative">
           <input 
@@ -159,22 +159,22 @@ const AdminHouseholds: React.FC = () => {
                       <button onClick={() => setEditingId(null)} className="text-red-500"><X size={16} /></button>
                     </div>
                   ) : (
-                    <h3 className="text-xl font-black uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{h.name}</h3>
+                    <h3 className="text-xl font-black tracking-tight group-hover:text-emerald-400 transition-colors">{h.name}</h3>
                   )}
-                  <p className="text-xs text-slate-600 font-mono tracking-tighter uppercase">{h.id}</p>
+                  <p className="text-xs text-slate-600 font-mono tracking-tighter">{h.id}</p>
                </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-white/5">
                <div>
-                   <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Members</div>
+                   <div className="text-[10px] text-slate-600 font-black tracking-widest mb-1">Members</div>
                    <div className="flex items-center gap-2">
                       <Users size={14} className="text-emerald-500" />
                       <span className="text-sm font-bold text-slate-300">{h.memberCount} Members</span>
                    </div>
                </div>
                <div>
-                  <div className="text-[10px] text-slate-600 font-black uppercase tracking-widest mb-1">Currency</div>
+                  <div className="text-[10px] text-slate-600 font-black tracking-widest mb-1">Currency</div>
                   <div className="flex items-center gap-2">
                      <Globe size={14} className="text-blue-500" />
                      <span className="text-sm font-bold text-slate-300">{h.currency}</span>
@@ -187,8 +187,8 @@ const AdminHouseholds: React.FC = () => {
                   <div className="bg-emerald-500 h-full" style={{ width: '65%' }} />
                </div>
                 <div className="flex justify-between items-center mt-2">
-                   <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Resource Usage</span>
-                   <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">Optimal</span>
+                   <span className="text-[10px] text-slate-600 font-black tracking-widest">Resource Usage</span>
+                   <span className="text-[10px] text-emerald-500 font-black tracking-widest">Optimal</span>
                 </div>
             </div>
           </motion.div>

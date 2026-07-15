@@ -8,6 +8,13 @@
       "when": 1782646127161,
       "tag": "0000_add_confirmation_number_to_tracked_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782777600000,
+      "tag": "0001_add_transaction_date",
+      "breakpoints": true
     }
   ]
 }

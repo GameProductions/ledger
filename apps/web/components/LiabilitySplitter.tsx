@@ -74,19 +74,19 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
         <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-5">
             <div className="flex items-center gap-3">
                 <Users size={18} className="text-secondary" />
-                <h3 className="font-bold uppercase tracking-widest text-xs">Delegate Liability</h3>
+                <h3 className="font-bold tracking-widest text-xs">Delegate Liability</h3>
             </div>
 
             <div className="flex bg-black/40 rounded-xl p-1 w-full max-w-xs">
                 <button 
                     onClick={() => { setSplitMode('percentage'); setAssignments({}); }}
-                    className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 ${splitMode === 'percentage' ? 'bg-primary text-black' : 'text-white/40'}`}
+                    className={`flex-1 py-1.5 text-[10px] font-black tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 ${splitMode === 'percentage' ? 'bg-primary text-black' : 'text-white/40'}`}
                 >
                     <Percent size={12} /> Percentage
                 </button>
                 <button 
                     onClick={() => { setSplitMode('fixed'); setAssignments({}); }}
-                    className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 ${splitMode === 'fixed' ? 'bg-primary text-black' : 'text-white/40'}`}
+                    className={`flex-1 py-1.5 text-[10px] font-black tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 ${splitMode === 'fixed' ? 'bg-primary text-black' : 'text-white/40'}`}
                 >
                     <DollarSign size={12} /> Fixed Amount
                 </button>
@@ -96,10 +96,10 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
                 {household?.members && household.members.length > 0 ? household.members.map((member: any) => (
                     <div key={member.id} className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 text-sm font-bold">
-                            <span className="w-8 h-8 rounded-full bg-white/10 flex flex-col items-center justify-center uppercase text-xs text-primary/60">
+                            <span className="w-8 h-8 rounded-full bg-white/10 flex flex-col items-center justify-center text-xs text-primary/60">
                                 {member.user?.displayName?.charAt(0) || '?'}
                             </span>
-                            {member.user?.displayName} {member.user?.id === user?.id && <span className="text-[9px] text-white/30 uppercase tracking-widest ml-1">(You)</span>}
+                            {member.user?.displayName} {member.user?.id === user?.id && <span className="text-[9px] text-white/30 tracking-widest ml-1">(You)</span>}
                         </div>
                         <div className="flex items-center gap-2">
                             <input 
@@ -116,20 +116,20 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
                         </div>
                     </div>
                 )) : (
-                    <div className="text-[10px] uppercase tracking-widest text-white/30 p-4 border border-dashed border-white/10 rounded-xl text-center">
+                    <div className="text-[10px] tracking-widest text-white/30 p-4 border border-dashed border-white/10 rounded-xl text-center">
                         Add members to your household via Identity settings to use delegation.
                     </div>
                 )}
             </div>
 
             <div className="flex items-center justify-between p-3 bg-black/30 rounded-xl border border-white/5">
-                <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Unassigned Balance</span>
+                <span className="text-[10px] tracking-widest font-black text-white/40">Unassigned Balance</span>
                 <Price amountCents={unassignedCents} className={`font-black tracking-tighter ${unassignedCents === 0 ? 'text-primary' : 'text-red-500'}`} />
             </div>
 
             <label className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl cursor-pointer hover:bg-primary/10 transition-colors">
                 <div>
-                   <div className="text-[10px] uppercase font-black tracking-widest text-primary">Public Master Ledger</div>
+                   <div className="text-[10px] font-black tracking-widest text-primary">Public Master Ledger</div>
                    <div className="text-[9px] font-medium text-white/50 w-4/5 leading-tight mt-1">Allow assignees to view the master tracker showing everyone's progress.</div>
                 </div>
                 <Checkbox checked={isMasterPublic} onChange={setIsMasterPublic} />
@@ -138,7 +138,7 @@ export const LiabilitySplitter: React.FC<LiabilitySplitterProps> = ({ targetId, 
             <button 
                 onClick={handleSave}
                 disabled={!isValid || household?.members?.length === 0}
-                className="w-full flex justify-center items-center gap-2 py-3 bg-primary text-black font-black uppercase tracking-widest rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-primary/10 hover:bg-white hover:shadow-2xl"
+                className="w-full flex justify-center items-center gap-2 py-3 bg-primary text-black font-black tracking-widest rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-primary/10 hover:bg-white hover:shadow-2xl"
             >
                 <CheckCircle2 size={16} /> Confirm Delegation
             </button>

@@ -100,13 +100,13 @@ const SupportPortal: React.FC = () => {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white mb-2">High-Priority Support</h2>
-          <p className="text-secondary text-sm uppercase tracking-widest font-bold opacity-60">Report issues or request system enhancements</p>
+          <h2 className="text-3xl font-black italic tracking-tighter text-white mb-2">High-Priority Support</h2>
+          <p className="text-secondary text-sm tracking-widest font-bold opacity-60">Report issues or request system enhancements</p>
         </div>
         <div className="flex items-center gap-3">
            <div className="px-4 py-2 bg-white/5 border border-glass-border rounded-xl flex items-center gap-2">
              <GithubIcon size={16} className="text-primary" />
-             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">GitHub Synced</span>
+             <span className="text-[10px] font-black tracking-widest opacity-60">GitHub Synced</span>
            </div>
         </div>
       </header>
@@ -118,14 +118,14 @@ const SupportPortal: React.FC = () => {
             <div className="card p-6 bg-deep/40 backdrop-blur-3xl border-glass-border relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -mr-32 -mt-32" />
               
-              <h3 className="text-lg font-bold mb-6 flex items-center gap-2 border-b border-glass-border pb-4 uppercase tracking-tight">
+              <h3 className="text-lg font-bold mb-6 flex items-center gap-2 border-b border-glass-border pb-4 tracking-tight">
                 <MessageSquare size={18} className="text-primary" />
                 New Service Ticket
               </h3>
               
               <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Subject / Headline</label>
+                  <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Subject / Headline</label>
                   <input 
                     value={formData.title}
                     onChange={e => setFormData({...formData, title: e.target.value})}
@@ -138,7 +138,7 @@ const SupportPortal: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Classification</label>
+                    <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Classification</label>
                     <select 
                       value={formData.category}
                       onChange={e => setFormData({...formData, category: e.target.value})}
@@ -152,7 +152,7 @@ const SupportPortal: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Priority Intake</label>
+                    <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Priority Intake</label>
                     <select 
                       value={formData.priority}
                       onChange={e => setFormData({...formData, priority: e.target.value})}
@@ -167,7 +167,7 @@ const SupportPortal: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary ml-1">Support Details</label>
+                  <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Support Details</label>
                   <textarea 
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
@@ -182,7 +182,7 @@ const SupportPortal: React.FC = () => {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-primary to-secondary text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-primary to-secondary text-white font-black tracking-widest py-4 rounded-xl shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Send size={16} />
                   {isSubmitting ? 'Submitting...' : 'Submit Support Ticket'}
@@ -193,7 +193,7 @@ const SupportPortal: React.FC = () => {
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
               <button 
                 onClick={() => setSelectedIssueId(null)}
-                className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-white flex items-center gap-2 mb-4"
+                className="text-[10px] font-black tracking-widest text-secondary hover:text-white flex items-center gap-2 mb-4"
               >
                 ← Back to New Ticket
               </button>
@@ -201,14 +201,14 @@ const SupportPortal: React.FC = () => {
               <div className="card p-6 bg-deep/40 backdrop-blur-3xl border-glass-border relative overflow-hidden">
                 <div className="flex justify-between items-start mb-6 border-b border-glass-border pb-4">
                   <div>
-                    <h3 className="text-xl font-bold uppercase tracking-tight mb-1">{selectedIssue.title}</h3>
-                    <div className="flex items-center gap-3 text-[10px] uppercase font-black tracking-widest opacity-40">
+                    <h3 className="text-xl font-bold tracking-tight mb-1">{selectedIssue.title}</h3>
+                    <div className="flex items-center gap-3 text-[10px] font-black tracking-widest opacity-40">
                       <span className="text-primary">{selectedIssue.category}</span>
                       <span className="text-secondary">•</span>
                       <span>{new Date(selectedIssue.createdAt).toLocaleString()}</span>
                     </div>
                   </div>
-                  <div className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${selectedIssue.status === 'open' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
+                  <div className={`px-4 py-2 rounded-xl border text-[10px] font-black tracking-widest ${selectedIssue.status === 'open' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
                     {selectedIssue.status}
                   </div>
                 </div>
@@ -218,7 +218,7 @@ const SupportPortal: React.FC = () => {
                 </div>
                 
                 <div className="space-y-6">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-secondary flex items-center gap-2">
+                  <h4 className="text-xs font-black tracking-widest text-secondary flex items-center gap-2">
                     <MessageSquare size={14} />
                     Conversation History
                   </h4>
@@ -228,7 +228,7 @@ const SupportPortal: React.FC = () => {
                       comments.map((comment: any) => (
                         <div key={comment.id} className={`p-4 rounded-xl border ${comment.userId ? 'bg-primary/5 border-primary/20' : 'bg-white/5 border-glass-border'}`}>
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">{comment.authorName}</span>
+                            <span className="text-[10px] font-black tracking-widest text-primary">{comment.authorName}</span>
                             <span className="text-[10px] opacity-40">{new Date(comment.createdAt).toLocaleDateString()}</span>
                           </div>
                           <p className="text-sm">{comment.body}</p>
@@ -252,7 +252,7 @@ const SupportPortal: React.FC = () => {
                       <button 
                         type="submit"
                         disabled={isCommenting}
-                        className="px-6 py-3 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all flex items-center gap-2"
+                        className="px-6 py-3 bg-primary text-white font-black tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all flex items-center gap-2"
                       >
                         <Send size={12} />
                         {isCommenting ? 'Posting...' : 'Post Update'}
@@ -267,7 +267,7 @@ const SupportPortal: React.FC = () => {
 
         {/* Previous Tickets */}
         <section className="space-y-6">
-          <h3 className="text-secondary uppercase tracking-widest text-xs font-black px-2 mt-2 flex items-center justify-between">
+          <h3 className="text-secondary tracking-widest text-xs font-black px-2 mt-2 flex items-center justify-between">
             Active Tickets
             <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">{issues?.length || 0}</span>
           </h3>
@@ -288,7 +288,7 @@ const SupportPortal: React.FC = () => {
                       <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-[10px] uppercase font-black tracking-widest opacity-40 mb-3">
+                  <div className="flex items-center gap-3 text-[10px] font-black tracking-widest opacity-40 mb-3">
                     <span className="text-primary">{issue.category}</span>
                     <span className="text-secondary">•</span>
                     <span>{new Date(issue.createdAt).toLocaleDateString()}</span>
@@ -298,7 +298,7 @@ const SupportPortal: React.FC = () => {
                       href={issue.githubIssueUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20"
+                      className="inline-flex items-center gap-2 text-[10px] font-black tracking-widest text-primary hover:text-white transition-colors bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20"
                     >
                       <GithubIcon size={12} />
                       View on GitHub
@@ -309,7 +309,7 @@ const SupportPortal: React.FC = () => {
             ) : (
               <div className="text-center py-12 card bg-white/5 border-dashed">
                 <AlertCircle size={32} className="mx-auto text-secondary opacity-20 mb-3" />
-                <p className="text-xs text-secondary italic opacity-40 uppercase tracking-widest">No active tickets</p>
+                <p className="text-xs text-secondary italic opacity-40 tracking-widest">No active tickets</p>
               </div>
             )}
           </div>

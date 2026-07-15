@@ -58,13 +58,13 @@ export const InlineToast: React.FC<InlineToastProps> = ({
         <div className="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-2">
           <button 
             onClick={onCancel}
-            className="px-2 py-0.5 rounded hover:bg-white/10 transition-colors uppercase tracking-widest text-[9px] font-black"
+            className="px-2 py-0.5 rounded hover:bg-white/10 transition-colors tracking-widest text-[9px] font-black"
           >
             Cancel
           </button>
           <button 
             onClick={onConfirm}
-            className="px-2 py-0.5 rounded bg-primary text-black hover:bg-primary/90 transition-colors uppercase tracking-widest text-[9px] font-black"
+            className="px-2 py-0.5 rounded bg-primary text-black hover:bg-primary/90 transition-colors tracking-widest text-[9px] font-black"
           >
             Confirm
           </button>

@@ -120,13 +120,13 @@ export const AuthVault: React.FC = () => {
             </div>
             <div>
               <h2 className="text-2xl font-black text-white tracking-tight">Authentication Vault</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">Security Standard v6.1 • Biometric Isolation</p>
+              <p className="text-[10px] text-slate-500 font-bold tracking-[0.2em] mt-1">Security Standard v6.1 • Biometric Isolation</p>
             </div>
           </div>
           <button 
             onClick={handleRegisterPasskey}
             disabled={registering}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] disabled:opacity-50"
+            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl text-xs font-black tracking-widest transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] disabled:opacity-50"
           >
             {registering ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             <span>Register Key</span>
@@ -155,12 +155,12 @@ export const AuthVault: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-white font-black text-sm uppercase tracking-tight">{pk.name || 'Unnamed Signature'}</h4>
-                        <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[7px] font-black uppercase tracking-tighter rounded border border-blue-500/20">
+                        <h4 className="text-white font-black text-sm tracking-tight">{pk.name || 'Unnamed Signature'}</h4>
+                        <span className="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 text-[7px] font-black tracking-tighter rounded border border-blue-500/20">
                           {pk.securityLevel?.includes('SE') ? 'FIDO2 L2+' : 'FIDO2 L1'}
                         </span>
                       </div>
-                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">{pk.manufacturer || 'Generic'} • {pk.providerName || 'Authenticator'}</p>
+                      <p className="text-[9px] text-slate-500 font-bold tracking-widest mt-0.5">{pk.manufacturer || 'Generic'} • {pk.providerName || 'Authenticator'}</p>
                     </div>
                   </div>
 
@@ -173,8 +173,8 @@ export const AuthVault: React.FC = () => {
                     </button>
                     {confirmRevokeId === pk.id ? (
                       <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 rounded-lg p-1">
-                        <button onClick={() => handleRevoke(pk.id)} className="px-2 py-1 bg-rose-500 text-white text-[8px] font-black rounded uppercase">Revoke</button>
-                        <button onClick={() => setConfirmRevokeId(null)} className="px-2 py-1 text-slate-500 text-[8px] font-black uppercase">Cancel</button>
+                        <button onClick={() => handleRevoke(pk.id)} className="px-2 py-1 bg-rose-500 text-white text-[8px] font-black rounded">Revoke</button>
+                        <button onClick={() => setConfirmRevokeId(null)} className="px-2 py-1 text-slate-500 text-[8px] font-black">Cancel</button>
                       </div>
                     ) : (
                       <button onClick={() => setConfirmRevokeId(pk.id)} className="p-2 bg-white/5 text-slate-600 hover:text-rose-400 rounded-lg transition-all">
@@ -193,7 +193,7 @@ export const AuthVault: React.FC = () => {
                         <AuditItem icon={<Globe />} label="Network" value={pk.lastUsedIpV4 || pk.lastUsedIpV6 || 'Unknown'} />
                         <AuditItem icon={<MapPin />} label="Location" value={`${pk.lastUsedCity || 'Unknown City'}, ${pk.lastUsedCountry || 'Unknown'}`} />
                         <div className="md:col-span-2 bg-slate-900/40 p-3 rounded-2xl border border-white/5">
-                          <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                          <p className="text-[8px] font-black text-slate-600 tracking-widest mb-1 flex items-center gap-1.5">
                             <Shield className="w-3 h-3" /> Forensics Descriptor
                           </p>
                           <p className="text-[9px] text-slate-400 font-mono break-all">{pk.lastUsedUa || 'N/A'}</p>
@@ -215,7 +215,7 @@ const AuditItem = ({ icon, label, value }: { icon: any, label: string, value: st
   <div className="bg-slate-900/50 p-2.5 rounded-2xl border border-white/5 flex items-center justify-between">
     <div className="flex items-center gap-2">
       <span className="text-blue-500/40 w-3 h-3 flex items-center justify-center">{icon}</span>
-      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{label}</span>
+      <span className="text-[8px] font-black text-slate-600 tracking-widest">{label}</span>
     </div>
     <span className="text-[10px] text-slate-300 font-bold font-mono">{value}</span>
   </div>

@@ -203,21 +203,21 @@ const PaymentCentralPage: React.FC = () => {
                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
                     <Shield size={16} />
                  </div>
-                 <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Security Area</p>
+                 <p className="text-xs font-black tracking-[0.4em] text-slate-500">Security Area</p>
               </div>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic uppercase underline decoration-amber-500/50 underline-offset-8">Payment Central</h1>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tighter italic underline decoration-amber-500/50 underline-offset-8">Payment Central</h1>
             </div>
           </div>
           <div className="flex gap-3">
             <button 
               onClick={() => setShowAddMethod(!showAddMethod)}
-              className="px-6 py-3 bg-white/5 border border-white/10 text-white font-black uppercase text-sm rounded-2xl hover:bg-white/10 transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-white/5 border border-white/10 text-white font-black text-sm rounded-2xl hover:bg-white/10 transition-all flex items-center gap-2"
             >
               {showAddMethod ? 'Cancel' : <><Plus size={16} /> Add Method</>}
             </button>
             <button 
               onClick={() => setShowLinkAccount(!showLinkAccount)}
-              className="px-6 py-3 bg-amber-500 text-black font-black uppercase text-sm rounded-2xl hover:scale-[1.05] transition-all flex items-center gap-2"
+              className="px-6 py-3 bg-amber-500 text-black font-black text-sm rounded-2xl hover:scale-[1.05] transition-all flex items-center gap-2"
             >
               {showLinkAccount ? 'Cancel' : <><Link size={16} /> Link Provider</>}
             </button>
@@ -235,7 +235,7 @@ const PaymentCentralPage: React.FC = () => {
                  <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><CreditCard className="text-amber-500" /> New Payment Method</h3>
                  <form onSubmit={handleAddMethod} className="space-y-4">
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Method Label</label>
+                      <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Method Label</label>
                       <input 
                         type="text" 
                         value={newMethod.name} 
@@ -247,7 +247,7 @@ const PaymentCentralPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Type</label>
+                        <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Type</label>
                         <select 
                           value={newMethod.type} 
                           onChange={(e) => setNewMethod({ ...newMethod, type: e.target.value })}
@@ -260,7 +260,7 @@ const PaymentCentralPage: React.FC = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Last 4 (Optional)</label>
+                        <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Last 4 (Optional)</label>
                         <input 
                           type="text" 
                           maxLength={4}
@@ -271,7 +271,7 @@ const PaymentCentralPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="w-full py-4 bg-white text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all">Save Method</button>
+                    <button type="submit" className="w-full py-4 bg-white text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-all">Save Method</button>
                  </form>
               </div>
             )}
@@ -282,7 +282,7 @@ const PaymentCentralPage: React.FC = () => {
                  <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-amber-500"><Link /> Link Provider Portal</h3>
                  <form onSubmit={handleLinkAccount} className="space-y-4">
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Select Provider</label>
+                      <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Select Provider</label>
                       <SearchableSelect 
                         options={(providers || []).map(p => ({ 
                           value: p.id, 
@@ -296,7 +296,7 @@ const PaymentCentralPage: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Attached Email</label>
+                      <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Attached Email</label>
                       <input 
                         type="email" 
                         value={newAccount.emailAttached} 
@@ -307,7 +307,7 @@ const PaymentCentralPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Account Settings</label>
+                        <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Account Settings</label>
                         <SearchableSelect 
                           options={(paymentMethods || []).map(m => ({ 
                             value: m.id, 
@@ -321,7 +321,7 @@ const PaymentCentralPage: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Link to Plan</label>
+                        <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Link to Plan</label>
                         <SearchableSelect 
                           options={(subscriptions || []).map(s => ({ 
                             value: s.id, 
@@ -337,7 +337,7 @@ const PaymentCentralPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Member Since</label>
+                        <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Member Since</label>
                         <input 
                           type="date" 
                           value={newAccount.membershipStartDate} 
@@ -346,7 +346,7 @@ const PaymentCentralPage: React.FC = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-black uppercase tracking-widest text-amber-500/50 mb-2 block">Plan End Date</label>
+                        <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Plan End Date</label>
                         <input 
                           type="date" 
                           value={newAccount.membershipEndDate} 
@@ -355,7 +355,7 @@ const PaymentCentralPage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <button type="submit" className="w-full py-4 bg-amber-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all">Connect Account</button>
+                    <button type="submit" className="w-full py-4 bg-amber-500 text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-all">Connect Account</button>
                  </form>
               </div>
             )}
@@ -363,8 +363,8 @@ const PaymentCentralPage: React.FC = () => {
             {/* Payment Methods List */}
             <div className="space-y-4">
                <div className="flex items-center justify-between px-4">
-                  <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Secure Methods</h3>
-                  <span className="text-xs font-black text-amber-500 uppercase italic px-2 py-0.5 bg-amber-500/10 rounded">{(paymentMethods || []).length}</span>
+                  <h3 className="text-xs font-black tracking-[0.3em] text-slate-600">Secure Methods</h3>
+                  <span className="text-xs font-black text-amber-500 italic px-2 py-0.5 bg-amber-500/10 rounded">{(paymentMethods || []).length}</span>
                </div>
                {(paymentMethods || []).map(method => (
                  <div key={method.id} className="p-5 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 group">
@@ -373,7 +373,7 @@ const PaymentCentralPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-sm tracking-tight">{method.name}</p>
-                      <p className="text-xs uppercase font-black text-slate-500 tracking-widest">{(method.type || '').replace('_', ' ')} {method.lastFour && `**** ${method.lastFour}`}</p>
+                      <p className="text-xs font-black text-slate-500 tracking-widest">{(method.type || '').replace('_', ' ')} {method.lastFour && `**** ${method.lastFour}`}</p>
                     </div>
                     <button className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-red-500 transition-all"><Trash2 size={16} /></button>
                  </div>
@@ -386,8 +386,8 @@ const PaymentCentralPage: React.FC = () => {
           {/* Right Column: Linked Provider Accounts */}
           <div className="xl:col-span-2 space-y-6">
              <div className="flex items-center justify-between px-6 mb-4">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-600">Active Provider Links</h3>
-                <p className="text-xs text-slate-500 uppercase tracking-widest">Cross-Platform Verification Active</p>
+                <h3 className="text-xs font-black tracking-[0.3em] text-slate-600">Active Provider Links</h3>
+                <p className="text-xs text-slate-500 tracking-widest">Cross-Platform Verification Active</p>
              </div>
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -409,7 +409,7 @@ const PaymentCentralPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <h4 className="text-xl font-black tracking-tighter uppercase italic">{account.providerName}</h4>
+                    <h4 className="text-xl font-black tracking-tighter italic">{account.providerName}</h4>
                     
                     <div className="mt-6 space-y-4">
                       {account.emailAttached && (
@@ -434,15 +434,15 @@ const PaymentCentralPage: React.FC = () => {
 
                     <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-4">
                       <div>
-                        <p className="text-[10px] font-black text-slate-600 uppercase">Provider Status</p>
-                        <p className={`text-xs font-black uppercase flex items-center gap-1.5 ${account.status === 'active' ? 'text-emerald-500' : 'text-slate-500'}`}>
+                        <p className="text-[10px] font-black text-slate-600">Provider Status</p>
+                        <p className={`text-xs font-black flex items-center gap-1.5 ${account.status === 'active' ? 'text-emerald-500' : 'text-slate-500'}`}>
                            <span className={`w-1.5 h-1.5 rounded-full ${account.status === 'active' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span> {account.status}
                         </p>
                       </div>
                       {account.subscriptionId && (
                          <div className="text-right">
-                            <p className="text-[10px] font-black text-slate-600 uppercase">Linked Subscription</p>
-                            <p className="text-xs font-black text-blue-400 uppercase italic">{account.subscription_name || 'Linked'}</p>
+                            <p className="text-[10px] font-black text-slate-600">Linked Subscription</p>
+                            <p className="text-xs font-black text-blue-400 italic">{account.subscription_name || 'Linked'}</p>
                          </div>
                       )}
                     </div>
@@ -451,7 +451,7 @@ const PaymentCentralPage: React.FC = () => {
                
                {linkedAccounts.length === 0 && (
                  <div className="col-span-full py-40 text-center rounded-[3.5rem] border border-dashed border-white/5 bg-white/2">
-                    <h4 className="text-xl font-black text-slate-700 uppercase tracking-widest">No Accounts Connected</h4>
+                    <h4 className="text-xl font-black text-slate-700 tracking-widest">No Accounts Connected</h4>
                     <p className="text-sm text-slate-700 mt-2 font-medium">Connect your providers to manage detailed transaction history.</p>
                  </div>
                )}

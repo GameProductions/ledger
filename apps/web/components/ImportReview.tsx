@@ -443,8 +443,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         <label className="block border-2 border-dashed border-white/10 rounded-[2.5rem] p-20 text-center hover:border-emerald-500/50 transition-all cursor-pointer group bg-black/20">
           <input type="file" accept=".csv,.json,.qif,.ofx,.pdf,.xlsx" onChange={handleFileUpload} className="hidden" />
           <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform text-4xl">📄</div>
-          <p className="font-extrabold text-2xl mb-2 text-white italic tracking-tighter uppercase">Drop Records Here</p>
-          <p className="text-xs text-slate-500 font-black uppercase tracking-[0.3em]">XLSX • CSV • QIF • PDF</p>
+          <p className="font-extrabold text-2xl mb-2 text-white italic tracking-tighter">Drop Records Here</p>
+          <p className="text-xs text-slate-500 font-black tracking-[0.3em]">XLSX • CSV • QIF • PDF</p>
         </label>
       )}
 
@@ -452,19 +452,19 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         <div className="p-8 sm:p-12 rounded-[2.5rem] border border-emerald-500/20 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-6">
             <div>
-              <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-1">Column Mapping Configuration</h4>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Map the headers from <span className="text-emerald-400 font-black">{file.name}</span> to import fields correctly</p>
+              <h4 className="text-2xl font-black text-white italic tracking-tighter mb-1">Column Mapping Configuration</h4>
+              <p className="text-xs text-slate-500 font-bold tracking-wider">Map the headers from <span className="text-emerald-400 font-black">{file.name}</span> to import fields correctly</p>
             </div>
             
             {availableSheets.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Worksheet:</span>
+                <span className="text-[10px] font-black text-slate-500 tracking-wider">Worksheet:</span>
                 <div className="flex gap-1.5">
                   {availableSheets.map(sheet => (
                     <button 
                       key={sheet}
                       onClick={() => handleSelectExcelSheet(sheet)}
-                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${selectedSheet === sheet ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/10' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-lg text-[9px] font-black tracking-wider transition-all ${selectedSheet === sheet ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/10' : 'bg-white/5 text-slate-400 hover:text-white'}`}
                     >
                       {sheet}
                     </button>
@@ -479,14 +479,14 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
             <div className="lg:col-span-5 space-y-5 bg-white/2 p-6 rounded-[2rem] border border-white/5">
               {/* Templates Configuration */}
               <div className="space-y-3 border-b border-white/5 pb-4">
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Templates</div>
+                <div className="text-[10px] font-black text-slate-500 tracking-widest block">Templates</div>
                 {Object.keys(savedTemplates).length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {Object.keys(savedTemplates).map(name => (
                       <div 
                         key={name}
                         onClick={() => setColumnMapping({ ...savedTemplates[name] })}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-wider cursor-pointer transition-all"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 border border-white/10 rounded-lg text-[9px] font-bold tracking-wider cursor-pointer transition-all"
                         title="Click to apply template mappings"
                       >
                         <span>📁 {name}</span>
@@ -512,21 +512,21 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                   />
                   <button 
                     onClick={handleSaveTemplate}
-                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[9px] uppercase rounded-lg transition-all"
+                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[9px] rounded-lg transition-all"
                   >
                     Save
                   </button>
                 </div>
               </div>
 
-              <div className="text-xs font-black text-emerald-400 uppercase tracking-widest border-b border-white/5 pb-2">Schema Fields</div>
+              <div className="text-xs font-black text-emerald-400 tracking-widest border-b border-white/5 pb-2">Schema Fields</div>
               
               <div className="space-y-4">
                 {/* Description Column */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Description / Merchant *</label>
-                    <span className="text-[8px] text-slate-500 font-bold uppercase">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 block">Description / Merchant *</label>
+                    <span className="text-[8px] text-slate-500 font-bold">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
                   </div>
                   <div className="flex gap-2">
                     {layoutMode === 'cells' ? (
@@ -560,8 +560,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                 {/* Amount Column */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Amount / Price *</label>
-                    <span className="text-[8px] text-slate-500 font-bold uppercase">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 block">Amount / Price *</label>
+                    <span className="text-[8px] text-slate-500 font-bold">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
                   </div>
                   <div className="flex gap-2">
                     {layoutMode === 'cells' ? (
@@ -595,8 +595,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                 {/* Date Column */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Transaction Date *</label>
-                    <span className="text-[8px] text-slate-500 font-bold uppercase">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
+                    <label className="text-[10px] font-black tracking-widest text-slate-400 block">Transaction Date *</label>
+                    <span className="text-[8px] text-slate-500 font-bold">({layoutMode === 'cells' ? 'Coord' : 'Column'})</span>
                   </div>
                   <div className="flex gap-2">
                     {layoutMode === 'cells' ? (
@@ -629,7 +629,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
                 {/* Category Column (Optional) */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Category (Optional)</label>
+                  <label className="text-[10px] font-black tracking-widest text-slate-400 block">Category (Optional)</label>
                   {layoutMode === 'cells' ? (
                     <input 
                       type="text" 
@@ -652,7 +652,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
                 {/* Notes Column (Optional) */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Notes / Memo (Optional)</label>
+                  <label className="text-[10px] font-black tracking-widest text-slate-400 block">Notes / Memo (Optional)</label>
                   {layoutMode === 'cells' ? (
                     <input 
                       type="text" 
@@ -677,10 +677,10 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
               {/* Additional Fields */}
               <div className="space-y-3 pt-4 border-t border-white/5">
                 <div className="flex justify-between items-center">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Additional Fields</div>
+                  <div className="text-[10px] font-black text-slate-500 tracking-widest">Additional Fields</div>
                   <button 
                     onClick={() => setAdditionalFields([...additionalFields, { fieldName: 'Field Name', column: '', pattern: '' }])}
-                    className="text-[9px] font-black uppercase text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
+                    className="text-[9px] font-black text-emerald-400 hover:text-emerald-300 transition-all cursor-pointer"
                   >
                     + Add Field
                   </button>
@@ -754,8 +754,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
             <div className="lg:col-span-7 space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                  <div className="text-xs font-black text-emerald-400 uppercase tracking-widest">Raw File Data Preview</div>
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                  <div className="text-xs font-black text-emerald-400 tracking-widest">Raw File Data Preview</div>
+                  <span className="text-[9px] text-slate-500 font-bold tracking-wider">
                     Showing {previewLimit === 'all' ? `all ${rawRows.length}` : `first ${Math.min(parseInt(previewLimit), rawRows.length)}`} of {rawRows.length} rows
                   </span>
                 </div>
@@ -772,7 +772,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                   </select>
                   <button 
                     onClick={() => setShowFullDoc(true)}
-                    className="px-3 py-1 bg-white/5 border border-white/10 text-white font-black text-[9px] uppercase rounded-lg hover:bg-white/10 transition-all cursor-pointer"
+                    className="px-3 py-1 bg-white/5 border border-white/10 text-white font-black text-[9px] rounded-lg hover:bg-white/10 transition-all cursor-pointer"
                   >
                     View Full Doc
                   </button>
@@ -785,7 +785,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                     <thead>
                       <tr className="bg-white/5 border-b border-white/5">
                         {headers.map(h => (
-                          <th key={h} className="px-4 py-3 font-black uppercase text-slate-400 tracking-wider whitespace-nowrap min-w-[100px]">{h}</th>
+                          <th key={h} className="px-4 py-3 font-black text-slate-400 tracking-wider whitespace-nowrap min-w-[100px]">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -809,14 +809,14 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
           <div className="flex justify-end gap-4 pt-6 border-t border-white/5">
             <button 
               onClick={() => setFile(null)} 
-              className="px-8 py-3 bg-white/5 text-white font-black uppercase text-xs rounded-xl hover:bg-white/10 transition-all cursor-pointer"
+              className="px-8 py-3 bg-white/5 text-white font-black text-xs rounded-xl hover:bg-white/10 transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button 
               onClick={handleAnalyze}
               disabled={!columnMapping.description || !columnMapping.amount || !columnMapping.date || analyzing}
-              className="px-10 py-3 bg-emerald-500 text-black font-black uppercase text-xs rounded-xl hover:scale-105 transition-all shadow-xl shadow-emerald-500/10 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+              className="px-10 py-3 bg-emerald-500 text-black font-black text-xs rounded-xl hover:scale-105 transition-all shadow-xl shadow-emerald-500/10 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
             >
               {analyzing ? 'Mapping Columns...' : 'Apply Mapping & Start Review'}
             </button>
@@ -832,21 +832,21 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                    <ShieldCheck size={20} />
                 </div>
                 <div>
-                   <p className="font-black text-sm uppercase italic tracking-tight">{reviewItems.length} Records Detected from "{selectedSheet || 'file'}"</p>
-                   <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Target: {scope === 'household' ? 'Shared Ledger' : 'Personal Hub'}</p>
+                   <p className="font-black text-sm italic tracking-tight">{reviewItems.length} Records Detected from "{selectedSheet || 'file'}"</p>
+                   <p className="text-[10px] text-slate-500 font-black tracking-widest">Target: {scope === 'household' ? 'Shared Ledger' : 'Personal Hub'}</p>
                 </div>
              </div>
              <div className="flex items-center gap-3 w-full sm:w-auto">
                <button 
                  onClick={handleAddRow}
-                 className="flex-1 sm:flex-none px-5 py-3 bg-white/5 border border-white/10 text-white font-black text-xs uppercase rounded-xl hover:bg-white/10 transition-all cursor-pointer"
+                 className="flex-1 sm:flex-none px-5 py-3 bg-white/5 border border-white/10 text-white font-black text-xs rounded-xl hover:bg-white/10 transition-all cursor-pointer"
                >
                  + Add Record
                </button>
                <button 
                  onClick={handleCommit}
                  disabled={committing}
-                 className="flex-1 sm:flex-none px-8 py-3 bg-emerald-500 text-black font-black text-xs uppercase rounded-xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
+                 className="flex-1 sm:flex-none px-8 py-3 bg-emerald-500 text-black font-black text-xs rounded-xl hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 cursor-pointer"
                >
                  {committing ? 'Saving History...' : 'Finish Import'}
                </button>
@@ -861,11 +861,11 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/2">
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Details & Notes</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">Owner/Person</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Amount ($)</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-right">Date</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest text-center w-16">Remove</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 tracking-widest">Details & Notes</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 tracking-widest text-center">Owner/Person</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 tracking-widest text-right">Amount ($)</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 tracking-widest text-right">Date</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-600 tracking-widest text-center w-16">Remove</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -887,7 +887,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                                    <select
                                      value={item.category || ''}
                                      onChange={(e) => handleUpdateField(idx, 'category', e.target.value)}
-                                     className="text-[10px] text-slate-500 uppercase font-black tracking-widest bg-transparent border border-transparent hover:border-white/10 focus:border-emerald-500/50 outline-none py-0.5 cursor-pointer max-w-[120px] transition-all"
+                                     className="text-[10px] text-slate-500 font-black tracking-widest bg-transparent border border-transparent hover:border-white/10 focus:border-emerald-500/50 outline-none py-0.5 cursor-pointer max-w-[120px] transition-all"
                                    >
                                      <option value="Uncategorized" className="text-black">Uncategorized</option>
                                      {(categories || []).map((c: any) => (
@@ -910,7 +910,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                                 <select 
                                   value={item.ownerId || ''}
                                   onChange={(e) => handleMapUser(idx, e.target.value)}
-                                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest outline-none focus:border-emerald-500/50 appearance-none min-w-[120px] text-white"
+                                  className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black tracking-widest outline-none focus:border-emerald-500/50 appearance-none min-w-[120px] text-white"
                                 >
                                   <option value="">Auto ({item.ownerName || 'Generic'})</option>
                                   {members?.map((m: any) => (
@@ -918,7 +918,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                                   ))}
                                 </select>
                               ) : (
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/5 border border-white/5 rounded-lg px-3 py-2">
+                                <span className="text-[10px] font-black tracking-widest text-slate-500 bg-white/5 border border-white/5 rounded-lg px-3 py-2">
                                   {user?.displayName || user?.username || 'Me'} (Locked)
                                 </span>
                               )}
@@ -959,7 +959,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
             {/* Scroll Indication text */}
             {reviewItems.length > 5 && (
               <div className="absolute bottom-2 inset-x-0 text-center z-20 pointer-events-none">
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-emerald-400 bg-black/80 backdrop-blur-md border border-white/5 rounded-full px-4 py-1.5 inline-block shadow-lg animate-pulse">
+                <p className="text-[9px] font-black tracking-[0.25em] text-emerald-400 bg-black/80 backdrop-blur-md border border-white/5 rounded-full px-4 py-1.5 inline-block shadow-lg animate-pulse">
                   ↕ Scroll to view all {reviewItems.length} records
                 </p>
               </div>
@@ -980,7 +980,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                 <thead>
                   <tr className="bg-white/5 border-b border-white/5 sticky top-0 z-10">
                     {headers.map(h => (
-                      <th key={h} className="px-4 py-3 font-black uppercase text-slate-400 tracking-wider whitespace-nowrap bg-black/80">{h}</th>
+                      <th key={h} className="px-4 py-3 font-black text-slate-400 tracking-wider whitespace-nowrap bg-black/80">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1001,7 +1001,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
           {rawTextContent && (
             <div className="space-y-2 pt-4 border-t border-white/5">
-              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Raw File Stream</div>
+              <div className="text-[10px] font-black text-slate-500 tracking-widest">Raw File Stream</div>
               <pre className="p-4 bg-black/40 border border-white/10 rounded-xl font-mono text-[10px] text-slate-400 overflow-auto max-h-60 custom-scrollbar whitespace-pre-wrap">
                 {rawTextContent}
               </pre>

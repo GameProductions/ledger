@@ -134,7 +134,7 @@ export default function SharedBalances() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-white">Shared Balances</h3>
-            <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">Track IOUs and settle debts with household members</p>
+            <p className="text-xs text-slate-500 tracking-widest font-bold">Track IOUs and settle debts with household members</p>
             <p className="text-xs text-secondary font-medium mt-1 pr-6">Keep track of informal debts and shared costs with other members of your household. You can record IOUs and mark them as settled when paid back.</p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function SharedBalances() {
       {/* Net Summary */}
       {summaryList.length > 0 && (
         <div className="mb-6 space-y-3">
-          <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Net Balances</h4>
+          <h4 className="text-[10px] font-black text-slate-500 tracking-widest">Net Balances</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {summaryList.map((s: BalanceSummary, idx: number) => {
               const isOwed = s.fromUserId === user?.id
@@ -164,7 +164,7 @@ export default function SharedBalances() {
                       <p className="text-sm font-bold text-white">
                         {s.fromName} → {s.toName}
                       </p>
-                      <p className={`text-xs font-black uppercase tracking-widest ${isOwed ? 'text-red-400' : 'text-emerald-400'}`}>
+                      <p className={`text-xs font-black tracking-widest ${isOwed ? 'text-red-400' : 'text-emerald-400'}`}>
                         {isOwed ? 'You owe' : 'Owes you'}
                       </p>
                     </div>
@@ -199,7 +199,7 @@ export default function SharedBalances() {
 
       {/* History */}
       <div className="space-y-2">
-        <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">History</h4>
+        <h4 className="text-[10px] font-black text-slate-500 tracking-widest">History</h4>
         {balanceList.length === 0 ? (
           <div className="py-12 text-center">
             <Users className="w-10 h-10 text-slate-700 mx-auto mb-3" />
@@ -268,7 +268,7 @@ export default function SharedBalances() {
       >
         <div className="space-y-4">
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Who do you owe?</label>
+            <label className="text-[10px] font-black text-slate-500 tracking-widest mb-2 block">Who do you owe?</label>
             <select
               value={newIOU.toUserId}
               onChange={(e) => setNewIOU({ ...newIOU, toUserId: e.target.value })}
@@ -281,7 +281,7 @@ export default function SharedBalances() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Amount</label>
+            <label className="text-[10px] font-black text-slate-500 tracking-widest mb-2 block">Amount</label>
             <CurrencyInput 
               valueCents={newIOU.amountCents || 0} 
               onChangeCents={cents => setNewIOU({ ...newIOU, amountCents: cents })}
@@ -290,7 +290,7 @@ export default function SharedBalances() {
             />
           </div>
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2 block">Description (optional)</label>
+            <label className="text-[10px] font-black text-slate-500 tracking-widest mb-2 block">Description (optional)</label>
             <input
               type="text"
               value={newIOU.description}

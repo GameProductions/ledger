@@ -68,10 +68,10 @@ const CloudHub: React.FC<CloudHubProps> = ({ onFileSelect }) => {
                 {connecting === p.id ? <Loader2 size={32} className="animate-spin text-white" /> : p.icon}
               </div>
               
-              <h4 className="font-black italic uppercase tracking-tighter text-white mb-2">{p.name}</h4>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{p.desc}</p>
+              <h4 className="font-black italic tracking-tighter text-white mb-2">{p.name}</h4>
+              <p className="text-[10px] font-black tracking-widest text-slate-500">{p.desc}</p>
               
-              <div className="mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="mt-8 flex items-center gap-2 text-[10px] font-black tracking-widest text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity">
                  Connect <ChevronRight size={12} />
               </div>
             </button>
@@ -83,14 +83,14 @@ const CloudHub: React.FC<CloudHubProps> = ({ onFileSelect }) => {
               {providers.find(p => p.id === activeProvider)?.icon}
            </div>
            
-           <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white mb-4">
+           <h3 className="text-3xl font-black italic tracking-tighter text-white mb-4">
              Connected to {providers.find(p => p.id === activeProvider)?.name}
            </h3>
            <p className="text-slate-500 max-w-sm mx-auto mb-10 font-medium">Your cloud storage is now updated and ready. Select a file to move into the Review Area.</p>
            
            <div className="flex flex-wrap justify-center gap-4">
               <button 
-                className="px-8 py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-2xl hover:scale-105 transition-all shadow-xl shadow-emerald-500/20"
+                className="px-8 py-4 bg-emerald-500 text-black font-black text-xs rounded-2xl hover:scale-105 transition-all shadow-xl shadow-emerald-500/20"
                 onClick={() => {
                    // Simulate file selection
                    onFileSelect({ name: 'ledger_backup.csv', size: '25KB', type: 'text/csv' });
@@ -100,7 +100,7 @@ const CloudHub: React.FC<CloudHubProps> = ({ onFileSelect }) => {
               </button>
               <button 
                 onClick={() => setActiveProvider(null)}
-                className="px-8 py-4 bg-white/5 text-slate-400 font-black uppercase text-xs rounded-2xl hover:bg-white/10 transition-all border border-white/5"
+                className="px-8 py-4 bg-white/5 text-slate-400 font-black text-xs rounded-2xl hover:bg-white/10 transition-all border border-white/5"
               >
                 Disconnect
               </button>
@@ -109,9 +109,9 @@ const CloudHub: React.FC<CloudHubProps> = ({ onFileSelect }) => {
            <div className="mt-12 pt-8 border-t border-white/5 flex items-center justify-center gap-4">
               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                  <Lock size={12} className="text-emerald-500" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">OAuth 2.0 Secure Connection</span>
+                 <span className="text-[10px] font-black tracking-widest text-emerald-500">OAuth 2.0 Secure Connection</span>
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No tokens stored on-device</p>
+              <p className="text-[10px] font-black tracking-widest text-slate-600">No tokens stored on-device</p>
            </div>
         </div>
       )}
@@ -119,13 +119,13 @@ const CloudHub: React.FC<CloudHubProps> = ({ onFileSelect }) => {
       {/* Security Context */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
          <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5">
-            <h5 className="font-black italic uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
+            <h5 className="font-black italic tracking-widest text-xs mb-4 flex items-center gap-2">
                <ShieldCheck className="text-blue-400" size={16} /> Privacy Policy
             </h5>
             <p className="text-[10px] text-slate-500 leading-relaxed font-medium">We only request read-only access to specific files you select. Your account credentials never touch our servers.</p>
          </div>
          <div className="p-8 rounded-[2.5rem] bg-indigo-500/5 border border-indigo-500/10">
-            <h5 className="font-black italic uppercase tracking-widest text-xs mb-4 flex items-center gap-2 text-indigo-400">
+            <h5 className="font-black italic tracking-widest text-xs mb-4 flex items-center gap-2 text-indigo-400">
                <ExternalLink size={16} /> Multi-Cloud Hub
             </h5>
             <p className="text-[10px] text-slate-500 leading-relaxed font-medium">Switch between providers at any time. Your import history tracks the source of every record for future audit clarity.</p>

@@ -20,6 +20,7 @@ interface FormInstance {
   transferTiming: string;
   isBorrowed: boolean;
   borrowSource: string;
+  transactionDate: string;
   createdAt: string;
 }
 
@@ -35,6 +36,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     transferTiming: 'future',
     isBorrowed: false,
     borrowSource: '',
+    transactionDate: new Date().toISOString().split('T')[0],
     createdAt: new Date().toISOString().split('T')[0]
   });
 
@@ -93,7 +95,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             transferTiming: inst.needsBalanceTransfer ? inst.transferTiming : null,
             isBorrowed: inst.isBorrowed,
             borrowSource: inst.isBorrowed ? inst.borrowSource : null,
-            createdAt: new Date(inst.createdAt).toISOString(),
+            transactionDate: new Date(inst.transactionDate).toISOString().split('T')[0],
           })
         })
       );
@@ -117,20 +119,20 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
       <div className="flex items-center justify-between gap-2 mb-3 relative z-20">
         <div className="flex items-center gap-2">
           <Flag className="text-orange-500" size={18} />
-          <h3 className="font-bold text-white uppercase tracking-widest text-sm text-orange-100">Add Tracked Expense</h3>
+          <h3 className="font-bold text-white tracking-widest text-sm text-orange-100">Add Tracked Expense</h3>
         </div>
         <div className="flex items-center gap-2">
           <button 
             type="button"
             onClick={handleAddBlank}
-            className="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-white px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all border border-emerald-500/20 flex items-center gap-1 cursor-pointer"
+            className="text-[10px] font-black tracking-widest text-emerald-400 hover:text-white px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 transition-all border border-emerald-500/20 flex items-center gap-1 cursor-pointer"
           >
             <Plus size={10} /> Add Instance
           </button>
           <button 
             type="button"
             onClick={() => setShowInfo(!showInfo)}
-            className="text-[10px] font-black uppercase tracking-widest text-orange-400 hover:text-white px-2.5 py-1 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 transition-all border border-orange-500/20 cursor-pointer"
+            className="text-[10px] font-black tracking-widest text-orange-400 hover:text-white px-2.5 py-1 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 transition-all border border-orange-500/20 cursor-pointer"
           >
             {showInfo ? 'Hide Guide' : 'Show Guide'}
           </button>
@@ -147,7 +149,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="space-y-1">
-              <span className="font-black uppercase tracking-wider text-[9px] text-orange-300">Use Cases</span>
+              <span className="font-black tracking-wider text-[9px] text-orange-300">Use Cases</span>
               <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
                 <li>Logging borrowed funds needing repayment.</li>
                 <li>Staging items requiring a balance transfer.</li>
@@ -155,7 +157,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
               </ul>
             </div>
             <div className="space-y-1">
-              <span className="font-black uppercase tracking-wider text-[9px] text-orange-300">Quick Guide</span>
+              <span className="font-black tracking-wider text-[9px] text-orange-300">Quick Guide</span>
               <ul className="list-decimal pl-4 space-y-0.5 text-[11px]">
                 <li>Enter the Amount and Description.</li>
                 <li>Toggle optional flags (attention, borrow, transfer).</li>
@@ -198,14 +200,14 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
               </div>
 
               {instances.length > 1 && (
-                <div className="text-[9px] uppercase tracking-widest text-orange-400/60 font-black mb-3">
+                <div className="text-[9px] tracking-widest text-orange-400/60 font-black mb-3">
                   Instance #{index + 1}
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Amount</label>
+                  <label className="text-xs tracking-widest text-secondary mb-1 flex">Amount</label>
                   <CurrencyInput 
                     valueCents={inst.amountCents} 
                     onChangeCents={cents => handleUpdate(index, { amountCents: cents })}
@@ -215,18 +217,18 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                   />
                 </div>
                 <div>
-                  <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Transaction date</label>
+                  <label className="text-xs tracking-widest text-secondary mb-1 flex">Transaction date</label>
                   <input 
                     type="date" 
-                    value={inst.createdAt} 
-                    onChange={e => handleUpdate(index, { createdAt: e.target.value })}
+                    value={inst.transactionDate} 
+                    onChange={e => handleUpdate(index, { transactionDate: e.target.value })}
                     style={{ colorScheme: 'dark' }}
                     className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors animate-in"
                     required
                   />
                 </div>
                 <div className="md:col-span-2 pr-16">
-                  <label className="text-xs uppercase tracking-widest text-secondary mb-1 flex">Description</label>
+                  <label className="text-xs tracking-widest text-secondary mb-1 flex">Description</label>
                   <input 
                     type="text" 
                     value={inst.description} 
@@ -326,7 +328,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
           <button 
             type="submit" 
             disabled={loading}
-            className="px-6 py-2.5 bg-white text-black font-black uppercase tracking-widest text-xs rounded-xl hover:scale-105 transition-transform cursor-pointer"
+            className="px-6 py-2.5 bg-white text-black font-black tracking-widest text-xs rounded-xl hover:scale-105 transition-transform cursor-pointer"
           >
             {loading ? 'Adding...' : instances.length > 1 ? `Save All Transactions (${instances.length})` : 'Save Transaction'}
           </button>

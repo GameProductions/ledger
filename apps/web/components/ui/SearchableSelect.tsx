@@ -139,7 +139,7 @@ const DropdownContent: React.FC<DropdownContentProps> = ({
 
       {filteredOptions.length === 0 && !search ? (
         <div className="p-8 text-center text-slate-400">
-          <p className="text-xs font-black uppercase tracking-widest text-amber-500/80 mb-1.5">No options created yet</p>
+          <p className="text-xs font-black tracking-widest text-amber-500/80 mb-1.5">No options created yet</p>
           <p className="text-[11px] text-slate-500 font-bold leading-normal">Type a name in the search box above to create one dynamically!</p>
         </div>
       ) : filteredOptions.length > 0 ? (
@@ -179,7 +179,7 @@ const DropdownContent: React.FC<DropdownContentProps> = ({
         })
       ) : (
         <div className="p-12 text-center">
-          <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
+          <p className="text-sm text-slate-600 font-black tracking-[0.2em] italic">No Matches Found</p>
         </div>
       )}
     </div>
@@ -303,7 +303,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             {selectedOption?.metadata?.subtext && (
-              <span className="text-[12px] text-slate-500 font-black uppercase tracking-widest truncate">
+              <span className="text-[12px] text-slate-500 font-black tracking-widest truncate">
                 {selectedOption.metadata.subtext}
               </span>
             )}

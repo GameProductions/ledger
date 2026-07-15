@@ -277,7 +277,7 @@ const SettingsPage: React.FC = () => {
                 User Settings
               </h1>
               <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-secondary opacity-40">User Configuration</span>
+                <span className="text-xs font-black tracking-[0.3em] text-secondary opacity-40">User Configuration</span>
               </div>
             </div>
           </div>
@@ -330,7 +330,7 @@ const SettingsPage: React.FC = () => {
             
             {/* Account Role Badge */}
             <div className="flex justify-center md:justify-start">
-              <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.15em] text-primary shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+              <div className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black tracking-[0.15em] text-primary shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                 {profile?.globalRole === 'owner' ? 'Owner' : (profile?.globalRole || 'Standard User')}
               </div>
             </div>
@@ -382,7 +382,7 @@ const SettingsPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all whitespace-nowrap ${
+              className={`px-6 py-3 rounded-2xl font-black tracking-widest text-xs transition-all whitespace-nowrap ${
                 activeTab === tab.id 
                   ? 'bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]' 
                   : 'text-secondary hover:bg-white/5 hover:text-white'
@@ -436,8 +436,8 @@ const SettingsPage: React.FC = () => {
                            }}
                          >
                            <div className="space-y-0.5">
-                             <div className="text-xs font-black uppercase tracking-widest text-white group-hover:text-primary transition-colors">Stay Signed In</div>
-                             <div className="text-[10px] text-secondary font-bold uppercase tracking-tight opacity-60">Maintain persistent session across restarts</div>
+                             <div className="text-xs font-black tracking-widest text-white group-hover:text-primary transition-colors">Stay Signed In</div>
+                             <div className="text-[10px] text-secondary font-bold tracking-tight opacity-60">Maintain persistent session across restarts</div>
                            </div>
                            <div className={`w-10 h-6 rounded-full transition-all relative ${settingsJson.staySignedIn !== false ? 'bg-primary' : 'bg-white/10'}`}>
                              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settingsJson.staySignedIn !== false ? 'right-1' : 'left-1'}`} />
@@ -447,7 +447,7 @@ const SettingsPage: React.FC = () => {
                          <button 
                            onClick={handleUpdatePassword}
                            disabled={changingPass || newPassword.length < 8}
-                           className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black uppercase tracking-[0.2em] text-xs py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                           className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-30 text-white font-black tracking-[0.2em] text-xs py-4 rounded-xl transition-all shadow-lg shadow-blue-500/20"
                          >
                            {changingPass ? 'Updating...' : 'Update Password'}
                          </button>
@@ -476,7 +476,7 @@ const SettingsPage: React.FC = () => {
                 <div className="flex items-center justify-between px-2">
                    <div>
                      <h3 className="text-xl font-black italic tracking-tight">Social Accounts</h3>
-                     <p className="text-xs font-bold text-secondary uppercase tracking-widest opacity-60">Connect and manage your social logins</p>
+                     <p className="text-xs font-bold text-secondary tracking-widest opacity-60">Connect and manage your social logins</p>
                    </div>
                 </div>
 
@@ -499,7 +499,7 @@ const SettingsPage: React.FC = () => {
                                    <p className="font-bold text-sm tracking-tight">{provider.name}</p>
                                    <div className="flex items-center gap-2">
                                       <span className={`w-1.5 h-1.5 rounded-full ${linked ? 'bg-primary' : 'bg-slate-500'}`}></span>
-                                      <span className="text-xs font-black uppercase tracking-widest text-secondary opacity-60">
+                                      <span className="text-xs font-black tracking-widest text-secondary opacity-60">
                                         {linked ? `Connected` : 'Offline'}
                                       </span>
                                    </div>
@@ -513,7 +513,7 @@ const SettingsPage: React.FC = () => {
                                   <button 
                                     onClick={() => handleSyncProfile(provider.id, linked.id)}
                                     disabled={syncing === provider.id}
-                                    className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-black uppercase tracking-widest transition-all"
+                                    className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-black tracking-widest transition-all"
                                   >
                                     <RefreshCw size={12} className={syncing === provider.id ? 'animate-spin' : ''} />
                                     {syncing === provider.id ? 'Syncing...' : 'Sync Profile'}
@@ -531,7 +531,7 @@ const SettingsPage: React.FC = () => {
                                     const baseApi = getApiUrl().replace(/\/$/, '');
                                     window.location.href = `${baseApi}/api/auth/login/${provider.id}?auth_token=${token}`;
                                   }}
-                                  className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs transition-all"
+                                  className="w-full p-3 rounded-lg bg-primary hover:bg-emerald-400 text-black font-black tracking-widest text-xs transition-all"
                                 >
                                   Link Account
                                 </button>
@@ -568,7 +568,7 @@ const SettingsPage: React.FC = () => {
                       <button 
                         key={style}
                         onClick={() => setUiStyle(style)}
-                        className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settingsJson.uiStyle === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                        className={`p-3 rounded-xl border-2 transition-all text-xs font-black tracking-widest ${settingsJson.uiStyle === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                       >
                         {style}
                       </button>
@@ -599,11 +599,11 @@ const SettingsPage: React.FC = () => {
                       onClick={() => setReducedMotion(!(localStorage.getItem('ledger_reduced_motion') === 'true'))}
                     >
                       <div className="space-y-0.5">
-                        <div className="text-xs font-black uppercase tracking-widest text-white group-hover:text-primary transition-colors flex items-center gap-2">
+                        <div className="text-xs font-black tracking-widest text-white group-hover:text-primary transition-colors flex items-center gap-2">
                           <Eye size={14} />
                           Reduced Motion
                         </div>
-                        <div className="text-[10px] text-secondary font-bold uppercase tracking-tight opacity-60">
+                        <div className="text-[10px] text-secondary font-bold tracking-tight opacity-60">
                           Disable animations and transitions
                         </div>
                       </div>
@@ -650,7 +650,7 @@ const SettingsPage: React.FC = () => {
                       <button 
                         key={c.id}
                         onClick={() => updateSettingsJson({ ...settingsJson, currency: c.id })}
-                        className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settingsJson.currency === c.id || (!settingsJson.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                        className={`p-3 rounded-xl border-2 transition-all text-xs font-black tracking-widest ${settingsJson.currency === c.id || (!settingsJson.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                       >
                         {c.name}
                       </button>
@@ -692,7 +692,7 @@ const SettingsPage: React.FC = () => {
               <section className="space-y-6">
                   <div className="px-2">
                     <h3 className="text-xl font-black italic tracking-tight">Financial Links</h3>
-                    <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Connected data sources and accounts</p>
+                    <p className="text-xs font-bold text-secondary tracking-[0.2em] opacity-60">Connected data sources and accounts</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -702,14 +702,14 @@ const SettingsPage: React.FC = () => {
                               <div className="text-xl">💳</div>
                               <div>
                                 <p className="font-bold text-sm tracking-tight">{acc.name}</p>
-                                <p className="text-xs font-black uppercase tracking-widest text-secondary opacity-40">Active Account</p>
+                                <p className="text-xs font-black tracking-widest text-secondary opacity-40">Active Account</p>
                               </div>
                           </div>
                           <Price amountCents={acc.balanceCents} className="text-lg font-black tracking-tighter" />
                         </div>
                     )) : (
                         <div className="col-span-full p-10 border-2 border-dashed border-white/5 rounded-3xl text-center opacity-30 grayscale italic">
-                          <p className="text-sm font-bold uppercase tracking-widest">No active financial links detected</p>
+                          <p className="text-sm font-bold tracking-widest">No active financial links detected</p>
                         </div>
                     )}
                   </div>
@@ -718,7 +718,7 @@ const SettingsPage: React.FC = () => {
               <section className="space-y-6">
                   <div className="px-2">
                     <h3 className="text-xl font-black italic tracking-tight">Household Management</h3>
-                    <p className="text-xs font-bold text-secondary uppercase tracking-[0.2em] opacity-60">Manage household members and access</p>
+                    <p className="text-xs font-bold text-secondary tracking-[0.2em] opacity-60">Manage household members and access</p>
                   </div>
                   <HouseholdRegistry />
                   <ArchivalVault />
@@ -749,7 +749,7 @@ const SettingsPage: React.FC = () => {
                />
                <div className="space-y-1">
                   <p className="text-sm font-bold tracking-tight text-white">Retain Profile Assets</p>
-                  <p className="text-xs text-secondary uppercase font-black tracking-widest opacity-60 leading-relaxed">Keep current display name and avatar even after this identity is removed.</p>
+                  <p className="text-xs text-secondary font-black tracking-widest opacity-60 leading-relaxed">Keep current display name and avatar even after this identity is removed.</p>
                </div>
             </label>
           </div>

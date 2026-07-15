@@ -50,7 +50,7 @@ export function ArchivalVault() {
              {archived.length === 0 ? (
                 <div className="p-12 text-center text-gray-500">
                   <Archive className="w-12 h-12 opacity-20 mx-auto mb-4" />
-                  <p className="text-lg font-black tracking-widest text-white/20 uppercase">Vault Empty</p>
+                  <p className="text-lg font-black tracking-widest text-white/20">Vault Empty</p>
                   <p className="text-sm mt-1">No archived infrastructures exist within this tier.</p>
                 </div>
              ) : (
@@ -58,7 +58,7 @@ export function ArchivalVault() {
                   <div key={item.id} className="p-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-wider bg-orange-500/20 text-orange-400">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider bg-orange-500/20 text-orange-400">
                           {item.type}
                         </span>
                         <h3 className="text-slate-200 font-bold">{item.name}</h3>

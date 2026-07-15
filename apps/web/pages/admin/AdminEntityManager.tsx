@@ -106,7 +106,7 @@ const AdminEntityManager: React.FC = () => {
             <p className="text-xs text-white/40 font-medium">Platform-wide CRUD access across all households and users. All actions are audited.</p>
           </div>
         </div>
-        <button onClick={() => setShowAudit(!showAudit)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${showAudit ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'}`}>
+        <button onClick={() => setShowAudit(!showAudit)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black tracking-widest transition-all ${showAudit ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'}`}>
           <FileText size={14} /> Audit Trail
         </button>
       </div>
@@ -114,7 +114,7 @@ const AdminEntityManager: React.FC = () => {
       {/* Audit Log Drawer */}
       {showAudit && (
         <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Owner Audit Log</div>
+          <div className="text-[10px] font-black tracking-widest text-emerald-400">Owner Audit Log</div>
           {(auditLog || []).length === 0 ? (
             <div className="text-sm text-white/30">No god-mode actions recorded yet.</div>
           ) : (
@@ -137,7 +137,7 @@ const AdminEntityManager: React.FC = () => {
         {/* Left Nav */}
         <div className="space-y-4">
           <nav className="bg-white/[0.02] border border-white/5 rounded-2xl p-3">
-            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 px-3 py-2">Entity Types</div>
+            <div className="text-[9px] font-black tracking-[0.2em] text-white/30 px-3 py-2">Entity Types</div>
             {ENTITY_TYPES.map(et => (
               <button
                 key={et.key}
@@ -154,7 +154,7 @@ const AdminEntityManager: React.FC = () => {
                   </div>
                   <span className="truncate">{et.label}</span>
                 </div>
-                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-widest border ${
                   et.scope === 'household'
                     ? 'bg-purple-500/10 text-purple-400 border-purple-500/25'
                     : 'bg-blue-500/10 text-blue-400 border-blue-500/25'
@@ -167,21 +167,21 @@ const AdminEntityManager: React.FC = () => {
 
           {/* Scope Filters */}
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
-            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 flex items-center gap-2"><Filter size={12} /> Scope Filter</div>
+            <div className="text-[9px] font-black tracking-[0.2em] text-white/30 flex items-center gap-2"><Filter size={12} /> Scope Filter</div>
             {activeMeta.scope === 'household' ? (
               <div>
-                <label className="text-[10px] font-bold text-white/40 uppercase block mb-1">Household ID</label>
+                <label className="text-[10px] font-bold text-white/40 block mb-1">Household ID</label>
                 <input value={householdFilter} onChange={e => setHouseholdFilter(e.target.value)} placeholder="Leave blank for ALL" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" />
                 <div className="text-[9px] text-white/20 mt-1">Filter results to a specific household</div>
               </div>
             ) : (
               <div>
-                <label className="text-[10px] font-bold text-white/40 uppercase block mb-1">User ID</label>
+                <label className="text-[10px] font-bold text-white/40 block mb-1">User ID</label>
                 <input value={userFilter} onChange={e => setUserFilter(e.target.value)} placeholder="Leave blank for ALL" className="w-full p-2 bg-black/40 border border-white/10 rounded-lg text-xs" />
                 <div className="text-[9px] text-white/20 mt-1">Filter results to a specific user</div>
               </div>
             )}
-            <button onClick={() => mutate()} className="w-full py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-xs font-black uppercase tracking-widest text-emerald-400 hover:bg-emerald-500/30 transition-all">
+            <button onClick={() => mutate()} className="w-full py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-xs font-black tracking-widest text-emerald-400 hover:bg-emerald-500/30 transition-all">
               <Eye size={12} className="inline mr-2" /> Load Records
             </button>
           </div>
@@ -196,7 +196,7 @@ const AdminEntityManager: React.FC = () => {
           </div>
 
           {/* Count */}
-          <div className="text-[10px] font-black uppercase tracking-widest text-white/30">
+          <div className="text-[10px] font-black tracking-widest text-white/30">
             {loading ? 'Loading...' : `${filtered.length} record${filtered.length !== 1 ? 's' : ''} found`}
             {!householdFilter && !userFilter && <span className="text-amber-400 ml-2">⚠ PLATFORM-WIDE</span>}
           </div>
@@ -238,7 +238,7 @@ const AdminEntityManager: React.FC = () => {
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {editing && Object.entries(editData).filter(([k]) => k !== 'id' && !k.endsWith('_at')).map(([key, value]) => (
           <div key={key}>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">{key}</label>
+            <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">{key}</label>
             <input
               value={String(value ?? '')}
               onChange={e => setEditData({ ...editData, [key]: e.target.value })}

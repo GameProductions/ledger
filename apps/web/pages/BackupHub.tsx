@@ -75,7 +75,7 @@ const BackupHub: React.FC = () => {
     <MainLayout>
       <div className="max-w-5xl mx-auto space-y-12">
         <header>
-          <div className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-2">Security & Recovery</div>
+           <div className="text-xs font-black tracking-[0.3em] text-primary mb-2">Security & Recovery</div>
           <h1 className="text-4xl font-black italic tracking-tighter">Backup Hub</h1>
           <p className="text-secondary font-medium">Strategic data preservation and multi-cloud redundancy.</p>
         </header>
@@ -93,7 +93,7 @@ const BackupHub: React.FC = () => {
               <button 
                 onClick={downloadLocalBackup}
                 disabled={!!loading}
-                className="w-full py-4 bg-primary text-black font-black uppercase rounded-2xl hover:scale-[1.02] transition-all disabled:opacity-50"
+                className="w-full py-4 bg-primary text-black font-black rounded-2xl hover:scale-[1.02] transition-all disabled:opacity-50"
               >
                 {loading === 'local' ? 'Generating Backup...' : 'Download Master Backup'}
               </button>
@@ -111,7 +111,7 @@ const BackupHub: React.FC = () => {
                     <img src={provider.icon} className="w-8 h-8" alt={provider.name} />
                     <div>
                       <p className="font-bold text-sm">{provider.name}</p>
-                      <p className="text-xs text-secondary font-black uppercase tracking-widest opacity-50 italic">Cloud Recovery Point</p>
+                       <p className="text-xs text-secondary font-black tracking-widest opacity-50 italic">Cloud Recovery Point</p>
                     </div>
                   </div>
                   <button 
@@ -128,7 +128,7 @@ const BackupHub: React.FC = () => {
 
         <section className="card p-12 text-center bg-white/5 border-white/5">
            <div className="inline-flex p-4 rounded-full bg-blue-500/10 text-blue-400 mb-6"><Shield size={32} /></div>
-           <h3 className="text-2xl font-black mb-4 italic uppercase tracking-tighter">Disaster Recovery Interface</h3>
+            <h3 className="text-2xl font-black mb-4 italic tracking-tighter">Disaster Recovery Interface</h3>
            <p className="text-secondary text-sm max-w-xl mx-auto mb-8">
              Restoration is an atomic operation. Uploading a master backup will merge new data and categories into your current household. Existing transaction IDs will be preserved to prevent duplicates.
            </p>
@@ -142,7 +142,7 @@ const BackupHub: React.FC = () => {
            <button 
              disabled={!!loading}
              onClick={() => document.getElementById('restore-upload')?.click()}
-             className="flex items-center gap-3 px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-black uppercase tracking-widest mx-auto transition-all"
+              className="flex items-center gap-3 px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-sm font-black tracking-widest mx-auto transition-all"
            >
              <Upload size={16} />
              {loading === 'restore' ? 'Restoring Core...' : 'Restore from Backup'}

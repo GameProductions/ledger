@@ -58,14 +58,14 @@ export const PaySchedulesList: React.FC = () => {
                         <Wallet size={20} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold uppercase tracking-tight italic">Income Pipeline</h3>
-                        <p className="text-[10px] text-white/30 font-black uppercase tracking-widest">Active Pay Schedules</p>
+                        <h3 className="text-lg font-bold tracking-tight italic">Income Pipeline</h3>
+                        <p className="text-[10px] text-white/30 font-black tracking-widest">Active Pay Schedules</p>
                         <p className="text-xs text-secondary font-medium mt-1 pr-6">Set up your recurring paychecks here (e.g., weekly or bi-weekly). This helps the system forecast your cash flow and calculate your budget intervals.</p>
                     </div>
                 </div>
                 <button 
                     onClick={() => { setEditingSchedule(null); setIsModalOpen(true); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary rounded-xl text-[10px] font-black tracking-widest text-white hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
                 >
                     <Plus size={14} /> Add Source
                 </button>
@@ -74,7 +74,7 @@ export const PaySchedulesList: React.FC = () => {
             {/* Income Summary Card */}
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                    <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary">
                         <TrendingUp size={14} /> Projected Monthly Total
                     </div>
                     <div className="text-4xl font-black tracking-tighter text-white">
@@ -84,7 +84,7 @@ export const PaySchedulesList: React.FC = () => {
                 </div>
                 <div className="h-20 w-px bg-white/5 hidden sm:block" />
                 <div className="text-right">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Active Sources</div>
+                    <div className="text-[10px] font-black tracking-widest text-white/40 mb-1">Active Sources</div>
                     <div className="text-2xl font-black text-white">{schedules?.length || 0}</div>
                 </div>
             </div>
@@ -98,11 +98,11 @@ export const PaySchedulesList: React.FC = () => {
                                 <div>
                                     <h4 className="font-bold text-white group-hover:text-primary transition-colors">{s.name}</h4>
                                     <div className="flex flex-wrap items-center gap-3 mt-1">
-                                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/30">
+                                        <div className="flex items-center gap-1 text-[10px] font-black tracking-widest text-white/30">
                                             <Calendar size={10} /> {s.frequency}
                                         </div>
                                         {s.userId && (
-                                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary/60">
+                                            <div className="flex items-center gap-1 text-[10px] font-black tracking-widest text-primary/60">
                                                 <User size={10} /> Assigned
                                             </div>
                                         )}
@@ -113,7 +113,7 @@ export const PaySchedulesList: React.FC = () => {
                             <div className="flex items-center gap-6">
                                 {(s.upcomingEffectiveDate || s.upcomingAmountCents) && (
                                     <div className="hidden lg:flex flex-col items-end px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-right-2">
-                                        <div className="text-[8px] font-black uppercase tracking-widest text-emerald-500/60">Planned Adjustment</div>
+                                        <div className="text-[8px] font-black tracking-widest text-emerald-500/60">Planned Adjustment</div>
                                         <div className="flex items-center gap-1.5">
                                             <Price amountCents={s.upcomingAmountCents} className="text-[10px] font-black text-emerald-500" />
                                             <span className="text-[8px] text-emerald-500/40 font-bold">@ {s.upcomingEffectiveDate}</span>
@@ -122,7 +122,7 @@ export const PaySchedulesList: React.FC = () => {
                                 )}
                                 <div className="text-right">
                                     <Price amountCents={s.estimatedAmountCents} className="text-lg font-black tracking-tighter" />
-                                    <div className="text-[9px] font-black uppercase tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
+                                    <div className="text-[9px] font-black tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
                                 </div>
                                 
                                 <div className="flex items-center">

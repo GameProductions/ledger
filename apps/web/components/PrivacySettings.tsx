@@ -72,7 +72,7 @@ export const PrivacySettings: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Export */}
           <div className="space-y-4">
-            <div className="text-xs uppercase tracking-widest text-emerald-500 font-bold">Portability</div>
+            <div className="text-xs tracking-widest text-emerald-500 font-bold">Portability</div>
             <h4 className="font-bold">Export My Data</h4>
             <p className="text-sm text-secondary opacity-50">Generate a comprehensive JSON package containing your accounts, transactions, and audit history.</p>
             <Button 
@@ -86,7 +86,7 @@ export const PrivacySettings: React.FC = () => {
 
           {/* Shred */}
           <div className="space-y-4">
-            <div className="text-xs uppercase tracking-widest text-red-500 font-bold">Erasure</div>
+            <div className="text-xs tracking-widest text-red-500 font-bold">Erasure</div>
             <h4 className="font-bold">Privacy Shredder</h4>
             <p className="text-sm text-secondary opacity-50">Permanently delete historical transactions and scrub associated logs. This action is irreversible.</p>
             
@@ -119,7 +119,7 @@ export const PrivacySettings: React.FC = () => {
             
             <div className="space-y-4">
                <div>
-                  <label className="text-xs uppercase font-black tracking-widest text-secondary opacity-50 ml-1">Reason for audit log</label>
+                  <label className="text-xs font-black tracking-widest text-secondary opacity-50 ml-1">Reason for audit log</label>
                   <input 
                     type="text"
                     value={shredReason}

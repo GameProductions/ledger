@@ -328,7 +328,7 @@ export const TransactionLedger: React.FC = () => {
                   });
                   setIsAddTxOpen(true);
                 }} 
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold uppercase tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md"
                 title="Add Transaction"
               >
                 <Plus size={12} /> Add Item
@@ -340,7 +340,7 @@ export const TransactionLedger: React.FC = () => {
           {selectedIds.length > 0 && (
             <div className="p-3 bg-primary/10 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full lg:w-auto animate-in slide-in-from-top-2 duration-300">
               <div className="flex flex-col">
-                <span className="text-[9px] uppercase tracking-widest opacity-60 font-bold">Selected ({selectedIds.length} items)</span>
+                <span className="text-[9px] tracking-widest opacity-60 font-bold">Selected ({selectedIds.length} items)</span>
                 <span className={`text-md font-black tracking-tighter ${selectionSumCents > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   <Price amountCents={selectionSumCents} />
                 </span>
@@ -349,19 +349,19 @@ export const TransactionLedger: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <button 
                   onClick={() => bulkReconcile(true)}
-                  className="px-2.5 py-1.5 bg-primary text-black font-black uppercase tracking-widest text-[9px] rounded-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
+                  className="px-2.5 py-1.5 bg-primary text-black font-black tracking-widest text-[9px] rounded-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1"
                 >
                   <Check size={10} /> Reconcile
                 </button>
                 <button 
                   onClick={handleBulkDeleteTxs}
-                  className="px-2.5 py-1.5 bg-red-500/20 text-red-400 font-black border border-red-500/30 uppercase tracking-widest text-[9px] rounded-lg hover:bg-red-500/35 transition-all flex items-center gap-1"
+                  className="px-2.5 py-1.5 bg-red-500/20 text-red-400 font-black border border-red-500/30 tracking-widest text-[9px] rounded-lg hover:bg-red-500/35 transition-all flex items-center gap-1"
                 >
                   <Trash2 size={10} /> Delete
                 </button>
                 <button 
                   onClick={() => setSelectedIds([])}
-                  className="px-2.5 py-1.5 bg-white/10 text-white font-black uppercase tracking-widest text-[9px] rounded-lg hover:bg-white/20 transition-all"
+                  className="px-2.5 py-1.5 bg-white/10 text-white font-black tracking-widest text-[9px] rounded-lg hover:bg-white/20 transition-all"
                 >
                   Clear
                 </button>
@@ -379,7 +379,7 @@ export const TransactionLedger: React.FC = () => {
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search..." 
-              className="pl-9 pr-4 py-1.5 text-xs bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary w-32 focus:w-48 transition-all font-black uppercase tracking-widest"
+              className="pl-9 pr-4 py-1.5 text-xs bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary w-32 focus:w-48 transition-all font-black tracking-widest"
             />
           </div>
           <button 
@@ -446,7 +446,7 @@ export const TransactionLedger: React.FC = () => {
                          </span>
                          <button 
                            onClick={() => {/* Mock confirm & remember */ globalMutate()}}
-                           className="text-[10px] bg-orange-500 text-black px-2 rounded-full font-bold uppercase tracking-widest hover:scale-105"
+                           className="text-[10px] bg-orange-500 text-black px-2 rounded-full font-bold tracking-widest hover:scale-105"
                          >
                            Confirm
                          </button>
@@ -469,7 +469,7 @@ export const TransactionLedger: React.FC = () => {
                     <td colSpan={6} className="p-4">
                       <div className="grid grid-cols-2 gap-4 text-xs opacity-80">
                         <div>
-                          <p className="mb-1 uppercase tracking-wider font-bold opacity-50">Raw Bank Data</p>
+                          <p className="mb-1 tracking-wider font-bold opacity-50">Raw Bank Data</p>
                            <p className="font-mono bg-black/50 p-2 rounded">{tx.rawDescription || tx.description}</p>
                            <div className="mt-3 flex gap-2 flex-wrap">
                             <button onClick={() => setActiveSplitTx(tx)} className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded hover:bg-white/20 transition">
@@ -505,7 +505,7 @@ export const TransactionLedger: React.FC = () => {
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <p className="mb-1 uppercase tracking-wider font-bold opacity-50">Audit History</p>
+                          <p className="mb-1 tracking-wider font-bold opacity-50">Audit History</p>
                           <div className="max-h-40 overflow-y-auto bg-black/25 border border-white/5 rounded-xl p-3">
                             <TransactionTimeline transactionId={tx.id} />
                           </div>
@@ -526,13 +526,13 @@ export const TransactionLedger: React.FC = () => {
                         <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                            <div className="flex items-center justify-between">
                               <div className="space-y-1">
-                                <h4 className="text-orange-400 font-bold uppercase tracking-widest text-xs flex items-center gap-1"><Flag size={12} /> Attention Required</h4>
+                                <h4 className="text-orange-400 font-bold tracking-widest text-xs flex items-center gap-1"><Flag size={12} /> Attention Required</h4>
                                 {tx.needsBalanceTransfer && <p className="text-sm">🔄 Balance Transfer timing: <span className="text-white font-bold">{tx.transferTiming === 'same_day' ? 'Same Day' : 'Future'}</span></p>}
                                 {tx.isBorrowed && <p className="text-sm">💸 Borrowed Funds Source: <span className="text-white font-bold">{tx.borrowSource || 'Not specified'}</span></p>}
                               </div>
                               <button 
                                 onClick={() => resolveAttention(tx.id)}
-                                className="px-4 py-2 bg-orange-500 text-black font-bold uppercase tracking-widest text-xs rounded-lg hover:scale-105 transition-transform"
+                                className="px-4 py-2 bg-orange-500 text-black font-bold tracking-widest text-xs rounded-lg hover:scale-105 transition-transform"
                               >
                                 Mark Accounted For
                               </button>
@@ -544,7 +544,7 @@ export const TransactionLedger: React.FC = () => {
                         <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
-                              <h4 className="text-blue-400 font-bold uppercase tracking-widest text-xs flex items-center gap-1 mb-2">
+                              <h4 className="text-blue-400 font-bold tracking-widest text-xs flex items-center gap-1 mb-2">
                                 <Hash size={12} /> Transfer Confirmation
                               </h4>
                               {transferConfirmEditing === tx.id ? (
@@ -586,14 +586,14 @@ export const TransactionLedger: React.FC = () => {
                                       setTransferConfirmEditing(tx.id)
                                       setTransferConfirmValue(tx.confirmationNumber || '')
                                     }}
-                                    className="text-[10px] uppercase tracking-widest font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                                    className="text-[10px] tracking-widest font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
                                   >
                                     <Edit3 size={10} /> {tx.confirmationNumber ? 'Edit' : 'Add'}
                                   </button>
                                 </div>
                               )}
                             </div>
-                            <div className="text-[10px] uppercase tracking-widest text-blue-400/60 font-bold whitespace-nowrap pt-0.5">
+                            <div className="text-[10px] tracking-widest text-blue-400/60 font-bold whitespace-nowrap pt-0.5">
                               Linked Transfer
                             </div>
                           </div>
@@ -634,17 +634,17 @@ export const TransactionLedger: React.FC = () => {
            <p className="text-secondary text-sm">Original Amount: <span className="text-white font-bold"><Price amountCents={activeSplitTx.amountCents} /></span></p>
            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                 <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 1 Amount</label>
+                 <label className="text-xs font-bold tracking-widest text-secondary block mb-2">Split 1 Amount</label>
                  <CurrencyInput valueCents={split1Cents} onChangeCents={setSplit1Cents} placeholder="Enter amount" className="bg-white/5 border-white/10" />
                  <input value={split1Desc} onChange={e => setSplit1Desc(e.target.value)} placeholder="Description" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm" />
               </div>
               <div className="space-y-2">
-                 <label className="text-xs font-bold uppercase tracking-widest text-secondary block mb-2">Split 2 Amount</label>
+                 <label className="text-xs font-bold tracking-widest text-secondary block mb-2">Split 2 Amount</label>
                  <CurrencyInput valueCents={split2Cents} onChangeCents={setSplit2Cents} placeholder="Enter amount" className="bg-white/5 border-white/10" />
                  <input value={split2Desc} onChange={e => setSplit2Desc(e.target.value)} placeholder="Description" className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm" />
               </div>
            </div>
-           <button onClick={handleExecuteSplit} className="w-full bg-primary text-black font-bold uppercase tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
+           <button onClick={handleExecuteSplit} className="w-full bg-primary text-black font-bold tracking-widest py-3 rounded-xl mt-4 max-w-[200px] mx-auto block">Execute Split</button>
          </div>
       )}
     </Modal>
@@ -657,7 +657,7 @@ export const TransactionLedger: React.FC = () => {
               <option value="">-- Select Parent Transaction --</option>
               {(transactions || []).slice(0, 10).map((t:any) => <option key={t.id} value={t.id}>{t.description} ({t.amountCents/100})</option>)}
            </select>
-           <button onClick={() => { setActiveLinkTx(null); globalMutate(); }} className="bg-primary text-black font-bold uppercase tracking-widest py-3 px-8 rounded-xl">Link Items</button>
+           <button onClick={() => { setActiveLinkTx(null); globalMutate(); }} className="bg-primary text-black font-bold tracking-widest py-3 px-8 rounded-xl">Link Items</button>
          </div>
       )}
     </Modal>
@@ -665,7 +665,7 @@ export const TransactionLedger: React.FC = () => {
     <Modal isOpen={isAddTxOpen} onClose={() => setIsAddTxOpen(false)} title="Add Transaction">
       <form onSubmit={handleCreateTx} className="space-y-4">
         <div>
-          <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Description</label>
+          <label className="text-xs tracking-widest text-secondary block mb-1">Description</label>
           <input 
             type="text" 
             value={txForm.description} 
@@ -676,7 +676,7 @@ export const TransactionLedger: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Amount</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Amount</label>
             <CurrencyInput 
               valueCents={txForm.amountCents} 
               onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
@@ -684,7 +684,7 @@ export const TransactionLedger: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Date</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Date</label>
             <input 
               type="date" 
               value={txForm.transactionDate} 
@@ -696,7 +696,7 @@ export const TransactionLedger: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Account</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Account</label>
             <SearchableSelect 
               options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
               value={txForm.accountId} 
@@ -706,7 +706,7 @@ export const TransactionLedger: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Category</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Category</label>
             <SearchableSelect 
               options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
               value={txForm.categoryId} 
@@ -718,7 +718,7 @@ export const TransactionLedger: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Confirmation Number</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Confirmation Number</label>
             <input 
               type="text" 
               value={txForm.confirmationNumber} 
@@ -728,7 +728,7 @@ export const TransactionLedger: React.FC = () => {
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Status</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Status</label>
             <select 
               value={txForm.status} 
               onChange={e => setTxForm({...txForm, status: e.target.value})} 
@@ -741,7 +741,7 @@ export const TransactionLedger: React.FC = () => {
           </div>
         </div>
         <div>
-          <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Notes</label>
+          <label className="text-xs tracking-widest text-secondary block mb-1">Notes</label>
           <textarea 
             value={txForm.notes} 
             onChange={e => setTxForm({...txForm, notes: e.target.value})} 
@@ -760,7 +760,7 @@ export const TransactionLedger: React.FC = () => {
       {editingTx && (
         <form onSubmit={handleUpdateTx} className="space-y-4">
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Description</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Description</label>
             <input 
               type="text" 
               value={txForm.description} 
@@ -771,7 +771,7 @@ export const TransactionLedger: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Amount</label>
+              <label className="text-xs tracking-widest text-secondary block mb-1">Amount</label>
               <CurrencyInput 
                 valueCents={txForm.amountCents} 
                 onChangeCents={cents => setTxForm({...txForm, amountCents: cents})} 
@@ -779,7 +779,7 @@ export const TransactionLedger: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Date</label>
+              <label className="text-xs tracking-widest text-secondary block mb-1">Date</label>
               <input 
                 type="date" 
                 value={txForm.transactionDate} 
@@ -791,7 +791,7 @@ export const TransactionLedger: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Account</label>
+              <label className="text-xs tracking-widest text-secondary block mb-1">Account</label>
               <SearchableSelect 
                 options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
                 value={txForm.accountId} 
@@ -801,7 +801,7 @@ export const TransactionLedger: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Category</label>
+              <label className="text-xs tracking-widest text-secondary block mb-1">Category</label>
               <SearchableSelect 
                 options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                 value={txForm.categoryId} 
@@ -813,7 +813,7 @@ export const TransactionLedger: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className={editingTx?.linkedTransactionId ? 'col-span-2' : ''}>
-              <label className={`text-xs uppercase tracking-widest block mb-1 flex items-center gap-1.5 ${editingTx?.linkedTransactionId ? 'text-blue-400 font-black' : 'text-secondary'}`}>
+              <label className={`text-xs tracking-widest block mb-1 flex items-center gap-1.5 ${editingTx?.linkedTransactionId ? 'text-blue-400 font-black' : 'text-secondary'}`}>
                 {editingTx?.linkedTransactionId && <Hash size={12} />}
                 Confirmation Number{editingTx?.linkedTransactionId ? ' (Transfer)' : ''}
               </label>
@@ -831,7 +831,7 @@ export const TransactionLedger: React.FC = () => {
             </div>
             {!editingTx?.linkedTransactionId && (
             <div>
-              <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Status</label>
+              <label className="text-xs tracking-widest text-secondary block mb-1">Status</label>
               <select 
                 value={txForm.status} 
                 onChange={e => setTxForm({...txForm, status: e.target.value})} 
@@ -845,7 +845,7 @@ export const TransactionLedger: React.FC = () => {
             )}
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-secondary block mb-1">Notes</label>
+            <label className="text-xs tracking-widest text-secondary block mb-1">Notes</label>
             <textarea 
               value={txForm.notes} 
               onChange={e => setTxForm({...txForm, notes: e.target.value})} 

@@ -50,6 +50,7 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   transferTiming: text('transfer_timing'),
   isBorrowed: boolean('is_borrowed').default(false),
   borrowSource: text('borrow_source'),
+  transactionDate: text('transaction_date'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_tracked_expenses_household').on(table.householdId),

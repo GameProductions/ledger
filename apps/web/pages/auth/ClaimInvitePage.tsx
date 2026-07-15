@@ -78,7 +78,7 @@ const ClaimInvitePage: React.FC = () => {
   }
 
   if (!token && !needsSetup) {
-    return <div className="flex-center min-h-[80vh] font-bold uppercase tracking-widest text-secondary">Invalid Invitation</div>
+    return <div className="flex-center min-h-[80vh] font-bold tracking-widest text-secondary">Invalid Invitation</div>
   }
 
   return (
@@ -90,7 +90,7 @@ const ClaimInvitePage: React.FC = () => {
             <h2 className="text-2xl font-black tracking-tighter">
               {needsSetup ? 'Setup Owner Account' : 'Join as Admin'}
             </h2>
-            <p className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60">
+            <p className="text-xs text-secondary tracking-widest font-bold opacity-60">
               {needsSetup ? 'Create the first owner account' : 'Create your admin account'}
             </p>
           </div>

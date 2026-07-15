@@ -22,8 +22,8 @@ export const PasswordChecklist: React.FC<PasswordChecklistProps> = ({ password }
   return (
     <div className="space-y-2 p-6 bg-white/5 border border-white/5 rounded-2xl reveal">
       <div className="flex flex-col gap-1 mb-4">
-        <div className="text-xs font-black uppercase tracking-[0.2em] text-secondary">Security Standards</div>
-        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">All special characters are accepted</div>
+        <div className="text-xs font-black tracking-[0.2em] text-secondary">Security Standards</div>
+        <div className="text-[10px] font-bold text-slate-500 tracking-wider">All special characters are accepted</div>
       </div>
       <div className="grid grid-cols-1 gap-3">
         {requirements.map((req, i) => {

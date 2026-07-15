@@ -28,7 +28,8 @@ if (mode === 'pre-commit') {
     const [major, minor, patch] = currentVersion.split('.').map(Number);
 
     const hasNewFiles = lines.some(line => line.startsWith('A'));
-    const hasFeatureKeywords = /\b(feat|feature)\b/i.test(diff);
+    const addedLines = diff.split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++'));
+    const hasFeatureKeywords = /\b(feat|feature)\b/i.test(addedLines.join('\n'));
     const isMinor = hasNewFiles || hasFeatureKeywords;
 
     let newVersion;

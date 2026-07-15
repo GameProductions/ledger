@@ -27,9 +27,9 @@ if (mode === 'pre-commit') {
     const currentVersion = pkg.version;
     const [major, minor, patch] = currentVersion.split('.').map(Number);
 
-    const hasAddedFiles = lines.some(line => line.startsWith('A') || line.startsWith('M  apps/web/pages/'));
-    const hasFeatureKeywords = /feat|feature|add\s|new\s|scheduler/i.test(diff);
-    const isMinor = hasAddedFiles || hasFeatureKeywords;
+    const hasNewFiles = lines.some(line => line.startsWith('A'));
+    const hasFeatureKeywords = /\b(feat|feature)\b/i.test(diff);
+    const isMinor = hasNewFiles || hasFeatureKeywords;
 
     let newVersion;
     if (isMinor) {

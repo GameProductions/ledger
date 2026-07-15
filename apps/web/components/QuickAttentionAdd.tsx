@@ -36,8 +36,8 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     transferTiming: 'future',
     isBorrowed: false,
     borrowSource: '',
-    transactionDate: new Date().toISOString().split('T')[0],
-    createdAt: new Date().toISOString().split('T')[0]
+    transactionDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })(),
+    createdAt: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })()
   });
 
   const [instances, setInstances] = useState<FormInstance[]>(() => [createEmptyInstance()]);
@@ -95,7 +95,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             transferTiming: inst.needsBalanceTransfer ? inst.transferTiming : null,
             isBorrowed: inst.isBorrowed,
             borrowSource: inst.isBorrowed ? inst.borrowSource : null,
-            createdAt: new Date(inst.transactionDate).toISOString(),
+            createdAt: inst.transactionDate,
           })
         })
       );

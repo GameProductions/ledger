@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { InlineToast } from './ui/InlineToast'
+const toLocalDate = (s?: string) => { if (!s) { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` } const d = new Date(s); return isNaN(d.getTime()) ? toLocalDate() : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
 import { useCurrency } from '../context/CurrencyContext'
 import { useToast } from '../context/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -42,7 +43,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const [ledgerDetails, setLedgerDetails] = useState({
     accountId: '',
     categoryId: '',
-    transactionDate: new Date().toISOString().split('T')[0],
+    transactionDate: toLocalDate(),
     status: 'paid'
   })
 
@@ -90,7 +91,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               transferTiming: item.transferTiming,
               isBorrowed: item.isBorrowed ?? false,
               borrowSource: item.borrowSource,
-              createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
+              createdAt: item.createdAt || toLocalDate()
             })
           })
         )
@@ -147,7 +148,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     setLedgerDetails({
       accountId: '',
       categoryId: '',
-      transactionDate: new Date().toISOString().split('T')[0],
+      transactionDate: toLocalDate(),
       status: 'paid'
     })
     if (itemId) {
@@ -155,7 +156,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       if (item && item.createdAt) {
         setLedgerDetails(prev => ({
           ...prev,
-          transactionDate: new Date(item.createdAt).toISOString().split('T')[0]
+          transactionDate: toLocalDate(item.createdAt)
         }))
       }
       setSinglePromoteId(itemId)
@@ -440,11 +441,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Transaction date</label>
                       <input 
                         type="date" 
-                        value={editForm?.transactionDate ? editForm.transactionDate.split('T')[0] : new Date().toISOString().split('T')[0]} 
-                        onChange={e => {
-                          const iso = new Date(e.target.value).toISOString()
-                          setEditForm({...editForm, transactionDate: iso, createdAt: iso})
-                        }}
+                        value={editForm?.transactionDate ? toLocalDate(editForm.transactionDate) : toLocalDate()} 
+                        onChange={e => setEditForm({...editForm, transactionDate: e.target.value, createdAt: e.target.value})}
                         style={{ colorScheme: 'dark' }}
                         className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
                         required
@@ -678,8 +676,8 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             transferTiming: item.transferTiming || '',
                             isBorrowed: item.isBorrowed ?? false,
                             borrowSource: item.borrowSource || '',
-                            transactionDate: item.transactionDate ? new Date(item.transactionDate).toISOString() : (item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()),
-                            createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
+                            transactionDate: toLocalDate(item.transactionDate || item.createdAt),
+                            createdAt: item.createdAt || toLocalDate()
                           })
                         }}
                         className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"

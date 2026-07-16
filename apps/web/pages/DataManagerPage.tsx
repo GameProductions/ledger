@@ -241,22 +241,22 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
-type TabKey = 'categories' | 'accounts' | 'charge-descriptors' | 'credit-cards' | 'payment-methods' | 'linked-accounts' | 'pairing-rules' | 'installment-plans' | 'bills' | 'subscriptions' | 'pay-schedules' | 'billers' | 'lenders'
+type TabKey = 'accounts' | 'bills' | 'billers' | 'categories' | 'charge-descriptors' | 'credit-cards' | 'installment-plans' | 'lenders' | 'linked-accounts' | 'pairing-rules' | 'pay-schedules' | 'payment-methods' | 'subscriptions'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} /> },
-  { key: 'charge-descriptors', label: 'Charge Descriptors', icon: <FileText size={16} /> },
+  { key: 'bills', label: 'Bills', icon: <Banknote size={16} /> },
   { key: 'billers', label: 'Billers', icon: <Building2 size={16} /> },
   { key: 'categories', label: 'Categories', icon: <Tag size={16} /> },
+  { key: 'charge-descriptors', label: 'Charge Descriptors', icon: <FileText size={16} /> },
   { key: 'credit-cards', label: 'Credit Cards', icon: <CreditCard size={16} /> },
   { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} /> },
-  { key: 'bills', label: 'Bills', icon: <Banknote size={16} /> },
-  { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} /> },
-  { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} /> },
+  { key: 'lenders', label: 'Lenders', icon: <Building2 size={16} /> },
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} /> },
   { key: 'pairing-rules', label: 'Pairing Rules', icon: <GitMerge size={16} /> },
+  { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} /> },
   { key: 'payment-methods', label: 'Payment Methods', icon: <Wallet size={16} /> },
-  { key: 'lenders', label: 'Lenders', icon: <Building2 size={16} /> },
+  { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} /> },
 ]
 
 const DataManagerPage: React.FC = () => {

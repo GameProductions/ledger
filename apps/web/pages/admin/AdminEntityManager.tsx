@@ -30,12 +30,12 @@ const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; sco
   { key: 'charge-descriptors', label: 'Charge Descriptors', icon: <FileText size={16} />, scope: 'household' },
   { key: 'credit-cards', label: 'Credit Cards', icon: <CreditCard size={16} />, scope: 'household' },
   { key: 'installment-plans', label: 'Installment Plans', icon: <CalendarClock size={16} />, scope: 'household' },
+  { key: 'lenders', label: 'Lenders', icon: <Building2 size={16} />, scope: 'household' },
   { key: 'linked-accounts', label: 'Linked Accounts', icon: <Link2 size={16} />, scope: 'user' },
   { key: 'pairing-rules', label: 'Pairing Rules', icon: <Link2 size={16} />, scope: 'household' },
   { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} />, scope: 'household' },
   { key: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} />, scope: 'user' },
   { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} />, scope: 'household' },
-  { key: 'lenders', label: 'Lenders', icon: <Building2 size={16} />, scope: 'household' },
 ]
 
 const AdminEntityManager: React.FC = () => {

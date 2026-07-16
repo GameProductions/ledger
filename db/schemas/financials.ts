@@ -267,6 +267,9 @@ export const installmentPlans = pgTable('installment_plans', {
   accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   paymentMode: text('payment_mode').default('manual'),
   status: text('status').default('active'),
+  planType: text('plan_type').default('user'),
+  bnplProviderId: text('bnpl_provider_id'),
+  originalTransactionId: text('original_transaction_id'),
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({

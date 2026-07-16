@@ -121,6 +121,9 @@ export const InstallmentPlanSchema = z.object({
   accountId: z.string().optional(),
   paymentMode: z.enum(['manual', 'autopay']).optional(),
   status: z.enum(['active', 'completed', 'cancelled']).optional(),
+  planType: z.enum(['user', 'bnpl']).optional().default('user'),
+  bnplProviderId: z.string().optional(),
+  originalTransactionId: z.string().optional(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })

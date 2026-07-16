@@ -102,6 +102,12 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
   'installment-plans': [
     { key: 'householdId', label: 'Household ID', type: 'text', locked: true },
     { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Furniture Payment' },
+    { key: 'planType', label: 'Plan Type', type: 'select', options: [
+      { value: 'user', label: 'User Created' },
+      { value: 'bnpl', label: 'BNPL (Buy Now Pay Later)' },
+    ]},
+    { key: 'bnplProviderId', label: 'BNPL Provider ID', type: 'text', placeholder: 'UUID from Lenders (Affirm, Klarna, etc.)' },
+    { key: 'originalTransactionId', label: 'Original Transaction ID', type: 'text', placeholder: 'UUID of the purchase transaction' },
     { key: 'totalAmountCents', label: 'Total Amount', type: 'cents', placeholder: '2400.00' },
     { key: 'installmentAmountCents', label: 'Per Installment', type: 'cents', placeholder: '200.00' },
     { key: 'totalInstallments', label: 'Total Installments', type: 'number', placeholder: '12' },

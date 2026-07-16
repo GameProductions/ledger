@@ -184,7 +184,7 @@ user.get('/onboarding', async (c) => {
   const lastVersion = userResult?.lastSeenVersion || 'Stable'
   
   const recentUpdates = VERSION_UPDATES.filter(v => v.version > lastVersion)
-  
+
   return c.json({
     success: true,
     data: {

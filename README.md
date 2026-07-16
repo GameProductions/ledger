@@ -1,46 +1,45 @@
-# LEDGER v3.131.0 (Interactive Edition)
-> **Secure Financial Platform** | Forensic Integrity & Agentic Reconciliation
+# LEDGER — Secure Financial Platform
+> **Forensic Integrity & Agentic Reconciliation**
 
-LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security. This release (v3.131.0) introduces **RTL Calculator-style Currency Entry**, **Full Ledger CRUD Operations**, **Mobile Layout Scaling**, and **Pay Cycle Arrow Navigation**.
+LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security.
 
-## 🚀 Key Features
+## Key Features
 
-### 🛡️ Forensic Integrity (Platform Security v6.1)
-- **Dual-Stack Network Forensics**: Full-stack transparency with labeled `IPv4` and `IPv6` chronology for every session and security event.
-- **Human-Readable Audit Logs**: Plain-English descriptions for all administrative and system actions, eradicating raw JSON jargon from the UI.
+### Forensic Integrity
+- **Dual-Stack Network Forensics**: Full-stack transparency with labeled IPv4 and IPv6 chronology for every session and security event.
+- **Human-Readable Audit Logs**: Plain-English descriptions for all administrative and system actions.
 - **Zero-Native Dialog System**: Complete eradication of browser-native alerts, confirms, and prompts in favor of a secure, promise-based toast utility.
 - **Session Persistence Control**: Granular "Stay Signed In" toggles for users and administrative overrides.
 
-### 🤖 Agentic Intelligence
+### Agentic Intelligence
 - **Reconciliation Agent**: Stateful background matching of transactions using Cloudflare Agents SDK and internal SQLite.
-- **Modular Schema**: High-performance domain-specific database architecture (Auth, Financials, Planning, Loans, System).
+- **Modular Schema**: Domain-specific database architecture (Auth, Financials, Planning, Loans, System).
 - **Rule-Based Pairing**: Automated transaction categorization and linking based on historical patterns and shared visibility rules.
 
-### 🛡️ Security & Activity Tracking
+### Security & Activity Tracking
 - **Owner Access (Impersonation)**: Securely log in as users for support with a confirmation workflow and privacy masking.
-- **Hardened Hashing**: PBKDF2-SHA256 with **100,000 iterations** for maximum password security.
+- **Hardened Hashing**: PBKDF2-SHA256 with 100,000 iterations for maximum password security.
 - **Zero-Trust Validation**: Strict Zod-powered input validation on all API endpoints.
 - **Activity History**: Detailed record of all administrative actions.
 
-### 🧠 Financial Intelligence
+### Financial Intelligence
 - **Payment Orchestrator**: Granular status tracking (Paid, Pending, Scheduled, Unpaid) with high-fidelity color coding.
 - **Transaction Timeline**: Chronological history of every note, confirmation number, and status change.
 - **Multi-Note Support**: Persistent, append-only notes for every financial record.
 - **Bill Forecasting**: Rolling 30-day and "Until Payday" projections.
 - **Universal Currency Engine**: Per-user currency preferences (USD, EUR, GBP) and platform-wide defaults.
 
-### ⚡ Searchable Dropdowns & Inline Creation
-- **Searchable Selectors**: Standard dropdown lists for Accounts, Categories, Providers, Payment Methods, and Subscriptions upgraded to fully searchable interfaces.
+### Searchable Dropdowns & Inline Creation
+- **Searchable Selectors**: All dropdown lists for Accounts, Categories, Providers, Payment Methods, and Subscriptions are fully searchable.
 - **Inline Entity Creation**: Create new categories, accounts, or providers on the fly directly inside form selectors with automatic insertion and selection.
 
-### 👥 Collaboration & Households
-- **Household Management**: Collaborative finance with administrative role management (formerly Territory Data Ownership).
+### Collaboration & Households
+- **Household Management**: Collaborative finance with administrative role management.
 - **Social Accounts**: Secure OAuth 2.0 integration for Discord and Google.
-- **Premium Onboarding**: Version-aware guided tours with "What's New" tracking.
 
 ---
 
-## 🛠️ Deployment Options
+## Deployment Options
 
 ### 1. Cloudflare Workers (Recommended)
 Deploy directly to Cloudflare's global edge network:
@@ -50,7 +49,7 @@ npm run deploy:web
 ```
 
 ### 2. Secure Self-Hosting (Docker Compose)
-Take total command of your infrastructure. Deploy the entire ecosystem—API, Web UI, and Database—to your own private hardware in seconds. 
+Deploy the entire ecosystem—API, Web UI, and Database—to your own private hardware.
 
 #### Setup
 1. **Pull the Image**:
@@ -68,22 +67,10 @@ Take total command of your infrastructure. Deploy the entire ecosystem—API, We
 
 ---
 
-## 📖 Included Documentation
+## Documentation
 - **User Guide**: Navigation and feature how-tos.
-- **Walkthrough**: Technical details and platform evolution (v3.131.0 - v3.131.0).
-- **Feature List**: Detailed breakdown of all platform capabilities.
-
-## Historical Evolution
-
-LEDGER is the direct successor to the **CASH** platform, evolving through several major architectural eras:
-
-- **CASH Stable (Gold Era)**: Introduced the signature "Glassmorphism" UI and fluid Framer-motion transitions.
-- **v3.11.x (Hardening Era)**: Transitioned authentication to Node.js `Buffer` logic for cross-environment Bit-Perfect Cryptographic Stability.
-- **v3.13.x (Mobility Era)**: Full Mobile-First refactor and PWA Asset Hardening.
-- **v3.15.x (Secure Era)**: Rebranded from "Territory" to **"Household Management"** and adopted Plain English terminology.
-- **v3.131.0 (Secure Era)**: Implementation of the **Payment Intelligence** and Owner Impersonation.
-- **v3.131.0 (Agentic Era)**: Transitioned to **Modular Architecture** and introduced the **Cloudflare Agents SDK** for stateful reconciliation.
-- **v3.131.0 (Interactive Era)**: Added right-to-left currency entry formatting, pay cycle header controls, full ledger CRUD, and mobile layout fixes.
+- **Walkthrough**: Technical details and platform capabilities.
 
 ---
+
 © 2026 GameProductions. All Rights Reserved.

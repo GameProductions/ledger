@@ -1,18 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useApi, globalMutate } from '../../hooks/useApi'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { Modal } from '../../components/ui/Modal'
+import { TypedFieldInput } from '../../components/ui/TypedFieldInput'
 import AdminPortal from './AdminPortal'
 import { getApiUrl } from '../../utils/api'
+import { FIELD_DEFS, getFieldDefs, type FieldDef, type EntityType } from '../../lib/entity-field-defs'
 import { 
   Shield, Tag, Wallet, CreditCard, Link2, CalendarClock, Receipt, Clock, Banknote, Building2,
-  Plus, Pencil, Trash2, Search, Check, Filter, Eye, FileText, ChevronDown
+  Plus, Pencil, Trash2, Search, Check, Filter, Eye, FileText
 } from 'lucide-react'
 
 const API = getApiUrl()
 
-// Helper for Owner actions
 const adminRequest = async (secureFetch: any, method: string, path: string, body?: any) => {
   const res = (await secureFetch(path, {
       method,
@@ -21,8 +22,6 @@ const adminRequest = async (secureFetch: any, method: string, path: string, body
     }) as any)
   return res.json()
 }
-
-type EntityType = 'categories' | 'accounts' | 'credit-cards' | 'charge-descriptors' | 'payment-methods' | 'linked-accounts' | 'subscriptions' | 'bills' | 'installment-plans' | 'pay-schedules' | 'pairing-rules' | 'lenders'
 
 const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; scope: 'household' | 'user' }[] = [
   { key: 'accounts', label: 'Accounts', icon: <Wallet size={16} />, scope: 'household' },
@@ -47,11 +46,9 @@ const AdminEntityManager: React.FC = () => {
   const [userFilter, setUserFilter] = useState('')
   const [search, setSearch] = useState('')
 
-  // Audit log
   const [showAudit, setShowAudit] = useState(false)
   const { data: auditLog = [] } = (useApi(showAudit ? '/api/admin/entity-manager/audit/report' : '') as any)
 
-  // Build query
   const activeMeta = ENTITY_TYPES.find(e => e.key === activeType)!
   const qs = activeMeta.scope === 'household' && householdFilter
     ? `?householdId=${householdFilter}`
@@ -63,36 +60,90 @@ const AdminEntityManager: React.FC = () => {
   const { data: allHouseholds = [] } = (useApi('/api/admin/households?limit=200') as any)
 
   // Edit state
+  const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [editData, setEditData] = useState<any>({})
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [unlockedKeys, setUnlockedKeys] = useState<Set<string>>(new Set())
 
-  const filtered = search
-    ? (items || []).filter((item: any) => JSON.stringify(item).toLowerCase().includes(search.toLowerCase()))
-    : items || []
+  const activeFieldDefs = useMemo(() => getFieldDefs(activeType), [activeType])
 
-  const handleSave = async () => {
-    if (!editing) return
-    await adminRequest(secureFetch, 'PATCH', `/api/admin/entity-manager/${activeType}/${editing.id}`, editData)
-    showToast('Record updated via Owner', 'success')
+  const resetForm = useCallback(() => {
+    setCreating(false)
     setEditing(null)
     setEditData({})
-    mutate();
-    globalMutate();
+    setUnlockedKeys(new Set())
+  }, [])
+
+  const openNew = useCallback(() => {
+    const initial: any = {}
+    activeFieldDefs.forEach(def => {
+      if (def.type === 'boolean') initial[def.key] = false
+      else initial[def.key] = ''
+    })
+    setEditData(initial)
+    setCreating(true)
+    setEditing(null)
+  }, [activeFieldDefs])
+
+  const openEdit = useCallback((item: any) => {
+    const data: any = {}
+    activeFieldDefs.forEach(def => {
+      const val = item[def.key]
+      data[def.key] = val ?? (def.type === 'boolean' ? false : '')
+    })
+    setEditData(data)
+    setEditing(item)
+    setCreating(false)
+  }, [activeFieldDefs])
+
+  const setFieldValue = useCallback((key: string, value: any) => {
+    setEditData((prev: any) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const toggleLock = useCallback((key: string) => {
+    setUnlockedKeys((prev: Set<string>) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
+
+  const handleSave = async () => {
+    if (!creating && !editing) return
+
+    const payload: any = {}
+    activeFieldDefs.forEach(def => {
+      const v = editData[def.key]
+      if (v === undefined || v === '') return
+      payload[def.key] = v
+    })
+
+    if (creating) {
+      await adminRequest(secureFetch, 'POST', `/api/admin/entity-manager/${activeType}`, payload)
+      showToast(`${activeMeta.label.slice(0, -1)} created via Owner`, 'success')
+    } else {
+      await adminRequest(secureFetch, 'PATCH', `/api/admin/entity-manager/${activeType}/${editing!.id}`, payload)
+      showToast(`${activeMeta.label.slice(0, -1)} updated via Owner`, 'success')
+    }
+
+    resetForm()
+    mutate()
+    globalMutate()
   }
 
   const handleDelete = async (id: string) => {
     await adminRequest(secureFetch, 'DELETE', `/api/admin/entity-manager/${activeType}/${id}`)
     showToast('Record removed via Owner', 'success')
     setDeleting(null)
-    mutate();
-    globalMutate();
+    mutate()
+    globalMutate()
   }
 
-  const openEdit = (item: any) => {
-    setEditData({ ...item })
-    setEditing(item)
-  }
+  const filtered = search
+    ? (items || []).filter((item: any) => JSON.stringify(item).toLowerCase().includes(search.toLowerCase()))
+    : items || []
 
   return (
     <AdminPortal activePath="#/admin/entity-manager">
@@ -112,12 +163,11 @@ const AdminEntityManager: React.FC = () => {
         </button>
       </div>
 
-      {/* Audit Log Drawer */}
       {showAudit && (
         <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
           <div className="text-[10px] font-black tracking-widest text-emerald-400">Owner Audit Log</div>
           {(auditLog || []).length === 0 ? (
-            <div className="text-sm text-white/30">No god-mode actions recorded yet.</div>
+            <div className="text-sm text-white/30">No Owner actions recorded yet.</div>
           ) : (
             <div className="max-h-64 overflow-y-auto space-y-1">
               {(auditLog || []).map((log: any) => (
@@ -166,7 +216,6 @@ const AdminEntityManager: React.FC = () => {
             ))}
           </nav>
 
-          {/* Scope Filters */}
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
             <div className="text-[9px] font-black tracking-[0.2em] text-white/30 flex items-center gap-2"><Filter size={12} /> Scope Filter</div>
             {activeMeta.scope === 'household' ? (
@@ -190,19 +239,21 @@ const AdminEntityManager: React.FC = () => {
 
         {/* Main Content */}
         <div className="space-y-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${activeMeta.label.toLowerCase()}...`} className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm" />
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${activeMeta.label.toLowerCase()}...`} className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm" />
+            </div>
+            <button onClick={openNew} className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-black tracking-widest text-white transition-all">
+              <Plus size={14} /> New
+            </button>
           </div>
 
-          {/* Count */}
           <div className="text-[10px] font-black tracking-widest text-white/30">
             {loading ? 'Loading...' : `${filtered.length} record${filtered.length !== 1 ? 's' : ''} found`}
             {!householdFilter && !userFilter && <span className="text-amber-400 ml-2">⚠ PLATFORM-WIDE</span>}
           </div>
 
-          {/* Table */}
           <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">
             {filtered.length === 0 ? (
               <div className="py-16 text-center text-white/30 text-sm">
@@ -235,21 +286,26 @@ const AdminEntityManager: React.FC = () => {
       </div>
       </div>
 
-    <Modal isOpen={!!editing} onClose={() => { setEditing(null); setEditData({}) }} title={`Edit ${activeMeta.label.slice(0, -1)}`}>
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {editing && Object.entries(editData).filter(([k]) => k !== 'id' && !k.endsWith('_at')).map(([key, value]) => (
-          <div key={key}>
-            <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">{key}</label>
-            <input
-              value={String(value ?? '')}
-              onChange={e => setEditData({ ...editData, [key]: e.target.value })}
-              className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm font-mono"
-            />
-          </div>
-        ))}
+    <Modal isOpen={creating || !!editing} onClose={resetForm} title={creating ? `New ${activeMeta.label.slice(0, -1)}` : `Edit ${activeMeta.label.slice(0, -1)}`}>
+      <div className="space-y-4 max-h-96 overflow-y-auto">
+        {activeFieldDefs.map(def => {
+          const isLocked = def.locked && !unlockedKeys.has(def.key)
+          return (
+            <div key={def.key}>
+              <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1.5">{def.label}</label>
+              <TypedFieldInput
+                def={def}
+                value={editData[def.key]}
+                onChange={(v) => setFieldValue(def.key, v)}
+                disabled={isLocked}
+                onToggleLock={def.locked ? () => toggleLock(def.key) : undefined}
+              />
+            </div>
+          )
+        })}
       </div>
       <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-white/10">
-        <button onClick={() => { setEditing(null); setEditData({}) }} className="px-4 py-2 text-sm text-white/60">Cancel</button>
+        <button onClick={resetForm} className="px-4 py-2 text-sm text-white/60">Cancel</button>
         <button onClick={handleSave} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 rounded-xl text-sm font-bold text-white hover:bg-emerald-500 transition-all">
           <Check size={14} /> Save (Audited)
         </button>

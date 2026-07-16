@@ -1,70 +1,59 @@
-# Walkthrough: Fleet Security v1.1 Terminology Migration (Final Phase)
+# LEDGER — Technical Platform Architecture
 
-We have successfully completed the final phase of the fleet-wide terminology migration, ensuring 100% compliance with Fleet Security v1.1 human-first accessibility standards across the `Ledger` and `Groupcord` projects.
+LEDGER is a full-stack financial management platform built on Cloudflare Workers, React, and PostgreSQL (Neon).
 
-## Changes Made
+## Architecture Overview
 
-### Ledger Project
-- **[AdminDashboard.tsx](file:///Users/morenicano/Documents/coding/projects/bots/ledger/src/web/components/AdminDashboard.tsx)**: 
-    - Rebranded "Owner" and "Administrator" to **"Manager"**.
-    - Updated the console title to **"Manager Console"**.
-    - Simplified "API Access Token" to **"Service Access Token"**.
-- **[UserMenu.tsx](file:///Users/morenicano/Documents/coding/projects/bots/ledger/src/web/components/UserMenu.tsx)**:
-    - Updated menu labels, replacing "Administrative Access" with **"Manager Portal Access"**.
-    - Replaced "Forensic Support" with **"High-Priority Support"**.
-- **[PreferencesPage.tsx](file:///Users/morenicano/Documents/coding/projects/bots/ledger/src/web/pages/PreferencesPage.tsx)**:
-    - Rebranded "API integrations" to **"service connections"** in developer settings.
+### Database Schema (PostgreSQL)
+- **Auth**: Users, sessions, passkeys, identity linking
+- **Financials**: Accounts, categories, transactions, bills, subscriptions, credit cards, installment plans, charge descriptors, payment methods, linked accounts
+- **Planning**: Pay schedules, pay exceptions, tracked expenses
+- **Loans**: Personal loans, lending relationships
+- **System**: Service providers, feature flags, activity logs, configuration
 
-### Groupcord Project
-- **[App.tsx](file:///Users/morenicano/Documents/coding/projects/bots/groupcord/src/web/src/App.tsx)**:
-    - Rebranded "Owner" to **"Manager Access"**.
-    - Updated the "Cloudflare Ecosystem" dashboard to **"Manager - Service Ecosystem"**.
-    - Renamed "Authentication" settings to **"Identity"**.
-    - Simplified "Global API Token" to **"Shared Service Token"**.
-- **[mappings.tsx](file:///Users/morenicano/Documents/coding/projects/bots/groupcord/src/web/routes/mappings.tsx)**:
-    - Replaced high-tech jargon like "Neural Link", "Mapping Reactor", and "Black Box" with human-first language (**"Service Link"**, **"Bridge Setup Exception"**, **"System Activity Log"**).
-    - Migrated "Operative" references to **"Collaborator"**.
-    - Simplified "Tactical Display Name" to **"Manager Display Name"**.
-    - Rebranded "Sovereign Control" to **"Manager Control"**.
+All schemas use drizzle-orm for type-safe queries. IDs are UUIDs generated via `crypto.randomUUID()`.
 
-## Verification Results
+### API Layer (Cloudflare Workers / Hono)
+- Route-based architecture under `/api/` namespace
+- Zod validation on all endpoints
+- JWT-based authentication with passkey support
+- Owner impersonation for support workflows
+- All administrative actions logged to the activity audit trail
 
-### Automated Audit
-- Conducted a fleet-wide `grep` search for restricted terms (`Sovereign`, `Neural`, `Operative`, `Reactor`, `Forensic`, `Owner`).
-- **Result**: 0 residual occurrences found in user-facing UI layers (`.tsx`, `.ts`).
+### Frontend (React SPA)
+- Component-based UI with glassmorphism design system
+- Modals for create/edit/delete operations on all entities
+- Searchable selectors with inline entity creation
+- Currency inputs with RTL calculator-style formatting
+- Mobile-responsive layout
 
-### UI Consistency
-- Verified that "Owner" remains correctly implemented as the sole technical exception for internal identity logic.
-- Confirmed that internal API routes and environment variables (e.g., `VITE_API_URL`) are preserved to maintain system stability.
+## Key Design Decisions
 
-## Final Status
-> [!IMPORTANT]
-> The terminology migration is now **100% COMPLETE**. The fleet is fully aligned with human-first accessibility standards while maintaining the technical stability of the underlying infrastructure.
+- **No native dialogs**: All alerts/confirms use a custom toast/promise system
+- **Cents storage**: All monetary values stored as integers (cents) to avoid floating-point errors
+- **CamelCase API keys**: Consistent JavaScript property naming across all API responses
+- **Household scoping**: Most entities scoped to a household for collaborative finance
+- **Force PATCH**: Updates use PATCH with partial payloads
+- **Audit logging**: All Owner (administration) actions are recorded with before/after snapshots
 
----
+## Admin Entity Manager
 
-# Walkthrough: v3.131.0 Interactive Enhancements
+The Owner Entity Manager provides platform-wide CRUD across all entity types. Field types are contextual:
+- Booleans render as toggle switches
+- Enums render as dropdowns
+- Monetary amounts render as decimal inputs (stored as cents)
+- Dates render as date pickers
+- System-managed fields (IDs, timestamps) are locked with an unlock padlock
 
-We have successfully implemented interactive fixes, mobile adjustments, and database schema updates for v3.131.0 of Ledger.
+## Discord Integration
 
-## Changes Made
-
-### 🗄️ Database & Schema Updates
-- Added `confirmation_number` (text) to the `tracked_expenses` PostgreSQL schema and migrated existing definitions.
-- Propagated confirmation numbers into permanent ledger transaction rows during promotion.
-
-### 🔌 API Routes
-- Added `DELETE /api/financials/transactions/:id` and `DELETE /api/financials/transactions/bulk` endpoints.
-- Expanded the validation schema for tracked expenses PATCH requests to allow notes and confirmation numbers.
-
-### 📱 Frontend Adjustments
-- **Mobile Accessibility**: Scaled layout base font size to `15px` under `768px` to ensure visual stability on smaller devices.
-- **Header Navigation Controls**: Added cycle arrow navigation for `pay_period` ranges in the Calendar header.
-- **RTL Masked Inputs**: Built `<CurrencyInput>` for right-to-left calculator-style currency inputs ensuring consistent two-decimal `.xx` formatting.
-- **Direct Ledger Management**: Added creation, editing, and deletion modals/buttons directly into the `TransactionLedger` component.
-- **Searchable Selectors & Inline Creation**: Upgraded dropdown menus (Categories, Accounts, Providers, Payment Methods, Subscriptions) to be fully text-searchable with dynamic `+ Create` options to add missing entities inline.
-- **Casing Audit Corrections**: Standardized transaction and tracked expense property keys to camelCase (e.g. `needsBalanceTransfer`, `accountedFor`, `rawDescription`) to prevent silent database insertion failures.
+LEDGER exposes slash commands for Discord:
+- `/ledger-safety` — Check spendable balance
+- `/ledger-upcoming` — View upcoming bills and subscriptions
+- `/ledger-forecast` — Financial health score and outlook
+- `/ledger-report` — Visual budget distribution chart
+- `/ledger-audit` — Recent security and audit logs (admin)
 
 ---
-*Created by Antigravity*
 
+*LEDGER — Built by Antigravity*

@@ -1,57 +1,57 @@
-# LEDGER Stable: User Guide & Documentation
+# LEDGER: User Guide & Documentation
 
-Welcome to LEDGER—your secure financial infrastructure. This guide is designed to help you navigate the platform's advanced features and maximize your financial intelligence.
+Welcome to LEDGER—your secure financial infrastructure. This guide covers the platform's features and capabilities.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Household Management
-Collaborate with your family or housemates under a unified ledger. 
+Collaborate with your family or housemates under a unified ledger.
 - **Personal Account**: Your private space for individual finances.
 - **Shared Household**: A collaborative environment for shared bills and service providers.
-- **Invites**: Use the **"Invite others to join your household"** feature in Settings to add members.
+- **Invites**: Use the "Invite others to join your household" feature in Settings to add members.
 
 ### 2. User Onboarding
-Upon your first login, or after a major update, you will see a **Guided Tour**. Look for the "What's New" notification to stay informed about the latest stability and security enhancements.
+Upon first login, you will see a Guided Tour introducing key features and workflows.
 
-## 💳 Transaction Privacy & Data Ownership
+## Transaction Privacy & Data Ownership
 
 ### Payment Orchestrator
-The Payment Orchestrator gives you absolute control over your transaction lifecycle:
+The Payment Orchestrator gives you control over your transaction lifecycle:
 - **Lifecycle Statuses**: Every transaction is color-coded:
-    - 🟢 **Paid**: Funds have been settled.
-    - 🟡 **Pending**: The transaction is in-flight.
-    - 🔵 **Scheduled**: Future commitment or recurring bill.
-    - 🔴 **Unpaid**: Outstanding obligation.
+  - Paid: Funds have been settled.
+  - Pending: The transaction is in-flight.
+  - Scheduled: Future commitment or recurring bill.
+  - Unpaid: Outstanding obligation.
 - **Transaction Timeline**: Click on any transaction to view its full chronological history, including all status changes and persistent notes.
-- **Multi-Note Support**: Add multiple high-fidelity notes to any transaction for granular auditing.
+- **Multi-Note Support**: Add multiple notes to any transaction for granular auditing.
 
 ### Receipt, Confirmation & Currency Management
-- **Receipts**: Attach digital receipts (PDF, PNG, JPG) using the 📁 icon.
-- **Confirmation Numbers**: Store and edit transaction confirmation numbers directly in the dashboard when updating tracked expenses or ledger items.
-- **RTL Calculator-Style Currency Fields**: To make data entry fast and natural on both mobile and desktop, currency input fields automatically place decimal points at `.xx` and shift digits from right to left as you type.
+- **Receipts**: Attach digital receipts (PDF, PNG, JPG) using the paperclip icon.
+- **Confirmation Numbers**: Store and edit transaction confirmation numbers directly in the dashboard.
+- **Currency Input Fields**: Currency inputs place decimal points at `.xx` and shift digits from right to left as you type, making data entry fast on both mobile and desktop.
 
 ### Full Transaction Ledger CRUD
-- **Direct Management**: You have full creation, editing, and deletion (single and bulk) access directly from the **Transaction Ledger** view.
-- **Notes & Audit History**: Modify notes, statuses, and tracking values seamlessly in the expanded detail window of any ledger item.
+- **Direct Management**: Full creation, editing, and deletion (single and bulk) access from the Transaction Ledger view.
+- **Notes & Audit History**: Modify notes, statuses, and tracking values in the expanded detail window of any ledger item.
 
-### ⚡ Searchable Dropdowns & Inline Creation
+### Searchable Dropdowns & Inline Creation
 - **Searchable Selectors**: Dropdown selectors for Accounts, Categories, Providers, Payment Methods, and Subscriptions feature instant text filtering.
-- **Inline Value Creation**: When adding or editing transactions, you can type a new category or account name and click "+ Create [name]" directly in the dropdown menu. This will instantly create the entity in the database and pre-select it in the field.
+- **Inline Value Creation**: Type a new category or account name and click "+ Create [name]" directly in any dropdown menu to instantly create and select the entity.
 
-## 🛡️ Security & Identity
+## Security & Identity
 
 ### Security Keys & Passkeys
-LEDGER prioritizes modern, phishing-resistant authentication:
-- **Passkeys**: Use your device's biometric or hardware security key (FIDO2) for "Sentinel-grade" security.
-- **Social Accounts**: Connect your Discord or Google identities for a seamless, secure login experience.
+LEDGER prioritizes phishing-resistant authentication:
+- **Passkeys**: Use your device's biometric or hardware security key (FIDO2).
+- **Social Accounts**: Connect your Discord or Google identities for a seamless login experience.
 
 ### Privacy Masking
-When using the platform in public, or during an administrative support session, you can toggle **Privacy Mode** to mask sensitive balances and PII.
+Toggle Privacy Mode to mask sensitive balances and PII when using the platform in public or during an administrative support session.
 
-## 🤖 Discord & Support
+## Discord & Support
 
 ### Support Center
-If you encounter issues, use the **Support Center** in Owner. The system automatically extracts repository metadata to ensure your support tickets are processed with full technical context.
+Use the Support Center in the help menu to report issues. The system automatically extracts repository metadata to ensure support tickets are processed with full technical context.
 
 ### Discord Commands
 Interact with your ledger directly from your Discord server:
@@ -60,4 +60,5 @@ Interact with your ledger directly from your Discord server:
 - `/ledger-forecast`: Get an estimate of your end-of-month balance.
 
 ---
-*For elite support or technical inquiries, contact the LEDGER development team.*
+
+*For support or technical inquiries, contact the LEDGER development team.*

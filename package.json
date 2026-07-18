@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.134.1",
+  "version": "3.134.2",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -67,8 +67,7 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.3",
-    "vitest": "^4.1.9",
-    "wrangler": "^4.90.0"
+    "vitest": "^4.1.9"
   },
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "*",

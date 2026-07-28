@@ -3,6 +3,8 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { Price } from './Price'
 import { Modal } from './ui/Modal'
 import { Checkbox } from './ui/Checkbox'
+import { ProviderLogo } from './shared/ProviderLogo'
+import { getItemTypeStyle } from './shared/itemTypeConfig'
 import { 
   Filter, 
   Calendar as CalendarIcon, 
@@ -13,7 +15,11 @@ import {
   CreditCard, 
   ArrowRight,
   List as ListIcon,
-  Grid as GridIcon
+  Grid as GridIcon,
+  BarChart3,
+  Zap,
+  StickyNote,
+  Wallet
 } from 'lucide-react'
 import { 
   startOfMonth, 
@@ -423,7 +429,7 @@ const Calendar: React.FC<CalendarProps> = ({
                 onClick={() => setShowTotalsPanel(!showTotalsPanel)}
                 className={`px-4 h-8 flex items-center gap-2 rounded-lg font-bold transition-all text-[10px] tracking-widest border border-white/5 shadow-xl ${showTotalsPanel ? 'bg-primary/20 text-primary border-primary/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
             >
-                📊 Totals
+                <BarChart3 size={12} className="text-primary" /> Totals
             </button>
           </div>
 
@@ -560,14 +566,14 @@ const Calendar: React.FC<CalendarProps> = ({
           </div>
 
           <div className="pt-6 border-t border-white/5 space-y-4">
-            <h4 className="text-[10px] font-black tracking-widest text-slate-400">📅 Paycheck Alignment Controls</h4>
+            <h4 className="text-[10px] font-black tracking-widest text-slate-400"><CalendarIcon size={10} className="inline mr-1" /> Paycheck Alignment Controls</h4>
             <div className="flex flex-wrap items-center gap-4">
               <button
                 disabled={isAligning}
                 onClick={() => handleReevaluate('all')}
                 className="px-4 py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50"
               >
-                {isAligning ? 'Aligning...' : '⚡ Align All Range Bills to Paychecks'}
+                {isAligning ? 'Aligning...' : <><Zap size={12} className="inline" /> Align All Range Bills to Paychecks</>}
               </button>
 
               <div className="flex items-center gap-2 bg-white/5 border border-white/5 p-1 rounded-xl">
@@ -633,9 +639,9 @@ const Calendar: React.FC<CalendarProps> = ({
                 </span>
                 {!isPadding && (dayItems.length > 0 ? (
                    <div className="flex gap-1">
-                     {dayItems.some(i => i.type === 'pay_schedule') && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>}
-                     {(dayItems.some(i => i.type === 'subscription') || dayItems.some(i => i.type === 'installment') || dayItems.some(i => i.type === 'bill')) && <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>}
-                     {dayItems.some(i => i.type === 'transaction') && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>}
+                     {Array.from(new Set(dayItems.map(i => i.type))).map(type => (
+                       <div key={type} className={`w-1.5 h-1.5 rounded-full animate-pulse ${getItemTypeStyle(type).dotColor}`} />
+                     ))}
                    </div>
                 ) : (
                    <div 
@@ -659,18 +665,13 @@ const Calendar: React.FC<CalendarProps> = ({
                        }
                     }}
                     onMouseLeave={() => setHoverItem(null)}
-                    className={`text-[10px] p-1.5 rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between gap-1 ${
-                      item.type === 'pay_schedule'
-                        ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-                        : (item.type === 'subscription' || item.type === 'bill' || item.type === 'installment')
-                          ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' 
-                          : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                    }`}
+                    className={`text-[10px] p-1.5 rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between gap-1 ${getItemTypeStyle(item.type).badgeBg} ${getItemTypeStyle(item.type).badgeText} ${getItemTypeStyle(item.type).badgeBorder}`}
                   >
-                    <span className="truncate flex items-center gap-1">
+                    <span className="truncate flex items-center gap-1.5">
+                        <ProviderLogo url={item.iconUrl || item.logoUrl} name={item.description} size={14} />
                         <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} /> {item.description}
                     </span>
-                    {(item.notes || item.note) && <span className="text-[8px] animate-pulse">📝</span>}
+                    {(item.notes || item.note) && <StickyNote size={10} className="text-white/40 animate-pulse" />}
                   </div>
                 ))}
                 {!isPadding && dayItems.length > 3 && (
@@ -698,44 +699,39 @@ const Calendar: React.FC<CalendarProps> = ({
                    No scheduled items match your filters for the selected range.
                </div>
            ) : (
-               allItems.map((item: any, i) => (
-                    <div 
-                        key={`${item.type}-${item.id || i}`}
-                        onClick={() => onItemClick(item)}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-all hover:scale-[1.01] cursor-pointer ${
-                            item.type === 'pay_schedule'
-                              ? 'bg-blue-500/5 hover:bg-blue-500/10 border-blue-500/20'
-                              : (item.type === 'subscription' || item.type === 'bill' || item.type === 'installment')
-                                ? 'bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20' 
-                                : 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/20'
-                          }`}
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${
-                               item.type === 'pay_schedule' ? 'bg-blue-500/20 text-blue-500' :
-                               (item.type === 'subscription' || item.type === 'bill' || item.type === 'installment') ? 'bg-amber-500/20 text-amber-500' :
-                               'bg-emerald-500/20 text-emerald-500'
-                            }`}>
-                                {format(item._date, 'd')}
-                            </div>
-                            <div>
-                                <h4 className="font-bold text-sm">{item.description}</h4>
-                                <p className="text-[10px] tracking-widest font-black opacity-50 mt-1 flex flex-wrap items-center gap-1">
-                                    <span>{item.type.replace('_', ' ')} • {format(item._date, 'MMM d, yyyy')}</span>
-                                    {getAssignedPaycheckName(item) && (
-                                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-black text-[8px] tracking-widest ml-1 border border-blue-500/10">
-                                        💸 {getAssignedPaycheckName(item)}
-                                      </span>
-                                    )}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                           <Price amountCents={item.amountCents} className="text-lg font-black tracking-tighter" />
-                        </div>
-                    </div>
-               ))
-           )}
+                allItems.map((item: any, i) => {
+                     const style = getItemTypeStyle(item.type)
+                     return (
+                     <div 
+                         key={`${item.type}-${item.id || i}`}
+                         onClick={() => onItemClick(item)}
+                         className={`flex items-center justify-between p-4 rounded-xl border transition-all hover:scale-[1.01] cursor-pointer ${style.badgeBg} hover:${style.badgeBg.replace('/10', '/20')} ${style.badgeBorder}`}
+                     >
+                         <div className="flex items-center gap-4">
+                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.badgeBg} ${style.badgeText}`}>
+                                 <ProviderLogo url={item.iconUrl || item.logoUrl} name={item.description} size={20} />
+                             </div>
+                             <div>
+                                 <h4 className="font-bold text-sm flex items-center gap-2">
+                                     {item.description}
+                                 </h4>
+                                 <p className="text-[10px] tracking-widest font-black opacity-50 mt-1 flex flex-wrap items-center gap-1">
+                                     <span>{style.label} • {format(item._date, 'MMM d, yyyy')}</span>
+                                     {getAssignedPaycheckName(item) && (
+                                       <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-black text-[8px] tracking-widest ml-1 border border-blue-500/10">
+                                         <Wallet size={10} className="inline" /> {getAssignedPaycheckName(item)}
+                                       </span>
+                                     )}
+                                 </p>
+                             </div>
+                         </div>
+                         <div className="text-right">
+                            <Price amountCents={item.amountCents} className="text-lg font-black tracking-tighter" />
+                         </div>
+                      </div>
+                      )
+                 })
+            )}
         </div>
       )}
 
@@ -866,7 +862,7 @@ const Calendar: React.FC<CalendarProps> = ({
           }}
         >
           <div className="flex items-center gap-2 mb-2">
-            <span className={`w-2 h-2 rounded-full ${hoverItem.type === 'pay_schedule' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+            <span className={`w-2 h-2 rounded-full ${getItemTypeStyle(hoverItem.type).dotColor}`} />
             <h4 className="text-[10px] font-black tracking-widest text-white/50">{hoverItem.description}</h4>
           </div>
           <p className="text-[11px] font-bold text-white leading-relaxed italic border-l-2 border-primary/40 pl-3">

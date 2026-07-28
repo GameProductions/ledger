@@ -3,6 +3,7 @@ import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { ArrowRightLeft } from 'lucide-react'
 
 const TransferForm: React.FC = () => {
   const { data: accounts } = (useApi('/api/financials/accounts') as any)
@@ -49,26 +50,30 @@ const TransferForm: React.FC = () => {
     window.location.reload()
   }
 
+  const accountOptions = (accounts || []).map((a: any) => ({ value: a.id, label: a.name }))
+
   return (
     <section className="card">
-      <h3 className="mb-1">Internal Transfer</h3>
-      <p className="text-xs text-secondary font-medium">Transfer funds between your checking, savings, or virtual accounts. Simply select the source and target accounts, enter the amount, and tap submit.</p>
-      <form onSubmit={handleTransfer} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>From</label>
-            <SearchableSelect 
-              options={(accounts || []).map((a: any) => ({ value: a.id, label: a.name }))}
+      <h3 className="text-lg font-black tracking-tighter italic flex items-center gap-2 mb-1">
+        <ArrowRightLeft size={18} className="text-primary" /> Internal Transfer
+      </h3>
+      <p className="text-xs text-secondary font-medium mb-6">Move funds between your accounts.</p>
+      <form onSubmit={handleTransfer} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black tracking-widest text-secondary">From</label>
+            <SearchableSelect
+              options={accountOptions}
               value={from}
               onChange={setFrom}
               placeholder="Select Account"
               onCreate={handleCreateAccount}
             />
           </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.2rem' }}>To</label>
-            <SearchableSelect 
-              options={(accounts || []).map((a: any) => ({ value: a.id, label: a.name }))}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black tracking-widest text-secondary">To</label>
+            <SearchableSelect
+              options={accountOptions}
               value={to}
               onChange={setTo}
               placeholder="Select Account"
@@ -76,16 +81,19 @@ const TransferForm: React.FC = () => {
             />
           </div>
         </div>
-        <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Amount</label>
-          <CurrencyInput 
-            valueCents={amountCents} 
-            onChangeCents={setAmountCents} 
-            placeholder="0.00" 
-            className="mt-1"
+        <div className="space-y-1">
+          <label className="text-[10px] font-black tracking-widest text-secondary">Amount</label>
+          <CurrencyInput
+            valueCents={amountCents}
+            onChangeCents={setAmountCents}
+            placeholder="0.00"
           />
         </div>
-        <button type="submit" className="primary" disabled={loading || !from || !to || from === to}>
+        <button
+          type="submit"
+          disabled={loading || !from || !to || from === to}
+          className="w-full py-3 bg-primary text-white rounded-xl text-xs font-black tracking-widest hover:brightness-110 transition-all disabled:opacity-40 shadow-lg shadow-primary/20"
+        >
           {loading ? 'Processing...' : 'Transfer Funds'}
         </button>
       </form>

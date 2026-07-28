@@ -5,7 +5,8 @@ import { getApiUrl } from '../utils/api'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { useReducedMotion } from '../hooks/useReducedMotion'
-import Subscriptions from '../components/Subscriptions'
+import SubscriptionManager from '../components/SubscriptionManager'
+import { DayDetailModal } from '../components/DayDetailModal'
 import Calendar from '../components/Calendar'
 import BudgetProgress from '../components/BudgetProgress'
 import WhatIfLedger from '../components/WhatIfLedger'
@@ -38,7 +39,8 @@ import { PaySchedulesList } from '../components/PaySchedulesList'
 import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
 import { projectPaydays, projectRecurringItems } from '../utils/payCycleUtils'
-import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2, Mic } from 'lucide-react';
+import { format } from 'date-fns'
+import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2, Mic, Check, X } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 
 const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
@@ -118,6 +120,64 @@ const MicButton: React.FC = () => {
   )
 }
 
+function getEntriesForDate(date: Date, transactions: any[], subscriptions: any[], bills: any[], installments: any[], recurringProjections: any[], paySchedules: any[]): any[] {
+  const dateStr = format(date, 'yyyy-MM-dd')
+  const entries: any[] = []
+
+  transactions.forEach((tx: any) => {
+    if (tx.transactionDate === dateStr) {
+      entries.push({ ...tx, type: 'transaction', description: tx.description, amountCents: tx.amountCents, iconUrl: tx.iconUrl })
+    }
+  })
+
+  subscriptions.forEach((sub: any) => {
+    if (sub.nextBillingDate === dateStr) {
+      entries.push({ ...sub, type: 'subscription', description: sub.name, amountCents: sub.amountCents, iconUrl: sub.iconUrl || sub.logoUrl })
+    }
+  })
+
+  bills.forEach((bill: any) => {
+    if (bill.dueDate === dateStr) {
+      entries.push({ ...bill, type: 'bill', description: bill.name, amountCents: bill.amountCents, iconUrl: bill.iconUrl || bill.logoUrl })
+    }
+  })
+
+  installments.forEach((inst: any) => {
+    if (inst.nextPayDate === dateStr) {
+      entries.push({ ...inst, type: 'installment', description: inst.name, amountCents: inst.installmentAmountCents, iconUrl: inst.iconUrl || inst.logoUrl })
+    }
+  })
+
+  recurringProjections.forEach((rp: any) => {
+    if (rp.date === dateStr) {
+      entries.push({
+        ...rp.originalData,
+        id: rp.id,
+        originalId: rp.originalId,
+        type: rp.type,
+        description: rp.description,
+        amountCents: rp.amountCents,
+        iconUrl: rp.originalData?.iconUrl || rp.originalData?.logoUrl,
+      })
+    }
+  })
+
+  paySchedules.forEach((pay: any) => {
+    const payDateStr = pay.date || pay.nextPayDate
+    if (payDateStr === dateStr) {
+      entries.push({
+        ...pay,
+        type: 'pay_schedule',
+        description: pay.name || 'Payday',
+        amountCents: pay.amountCents || pay.estimatedAmountCents || 0,
+        iconUrl: pay.iconUrl,
+      })
+    }
+  })
+
+  return entries
+}
+
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user, token, householdId, logout } = useAuth()
   const apiUrl = getApiUrl();
@@ -147,6 +207,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [selectedCalendarItem, setSelectedCalendarItem] = useState<any>(null)
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>()
   const [selectedPayday, setSelectedPayday] = useState<any | null>(null)
+  const [isDayDetailOpen, setIsDayDetailOpen] = useState(false)
+  const [dayDetailDate, setDayDetailDate] = useState<Date>(new Date())
 
   const { data: budgetsData, mutate: mutateBudgets } = (useApi('/api/planning/budgets') as any)
   const [showFundModal, setShowFundModal] = useState(false)
@@ -633,11 +695,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   recurringProjections={projectedRecurring}
                   paySchedules={projectedPaydays}
                   payScheduleDefinitions={paySchedules}
-                  onDayClick={(date) => {
-                    setSelectedCalendarDate(date)
-                    setSelectedCalendarItem(null)
-                    setIsCalendarModalOpen(true)
-                  }}
+        onDayClick={(date) => {
+          setDayDetailDate(date)
+          setIsDayDetailOpen(true)
+        }}
                   onItemClick={(item) => {
                     setSelectedCalendarItem(item)
                     setIsCalendarModalOpen(true)
@@ -674,13 +735,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       );
       case 'future-balance': return (
             <section key="future-balance" className="card">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="text-lg font-bold">Future Balance</h3>
-                  <p className="text-xs text-secondary font-medium mt-1">A forecast of your cash balance over the next 6 months, helping you visualize your savings growth and see if you have enough to cover upcoming expenses.</p>
-                </div>
-                <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black min-w-[110px] text-center">6-Month Forecast</div>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+                <h3 className="text-lg font-black tracking-tighter italic">Future Balance</h3>
+                <div className="text-[10px] bg-primary/10 text-primary px-3 py-1 rounded-full font-black tracking-widest">6-Month Forecast</div>
               </div>
+              <p className="text-xs text-secondary font-medium w-full mb-2">Projected cash balance over the next 6 months showing savings growth and expense coverage.</p>
               <div className="text-3xl font-black text-white mb-2 mt-4">
                 <Price amountCents={Array.isArray(forecast) ? (forecast.at(-1)?.balance_cents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
@@ -789,7 +848,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                           onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
                           className={`px-3 py-2 text-xs font-bold tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
                         >
-                          {tx.status === 'reconciled' ? '✓' : 'Match'}
+                          {tx.status === 'reconciled' ? <Check size={14} className="inline" /> : 'Match'}
                         </button>
                       </div>
                     </div>
@@ -874,17 +933,15 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       );
       case 'budget-categories': return (
               <section id="budget-categories-card" key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold tracking-tight italic">Budget Categories</h3>
-                    <p className="text-xs text-secondary font-medium mt-1 pr-4">Your envelope budgeting center. Allocate funds to different envelopes (like Groceries or Rent) to stay within your limits, and use the 'Roll Over' button to carry leftover funds to the next month.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 min-w-[220px] justify-end">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <h3 className="text-lg font-black tracking-tighter italic">Budget Categories</h3>
+                  <div className="flex flex-wrap gap-2">
                     <button onClick={handleRollover} className="text-xs font-bold tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
                     <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
                     <button onClick={() => setShowFundModal(true)} className="text-xs font-bold tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
                   </div>
                 </div>
+                <p className="text-xs text-secondary font-medium mb-4 w-full">Allocate, fund, and track envelope spending across categories.</p>
                 <div className="text-3xl font-black text-primary mb-1 mt-6">
                   <Price amountCents={budgetsData?.unallocatedBalanceCents || 0} />
                 </div>
@@ -930,7 +987,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       case 'transfer-form': return <TransferForm key="transfer-form" />;
       case 'bills-list': return <BillsList key="bills-list" />;
       case 'installments-list': return <InstallmentsList key="installments-list" />;
-      case 'subscriptions': return <Subscriptions key="subscriptions" />;
+      case 'subscriptions': return <SubscriptionManager key="subscriptions" compact />;
       case 'what-if-ledger': return <WhatIfLedger key="what-if-ledger" />;
       case 'shared-balances': return <SharedBalances key="shared-balances" />;
       case 'financial-health': return (
@@ -958,91 +1015,92 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (!isCustomizing) return null;
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[9999] p-4 flex items-center justify-center pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsCustomizing(false); }}>
-        <div className="card w-full max-w-lg p-8 max-h-[80vh] overflow-y-auto space-y-6" onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-between items-center bg-deep sticky top-0 pb-4 z-10 border-b border-white/5">
+        <div className="card w-full max-w-lg p-0 max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center bg-slate-900/95 backdrop-blur-xl sticky top-0 p-6 z-10 border-b border-white/5 rounded-t-[inherit]">
               <div>
                   <h3 className="text-xl font-black tracking-tighter italic m-0">Customize Layout</h3>
                   <p className="text-xs text-secondary font-bold tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
               </div>
-              <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2">✕</button>
+              <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2"><X size={18} /></button>
           </div>
 
-          <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation</h4>
-            <Reorder.Group 
-                axis="y" 
-                values={tabConfig} 
-                onReorder={(newOrder) => setTabConfig(newOrder)}
-                className="space-y-2"
-            >
-                {tabConfig.map((tab) => (
-                    <Reorder.Item 
-                        key={tab.id} 
-                        value={tab}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${tab.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <GripVertical size={16} className="text-secondary/50" />
-                            <span className="text-sm font-bold text-white">{tab.icon} {tab.label}</span>
-                        </div>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const newTabs = tabConfig.map(t => t.id === tab.id ? { ...t, visible: !t.visible } : t);
-                                setTabConfig(newTabs);
-                                
-                                // Fallback for activeTab if hidden
-                                if (tab.id === activeTab && tab.visible) {
-                                   const nextVisible = newTabs.find(t => t.visible);
-                                   if (nextVisible) setActiveTab(nextVisible.id);
-                                }
-                            }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            {tab.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
-                        </button>
-                    </Reorder.Item>
-                ))}
-            </Reorder.Group>
-          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation Tabs</h4>
+              <Reorder.Group 
+                  axis="y" 
+                  values={tabConfig} 
+                  onReorder={(newOrder) => setTabConfig(newOrder)}
+                  className="space-y-2"
+              >
+                  {tabConfig.map((tab) => (
+                      <Reorder.Item 
+                          key={tab.id} 
+                          value={tab}
+                          className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${tab.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
+                      >
+                          <div className="flex items-center gap-3">
+                              <GripVertical size={16} className="text-secondary/50" />
+                              <span className="text-sm font-bold text-white">{tab.icon} {tab.label}</span>
+                          </div>
+                          <button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newTabs = tabConfig.map(t => t.id === tab.id ? { ...t, visible: !t.visible } : t);
+                                  setTabConfig(newTabs);
+                                  
+                                  // Fallback for activeTab if hidden
+                                  if (tab.id === activeTab && tab.visible) {
+                                     const nextVisible = newTabs.find(t => t.visible);
+                                     if (nextVisible) setActiveTab(nextVisible.id);
+                                  }
+                              }}
+                              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                              {tab.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
+                          </button>
+                      </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            </div>
 
-          <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Tab Configuration</h4>
-            <Reorder.Group 
-                axis="y" 
-                values={layout[activeTab] || []} 
-                onReorder={(newOrder) => {
-                    setLayout({ ...layout, [activeTab]: newOrder });
-                }}
-                className="space-y-2"
-            >
-                {(layout[activeTab] || []).map((item) => (
-                    <Reorder.Item 
-                        key={item.id} 
-                        value={item}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${item.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <GripVertical size={16} className="text-secondary/50" />
-                            <span className="text-xs font-black tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
-                        </div>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const newTabItems = (layout[activeTab] || []).map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
-                                setLayout({ ...layout, [activeTab]: newTabItems });
-                            }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            {item.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
-                        </button>
-                    </Reorder.Item>
-                ))}
-            </Reorder.Group>
-            
+            <div className="space-y-4">
+              <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Widgets</h4>
+              <Reorder.Group 
+                  axis="y" 
+                  values={layout[activeTab] || []} 
+                  onReorder={(newOrder) => {
+                      setLayout({ ...layout, [activeTab]: newOrder });
+                  }}
+                  className="space-y-2"
+              >
+                  {(layout[activeTab] || []).map((item) => (
+                      <Reorder.Item 
+                          key={item.id} 
+                          value={item}
+                          className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${item.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
+                      >
+                          <div className="flex items-center gap-3">
+                              <GripVertical size={16} className="text-secondary/50" />
+                              <span className="text-xs font-black tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
+                          </div>
+                          <button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newTabItems = (layout[activeTab] || []).map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
+                                  setLayout({ ...layout, [activeTab]: newTabItems });
+                              }}
+                              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                              {item.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
+                          </button>
+                      </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            </div>
           </div>
           
-          <div className="pt-6 border-t border-white/5 flex gap-4 sticky bottom-0 bg-deep pt-4">
+          <div className="p-6 border-t border-white/5 flex gap-4 bg-slate-900/95 backdrop-blur-xl rounded-b-[inherit]">
               <button 
                   className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold tracking-widest hover:bg-white/10 transition-all"
                   onClick={() => {
@@ -1403,6 +1461,34 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           </div>
         </div>
       )}
+
+      <DayDetailModal
+        isOpen={isDayDetailOpen}
+        date={dayDetailDate}
+        entries={getEntriesForDate(dayDetailDate, transactions, subscriptions, bills, installments, projectedRecurring, projectedPaydays)}
+        onClose={() => setIsDayDetailOpen(false)}
+        onAddEntry={(date) => {
+          setSelectedCalendarDate(date)
+          setSelectedCalendarItem(null)
+          setIsDayDetailOpen(false)
+          setIsCalendarModalOpen(true)
+        }}
+        onEditEntry={(item) => {
+          setSelectedCalendarItem(item)
+          setIsDayDetailOpen(false)
+          setIsCalendarModalOpen(true)
+        }}
+        onDeleteEntry={(item) => {
+          if (handleCalendarDelete) {
+            handleCalendarDelete(item.id || item.originalId, item.type, 'one', item.date || item.transactionDate)
+          }
+        }}
+        onMarkPaid={(item) => {
+          if (item.type === 'bill' || item.type === 'subscription') {
+            handleCalendarSave({ ...item, status: 'paid', type: item.type === 'subscription' ? 'bill' : 'bill' }, 'one')
+          }
+        }}
+      />
 
       <CalendarEntryModal 
         key={`${isCalendarModalOpen}-${selectedCalendarItem?.id || 'new'}-${selectedCalendarDate?.toISOString() || ''}`}

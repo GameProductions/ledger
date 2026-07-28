@@ -23,6 +23,7 @@ import adminRoutes from './routes/admin'
 import dataRoutes from './routes/data-service'
 import interopRoutes from './routes/interop'
 import backupRoutes from './routes/backup'
+import { sharedAccess } from '#/schema'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
 import trackedExpensesRoutes from './routes/tracked-expenses'
@@ -222,6 +223,29 @@ app.get('/api/health', async (c) => {
 })
 
 app.get('/openapi.json', (c) => c.json(openApiSpec))
+
+// Public Shared Access Endpoint (no auth required)
+app.get('/api/shared/:token', async (c) => {
+  const token = c.req.param('token')
+  const db = getDb(c.env)
+  const result = await db.select().from(sharedAccess).where(eq(sharedAccess.token, token)).limit(1)
+  const share = result[0]
+  if (!share) return c.json({ error: 'Not found' }, 404)
+  if (share.expiresAt && new Date(share.expiresAt) < new Date()) return c.json({ error: 'Link expired' }, 410)
+  
+  await db.update(sharedAccess).set({ lastAccessedAt: new Date().toISOString() }).where(eq(sharedAccess.id, share.id))
+  
+  return c.json({
+    success: true,
+    data: {
+      contactLabel: share.contactLabel,
+      permission: share.permission,
+      targetType: share.targetType,
+      targetId: share.targetId,
+      visibilityScope: share.visibilityScope,
+    }
+  })
+})
 
 // Specific Middleware Chains
 app.use('/api/admin/*', adminMiddleware)

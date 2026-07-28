@@ -52,16 +52,12 @@ export const PaySchedulesList: React.FC = () => {
     return (
         <>
           <section className="card space-y-6">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                         <Wallet size={20} />
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold tracking-tight italic">Income Pipeline</h3>
-                        <p className="text-[10px] text-white/30 font-black tracking-widest">Active Pay Schedules</p>
-                        <p className="text-xs text-secondary font-medium mt-1 pr-6">Set up your recurring paychecks here (e.g., weekly or bi-weekly). This helps the system forecast your cash flow and calculate your budget intervals.</p>
-                    </div>
+                    <h3 className="text-lg font-black tracking-tighter italic">Income Pipeline</h3>
                 </div>
                 <button 
                     onClick={() => { setEditingSchedule(null); setIsModalOpen(true); }}
@@ -70,6 +66,8 @@ export const PaySchedulesList: React.FC = () => {
                     <Plus size={14} /> Add Source
                 </button>
             </div>
+            <p className="text-[10px] text-white/30 font-black tracking-widest w-full">Active Pay Schedules</p>
+            <p className="text-xs text-secondary font-medium mt-0.5 w-full">Set up recurring paychecks to forecast cash flow and calculate budget intervals.</p>
 
             {/* Income Summary Card */}
             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col sm:flex-row justify-between items-center gap-6">

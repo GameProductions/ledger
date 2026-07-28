@@ -14,12 +14,12 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
   const now = new Date();
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
-      <div className="px-2">
-        <h3 className="text-sm font-black tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
-          <Wallet size={14} className="text-primary" /> Smart Pay Cycle Timeline
+    <section className="card animate-in fade-in duration-700">
+      <div>
+        <h3 className="text-lg font-black tracking-tighter italic flex items-center gap-2 mb-1">
+          <Wallet size={18} className="text-primary" /> Pay Cycle Timeline
         </h3>
-        <p className="text-xs text-secondary font-medium">This automatically groups your upcoming bills and expenses by paycheck cycles. It shows you exactly which paycheck will cover which bill and estimates how much you will have left over after paying them.</p>
+        <p className="text-xs text-secondary font-medium">Bills grouped by the paychecks that cover them, showing disposable balance after each cycle.</p>
       </div>
 
       <div className="relative space-y-8 pl-4 border-l border-dashed border-white/10 ml-2">
@@ -106,6 +106,6 @@ export const PayCycleTimeline: React.FC<PayCycleTimelineProps> = ({ paydays, lia
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

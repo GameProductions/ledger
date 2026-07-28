@@ -1,5 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Trash2, CheckCircle2, Hash, Activity, Database, User, Users } from 'lucide-react';
+import { X, Trash2, CheckCircle2, Hash, Activity, Database, User, Users, Image, RefreshCw, Tag, Wallet, Clock, Palette } from 'lucide-react';
+import { ProviderLogo } from './shared/ProviderLogo';
+import { AccordionSection } from './shared/AccordionSection';
+import { VisibilitySelector } from './shared/VisibilitySelector';
+import { ExternalContactSelect } from './shared/ExternalContactSelect';
+import { autoFetchLogo } from '../utils/logoUtils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TypeableSelect } from './ui/TypeableSelect';
 import { TransactionTimeline } from './TransactionTimeline';
@@ -162,6 +167,15 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [saveToRegistry, setSaveToRegistry] = useState(false);
   const [registryScope, setRegistryScope] = useState<'private' | 'household'>('private');
 
+  // Logo state
+  const [iconUrl, setIconUrl] = useState(initialData?.iconUrl || initialData?.logoUrl || '');
+  const [isAutoFetching, setIsAutoFetching] = useState(false);
+
+  // Visibility & External Contact state
+  const [visibility, setVisibility] = useState<'private' | 'household' | 'public'>(initialData?.visibility || 'household');
+  const [publicScope, setPublicScope] = useState<'name_only' | 'full'>(initialData?.publicScope || 'name_only');
+  const [externalContactId, setExternalContactId] = useState(initialData?.externalContactId || '');
+
   // Load and match initial provider if editing
   useEffect(() => {
     if (description && providers.length > 0) {
@@ -184,6 +198,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
     const matched = providers.find((p: any) => p.name.toLowerCase() === providerName.toLowerCase());
     if (matched) {
       setSelectedProvider(matched);
+      if (matched.iconUrl) setIconUrl(matched.iconUrl);
       if (matched.defaultCategoryId) {
         setCategoryId(matched.defaultCategoryId);
       }
@@ -204,7 +219,19 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
     } else {
       setSelectedProvider({ name: providerName, visibility: 'public' });
       setHasChangesToProvider(true);
+      const logos = autoFetchLogo(providerName);
+      if (logos) setIconUrl(logos.clearbit);
     }
+  };
+
+  const handleAutoFetchLogo = () => {
+    if (!description) return;
+    setIsAutoFetching(true);
+    const logos = autoFetchLogo(description);
+    if (logos) {
+      setIconUrl(logos.clearbit);
+    }
+    setIsAutoFetching(false);
   };
 
   const handleCategoryChange = (val: string) => {
@@ -229,6 +256,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
   const submitForm = async (scope?: 'one' | 'future' | 'all') => {
     const id = initialData?.originalId || initialData?.id;
+
+    if (selectedProvider && iconUrl) {
+      setSelectedProvider({ ...selectedProvider, iconUrl });
+    }
 
     // Sync to provider registry if selected
     if (saveToRegistry && selectedProvider) {
@@ -310,7 +341,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           maxOccurrences: billMaxOccurrences ? parseInt(billMaxOccurrences) : null,
           payScheduleId: payScheduleId || null,
           paycheckDate: paymentDate || null,
-          originalDate: initialData?.date
+          originalDate: initialData?.date,
+          iconUrl: iconUrl || null,
+          visibility: visibility,
+          publicScope: visibility === 'public' ? publicScope : undefined,
+          externalContactId: externalContactId || null
         }, scope);
       } else {
         onSave({
@@ -324,7 +359,11 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           categoryId: categoryId || null,
           accountId: accountId || null,
           payScheduleId: payScheduleId || null,
-          paycheckDate: paymentDate || null
+          paycheckDate: paymentDate || null,
+          iconUrl: iconUrl || null,
+          visibility: visibility,
+          publicScope: visibility === 'public' ? publicScope : undefined,
+          externalContactId: externalContactId || null
         }, scope);
       }
     }
@@ -622,290 +661,233 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
             </div>
           </div>
         ) : (
-          // Combined Bills & Charges Layout
-          <div className="space-y-6 animate-in fade-in duration-300">
-            
-            {/* GROUP 1: PRIORITY FIELDS (Provider, Category, Amount, Due Date, Pay Date) */}
-            <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-              <div className="text-[10px] font-black tracking-widest text-slate-500 mb-2">Core Entry Information</div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Provider Dropdown (Linked to Service Providers registry) */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Provider / Description</label>
-                  <SearchableSelect
-                    options={providerOptions}
-                    value={description}
-                    onChange={handleProviderChange}
-                    placeholder="Search or enter provider..."
-                    onCreate={(val) => {
-                      handleProviderChange(val);
-                      return val;
-                    }}
-                  />
-                </div>
+          // Combined Bills & Charges Layout (Accordion)
+          <div className="space-y-4 animate-in fade-in duration-300">
 
-                {/* Category Dropdown */}
-                <div className="space-y-2">
-                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Category</label>
-                  <select
-                    value={categoryId}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
-                  >
+            {/* ESSENTIALS: always visible */}
+            <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+              <div className="text-[9px] font-black tracking-widest text-slate-500">Essentials</div>
+
+              {/* Provider */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black tracking-widest text-secondary">Provider / Description</label>
+                <div className="flex items-center gap-2">
+                  <ProviderLogo url={iconUrl} name={description} size={28} className="border border-white/10 flex-shrink-0" />
+                  <div className="flex-1">
+                    <SearchableSelect
+                      options={providerOptions}
+                      value={description}
+                      onChange={handleProviderChange}
+                      placeholder="Search or enter provider..."
+                      onCreate={(val) => { handleProviderChange(val); return val; }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Amount + Due Date + Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Amount</label>
+                  <CurrencyInput valueCents={amountCents} onChangeCents={setAmountCents} placeholder="0.00" showSymbol={true} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Due Date</label>
+                  <input required type="date" value={dueDate} onChange={(e) => handleDueDateChange(e.target.value)}
+                    className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Status</label>
+                  <TypeableSelect options={[
+                    { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
+                    { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
+                    { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
+                    { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
+                  ]} value={status} onChange={(val) => setStatus(val)} />
+                </div>
+              </div>
+            </div>
+
+            {/* ORGANIZATION: accordion, default open */}
+            <AccordionSection icon={Tag} title="Organization" defaultOpen={true}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Category</label>
+                  <select value={categoryId} onChange={(e) => handleCategoryChange(e.target.value)}
+                    className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm">
                     <option value="">Select Category...</option>
-                    {categories.map((c: any) => (
-                      <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>
-                    ))}
+                    {categories.map((c: any) => (<option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>))}
                   </select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Amount */}
-                <div className="space-y-2">
-                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Amount</label>
-                   <CurrencyInput 
-                     valueCents={amountCents}
-                     onChangeCents={setAmountCents}
-                     placeholder="0.00"
-                     showSymbol={true}
-                   />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Pay From Account</label>
+                  <select value={accountId} onChange={(e) => setAccountId(e.target.value)}
+                    className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm">
+                    <option value="">Select Account...</option>
+                    {accounts.map((a: any) => (<option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>))}
+                  </select>
                 </div>
 
-                {/* Due Date */}
-                <div className="space-y-2">
-                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Due Date</label>
-                   <input 
-                     required
-                     type="date" 
-                     value={dueDate}
-                     onChange={(e) => handleDueDateChange(e.target.value)}
-                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-md"
-                   />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">External Owner</label>
+                  <ExternalContactSelect value={externalContactId} onChange={setExternalContactId} />
                 </div>
 
-                {/* Pay/Payment Date */}
-                <div className="space-y-2">
-                   <label className="text-xs font-black tracking-widest text-secondary ml-1">Pay Date</label>
-                   <input 
-                     required
-                     type="date" 
-                     value={paymentDate}
-                     onChange={(e) => setPaymentDate(e.target.value)}
-                     className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-md"
-                   />
-                </div>
-              </div>
-
-              {/* Account Dropdown */}
-              <div className="space-y-2">
-                <label className="text-xs font-black tracking-widest text-secondary ml-1">Pay From Account</label>
-                <select
-                  value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
-                  className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
-                >
-                  <option value="">Select Account...</option>
-                  {accounts.map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.name.toUpperCase()}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* OPTIONAL PROVIDER REGISTRY SYNC PANEL */}
-            {hasChangesToProvider && selectedProvider && (
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3 animate-in zoom-in-95 duration-200">
-                <div className="flex items-center gap-3">
-                  <Checkbox 
-                    checked={saveToRegistry} 
-                    onChange={setSaveToRegistry} 
-                    iconClassName="text-primary"
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Visibility</label>
+                  <VisibilitySelector
+                    value={visibility}
+                    publicScope={publicScope}
+                    onChange={setVisibility}
+                    onPublicScopeChange={setPublicScope}
                   />
-                  <label onClick={() => setSaveToRegistry(!saveToRegistry)} className="text-xs font-black tracking-widest text-primary/90 cursor-pointer select-none">
-                    Save defaults to provider registry?
-                  </label>
                 </div>
-                {saveToRegistry && (
-                  <div className="pl-7 space-y-2 animate-in fade-in duration-150">
-                    <div className="text-[10px] text-secondary font-bold tracking-wider">Save scope / visibility:</div>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 text-xs font-semibold text-white cursor-pointer">
-                        <input 
-                          type="radio" 
-                          name="provider_scope"
-                          checked={registryScope === 'private'}
-                          onChange={() => setRegistryScope('private')}
-                          className="accent-primary"
-                        />
-                        Personal (Private)
+              </div>
+            </AccordionSection>
+
+            {/* SCHEDULING: accordion, collapsed */}
+            <AccordionSection icon={Clock} title="Scheduling" defaultOpen={false}>
+              <div className="space-y-3">
+                {/* Recurrence */}
+                <div className="border border-white/5 rounded-xl overflow-hidden">
+                  <button type="button" onClick={() => setIsRecurring(!isRecurring)}
+                    className="w-full flex items-center justify-between p-3 outline-none hover:bg-white/[0.02] transition-colors text-left">
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={isRecurring} onChange={setIsRecurring} iconClassName="text-amber-500" />
+                      <span className="text-[10px] font-black tracking-widest text-secondary">Recurring bill</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">{isRecurring ? '▼' : '▶'}</span>
+                  </button>
+                  {isRecurring && (
+                    <div className="p-3 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-white/5 animate-in slide-in-from-top-2">
+                      <div>
+                        <label className="text-[9px] font-black tracking-widest text-secondary">Frequency</label>
+                        <TypeableSelect options={FREQUENCY_OPTIONS}
+                          value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
+                          onChange={(val) => setFrequency(val)} />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black tracking-widest text-secondary">End Date</label>
+                        <input type="date" value={billEndDate} onChange={(e) => setBillEndDate(e.target.value)}
+                          className="w-full p-2.5 bg-black/40 border border-white/5 rounded-xl text-white text-xs font-bold outline-none focus:border-white/20" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-black tracking-widest text-secondary">Max Occurrences</label>
+                        <input type="number" placeholder="Unlimited" value={billMaxOccurrences}
+                          onChange={(e) => setBillMaxOccurrences(e.target.value)}
+                          className="w-full p-2.5 bg-black/40 border border-white/5 rounded-xl text-white text-xs font-bold outline-none focus:border-white/20" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Rate Adjustment */}
+                <div className="p-3 border border-amber-500/10 bg-amber-500/5 rounded-xl">
+                  <button type="button" onClick={() => setShowRateAdjustment(!showRateAdjustment)}
+                    className="w-full flex items-center justify-between outline-none cursor-pointer">
+                    <span className="text-[10px] font-black tracking-widest text-amber-500">Planned Rate Adjustment</span>
+                    <span className="text-[10px] text-slate-500">{showRateAdjustment ? '▼' : '▶'}</span>
+                  </button>
+                  {showRateAdjustment && (
+                    <div className="grid grid-cols-2 gap-3 pt-3 animate-in slide-in-from-top-2">
+                      <div>
+                        <label className="text-[8px] font-black tracking-widest text-white/30">Upcoming Amount</label>
+                        <CurrencyInput valueCents={upcomingAmountCents} onChangeCents={setUpcomingAmountCents}
+                          placeholder="0.00" className="bg-black/40 border-white/5" />
+                      </div>
+                      <div>
+                        <label className="text-[8px] font-black tracking-widest text-white/30">Effective Date</label>
+                        <input type="date" value={upcomingDate} onChange={(e) => setUpcomingDate(e.target.value)}
+                          className="w-full p-2.5 bg-black/40 border border-white/5 rounded-xl text-white text-xs font-bold outline-none focus:border-white/20" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Paycheck Alignment */}
+                {paySchedules && paySchedules.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black tracking-widest text-secondary">Assign to Paycheck</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <select value={payScheduleId} onChange={(e) => setPayScheduleId(e.target.value)}
+                        className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm">
+                        <option value="">Do not assign</option>
+                        {paySchedules.map((ps: any) => (<option key={ps.id} value={ps.id}>{ps.name.toUpperCase()}</option>))}
+                      </select>
+                      <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)}
+                        className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AccordionSection>
+
+            {/* BRANDING: accordion, collapsed */}
+            <AccordionSection icon={Palette} title="Branding" defaultOpen={false}>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Logo URL</label>
+                  <div className="flex gap-2">
+                    <input type="text" value={iconUrl} onChange={(e) => setIconUrl(e.target.value)}
+                      placeholder="https://logo.clearbit.com/netflix.com"
+                      className="flex-1 p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-xs font-bold" />
+                    <button type="button" onClick={handleAutoFetchLogo} disabled={isAutoFetching || !description}
+                      className="px-3 bg-primary/10 border border-primary/30 text-primary rounded-xl text-[10px] font-black tracking-widest hover:bg-primary/20 transition-all disabled:opacity-40 flex items-center gap-1">
+                      <RefreshCw size={12} className={isAutoFetching ? 'animate-spin' : ''} /> Auto
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirmation Number */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Confirmation #</label>
+                  <div className="relative">
+                    <input type="text" value={confirmationNumber} onChange={(e) => setConfirmationNumber(e.target.value)}
+                      placeholder="Optional..."
+                      className="w-full p-3 pl-10 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-xs font-bold" />
+                    <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  </div>
+                </div>
+
+                {/* Pay Date */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black tracking-widest text-secondary">Pay Date</label>
+                  <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)}
+                    className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-sm font-bold" />
+                </div>
+
+                {/* Save to Registry */}
+                {hasChangesToProvider && selectedProvider && (
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={saveToRegistry} onChange={setSaveToRegistry} iconClassName="text-primary" />
+                      <label onClick={() => setSaveToRegistry(!saveToRegistry)} className="text-[10px] font-black tracking-widest text-primary/90 cursor-pointer select-none">
+                        Save defaults to provider registry
                       </label>
-                      {canManageHousehold && (
-                        <label className="flex items-center gap-2 text-xs font-semibold text-white cursor-pointer">
-                          <input 
-                            type="radio" 
-                            name="provider_scope"
-                            checked={registryScope === 'household'}
-                            onChange={() => setRegistryScope('household')}
-                            className="accent-primary"
-                          />
-                          Household (Shared)
-                        </label>
-                      )}
                     </div>
+                    {saveToRegistry && (
+                      <div className="pl-6 space-y-1.5 animate-in fade-in">
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-1.5 text-[10px] font-semibold text-white cursor-pointer">
+                            <input type="radio" name="provider_scope" checked={registryScope === 'private'}
+                              onChange={() => setRegistryScope('private')} className="accent-primary" />
+                            Personal
+                          </label>
+                          {canManageHousehold && (
+                            <label className="flex items-center gap-1.5 text-[10px] font-semibold text-white cursor-pointer">
+                              <input type="radio" name="provider_scope" checked={registryScope === 'household'}
+                                onChange={() => setRegistryScope('household')} className="accent-primary" />
+                              Household
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-
-            {/* GROUP 2: SECONDARY LOGICAL FIELDS (Status, Recurrence, Rate Adj, Paycheck Alignment) */}
-            <div className="p-5 bg-white/[0.01] border border-white/5 rounded-2xl space-y-5">
-              <div className="text-[10px] font-black tracking-widest text-slate-600 mb-1">Status & Scheduling Details</div>
-
-              {/* Status & Confirmation Number */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <label className="text-xs font-black tracking-widest text-secondary ml-1">Status</label>
-                    <TypeableSelect 
-                      options={[
-                        { value: 'paid', label: 'PAID', icon: <div className="w-2 h-2 rounded-full bg-emerald-500" /> },
-                        { value: 'pending', label: 'PENDING', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> },
-                        { value: 'scheduled', label: 'SCHEDULED', icon: <div className="w-2 h-2 rounded-full bg-blue-500" /> },
-                        { value: 'unpaid', label: 'UNPAID', icon: <div className="w-2 h-2 rounded-full bg-red-500" /> }
-                      ]}
-                      value={status}
-                      onChange={(val) => setStatus(val)}
-                    />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-xs font-black tracking-widest text-secondary ml-1">Confirmation #</label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        value={confirmationNumber}
-                        onChange={(e) => setConfirmationNumber(e.target.value)}
-                        placeholder="Optional..."
-                        className="w-full p-4 pl-12 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-md"
-                      />
-                      <Hash size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                    </div>
-                 </div>
-              </div>
-
-              {/* Expandable Recurrence Section */}
-              <div className="border border-white/5 bg-white/[0.01] rounded-2xl overflow-hidden transition-all duration-300">
-                <button
-                  type="button"
-                  onClick={() => setIsRecurring(!isRecurring)}
-                  className="w-full flex items-center justify-between p-4 outline-none hover:bg-white/[0.02] transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <Checkbox 
-                      checked={isRecurring} 
-                      onChange={setIsRecurring} 
-                      iconClassName="text-amber-500"
-                    />
-                    <span className="text-xs font-black tracking-widest text-secondary">
-                      Make this a recurring bill
-                    </span>
-                  </div>
-                  <span className="text-xs text-slate-500">{isRecurring ? '▼' : '▶'}</span>
-                </button>
-                {isRecurring && (
-                  <div className="p-4 pt-0 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-white/5 animate-in slide-in-from-top-2 duration-300">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Frequency</label>
-                      <TypeableSelect 
-                        options={FREQUENCY_OPTIONS}
-                        value={frequency === 'semi-monthly' || frequency === 'manual' ? 'monthly' : frequency}
-                        onChange={(val) => setFrequency(val)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black tracking-widest text-secondary ml-1">End Date</label>
-                      <input 
-                        type="date"
-                        value={billEndDate}
-                        onChange={(e) => setBillEndDate(e.target.value)}
-                        className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black tracking-widest text-secondary ml-1">Max Occurrences</label>
-                      <input 
-                        type="number"
-                        placeholder="Unlimited"
-                        value={billMaxOccurrences}
-                        onChange={(e) => setBillMaxOccurrences(e.target.value)}
-                        className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-xs outline-none focus:border-white/20"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Expandable Rate Adjustment for Bills */}
-              <div className="p-4 border rounded-2xl space-y-4 bg-amber-500/5 border-amber-500/10">
-                <button
-                  type="button"
-                  onClick={() => setShowRateAdjustment(!showRateAdjustment)}
-                  className="w-full flex items-center justify-between outline-none cursor-pointer"
-                >
-                  <div className="text-[10px] font-black tracking-widest text-amber-500">Planned Rate Adjustment (Optional)</div>
-                  <span className="text-xs text-slate-500">{showRateAdjustment ? '▼' : '▶'}</span>
-                </button>
-                {showRateAdjustment && (
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black tracking-widest text-white/30 ml-1">Upcoming Amount</label>
-                       <CurrencyInput
-                         valueCents={upcomingAmountCents}
-                         onChangeCents={setUpcomingAmountCents}
-                         placeholder="0.00"
-                         className="bg-black/40 border-white/5"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[9px] font-black tracking-widest text-white/30 ml-1">Effective Date</label>
-                       <input 
-                        type="date"
-                        value={upcomingDate}
-                        onChange={(e) => setUpcomingDate(e.target.value)}
-                        className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-white font-bold text-sm outline-none focus:border-white/20"
-                       />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Assign to Paycheck alignment options */}
-              {paySchedules && paySchedules.length > 0 && (
-                <div className="space-y-3">
-                  <label className="text-xs font-black tracking-widest text-secondary ml-1">Assign to Paycheck</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <select
-                      value={payScheduleId}
-                      onChange={(e) => setPayScheduleId(e.target.value)}
-                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
-                    >
-                      <option value="">Do not assign schedule</option>
-                      {paySchedules.map(ps => (
-                        <option key={ps.id} value={ps.id}>{ps.name.toUpperCase()}</option>
-                      ))}
-                    </select>
-
-                    <input 
-                      type="date" 
-                      value={paymentDate} 
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full p-4 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-md"
-                      placeholder="Align paycheck date..."
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            </AccordionSection>
           </div>
         )}
       </div>
@@ -1017,10 +999,10 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                     onDelete(initialData.id, initialData.type);
                   }
                 }}
-                className="w-14 h-14 flex items-center justify-center bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl hover:bg-red-500/20 transition-all cursor-pointer"
-               >
-                 <Trash2 size={24} />
-               </button>
+                 className="flex items-center gap-2 px-4 py-3 border border-red-500/30 text-red-500 rounded-2xl hover:bg-red-500/10 transition-all cursor-pointer text-xs font-black tracking-widest"
+                >
+                  <Trash2 size={18} /> Delete
+                </button>
              )}
              <button 
               type="submit"

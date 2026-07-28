@@ -3,6 +3,7 @@ import { Price } from './Price'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { PiggyBank } from 'lucide-react'
 
 const API_URL = getApiUrl()
 
@@ -29,43 +30,53 @@ const SavingsBuckets: React.FC = () => {
 
   return (
     <section className="card">
-      <h3 style={{ marginBottom: '0.25rem' }}>📥 Virtual Savings Buckets</h3>
-      <p className="text-xs text-secondary font-medium mb-6">Create sub-savings goals within your main account. Virtual buckets let you allocate parts of your savings balance to specific goals (like a vacation or emergency fund) without opening new bank accounts.</p>
-      <div style={{ display: 'grid', gap: '1rem' }}>
+      <h3 className="text-lg font-black tracking-tighter italic flex items-center gap-2 mb-1">
+        <PiggyBank size={18} className="text-primary" /> Savings Buckets
+      </h3>
+      <p className="text-xs text-secondary font-medium mb-6">Allocate parts of your balance to specific goals like a vacation or emergency fund.</p>
+      <div className="space-y-4">
         {Array.isArray(buckets) && buckets.map((b: any) => {
           const percent = b.target_cents > 0 ? Math.round((b.current_cents / b.target_cents) * 100) : 0;
           return (
             <div key={b.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
-                <span>{b.name}</span>
-                <span>{percent}%</span>
+              <div className="flex items-center justify-between text-sm mb-1.5">
+                <span className="font-bold text-white">{b.name}</span>
+                <span className="font-black text-primary">{percent}%</span>
               </div>
-              <div style={{ width: '100%', height: '8px', background: 'var(--bg-dark)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${Math.min(100, percent)}%`, height: '100%', background: 'var(--primary)' }}></div>
+              <div className="h-2 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, percent)}%` }}
+                />
               </div>
-              <div className="text-xs text-secondary font-medium">
+              <div className="text-[10px] text-white/40 font-medium mt-1">
                 Goal: <Price amountCents={b.target_cents} options={{ minimumFractionDigits: 0 }} />
               </div>
             </div>
           );
-        }) || <p style={{ color: 'var(--text-secondary)' }}>No buckets yet.</p>}
+        }) || <p className="text-sm text-white/40 font-medium">No buckets yet.</p>}
         {isAdding ? (
-          <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-xl mt-2 border border-white/10">
-            <input type="text" placeholder="Bucket Name" value={name} onChange={e => setName(e.target.value)} className="bg-black/50 text-white text-sm px-3 py-2 rounded-lg border-none" />
-            <CurrencyInput 
-              valueCents={parseInt(amount) || 0} 
+          <div className="space-y-3 p-4 bg-white/5 rounded-xl border border-white/10">
+            <input type="text" placeholder="Bucket Name" value={name} onChange={e => setName(e.target.value)} className="w-full bg-black/40 text-white text-sm px-3 py-2 rounded-lg border border-white/10 outline-none focus:border-primary" />
+            <CurrencyInput
+              valueCents={parseInt(amount) || 0}
               onChangeCents={cents => setAmount(cents.toString())}
               placeholder="Target Goal"
               showSymbol={true}
-              className="bg-black/50 text-sm"
+              className="bg-black/40"
             />
-            <div className="flex gap-2 mt-1">
-              <button onClick={handleCreate} className="flex-1 bg-emerald-500/20 text-emerald-500 font-bold py-1.5 rounded-lg text-xs hover:bg-emerald-500/30">Save</button>
-              <button onClick={() => setIsAdding(false)} className="flex-1 bg-white/5 text-slate-400 font-bold py-1.5 rounded-lg text-xs hover:bg-white/10">Cancel</button>
+            <div className="flex gap-2">
+              <button onClick={handleCreate} className="flex-1 py-2 border border-emerald-500/30 text-emerald-500 font-black rounded-lg text-xs tracking-widest hover:bg-emerald-500/10 transition-all">Save</button>
+              <button onClick={() => setIsAdding(false)} className="flex-1 py-2 bg-white/5 text-slate-400 font-black rounded-lg text-xs tracking-widest hover:bg-white/10 transition-all">Cancel</button>
             </div>
           </div>
         ) : (
-          <button onClick={() => setIsAdding(true)} style={{ background: 'var(--bg-dark)', marginTop: '0.5rem' }}>+ Create New Bucket</button>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="w-full py-3 mt-2 bg-white/5 border border-dashed border-white/10 rounded-xl text-xs font-black tracking-widest text-white/40 hover:bg-white/10 hover:text-white transition-all"
+          >
+            + Create New Bucket
+          </button>
         )}
       </div>
     </section>

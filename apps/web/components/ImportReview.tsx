@@ -5,7 +5,8 @@ import {
   Building,
   Layers,
   StickyNote,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { useApi } from '../hooks/useApi';
@@ -492,10 +493,10 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                         <span>📁 {name}</span>
                         <button 
                           onClick={(e) => handleDeleteTemplate(name, e)}
-                          className="hover:text-red-400 font-extrabold text-[8px] ml-1 p-0.5"
+                          className="hover:text-red-400 font-extrabold ml-1 p-0.5"
                           title="Delete template"
                         >
-                          ✕
+                          <X size={12} />
                         </button>
                       </div>
                     ))}
@@ -739,9 +740,9 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
                         />
                         <button 
                           onClick={() => setAdditionalFields(additionalFields.filter((_, i) => i !== idx))}
-                          className="text-red-400 hover:text-red-300 font-extrabold text-xs px-1 cursor-pointer"
+                          className="text-red-400 hover:text-red-300 font-extrabold px-1 cursor-pointer"
                         >
-                          ✕
+                          <X size={14} />
                         </button>
                       </div>
                     ))}

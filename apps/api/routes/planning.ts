@@ -12,7 +12,9 @@ import {
   PayScheduleSchema,
   BillSchema,
   LiabilitySplitSchema,
-  PayExceptionSchema
+  PayExceptionSchema,
+  ExternalContactSchema,
+  SharedAccessSchema
 } from '@shared/schemas'
 import { logAudit } from '../utils'
 import { getDb } from '#/index'
@@ -31,10 +33,12 @@ import {
   liabilitySplits,
   systemAnnouncements,
   schedules,
-  activityLogs as auditLogs
+  activityLogs as auditLogs,
+  externalContacts,
+  sharedAccess
 } from '#/schema'
 import remindersApi from './reminders'
-import { eq, and, desc, asc, like, lte, sql } from 'drizzle-orm'
+import { eq, and, or, desc, asc, like, lte, sql } from 'drizzle-orm'
 
 const planning = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -97,6 +101,9 @@ planning.post('/subscriptions', zValidator('json', SubscriptionSchema), async (c
     accountId: data.accountId || null,
     paymentMode: data.paymentMode || 'manual',
     ownerId: data.ownerId || c.get('userId'),
+    visibility: data.visibility || 'household',
+    publicScope: data.publicScope || 'name_only',
+    externalContactId: data.externalContactId || null,
     upcomingAmountCents: data.upcomingAmountCents || null,
     upcomingEffectiveDate: data.upcomingEffectiveDate || null,
     payScheduleId: data.payScheduleId || null,
@@ -126,6 +133,9 @@ planning.patch('/subscriptions/:id', zValidator('json', SubscriptionSchema.parti
   if (data.maxOccurrences !== undefined) updates.maxOccurrences = data.maxOccurrences
   if (data.accountId !== undefined) updates.accountId = data.accountId
   if (data.paymentMode !== undefined) updates.paymentMode = data.paymentMode
+  if (data.visibility !== undefined) updates.visibility = data.visibility
+  if (data.publicScope !== undefined) updates.publicScope = data.publicScope
+  if (data.externalContactId !== undefined) updates.externalContactId = data.externalContactId
   if (data.upcomingAmountCents !== undefined) updates.upcomingAmountCents = data.upcomingAmountCents
   if (data.upcomingEffectiveDate !== undefined) updates.upcomingEffectiveDate = data.upcomingEffectiveDate
   if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
@@ -208,6 +218,9 @@ planning.post('/bills', zValidator('json', BillSchema), async (c) => {
     endDate: data.endDate || null,
     maxOccurrences: data.maxOccurrences || null,
     ownerId: data.ownerId || c.get('userId'),
+    visibility: data.visibility || 'household',
+    publicScope: data.publicScope || 'name_only',
+    externalContactId: data.externalContactId || null,
     upcomingAmountCents: data.upcomingAmountCents || null,
     upcomingEffectiveDate: data.upcomingEffectiveDate || null,
     payScheduleId: data.payScheduleId || null,
@@ -241,6 +254,9 @@ planning.patch('/bills/:id', zValidator('json', BillSchema.partial()), async (c)
   if (data.endDate !== undefined) updates.endDate = data.endDate
   if (data.maxOccurrences !== undefined) updates.maxOccurrences = data.maxOccurrences
   if (data.ownerId !== undefined) updates.ownerId = data.ownerId
+  if (data.visibility !== undefined) updates.visibility = data.visibility
+  if (data.publicScope !== undefined) updates.publicScope = data.publicScope
+  if (data.externalContactId !== undefined) updates.externalContactId = data.externalContactId
   if (data.upcomingAmountCents !== undefined) updates.upcomingAmountCents = data.upcomingAmountCents
   if (data.upcomingEffectiveDate !== undefined) updates.upcomingEffectiveDate = data.upcomingEffectiveDate
   if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
@@ -1026,6 +1042,95 @@ planning.post('/re-evaluate', zValidator('json', z.object({
   }
 
   return c.json({ success: true, updatedCount })
+})
+
+// ─── External Contacts ─────────────────────────────────────────────────
+planning.get('/contacts', async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const db = getDb(c.env)
+  
+  const results = await db.select().from(externalContacts).where(
+    and(
+      or(
+        eq(externalContacts.scope, 'household'),
+        eq(externalContacts.createdBy, userId)
+      )
+    )
+  )
+  return c.json({ success: true, data: results || [] })
+})
+
+planning.post('/contacts', zValidator('json', ExternalContactSchema), async (c) => {
+  const userId = c.get('userId') as string
+  const householdId = c.get('householdId')
+  const { name, scope } = c.req.valid('json')
+  const id = crypto.randomUUID()
+  const db = getDb(c.env)
+  
+  await db.insert(externalContacts).values({
+    id,
+    name,
+    scope: scope || 'private',
+    householdId: scope === 'household' ? householdId : null,
+    createdBy: userId,
+  })
+  
+  await logAudit(c, 'external_contacts', id, 'create', null, { name, scope })
+  return c.json({ success: true, id })
+})
+
+planning.delete('/contacts/:id', async (c) => {
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(externalContacts).where(eq(externalContacts.id, id))
+  await logAudit(c, 'external_contacts', id, 'delete')
+  return c.json({ success: true })
+})
+
+// ─── Share Links ───────────────────────────────────────────────────────
+planning.post('/:targetType(bills|subscriptions)/:targetId/share', zValidator('json', SharedAccessSchema), async (c) => {
+  const userId = c.get('userId') as string
+  const targetType = c.req.param('targetType') as string
+  const targetId = c.req.param('targetId') as string
+  const data = c.req.valid('json') as any
+  const id = crypto.randomUUID()
+  const token = crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+  const db = getDb(c.env)
+  
+  await db.insert(sharedAccess).values({
+    id,
+    targetType,
+    targetId,
+    token,
+    contactLabel: data.contactLabel,
+    visibilityScope: data.visibilityScope || 'name_only',
+    permission: data.permission || 'view',
+    expiresAt: data.expiresAt || null,
+    createdBy: userId,
+  } as any)
+  
+  await logAudit(c, 'shared_access', id, 'share_generated', null, { targetType, targetId, contactLabel: data.contactLabel })
+  return c.json({ success: true, id, token, url: `/api/shared/${token}` })
+})
+
+planning.get('/:targetType(bills|subscriptions)/:targetId/share', async (c) => {
+  const targetType = c.req.param('targetType') as string
+  const targetId = c.req.param('targetId') as string
+  const db = getDb(c.env)
+  
+  const results = await db.select().from(sharedAccess).where(
+    and(eq(sharedAccess.targetType, targetType as any), eq(sharedAccess.targetId, targetId as any))
+  )
+  return c.json({ success: true, data: results || [] })
+})
+
+planning.delete('/share/:token', async (c) => {
+  const token = c.req.param('token')
+  const db = getDb(c.env)
+  await db.delete(sharedAccess).where(eq(sharedAccess.token, token))
+  await logAudit(c, 'shared_access', token, 'share_revoked')
+  return c.json({ success: true })
 })
 
 export default planning

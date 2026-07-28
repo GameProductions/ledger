@@ -9,7 +9,7 @@ import { getApiUrl } from '../../utils/api'
 import { FIELD_DEFS, getFieldDefs, type FieldDef, type EntityType } from '../../lib/entity-field-defs'
 import { 
   Shield, Tag, Wallet, CreditCard, Link2, CalendarClock, Receipt, Clock, Banknote, Building2,
-  Plus, Pencil, Trash2, Search, Check, Filter, Eye, FileText
+  Plus, Pencil, Trash2, Search, Check, Filter, Eye, FileText, Contact, Share2 as ShareIcon
 } from 'lucide-react'
 
 const API = getApiUrl()
@@ -36,6 +36,8 @@ const ENTITY_TYPES: { key: EntityType; label: string; icon: React.ReactNode; sco
   { key: 'pay-schedules', label: 'Pay Schedules', icon: <Clock size={16} />, scope: 'household' },
   { key: 'payment-methods', label: 'Payment Methods', icon: <CreditCard size={16} />, scope: 'user' },
   { key: 'subscriptions', label: 'Subscriptions', icon: <Receipt size={16} />, scope: 'household' },
+  { key: 'external-contacts', label: 'External Contacts', icon: <Contact size={16} />, scope: 'household' },
+  { key: 'shared-access', label: 'Shared Access', icon: <ShareIcon size={16} />, scope: 'household' },
 ]
 
 const AdminEntityManager: React.FC = () => {

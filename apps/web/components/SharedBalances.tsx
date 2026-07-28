@@ -127,15 +127,14 @@ export default function SharedBalances() {
 
   return (
     <section className="card" style={{ gridColumn: 'span 2' }}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center flex-shrink-0">
             <ArrowRightLeft className="w-5 h-5 text-violet-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Shared Balances</h3>
-            <p className="text-xs text-slate-500 tracking-widest font-bold">Track IOUs and settle debts with household members</p>
-            <p className="text-xs text-secondary font-medium mt-1 pr-6">Keep track of informal debts and shared costs with other members of your household. You can record IOUs and mark them as settled when paid back.</p>
+            <h3 className="text-lg font-black tracking-tighter italic">Shared Balances</h3>
+            <p className="text-xs text-secondary font-medium">Track IOUs and shared costs with household members, and settle debts.</p>
           </div>
         </div>
         <button 

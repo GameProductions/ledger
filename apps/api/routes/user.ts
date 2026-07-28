@@ -571,11 +571,12 @@ user.post('/service-providers', zValidator('json', z.object({
   name: z.string().min(1),
   visibility: z.enum(['private', 'household', 'public']).optional(),
   defaultCategoryId: z.string().nullable().optional(),
-  defaultDueDate: z.string().nullable().optional()
+  defaultDueDate: z.string().nullable().optional(),
+  iconUrl: z.string().nullable().optional()
 })), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') || null
-  const { name, visibility, defaultCategoryId, defaultDueDate } = c.req.valid('json')
+  const { name, visibility, defaultCategoryId, defaultDueDate, iconUrl } = c.req.valid('json')
   const id = crypto.randomUUID()
   const db = getDb(c.env)
   
@@ -601,6 +602,7 @@ user.post('/service-providers', zValidator('json', z.object({
     createdBy: userId,
     defaultCategoryId: defaultCategoryId || null,
     defaultDueDate: defaultDueDate || null,
+    iconUrl: iconUrl || null,
     status: 'active'
   })
   
@@ -612,7 +614,8 @@ user.patch('/service-providers/:id', zValidator('json', z.object({
   name: z.string().optional(),
   visibility: z.enum(['private', 'household']).optional(),
   defaultCategoryId: z.string().nullable().optional(),
-  defaultDueDate: z.string().nullable().optional()
+  defaultDueDate: z.string().nullable().optional(),
+  iconUrl: z.string().nullable().optional()
 })), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') || null
@@ -665,6 +668,7 @@ user.patch('/service-providers/:id', zValidator('json', z.object({
   }
   if (updates.defaultCategoryId !== undefined) valuesToSet.defaultCategoryId = updates.defaultCategoryId
   if (updates.defaultDueDate !== undefined) valuesToSet.defaultDueDate = updates.defaultDueDate
+  if (updates.iconUrl !== undefined) valuesToSet.iconUrl = updates.iconUrl
 
   await db.update(serviceProviders).set(valuesToSet).where(eq(serviceProviders.id, id))
   await logAudit(c, 'service_providers', id, 'UPDATE', null, valuesToSet)

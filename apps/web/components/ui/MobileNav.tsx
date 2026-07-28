@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, CreditCard, BarChart3, Settings, MoreHorizontal, HandCoins, Briefcase, Database, List, GitMerge, HelpCircle, X, Wallet, Calendar, Zap } from 'lucide-react';
+import { LayoutDashboard, CreditCard, BarChart3, Settings, MoreHorizontal, HandCoins, Briefcase, Database, List, GitMerge, HelpCircle, X, Wallet, Calendar, Zap, Receipt } from 'lucide-react';
 
 const mainTabsDefault = [
   { id: 'home', label: 'Home', icon: LayoutDashboard, hash: '#/' },
@@ -10,6 +10,7 @@ const mainTabsDefault = [
 ];
 
 const overflowItems = [
+  { id: 'subscriptions', label: 'Subscriptions', icon: Receipt, hash: '#/subscriptions' },
   { id: 'loans', label: 'Loans', icon: HandCoins, hash: '#/loans' },
   { id: 'investments', label: 'Investments', icon: Briefcase, hash: '#/investments' },
   { id: 'data', label: 'Data Center', icon: Database, hash: '#/data' },

@@ -53,6 +53,7 @@ const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
 const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
 const DataManagerPage = lazy(() => import('./pages/DataManagerPage'))
+const SubscriptionManagerPage = lazy(() => import('./pages/SubscriptionManagerPage'))
 const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
 const PasskeyChallenge = lazy(() => import('./components/PasskeyChallenge'))
 import { MaintenanceView } from './components/MaintenanceView'
@@ -265,6 +266,7 @@ const AppContent: React.FC = () => {
     if (path === '#/loans') return <LoanManagerPage />
     if (path === '#/investments') return <InvestmentPortfolioPage />
     if (path === '#/manage') return <DataManagerPage />
+    if (path === '#/subscriptions') return <SubscriptionManagerPage />
     if (path === '#/reconcile') return <ReconciliationPage />
     if (path.startsWith('#/snapshot/')) return <SnapshotViewer />
     if (path === '#/backup') return <BackupHub />

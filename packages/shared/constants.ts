@@ -73,5 +73,6 @@ export const AUTH_EXCLUSIONS = [
   '/favicon.ico',
   '/favicon.png',
   '/apple-touch-icon.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/api/shared'
 ]

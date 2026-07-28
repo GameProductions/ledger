@@ -24,7 +24,9 @@ const getTable = (type: string) => {
     'pay-schedules': schema.paySchedules,
     'pairing-rules': schema.transactionPairingRules,
     'lenders': schema.serviceProviders,
-    'charge-descriptors': schema.chargeDescriptors
+    'charge-descriptors': schema.chargeDescriptors,
+    'external-contacts': schema.externalContacts,
+    'shared-access': schema.sharedAccess
   }
   return mapping[type]
 }

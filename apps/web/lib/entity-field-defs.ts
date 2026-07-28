@@ -22,6 +22,8 @@ export type EntityType =
   | 'payment-methods'
   | 'subscriptions'
   | 'lenders'
+  | 'external-contacts'
+  | 'shared-access'
 
 export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
   accounts: [
@@ -252,6 +254,25 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'iconUrl', label: 'Icon URL', type: 'text', placeholder: 'https://...' },
     { key: 'defaultCategoryId', label: 'Default Category ID', type: 'text', placeholder: 'UUID (optional)' },
     { key: 'defaultDueDate', label: 'Default Due Date', type: 'date' },
+  ],
+  'external-contacts': [
+    { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Sarah, Mom' },
+    { key: 'scope', label: 'Scope', type: 'select', options: [{ value: 'private', label: 'Private' }, { value: 'household', label: 'Household' }] },
+    { key: 'householdId', label: 'Household ID', type: 'text', locked: true },
+    { key: 'createdBy', label: 'Created By', type: 'text', locked: true },
+    { key: 'createdAt', label: 'Created At', type: 'text', locked: true },
+  ],
+  'shared-access': [
+    { key: 'targetType', label: 'Target Type', type: 'text', locked: true },
+    { key: 'targetId', label: 'Target ID', type: 'text', locked: true },
+    { key: 'token', label: 'Token', type: 'text', locked: true },
+    { key: 'contactLabel', label: 'Contact Label', type: 'text', placeholder: 'e.g. Sarah' },
+    { key: 'visibilityScope', label: 'Visibility', type: 'select', options: [{ value: 'name_only', label: 'Name Only' }, { value: 'full', label: 'Full' }] },
+    { key: 'permission', label: 'Permission', type: 'select', options: [{ value: 'view', label: 'View' }, { value: 'view_and_pay', label: 'View & Pay' }] },
+    { key: 'expiresAt', label: 'Expires At', type: 'date' },
+    { key: 'lastAccessedAt', label: 'Last Accessed', type: 'text', locked: true },
+    { key: 'createdBy', label: 'Created By', type: 'text', locked: true },
+    { key: 'createdAt', label: 'Created At', type: 'text', locked: true },
   ],
 }
 

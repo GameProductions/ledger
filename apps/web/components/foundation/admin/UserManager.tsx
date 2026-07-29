@@ -41,7 +41,7 @@ export const UserManager = (props: { users?: any[], onUpdate: (id: string, data:
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-slate-900/50 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+            <tr className="bg-slate-900/50 text-[10px] tracking-widest text-slate-500 font-bold">
               <th className="px-8 py-4">User</th>
               <th className="px-8 py-4">Status</th>
               <th className="px-8 py-4">Roles</th>
@@ -82,7 +82,7 @@ export const UserManager = (props: { users?: any[], onUpdate: (id: string, data:
                 <td className="px-8 py-5">
                   <div className="flex flex-wrap gap-2">
                     {(user.roles || []).map((role: string) => (
-                      <span key={role} className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded text-[9px] font-bold uppercase tracking-wider">
+                      <span key={role} className="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded text-[9px] font-bold tracking-wider">
                         {role}
                       </span>
                     ))}
@@ -116,7 +116,7 @@ export const UserManager = (props: { users?: any[], onUpdate: (id: string, data:
       </div>
 
       <footer className="p-4 bg-slate-900/50 border-t border-slate-800 text-center">
-        <p className="text-[10px] text-slate-600 font-bold tracking-widest uppercase">
+        <p className="text-[10px] text-slate-600 font-bold tracking-widest">
           2026 GameProductions™. All rights reserved.
         </p>
       </footer>

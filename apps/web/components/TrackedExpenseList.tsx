@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { InlineToast } from './ui/InlineToast'
+const toLocalDate = (s?: string): string => { if (!s) { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` } const d = new Date(s); return isNaN(d.getTime()) ? toLocalDate() : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
 import { useCurrency } from '../context/CurrencyContext'
 import { useToast } from '../context/ToastContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,9 +11,11 @@ import { Price } from './Price'
 import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy, Check, CheckCircle2 } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
+import { EntityManagerSelect } from './ui/EntityManagerSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { DateTimeInput } from './ui/DateTimeInput'
+import { PromoteToLedgerModal } from './PromoteToLedgerModal'
 
 interface TrackedExpenseListProps {
   refreshTrigger?: number
@@ -42,8 +45,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const [ledgerDetails, setLedgerDetails] = useState({
     accountId: '',
     categoryId: '',
-    transactionDate: new Date().toISOString().split('T')[0],
-    status: 'paid'
+    transactionDate: toLocalDate(),
+    status: 'paid',
+    chargeDescriptorId: ''
   })
 
   // Single Item Edit State
@@ -90,7 +94,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               transferTiming: item.transferTiming,
               isBorrowed: item.isBorrowed ?? false,
               borrowSource: item.borrowSource,
-              createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
+              createdAt: item.createdAt || toLocalDate()
             })
           })
         )
@@ -141,6 +145,29 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       setConfirmDeleteId(null)
       setConfirmBulkDelete(false)
     }
+  }
+
+  const openMoveToLedger = (itemId?: string) => {
+    setLedgerDetails({
+      accountId: '',
+      categoryId: '',
+      transactionDate: toLocalDate(),
+      status: 'paid',
+      chargeDescriptorId: ''
+    })
+    if (itemId) {
+      const item = tracked.find((t: any) => t.id === itemId)
+      if (item && item.createdAt) {
+        setLedgerDetails(prev => ({
+          ...prev,
+          transactionDate: toLocalDate(item.createdAt)
+        }))
+      }
+      setSinglePromoteId(itemId)
+    } else {
+      setSinglePromoteId(null)
+    }
+    setIsMoveToLedgerOpen(true)
   }
 
   const handleMoveToLedger = async () => {
@@ -199,6 +226,21 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     return data.id;
   };
 
+  const handleCreateChargeDescriptor = async (name: string): Promise<string> => {
+    const res = (await fetch(`${getApiUrl()}/api/financials/charge-descriptors`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('ledger_token')}`,
+        'x-household-id': localStorage.getItem('ledger_householdId') || ''
+      },
+      body: JSON.stringify({ name })
+    }) as any);
+    const data = (await res.json() as any);
+    globalMutate();
+    return data.id;
+  };
+
   /** Creates a payment method and returns its name (borrowSource stores names, not IDs) */
   const handleCreatePaymentMethod = async (name: string): Promise<string> => {
     const res = (await fetch(`${getApiUrl()}/api/user/payment-methods`, {
@@ -216,6 +258,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   };
 
   const handleUpdate = async (id: string, updates: any) => {
+    const { transactionDate: _td, ...clean } = updates
     const res = (await fetch(`${getApiUrl()}/api/tracked-expenses/bulk`, {
           method: 'PATCH',
           headers: {
@@ -225,7 +268,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           },
           body: JSON.stringify({
             ids: [id],
-            updates
+            updates: clean
           })
         }) as any)
     if (res.ok) {
@@ -261,7 +304,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
     <>
       <div className="mt-4 border-t border-white/5 pt-6">
         <div className="mb-4">
-          <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-200/60 flex items-center gap-2 mb-1">
+          <h4 className="text-xs font-black tracking-[0.2em] text-orange-200/60 flex items-center gap-2 mb-1">
             <ChevronRight size={14} className="text-orange-500" />
             Pending Tracked Expenses ({tracked.length})
             <span className="ml-2 px-2 py-0.5 bg-orange-500/10 rounded-full text-orange-400 border border-orange-500/10">
@@ -275,7 +318,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           <div className="flex items-center gap-3">
             <button 
               onClick={toggleSelectAll}
-              className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-primary transition-colors"
+              className="text-[10px] font-black tracking-widest text-secondary hover:text-primary transition-colors"
             >
               {selectedIds.length === tracked.length ? 'Deselect All' : 'Select All'}
             </button>
@@ -284,7 +327,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           {reduced ? (
             selectedIds.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-2 sm:pr-3 w-full sm:w-auto">
-              <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
+              <div className="px-3 py-1.5 text-[10px] font-black tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                 Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
                   const item = tracked.find((t: any) => t.id === id)
                   return sum + (item?.amountCents ?? 0)
@@ -293,19 +336,19 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               <div className="flex flex-wrap items-center gap-1.5">
                 <button 
                   onClick={() => setIsBulkEditOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <Edit3 size={12} /> Bulk Edit
                 </button>
                 <button 
                   onClick={() => { setDuplicateCopies(1); setIsDuplicateModalOpen(true); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <Copy size={12} /> Duplicate
                 </button>
                 <button 
-                  onClick={() => setIsMoveToLedgerOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
+                  onClick={() => openMoveToLedger()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
                 >
                   <Send size={12} /> Move to Ledger ({selectedIds.length})
                 </button>
@@ -339,7 +382,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 exit={{ opacity: 0, y: -10 }}
                 className="flex flex-wrap items-center gap-2 bg-orange-500/5 border border-orange-500/20 rounded-xl p-1 pr-2 sm:pr-3 w-full sm:w-auto"
               >
-                <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
+                <div className="px-3 py-1.5 text-[10px] font-black tracking-widest text-orange-200/60 border-r border-white/10 mr-1">
                   Selected: {formatPrice(selectedIds.reduce((sum: number, id: string) => {
                     const item = tracked.find((t: any) => t.id === id)
                     return sum + (item?.amountCents ?? 0)
@@ -348,19 +391,19 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button 
                     onClick={() => setIsBulkEditOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <Edit3 size={12} /> Bulk Edit
                   </button>
                   <button 
                     onClick={() => { setDuplicateCopies(1); setIsDuplicateModalOpen(true); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-black tracking-widest hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <Copy size={12} /> Duplicate
                   </button>
                   <button 
-                    onClick={() => setIsMoveToLedgerOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
+                    onClick={() => openMoveToLedger()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-black tracking-widest hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20 cursor-pointer"
                   >
                     <Send size={12} /> Move to Ledger ({selectedIds.length})
                   </button>
@@ -396,8 +439,20 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               {editingId === item.id ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Charge Descriptor</label>
+                      <EntityManagerSelect
+                        entityType="charge-descriptors"
+                        value={editForm?.chargeDescriptorId || ''}
+                        onChange={(val, item) => {
+                          setEditForm({...editForm, chargeDescriptorId: val, description: (item as any)?.name || editForm?.description || ''})
+                        }}
+                        placeholder="Choose or create descriptor..."
+                        onCreate={handleCreateChargeDescriptor}
+                      />
+                    </div>
                     <div>
-                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Description</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Description</label>
                       <input 
                         type="text" 
                         value={editForm?.description || ''} 
@@ -406,7 +461,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Amount</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Amount</label>
                       <CurrencyInput 
                         valueCents={editForm?.amountCents || 0} 
                         onChangeCents={cents => setEditForm({...editForm, amountCents: cents})}
@@ -414,18 +469,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transaction date</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Transaction date</label>
                       <input 
                         type="date" 
-                        value={editForm?.createdAt ? editForm.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]} 
-                        onChange={e => setEditForm({...editForm, createdAt: new Date(e.target.value).toISOString()})}
+                        value={editForm?.transactionDate ? toLocalDate(editForm.transactionDate) : toLocalDate()} 
+                        onChange={e => setEditForm({...editForm, transactionDate: e.target.value, createdAt: e.target.value})}
                         style={{ colorScheme: 'dark' }}
                         className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
                         required
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Confirmation Number</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Confirmation Number</label>
                       <input 
                         type="text" 
                         value={editForm?.confirmationNumber || ''} 
@@ -442,7 +497,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Notes</label>
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Notes</label>
                       <textarea 
                         value={editForm?.notes || ''} 
                         onChange={e => setEditForm({...editForm, notes: e.target.value})}
@@ -454,7 +509,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
 
                   {/* --- Flags --- */}
                   <div className="border-t border-white/5 pt-4">
-                    <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-3 block">Flags</label>
+                    <label className="text-[10px] font-black tracking-widest text-secondary mb-3 block">Flags</label>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 
                       {/* Needs Attention */}
@@ -499,7 +554,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       {editForm?.needsBalanceTransfer && (
                         <div className="space-y-4">
                           <div>
-                            <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
+                            <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
                             <select 
                               value={editForm?.transferTiming || 'future'} 
                               onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
@@ -523,7 +578,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                       )}
                       {editForm?.isBorrowed && (
                         <div>
-                          <label className="text-[10px] uppercase font-black tracking-widest text-secondary mb-1 block">Borrow Source</label>
+                          <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Borrow Source</label>
                           <SearchableSelect
                             options={paymentMethods.map((pm: any) => ({
                               value: pm.name,
@@ -557,10 +612,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             <Trash2 size={14} /> Delete
                           </button>
                           <button
-                            onClick={() => {
-                              setSinglePromoteId(item.id)
-                              setIsMoveToLedgerOpen(true)
-                            }}
+                            onClick={() => openMoveToLedger(item.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 rounded-lg text-xs transition-colors font-bold"
                           >
                             <Send size={14} /> Move to Ledger
@@ -585,17 +637,17 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <div>
                       <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
                       <div className="flex items-center gap-3 mt-1">
-                        <div className="text-[10px] uppercase tracking-widest text-secondary font-black flex items-center gap-1">
-                          <Calendar size={10} /> {new Date(item.createdAt).toLocaleDateString()}
+                        <div className="text-[10px] tracking-widest text-secondary font-black flex items-center gap-1">
+                          <Calendar size={10} /> {new Date(item.transactionDate || item.createdAt).toLocaleDateString()}
                         </div>
                         {item.attentionRequired && (
-                          <div className="text-[10px] uppercase tracking-widest text-orange-400 font-black flex items-center gap-1">
+                          <div className="text-[10px] tracking-widest text-orange-400 font-black flex items-center gap-1">
                             <AlertTriangle size={10} /> Needs Attention
                           </div>
                         )}
                         {item.needsBalanceTransfer && (
                           <div className="flex items-center gap-2">
-                            <div className="text-[10px] uppercase tracking-widest text-blue-400 font-black flex items-center gap-1">
+                            <div className="text-[10px] tracking-widest text-blue-400 font-black flex items-center gap-1">
                               <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${(() => {
                                 const v = item.transferTiming
                                 if (v.includes('T')) {
@@ -606,18 +658,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                               })()}` : ''}
                             </div>
                             {item.transferReconciled ? (
-                              <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                              <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] font-black tracking-widest rounded flex items-center gap-1">
                                 <Check size={8} /> Reconciled
                               </div>
                             ) : (
-                              <div className="px-1.5 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                              <div className="px-1.5 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black tracking-widest rounded flex items-center gap-1">
                                 Pending
                               </div>
                             )}
                           </div>
                         )}
                         {item.isBorrowed && (
-                          <div className="text-[10px] uppercase tracking-widest text-purple-400 font-black flex items-center gap-1">
+                          <div className="text-[10px] tracking-widest text-purple-400 font-black flex items-center gap-1">
                             <Wallet size={10} /> Borrowed{item.borrowSource ? ` from ${item.borrowSource}` : ''}
                           </div>
                         )}
@@ -628,16 +680,13 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <Price amountCents={item.amountCents} className="text-lg font-black text-orange-200" />
-                      <div className="text-[9px] uppercase font-black tracking-widest text-secondary mt-0.5">
+                      <div className="text-[9px] font-black tracking-widest text-secondary mt-0.5">
                         Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => {
-                          setSinglePromoteId(item.id)
-                          setIsMoveToLedgerOpen(true)
-                        }}
+                        onClick={() => openMoveToLedger(item.id)}
                         className="p-2 hover:bg-orange-500/10 rounded-xl transition-all text-orange-400 hover:text-orange-300 flex items-center justify-center cursor-pointer"
                         aria-label="Move to ledger"
                         title="Move to ledger"
@@ -656,9 +705,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             needsBalanceTransfer: item.needsBalanceTransfer ?? false,
                             transferReconciled: item.transferReconciled ?? false,
                             transferTiming: item.transferTiming || '',
+                            chargeDescriptorId: item.chargeDescriptorId || '',
                             isBorrowed: item.isBorrowed ?? false,
                             borrowSource: item.borrowSource || '',
-                            createdAt: item.createdAt ? new Date(item.createdAt).toISOString() : new Date().toISOString()
+                            transactionDate: toLocalDate(item.transactionDate || item.createdAt),
+                            createdAt: item.createdAt || toLocalDate()
                           })
                         }}
                         className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
@@ -693,87 +744,21 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         })}
       </div>
     </div>
-    <Modal isOpen={isMoveToLedgerOpen} onClose={() => { setIsMoveToLedgerOpen(false); setSinglePromoteId(null); }} title="Add to Main Ledger">
-        <div className="space-y-6 p-1">
-          <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mb-4">
-            <p className="text-sm text-orange-200/80 font-medium">Moving {singlePromoteId ? 1 : selectedIds.length} item(s) to the transaction ledger.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                <CreditCard size={14} className="text-orange-500" /> Payment Account
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">The account used for payment. Type a name to create a new one.</p>
-              <SearchableSelect 
-                options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
-                value={ledgerDetails.accountId}
-                onChange={val => setLedgerDetails({...ledgerDetails, accountId: val})}
-                placeholder="Choose or create Account..."
-                onCreate={handleCreateAccount}
-              />
-            </div>
-            <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                <Tag size={14} className="text-orange-500" /> Budget Category
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">Category for expense reports. Type a name to create a new one.</p>
-              <SearchableSelect 
-                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                value={ledgerDetails.categoryId}
-                onChange={val => setLedgerDetails({...ledgerDetails, categoryId: val})}
-                placeholder="Choose or create Category..."
-                onCreate={handleCreateCategory}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                <Calendar size={14} className="text-orange-500" /> Transaction Date
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">The date the transaction cleared or occurred.</p>
-              <input 
-                type="date"
-                value={ledgerDetails.transactionDate}
-                onChange={e => setLedgerDetails({...ledgerDetails, transactionDate: e.target.value})}
-                className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-orange-500/50 outline-none font-bold"
-              />
-            </div>
-            <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
-                Reconciliation Status
-              </label>
-              <p className="text-[10px] text-slate-500 font-bold mb-2">Set whether this transaction has settled in your account.</p>
-              <div className="flex gap-2">
-                {[
-                  { value: 'paid', label: 'Paid / Cleared' },
-                  { value: 'pending', label: 'Pending / Uncleared' }
-                ].map(s => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => setLedgerDetails({...ledgerDetails, status: s.value})}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${ledgerDetails.status === s.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-black/40 border-white/10 text-secondary'}`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={handleMoveToLedger}
-            disabled={!ledgerDetails.accountId}
-            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2"
-          >
-            <Send size={18} />
-            Move to Ledger
-          </button>
-        </div>
-      </Modal>
+    <PromoteToLedgerModal
+        isOpen={isMoveToLedgerOpen}
+        onClose={() => { setIsMoveToLedgerOpen(false); setSinglePromoteId(null); }}
+        items={
+          singlePromoteId
+            ? tracked.filter((t: any) => t.id === singlePromoteId)
+            : selectedIds.map((id: string) => tracked.find((t: any) => t.id === id)).filter(Boolean)
+        }
+        ledgerDetails={ledgerDetails}
+        setLedgerDetails={setLedgerDetails}
+        onSubmit={handleMoveToLedger}
+        handleCreateAccount={handleCreateAccount}
+        handleCreateCategory={handleCreateCategory}
+        handleCreateChargeDescriptor={handleCreateChargeDescriptor}
+      />
 
       <Modal isOpen={isBulkEditOpen} onClose={() => setIsBulkEditOpen(false)} title="Bulk Edit Tracked Expenses">
         <div className="space-y-6 p-1">
@@ -781,7 +766,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 block">New Amount (Optional)</label>
+              <label className="text-xs font-black tracking-widest text-secondary mb-2 block">New Amount (Optional)</label>
               <CurrencyInput 
                 valueCents={bulkUpdates.amountCents ?? 0} 
                 onChangeCents={cents => setBulkUpdates({...bulkUpdates, amountCents: cents})}
@@ -791,7 +776,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             </div>
 
             <div>
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 block">New Description (Optional)</label>
+              <label className="text-xs font-black tracking-widest text-secondary mb-2 block">New Description (Optional)</label>
               <input 
                 type="text"
                 placeholder="Description"
@@ -801,7 +786,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
             </div>
 
             <div className="border-t border-white/5 pt-4">
-              <label className="text-xs uppercase font-black tracking-widest text-secondary mb-3 block">Flags (Optional — applies to all selected)</label>
+              <label className="text-xs font-black tracking-widest text-secondary mb-3 block">Flags (Optional — applies to all selected)</label>
               <div className="grid grid-cols-1 gap-3">
                 <div className="flex items-center gap-3">
                   <Checkbox
@@ -833,7 +818,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
 
           <button 
             onClick={handleBulkUpdate}
-            className="w-full bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all border border-white/10"
+            className="w-full bg-white/10 hover:bg-white/20 text-white font-black tracking-widest py-4 rounded-2xl transition-all border border-white/10"
           >
             Apply Bulk Updates
           </button>
@@ -849,7 +834,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           </div>
 
           <div>
-            <label className="text-xs uppercase font-black tracking-widest text-secondary mb-2 block">
+            <label className="text-xs font-black tracking-widest text-secondary mb-2 block">
               Number of copies to make (per transaction)
             </label>
             <input 
@@ -865,14 +850,14 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
           <div className="flex gap-2">
             <button 
               onClick={() => setIsDuplicateModalOpen(false)}
-              className="flex-1 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+              className="flex-1 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl text-xs font-black tracking-widest transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button 
               onClick={handleBulkDuplicate}
               disabled={isDuplicating}
-              className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+              className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white rounded-xl text-xs font-black tracking-widest transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
             >
               {isDuplicating ? 'Duplicating...' : 'Duplicate'}
             </button>

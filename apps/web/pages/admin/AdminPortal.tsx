@@ -24,7 +24,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
         <div className="animate-in zoom-in duration-500">
           <h1 className="text-6xl font-black text-red-500 mb-6 tracking-tighter shadow-glow-red italic">403: ACCESS DENIED</h1>
           <p className="text-slate-400 font-bold max-w-md mx-auto leading-relaxed">This sector of the Ledger Architecture is restricted to Owner authorized personnel. Your unauthorized attempt has been recorded for security review.</p>
-          <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black uppercase tracking-widest text-xs">Return to Home</a>
+          <a href="#/" className="mt-12 inline-block px-10 py-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-2xl transition-all font-black tracking-widest text-xs">Return to Home</a>
         </div>
       </div>
     );
@@ -54,10 +54,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-base font-black tracking-tight uppercase italic">SYSTEM <span className="text-emerald-500">OWNER</span></h1>
-                <span className="px-1.5 py-0.5 rounded text-[8px] bg-emerald-500 text-black font-black tracking-widest uppercase animate-pulse">Auth</span>
+                <h1 className="text-base font-black tracking-tight italic">System <span className="text-emerald-500">Owner</span></h1>
+                <span className="px-1.5 py-0.5 rounded text-[8px] bg-emerald-500 text-black font-black tracking-widest animate-pulse">Auth</span>
               </div>
-              <p className="text-[8px] text-slate-500 uppercase tracking-widest font-black">Owner Access</p>
+              <p className="text-[8px] text-slate-500 tracking-widest font-black">Owner Access</p>
             </div>
           </div>
         </div>
@@ -65,7 +65,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
         <div className="flex items-center gap-6">
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
             <Shield size={14} className="text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Secure Connection</span>
+            <span className="text-[10px] font-black text-emerald-500 tracking-wider">Secure Connection</span>
           </div>
           <UserMenu isAdminPortal={true} />
         </div>
@@ -90,7 +90,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                     }`}
                    >
                      <item.icon size={16} className={isActive ? 'text-black' : 'group-hover:text-emerald-500 transition-colors'} />
-                     <span className="text-xs uppercase tracking-wider">{item.name}</span>
+                     <span className="text-xs tracking-wider">{item.name}</span>
                    </a>
                  );
                })}
@@ -100,8 +100,8 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                 <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2">
                    <Lock size={14} className="text-blue-500" />
                    <div className="flex flex-col">
-                       <span className="text-[10px] font-black uppercase text-slate-600">Level</span>
-                       <span className="text-[10px] font-black text-blue-500 uppercase italic">OWNER_ACCESS</span>
+                       <span className="text-[10px] font-black text-slate-600">Level</span>
+                       <span className="text-[10px] font-black text-blue-500 italic">OWNER_ACCESS</span>
                    </div>
                  </div>
               </div>
@@ -118,10 +118,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
         {/* Status Footer */}
         <footer className="fixed bottom-0 left-0 right-0 py-1.5 px-8 z-[500] pointer-events-none">
           <div className="flex items-center justify-between opacity-25">
-            <div className="text-[10px] text-slate-600 font-mono uppercase tracking-widest">
+            <div className="text-[10px] text-slate-600 font-mono tracking-widest">
               Session: {user.id.slice(0, 16)}... | Secure
             </div>
-            <div className="text-[10px] text-emerald-500 font-mono uppercase tracking-widest">
+            <div className="text-[10px] text-emerald-500 font-mono tracking-widest">
               Host: {window.location.hostname}
             </div>
           </div>

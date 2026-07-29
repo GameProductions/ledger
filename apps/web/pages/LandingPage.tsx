@@ -85,13 +85,13 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={theme.logoUrl} alt="Logo" className="h-10 w-10" />
-            <span className="text-xl font-black tracking-tighter italic uppercase">LEDGER</span>
+            <span className="text-xl font-black tracking-tighter italic">Ledger</span>
           </div>
           <div className="flex items-center gap-8">
-            <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-colors">
+            <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center gap-2 text-sm font-bold tracking-widest text-slate-400 hover:text-white transition-colors">
               <GithubIcon size={16} /> GitHub
             </a>
-            <a href="#/login" className="px-6 py-2.5 bg-primary rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+            <a href="#/login" className="px-6 py-2.5 bg-primary rounded-xl font-black tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-105 transition-all">
               Sign In
             </a>
           </div>
@@ -110,7 +110,7 @@ const LandingPage: React.FC = () => {
             <div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
                 <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Secure Personal Budgeting</span>
+                <span className="text-xs font-black tracking-[0.2em] text-slate-300">Secure Personal Budgeting</span>
               </div>
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
                 Your Money. Your Budget. <br/>
@@ -120,10 +120,10 @@ const LandingPage: React.FC = () => {
                 A simple, secure, and private tool to track your personal expenses, manage budgets, and plan your family finances—with no third-party companies owning your data.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
+                <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
                   Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </a>
-                <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
+                <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
                   <GithubIcon size={18} /> Source Code
                 </a>
               </div>
@@ -136,7 +136,7 @@ const LandingPage: React.FC = () => {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
                 <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-300">Secure Personal Budgeting</span>
+                <span className="text-xs font-black tracking-[0.2em] text-slate-300">Secure Personal Budgeting</span>
               </div>
               <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85]">
                 Your Money. Your Budget. <br/>
@@ -146,10 +146,10 @@ const LandingPage: React.FC = () => {
                 A simple, secure, and private tool to track your personal expenses, manage budgets, and plan your family finances—with no third-party companies owning your data.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
+                <a href="#/login" className="group px-12 py-5 bg-white text-black rounded-2xl font-black tracking-widest text-sm flex items-center gap-3 hover:scale-105 transition-all shadow-xl">
                   Enter Dashboard <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </a>
-                <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
+                <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black tracking-widest text-sm hover:bg-white/10 transition-all flex items-center gap-3">
                   <GithubIcon size={18} /> Source Code
                 </a>
               </div>
@@ -170,7 +170,7 @@ const LandingPage: React.FC = () => {
                 <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-black uppercase tracking-tight mb-4 italic leading-none">{feature.title}</h3>
+                <h3 className="text-lg font-black tracking-tight mb-4 italic leading-none">{feature.title}</h3>
                 <p className="text-sm text-slate-400 font-bold leading-relaxed opacity-70">
                   {feature.description}
                 </p>
@@ -187,7 +187,7 @@ const LandingPage: React.FC = () => {
                 <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-black uppercase tracking-tight mb-4 italic leading-none">{feature.title}</h3>
+                <h3 className="text-lg font-black tracking-tight mb-4 italic leading-none">{feature.title}</h3>
                 <p className="text-sm text-slate-400 font-bold leading-relaxed opacity-70">
                   {feature.description}
                 </p>
@@ -201,8 +201,8 @@ const LandingPage: React.FC = () => {
       <section className="py-32 px-6 bg-white/[0.01] border-y border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic uppercase">Your Personal Cloud Connections</h2>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Pick where your private data is stored</p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic">Your Personal Cloud Connections</h2>
+            <p className="text-xs font-black tracking-[0.3em] text-slate-500">Pick where your private data is stored</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 items-center justify-items-center mb-32">
@@ -215,25 +215,25 @@ const LandingPage: React.FC = () => {
                     className="h-16 w-16 object-contain"
                   />
                 </div>
-                <span className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 group-hover:text-primary transition-colors">{int.name}</span>
+                <span className="text-xs font-black tracking-[0.4em] text-slate-500 group-hover:text-primary transition-colors">{int.name}</span>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <div className="p-10 bg-[#020617] rounded-[3rem] border border-white/5">
-               <h4 className="text-xl font-black italic uppercase mb-4">Complete Data Ownership</h4>
+               <h4 className="text-xl font-black italic mb-4">Complete Data Ownership</h4>
                <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80">
                  We connect directly to your Google Drive, Dropbox, or OneDrive so your data never lives on our servers. Your budgets and transactions are encrypted and stored in your own personal cloud, giving you 100% control over your files.
                </p>
             </div>
             <div className="p-10 bg-[#020617] rounded-[3rem] border border-white/5 relative overflow-hidden group">
                <div className="relative z-10">
-                 <h4 className="text-xl font-black italic uppercase mb-4">Run Offline locally</h4>
+                 <h4 className="text-xl font-black italic mb-4">Run Offline locally</h4>
                  <p className="text-sm text-slate-400 font-medium leading-relaxed opacity-80 mb-6">
                    Prefer to keep your finances completely offline? You can run the entire app locally on your own computer. You don't need any complex infrastructure to get started.
                  </p>
-                 <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-colors">
+                 <a href="https://github.com/GameProductions/ledger" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-primary hover:text-white transition-colors">
                    View Source Code <ArrowRight size={12} />
                  </a>
                </div>
@@ -246,15 +246,15 @@ const LandingPage: React.FC = () => {
       {/* Features */}
       <section className="py-32 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-24">
-          <h2 className="text-4xl font-black tracking-tighter mb-4 italic uppercase">Simple & Powerful Features</h2>
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Everything you need to manage your personal finances</p>
+          <h2 className="text-4xl font-black tracking-tighter mb-4 italic">Simple & Powerful Features</h2>
+          <p className="text-xs font-black tracking-[0.3em] text-slate-500">Everything you need to manage your personal finances</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {exhaustiveFeatures.map((f, i) => (
             <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl text-center group hover:bg-white/[0.05] transition-all">
                <div className="mb-4 flex justify-center">{f.icon}</div>
-               <div className="text-xs font-black uppercase tracking-widest mb-2">{f.name}</div>
+               <div className="text-xs font-black tracking-widest mb-2">{f.name}</div>
                <div className="text-xs text-slate-500 font-bold leading-tight">{f.desc}</div>
             </div>
           ))}
@@ -265,7 +265,7 @@ const LandingPage: React.FC = () => {
       <section className="py-40 px-6 max-w-7xl mx-auto border-t border-white/5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
           <div>
-            <div className="text-xs font-black uppercase tracking-[0.5em] text-primary mb-8">Built with Privacy First</div>
+            <div className="text-xs font-black tracking-[0.5em] text-primary mb-8">Built with Privacy First</div>
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-12 italic leading-[0.9]">Safe. <br/> Private. <br/> Yours.</h2>
             <p className="text-slate-400 font-medium mb-12 leading-relaxed opacity-80">
               LEDGER uses secure, device-level encryption to safeguard all your budget files. Your transactions, account balances, and personal details remain entirely private.
@@ -273,15 +273,15 @@ const LandingPage: React.FC = () => {
             <div className="flex gap-10">
                <div>
                   <div className="text-3xl font-black italic mb-1">Secure</div>
-                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Encryption</div>
+                  <div className="text-xs font-black tracking-widest text-slate-500">Encryption</div>
                </div>
                <div>
                   <div className="text-3xl font-black italic mb-1">0%</div>
-                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Third-party Servers</div>
+                  <div className="text-xs font-black tracking-widest text-slate-500">Third-party Servers</div>
                </div>
                <div>
                   <div className="text-3xl font-black italic mb-1">100%</div>
-                  <div className="text-xs uppercase font-black tracking-widest text-slate-500">Private Data</div>
+                  <div className="text-xs font-black tracking-widest text-slate-500">Private Data</div>
                </div>
             </div>
           </div>
@@ -289,8 +289,8 @@ const LandingPage: React.FC = () => {
              <div className="aspect-square bg-[#020617] rounded-[4.9rem] flex items-center justify-center">
                 <div className="text-center p-12">
                    <Fingerprint size={80} className="text-primary mx-auto mb-8 animate-pulse" />
-                   <h3 className="text-2xl font-black uppercase italic mb-4">Secure Sign-In</h3>
-                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Biometric Login Ready</p>
+                   <h3 className="text-2xl font-black italic mb-4">Secure Sign-In</h3>
+                   <p className="text-xs text-slate-500 font-bold tracking-widest">Biometric Login Ready</p>
                 </div>
              </div>
           </div>

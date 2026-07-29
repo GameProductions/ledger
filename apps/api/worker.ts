@@ -39,7 +39,7 @@ app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
     try {
         // 1. Migrate OAuth Identities -> Offload
         const identities = (await db.select().from(userIdentities).where(
-                    or(sql`accessToken IS NOT NULL`, sql`refreshToken IS NOT NULL`)
+                    or(sql`access_token IS NOT NULL`, sql`refresh_token IS NOT NULL`)
                 ) as any);
 
         for (const identity of identities) {
@@ -64,7 +64,7 @@ app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
         }
 
         // 2. Migrate Personal Access Tokens -> Offload
-        const pats = (await db.select().from(personalAccessTokens).where(sql`tokenHash IS NOT NULL`) as any);
+        const pats = (await db.select().from(personalAccessTokens).where(sql`token_hash IS NOT NULL`) as any);
         for (const pat of pats) {
             if (pat.tokenHash && pat.tokenHash !== '[VAULTED]') {
                 await offloadToFoundation(c, 'ledger', 'personal_access_token', pat.id, pat.tokenHash);
@@ -88,7 +88,7 @@ app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
         // 5. Clean Slate Lifecycle Tokens
         const resetPurge = (await db.delete(passwordResets) as any);
         const invitePurge = (await db.delete(adminInvitations) as any);
-        const patPurge = (await db.delete(personalAccessTokens).where(sql`tokenHash IS NULL`) as any);
+        const patPurge = (await db.delete(personalAccessTokens).where(sql`token_hash IS NULL`) as any);
         
         results.purged = ((resetPurge as any).meta?.changes || 0) + ((invitePurge as any).meta?.changes || 0);
 

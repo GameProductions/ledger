@@ -95,17 +95,17 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                 {/* Privacy Badge */}
                 <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
                     <Shield size={14} className="text-indigo-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Private Exception</span>
+                    <span className="text-[10px] font-black tracking-widest text-indigo-400">Private Exception</span>
                     <span className="text-[10px] text-indigo-400/60 font-medium italic">— Only visible to you</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Projected Date</div>
+                        <div className="text-[9px] font-black tracking-widest text-white/40 mb-1">Projected Date</div>
                         <div className="text-sm font-bold text-white/80">{payday.originalDate}</div>
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-white/40 mb-1">Projected Amount</div>
+                        <div className="text-[9px] font-black tracking-widest text-white/40 mb-1">Projected Amount</div>
                         <Price amountCents={payday.amountCents} className="text-sm font-bold" />
                     </div>
                 </div>
@@ -113,7 +113,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                 <div className="space-y-4">
                     {/* Note Field */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                        <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                             <MessageSquare size={12} /> Personal Note
                         </label>
                         <textarea
@@ -127,7 +127,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                     <div className="grid grid-cols-2 gap-4">
                         {/* Amount Override */}
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                            <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                                 <DollarSign size={12} /> Override Amount
                             </label>
                             <CurrencyInput
@@ -140,7 +140,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
 
                         {/* Date Override */}
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                            <label className="text-[10px] font-black tracking-widest text-white/40 flex items-center gap-2">
                                 <Calendar size={12} /> Override Date
                             </label>
                             <input
@@ -167,7 +167,7 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                         <button
                             onClick={handleDelete}
                             disabled={loading}
-                            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-400 transition-colors"
+                            className="flex items-center gap-2 text-[10px] font-black tracking-widest text-red-500 hover:text-red-400 transition-colors"
                         >
                             <Trash2 size={14} /> Clear Exception
                         </button>
@@ -176,14 +176,14 @@ export const PaydayExceptionModal: React.FC<PaydayExceptionModalProps> = ({ payd
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                            className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 transition-all"
+                            className="px-6 py-2 rounded-xl text-[10px] font-black tracking-widest text-white/40 hover:bg-white/5 transition-all"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={loading}
-                            className="px-8 py-2 bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20"
+                            className="px-8 py-2 bg-indigo-500 text-white rounded-xl text-[10px] font-black tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-indigo-500/20"
                         >
                             {loading ? 'Saving...' : 'Save Exception'}
                         </button>

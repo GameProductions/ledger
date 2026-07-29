@@ -3,16 +3,20 @@ import { useAuth } from '../context/AuthContext';
 import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
-import { Trash2, AlertCircle, Share2, ShieldCheck, Layers, CreditCard } from 'lucide-react';
+import { Trash2, AlertCircle, Share2, Layers } from 'lucide-react';
 import { LiabilitySplitter } from './LiabilitySplitter';
 import { Price } from './Price';
+import { UpcomingChangeBadge } from './shared/UpcomingChangeBadge';
+import { MasterSplitLedger } from './shared/MasterSplitLedger';
+import { LiabilityItemCard } from './shared/LiabilityItemCard';
+import { EmptyPlaceholder } from './shared/EmptyPlaceholder';
+import { ProviderLogo } from './shared/ProviderLogo';
 
 export const InstallmentsList: React.FC = () => {
     const { token, householdId } = useAuth();
     const { data: installments = [], loading, mutate } = (useApi('/api/planning/installment-plans') as any);
     const { showToast } = useToast();
     
-    // UI State for Modals
     const [openSplitterId, setOpenSplitterId] = React.useState<string | null>(null);
     const [openTrackerId, setOpenTrackerId] = React.useState<string | null>(null);
 
@@ -53,15 +57,15 @@ export const InstallmentsList: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-8 text-xs font-black uppercase tracking-[0.2em] text-white/30">Calculating Installment Amortization...</div>;
+    if (loading) return <div className="text-center py-8 text-xs font-black tracking-[0.2em] text-white/30">Calculating Installment Amortization...</div>;
 
     return (
         <section className="space-y-4">
             <div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-black tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
                     <Layers size={14} className="text-indigo-500" /> Installment Plans
                 </h3>
-                <p className="text-xs text-secondary font-medium">Manage finite payment agreements (like financing a phone, a car loan, or furniture store installment plans). This lists how many payments are left, your progress, and automatically removes the plan from your budget once paid in full.</p>
+                <p className="text-xs text-secondary font-medium">Manage finite payment agreements (like financing a phone, a car loan, or furniture store installment plans).</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
@@ -73,36 +77,36 @@ export const InstallmentsList: React.FC = () => {
                     const paidAmountCents = paidPayments * inst.installmentAmountCents;
 
                     return (
-                        <div key={inst.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-indigo-500/30 overflow-hidden">
-                            {inst.upcomingEffectiveDate && (
-                                <div className="absolute top-0 right-0 bg-indigo-500/10 border-b border-l border-indigo-500/20 px-3 py-1 rounded-bl-xl">
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                                        Rate Change: <Price amountCents={inst.upcomingAmountCents} /> on {inst.upcomingEffectiveDate}
-                                    </div>
-                                </div>
-                            )}
+                        <LiabilityItemCard key={inst.id} color="violet">
+                            <UpcomingChangeBadge
+                                amountCents={inst.upcomingAmountCents}
+                                effectiveDate={inst.upcomingEffectiveDate}
+                                label="Rate Change"
+                                color="violet"
+                            />
                             <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 className="font-black text-lg tracking-tighter uppercase italic">{inst.name}</h4>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-400`}>
-                                            {paidPayments} OF {totalPayments} PAID
-                                        </span>
-                                        <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
-                                            Next: {inst.nextPayDate}
-                                        </span>
+                                <div className="flex items-center gap-3">
+                                    <ProviderLogo url={inst.iconUrl || inst.logoUrl} name={inst.name} size={32} />
+                                    <div>
+                                        <h4 className="font-black text-lg tracking-tighter italic">{inst.name}</h4>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-400">
+                                                {paidPayments} OF {totalPayments} PAID
+                                            </span>
+                                            <span className="text-[10px] font-bold text-white/30 tracking-widest">
+                                                Next: {inst.nextPayDate}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <Price amountCents={inst.installmentAmountCents} className="text-xl font-black tracking-tighter" />
-                                    <div className="text-[11px] font-bold uppercase tracking-widest text-white/30 mt-0.5">Per {inst.frequency}</div>
+                                    <div className="text-[10px] font-bold tracking-widest text-white/30 mt-0.5">Per {inst.frequency}</div>
                                 </div>
                             </div>
 
-                            {/* Progress Section */}
                             <div className="space-y-2 mb-4">
-                                <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
+                                <div className="flex justify-between text-[10px] font-bold tracking-widest">
                                     <span className="text-white/40">Total Progress</span>
                                     <div className="flex gap-2">
                                         <span className="text-white/40 italic">Paid <Price amountCents={paidAmountCents} /></span>
@@ -111,74 +115,36 @@ export const InstallmentsList: React.FC = () => {
                                 </div>
                                 <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
                                     <div 
-                                        className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000"
+                                        className="h-full bg-violet-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000"
                                         style={{ width: `${progressPercent}%` }}
                                     />
                                 </div>
                             </div>
 
                             {inst.isSplitPortion && (
-                                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 mb-4">
-                                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-400">
+                                <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-3 mb-4">
+                                    <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-violet-400">
                                         <Share2 size={12} /> Assigned Split Portion
                                     </div>
                                 </div>
                             )}
 
-                            {/* Premium Internal Tracking for Originators */}
                             {inst.isSplitOriginator && inst.splits && (
                                 <div className="mb-4">
-                                    <button 
-                                        onClick={() => setOpenTrackerId(openTrackerId === inst.id ? null : inst.id)}
-                                        className="w-full bg-primary/10 border border-primary/20 rounded-xl p-3 flex flex-col hover:bg-primary/20 transition-all text-left group/tracker shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
-                                    >
-                                        <div className="flex items-center justify-between w-full">
-                                            <div className="flex items-center gap-2">
-                                                <ShieldCheck size={14} className="text-primary group-hover/tracker:scale-110 transition-transform" />
-                                                <span className="text-xs uppercase font-bold tracking-widest text-primary">Master Split Ledger</span>
-                                            </div>
-                                            <span className="text-xs uppercase font-bold text-white/40">{openTrackerId === inst.id ? 'Close' : 'View Stats'}</span>
-                                        </div>
-                                        {openTrackerId === inst.id && (
-                                            <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
-                                                <div className="flex items-center justify-between px-2 py-1 bg-white/5 rounded-lg border border-white/5 mb-2">
-                                                    <span className="text-[11px] font-bold uppercase tracking-widest text-white/40">Broadcasting Status</span>
-                                                    <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={inst.splits?.[0]?.isMasterLedgerPublic || false} 
-                                                            onChange={(e) => handleTogglePublic(inst.id, e.target.checked)}
-                                                            className="sr-only peer" 
-                                                        />
-                                                        <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/40 after:border-white/10 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                                                    </label>
-                                                </div>
-                                                {inst.splits.map((split: any) => (
-                                                    <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-5 h-5 rounded-full bg-white/10 text-[11px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
-                                                            <span className="text-xs font-bold uppercase tracking-widest text-white/60">Portion</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                                                                split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
-                                                            }`}>
-                                                                {split.status}
-                                                            </span>
-                                                            <Price amountCents={split.calculatedAmountCents} className="text-xs font-bold tracking-widest" />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </button>
+                                    <MasterSplitLedger
+                                        splits={inst.splits}
+                                        isMasterLedgerPublic={inst.splits?.[0]?.isMasterLedgerPublic || false}
+                                        onTogglePublic={(isPublic) => handleTogglePublic(inst.id, isPublic)}
+                                        open={openTrackerId === inst.id}
+                                        onToggle={() => setOpenTrackerId(openTrackerId === inst.id ? null : inst.id)}
+                                    />
                                 </div>
                             )}
 
                             <div className="flex items-center justify-between pt-4 border-t border-white/5">
                                 <div className="flex gap-2">
                                     <button 
-                                        className="text-xs font-bold uppercase tracking-widest bg-white/5 text-white/40 px-4 py-2 rounded-xl cursor-not-allowed border border-white/5"
+                                        className="text-[10px] font-black tracking-widest bg-white/5 text-white/40 px-4 py-2 rounded-xl cursor-not-allowed border border-white/5"
                                         disabled
                                     >
                                         Payment Logic Pending
@@ -186,17 +152,17 @@ export const InstallmentsList: React.FC = () => {
                                     {!inst.isSplitOriginator && !inst.isSplitPortion && (
                                         <button 
                                             onClick={() => setOpenSplitterId(openSplitterId === inst.id ? null : inst.id)}
-                                            className="text-xs font-bold uppercase tracking-widest bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-2 rounded-xl hover:bg-indigo-500/20 transition-all flex items-center gap-2"
+                                            className="flex items-center gap-1 text-[10px] font-black tracking-widest border border-violet-500/30 text-violet-400 px-3 py-2 rounded-xl hover:bg-violet-500/10 transition-all"
                                         >
-                                            <Share2 size={14} /> Split Bill
+                                            <Share2 size={14} /> Split
                                         </button>
                                     )}
                                 </div>
                                 <button 
                                     onClick={() => handleDelete(inst.id)}
-                                    className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all"
+                                    className="flex items-center gap-1 text-[10px] font-black tracking-widest border border-red-500/30 text-red-500 px-3 py-2 rounded-xl hover:bg-red-500/10 transition-all"
                                 >
-                                    <Trash2 size={16} />
+                                    <Trash2 size={14} /> Delete
                                 </button>
                             </div>
 
@@ -214,13 +180,10 @@ export const InstallmentsList: React.FC = () => {
                                     />
                                 </div>
                             )}
-                        </div>
+                        </LiabilityItemCard>
                     );
                 }) : (
-                    <div className="py-12 text-center border border-dashed border-white/10 rounded-[2rem]">
-                        <AlertCircle size={24} className="mx-auto text-white/20 mb-3" />
-                        <p className="text-xs font-black uppercase tracking-widest text-white/20">No active installment plans found</p>
-                    </div>
+                    <EmptyPlaceholder icon={AlertCircle} message="No active installment plans found" />
                 )}
             </div>
         </section>

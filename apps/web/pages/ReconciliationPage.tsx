@@ -115,7 +115,7 @@ const ReconciliationPage: React.FC = () => {
           <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 flex items-center justify-between group overflow-hidden relative">
             <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all"></div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Pending Suggestions</p>
+              <p className="text-[10px] font-black tracking-widest text-white/40 mb-1">Pending Suggestions</p>
               <h4 className="text-3xl font-black italic">{proposals.length}</h4>
             </div>
             <GitMerge className="text-primary/40 group-hover:text-primary transition-colors" size={32} />
@@ -159,9 +159,9 @@ const ReconciliationPage: React.FC = () => {
                 <button onClick={toggleAll} className="w-5 h-5 rounded border border-white/20 flex items-center justify-center transition-colors hover:border-primary">
                    {selected.size === proposals.length && proposals.length > 0 && <div className="w-3 h-3 bg-primary rounded-sm" />}
                 </button>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Select All</span>
+                <span className="text-[10px] font-black tracking-widest text-white/30">Select All</span>
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30">
+              <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-white/30">
                 <Zap size={12} className="text-amber-500" /> AI Confidence Score
               </div>
            </div>
@@ -171,7 +171,7 @@ const ReconciliationPage: React.FC = () => {
            ) : proposals.length === 0 ? (
              <div className="py-40 text-center rounded-[3rem] border border-dashed border-white/5 bg-white/[0.02]">
                 <ShieldCheck className="mx-auto text-white/10 mb-6" size={64} />
-                <h4 className="text-xl font-black uppercase tracking-widest text-white/40">Ledger Balanced</h4>
+                <h4 className="text-xl font-black tracking-widest text-white/40">Ledger Balanced</h4>
                 <p className="text-sm text-white/20 mt-2">No pending reconciliation proposals found.</p>
              </div>
            ) : (
@@ -187,7 +187,7 @@ const ReconciliationPage: React.FC = () => {
                        {/* Transaction 1 */}
                        <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Primary</span>
+                            <span className="text-[10px] font-black tracking-widest text-white/20">Primary</span>
                             <span className="text-[10px] font-medium text-white/40">{p.primaryDate}</span>
                           </div>
                           <h5 className="font-bold text-lg leading-tight truncate">{p.primaryDescription}</h5>
@@ -211,7 +211,7 @@ const ReconciliationPage: React.FC = () => {
                        <div className="flex-1 space-y-1 text-right">
                           <div className="flex items-center gap-2 justify-end">
                             <span className="text-[10px] font-medium text-white/40">{p.suggestedDate}</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Suggested Match</span>
+                            <span className="text-[10px] font-black tracking-widest text-white/20">Suggested Match</span>
                           </div>
                           <h5 className="font-bold text-lg leading-tight truncate">{p.suggestedDescription}</h5>
                           <Price amountCents={p.suggestedAmount} className="text-sm font-black" />
@@ -235,7 +235,7 @@ const ReconciliationPage: React.FC = () => {
               <Zap size={20} />
            </div>
            <div>
-              <h5 className="text-sm font-black uppercase tracking-widest text-blue-400">Reconciliation Logic</h5>
+              <h5 className="text-sm font-black tracking-widest text-blue-400">Reconciliation Logic</h5>
               <p className="text-xs text-white/40 mt-1 max-w-2xl">
                 The smart engine automatically pairs transactions of opposite amounts occurring within 7 days of each other. 
                 Approved pairings will link the transactions permanently for accurate balance reporting and debt tracking.

@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, integer, primaryKey, index } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, integer, primaryKey, index, serial } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './auth';
 
@@ -47,6 +47,27 @@ export const categories = pgTable('categories', {
   householdIdx: index('idx_categories_household').on(table.householdId),
 }));
 
+export const merchants = pgTable('merchants', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_merchants_household').on(table.householdId),
+}));
+
+export const chargeDescriptors = pgTable('charge_descriptors', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  defaultCategoryId: text('default_category_id'),
+  isActive: boolean('is_active').default(true),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_charge_descriptors_household').on(table.householdId),
+}));
+
 export const billers = pgTable('billers', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -86,6 +107,7 @@ export const transactions = pgTable('transactions', {
   source: text('source').default('manual'),
   payScheduleId: text('pay_schedule_id'),
   paycheckDate: text('paycheck_date'),
+  chargeDescriptorId: text('charge_descriptor_id'),
 }, (table) => ({
   householdIdx: index('idx_transactions_household').on(table.householdId),
   accountIdx: index('idx_transactions_account').on(table.accountId),
@@ -111,6 +133,35 @@ export const transactionPairingRules = pgTable('transaction_pairing_rules', {
   categoryIdx: index('idx_pairing_rules_category').on(table.targetCategoryId),
 }));
 
+export const externalContacts = pgTable('external_contacts', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  scope: text('scope').default('private'),
+  householdId: text('household_id').references(() => households.id, { onDelete: 'cascade' }),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_ext_contacts_household').on(table.householdId),
+  creatorIdx: index('idx_ext_contacts_creator').on(table.createdBy),
+}));
+
+export const sharedAccess = pgTable('shared_access', {
+  id: text('id').primaryKey(),
+  targetType: text('target_type').notNull(),
+  targetId: text('target_id').notNull(),
+  token: text('token').notNull().unique(),
+  contactLabel: text('contact_label').notNull(),
+  visibilityScope: text('visibility_scope').default('name_only'),
+  permission: text('permission').default('view'),
+  expiresAt: text('expires_at'),
+  lastAccessedAt: text('last_accessed_at'),
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  tokenIdx: index('idx_shared_access_token').on(table.token),
+  targetIdx: index('idx_shared_access_target').on(table.targetType, table.targetId),
+}));
+
 export const bills = pgTable('bills', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
@@ -130,6 +181,9 @@ export const bills = pgTable('bills', {
   payScheduleId: text('pay_schedule_id'),
   paycheckDate: text('paycheck_date'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
+  visibility: text('visibility').default('household'),
+  publicScope: text('public_scope').default('name_only'),
+  externalContactId: text('external_contact_id').references(() => externalContacts.id, { onDelete: 'set null' }),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_bills_household').on(table.householdId),
@@ -151,6 +205,9 @@ export const subscriptions = pgTable('subscriptions', {
   accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   paymentMode: text('payment_mode').default('manual'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
+  visibility: text('visibility').default('household'),
+  publicScope: text('public_scope').default('name_only'),
+  externalContactId: text('external_contact_id').references(() => externalContacts.id, { onDelete: 'set null' }),
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
   payScheduleId: text('pay_schedule_id'),
@@ -254,6 +311,9 @@ export const installmentPlans = pgTable('installment_plans', {
   accountId: text('account_id').references(() => accounts.id, { onDelete: 'set null' }),
   paymentMode: text('payment_mode').default('manual'),
   status: text('status').default('active'),
+  planType: text('plan_type').default('user'),
+  bnplProviderId: text('bnpl_provider_id'),
+  originalTransactionId: text('original_transaction_id'),
   upcomingAmountCents: integer('upcoming_amount_cents'),
   upcomingEffectiveDate: text('upcoming_effective_date'),
 }, (table) => ({

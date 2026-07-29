@@ -5,7 +5,8 @@ import { getApiUrl } from '../utils/api'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { useReducedMotion } from '../hooks/useReducedMotion'
-import Subscriptions from '../components/Subscriptions'
+import SubscriptionManager from '../components/SubscriptionManager'
+import { DayDetailModal } from '../components/DayDetailModal'
 import Calendar from '../components/Calendar'
 import BudgetProgress from '../components/BudgetProgress'
 import WhatIfLedger from '../components/WhatIfLedger'
@@ -38,7 +39,8 @@ import { PaySchedulesList } from '../components/PaySchedulesList'
 import { PaydayExceptionModal } from '../components/PaydayExceptionModal'
 import { PayCycleTimeline } from '../components/PayCycleTimeline'
 import { projectPaydays, projectRecurringItems } from '../utils/payCycleUtils'
-import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2, Mic } from 'lucide-react';
+import { format } from 'date-fns'
+import { AlertTriangle, Info, Bell, XCircle, GripVertical, Eye, EyeOff, Settings2, Mic, Check, X } from 'lucide-react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 
 const DEFAULT_LAYOUT: Record<string, { id: string, visible: boolean }[]> = {
@@ -118,6 +120,64 @@ const MicButton: React.FC = () => {
   )
 }
 
+function getEntriesForDate(date: Date, transactions: any[], subscriptions: any[], bills: any[], installments: any[], recurringProjections: any[], paySchedules: any[]): any[] {
+  const dateStr = format(date, 'yyyy-MM-dd')
+  const entries: any[] = []
+
+  transactions.forEach((tx: any) => {
+    if (tx.transactionDate === dateStr) {
+      entries.push({ ...tx, type: 'transaction', description: tx.description, amountCents: tx.amountCents, iconUrl: tx.iconUrl })
+    }
+  })
+
+  subscriptions.forEach((sub: any) => {
+    if (sub.nextBillingDate === dateStr) {
+      entries.push({ ...sub, type: 'subscription', description: sub.name, amountCents: sub.amountCents, iconUrl: sub.iconUrl || sub.logoUrl })
+    }
+  })
+
+  bills.forEach((bill: any) => {
+    if (bill.dueDate === dateStr) {
+      entries.push({ ...bill, type: 'bill', description: bill.name, amountCents: bill.amountCents, iconUrl: bill.iconUrl || bill.logoUrl })
+    }
+  })
+
+  installments.forEach((inst: any) => {
+    if (inst.nextPayDate === dateStr) {
+      entries.push({ ...inst, type: 'installment', description: inst.name, amountCents: inst.installmentAmountCents, iconUrl: inst.iconUrl || inst.logoUrl })
+    }
+  })
+
+  recurringProjections.forEach((rp: any) => {
+    if (rp.date === dateStr) {
+      entries.push({
+        ...rp.originalData,
+        id: rp.id,
+        originalId: rp.originalId,
+        type: rp.type,
+        description: rp.description,
+        amountCents: rp.amountCents,
+        iconUrl: rp.originalData?.iconUrl || rp.originalData?.logoUrl,
+      })
+    }
+  })
+
+  paySchedules.forEach((pay: any) => {
+    const payDateStr = pay.date || pay.nextPayDate
+    if (payDateStr === dateStr) {
+      entries.push({
+        ...pay,
+        type: 'pay_schedule',
+        description: pay.name || 'Payday',
+        amountCents: pay.amountCents || pay.estimatedAmountCents || 0,
+        iconUrl: pay.iconUrl,
+      })
+    }
+  })
+
+  return entries
+}
+
 const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' | 'calendar') => void }> = ({ view, setView }) => {
   const { user, token, householdId, logout } = useAuth()
   const apiUrl = getApiUrl();
@@ -147,6 +207,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const [selectedCalendarItem, setSelectedCalendarItem] = useState<any>(null)
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>()
   const [selectedPayday, setSelectedPayday] = useState<any | null>(null)
+  const [isDayDetailOpen, setIsDayDetailOpen] = useState(false)
+  const [dayDetailDate, setDayDetailDate] = useState<Date>(new Date())
 
   const { data: budgetsData, mutate: mutateBudgets } = (useApi('/api/planning/budgets') as any)
   const [showFundModal, setShowFundModal] = useState(false)
@@ -344,7 +406,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
   const handleCalendarSave = async (data: any, recurrenceScope?: 'one' | 'future' | 'all') => {
     const isNew = !data.id
-    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/bills' : data.type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = data.type === 'pay_schedule' ? '/api/planning/pay-schedules' : data.type === 'bill' ? '/api/planning/bills' : data.type === 'subscription' ? '/api/planning/subscriptions' : data.type === 'installment' ? '/api/planning/installment-plans' : '/api/financials/transactions'
     
     // Helper to perform simple headers fetch
     const fetchApi = (url: string, method: string, payload: any) => 
@@ -358,7 +420,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         body: JSON.stringify(payload)
       })
 
-    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule')) {
+    if (!isNew && recurrenceScope === 'one' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule' || data.type === 'installment')) {
       if (data.type === 'pay_schedule') {
         // Save paycheck override/exception
         await fetchApi('/api/planning/pay-exceptions', 'POST', {
@@ -389,13 +451,13 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           status: data.status || 'unpaid',
           notes: data.notes || '',
           isRecurring: false,
-          categoryId: selectedCalendarItem?.originalData?.categoryId || null,
-          accountId: selectedCalendarItem?.originalData?.accountId || null
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null
         }
         await fetchApi(endpoint, 'POST', oneOffPayload)
       }
       
-    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule')) {
+    } else if (!isNew && recurrenceScope === 'future' && data.originalDate && (data.type === 'bill' || data.type === 'subscription' || data.type === 'pay_schedule' || data.type === 'installment')) {
       if (data.type === 'pay_schedule') {
         // 1. End the old schedule the day before this occurrence
         const oldNotes = selectedCalendarItem?.notes || selectedCalendarItem?.originalData?.notes || ''
@@ -429,8 +491,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           frequency: data.frequency,
           endDate: data.endDate || null,
           maxOccurrences: data.maxOccurrences || null,
-          categoryId: selectedCalendarItem?.originalData?.categoryId || null,
-          accountId: selectedCalendarItem?.originalData?.accountId || null
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null
         }
         await fetchApi(endpoint, 'POST', newSchedulePayload)
       }
@@ -446,7 +508,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           frequency: data.frequency,
           estimatedAmountCents: data.estimatedAmountCents,
           nextPayDate: data.nextPayDate,
-          notes: data.notes
+          notes: data.notes,
+          upcomingAmountCents: data.upcomingAmountCents || null,
+          upcomingEffectiveDate: data.upcomingEffectiveDate || null
         }
       } else if (data.type === 'bill' || data.type === 'subscription') {
         payload = {
@@ -458,14 +522,38 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           isRecurring: data.isRecurring,
           frequency: data.frequency,
           endDate: data.endDate || null,
-          maxOccurrences: data.maxOccurrences || null
+          maxOccurrences: data.maxOccurrences || null,
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null,
+          payScheduleId: data.payScheduleId || null,
+          paycheckDate: data.paycheckDate || null,
+          upcomingAmountCents: data.upcomingAmountCents || null,
+          upcomingEffectiveDate: data.upcomingEffectiveDate || null
+        }
+      } else if (data.type === 'installment') {
+        payload = {
+          name: data.name || data.description,
+          totalAmountCents: data.totalAmountCents,
+          installmentAmountCents: data.installmentAmountCents,
+          totalInstallments: data.totalInstallments,
+          remainingInstallments: data.remainingInstallments || data.totalInstallments,
+          frequency: data.frequency,
+          nextPaymentDate: data.nextPaymentDate,
+          accountId: data.accountId || null,
+          categoryId: data.categoryId || null,
+          status: data.status || 'active'
         }
       } else {
         payload = {
-          description: data.description,
+          description: data.description || data.name,
           amountCents: data.amountCents,
-          transactionDate: data.transactionDate || data.date,
-          status: data.status || 'none'
+          transactionDate: data.transactionDate || data.dueDate || data.date,
+          status: data.status || 'none',
+          categoryId: data.categoryId || null,
+          accountId: data.accountId || null,
+          confirmationNumber: data.confirmationNumber || null,
+          payScheduleId: data.payScheduleId || null,
+          paycheckDate: data.paycheckDate || null
         }
       }
       await fetchApi(url, method, payload)
@@ -474,6 +562,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (data.type === 'pay_schedule') mutateSchedules()
     else if (data.type === 'bill') mutateBills()
     else if (data.type === 'subscription') mutateSubs()
+    else if (data.type === 'installment') mutateInstallments()
     else mutateTx()
     
     setIsCalendarModalOpen(false)
@@ -482,8 +571,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   }
 
   const handleCalendarDelete = async (id: string, type: string, recurrenceScope?: 'one' | 'future' | 'all', selectedDate?: string) => {
-    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription' || type === 'pay_schedule')) {
-      const endpoint = type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/planning/pay-schedules'
+    if (recurrenceScope && selectedDate && (type === 'bill' || type === 'subscription' || type === 'pay_schedule' || type === 'installment')) {
+      const endpoint = type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : type === 'pay_schedule' ? '/api/planning/pay-schedules' : '/api/planning/installment-plans'
       
       const fetchApi = (url: string, method: string, payload: any) => 
         fetch(`${apiUrl}${url}`, {
@@ -559,6 +648,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       
       if (type === 'pay_schedule') mutateSchedules()
       else if (type === 'bill') mutateBills()
+      else if (type === 'installment') mutateInstallments()
       else mutateSubs()
       setIsCalendarModalOpen(false)
       globalMutate()
@@ -572,7 +662,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
   const confirmCalendarDelete = async () => {
     if (!deletePending) return
     const { id, type } = deletePending
-    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : '/api/financials/transactions'
+    const endpoint = type === 'pay_schedule' ? '/api/planning/pay-schedules' : type === 'bill' ? '/api/planning/bills' : type === 'subscription' ? '/api/planning/subscriptions' : type === 'installment' ? '/api/planning/installment-plans' : '/api/financials/transactions'
     
     await fetch(`${apiUrl}${endpoint}/${id}`, {
       method: 'DELETE',
@@ -585,6 +675,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (type === 'pay_schedule') mutateSchedules()
     else if (type === 'bill') mutateBills()
     else if (type === 'subscription') mutateSubs()
+    else if (type === 'installment') mutateInstallments()
     else mutateTx()
     
     globalMutate()
@@ -608,11 +699,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   recurringProjections={projectedRecurring}
                   paySchedules={projectedPaydays}
                   payScheduleDefinitions={paySchedules}
-                  onDayClick={(date) => {
-                    setSelectedCalendarDate(date)
-                    setSelectedCalendarItem(null)
-                    setIsCalendarModalOpen(true)
-                  }}
+        onDayClick={(date) => {
+          setDayDetailDate(date)
+          setIsDayDetailOpen(true)
+        }}
                   onItemClick={(item) => {
                     setSelectedCalendarItem(item)
                     setIsCalendarModalOpen(true)
@@ -644,24 +734,22 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <div className="safe-to-spend-container mt-4">
                 <Price amountCents={analysis?.safe_to_spend_cents || analysis?.safety_number_cents || 0} />
               </div>
-              <p className="text-sm text-secondary uppercase tracking-widest font-bold opacity-60 mt-2">Spendable cash for selected window</p>
+              <p className="text-sm text-secondary tracking-widest font-bold opacity-60 mt-2">Spendable cash for selected window</p>
             </section>
       );
       case 'future-balance': return (
             <section key="future-balance" className="card">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="text-lg font-bold">Future Balance</h3>
-                  <p className="text-xs text-secondary font-medium mt-1">A forecast of your cash balance over the next 6 months, helping you visualize your savings growth and see if you have enough to cover upcoming expenses.</p>
-                </div>
-                <div className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase font-black min-w-[110px] text-center">6-Month Forecast</div>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+                <h3 className="text-lg font-black tracking-tighter italic">Future Balance</h3>
+                <div className="text-[10px] bg-primary/10 text-primary px-3 py-1 rounded-full font-black tracking-widest">6-Month Forecast</div>
               </div>
+              <p className="text-xs text-secondary font-medium w-full mb-2">Projected cash balance over the next 6 months showing savings growth and expense coverage.</p>
               <div className="text-3xl font-black text-white mb-2 mt-4">
                 <Price amountCents={Array.isArray(forecast) ? (forecast.at(-1)?.balance_cents || 0) : 0} options={{ minimumFractionDigits: 0 }} />
               </div>
               <div className="flex items-center gap-2 mb-4">
                  <span className="w-2 h-2 bg-emerald-500 rounded-full pulse"></span>
-                 <span className="text-xs text-secondary font-bold uppercase tracking-widest opacity-60">Estimated Available Money</span>
+                 <span className="text-xs text-secondary font-bold tracking-widest opacity-60">Estimated Available Money</span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden flex">
                 {Array.isArray(forecast) && forecast.slice(0, 6).map((p: any, i: number) => (
@@ -693,14 +781,14 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                       />
                   </div>
                   <div className="flex gap-4 items-center mr-4">
-                    <a href="#/data" className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-all no-underline">
+                    <a href="#/data" className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary hover:text-white transition-all no-underline">
                       <span>📥</span> Import & Export
                     </a>
                     {['all', 'unmatched', 'matched'].map(s => (
                       <button 
                         key={s}
                         onClick={() => setFilterStatus(s)}
-                        className={`text-[12px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
+                        className={`text-[12px] font-black tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
                       >
                         {s}
                       </button>
@@ -729,22 +817,22 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         <div className="font-bold flex items-center gap-3">
                           {tx.description}
                           {tx.status === 'paid' && (
-                            <span className="text-xs font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase border border-emerald-500/20">Paid</span>
+                            <span className="text-xs font-bold bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full border border-emerald-500/20">Paid</span>
                           )}
                           {tx.status === 'pending' && (
-                            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase border border-amber-500/20">Pending</span>
+                            <span className="text-xs font-bold bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">Pending</span>
                           )}
                           {tx.status === 'scheduled' && (
-                            <span className="text-xs font-bold bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase border border-blue-500/20">Scheduled</span>
+                            <span className="text-xs font-bold bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full border border-blue-500/20">Scheduled</span>
                           )}
                           {(tx.status === 'unpaid' || !tx.status) && (
-                            <span className="text-xs font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full uppercase border border-red-500/20">Unpaid</span>
+                            <span className="text-xs font-bold bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">Unpaid</span>
                           )}
                           {tx.reconciliationStatus === 'reconciled' && (
-                            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Cleared</span>
+                            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Cleared</span>
                           )}
                         </div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60 flex items-center gap-2">
+                        <div className="text-xs text-secondary font-bold opacity-60 flex items-center gap-2">
                            {tx.transactionDate}
                            {tx.confirmationNumber && <span className="text-slate-500 pr-2 border-r border-white/10">#{tx.confirmationNumber}</span>}
                         </div>
@@ -762,9 +850,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                         </button>
                         <button 
                           onClick={() => toggleReconcile(tx.id, tx.status === 'reconciled')}
-                          className={`px-3 py-2 text-xs font-bold uppercase tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
+                          className={`px-3 py-2 text-xs font-bold tracking-widest rounded-lg border transition-all ${tx.status === 'reconciled' ? 'bg-primary border-primary text-white' : 'bg-transparent border-primary/50 text-primary hover:bg-primary/10'}`}
                         >
-                          {tx.status === 'reconciled' ? '✓' : 'Match'}
+                          {tx.status === 'reconciled' ? <Check size={14} className="inline" /> : 'Match'}
                         </button>
                       </div>
                     </div>
@@ -791,7 +879,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       case 'add-transaction': return (
             <section key="add-transaction" className="card bg-primary/5 border-primary/20 animate-in fade-in zoom-in duration-500 delay-150">
               <h3 className="text-lg font-bold mb-1">Add Transaction</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60 mb-2">Instantly record new entries</p>
+              <p className="text-xs text-secondary font-bold opacity-60 mb-2">Instantly record new entries</p>
               <p className="text-xs text-secondary font-medium mb-6">Quickly record a purchase or income. Tap a template button below to auto-fill common items, or type the name and amount manually.</p>
               
               <div className="flex flex-wrap gap-2 mb-6">
@@ -802,7 +890,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                        if (tpl.name) setQeDesc(tpl.name)
                        if (tpl.amountCents) setQeAmountCents(tpl.amountCents)
                     }}
-                    className="text-xs font-bold uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
+                    className="text-xs font-bold tracking-widest px-3 py-1.5 bg-white/5 border border-glass-border rounded-lg hover:border-primary/50 hover:bg-white/10 transition-all"
                   >
                     {tpl.name}
                   </button>
@@ -842,28 +930,26 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 </div>
                 <div className="flex gap-2 sm:contents">
                   <CurrencyInput valueCents={qeAmountCents} onChangeCents={setQeAmountCents} placeholder="0.00" className="bg-white/10 border-glass-border" />
-                  <button type="submit" className="px-8 bg-primary rounded-xl font-black uppercase tracking-widest text-xs">Save</button>
+                  <button type="submit" className="px-8 bg-primary rounded-xl font-black tracking-widest text-xs">Save</button>
                 </div>
               </form>
             </section>
       );
       case 'budget-categories': return (
               <section id="budget-categories-card" key="budget-categories" className="card animate-in fade-in zoom-in duration-500">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold uppercase tracking-tight italic">Budget Categories</h3>
-                    <p className="text-xs text-secondary font-medium mt-1 pr-4">Your envelope budgeting center. Allocate funds to different envelopes (like Groceries or Rent) to stay within your limits, and use the 'Roll Over' button to carry leftover funds to the next month.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 min-w-[220px] justify-end">
-                    <button onClick={handleRollover} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
-                    <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
-                    <button onClick={() => setShowFundModal(true)} className="text-xs font-bold uppercase tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <h3 className="text-lg font-black tracking-tighter italic">Budget Categories</h3>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={handleRollover} className="text-xs font-bold tracking-widest px-3 py-2 bg-white/5 border border-glass-border rounded-xl hover:bg-white/10 transition-all">Roll Over</button>
+                    <button onClick={() => setShowDepositModal(true)} className="text-xs font-bold tracking-widest px-3 py-2 bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">Deposit</button>
+                    <button onClick={() => setShowFundModal(true)} className="text-xs font-bold tracking-widest px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 rounded-xl hover:bg-secondary/20 transition-all">Fund</button>
                   </div>
                 </div>
+                <p className="text-xs text-secondary font-medium mb-4 w-full">Allocate, fund, and track envelope spending across categories.</p>
                 <div className="text-3xl font-black text-primary mb-1 mt-6">
                   <Price amountCents={budgetsData?.unallocatedBalanceCents || 0} />
                 </div>
-                <div className="text-xs text-secondary uppercase tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
+                <div className="text-xs text-secondary tracking-widest font-bold opacity-60 mb-6">Unallocated Funds</div>
                 
                 <div className="space-y-2">
                   {Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => (
@@ -873,7 +959,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">{b.icon}</div>
                              <div>
                                 <h4 className="font-bold text-sm leading-none">{b.name}</h4>
-                                <p className="text-xs text-secondary opacity-40 uppercase tracking-widest mt-1 hide-on-narrow">Active Category</p>
+                                <p className="text-xs text-secondary opacity-40 tracking-widest mt-1 hide-on-narrow">Active Category</p>
                              </div>
                           </div>
                           <div className={`text-xl font-black tracking-tighter ${((b.envelopeBalanceCents || 0) < 0) ? 'text-red-500' : 'text-white'}`}>
@@ -882,7 +968,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                        </div>
                        
                        <div className="space-y-2">
-                          <div className="flex justify-between text-xs font-bold uppercase tracking-widest">
+                          <div className="flex justify-between text-xs font-bold tracking-widest">
                              <span className="text-secondary opacity-60">Activity</span>
                              <span className="text-white opacity-80"><Price amountCents={b.spend_cents || 0} /> <span className="hide-on-narrow">/ <Price amountCents={b.monthlyBudgetCents || 0} /></span></span>
                           </div>
@@ -905,7 +991,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       case 'transfer-form': return <TransferForm key="transfer-form" />;
       case 'bills-list': return <BillsList key="bills-list" />;
       case 'installments-list': return <InstallmentsList key="installments-list" />;
-      case 'subscriptions': return <Subscriptions key="subscriptions" />;
+      case 'subscriptions': return <SubscriptionManager key="subscriptions" compact />;
       case 'what-if-ledger': return <WhatIfLedger key="what-if-ledger" />;
       case 'shared-balances': return <SharedBalances key="shared-balances" />;
       case 'financial-health': return (
@@ -915,7 +1001,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               <HealthScore score={analysis?.healthScore || 0} />
               <button 
                 onClick={() => window.open(`${apiUrl}/api/data/history/summary`, '_blank')}
-                className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-xs font-black uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
+                className="mt-8 w-full py-3 bg-white/5 border border-glass-border rounded-xl text-xs font-black tracking-widest text-primary hover:bg-primary/5 hover:border-primary/50 transition-all"
               >
                 📥 Download Statement Summary
               </button>
@@ -933,93 +1019,94 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
     if (!isCustomizing) return null;
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[9999] p-4 flex items-center justify-center pointer-events-auto" onClick={(e) => { e.stopPropagation(); setIsCustomizing(false); }}>
-        <div className="card w-full max-w-lg p-8 max-h-[80vh] overflow-y-auto space-y-6" onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-between items-center bg-deep sticky top-0 pb-4 z-10 border-b border-white/5">
+        <div className="card w-full max-w-lg p-0 max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center bg-slate-900/95 backdrop-blur-xl sticky top-0 p-6 z-10 border-b border-white/5 rounded-t-[inherit]">
               <div>
-                  <h3 className="text-xl font-black uppercase tracking-tighter italic m-0">Customize Layout</h3>
-                  <p className="text-xs text-secondary font-bold uppercase tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
+                  <h3 className="text-xl font-black tracking-tighter italic m-0">Customize Layout</h3>
+                  <p className="text-xs text-secondary font-bold tracking-widest opacity-60">Drag to reorder • Toggle visibility</p>
               </div>
-              <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2">✕</button>
+              <button onClick={() => setIsCustomizing(false)} className="opacity-50 hover:opacity-100 p-2"><X size={18} /></button>
           </div>
 
-          <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation</h4>
-            <Reorder.Group 
-                axis="y" 
-                values={tabConfig} 
-                onReorder={(newOrder) => setTabConfig(newOrder)}
-                className="space-y-2"
-            >
-                {tabConfig.map((tab) => (
-                    <Reorder.Item 
-                        key={tab.id} 
-                        value={tab}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${tab.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <GripVertical size={16} className="text-secondary/50" />
-                            <span className="text-sm font-bold text-white">{tab.icon} {tab.label}</span>
-                        </div>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const newTabs = tabConfig.map(t => t.id === tab.id ? { ...t, visible: !t.visible } : t);
-                                setTabConfig(newTabs);
-                                
-                                // Fallback for activeTab if hidden
-                                if (tab.id === activeTab && tab.visible) {
-                                   const nextVisible = newTabs.find(t => t.visible);
-                                   if (nextVisible) setActiveTab(nextVisible.id);
-                                }
-                            }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            {tab.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
-                        </button>
-                    </Reorder.Item>
-                ))}
-            </Reorder.Group>
-          </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="space-y-4">
+              <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">Main Navigation Tabs</h4>
+              <Reorder.Group 
+                  axis="y" 
+                  values={tabConfig} 
+                  onReorder={(newOrder) => setTabConfig(newOrder)}
+                  className="space-y-2"
+              >
+                  {tabConfig.map((tab) => (
+                      <Reorder.Item 
+                          key={tab.id} 
+                          value={tab}
+                          className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${tab.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
+                      >
+                          <div className="flex items-center gap-3">
+                              <GripVertical size={16} className="text-secondary/50" />
+                              <span className="text-sm font-bold text-white">{tab.icon} {tab.label}</span>
+                          </div>
+                          <button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newTabs = tabConfig.map(t => t.id === tab.id ? { ...t, visible: !t.visible } : t);
+                                  setTabConfig(newTabs);
+                                  
+                                  // Fallback for activeTab if hidden
+                                  if (tab.id === activeTab && tab.visible) {
+                                     const nextVisible = newTabs.find(t => t.visible);
+                                     if (nextVisible) setActiveTab(nextVisible.id);
+                                  }
+                              }}
+                              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                              {tab.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
+                          </button>
+                      </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            </div>
 
-          <div className="space-y-4 pt-2">
-            <h4 className="text-xs font-black uppercase tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Tab Configuration</h4>
-            <Reorder.Group 
-                axis="y" 
-                values={layout[activeTab] || []} 
-                onReorder={(newOrder) => {
-                    setLayout({ ...layout, [activeTab]: newOrder });
-                }}
-                className="space-y-2"
-            >
-                {(layout[activeTab] || []).map((item) => (
-                    <Reorder.Item 
-                        key={item.id} 
-                        value={item}
-                        className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${item.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <GripVertical size={16} className="text-secondary/50" />
-                            <span className="text-xs font-black uppercase tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
-                        </div>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const newTabItems = (layout[activeTab] || []).map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
-                                setLayout({ ...layout, [activeTab]: newTabItems });
-                            }}
-                            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        >
-                            {item.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
-                        </button>
-                    </Reorder.Item>
-                ))}
-            </Reorder.Group>
-            
+            <div className="space-y-4">
+              <h4 className="text-xs font-black tracking-widest text-primary border-b border-primary/20 pb-2">{tabs.find(t => t.id === activeTab)?.label} Widgets</h4>
+              <Reorder.Group 
+                  axis="y" 
+                  values={layout[activeTab] || []} 
+                  onReorder={(newOrder) => {
+                      setLayout({ ...layout, [activeTab]: newOrder });
+                  }}
+                  className="space-y-2"
+              >
+                  {(layout[activeTab] || []).map((item) => (
+                      <Reorder.Item 
+                          key={item.id} 
+                          value={item}
+                          className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${item.visible ? 'bg-white/5 border-glass-border hover:border-primary/50' : 'bg-transparent border-white/5 opacity-50'}`}
+                      >
+                          <div className="flex items-center gap-3">
+                              <GripVertical size={16} className="text-secondary/50" />
+                              <span className="text-xs font-black tracking-widest text-white">{item.id.replace(/-/g, ' ')}</span>
+                          </div>
+                          <button 
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newTabItems = (layout[activeTab] || []).map(w => w.id === item.id ? { ...w, visible: !w.visible } : w);
+                                  setLayout({ ...layout, [activeTab]: newTabItems });
+                              }}
+                              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                              {item.visible ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-secondary" />}
+                          </button>
+                      </Reorder.Item>
+                  ))}
+              </Reorder.Group>
+            </div>
           </div>
           
-          <div className="pt-6 border-t border-white/5 flex gap-4 sticky bottom-0 bg-deep pt-4">
+          <div className="p-6 border-t border-white/5 flex gap-4 bg-slate-900/95 backdrop-blur-xl rounded-b-[inherit]">
               <button 
-                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                  className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl text-xs font-bold tracking-widest hover:bg-white/10 transition-all"
                   onClick={() => {
                     // Reset to saved state on cancel
                     if (user?.settingsJson) {
@@ -1033,7 +1120,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   Cancel
               </button>
               <button 
-                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-xs font-bold uppercase tracking-widest hover:brightness-110 transition-all transition-all"
+                  className="flex-1 py-4 bg-primary text-white shadow-[0_0_20px_rgba(16,185,129,0.2)] rounded-xl text-xs font-bold tracking-widest hover:brightness-110 transition-all transition-all"
                   onClick={() => { saveLayout(layout, tabConfig); setIsCustomizing(false); }}
               >
                   Save Global Layout
@@ -1068,7 +1155,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                    <Info size={24} />}
                 </div>
                 <div className="flex-1 pt-1">
-                  <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                  <h4 className="text-sm font-black tracking-[0.2em] mb-1.5">{ann.title}</h4>
                   <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
                     <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
                   </div>
@@ -1111,7 +1198,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                      <Info size={24} />}
                   </div>
                   <div className="flex-1 pt-1">
-                    <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1.5">{ann.title}</h4>
+                    <h4 className="text-sm font-black tracking-[0.2em] mb-1.5">{ann.title}</h4>
                     <div className="text-xs font-bold opacity-70 leading-relaxed markdown-content">
                       <ReactMarkdown>{ann.contentMd}</ReactMarkdown>
                     </div>
@@ -1154,7 +1241,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         </div>
         <button 
           onClick={() => setIsCustomizing(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ml-4 whitespace-nowrap"
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-glass-border hover:bg-white/10 rounded-xl text-xs font-bold tracking-widest transition-all ml-4 whitespace-nowrap"
         >
           <Settings2 size={14} className="text-secondary hover:text-white" /> Customize View
         </button>
@@ -1181,7 +1268,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       {selectedTxIds.length > 0 && (
         <div className="fixed bottom-24 sm:bottom-8 left-1/2 -translate-x-1/2 z-[100] p-1 bg-[#0f172a]/95 backdrop-blur-2xl border border-secondary rounded-2xl shadow-2xl reveal flex items-center gap-3 sm:gap-6 min-w-[300px] sm:min-w-[400px]">
           <div className="flex items-center gap-2 sm:gap-4 pl-4 sm:pl-6">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
+            <span className="text-[10px] sm:text-xs font-black tracking-[0.2em] text-secondary">{selectedTxIds.length} <span className="hidden xs:inline">Selected</span></span>
             <div className="h-4 w-px bg-glass-border" />
             <span className="text-lg sm:text-xl font-black tracking-tighter">
               <Price amountCents={(Array.isArray(transactions) ? transactions : []).filter((t: any) => selectedTxIds.includes(t.id)).reduce((acc: number, t: any) => acc + (t.amountCents || 0), 0)} />
@@ -1189,7 +1276,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           </div>
           <button 
             onClick={() => setSelectedTxIds([])}
-            className="ml-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[12px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap"
+            className="ml-auto px-4 sm:px-6 py-2 sm:py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[12px] sm:text-xs font-black tracking-widest whitespace-nowrap"
           >
             Clear
           </button>
@@ -1211,7 +1298,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
 
             <div className="space-y-6">
               <div>
-                <div className="text-xs text-primary font-black uppercase tracking-[0.2em] mb-3">Matches</div>
+                <div className="text-xs text-primary font-black tracking-[0.2em] mb-3">Matches</div>
                 <div className="space-y-2">
                   {Array.isArray(smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates) && 
                   smartSuggestions?.find((s: any) => s.source.id === linkingTx.id)?.candidates?.map((t: any) => (
@@ -1250,7 +1337,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
               </div>
 
               <div>
-                <div className="text-xs text-secondary font-black uppercase tracking-[0.2em] mb-3">All Transactions</div>
+                <div className="text-xs text-secondary font-black tracking-[0.2em] mb-3">All Transactions</div>
                 <div className="space-y-2">
                   {Array.isArray(transactions) && transactions.filter((t: any) => t.id !== linkingTx.id).map((t: any) => (
                     <div 
@@ -1274,12 +1361,12 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                     >
                       <div>
                         <div className="font-bold group-hover:text-primary transition-colors">{t.description}</div>
-                        <div className="text-xs text-secondary uppercase font-bold opacity-60">{t.transactionDate}</div>
+                        <div className="text-xs text-secondary font-bold opacity-60">{t.transactionDate}</div>
                       </div>
                       <div className="text-right">
                         <div className="font-black tracking-tighter text-lg">${(t.amountCents / 100).toFixed(2)}</div>
                         {Math.abs(t.amountCents) === Math.abs(linkingTx.amountCents) && (
-                          <span className="text-[10px] text-primary font-black uppercase">Exact Match</span>
+                          <span className="text-[10px] text-primary font-black">Exact Match</span>
                         )}
                       </div>
                     </div>
@@ -1305,7 +1392,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   setLinkingTx(null)
                   showToast('Links Reset')
                 }}
-                className="mt-8 w-full py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                className="mt-8 w-full py-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs font-black tracking-widest hover:bg-red-500/20 transition-all"
               >
                 Reset All Links
               </button>
@@ -1319,11 +1406,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="card w-full max-w-md p-8 reveal space-y-6overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Add Money to Category</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60">Allocate balance from unallocated pool</p>
+              <p className="text-xs text-secondary font-bold opacity-60">Allocate balance from unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Select Category</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Select Category</label>
                 <SearchableSelect 
                   options={Array.isArray(budgetsData?.budgets) ? budgetsData.budgets.filter((b: any) => b.is_envelope).map((b: any) => ({
                     value: b.id,
@@ -1335,10 +1422,10 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   onChange={(val) => setFundCategoryId(val)}
                   placeholder="Choose a category..."
                 />
-                <a href="#/settings" className="text-[10px] sm:text-xs text-primary font-black uppercase tracking-widest hover:underline mt-2 inline-block ml-1">Manage Categories &rarr;</a>
+                <a href="#/settings" className="text-[10px] sm:text-xs text-primary font-black tracking-widest hover:underline mt-2 inline-block ml-1">Manage Categories &rarr;</a>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Amount</label>
                 <CurrencyInput
                   valueCents={fundAmountCents}
                   onChangeCents={setFundAmountCents}
@@ -1346,8 +1433,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
               </div>
               <div className="flex gap-4 pt-4">
-                <button onClick={() => setShowFundModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black uppercase text-xs">Cancel</button>
-                <button className="flex-1 py-4 bg-primary rounded-xl font-black uppercase text-xs" onClick={handleFund}>Allocate Funds</button>
+                <button onClick={() => setShowFundModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black text-xs">Cancel</button>
+                <button className="flex-1 py-4 bg-primary rounded-xl font-black text-xs" onClick={handleFund}>Allocate Funds</button>
               </div>
             </div>
           </div>
@@ -1359,11 +1446,11 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           <div className="card w-full max-w-md p-8 reveal space-y-6 overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-xl font-black m-0">Add to Unallocated</h3>
-              <p className="text-xs text-secondary uppercase font-bold opacity-60">Add funds to unallocated pool</p>
+              <p className="text-xs text-secondary font-bold opacity-60">Add funds to unallocated pool</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-secondary ml-1">Amount</label>
+                <label className="text-xs font-black tracking-widest text-secondary ml-1">Amount</label>
                 <CurrencyInput
                   valueCents={depositAmountCents}
                   onChangeCents={setDepositAmountCents}
@@ -1371,13 +1458,41 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                 />
               </div>
               <div className="flex gap-4 pt-4">
-                <button onClick={() => setShowDepositModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black uppercase text-xs">Cancel</button>
-                <button className="flex-1 py-4 bg-primary rounded-xl font-black uppercase text-xs" onClick={handleDeposit}>Deposit</button>
+                <button onClick={() => setShowDepositModal(false)} className="flex-1 py-4 bg-white/5 border border-glass-border rounded-xl font-black text-xs">Cancel</button>
+                <button className="flex-1 py-4 bg-primary rounded-xl font-black text-xs" onClick={handleDeposit}>Deposit</button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <DayDetailModal
+        isOpen={isDayDetailOpen}
+        date={dayDetailDate}
+        entries={getEntriesForDate(dayDetailDate, transactions, subscriptions, bills, installments, projectedRecurring, projectedPaydays)}
+        onClose={() => setIsDayDetailOpen(false)}
+        onAddEntry={(date) => {
+          setSelectedCalendarDate(date)
+          setSelectedCalendarItem(null)
+          setIsDayDetailOpen(false)
+          setIsCalendarModalOpen(true)
+        }}
+        onEditEntry={(item) => {
+          setSelectedCalendarItem(item)
+          setIsDayDetailOpen(false)
+          setIsCalendarModalOpen(true)
+        }}
+        onDeleteEntry={(item) => {
+          if (handleCalendarDelete) {
+            handleCalendarDelete(item.id || item.originalId, item.type, 'one', item.date || item.transactionDate)
+          }
+        }}
+        onMarkPaid={(item) => {
+          if (item.type === 'bill' || item.type === 'subscription') {
+            handleCalendarSave({ ...item, status: 'paid', type: item.type === 'subscription' ? 'bill' : 'bill' }, 'one')
+          }
+        }}
+      />
 
       <CalendarEntryModal 
         key={`${isCalendarModalOpen}-${selectedCalendarItem?.id || 'new'}-${selectedCalendarDate?.toISOString() || ''}`}
@@ -1397,8 +1512,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         title="Confirm Budget Rollover"
         footer={
           <>
-            <button onClick={() => setIsRolloverModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Cancel</button>
-            <button onClick={confirmRollover} className="px-6 py-2 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">Continue</button>
+            <button onClick={() => setIsRolloverModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black tracking-widest transition-all">Cancel</button>
+            <button onClick={confirmRollover} className="px-6 py-2 bg-primary text-white rounded-xl text-xs font-black tracking-widest transition-all">Continue</button>
           </>
         }
       >
@@ -1411,8 +1526,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         title="Delete Entry?"
         footer={
           <>
-            <button onClick={() => setIsDeleteModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Cancel</button>
-            <button onClick={confirmCalendarDelete} className="px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all font-bold">Delete Forever</button>
+            <button onClick={() => setIsDeleteModalOpen(false)} className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black tracking-widest transition-all">Cancel</button>
+            <button onClick={confirmCalendarDelete} className="px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-black tracking-widest transition-all font-bold">Delete Forever</button>
           </>
         }
       >

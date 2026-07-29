@@ -134,7 +134,7 @@ const DomainChipEditor: React.FC<DomainChipEditorProps> = ({
           <p className={`font-bold ${accent.text} mb-1 leading-none text-sm`}>{label}</p>
           <p className="text-sm text-gray-500">{description}</p>
         </div>
-        <span className={`shrink-0 text-xs px-2 py-0.5 rounded font-black uppercase tracking-widest border ${accent.border} ${accent.bg} ${accent.text}`}>
+        <span className={`shrink-0 text-xs px-2 py-0.5 rounded font-black tracking-widest border ${accent.border} ${accent.bg} ${accent.text}`}>
           {domains.length} domain{domains.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -188,7 +188,7 @@ const DomainChipEditor: React.FC<DomainChipEditorProps> = ({
           type="button"
           onClick={() => commitDomain(inputValue)}
           disabled={!inputValue.trim() || saving}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed ${accent.bg} ${accent.text} border ${accent.border} hover:opacity-90`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed ${accent.bg} ${accent.text} border ${accent.border} hover:opacity-90`}
         >
           <Plus size={12} strokeWidth={3} />
           Add Domain
@@ -325,8 +325,8 @@ const AdminConfig: React.FC = () => {
             <div className="flex items-center gap-4 mb-4">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-xl">🛠️</div>
               <div>
-                <h3 className="font-black uppercase italic tracking-tight text-amber-400">System Self-Healing</h3>
-                <p className="text-xs text-amber-500/60 font-bold uppercase tracking-widest">Maintenance Operations</p>
+                <h3 className="font-black italic tracking-tight text-amber-400">System Self-Healing</h3>
+                <p className="text-xs text-amber-500/60 font-bold tracking-widest">Maintenance Operations</p>
               </div>
             </div>
             <p className="text-sm text-gray-400 mb-6 max-w-2xl">
@@ -343,7 +343,7 @@ const AdminConfig: React.FC = () => {
               <button
                 onClick={() => setConfirmHeal(true)}
                 disabled={healing}
-                className={`px-8 py-3 rounded-2xl font-black uppercase tracking-tighter italic transition-all ${healing ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}
+                className={`px-8 py-3 rounded-2xl font-black tracking-tighter italic transition-all ${healing ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-black hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}
               >
                 {healing ? "Healing System..." : "Run Self-Heal"}
               </button>
@@ -368,7 +368,7 @@ const AdminConfig: React.FC = () => {
                   <div className="p-5 space-y-4 bg-black/20">
                     {/* Config Keys */}
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                      <p className="text-[11px] font-black tracking-widest text-gray-500 mb-2">
                         Config Keys — {healResult.report.configKeys.checked} checked
                       </p>
                       {healResult.report.configKeys.restored.length === 0 ? (
@@ -386,7 +386,7 @@ const AdminConfig: React.FC = () => {
 
                     {/* Feature Flags */}
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                      <p className="text-[11px] font-black tracking-widest text-gray-500 mb-2">
                         Feature Flags — {healResult.report.featureFlags.checked} checked
                       </p>
                       {healResult.report.featureFlags.restored.length === 0 ? (
@@ -405,7 +405,7 @@ const AdminConfig: React.FC = () => {
                     {/* Errors */}
                     {healResult.report.errors.length > 0 && (
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-widest text-red-500 mb-2">Errors</p>
+                        <p className="text-[11px] font-black tracking-widest text-red-500 mb-2">Errors</p>
                         <ul className="space-y-1">
                           {healResult.report.errors.map((e, i) => (
                             <li key={i} className="text-xs text-red-400 font-mono">• {e}</li>
@@ -419,15 +419,15 @@ const AdminConfig: React.FC = () => {
             )}
           </div>
           <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none transform rotate-12">
-            <div className="text-8xl font-black italic tracking-tighter uppercase leading-none">REPAIR</div>
+            <div className="text-8xl font-black italic tracking-tighter leading-none">Repair</div>
           </div>
         </section>
 
         {/* Platform Settings */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-emerald-500/50 underline-offset-8">Platform Settings</h2>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Global Settings</span>
+            <h2 className="text-2xl font-black italic tracking-tighter underline decoration-emerald-500/50 underline-offset-8">Platform Settings</h2>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold tracking-widest leading-none">Global Settings</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Generic text-input configs (exclude domain lists, timezone, locale) */}
@@ -444,7 +444,7 @@ const AdminConfig: React.FC = () => {
                     onChange={(e) => handleUpdateConfig(cfg.id, e.target.value)}
                     className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 transition-all font-mono"
                   />
-                  <span className="text-xs text-gray-600 uppercase font-black">{cfg.valueType || cfg.value_type}</span>
+                  <span className="text-xs text-gray-600 font-black">{cfg.valueType || cfg.value_type}</span>
                 </div>
               </div>
             ))}
@@ -464,7 +464,7 @@ const AdminConfig: React.FC = () => {
                     className="flex-1"
                     placeholder="Select timezone..."
                   />
-                  <span className="text-xs text-gray-600 uppercase font-black">Dropdown</span>
+                  <span className="text-xs text-gray-600 font-black">Dropdown</span>
                 </div>
               </div>
             )}
@@ -486,7 +486,7 @@ const AdminConfig: React.FC = () => {
                       <option key={loc.value} value={loc.value}>{loc.label}</option>
                     ))}
                   </select>
-                  <span className="text-xs text-gray-600 uppercase font-black">Dropdown</span>
+                  <span className="text-xs text-gray-600 font-black">Dropdown</span>
                 </div>
               </div>
             )}
@@ -498,7 +498,7 @@ const AdminConfig: React.FC = () => {
                 <p className="text-sm text-gray-500">Default persistence behavior for all platform sessions.</p>
               </div>
               <div className="flex items-center justify-between mt-4">
-                <span className="text-xs text-gray-600 uppercase font-black">Boolean</span>
+                <span className="text-xs text-gray-600 font-black">Boolean</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -519,8 +519,8 @@ const AdminConfig: React.FC = () => {
         {/* Domain Lists */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-violet-500/50 underline-offset-8">Domain Access Control</h2>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Security</span>
+            <h2 className="text-2xl font-black italic tracking-tighter underline decoration-violet-500/50 underline-offset-8">Domain Access Control</h2>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold tracking-widest leading-none">Security</span>
           </div>
           <div className="grid grid-cols-1 gap-4">
             {allowedDomainsCfg && (
@@ -549,8 +549,8 @@ const AdminConfig: React.FC = () => {
         {/* Feature Flags */}
         <section>
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Feature Flags</h2>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold uppercase tracking-widest leading-none">Component Visibility</span>
+            <h2 className="text-2xl font-black italic tracking-tighter underline decoration-blue-500/50 underline-offset-8">Feature Flags</h2>
+            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold tracking-widest leading-none">Component Visibility</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {(features || []).map(feat => (

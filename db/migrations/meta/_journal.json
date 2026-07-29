@@ -8,6 +8,27 @@
       "when": 1782646127161,
       "tag": "0000_add_confirmation_number_to_tracked_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784149200000,
+      "tag": "0001_charge_descriptors",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785600000000,
+      "tag": "0006_merchants",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786045000000,
+      "tag": "0007_schema_catchup",
+      "breakpoints": true
     }
   ]
 }

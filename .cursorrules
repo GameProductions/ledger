@@ -71,6 +71,7 @@ This document serves as the absolute source of truth for all projects within the
   - **Admin**: Project-specific administrative access.
   - **Mod**: Content moderation and user management.
   - **User**: Standard access.
+- **First User Auto-Elevation**: The very first user to successfully sign into any project MUST automatically be granted the owner role. This is determined by checking whether any user record exists in the database at the time of registration — if zero users exist, the new user becomes owner. This ensures every freshly deployed project always has at least one owner without manual intervention.
 - **User Management**: Always include full CRUD for user management, accessible to Mods and above.
 - **Governance Portal (`GovernancePortal`)**:
   - **Component**: Create a separate, secure portal named `GovernancePortal` for Owners.
@@ -86,6 +87,7 @@ This document serves as the absolute source of truth for all projects within the
 
 
 ## 5. UI/UX Standards 
+- **Jargon-Free Language**: All user-facing text (labels, messages, notifications, descriptions, error messages) MUST be written in plain, non-technical language. Avoid developer terminology, internal system names, error codes, or implementation details unless the intended audience is explicitly technical (e.g., API documentation, developer guides, webhook configuration pages). If a non-technical user would need to guess what a message means, rewrite it.
 - **PWA Status**: All applications must be fully progressive and configured as a Progressive Web App (PWA).
 - **High-Fidelity Utilities**:
     - **Scrollable Lists**: Use a standardized `.scrollable-list` class with `max-height: 65vh; overflow-y: auto; overflow-x: hidden;`.
@@ -118,13 +120,24 @@ This document serves as the absolute source of truth for all projects within the
 - **Remote DB Binding**: Use `wrangler dev --remote` to connect local dev to the live D1 database.
 - **Publishing Workflow**: Local Test -> User Confirmation -> Commit (with version) -> Publish.
 - **Refactoring Policy**: Keep PWAs modular. If a component grows too large, suggest refactor options. **Never refactor without user confirmation.**
+- **Opportunistic Refactor Abstraction**: When modifying any code — whether fixing a bug, adding a feature, or adjusting existing logic — if you identify a clear opportunity to extract a reusable abstraction (function, component, hook, type, utility, or service), perform that extraction immediately as part of the same change. Do not defer it. This rule applies fleet-wide: every edit is an opportunity to reduce duplication and improve modularity. The only exception is when the extraction would fundamentally change the scope of the task — in that case, flag the opportunity and create a follow-up task rather than silently leaving the duplication.
+- **Modularize When Sensible**: Beyond explicit extraction opportunities, any time the logical structure of the code would be cleaner, more maintainable, or more testable as separate modules, do it. This includes splitting monolithic files, separating concerns across directories, decoupling tightly bound components, and organizing related logic into dedicated modules. Do not wait for a dedicated refactor ticket — if it makes the codebase better and fits within the current change, do it inline. Size is not a prerequisite; clarity is.
 
 ## 7. Development & DevOps 
 - **Version Control**: GitHub (`GameProductions/`) for all code management.
 - **CI/CD**: Use GitHub Actions for auto-deploy.
-- **Versioning**: Major (X.0.0), Minor (0.X.0), Patch (0.0.X). 
+- **Version Format**: All version references MUST use the `v` prefix (e.g., `v1.17.3`). In commit message titles, the version MUST be wrapped in brackets: `[v1.17.3]`.
+- **Scope-Based Versioning**: The bump type is determined by the logical scope of changes, not commit count:
+  - **Patch** — bug fixes, refactors, documentation, dependency updates, non-functional changes. Group all such changes into a single patch bump per session regardless of quantity.
+  - **Minor** — new features, new endpoints, new components, non-breaking API additions, internal breaking changes.
+  - **Major** — breaking architectural changes, framework migrations, database migrations, public API breaks.
+- **No Automatic Major Bumps**: The system MUST NEVER auto-bump a major version. If the changes appear to warrant a major bump, suggest it explicitly and wait for user approval before applying.
+- **Version Skip Protection**: The bump mechanism MUST enforce sequential versioning. A jump from `v1.17.3` → `v1.56.0` (skipping 38 minors) or `v1.17.3` → `v2.0.0` (unapproved major) MUST be rejected as likely a typo or miscalculation. The allowed transitions are:
+  - Patch: increment the patch segment by 1 (`v1.17.3` → `v1.17.4`)
+  - Minor: increment the minor segment by 1, reset patch to 0 (`v1.17.3` → `v1.18.0`)
+  - Major: only with explicit user approval, increment major by 1, reset minor and patch to 0 (`v1.17.3` → `v2.0.0`)
 - **Commit Format**: All commit messages MUST follow this structured format:
-    1. **Prefix**: The current version from `package.json` in `[vx.y.z]` format.
+    1. **Prefix**: The current version from `package.json` in `[vX.Y.Z]` format.
     2. **Title**: A concise, one-line summary.
     3. **Details**: A prioritized, bulleted list of all significant changes.
     4. **Context**: Mention of specific components/modules modified.
@@ -247,6 +260,8 @@ All projects MUST adhere to this unified monorepo-style layout to ensure scalabi
 - **Tone & Jargon**: The assistant must maintain a professional and premium tone. Use of any themed jargon or informal terminology is strictly prohibited.
 - **Migration & Verifiability**: During database migrations (Rule 14), the agent MUST explicitly perform a 1:1 row count verification between the archive and new table. The agent MUST report the exact results and any anomalies to the user before requesting final decommission approval.
 - **Operational Consistency**: Maintain English as the sole operational language for all internal and external communication.
+- **Intellectual Honesty**: Always be honest in your responses. If you disagree with a request because it would do more harm than good, is illogical, or has negative downstream consequences, say so directly. A "yes" is never required out of politeness. If you have an alternative recommendation, voice it — we can discuss trade-offs and decide how to proceed together. Silence or false agreement in the face of a bad idea is a disservice to the codebase.
+- **First-Time Writing Standard**: When updating documentation, writing code comments, or crafting any user-facing dialog, always write as the original text — not as a change, update, or modification. Write as if implementing the feature or concept for the first time. The only exceptions are items whose purpose is to highlight change (changelogs, what's new modals, onboarding tour steps that announce new capabilities).
 
 ## 16. Standardized Identity Schema
 To ensure fleet-wide interoperability and unified identity management, all projects MUST adhere to the "Gold Standard" schema for users, social identities, and multi-factor authentication.
@@ -356,11 +371,12 @@ To ensure absolute account integrity and forensic traceability, all identity sys
     - **Audit Continuity**: Every passkey record MUST maintain a permanent `registration_forensics` block and a rolling `last_used_forensics` block.
 - **Administrative Clearing**: Upon transition to the base64url and Vault standard, all existing legacy passkey registrations MUST be cleared from the database to ensure state purity and security compliance.
 
-## 20. Administration & Owner Nomenclature (Fleet Standard v6.1)
-- **Role Standard**: The highest level of authority within any project is the **Owner**. The term "Owner" is strictly prohibited in all UI, code, and documentation.
+## 20. Role Nomenclature & Access Standards
+- **Owner Role**: The highest level of authority within any project is the **owner** role (case insensitive — Owner, OWNER, owner are all valid). It is the top-tier role in the hierarchy.
+- **Usage in Code & UI**: Using "owner" in code (variable names, type definitions, route guards), file paths, and documentation is perfectly fine, especially when describing restrictions limited to that role. In UI labels and user-facing text, prefer "Owner" (capitalized) for clarity.
+- **Prohibited Terminology**: Do not use "God Mode", "Supreme", "Power User", or any other informal jargon to describe administrative roles or interfaces. Owner and Admin are sufficient and professional.
 - **Interface Standard**: All high-level administrative tools, dashboards, and portals MUST be collectively referred to as **Administration**.
-- **Visual Purity**: Administrative interfaces MUST be free of informal jargon (e.g., "God Mode", "Power", "Supreme").
-- **Routing Standard**: Access to administrative features MUST be gated via the `/administration/` namespace.
+- **Routing Standard**: Access to owner-level administrative features MUST be gated via the `/administration/` namespace.
 
 ## 21. Migration Lifecycle & Squashing (Standard v6.1)
 - **Milestone Squashing**: Periodically, individual migrations in `db/migrations/` MUST be squashed into a single `0000_initial_schema.sql` to ensure fresh install reliability.

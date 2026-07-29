@@ -53,6 +53,7 @@ const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
 const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
 const DataManagerPage = lazy(() => import('./pages/DataManagerPage'))
+const SubscriptionManagerPage = lazy(() => import('./pages/SubscriptionManagerPage'))
 const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
 const PasskeyChallenge = lazy(() => import('./components/PasskeyChallenge'))
 import { MaintenanceView } from './components/MaintenanceView'
@@ -179,7 +180,7 @@ const AppContent: React.FC = () => {
           </p>
           
           <div className="w-full max-w-sm rounded-xl bg-white/5 p-6 text-left border border-white/10">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Manual Instructions</h3>
+            <h3 className="text-xs font-bold text-slate-500 tracking-widest mb-4">Manual Instructions</h3>
             <ul className="space-y-3 text-sm text-slate-300">
               <li className="flex gap-2">
                 <span className="text-blue-400 font-bold">1.</span>
@@ -265,6 +266,7 @@ const AppContent: React.FC = () => {
     if (path === '#/loans') return <LoanManagerPage />
     if (path === '#/investments') return <InvestmentPortfolioPage />
     if (path === '#/manage') return <DataManagerPage />
+    if (path === '#/subscriptions') return <SubscriptionManagerPage />
     if (path === '#/reconcile') return <ReconciliationPage />
     if (path.startsWith('#/snapshot/')) return <SnapshotViewer />
     if (path === '#/backup') return <BackupHub />
@@ -304,7 +306,7 @@ const AppContent: React.FC = () => {
             <div className="flex h-4 w-4 shrink-0 items-center justify-center">
               <div className="h-full w-full animate-spin rounded-full border-2 border-white/20 border-t-white" />
             </div>
-            <span className="text-xs font-bold text-white uppercase tracking-widest leading-none">
+            <span className="text-xs font-bold text-white tracking-widest leading-none">
               Checking System Status (Attempt {retryAttempt}/3)
             </span>
           </div>
@@ -321,7 +323,7 @@ const AppContent: React.FC = () => {
               <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                 <div className="h-full w-full animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>
-              <span className="text-xs font-bold text-white uppercase tracking-widest leading-none">
+              <span className="text-xs font-bold text-white tracking-widest leading-none">
                 Checking System Status (Attempt {retryAttempt}/3)
               </span>
             </motion.div>

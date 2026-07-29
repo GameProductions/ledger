@@ -12,7 +12,10 @@ import {
   reports,
   serviceProviders,
   personalAccessTokens,
-  userHouseholds
+  userHouseholds,
+  bills,
+  subscriptions,
+  paySchedules
 } from '#/schema'
 import { eq, and, desc, asc, like, gt, lt, gte, or, sql, inArray } from 'drizzle-orm'
 import { hashToken } from '../utils'
@@ -223,22 +226,43 @@ data.post('/scrape', zValidator('json', z.object({
 
 // Unified Import Confirmation
 data.post('/import/confirm', zValidator('json', z.object({
-  type: z.enum(['transactions', 'providers', 'paychecks']),
+  type: z.enum(['transactions', 'providers', 'paychecks', 'ledger_spreadsheet']),
   scope: z.enum(['household', 'private']),
-  data: z.array(z.object({
-    description: z.string(),
-    amount: z.number(),
-    date: z.string(),
-    category: z.string().nullable().optional(),
-    notes: z.string().nullable().optional(),
-    ownerId: z.string().nullable().optional()
-  }))
+  data: z.any().optional(),
+  // ledger_spreadsheet fields
+  year: z.number().int().optional(),
+  personMap: z.record(z.string(), z.string()).optional(),
+  paychecks: z.array(z.object({
+    label: z.string(),
+    monthDates: z.record(z.string(), z.string()).optional(),
+    income: z.record(z.string(), z.number()),
+    additionalIncome: z.record(z.string(), z.number()).nullable().optional(),
+    freeSpending: z.record(z.string(), z.number()).nullable().optional(),
+    accountAllocations: z.array(z.object({
+      bankName: z.string(),
+      accountType: z.string(),
+      userId: z.string(),
+      amountCents: z.number().int()
+    })).optional().default([]),
+    expenses: z.array(z.object({
+      billName: z.string(),
+      payee: z.string(),
+      categoryId: z.string().nullable().optional(),
+      dueDate: z.string().nullable().optional(),
+      frequency: z.string().nullable().optional(),
+      ownerId: z.string(),
+      amountCents: z.number().int(),
+      notes: z.string().nullable().optional(),
+      isRecurring: z.boolean(),
+      paycheckDate: z.string().nullable().optional()
+    })).optional().default([])
+  })).optional().default([])
 })), async (c) => {
   const userId = c.get('userId') as string
   const globalRole = c.get('globalRole') as string
   const reqData = c.req.valid('json')
+  const { type } = reqData
   const householdId = reqData.scope === 'private' ? `personal-${userId}` : c.get('householdId') as string
-  const { type, data: items } = reqData
   const db = getDb(c.env)
 
   // Check if caller is platform Owner
@@ -256,14 +280,13 @@ data.post('/import/confirm', zValidator('json', z.object({
   }
 
   if (type === 'transactions') {
-    const distinctOwners = [...new Set(items.map(i => i.ownerId).filter(Boolean))] as string[]
+    const items: any[] = (reqData as any).data || []
+    const distinctOwners = [...new Set(items.map((i: any) => i.ownerId).filter(Boolean))] as string[]
     
     let authorizedOwners: string[] = []
     if (isPlatformOwner) {
-      // Platform owners can import for anyone
       authorizedOwners = distinctOwners
     } else if (isHouseholdOwner) {
-      // Household owners can import for anyone in their household
       if (distinctOwners.length > 0) {
         const validMembers = (await db.select({ userId: userHouseholds.userId })
                 .from(userHouseholds)
@@ -271,7 +294,6 @@ data.post('/import/confirm', zValidator('json', z.object({
         authorizedOwners = validMembers.map((m: any) => m.userId)
       }
     } else {
-      // Regular users or private imports can ONLY import for themselves
       authorizedOwners = [userId]
     }
 
@@ -296,7 +318,7 @@ data.post('/import/confirm', zValidator('json', z.object({
       accountIdToUse = newAccountId
     }
 
-    const records = items.map(item => ({
+    const records = items.map((item: any) => ({
       id: crypto.randomUUID(),
       householdId,
       accountId: accountIdToUse,
@@ -307,15 +329,167 @@ data.post('/import/confirm', zValidator('json', z.object({
       ownerId: (item.ownerId && authorizedOwners.includes(item.ownerId)) ? item.ownerId : userId
     }))
     
-    // Chunk inserts due to D1 limits (100 rows per batch recommended)
     for (let i = 0; i < records.length; i += 100) {
       await db.insert(transactions).values(records.slice(i, i + 100))
     }
+    
+    await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, count: items.length })
+    return c.json({ success: true, count: items.length, target: householdId })
+  }
+
+  if (type === 'ledger_spreadsheet') {
+    const { personMap, paychecks: importPaychecks } = reqData
+    const counts = { paySchedules: 0, bills: 0, subscriptions: 0, transactions: 0 }
+
+    for (const pc of importPaychecks || []) {
+      const personIds = Object.values(personMap || {})
+      const uniquePersonIds = [...new Set(personIds)]
+
+      for (const personId of uniquePersonIds) {
+        let incomeCents = 0
+        for (const [personName, pid] of Object.entries(personMap || {})) {
+          if (pid === personId) {
+            incomeCents += (pc.income[personName] || 0)
+          }
+        }
+        if (incomeCents > 0) {
+          const psId = crypto.randomUUID()
+          let firstDate = ''
+          for (const d of Object.values(pc.monthDates || {})) {
+            if (d) { firstDate = d; break }
+          }
+          await db.insert(paySchedules).values({
+            id: psId,
+            householdId,
+            userId: personId,
+            name: pc.label,
+            frequency: 'monthly',
+            nextPayDate: firstDate || null,
+            estimatedAmountCents: Math.round(incomeCents),
+          })
+          counts.paySchedules++
+        }
+      }
+
+      for (const expense of pc.expenses || []) {
+        const eId = crypto.randomUUID()
+        if (expense.isRecurring) {
+          const duePart = expense.dueDate ? expense.dueDate : ''
+          const catId = expense.categoryId || null
+          await db.insert(bills).values({
+            id: eId,
+            householdId,
+            name: expense.payee || expense.billName,
+            amountCents: expense.amountCents,
+            dueDate: duePart || Object.values(pc.monthDates || {})[0] || `${reqData.year}-01-01`,
+            status: 'unpaid',
+            notes: expense.notes || null,
+            categoryId: catId,
+            isRecurring: true,
+            frequency: expense.frequency || 'monthly',
+            ownerId: expense.ownerId || userId,
+            payScheduleId: null,
+            paycheckDate: expense.paycheckDate || null,
+          })
+          counts.bills++
+        } else {
+          let catId = expense.categoryId || null
+          const firstAccount = await db.select({ id: accounts.id })
+            .from(accounts)
+            .where(eq(accounts.householdId, householdId))
+            .limit(1)
+            .then(res => res[0]?.id || null)
+          await db.insert(transactions).values({
+            id: eId,
+            householdId,
+            accountId: firstAccount || null,
+            description: expense.payee || expense.billName,
+            amountCents: expense.amountCents,
+            transactionDate: expense.dueDate || Object.values(pc.monthDates || {})[0] || `${reqData.year}-01-01`,
+            categoryId: catId,
+            notes: expense.notes || null,
+            ownerId: expense.ownerId || userId,
+          })
+          counts.subscriptions++
+        }
+      }
+
+      for (const alloc of pc.accountAllocations || []) {
+        const targetAccount = await db.select({ id: accounts.id })
+          .from(accounts)
+          .where(and(eq(accounts.householdId, householdId), eq(accounts.name, alloc.bankName)))
+          .limit(1)
+          .then(res => res[0] || null)
+        if (targetAccount && alloc.amountCents > 0) {
+          const tId = crypto.randomUUID()
+          await db.insert(transactions).values({
+            id: tId,
+            householdId,
+            accountId: targetAccount.id,
+            description: `${pc.label} allocation to ${alloc.bankName}`,
+            amountCents: alloc.amountCents,
+            transactionDate: Object.values(pc.monthDates || {})[0] || `${reqData.year}-01-01`,
+            ownerId: alloc.userId || userId,
+          })
+          counts.transactions++
+        }
+      }
+
+      if (pc.additionalIncome) {
+        for (const [personName, amount] of Object.entries(pc.additionalIncome)) {
+          if (amount > 0) {
+            const ownerId = personMap?.[personName] || userId
+            const firstAccount = await db.select({ id: accounts.id })
+              .from(accounts)
+              .where(eq(accounts.householdId, householdId))
+              .limit(1)
+              .then(res => res[0]?.id || null)
+            const tId = crypto.randomUUID()
+            await db.insert(transactions).values({
+              id: tId,
+              householdId,
+              accountId: firstAccount || null,
+              description: `Additional income - ${pc.label}`,
+              amountCents: Math.round(amount),
+              transactionDate: Object.values(pc.monthDates || {})[0] || `${reqData.year}-01-01`,
+              ownerId,
+            })
+            counts.transactions++
+          }
+        }
+      }
+
+      if (pc.freeSpending) {
+        for (const [personName, amount] of Object.entries(pc.freeSpending)) {
+          if (amount > 0) {
+            const ownerId = personMap?.[personName] || userId
+            const firstAccount = await db.select({ id: accounts.id })
+              .from(accounts)
+              .where(eq(accounts.householdId, householdId))
+              .limit(1)
+              .then(res => res[0]?.id || null)
+            const tId = crypto.randomUUID()
+            await db.insert(transactions).values({
+              id: tId,
+              householdId,
+              accountId: firstAccount || null,
+              description: `Free spending - ${pc.label}`,
+              amountCents: Math.round(amount),
+              transactionDate: Object.values(pc.monthDates || {})[0] || `${reqData.year}-01-01`,
+              ownerId,
+            })
+            counts.transactions++
+          }
+        }
+      }
+    }
+
+    await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, counts })
+    return c.json({ success: true, counts, target: householdId })
   }
   
-  await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, count: items.length })
-  
-  return c.json({ success: true, count: items.length, target: householdId })
+  await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope })
+  return c.json({ success: true, target: householdId })
 })
 
 // Webhooks

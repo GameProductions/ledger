@@ -208,12 +208,12 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
           const isRollover = category.rolloverEnabled === true;
 
           if (isRollover) {
-            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocatedBalanceCents - ${monthlyBudget}` }).where(eq(households.id, schedule.householdId)));
-            queries.push(db.update(categories).set({ envelopeBalanceCents: sql`envelopeBalanceCents + ${monthlyBudget}`, rolloverCents: currentEnvelope }).where(eq(categories.id, schedule.targetId)));
+            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents - ${monthlyBudget}` }).where(eq(households.id, schedule.householdId)));
+            queries.push(db.update(categories).set({ envelopeBalanceCents: sql`envelope_balance_cents + ${monthlyBudget}`, rolloverCents: currentEnvelope }).where(eq(categories.id, schedule.targetId)));
           } else {
             const surplus = currentEnvelope;
             const adjustment = monthlyBudget - surplus;
-            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocatedBalanceCents - ${adjustment}` }).where(eq(households.id, schedule.householdId)));
+            queries.push(db.update(households).set({ unallocatedBalanceCents: sql`unallocated_balance_cents - ${adjustment}` }).where(eq(households.id, schedule.householdId)));
             queries.push(db.update(categories).set({ envelopeBalanceCents: monthlyBudget, rolloverCents: 0 }).where(eq(categories.id, schedule.targetId)));
           }
         }

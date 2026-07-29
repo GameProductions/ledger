@@ -68,7 +68,7 @@ const PreferencesPage: React.FC = () => {
               <Palette className="text-primary" size={32} />
               Preferences
             </h1>
-            <p className="text-secondary uppercase tracking-widest text-xs font-bold opacity-60">Customize your visual and functional experience</p>
+            <p className="text-secondary tracking-widest text-xs font-bold opacity-60">Customize your visual and functional experience</p>
           </div>
         </div>
 
@@ -94,7 +94,7 @@ const PreferencesPage: React.FC = () => {
                   <button 
                     key={style}
                     onClick={() => setUiStyle(style)}
-                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settings.uiStyle === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black tracking-widest ${settings.uiStyle === style ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                   >
                     {style}
                   </button>
@@ -116,7 +116,7 @@ const PreferencesPage: React.FC = () => {
                   <button 
                     key={c.id}
                     onClick={() => updateSettings({ ...settings, currency: c.id })}
-                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black uppercase tracking-widest ${settings.currency === c.id || (!settings.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
+                    className={`p-3 rounded-xl border-2 transition-all text-xs font-black tracking-widest ${settings.currency === c.id || (!settings.currency && c.id === 'USD') ? 'border-primary bg-primary/10 text-primary' : 'border-glass-border bg-white/5 text-secondary hover:border-white/20'}`}
                   >
                     {c.name}
                   </button>

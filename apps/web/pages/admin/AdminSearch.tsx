@@ -47,7 +47,7 @@ const AdminSearch: React.FC = () => {
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Transaction Results - NEW */}
             <section>
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
+              <h3 className="text-xs font-black tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
                 Global Transaction History <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="space-y-2">
@@ -56,13 +56,13 @@ const AdminSearch: React.FC = () => {
                     <div>
                        <div className="flex items-center gap-2">
                          <p className="font-bold">{tx.description}</p>
-                         <span className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full uppercase font-black">{tx.householdName}</span>
+                         <span className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full font-black">{tx.householdName}</span>
                        </div>
-                       <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter">{tx.id} • {tx.transactionDate}</p>
+                       <p className="text-xs text-gray-500 font-medium tracking-tighter">{tx.id} • {tx.transactionDate}</p>
                     </div>
                     <div className="text-right">
                        <Price amountCents={tx.amountCents} className="font-black text-lg" />
-                       <p className="text-[10px] text-gray-600 uppercase font-black">{tx.reconciliationStatus}</p>
+                       <p className="text-[10px] text-gray-600 font-black">{tx.reconciliationStatus}</p>
                     </div>
                   </div>
                 ))}
@@ -72,7 +72,7 @@ const AdminSearch: React.FC = () => {
 
             {/* User Results */}
             <section>
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-500 mb-6 flex items-center gap-4">
+              <h3 className="text-xs font-black tracking-[0.3em] text-emerald-500 mb-6 flex items-center gap-4">
                 System Users <div className="h-[1px] flex-1 bg-emerald-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -81,7 +81,7 @@ const AdminSearch: React.FC = () => {
                     <p className="font-bold text-lg mb-1 group-hover:text-emerald-400 transition-colors">{u.displayName || 'Anonymous'}</p>
                     <p className="text-sm text-gray-500 font-mono mb-4">{u.email}</p>
                     <div className="flex gap-2">
-                       <a href={`#/admin/users?id=${u.id}`} className="px-3 py-1 bg-white/5 rounded-full text-xs font-bold uppercase hover:bg-emerald-500 hover:text-black transition-all">View User Profile</a>
+                       <a href={`#/admin/users?id=${u.id}`} className="px-3 py-1 bg-white/5 rounded-full text-xs font-bold hover:bg-emerald-500 hover:text-black transition-all">View User Profile</a>
                     </div>
                   </div>
                 ))}
@@ -91,7 +91,7 @@ const AdminSearch: React.FC = () => {
 
             {/* Registry Results */}
             <section>
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
+              <h3 className="text-xs font-black tracking-[0.3em] text-blue-500 mb-6 flex items-center gap-4">
                 System Records <div className="h-[1px] flex-1 bg-blue-500/20" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -100,7 +100,7 @@ const AdminSearch: React.FC = () => {
                     <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center">📦</div>
                     <div>
                       <p className="font-bold text-sm">{r.name}</p>
-                      <p className="text-xs font-black uppercase text-blue-500 tracking-widest">{r.itemType}</p>
+                      <p className="text-xs font-black text-blue-500 tracking-widest">{r.itemType}</p>
                     </div>
                   </div>
                 ))}

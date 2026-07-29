@@ -24,7 +24,7 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({ view, setView }) => {
                 <h1 className="text-lg sm:text-xl font-black tracking-tighter bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent m-0 leading-none">
                   LEDGER
                 </h1>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/40 mt-0.5">
+                <span className="text-[10px] font-black tracking-[0.2em] text-text-muted/40 mt-0.5">
                   v{import.meta.env.VITE_APP_VERSION}
                 </span>
               </div>

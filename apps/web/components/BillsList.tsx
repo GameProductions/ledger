@@ -3,9 +3,16 @@ import { useAuth } from '../context/AuthContext';
 import { useApi, globalMutate } from '../hooks/useApi';
 import { useToast } from '../context/ToastContext';
 import { getApiUrl } from '../utils/api';
-import { Trash2, AlertCircle, Calendar as CalendarIcon, ExternalLink, ShieldCheck, Share2 } from 'lucide-react';
+import { Trash2, AlertCircle, Calendar as CalendarIcon, Share2, Globe } from 'lucide-react';
 import { LiabilitySplitter } from './LiabilitySplitter';
+import { ShareDialog } from './shared/ShareDialog';
 import { Price } from './Price';
+import { StatusBadge } from './shared/StatusBadge';
+import { UpcomingChangeBadge } from './shared/UpcomingChangeBadge';
+import { MasterSplitLedger } from './shared/MasterSplitLedger';
+import { LiabilityItemCard } from './shared/LiabilityItemCard';
+import { EmptyPlaceholder } from './shared/EmptyPlaceholder';
+import { ProviderLogo } from './shared/ProviderLogo';
 
 
 export const BillsList: React.FC = () => {
@@ -13,9 +20,9 @@ export const BillsList: React.FC = () => {
     const { data: bills = [], loading, mutate } = (useApi('/api/planning/bills') as any);
     const { showToast } = useToast();
     
-    // UI State for Modals
     const [openSplitterId, setOpenSplitterId] = React.useState<string | null>(null);
     const [openTrackerId, setOpenTrackerId] = React.useState<string | null>(null);
+    const [shareTarget, setShareTarget] = React.useState<{ id: string; name: string } | null>(null);
 
     const handleDelete = async (id: string) => {
         if (!token) return;
@@ -74,12 +81,20 @@ export const BillsList: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="text-center py-8 text-xs font-black uppercase tracking-[0.2em] text-white/30">Analyzing Ledger Liquidity...</div>;
+    if (loading) return <div className="text-center py-8 text-xs font-black tracking-[0.2em] text-white/30">Analyzing Ledger Liquidity...</div>;
 
     return (
         <section className="space-y-4">
+          {shareTarget && (
+            <ShareDialog
+              targetType="bill"
+              targetId={shareTarget.id}
+              targetName={shareTarget.name}
+              onClose={() => setShareTarget(null)}
+            />
+          )}
             <div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-black tracking-[0.2em] text-white/40 flex items-center gap-2 mb-1">
                     <CalendarIcon size={14} className="text-amber-500" /> Active Bills
                 </h3>
                 <p className="text-xs text-secondary font-medium">Keep track of your regular, non-subscription household bills (like electricity, rent, or water). You can view due dates, track payment status, split bills with other household members, and set planned adjustments.</p>
@@ -87,35 +102,30 @@ export const BillsList: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-3">
                 {bills?.length > 0 ? bills.map((bill: any) => (
-                    <div key={bill.id} className="group relative bg-white/[0.03] border border-white/5 rounded-[1.5rem] p-5 hover:bg-white/[0.05] transition-all hover:border-amber-500/30 overflow-hidden">
-                        {bill.upcomingEffectiveDate && (
-                            <div className="absolute top-0 right-0 bg-amber-500/10 border-b border-l border-amber-500/20 px-3 py-1 rounded-bl-xl">
-                                <div className="text-[9px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-                                    Planned Adjustment: <Price amountCents={bill.upcomingAmountCents} /> on {bill.upcomingEffectiveDate}
-                                </div>
-                            </div>
-                        )}
+                    <LiabilityItemCard key={bill.id} color="amber">
+                        <UpcomingChangeBadge
+                            amountCents={bill.upcomingAmountCents}
+                            effectiveDate={bill.upcomingEffectiveDate}
+                            label="Planned Adjustment"
+                            color="amber"
+                        />
                         <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h4 className="font-black text-lg tracking-tighter uppercase italic">{bill.name}</h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
-                                        bill.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' :
-                                        bill.status === 'pending' ? 'bg-amber-500/20 text-amber-500' :
-                                        'bg-red-500/20 text-red-500'
-                                    }`}>
-                                        {bill.status}
-                                    </span>
-                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                                        Due: {bill.dueDate}
-                                    </span>
+                            <div className="flex items-center gap-3">
+                                <ProviderLogo url={bill.iconUrl || bill.logoUrl} name={bill.name} size={32} />
+                                <div>
+                                    <h4 className="font-black text-lg tracking-tighter italic flex items-center gap-2">{bill.name}</h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <StatusBadge status={bill.status} />
+                                        <span className="text-[10px] font-bold text-white/30 tracking-widest">
+                                            Due: {bill.dueDate}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div className="text-right">
                                 <Price amountCents={bill.amountCents} className="text-xl font-black tracking-tighter" />
                                 {bill.isRecurring && (
-                                    <div className="text-[9px] font-black uppercase tracking-widest text-primary/60 mt-0.5">Recurring Monthly</div>
+                                    <div className="text-[9px] font-black tracking-widest text-primary/60 mt-0.5">Recurring Monthly</div>
                                 )}
                             </div>
                         </div>
@@ -123,7 +133,7 @@ export const BillsList: React.FC = () => {
                         {(bill.notes || bill.isSplitPortion) && (
                             <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 to-transparent border border-white/10 rounded-xl p-3 mb-4 flex flex-col gap-2">
                                 {bill.isSplitPortion && (
-                                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/80">
+                                    <div className="flex items-center gap-2 text-[10px] font-black tracking-widest text-primary/80">
                                         <Share2 size={12} /> Assigned Split Portion
                                     </div>
                                 )}
@@ -135,72 +145,34 @@ export const BillsList: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Premium Internal Tracking for Originators */}
                         {bill.isSplitOriginator && bill.splits && (
                             <div className="mb-4">
-                                <button 
-                                    onClick={() => setOpenTrackerId(openTrackerId === bill.id ? null : bill.id)}
-                                    className="w-full bg-primary/10 border border-primary/20 rounded-xl p-3 flex flex-col hover:bg-primary/20 transition-all text-left group/tracker shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]"
-                                >
-                                    <div className="flex items-center justify-between w-full">
-                                        <div className="flex items-center gap-2">
-                                            <ShieldCheck size={14} className="text-primary group-hover/tracker:scale-110 transition-transform" />
-                                            <span className="text-[10px] uppercase font-black tracking-widest text-primary">Master Split Ledger</span>
-                                        </div>
-                                        <span className="text-[10px] uppercase font-black text-white/40">{openTrackerId === bill.id ? 'Close' : 'View Stats'}</span>
-                                    </div>
-                                    {openTrackerId === bill.id && (
-                                        <div className="mt-3 pt-3 border-t border-primary/20 space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
-                                            <div className="flex items-center justify-between px-2 py-1 bg-white/5 rounded-lg border border-white/5 mb-2">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Broadcasting Status</span>
-                                                <label className="relative inline-flex items-center cursor-pointer scale-75 origin-right">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={bill.splits?.[0]?.isMasterLedgerPublic || false} 
-                                                        onChange={(e) => handleTogglePublic(bill.id, e.target.checked)}
-                                                        className="sr-only peer" 
-                                                    />
-                                                    <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white/40 after:border-white/10 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                                                </label>
-                                            </div>
-                                            {bill.splits.map((split: any) => (
-                                                <div key={split.id} className="flex items-center justify-between bg-black/40 p-2 rounded-lg border border-white/5">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="w-5 h-5 rounded-full bg-white/10 text-[9px] flex items-center justify-center font-bold">{split.assignedUserId.substring(0, 2)}</span>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">Portion</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                                                            split.status === 'paid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
-                                                        }`}>
-                                                            {split.status}
-                                                        </span>
-                                                        <Price amountCents={split.calculatedAmountCents} className="text-[11px] font-black tracking-widest" />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </button>
+                                <MasterSplitLedger
+                                    splits={bill.splits}
+                                    isMasterLedgerPublic={bill.splits?.[0]?.isMasterLedgerPublic || false}
+                                    onTogglePublic={(isPublic) => handleTogglePublic(bill.id, isPublic)}
+                                    open={openTrackerId === bill.id}
+                                    onToggle={() => setOpenTrackerId(openTrackerId === bill.id ? null : bill.id)}
+                                />
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                            <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-white/5">
+                            <div className="flex flex-wrap items-center gap-2">
                                 {bill.status !== 'paid' && (
                                     <>
                                         <button 
                                             onClick={() => handleStatusUpdate(bill.id, 'paid')}
-                                            className="text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-black px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg shadow-emerald-500/20"
+                                            className="text-[10px] font-black tracking-widest bg-emerald-500 text-black px-4 py-2 rounded-xl hover:scale-105 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                                         >
                                             Mark Paid
                                         </button>
                                         {!bill.isSplitOriginator && !bill.isSplitPortion && (
                                             <button 
                                                 onClick={() => setOpenSplitterId(openSplitterId === bill.id ? null : bill.id)}
-                                                className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-2 rounded-xl hover:bg-emerald-500/20 transition-all"
+                                                className="flex items-center gap-1 text-[10px] font-black tracking-widest border border-emerald-500/30 text-emerald-500 px-3 py-2 rounded-xl hover:bg-emerald-500/10 transition-all active:scale-95"
                                             >
-                                                <Share2 size={14} />
+                                                <Share2 size={14} /> Split
                                             </button>
                                         )}
                                     </>
@@ -208,18 +180,24 @@ export const BillsList: React.FC = () => {
                                 {bill.status === 'paid' && (
                                     <button 
                                         onClick={() => handleStatusUpdate(bill.id, 'pending')}
-                                        className="text-[10px] font-black uppercase tracking-widest border border-white/10 text-white/60 px-4 py-2 rounded-xl hover:bg-white/5 transition-all"
+                                        className="text-[10px] font-black tracking-widest border border-white/10 text-white/60 px-4 py-2 rounded-xl hover:bg-white/5 transition-all active:scale-95"
                                     >
                                         Revert to Pending
                                     </button>
                                 )}
-                            </div>
-                            <button 
+                              <button
+                                onClick={() => setShareTarget({ id: bill.id, name: bill.name })}
+                                className="flex items-center gap-1 text-[10px] font-black tracking-widest border border-blue-500/30 text-blue-500 px-3 py-2 rounded-xl hover:bg-blue-500/10 transition-all active:scale-95"
+                              >
+                                <Globe size={14} /> Share
+                              </button>
+                              <button 
                                 onClick={() => handleDelete(bill.id)}
-                                className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-all"
-                            >
-                                <Trash2 size={16} />
-                            </button>
+                                className="flex items-center gap-1 text-[10px] font-black tracking-widest border border-red-500/30 text-red-500 px-3 py-2 rounded-xl hover:bg-red-500/10 transition-all active:scale-95"
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
                         </div>
 
                         {openSplitterId === bill.id && (
@@ -236,13 +214,10 @@ export const BillsList: React.FC = () => {
                                 />
                             </div>
                         )}
-                    </div>
+                    </LiabilityItemCard>
 
                 )) : (
-                    <div className="py-12 text-center border border-dashed border-white/10 rounded-[2rem]">
-                        <AlertCircle size={24} className="mx-auto text-white/20 mb-3" />
-                        <p className="text-xs font-black uppercase tracking-widest text-white/20">No active bills in this lifecycle</p>
-                    </div>
+                    <EmptyPlaceholder icon={AlertCircle} message="No active bills in this lifecycle" />
                 )}
             </div>
         </section>

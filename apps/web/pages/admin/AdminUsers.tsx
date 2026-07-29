@@ -219,7 +219,7 @@ const UserDetailsModal: React.FC<{
 
   if (loading) return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="animate-pulse text-emerald-500 font-black tracking-widest text-sm uppercase">Loading User...</div>
+      <div className="animate-pulse text-emerald-500 font-black tracking-widest text-sm">Loading User...</div>
     </div>
   );
 
@@ -241,7 +241,7 @@ const UserDetailsModal: React.FC<{
                     alt="User"
                   />
                ) : (
-                  <div className="w-16 h-16 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-400 font-black text-xl flex items-center justify-center tracking-widest uppercase shadow-2xl">
+                  <div className="w-16 h-16 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-400 font-black text-xl flex items-center justify-center tracking-widest shadow-2xl">
                     {getInitials(details?.profile?.displayName, details?.profile?.username, details?.profile?.email)}
                   </div>
                )}
@@ -251,8 +251,8 @@ const UserDetailsModal: React.FC<{
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight uppercase italic">{details?.profile?.displayName || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight italic">{details?.profile?.displayName || details?.profile?.username || details?.profile?.email || 'System User'}</h2>
+                <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider ${details?.profile?.status === 'active' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                    {details?.profile?.status || 'Unknown'}
                 </span>
               </div>
@@ -272,25 +272,25 @@ const UserDetailsModal: React.FC<{
             <div>
               <div className="flex items-center gap-2 text-emerald-500 mb-6">
                 <Activity size={16} />
-                <span className="text-xs font-black uppercase tracking-[0.2em]">Activity</span>
+                <span className="text-xs font-black tracking-[0.2em]">Activity</span>
               </div>
               
               <div className="space-y-6">
                 <div>
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-1">Registration</label>
+                  <label className="text-xs text-slate-600 font-black tracking-widest block mb-1">Registration</label>
                   <div className="text-sm text-slate-300 font-bold">
                     {details?.profile?.createdAt ? new Date(details.profile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-1">Last Interaction</label>
+                  <label className="text-xs text-slate-600 font-black tracking-widest block mb-1">Last Interaction</label>
                   <div className="text-sm text-slate-300 font-bold">
                     {details?.profile?.lastActiveAt ? new Date(details.profile.lastActiveAt).toLocaleString() : 'No History'}
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest block mb-1">Access Role</label>
-                  <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-xs font-black text-white uppercase tracking-widest inline-block mt-2">
+                  <label className="text-xs text-slate-600 font-black tracking-widest block mb-1">Access Role</label>
+                  <div className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-xs font-black text-white tracking-widest inline-block mt-2">
                     {details?.profile?.globalRole || 'Unknown'}
                   </div>
                 </div>
@@ -298,12 +298,12 @@ const UserDetailsModal: React.FC<{
             </div>
 
             <div className="pt-6 border-t border-white/5">
-                <label className="text-[10px] text-slate-600 uppercase font-black tracking-widest block mb-3">Linked Accounts</label>
+                <label className="text-[10px] text-slate-600 font-black tracking-widest block mb-3">Linked Accounts</label>
                 <div className="flex flex-wrap gap-2">
                    {(details?.socialLinks || []).length > 0 ? (details?.socialLinks || []).map((link: any) => {
                       const brand = getProviderBrand(link.provider);
                       return (
-                        <div key={link.provider} title={brand.label} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-black uppercase tracking-wider transition-all shadow-sm ${brand.colorClass}`}>
+                        <div key={link.provider} title={brand.label} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-black tracking-wider transition-all shadow-sm ${brand.colorClass}`}>
                            <span className="text-sm leading-none">{brand.icon}</span>
                            <span>{brand.label}</span>
                         </div>
@@ -318,7 +318,7 @@ const UserDetailsModal: React.FC<{
               <div className="flex items-center justify-between mb-2">
                  <div className="flex items-center gap-2 text-primary">
                    <Fingerprint size={18} />
-                   <span className="text-xs font-black uppercase tracking-[0.2em]">Security Keys & Passkeys</span>
+                   <span className="text-xs font-black tracking-[0.2em]">Security Keys & Passkeys</span>
                  </div>
                  <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-black">{details?.passkeys?.length || 0} Registered</span>
               </div>
@@ -334,7 +334,7 @@ const UserDetailsModal: React.FC<{
                              <p className="text-sm font-bold tracking-tight text-white">
                                <Masked>{pk.name}</Masked>
                              </p>
-                             <p className="text-xs text-slate-600 font-black uppercase tracking-widest">{pk.aaguid || 'Unknown Provider'}</p>
+                             <p className="text-xs text-slate-600 font-black tracking-widest">{pk.aaguid || 'Unknown Provider'}</p>
                           </div>
                        </div>
                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -355,7 +355,7 @@ const UserDetailsModal: React.FC<{
                  )) : (
                     <div className="h-40 flex flex-col items-center justify-center text-slate-700 border-2 border-dashed border-white/5 rounded-3xl space-y-3">
                        <ShieldAlert size={32} className="opacity-20" />
-                       <span className="text-xs font-black uppercase tracking-widest">No Passkeys Detected</span>
+                       <span className="text-xs font-black tracking-widest">No Passkeys Detected</span>
                     </div>
                  )}
               </div>
@@ -365,11 +365,11 @@ const UserDetailsModal: React.FC<{
                   <div className="flex items-center justify-between">
                      <div className="flex items-center gap-2 text-orange-500">
                         <ShieldAlert size={18} />
-                        <span className="text-xs font-black uppercase tracking-[0.2em]">Security Tools</span>
+                        <span className="text-xs font-black tracking-[0.2em]">Security Tools</span>
                      </div>
                      <button 
                        onClick={generatePassword}
-                       className="flex items-center gap-2 text-[10px] font-black text-orange-500 uppercase tracking-widest hover:text-orange-400 transition-colors cursor-pointer"
+                       className="flex items-center gap-2 text-[10px] font-black text-orange-500 tracking-widest hover:text-orange-400 transition-colors cursor-pointer"
                      >
                        <RefreshCw size={12} />
                        Generate
@@ -403,7 +403,7 @@ const UserDetailsModal: React.FC<{
                           />
                           <span 
                             onClick={() => setIsTemp(!isTemp)}
-                            className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors select-none"
+                            className="text-xs font-black tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors select-none"
                           >
                             Temporary Password
                           </span>
@@ -412,7 +412,7 @@ const UserDetailsModal: React.FC<{
                        <button 
                         onClick={handleAdminResetPassword}
                         disabled={resetting || !manualPass}
-                        className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all cursor-pointer"
+                        className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-black font-black tracking-widest text-xs rounded-xl transition-all cursor-pointer"
                        >
                          Reset Password
                        </button>
@@ -425,13 +425,13 @@ const UserDetailsModal: React.FC<{
           <div className="p-8 space-y-6 bg-black/40 border-t border-white/5 lg:col-span-2">
             <div className="flex items-center gap-2 text-emerald-500">
               <Smartphone size={18} />
-              <span className="text-xs font-black uppercase tracking-[0.2em]">Cross-Device Sign-In Requests</span>
+              <span className="text-xs font-black tracking-[0.2em]">Cross-Device Sign-In Requests</span>
             </div>
             <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
               {crossDeviceRequests.length === 0 ? (
                 <div className="text-center py-8 text-slate-700 border-2 border-dashed border-white/5 rounded-3xl">
                   <Smartphone size={28} className="mx-auto mb-2 opacity-20" />
-                  <span className="text-xs font-black uppercase tracking-widest">No Pending Requests</span>
+                  <span className="text-xs font-black tracking-widest">No Pending Requests</span>
                 </div>
               ) : (
                 crossDeviceRequests.map((req: any) => {
@@ -452,7 +452,7 @@ const UserDetailsModal: React.FC<{
                       <button
                         onClick={() => handleAdminApproveCrossDevice(req.id)}
                         disabled={approvingCrossDevice === req.id}
-                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-black font-black uppercase tracking-widest text-xs rounded-xl transition-all flex items-center gap-2"
+                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-black font-black tracking-widest text-xs rounded-xl transition-all flex items-center gap-2"
                       >
                         {approvingCrossDevice === req.id ? (
                           <RefreshCw className="w-3 h-3 animate-spin" />
@@ -472,18 +472,18 @@ const UserDetailsModal: React.FC<{
           <div className="p-8 space-y-6 bg-deep-slate-90/50">
             <div className="flex items-center gap-2 text-slate-500 mb-6">
               <Terminal size={18} />
-              <span className="text-xs font-black uppercase tracking-[0.2em]">Activity History</span>
+              <span className="text-xs font-black tracking-[0.2em]">Activity History</span>
             </div>
             
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {(details?.activity || []).length > 0 ? (details?.activity || []).map((log: any, idx: number) => (
                 <div key={idx} className="relative pl-5 border-l border-white/10 py-1 hover:border-emerald-500 transition-colors">
                   <div className="absolute left-[-5px] top-2 w-2 h-2 rounded-full bg-white/10" />
-                  <div className="text-xs font-black uppercase text-slate-300 tracking-tight">{log.action?.replace(/_/g, ' ')?.replace('ADMIN ', '') || 'OPERATION'}</div>
+                  <div className="text-xs font-black text-slate-300 tracking-tight">{log.action?.replace(/_/g, ' ')?.replace('ADMIN ', '') || 'OPERATION'}</div>
                   <div className="text-[12px] text-slate-600 font-mono mt-1">{new Date(log.createdAt || log.timestamp).toLocaleString()}</div>
                 </div>
               )) : (
-                <div className="text-center py-12 opacity-10 italic text-xs font-black uppercase tracking-widest">No Activity History</div>
+                <div className="text-center py-12 opacity-10 italic text-xs font-black tracking-widest">No Activity History</div>
               )}
             </div>
           </div>
@@ -493,24 +493,24 @@ const UserDetailsModal: React.FC<{
         <div className="p-8 bg-black/60 flex items-center justify-between border-t border-white/5">
           <div className="flex items-center gap-6">
              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">System</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-slate-600">System</span>
                 <span className="text-xs font-black text-slate-400 font-mono">USER_DIRECTORY_V2.4</span>
              </div>
              <div className="h-8 w-px bg-white/5" />
              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Access Key</span>
+                <span className="text-[10px] font-black tracking-[0.2em] text-slate-600">Access Key</span>
                 <span className="text-xs font-black text-emerald-500/60 font-mono">AUTHORIZED_ADMIN</span>
              </div>
           </div>
           
           <div className="flex gap-4">
-             <button className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest transition-all">
+             <button className="flex items-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 rounded-2xl text-xs font-black tracking-widest transition-all">
                 <RefreshCw size={14} />
                 Full Resync
              </button>
              <button 
                 onClick={() => onImpersonate(details.profile)}
-                className="flex items-center gap-3 px-6 py-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                className="flex items-center gap-3 px-6 py-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20 rounded-2xl text-xs font-black tracking-widest transition-all"
               >
                 <Monitor size={14} />
                 Impersonate User
@@ -520,12 +520,12 @@ const UserDetailsModal: React.FC<{
                   onMerge(userId);
                   onClose();
                 }}
-                className="flex items-center gap-3 px-6 py-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                className="flex items-center gap-3 px-6 py-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/20 rounded-2xl text-xs font-black tracking-widest transition-all"
               >
                 <GitMerge size={14} />
                 Merge Account
               </button>
-             <button className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all">
+             <button className="flex items-center gap-3 px-8 py-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-2xl text-xs font-black tracking-widest transition-all">
                 <ExternalLink size={16} />
                 Download Record Summary
              </button>
@@ -637,8 +637,8 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
         <div className="p-10 space-y-8">
            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-white">Create <span className="text-emerald-500">User</span></h3>
-                <p className="text-xs text-slate-500 uppercase font-black tracking-widest mt-1">Create a new manual user record</p>
+                <h3 className="text-2xl font-black italic tracking-tighter text-white">Create <span className="text-emerald-500">User</span></h3>
+                <p className="text-xs text-slate-500 font-black tracking-widest mt-1">Create a new manual user record</p>
               </div>
               <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-slate-500 hover:text-white">
                 <X size={20} />
@@ -648,7 +648,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Username</label>
+                  <label className="text-xs text-slate-600 font-black tracking-widest ml-1">Username</label>
                   <input 
                     required
                     type="text"
@@ -659,7 +659,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Display Name</label>
+                  <label className="text-xs text-slate-600 font-black tracking-widest ml-1">Display Name</label>
                   <input 
                     required
                     type="text"
@@ -672,7 +672,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Email</label>
+                <label className="text-xs text-slate-600 font-black tracking-widest ml-1">Email</label>
                 <input 
                   required
                   type="email"
@@ -685,11 +685,11 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-slate-600 uppercase font-black tracking-widest ml-1">Initial Password</label>
+                  <label className="text-xs text-slate-600 font-black tracking-widest ml-1">Initial Password</label>
                   <button 
                     type="button"
                     onClick={generatePassword}
-                    className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest hover:text-emerald-400 transition-colors"
+                    className="flex items-center gap-2 text-[10px] font-black text-emerald-500 tracking-widest hover:text-emerald-400 transition-colors"
                   >
                     <RefreshCw size={12} />
                     Generate
@@ -707,16 +707,16 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
 
               <div className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl">
                  <div className="space-y-1">
-                    <p className="text-xs font-black uppercase text-white tracking-widest">Access Role</p>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Set the default permissions for this user</p>
+                    <p className="text-xs font-black text-white tracking-widest">Access Role</p>
+                    <p className="text-[10px] text-slate-500 font-bold tracking-tighter">Set the default permissions for this user</p>
                  </div>
                  <select 
-                   className="bg-black border border-white/10 p-2 rounded-lg text-xs font-black uppercase text-emerald-500 outline-none"
+                   className="bg-black border border-white/10 p-2 rounded-lg text-xs font-black text-emerald-500 outline-none"
                    value={formData.globalRole}
                    onChange={e => setFormData({ ...formData, globalRole: e.target.value })}
                  >
-                   <option value="user">USER</option>
-                   <option value="owner">OWNER</option>
+                   <option value="user">User</option>
+                   <option value="owner">Owner</option>
                  </select>
               </div>
 
@@ -725,23 +725,23 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                   checked={formData.forcePasswordChange}
                   onChange={checked => setFormData({ ...formData, forcePasswordChange: checked })}
                 />
-                <label onClick={() => setFormData({ ...formData, forcePasswordChange: !formData.forcePasswordChange })} className="text-xs text-slate-500 font-bold uppercase tracking-widest cursor-pointer select-none">Require Password Change on First Login</label>
+                <label onClick={() => setFormData({ ...formData, forcePasswordChange: !formData.forcePasswordChange })} className="text-xs text-slate-500 font-bold tracking-widest cursor-pointer select-none">Require Password Change on First Login</label>
               </div>
 
-              {error && <p className="text-red-500 text-xs font-black text-center uppercase tracking-widest">{error}</p>}
+              {error && <p className="text-red-500 text-xs font-black text-center tracking-widest">{error}</p>}
 
               <div className="pt-4 flex gap-4">
                  <button 
                   type="button" 
                   onClick={onClose}
-                  className="flex-1 py-4 px-6 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-[0.2em] text-slate-500 hover:bg-white/5 transition-all"
+                  className="flex-1 py-4 px-6 border border-white/10 rounded-2xl text-xs font-black tracking-[0.2em] text-slate-500 hover:bg-white/5 transition-all"
                  >
                    Cancel
                  </button>
                  <button 
                   type="submit" 
                   disabled={loading}
-                  className="flex-[2] py-4 px-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3"
+                  className="flex-[2] py-4 px-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-black rounded-2xl text-xs font-black tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-3"
                  >
                    {loading ? <RefreshCw className="animate-spin" size={16} /> : <Shield size={16} />}
                    Create User
@@ -885,7 +885,7 @@ const AdminUsers: React.FC = () => {
     <AdminPortal activePath="#/admin/users">
       <div className="flex flex-col items-center justify-center min-h-[400px] text-emerald-500">
         <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mb-4" />
-        <div className="text-xs font-black uppercase tracking-[0.3em]">Loading users...</div>
+        <div className="text-xs font-black tracking-[0.3em]">Loading users...</div>
       </div>
     </AdminPortal>
   );
@@ -894,10 +894,10 @@ const AdminUsers: React.FC = () => {
     <AdminPortal activePath="#/admin/users">
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-12 gap-6">
         <div>
-          <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
+          <h2 className="text-4xl font-black italic tracking-tighter leading-none">
             User <span className="text-emerald-500">Directory</span>
           </h2>
-          <p className="text-sm text-slate-500 mt-2 uppercase tracking-widest font-bold">Manage user accounts and permissions</p>
+          <p className="text-sm text-slate-500 mt-2 tracking-widest font-bold">Manage user accounts and permissions</p>
         </div>
         <div className="relative">
           <input 
@@ -911,7 +911,7 @@ const AdminUsers: React.FC = () => {
         </div>
         <button 
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all cursor-pointer"
+          className="flex items-center gap-3 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-black rounded-2xl text-xs font-black tracking-[0.2em] shadow-xl shadow-emerald-500/20 transition-all cursor-pointer"
         >
           <Shield size={16} />
           Create New User
@@ -921,7 +921,7 @@ const AdminUsers: React.FC = () => {
       {/* Filtering and Sorting Row */}
       <div className="flex flex-wrap items-center gap-4 mb-8 bg-white/2 p-4 rounded-2xl border border-white/5">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Role:</span>
+          <span className="text-[10px] font-black text-slate-500 tracking-wider">Role:</span>
           <select 
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -935,7 +935,7 @@ const AdminUsers: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Status:</span>
+          <span className="text-[10px] font-black text-slate-500 tracking-wider">Status:</span>
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -949,7 +949,7 @@ const AdminUsers: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Sort By:</span>
+          <span className="text-[10px] font-black text-slate-500 tracking-wider">Sort By:</span>
           <select 
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -964,7 +964,7 @@ const AdminUsers: React.FC = () => {
 
         <button 
           onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all cursor-pointer"
+          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-black text-xs tracking-wider rounded-xl border border-white/10 transition-all cursor-pointer"
         >
           Order: {sortOrder.toUpperCase()}
         </button>
@@ -972,7 +972,7 @@ const AdminUsers: React.FC = () => {
 
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="bg-white/5 text-xs font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/5">
+          <tr className="bg-white/5 text-xs font-black tracking-[0.2em] text-slate-500 border-b border-white/5">
             <th className="px-8 py-6">User Profile</th>
             <th className="px-8 py-6">Access Role</th>
             <th className="px-8 py-6">Account Status</th>
@@ -991,25 +991,25 @@ const AdminUsers: React.FC = () => {
                       alt="Avatar"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center tracking-widest uppercase">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center tracking-widest">
                       {getInitials(u.displayName, u.username, u.email)}
                     </div>
                   )}
                   <div>
-                    <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{u.displayName || u.username || u.email || 'System User'}</div>
+                    <div className="font-black text-slate-100 group-hover:text-emerald-400 transition-colors tracking-tight">{u.displayName || u.username || u.email || 'System User'}</div>
                     <div className="text-xs text-slate-500 font-mono tracking-tighter">{u.email}</div>
                   </div>
                 </div>
               </td>
                 <td className="px-8 py-6">
-                  <span className={`px-2 py-1 rounded text-xs font-black uppercase tracking-widest ${u.globalRole === 'owner' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-black tracking-widest ${u.globalRole === 'owner' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white/5 text-slate-400 border border-white/10'}`}>
                     {u.globalRole}
                   </span>
                 </td>
                 <td className="px-8 py-6">
                    <div className="flex items-center gap-2">
                      <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500 shadow-[0_0_8px_#ef4444]'}`} />
-                     <span className={`text-xs font-black uppercase tracking-widest ${u.status === 'active' ? 'text-emerald-500' : 'text-red-500'}`}>
+                     <span className={`text-xs font-black tracking-widest ${u.status === 'active' ? 'text-emerald-500' : 'text-red-500'}`}>
                        {u.status}
                      </span>
                    </div>
@@ -1138,7 +1138,7 @@ const AdminUsers: React.FC = () => {
               />
             </div>
 
-            <p className="text-xs text-slate-500 uppercase font-black tracking-widest pr-4">
+            <p className="text-xs text-slate-500 font-black tracking-widest pr-4">
               Select the account that will <span className="text-white">REMAIN active</span>. Data from the source account will be migrated.
             </p>
             
@@ -1156,7 +1156,7 @@ const AdminUsers: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <img src={u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} className="w-8 h-8 rounded-lg" />
                     <div>
-                      <p className="text-sm font-black uppercase text-white tracking-tight">{u.displayName || u.username}</p>
+                      <p className="text-sm font-black text-white tracking-tight">{u.displayName || u.username}</p>
                       <p className="text-[10px] font-mono text-slate-500">{u.email}</p>
                     </div>
                   </div>
@@ -1182,7 +1182,7 @@ const AdminUsers: React.FC = () => {
         >
           <div className="space-y-4">
             <p className="text-secondary font-medium">Are you sure you want to permanently delete <strong>{userToDelete?.displayName || userToDelete?.username}</strong>?</p>
-            <p className="text-red-500 text-xs font-black uppercase tracking-widest">CRITICAL ACTION: This will remove all associated data and credentials. This cannot be undone.</p>
+            <p className="text-red-500 text-xs font-black tracking-widest">CRITICAL ACTION: This will remove all associated data and credentials. This cannot be undone.</p>
           </div>
         </Modal>
 
@@ -1272,7 +1272,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
             <Monitor size={24} />
           </div>
           <div>
-            <p className="text-sm font-black uppercase text-white tracking-widest">{target.displayName || target.username}</p>
+            <p className="text-sm font-black text-white tracking-widest">{target.displayName || target.username}</p>
             <p className="text-[10px] font-mono text-purple-400">{target.email}</p>
           </div>
         </div>
@@ -1280,8 +1280,8 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
         <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-black uppercase text-white tracking-widest">Privacy Protection</p>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Mask sensitive personal info and financial data during this session</p>
+              <p className="text-xs font-black text-white tracking-widest">Privacy Protection</p>
+              <p className="text-[10px] text-slate-500 font-bold tracking-tighter">Mask sensitive personal info and financial data during this session</p>
             </div>
             <button 
               onClick={() => setPrivacyMirror(!privacyMirror)}
@@ -1294,7 +1294,7 @@ const ImpersonationConfirmModal: React.FC<ImpersonationConfirmModalProps> = ({
 
         <div className="flex items-start gap-3 p-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl">
           <ShieldAlert size={16} className="text-orange-500 mt-0.5 shrink-0" />
-          <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-widest leading-relaxed">
+          <p className="text-[10px] text-orange-500/80 font-bold tracking-widest leading-relaxed">
             Administrative Warning: You are about to access a live user session. All actions taken will be recorded in the security logs under your administrative ID.
           </p>
         </div>

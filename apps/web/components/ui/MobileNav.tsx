@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, CreditCard, BarChart3, Settings, MoreHorizontal, HandCoins, Briefcase, Database, List, GitMerge, HelpCircle, X, Wallet, Calendar, Zap } from 'lucide-react';
+import { LayoutDashboard, CreditCard, BarChart3, Settings, MoreHorizontal, HandCoins, Briefcase, Database, List, GitMerge, HelpCircle, X, Wallet, Calendar, Zap, Receipt } from 'lucide-react';
 
 const mainTabsDefault = [
   { id: 'home', label: 'Home', icon: LayoutDashboard, hash: '#/' },
@@ -10,6 +10,7 @@ const mainTabsDefault = [
 ];
 
 const overflowItems = [
+  { id: 'subscriptions', label: 'Subscriptions', icon: Receipt, hash: '#/subscriptions' },
   { id: 'loans', label: 'Loans', icon: HandCoins, hash: '#/loans' },
   { id: 'investments', label: 'Investments', icon: Briefcase, hash: '#/investments' },
   { id: 'data', label: 'Data Center', icon: Database, hash: '#/data' },
@@ -89,7 +90,7 @@ const MobileNav: React.FC = () => {
                 }`}
               >
                 <Icon size={18} />
-                <span className="text-[9px] font-bold uppercase tracking-widest">{item.label}</span>
+                <span className="text-[9px] font-bold tracking-widest">{item.label}</span>
               </button>
             );
           })}
@@ -104,7 +105,7 @@ const MobileNav: React.FC = () => {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-sm font-black uppercase tracking-widest text-secondary">More</h3>
+              <h3 className="text-sm font-black tracking-widest text-secondary">More</h3>
               <button onClick={() => setShowMore(false)} className="p-2 hover:bg-white/5 rounded-xl text-secondary transition-all cursor-pointer">
                 <X size={20} />
               </button>
@@ -124,7 +125,7 @@ const MobileNav: React.FC = () => {
                     }`}
                   >
                     <Icon size={22} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+                    <span className="text-[10px] font-bold tracking-widest">{item.label}</span>
                   </button>
                 );
               })}

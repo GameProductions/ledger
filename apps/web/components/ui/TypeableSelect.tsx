@@ -121,7 +121,7 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
         <div className="flex-1 flex items-center gap-3 overflow-hidden">
             {selectedOption?.icon || LeadingIcon || <Search size={16} className="text-slate-500 group-hover:text-amber-500/50 transition-colors" />}
             <div className="flex flex-col overflow-hidden">
-              <span className={`text-sm tracking-tight truncate uppercase font-black ${selectedOption ? 'text-white' : 'text-slate-500'}`}>
+              <span className={`text-sm tracking-tight truncate font-black ${selectedOption ? 'text-white' : 'text-slate-500'}`}>
                 {selectedOption ? selectedOption.label : placeholder}
               </span>
             </div>
@@ -177,18 +177,18 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                         {option.icon || <div className="text-[10px] font-black italic">{option.label.charAt(0)}</div>}
                       </div>
                       <div className="flex-1 flex flex-col">
-                        <span className={`text-sm font-black uppercase tracking-tight ${option.metadata?.isCustom ? 'italic text-amber-500/80' : ''}`}>{option.label}</span>
-                        {option.description && (
-                          <span className="text-[10px] text-slate-500 font-medium tracking-tight mt-0.5 leading-normal">{option.description}</span>
-                        )}
+                        <span className={`text-sm font-black tracking-tight ${option.metadata?.isCustom ? 'italic text-amber-500/80' : ''}`}>{option.label}</span>
+                          {option.description && (
+                            <span className="text-[10px] text-slate-500 font-medium tracking-tight mt-0.5 leading-normal">{option.description}</span>
+                          )}
+                        </div>
+                        {isSelected && <Check size={16} className="text-amber-500" />}
                       </div>
-                      {isSelected && <Check size={16} className="text-amber-500" />}
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="p-12 text-center">
-                   <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
+                    );
+                  })
+                ) : (
+                  <div className="p-12 text-center">
+                     <p className="text-sm text-slate-600 font-black tracking-[0.2em] italic">No Matches Found</p>
                 </div>
               )}
             </div>
@@ -248,7 +248,7 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                           {option.icon || <div className="text-[10px] font-black italic">{option.label.charAt(0)}</div>}
                         </div>
                         <div className="flex-1 flex flex-col">
-                          <span className={`text-sm font-black uppercase tracking-tight ${option.metadata?.isCustom ? 'italic text-amber-500/80' : ''}`}>{option.label}</span>
+                        <span className={`text-sm font-black tracking-tight ${option.metadata?.isCustom ? 'italic text-amber-500/80' : ''}`}>{option.label}</span>
                           {option.description && (
                             <span className="text-[10px] text-slate-500 font-medium tracking-tight mt-0.5 leading-normal">{option.description}</span>
                           )}
@@ -259,7 +259,7 @@ export const TypeableSelect: React.FC<TypeableSelectProps> = ({
                   })
                 ) : (
                   <div className="p-12 text-center">
-                     <p className="text-sm text-slate-600 font-black uppercase tracking-[0.2em] italic">No Matches Found</p>
+                   <p className="text-sm text-slate-600 font-black tracking-[0.2em] italic">No Matches Found</p>
                   </div>
                 )}
               </div>

@@ -101,9 +101,11 @@ backup.get('/export', async (c) => {
 // 🛑 RESTORE: Data Restore (v3.26.0)
 const TABLE_WHITELIST: Record<string, string[]> = {
   households: ['id', 'name', 'currency', 'countryCode', 'status'],
+  chargeDescriptors: ['id', 'householdId', 'name', 'description', 'defaultCategoryId', 'isActive'],
   accounts: ['id', 'householdId', 'name', 'type', 'balanceCents', 'currency', 'status'],
   categories: ['id', 'householdId', 'name', 'icon', 'color', 'monthlyBudgetCents', 'envelopeBalanceCents', 'rolloverEnabled', 'rolloverCents', 'emergencyFund'],
-  transactions: ['id', 'householdId', 'accountId', 'categoryId', 'amountCents', 'description', 'transactionDate', 'status', 'isRecurring', 'providerId', 'billId'],
+  trackedExpenses: ['id', 'householdId', 'description', 'amountCents', 'status', 'chargeDescriptorId', 'createdAt'],
+  transactions: ['id', 'householdId', 'accountId', 'categoryId', 'amountCents', 'description', 'transactionDate', 'status', 'isRecurring', 'chargeDescriptorId', 'providerId', 'billId'],
   subscriptions: ['id', 'householdId', 'name', 'amountCents', 'billingCycle', 'nextBillingDate', 'categoryId', 'accountId', 'paymentMode'],
   paySchedules: ['id', 'householdId', 'userId', 'name', 'frequency', 'nextPayDate', 'estimatedAmountCents', 'semiMonthlyDay1', 'semiMonthlyDay2'],
   payExceptions: ['id', 'householdId', 'userId', 'payScheduleId', 'originalDate', 'overrideDate', 'overrideAmountCents', 'note'],

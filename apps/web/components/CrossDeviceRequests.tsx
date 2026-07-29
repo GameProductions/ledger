@@ -104,11 +104,11 @@ export function CrossDeviceRequests() {
 
         <div className="border-t border-white/5 pt-5">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Pending Requests</h4>
+            <h4 className="text-xs font-black tracking-widest text-slate-400">Pending Requests</h4>
             <button
               onClick={fetchPending}
               aria-label="Refresh pending requests"
-              className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1"
+              className="text-[10px] font-black text-slate-500 hover:text-white tracking-widest transition-colors flex items-center gap-1"
             >
               <RefreshCw className={`w-3 h-3 ${loadingPending ? 'animate-spin' : ''}`} /> Refresh
             </button>

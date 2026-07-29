@@ -20,21 +20,21 @@ export const GlassFooter: React.FC = () => {
               <div className="flex items-center gap-2">
                 <h4 className="font-black text-white tracking-tighter text-lg leading-tight">LEDGER</h4>
                 <div className="w-px h-3 bg-white/10"></div>
-                <span className="text-[11px] font-bold uppercase tracking-widest text-secondary">v{import.meta.env.VITE_APP_VERSION || '1.0.0'}</span>
+                <span className="text-[11px] font-bold tracking-widest text-secondary">v{import.meta.env.VITE_APP_VERSION || '1.0.0'}</span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-500/60">Live Evaluation of Daily Gains & Expense Records</p>
+              <p className="text-xs font-bold tracking-[0.2em] text-orange-500/60">Live Evaluation of Daily Gains & Expense Records</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 border border-white/5 rounded-full w-fit">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-500/80">System Operational</span>
+            <span className="text-[11px] font-bold tracking-widest text-emerald-500/80">System Operational</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:flex md:items-center gap-x-12 gap-y-6">
           <div className="space-y-3">
-            <h5 className="text-xs font-bold uppercase tracking-widest text-white/40">Resources</h5>
+            <h5 className="text-xs font-bold tracking-widest text-white/40">Resources</h5>
             <ul className="space-y-2">
               <li><a href="#/docs" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Documentation</a></li>
               <li><a href="#/updates" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Changelog</a></li>
@@ -42,7 +42,7 @@ export const GlassFooter: React.FC = () => {
           </div>
           
           <div className="space-y-3">
-            <h5 className="text-xs font-bold uppercase tracking-widest text-white/40">Legal</h5>
+            <h5 className="text-xs font-bold tracking-widest text-white/40">Legal</h5>
             <ul className="space-y-2">
               <li><a href="#/privacy" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Privacy Policy</a></li>
               <li><a href="#/terms" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Terms of Service</a></li>
@@ -73,12 +73,12 @@ export const GlassFooter: React.FC = () => {
       </div>
 
       <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/20">
+        <p className="text-xs font-bold tracking-[0.2em] text-white/20">
           © {new Date().getFullYear()} GameProductions™. All protocols active.
         </p>
         <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
           <ShieldCheck size={12} className="text-orange-500/50" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-white/30">End-to-End Encrypted Ledger</span>
+          <span className="text-[11px] font-bold tracking-widest text-white/30">End-to-End Encrypted Ledger</span>
         </div>
       </div>
     </footer>
@@ -101,21 +101,21 @@ export const GlassFooter: React.FC = () => {
               <div className="flex items-center gap-2">
                 <h4 className="font-black text-white tracking-tighter text-lg leading-tight">LEDGER</h4>
                 <div className="w-px h-3 bg-white/10"></div>
-                <span className="text-[11px] font-bold uppercase tracking-widest text-secondary">v{import.meta.env.VITE_APP_VERSION || '1.0.0'}</span>
+                <span className="text-[11px] font-bold tracking-widest text-secondary">v{import.meta.env.VITE_APP_VERSION || '1.0.0'}</span>
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-500/60">Live Evaluation of Daily Gains & Expense Records</p>
+              <p className="text-xs font-bold tracking-[0.2em] text-orange-500/60">Live Evaluation of Daily Gains & Expense Records</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 border border-white/5 rounded-full w-fit">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-500/80">System Operational</span>
+            <span className="text-[11px] font-bold tracking-widest text-emerald-500/80">System Operational</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:flex md:items-center gap-x-12 gap-y-6">
           <div className="space-y-3">
-            <h5 className="text-xs font-bold uppercase tracking-widest text-white/40">Resources</h5>
+            <h5 className="text-xs font-bold tracking-widest text-white/40">Resources</h5>
             <ul className="space-y-2">
               <li><a href="#/docs" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Documentation</a></li>
               <li><a href="#/updates" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Changelog</a></li>
@@ -123,7 +123,7 @@ export const GlassFooter: React.FC = () => {
           </div>
           
           <div className="space-y-3">
-            <h5 className="text-xs font-bold uppercase tracking-widest text-white/40">Legal</h5>
+            <h5 className="text-xs font-bold tracking-widest text-white/40">Legal</h5>
             <ul className="space-y-2">
               <li><a href="#/privacy" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Privacy Policy</a></li>
               <li><a href="#/terms" className="text-xs font-bold text-secondary hover:text-orange-500 transition-colors">Terms of Service</a></li>
@@ -154,12 +154,12 @@ export const GlassFooter: React.FC = () => {
       </div>
 
       <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/20">
+        <p className="text-xs font-bold tracking-[0.2em] text-white/20">
           © {new Date().getFullYear()} GameProductions™. All protocols active.
         </p>
         <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-lg border border-white/5">
           <ShieldCheck size={12} className="text-orange-500/50" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-white/30">End-to-End Encrypted Ledger</span>
+          <span className="text-[11px] font-bold tracking-widest text-white/30">End-to-End Encrypted Ledger</span>
         </div>
       </div>
     </motion.footer>

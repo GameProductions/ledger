@@ -48,6 +48,7 @@ export const TransactionSchema = z.object({
   source: z.string().optional().default('manual'),
   payScheduleId: z.string().optional().nullable(),
   paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  chargeDescriptorId: z.string().optional().nullable(),
 })
 
 export const TransactionOutputSchema = z.object({
@@ -120,8 +121,18 @@ export const InstallmentPlanSchema = z.object({
   accountId: z.string().optional(),
   paymentMode: z.enum(['manual', 'autopay']).optional(),
   status: z.enum(['active', 'completed', 'cancelled']).optional(),
+  planType: z.enum(['user', 'bnpl']).optional().default('user'),
+  bnplProviderId: z.string().optional(),
+  originalTransactionId: z.string().optional(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+})
+
+export const ChargeDescriptorSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().optional().nullable(),
+  defaultCategoryId: z.string().optional().nullable(),
+  isActive: z.boolean().optional().default(true),
 })
 
 export const TrackedExpenseSchema = z.object({
@@ -134,6 +145,7 @@ export const TrackedExpenseSchema = z.object({
   transferTiming: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
   isBorrowed: z.boolean().optional().default(false),
   borrowSource: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
+  chargeDescriptorId: z.string().optional().nullable(),
   createdAt: z.string().optional(),
 })
 
@@ -147,6 +159,9 @@ export const SubscriptionSchema = z.object({
   accountId: z.string().optional(),
   paymentMode: z.enum(['manual', 'autopay']).optional(),
   ownerId: z.string().optional(),
+  visibility: z.enum(['private', 'household', 'public']).optional().default('household'),
+  publicScope: z.enum(['name_only', 'full']).optional().default('name_only'),
+  externalContactId: z.string().optional().nullable(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   payScheduleId: z.string().optional().nullable(),
@@ -180,6 +195,9 @@ export const BillSchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   maxOccurrences: z.number().int().positive().optional().nullable(),
   ownerId: z.string().optional(),
+  visibility: z.enum(['private', 'household', 'public']).optional().default('household'),
+  publicScope: z.enum(['name_only', 'full']).optional().default('name_only'),
+  externalContactId: z.string().optional().nullable(),
   upcomingAmountCents: z.number().int().positive().optional(),
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   payScheduleId: z.string().optional().nullable(),
@@ -226,6 +244,10 @@ export const LoanSchema = z.object({
   status: z.enum(['active', 'closed', 'defaulted']).optional().default('active')
 })
 
+export const MerchantSchema = z.object({
+  name: z.string().min(1).max(200),
+})
+
 export const BillerSchema = z.object({
   name: z.string().min(1).max(200),
   logoUrl: z.string().url().optional().nullable(),
@@ -268,6 +290,18 @@ export const UpdateHouseholdSchema = z.object({
 export const OwnershipTransferSchema = z.object({
   newOwnerId: z.string(),
   transferHistory: z.boolean().optional().default(false)
+})
+
+export const ExternalContactSchema = z.object({
+  name: z.string().min(1).max(100),
+  scope: z.enum(['private', 'household']).optional().default('private'),
+})
+
+export const SharedAccessSchema = z.object({
+  contactLabel: z.string().min(1).max(100),
+  visibilityScope: z.enum(['name_only', 'full']).optional().default('name_only'),
+  permission: z.enum(['view', 'view_and_pay']).optional().default('view'),
+  expiresAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
 })
 
 // --- INTEROP & EXTERNAL SCHEMAS ---

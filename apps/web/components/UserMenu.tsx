@@ -92,11 +92,11 @@ const UserMenu: React.FC<{
             <span className="text-sm font-bold text-white">{displayName}</span>
           </Masked>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${getRoleBadgeStyles(role)}`}>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider border ${getRoleBadgeStyles(role)}`}>
               {role}
             </span>
             {isImpersonating && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border bg-purple-500/10 text-purple-400 border-purple-500/20">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider border bg-purple-500/10 text-purple-400 border-purple-500/20">
                 Impersonated
               </span>
             )}
@@ -117,7 +117,7 @@ const UserMenu: React.FC<{
             >
               <div className="px-3 py-2 border-b border-glass-border mb-2">
                 <div className="min-w-0">
-                  <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
+                  <div className="text-xs text-primary tracking-widest font-black mb-1">
                     {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
                   </div>
                   <Masked>
@@ -178,7 +178,7 @@ const UserMenu: React.FC<{
 
                 {!isAdminPortal && setView && isHome && (
                   <div className="px-3 py-2 border-t border-glass-border mt-2">
-                    <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
+                    <div className="text-xs text-secondary tracking-widest font-bold mb-2">Dashboard View</div>
                     <div className="grid grid-cols-2 gap-2">
                       <button 
                         role="menuitem"
@@ -232,7 +232,7 @@ const UserMenu: React.FC<{
               >
                 <div className="px-3 py-2 border-b border-glass-border mb-2">
                   <div className="min-w-0">
-                    <div className="text-xs text-primary uppercase tracking-widest font-black mb-1">
+                    <div className="text-xs text-primary tracking-widest font-black mb-1">
                       {isAdminPortal ? 'Owner Portal' : isImpersonating ? 'Mirrored Identity' : 'Account'}
                     </div>
                     <Masked>
@@ -280,7 +280,7 @@ const UserMenu: React.FC<{
 
                     {!isAdminPortal && setView && isHome && (
                     <div className="px-3 py-2 border-t border-glass-border mt-2">
-                      <div className="text-xs text-secondary uppercase tracking-widest font-bold mb-2">Dashboard View</div>
+                      <div className="text-xs text-secondary tracking-widest font-bold mb-2">Dashboard View</div>
                       <div className="grid grid-cols-2 gap-2">
                         <button 
                           role="menuitem"

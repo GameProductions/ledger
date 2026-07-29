@@ -205,7 +205,7 @@ const AdminDashboard: React.FC = () => {
         {statCards.map((stat) => (
           <div key={stat.label} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/20 transition-all group overflow-hidden relative">
             <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-${stat.color}-500/10 blur-3xl`} />
-            <p className="text-gray-400 text-sm font-medium mb-1 uppercase tracking-widest">{stat.label}</p>
+            <p className="text-gray-400 text-sm font-medium mb-1 tracking-widest">{stat.label}</p>
             <p className="text-3xl font-black">{stat.value}</p>
           </div>
         ))}
@@ -222,7 +222,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center gap-4">
               <FlaskConical size={24} className="text-emerald-500" />
               <div>
-                <p className="text-gray-400 text-sm font-medium uppercase tracking-widest">Demo Sandbox</p>
+                <p className="text-gray-400 text-sm font-medium tracking-widest">Demo Sandbox</p>
                 <p className="text-base font-black mt-1">
                   {seedingDemo ? 'Seeding...' : 'Create Demo Environment'}
                 </p>
@@ -239,7 +239,7 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center gap-4">
               <RotateCcw size={24} className="text-amber-500" />
               <div>
-                <p className="text-gray-400 text-sm font-medium uppercase tracking-widest">Reset Sandbox</p>
+                <p className="text-gray-400 text-sm font-medium tracking-widest">Reset Sandbox</p>
                 <p className="text-base font-black mt-1">
                   {resettingDemo ? 'Resetting...' : 'Reset Demo Environment'}
                 </p>
@@ -249,7 +249,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         {demoCredentials && (
           <div className="mt-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
-            <p className="text-xs font-black uppercase tracking-widest text-emerald-500">Demo Credentials</p>
+            <p className="text-xs font-black tracking-widest text-emerald-500">Demo Credentials</p>
             <p className="text-sm font-mono">Username: <span className="text-white font-bold">{demoCredentials.username}</span></p>
             <p className="text-sm font-mono">Password: <span className="text-white font-bold">{demoCredentials.password}</span></p>
             <p className="text-sm font-mono">Household: <span className="text-white font-bold">{demoCredentials.householdId}</span></p>
@@ -282,7 +282,7 @@ const AdminDashboard: React.FC = () => {
                   key={cat.value}
                   type="button"
                   onClick={() => setSelectedCategory(cat.value as any)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest border transition-all ${
                     selectedCategory === cat.value 
                     ? 'bg-emerald-500 text-black border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' 
                     : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
@@ -385,34 +385,34 @@ const AdminDashboard: React.FC = () => {
                             {log.action.includes('LOGIN') ? '🔐' : log.action.includes('ADMIN') ? '⚡' : '📝'}
                           </div>
                           <div>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{log.action}</span>
+                            <span className="text-[9px] font-black tracking-[0.2em] text-slate-500">{log.action}</span>
                             <h4 className="text-xs font-bold text-slate-200 mt-0.5">{renderDescription()}</h4>
                           </div>
                         </div>
-                        <span className="text-[9px] text-slate-500 font-mono uppercase">{new Date(log.createdAt).toLocaleString()}</span>
+                        <span className="text-[9px] text-slate-500 font-mono">{new Date(log.createdAt).toLocaleString()}</span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] border-t border-white/5 pt-2">
                         <div>
-                          <span className="text-slate-500 font-bold uppercase tracking-wider text-[8px] mr-1">Actor:</span>
+                          <span className="text-slate-500 font-bold tracking-wider text-[8px] mr-1">Actor:</span>
                           <span className="font-bold text-emerald-400">{log.actorName || 'System'}</span>
                         </div>
                         {(log.ipV4 || log.ipV6) && (
                           <div>
-                            <span className="text-slate-500 font-bold uppercase tracking-wider text-[8px] mr-1">IP:</span>
+                            <span className="text-slate-500 font-bold tracking-wider text-[8px] mr-1">IP:</span>
                             <span className="font-mono text-slate-400">{log.ipV4 || log.ipV6}</span>
                           </div>
                         )}
                         {log.location && (
                           <div>
-                            <span className="text-slate-500 font-bold uppercase tracking-wider text-[8px] mr-1">Location:</span>
+                            <span className="text-slate-500 font-bold tracking-wider text-[8px] mr-1">Location:</span>
                             <span className="font-bold text-blue-400">{log.location}</span>
                           </div>
                         )}
                       </div>
 
                       <details className="text-[10px]">
-                        <summary className="text-[9px] font-black uppercase tracking-widest text-slate-600 cursor-pointer hover:text-white transition-colors outline-none list-none flex items-center gap-1">
+                        <summary className="text-[9px] font-black tracking-widest text-slate-600 cursor-pointer hover:text-white transition-colors outline-none list-none flex items-center gap-1">
                           <span className="w-1 h-1 rounded-full bg-slate-600"></span>
                           Telemetry Payload
                         </summary>
@@ -431,7 +431,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 uppercase tracking-tighter">
+          <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 tracking-tighter">
             <Megaphone size={22} className="text-primary" />
             System Broadcast Messages
           </h3>
@@ -472,7 +472,7 @@ const AdminDashboard: React.FC = () => {
                         newAnnouncement.priority === item.value ? item.dot : 'bg-slate-600'
                       }`} />
                       <div>
-                        <div className={`text-[11px] font-black uppercase tracking-widest ${
+                        <div className={`text-[11px] font-black tracking-widest ${
                           newAnnouncement.priority === item.value ? 'text-primary' : 'text-slate-300'
                         }`}>{item.label}</div>
                         <div className="text-[10px] opacity-60 mt-0.5">{item.desc}</div>
@@ -481,20 +481,20 @@ const AdminDashboard: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <button onClick={createAnnouncement} className="w-full bg-primary text-white font-black uppercase tracking-widest py-3.5 rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2">
+              <button onClick={createAnnouncement} className="w-full bg-primary text-white font-black tracking-widest py-3.5 rounded-xl hover:bg-secondary transition-all flex items-center justify-center gap-2">
                 <Send size={14} /> Send Announcement
               </button>
             </div>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-2">Active Messages</h4>
+            <h4 className="text-[10px] font-black tracking-[0.3em] text-slate-500 ml-2">Active Messages</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
               {announcements?.length > 0 ? (announcements || []).map((a: any) => (
                 <div key={a.id} className="p-4 bg-black/40 border border-white/5 border-l-4 border-l-primary rounded-xl flex justify-between items-center group">
                   <div>
                     <div className="font-bold text-sm text-slate-200">{a.title}</div>
-                    <div className="text-[10px] uppercase font-black tracking-widest opacity-40 mt-1">
+                    <div className="text-[10px] font-black tracking-widest opacity-40 mt-1">
                       {a.priority} • {new Date(a.createdAt).toLocaleString()}
                     </div>
                   </div>
@@ -532,10 +532,10 @@ const AdminDashboard: React.FC = () => {
           </h3>
           <div className="space-y-4 relative">
             <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">System Status</div>
+              <div className="text-[10px] font-black tracking-widest text-slate-500">System Status</div>
               <div className="flex items-center gap-2">
                 <span className={`w-2.5 h-2.5 rounded-full ${maintenanceEnabled ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                <span className="text-sm font-black uppercase tracking-wider">
+                <span className="text-sm font-black tracking-wider">
                   {maintenanceEnabled ? 'Maintenance Mode Active' : 'Public Access Allowed'}
                 </span>
               </div>
@@ -549,7 +549,7 @@ const AdminDashboard: React.FC = () => {
             <button 
               onClick={handleToggleMaintenance}
               disabled={loadingMaintenance}
-              className={`w-full p-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all border relative overflow-hidden ${
+              className={`w-full p-4 rounded-2xl font-black tracking-widest text-xs transition-all border relative overflow-hidden ${
                 maintenanceEnabled 
                 ? 'bg-emerald-500 text-black hover:bg-emerald-400 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
                 : 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20'
@@ -570,7 +570,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Invitations Section */}
         <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-6">
-          <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 uppercase tracking-tighter">
+          <h3 className="text-lg font-bold flex items-center gap-3 border-b border-white/5 pb-4 tracking-tighter">
             <Ticket size={22} className="text-secondary" />
             Owner Invitations
           </h3>
@@ -583,24 +583,24 @@ const AdminDashboard: React.FC = () => {
             <select 
               value={inviteRole}
               onChange={e => setInviteRole(e.target.value as any)}
-              className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3.5 text-sm font-black uppercase tracking-widest appearance-none"
+              className="flex-1 bg-black/40 border border-white/10 rounded-xl p-3.5 text-sm font-black tracking-widest appearance-none"
             >
               <option value="owner">Full Owner Access</option>
               <option value="operator">System Operator</option>
             </select>
-            <button onClick={createInvite} className="flex-1 bg-secondary text-white font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-all flex items-center justify-center gap-2 px-4">
+            <button onClick={createInvite} className="flex-1 bg-secondary text-white font-black tracking-widest rounded-xl hover:bg-primary transition-all flex items-center justify-center gap-2 px-4">
               <Plus size={14} /> Generate & Copy
             </button>
           </div>
 
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 ml-2">Pending Invitations</h4>
+            <h4 className="text-[10px] font-black tracking-[0.3em] text-slate-500 ml-2">Pending Invitations</h4>
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
               {invitations?.length > 0 ? (invitations || []).map((i: any) => (
                 <div key={i.token} className="p-4 bg-black/40 border border-white/5 border-l-4 border-l-secondary rounded-xl flex justify-between items-center group">
                   <div>
                     <div className="font-mono text-xs text-primary">{i.token.substring(0, 16)}...</div>
-                    <div className="text-[10px] uppercase font-black tracking-widest opacity-40 mt-1 flex items-center gap-2">
+                    <div className="text-[10px] font-black tracking-widest opacity-40 mt-1 flex items-center gap-2">
                       <Clock size={10} />
                       Expires {new Date(i.expiresAt).toLocaleTimeString()}
                       <span className="text-secondary">•</span>

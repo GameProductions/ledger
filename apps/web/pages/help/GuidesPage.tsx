@@ -55,8 +55,8 @@ export const GuidesPage: React.FC = () => {
     <MainLayout>
       <div className="max-w-4xl mx-auto py-12 space-y-12">
         <header className="space-y-4">
-          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Mastery Guides</div>
-          <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none underline decoration-primary/40 underline-offset-8">Knowledge Base</h1>
+          <div className="text-xs font-black tracking-[0.4em] text-primary mb-2">Mastery Guides</div>
+          <h1 className="text-5xl font-black italic tracking-tighter leading-none underline decoration-primary/40 underline-offset-8">Knowledge Base</h1>
           <p className="text-secondary font-medium mt-4">In-depth documentation for the ledger-savvy professional.</p>
         </header>
 
@@ -73,8 +73,8 @@ export const GuidesPage: React.FC = () => {
                     {guide.icon}
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-black tracking-tighter uppercase italic text-white group-hover:text-primary transition-colors">{guide.title}</h3>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] text-secondary flex items-center gap-4">
+                    <h3 className="text-2xl font-black tracking-tighter italic text-white group-hover:text-primary transition-colors">{guide.title}</h3>
+                    <div className="text-xs font-black tracking-[0.2em] text-secondary flex items-center gap-4">
                       <span>{guide.duration}</span>
                       <span className="opacity-30">|</span>
                       <span>{guide.topics.length} Sections</span>
@@ -88,7 +88,7 @@ export const GuidesPage: React.FC = () => {
               
               <div className="mt-8 flex flex-wrap gap-3 relative z-10">
                 {(guide.topics || []).map((t, j) => (
-                  <span key={j} className="px-4 py-1.5 bg-white/5 rounded-xl text-xs font-black text-secondary uppercase tracking-widest border border-white/5">
+                  <span key={j} className="px-4 py-1.5 bg-white/5 rounded-xl text-xs font-black text-secondary tracking-widest border border-white/5">
                     {t}
                   </span>
                 ))}
@@ -133,14 +133,14 @@ export const FAQPage: React.FC = () => {
     <MainLayout>
       <div className="max-w-3xl mx-auto py-12 space-y-12">
         <header className="space-y-4 text-center">
-          <div className="text-xs font-black uppercase tracking-[0.4em] text-primary mb-2">Frequently Asked Questions</div>
-          <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">Common Questions</h1>
+          <div className="text-xs font-black tracking-[0.4em] text-primary mb-2">Frequently Asked Questions</div>
+          <h1 className="text-5xl font-black italic tracking-tighter leading-none">Common Questions</h1>
         </header>
 
         <div className="space-y-10">
           {(faqs || []).map((faq, i) => (
             <div key={i} className="space-y-4 group p-8 rounded-[2rem] bg-white/5 border border-white/5 hover:border-white/10 transition-all">
-              <h3 className="text-xl font-black italic uppercase tracking-tighter text-white flex items-center gap-6">
+              <h3 className="text-xl font-black italic tracking-tighter text-white flex items-center gap-6">
                 <span className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center text-sm font-black border border-primary/20 shadow-2xl">Q</span>
                 {faq.q}
               </h3>
@@ -152,10 +152,10 @@ export const FAQPage: React.FC = () => {
         </div>
 
         <div className="p-12 bg-primary/5 border border-dashed border-primary/20 rounded-[3rem] text-center space-y-6">
-          <p className="text-secondary text-sm font-bold uppercase tracking-widest">Still have questions? Our support portal is active 24/7.</p>
+          <p className="text-secondary text-sm font-bold tracking-widest">Still have questions? Our support portal is active 24/7.</p>
           <button 
             onClick={() => window.location.hash = '#/help/support'}
-            className="px-10 py-4 bg-primary text-black text-sm font-black uppercase tracking-[0.3em] rounded-full hover:scale-105 transition-all shadow-2xl shadow-primary/20 flex items-center gap-4 mx-auto"
+            className="px-10 py-4 bg-primary text-black text-sm font-black tracking-[0.3em] rounded-full hover:scale-105 transition-all shadow-2xl shadow-primary/20 flex items-center gap-4 mx-auto"
           >
             Visit Support Portal <ArrowRight size={18} />
           </button>

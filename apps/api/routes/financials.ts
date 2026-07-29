@@ -15,7 +15,9 @@ import {
   CategorySchema,
   AccountSchema,
   TransactionPairingRuleSchema,
-  BillerSchema
+  BillerSchema,
+  MerchantSchema,
+  ChargeDescriptorSchema
 } from '@shared/schemas'
 import { dispatchWebhook } from '../services/webhook-service'
 import { logAudit, apiError } from '../utils'
@@ -35,9 +37,10 @@ import {
   transactionPairingRules,
   trackedExpenses,
   activityLogs,
-  users
+  users,
+  chargeDescriptors
 } from '#/schema'
-import { billers, reconciliationProposals } from '#/schema'
+import { billers, merchants, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { inferTransactionDetails } from '../inference'
@@ -182,6 +185,22 @@ financials.delete('/accounts/:id', async (c) => {
   await db.update(accounts).set({ status: 'closed' }).where(and(eq(accounts.id, id), eq(accounts.householdId, householdId)))
   await logAudit(c, 'accounts', id, 'ARCHIVE')
   return c.json({ success: true })
+})
+
+// Charge Descriptors
+financials.post('/charge-descriptors', zValidator('json', ChargeDescriptorSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const data = (c.req.valid('json') as any)
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(chargeDescriptors).values({
+    id, householdId, name: data.name,
+    description: data.description || null,
+    defaultCategoryId: data.defaultCategoryId || null,
+    isActive: data.isActive ?? true,
+  })
+  await logAudit(c, 'charge_descriptors', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
 })
 
 // Credit Cards
@@ -452,7 +471,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
 
     if (data.categoryId) {
       const updateCat = db.update(categories)
-        .set({ envelopeBalanceCents: sql`envelopeBalanceCents - ${data.amountCents}` })
+        .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amountCents}` })
         .where(and(eq(categories.id, data.categoryId), eq(categories.householdId, householdId)))
       
       await db.batch([insertTx, updateCat])
@@ -936,8 +955,8 @@ financials.post('/transfers', zValidator('json', TransferSchema, (result, c) => 
 
   const id = crypto.randomUUID()
   
-  const u1 = db.update(accounts).set({ balanceCents: sql`balanceCents - ${amountCents}` }).where(and(eq(accounts.id, fromAccountId), eq(accounts.householdId, householdId)))
-  const u2 = db.update(accounts).set({ balanceCents: sql`balanceCents + ${amountCents}` }).where(and(eq(accounts.id, toAccountId), eq(accounts.householdId, householdId)))
+  const u1 = db.update(accounts).set({ balanceCents: sql`balance_cents - ${amountCents}` }).where(and(eq(accounts.id, fromAccountId), eq(accounts.householdId, householdId)))
+  const u2 = db.update(accounts).set({ balanceCents: sql`balance_cents + ${amountCents}` }).where(and(eq(accounts.id, toAccountId), eq(accounts.householdId, householdId)))
   
   await db.batch([u1, u2])
   
@@ -1235,6 +1254,24 @@ financials.delete('/billers/:id', async (c) => {
   await db.delete(billers).where(eq(billers.id, id))
   await logAudit(c, 'billers', id, 'DELETE')
   return c.json({ success: true })
+})
+
+// 🏪 Merchants CRUD
+financials.get('/merchants', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(merchants).where(eq(merchants.householdId, householdId)).orderBy(asc(merchants.name))
+  return c.json({ success: true, data: results })
+})
+
+financials.post('/merchants', zValidator('json', MerchantSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(merchants).values({ id, householdId, ...data })
+  await logAudit(c, 'merchants', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
 })
 
 // 🧩 Intelligent Reconciliation

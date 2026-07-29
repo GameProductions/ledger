@@ -96,14 +96,14 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
            <button 
              onClick={() => handleAddNote('confirmation')}
              disabled={isSubmitting || !newNote.trim()}
-             className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all disabled:opacity-50"
+             className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-lg text-[10px] font-black tracking-tighter transition-all disabled:opacity-50"
            >
              + Confirmation
            </button>
            <button 
              onClick={() => handleAddNote('note')}
              disabled={isSubmitting || !newNote.trim()}
-             className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black border border-amber-500/20 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all disabled:opacity-50"
+             className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-black border border-amber-500/20 rounded-lg text-[10px] font-black tracking-tighter transition-all disabled:opacity-50"
            >
              + Note
            </button>
@@ -113,7 +113,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
       {entries.length === 0 ? (
         <div className="py-12 text-center bg-white/[0.02] border border-dashed border-white/5 rounded-[2rem]">
           <Activity size={32} className="mx-auto text-slate-700 mb-4 opacity-50" />
-          <p className="text-sm text-slate-500 font-black uppercase tracking-[0.2em] italic">No Privacy & Data Ownership Logs</p>
+          <p className="text-sm text-slate-500 font-black tracking-[0.2em] italic">No Privacy & Data Ownership Logs</p>
         </div>
       ) : (
         <div className="relative space-y-8 before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-[2px] before:bg-white/5">
@@ -132,7 +132,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
 
               <div className="flex flex-col gap-1.5">
                  <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-black uppercase tracking-[0.1em] italic ${
+                    <span className={`text-[10px] font-black tracking-[0.1em] italic ${
                       entry.type === 'note' ? 'text-amber-500/70' :
                       entry.type === 'confirmation' ? 'text-emerald-500/70' :
                       'text-blue-500/70'
@@ -148,7 +148,7 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
                       {entry.content}
                     </p>
                  </div>
-                 <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest pl-1">
+                 <span className="text-[9px] text-slate-500 font-black tracking-widest pl-1">
                    {format(new Date(entry.createdAt), 'MMMM d, yyyy • h:mm a')}
                  </span>
               </div>

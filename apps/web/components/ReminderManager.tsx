@@ -81,10 +81,10 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
       <div className="bg-black border border-white/10 rounded-2xl w-full max-w-md overflow-hidden relative">
         <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
           <div>
-            <h3 className="font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <h3 className="font-black tracking-widest text-sm flex items-center gap-2">
               <Bell size={14} className="text-primary" /> Reminders
             </h3>
-            <p className="text-[10px] text-white/50 tracking-widest uppercase">{targetName}</p>
+            <p className="text-[10px] text-white/50 tracking-widest">{targetName}</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X size={16} />
@@ -101,7 +101,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
                   <div>
                     <div className="text-xs font-bold font-mono text-primary flex items-center gap-1.5">
                       {r.deliveryType === 'discord_dm' ? 'Discord DM' : 'Discord Webhook'}
-                      <span className="text-[9px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm tracking-widest uppercase">
+                      <span className="text-[9px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm tracking-widest">
                         {r.frequencyDays} Days Prior
                       </span>
                     </div>
@@ -120,14 +120,14 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
           {!showAdd ? (
             <button 
               onClick={() => setShowAdd(true)} 
-              className="w-full mt-4 py-3 border border-dashed border-white/20 rounded-xl text-xs font-black uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 hover:border-white/40 transition-all"
+              className="w-full mt-4 py-3 border border-dashed border-white/20 rounded-xl text-xs font-black tracking-widest text-white/60 hover:text-white hover:bg-white/5 hover:border-white/40 transition-all"
             >
               + Create Reminder
             </button>
           ) : (
             <form onSubmit={handleAdd} className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-3">
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">Delivery Method</label>
+                <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Delivery Method</label>
                 <select 
                   value={deliveryType} 
                   onChange={(e) => setDeliveryType(e.target.value)}
@@ -141,7 +141,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
 
               {deliveryType === 'discord_webhook' && (
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">Webhook URL</label>
+                  <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Webhook URL</label>
                   <input 
                     type="url" 
                     value={deliveryTarget}
@@ -154,7 +154,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
               )}
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">Alert Timing</label>
+                <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Alert Timing</label>
                 <select 
                   value={frequencyDays} 
                   onChange={(e) => setFrequencyDays(Number(e.target.value))}
@@ -169,7 +169,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 block mb-1">Custom Note (Optional)</label>
+                <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Custom Note (Optional)</label>
                 <input 
                   type="text" 
                   value={note}
@@ -180,8 +180,8 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 text-xs font-black uppercase tracking-widest border border-white/10 rounded-lg hover:bg-white/5">Cancel</button>
-                <button type="submit" className="flex-1 py-2 text-xs font-black uppercase tracking-widest bg-primary text-black rounded-lg hover:bg-primary/90">Save</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 text-xs font-black tracking-widest border border-white/10 rounded-lg hover:bg-white/5">Cancel</button>
+                <button type="submit" className="flex-1 py-2 text-xs font-black tracking-widest bg-primary text-black rounded-lg hover:bg-primary/90">Save</button>
               </div>
             </form>
           )}

@@ -389,8 +389,8 @@ const LoginPage: React.FC = () => {
           <div className="text-center space-y-6">
             <img src={theme.logoUrl} alt="LEDGER" className="h-20 mx-auto opacity-100 hover:scale-110 transition-transform duration-700 pointer-events-none" />
             <div className="space-y-1">
-              <h2 className="text-3xl font-black tracking-tighter text-center uppercase italic underline decoration-primary/40 underline-offset-8">LEDGER</h2>
-              <p className="text-xs font-black uppercase tracking-[0.4em] text-secondary opacity-40">Live Evaluation of Daily Gains & Expense Records</p>
+              <h2 className="text-3xl font-black tracking-tighter text-center italic underline decoration-primary/40 underline-offset-8">LEDGER</h2>
+              <p className="text-xs font-black tracking-[0.4em] text-secondary opacity-40">Live Evaluation of Daily Gains & Expense Records</p>
             </div>
           </div>
 
@@ -437,7 +437,7 @@ const LoginPage: React.FC = () => {
                 }
               />
               {usernameError && (
-                <div id="username-error" role="alert" className="text-xs text-red-500 font-bold uppercase tracking-wider">{usernameError}</div>
+                <div id="username-error" role="alert" className="text-xs text-red-500 font-bold tracking-wider">{usernameError}</div>
               )}
                   <Input 
                     label="Password"
@@ -452,19 +452,19 @@ const LoginPage: React.FC = () => {
                     className="bg-white/5 border-white/5 focus:border-primary p-5 rounded-2xl font-bold font-mono tracking-widest text-lg"
                   />
                   {passwordError && (
-                    <div id="password-error" role="alert" className="text-xs text-red-500 font-bold uppercase tracking-wider">{passwordError}</div>
+                    <div id="password-error" role="alert" className="text-xs text-red-500 font-bold tracking-wider">{passwordError}</div>
                   )}
                 <div className="flex justify-between items-center px-1">
                    <div className="flex items-center gap-3 group cursor-pointer select-none" onClick={() => setPersistent(!persistent)}>
                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${persistent ? 'bg-primary border-primary' : 'bg-transparent border-white/20 group-hover:border-white/40'}`}>
                        {persistent && <Check size={14} className="text-black font-black" strokeWidth={4} />}
                      </div>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-secondary group-hover:text-white transition-colors">Keep me signed in</span>
+                     <span className="text-[10px] font-black tracking-widest text-secondary group-hover:text-white transition-colors">Keep me signed in</span>
                    </div>
                    <button 
                     type="button"
                     onClick={() => setIsForgotModalOpen(true)}
-                    className="text-xs font-black uppercase tracking-widest text-blue-400 hover:text-blue-300 transition-colors"
+                    className="text-xs font-black tracking-widest text-blue-400 hover:text-blue-300 transition-colors"
                    >
                      Forgot Details?
                    </button>
@@ -478,7 +478,7 @@ const LoginPage: React.FC = () => {
                 onClick={(e) => { e.preventDefault(); handleLogin() }}
                 variant="primary" 
                 size="lg" 
-                className="w-full py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-[11px] shadow-2xl shadow-primary/20"
+                className="w-full py-6 rounded-2xl font-black tracking-[0.3em] text-[11px] shadow-2xl shadow-primary/20"
                 loading={loading}
               >
                 Sign in with Password
@@ -487,7 +487,7 @@ const LoginPage: React.FC = () => {
               <button 
                 type="button"
                 onClick={handlePasskeyLogin}
-                className="w-full flex items-center justify-center gap-4 py-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-primary/40 transition-all font-black uppercase tracking-widest text-xs"
+                className="w-full flex items-center justify-center gap-4 py-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-primary/40 transition-all font-black tracking-widest text-xs"
               >
                 <Fingerprint size={18} className="text-primary" />
                 Sign in with Biometrics
@@ -495,7 +495,7 @@ const LoginPage: React.FC = () => {
             </div>
           </form>
 
-          <div className="flex items-center gap-6 text-xs uppercase font-black tracking-widest text-secondary opacity-20">
+          <div className="flex items-center gap-6 text-xs font-black tracking-widest text-secondary opacity-20">
             <div className="flex-1 border-t border-white/10"></div>
             <span>Cross-Platform Sync</span>
             <div className="flex-1 border-t border-white/10"></div>
@@ -533,7 +533,7 @@ const LoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowCrossDevice(true)}
-              className="w-full flex items-center justify-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs uppercase tracking-widest text-slate-400"
+              className="w-full flex items-center justify-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all font-bold text-xs tracking-widest text-slate-400"
             >
               <Smartphone className="w-4 h-4" />
               Sign in using another device
@@ -551,7 +551,7 @@ const LoginPage: React.FC = () => {
                 type="button"
                 onClick={handleCrossDeviceInitiate}
                 disabled={crossDeviceStatus === 'initiating' || !crossDeviceIdentifier.trim()}
-                className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all font-black uppercase tracking-widest text-xs text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/20 transition-all font-black tracking-widest text-xs text-primary disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {crossDeviceStatus === 'initiating' ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -564,7 +564,7 @@ const LoginPage: React.FC = () => {
           ) : crossDeviceStatus === 'showing' ? (
             <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4 reveal">
               <div className="text-center space-y-1">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Enter this code on your authorized device</p>
+                <p className="text-xs font-black tracking-widest text-slate-400">Enter this code on your authorized device</p>
                 <p className="text-[10px] text-slate-500">Settings → Security → Authorize Device Sign-In</p>
               </div>
               <div className="flex items-center justify-center gap-4">
@@ -585,7 +585,7 @@ const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCrossDeviceCancel}
-                className="w-full text-[10px] text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest font-black"
+                className="w-full text-[10px] text-slate-500 hover:text-red-400 transition-colors tracking-widest font-black"
               >
                 Cancel
               </button>
@@ -601,7 +601,7 @@ const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { setShowCrossDevice(false); setCrossDeviceStatus('idle') }}
-                className="w-full text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+                className="w-full text-xs font-black tracking-widest text-slate-400 hover:text-white transition-colors"
               >
                 Try again
               </button>
@@ -677,7 +677,7 @@ const LoginPage: React.FC = () => {
         <div className="space-y-6">
            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
               <RefreshCw className="text-blue-500 mt-1 animate-spin-slow" size={20} />
-              <p className="text-sm text-blue-500 font-bold leading-relaxed uppercase tracking-tighter">An owner has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
+              <p className="text-sm text-blue-500 font-bold leading-relaxed tracking-tighter">An owner has requested a mandatory security update for your account. Please establish a new password to proceed.</p>
            </div>
            <div className="relative">
              <Input 

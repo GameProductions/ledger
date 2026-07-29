@@ -103,14 +103,14 @@ const AdminProcessors: React.FC = () => {
     }
   };
 
-  if (loading) return <AdminPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black uppercase tracking-widest italic">Loading processors...</div></AdminPortal>;
+  if (loading) return <AdminPortal activePath="#/admin/processors"><div className="animate-pulse p-12 text-center text-slate-500 font-black tracking-widest italic">Loading processors...</div></AdminPortal>;
 
   return (
     <AdminPortal activePath="#/admin/processors">
       <div className="flex items-center justify-between mb-12">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
-          <p className="text-xs text-slate-500 uppercase tracking-[0.4em] font-black mt-2">Owner Mode - Billing Infrastructure</p>
+          <h2 className="text-3xl font-black italic tracking-tighter underline decoration-blue-500/50 underline-offset-8">Billing Processors</h2>
+          <p className="text-xs text-slate-500 tracking-[0.4em] font-black mt-2">Owner Mode - Billing Infrastructure</p>
         </div>
         <button 
           onClick={() => {
@@ -120,7 +120,7 @@ const AdminProcessors: React.FC = () => {
             }
             setShowAdd(!showAdd);
           }}
-          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-blue-500 text-black'} font-black uppercase text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
+          className={`px-6 py-3 ${showAdd ? 'bg-white/5 text-white' : 'bg-blue-500 text-black'} font-black text-sm rounded-xl hover:scale-[1.05] transition-all flex items-center gap-2`}
         >
           {showAdd ? 'Cancel' : <><Plus size={16} /> Add Processor</>}
         </button>
@@ -132,12 +132,12 @@ const AdminProcessors: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
                <ShieldAlert size={20} />
             </div>
-            <h3 className="text-xl font-black italic uppercase tracking-tight">{editingId ? 'Edit Processor' : 'Add Processor'}</h3>
+            <h3 className="text-xl font-black italic tracking-tight">{editingId ? 'Edit Processor' : 'Add Processor'}</h3>
           </div>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Processor Name</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Processor Name</label>
                 <input 
                   type="text" 
                   value={newItem.name} 
@@ -148,7 +148,7 @@ const AdminProcessors: React.FC = () => {
                 />
               </div>
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Corporate Website</label>
                 <input 
                   type="url" 
                   value={newItem.websiteUrl} 
@@ -158,7 +158,7 @@ const AdminProcessors: React.FC = () => {
                 />
               </div>
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Branding Assets (Logo URL)</label>
                 <input 
                   type="url" 
                   value={newItem.brandingUrl} 
@@ -170,7 +170,7 @@ const AdminProcessors: React.FC = () => {
             </div>
             <div className="space-y-6">
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Support URL</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Support URL</label>
                 <input 
                   type="url" 
                   value={newItem.support_url} 
@@ -180,7 +180,7 @@ const AdminProcessors: React.FC = () => {
                 />
               </div>
                <div>
-                <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Subscription ID Notes</label>
                 <textarea 
                   value={newItem.subscriptionId_notes} 
                   onChange={(e) => setNewItem({ ...newItem, subscriptionId_notes: e.target.value })}
@@ -189,7 +189,7 @@ const AdminProcessors: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-blue-500/50 transition-all outline-none"
                 />
               </div>
-              <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black uppercase text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
+              <button type="submit" className="w-full py-4 bg-blue-500 text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-blue-500/20">
                 {editingId ? 'Save Changes' : 'Add Processor'}
               </button>
             </div>
@@ -234,7 +234,7 @@ const AdminProcessors: React.FC = () => {
                 )}
               </div>
               <div>
-                <h3 className="font-black text-xl tracking-tighter italic uppercase">{processor.name}</h3>
+                <h3 className="font-black text-xl tracking-tighter italic">{processor.name}</h3>
                 <div className="flex gap-3 mt-2">
                   {processor.websiteUrl && (
                     <a href={processor.websiteUrl} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-blue-400 border border-white/5 transition-all"><Globe size={14} /></a>
@@ -248,26 +248,26 @@ const AdminProcessors: React.FC = () => {
             
             {processor.subscriptionIdNotes && (
               <div className="mt-4 p-5 rounded-2xl bg-black/20 border border-white/5 shadow-inner">
-                <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-2 opacity-60 italic">Identification Logic</p>
+                <p className="text-[10px] font-black text-slate-600 tracking-widest mb-2 opacity-60 italic">Identification Logic</p>
                 <p className="text-xs text-slate-400 leading-relaxed italic">{processor.subscriptionIdNotes}</p>
               </div>
             )}
             
             <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6">
                <div>
-                  <p className="text-[10px] font-black text-slate-600 uppercase mb-1">System Status</p>
-                  <p className="text-xs font-black text-emerald-500 uppercase flex items-center gap-2">
+                  <p className="text-[10px] font-black text-slate-600 mb-1">System Status</p>
+                  <p className="text-xs font-black text-emerald-500 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> System Active
                   </p>
                </div>
-               <button className="text-xs font-black text-slate-500 uppercase hover:text-white flex items-center gap-1.5 transition-all hover:translate-x-1">Coverage <ExternalLink size={10} /></button>
+               <button className="text-xs font-black text-slate-500 hover:text-white flex items-center gap-1.5 transition-all hover:translate-x-1">Coverage <ExternalLink size={10} /></button>
             </div>
           </div>
         ))}
 
         {processors.length === 0 && (
           <div className="col-span-full py-32 text-center rounded-[3rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">
-            <h4 className="text-xl font-black text-slate-500 uppercase tracking-widest">No Processors Added</h4>
+            <h4 className="text-xl font-black text-slate-500 tracking-widest">No Processors Added</h4>
             <p className="text-sm text-slate-600 mt-2">Setup your first billing processor to begin coverage mapping.</p>
           </div>
         )}

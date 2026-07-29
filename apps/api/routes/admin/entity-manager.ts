@@ -22,7 +22,11 @@ const getTable = (type: string) => {
     'bills': schema.bills,
     'installment-plans': schema.installmentPlans,
     'pay-schedules': schema.paySchedules,
-    'pairing-rules': schema.transactionPairingRules
+    'pairing-rules': schema.transactionPairingRules,
+    'lenders': schema.serviceProviders,
+    'charge-descriptors': schema.chargeDescriptors,
+    'external-contacts': schema.externalContacts,
+    'shared-access': schema.sharedAccess
   }
   return mapping[type]
 }
@@ -51,6 +55,22 @@ entities.get('/:type', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
+entities.post('/:type', async (c) => {
+  const { type } = c.req.param()
+  const data = (await c.req.json() as any)
+  const table = getTable(type)
+  if (!table) throw new HTTPException(400, { message: 'Invalid entity type' })
+
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  const insertData = { ...data, id }
+
+  await db.insert(table).values(insertData)
+  await logAudit(c, type, id, 'OWNER_CREATE', null, insertData, {}, true)
+
+  return c.json({ success: true, data: { id } })
+})
+
 entities.patch('/:type/:id', async (c) => {
   const { type, id } = c.req.param()
   const data = (await c.req.json() as any)
@@ -70,7 +90,7 @@ entities.patch('/:type/:id', async (c) => {
   })
 
   await db.update(table).set({ ...cleanData, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(table.id, id))
-  await logAudit(c, type, id, 'GOD_MODE_UPDATE', old, cleanData, {}, true)
+  await logAudit(c, type, id, 'OWNER_UPDATE', old, cleanData, {}, true)
   
   return c.json({ success: true })
 })
@@ -85,7 +105,7 @@ entities.delete('/:type/:id', async (c) => {
   if (!old) throw new HTTPException(404, { message: 'Record not found' })
 
   await db.delete(table).where(eq(table.id, id))
-  await logAudit(c, type, id, 'GOD_MODE_DELETE', old, null, {}, true)
+  await logAudit(c, type, id, 'OWNER_DELETE', old, null, {}, true)
   
   return c.json({ success: true })
 })
@@ -94,7 +114,7 @@ entities.get('/audit/report', async (c) => {
   const db = getDb(c.env)
   const results = (await db.select()
       .from(schema.activityLogs)
-      .where(sql`action LIKE 'GOD_MODE_%'`)
+      .where(sql`action LIKE 'OWNER_%'`)
       .orderBy(desc(schema.activityLogs.createdAt))
       .limit(100) as any)
   return c.json({ success: true, data: results || [] })

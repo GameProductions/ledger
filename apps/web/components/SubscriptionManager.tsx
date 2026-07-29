@@ -3,7 +3,7 @@ import { useApi, globalMutate } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
-import { Bell, Link, Share2, Search, Plus, X, Trash2, CheckCircle2, Receipt, Globe } from 'lucide-react'
+import { Bell, Link, Share2, Search, Plus, X, Trash2, CheckCircle2, Receipt, Globe, Ban } from 'lucide-react'
 import { Price } from './Price'
 import { ProviderLogo } from './shared/ProviderLogo'
 import { StatusBadge } from './shared/StatusBadge'
@@ -49,31 +49,49 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
   const { data: subs = [], loading, mutate } = (useApi('/api/planning/subscriptions') as any)
   const { data: linkedAccounts = [] } = (useApi('/api/user/linked-accounts') as any)
   const { data: providers = [] } = (useApi('/api/user/service-providers') as any)
+  const { data: paymentMethodsData } = (useApi('/api/user/payment-methods') as any)
+  const paymentMethods: any[] = paymentMethodsData?.data ?? []
 
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [cycleFilter, setCycleFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('name')
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc')
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingSub, setEditingSub] = useState<any>(null)
+  const [cancelTarget, setCancelTarget] = useState<any>(null)
   const [reminderTarget, setReminderTarget] = useState<{ id: string; name: string } | null>(null)
   const [openSplitterId, setOpenSplitterId] = useState<string | null>(null)
   const [openTrackerId, setOpenTrackerId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [shareTarget, setShareTarget] = useState<{ id: string; name: string } | null>(null)
 
+  const isCancelled = (s: any) => s.endDate && new Date(s.endDate) < new Date()
+
   const filtered = useMemo(() => {
     if (!Array.isArray(subs)) return []
-    return subs.filter((s: any) => {
+    let result = subs.filter((s: any) => {
+      const cancelled = isCancelled(s)
       if (search && !s.name?.toLowerCase().includes(search.toLowerCase())) return false
-      if (statusFilter === 'active' && s.isTrial) return false
+      if (statusFilter === 'active' && (cancelled || s.isTrial)) return false
       if (statusFilter === 'trial' && !s.isTrial) return false
+      if (statusFilter === 'cancelled' && !cancelled) return false
       if (cycleFilter !== 'all' && s.billingCycle !== cycleFilter) return false
       return true
     })
-  }, [subs, search, statusFilter, cycleFilter])
+    result.sort((a: any, b: any) => {
+      let cmp = 0
+      if (sortBy === 'name') cmp = (a.name || '').localeCompare(b.name || '')
+      else if (sortBy === 'amount') cmp = (a.amountCents || 0) - (b.amountCents || 0)
+      else if (sortBy === 'nextBilling') cmp = (a.nextBillingDate || '').localeCompare(b.nextBillingDate || '')
+      else if (sortBy === 'billingCycle') cmp = (a.billingCycle || '').localeCompare(b.billingCycle || '')
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return result
+  }, [subs, search, statusFilter, cycleFilter, sortBy, sortDir])
 
   const stats = useMemo(() => {
-    const active = Array.isArray(subs) ? subs.filter((s: any) => s.status !== 'cancelled') : []
+    const active = Array.isArray(subs) ? subs.filter((s: any) => !isCancelled(s)) : []
     const monthlyTotal = active.reduce((sum: number, s: any) => {
       const mult = ANNUAL_MULTIPLIER[s.billingCycle] || 12
       return sum + ((s.amountCents || 0) * mult) / 12
@@ -211,6 +229,7 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
           <option value="all">All</option>
           <option value="active">Active</option>
           <option value="trial">Trial</option>
+          <option value="cancelled">Cancelled</option>
         </select>
         <select
           value={cycleFilter}
@@ -222,6 +241,25 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
         </select>
+        <div className="flex items-center gap-1">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-white/5 border border-white/10 text-[10px] font-black tracking-widest px-3 py-2 rounded-xl text-secondary outline-none"
+          >
+            <option value="name">Name</option>
+            <option value="amount">Amount</option>
+            <option value="nextBilling">Date</option>
+            <option value="billingCycle">Cycle</option>
+          </select>
+          <button
+            onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+            className="w-9 h-9 flex items-center justify-center bg-white/5 border border-white/10 rounded-xl text-secondary hover:text-white hover:bg-white/10 transition-all text-xs"
+            title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+          >
+            {sortDir === 'asc' ? '↑' : '↓'}
+          </button>
+        </div>
       </div>
 
       {/* Subscription Cards */}
@@ -271,10 +309,16 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0 ml-3">
-                    <Price amountCents={sub.amountCents} className="text-lg font-black tracking-tighter" />
-                    <div className="text-[9px] text-white/30 font-black tracking-widest mt-0.5">
-                      /{sub.billingCycle} · <Price amountCents={annualCost} hideCents />/yr
-                    </div>
+                    {sub.amountCents === 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black tracking-widest px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-lg">FREE</span>
+                    ) : (
+                      <>
+                        <Price amountCents={sub.amountCents} className="text-lg font-black tracking-tighter" />
+                        <div className="text-[9px] text-white/30 font-black tracking-widest mt-0.5">
+                          /{sub.billingCycle} · <Price amountCents={annualCost} hideCents />/yr
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -285,7 +329,7 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
                       <Link size={10} /> Account Linked
                     </span>
                   )}
-                  {sub.status && <StatusBadge status={sub.status} />}
+                  {isCancelled(sub) && <StatusBadge status="cancelled" />}
                 </div>
 
                 {/* Notes */}
@@ -323,6 +367,14 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
                   >
                     Edit
                   </button>
+                  {!isCancelled(sub) && (
+                    <button
+                      onClick={() => setCancelTarget(sub)}
+                      className="flex items-center gap-1 text-[10px] font-black tracking-widest px-3 py-1.5 border border-slate-500/30 text-slate-400 rounded-lg hover:bg-slate-500/10 transition-all active:scale-95"
+                    >
+                      <Ban size={10} /> Cancel
+                    </button>
+                  )}
                   <button
                     onClick={() => setReminderTarget({ id: sub.id, name: sub.name })}
                     className="flex items-center gap-1 text-[10px] font-black tracking-widest px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-all active:scale-95"
@@ -377,6 +429,7 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
           initial={editingSub}
           providerOptions={providerOptions}
           linkedAccountOptions={linkedAccountOptions}
+          paymentMethods={paymentMethods}
           onSave={async (data) => {
             const apiUrl = getApiUrl().replace(/\/$/, '')
             const isNew = !editingSub
@@ -418,6 +471,34 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
           </div>
         </div>
       )}
+
+      {/* Cancel confirmation */}
+      {cancelTarget && (
+        <CancelSubscriptionModal
+          sub={cancelTarget}
+          onConfirm={async (endDate) => {
+            if (!token) return
+            const res = await fetch(`${getApiUrl()}/api/planning/subscriptions/${cancelTarget.id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'x-household-id': householdId || '',
+              },
+              body: JSON.stringify({ endDate }),
+            })
+            if (res.ok) {
+              showToast('Subscription cancelled', 'success')
+              setCancelTarget(null)
+              mutate()
+              globalMutate()
+            } else {
+              showToast('Failed to cancel subscription', 'error')
+            }
+          }}
+          onClose={() => setCancelTarget(null)}
+        />
+      )}
     </section>
   )
 }
@@ -428,6 +509,7 @@ interface SubscriptionFormModalProps {
   initial: any
   providerOptions: { value: string; label: string }[]
   linkedAccountOptions: { value: string; label: string; metadata?: { email?: string } }[]
+  paymentMethods: any[]
   onSave: (data: any) => Promise<void>
   onClose: () => void
 }
@@ -436,6 +518,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
   initial,
   providerOptions,
   linkedAccountOptions,
+  paymentMethods,
   onSave,
   onClose,
 }) => {
@@ -451,6 +534,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
   const [upcomingAmountCents, setUpcomingAmountCents] = useState(initial?.upcomingAmountCents || 0)
   const [upcomingEffectiveDate, setUpcomingEffectiveDate] = useState(initial?.upcomingEffectiveDate || '')
   const [showRateChange, setShowRateChange] = useState(!!(initial?.upcomingAmountCents || initial?.upcomingEffectiveDate))
+  const [paymentMethodId, setPaymentMethodId] = useState(initial?.paymentMethodId || '')
   const [notes, setNotes] = useState(initial?.notes || '')
   const [saving, setSaving] = useState(false)
 
@@ -463,7 +547,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !amountCents || !nextBillingDate) return
+    if (!name || amountCents === null || amountCents === undefined || !nextBillingDate) return
     setSaving(true)
     await onSave({
       name,
@@ -473,6 +557,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
       trialEndDate: isTrial ? trialEndDate : null,
       isTrial: isTrial && !!trialEndDate,
       providerAccountId: linkedAccountId || null,
+      paymentMethodId: paymentMethodId || null,
       iconUrl: iconUrl || null,
       categoryId: categoryId || null,
       upcomingAmountCents: upcomingAmountCents || null,
@@ -603,6 +688,17 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
             />
           </div>
 
+          {/* Payment Method */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black tracking-widest text-secondary">Payment Method</label>
+            <SearchableSelect
+              options={paymentMethods.map((pm: any) => ({ value: pm.id, label: pm.name || pm.type || pm.id }))}
+              value={paymentMethodId}
+              onChange={setPaymentMethodId}
+              placeholder="Select payment method..."
+            />
+          </div>
+
           {/* Category */}
           <div className="space-y-1">
             <label className="text-[10px] font-black tracking-widest text-secondary">Category</label>
@@ -663,7 +759,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={saving || !name || !amountCents || !nextBillingDate}
+              disabled={saving || !name || amountCents === null || amountCents === undefined || !nextBillingDate}
               className="flex-1 py-3 bg-primary text-white rounded-xl text-xs font-black tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-40 disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
               <CheckCircle2 size={14} />
@@ -671,6 +767,63 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// ─── Cancel Subscription Modal ──────────────────────────────────────
+
+interface CancelSubscriptionModalProps {
+  sub: any
+  onConfirm: (endDate: string) => Promise<void>
+  onClose: () => void
+}
+
+const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = ({ sub, onConfirm, onClose }) => {
+  const today = new Date().toISOString().split('T')[0]
+  const [endDate, setEndDate] = useState(today)
+  const [loading, setLoading] = useState(false)
+
+  const handleConfirm = async () => {
+    setLoading(true)
+    await onConfirm(endDate)
+    setLoading(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl" onClick={onClose}>
+      <div className="card w-full max-w-sm p-6 space-y-4 relative" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-black tracking-tighter">Cancel <span className="text-primary">{sub.name}</span></h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-full transition-all">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-secondary font-medium">
+          Set the date when this subscription will end. Future payments after this date will not be tracked.
+        </p>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black tracking-widest text-secondary">Cancellation Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-sm font-bold"
+          />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-black tracking-widest hover:bg-white/10 transition-all">
+            Keep Active
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={loading || !endDate}
+            className="flex-1 py-3 text-slate-400 border border-slate-500/30 rounded-xl text-xs font-black tracking-widest hover:bg-slate-500/10 transition-all disabled:opacity-40"
+          >
+            {loading ? 'Cancelling...' : 'Confirm Cancellation'}
+          </button>
+        </div>
       </div>
     </div>
   )

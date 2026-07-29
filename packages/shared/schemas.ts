@@ -151,7 +151,7 @@ export const TrackedExpenseSchema = z.object({
 
 export const SubscriptionSchema = z.object({
   name: z.string().min(1).max(100),
-  amountCents: z.number().int().positive(),
+  amountCents: z.number().int().nonnegative(),
   billingCycle: z.enum(['weekly', 'biweekly', 'monthly', 'quarterly', 'annually', 'yearly']),
   nextBillingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
@@ -166,6 +166,7 @@ export const SubscriptionSchema = z.object({
   upcomingEffectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   payScheduleId: z.string().optional().nullable(),
   paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  paymentMethodId: z.string().optional().nullable(),
 })
 
 export const PayScheduleSchema = z.object({

@@ -5,6 +5,15 @@ import { useToast } from '../context/ToastContext'
 import { getApiUrl } from '../utils/api'
 import { Bell, Trash2, X } from 'lucide-react'
 
+const CHANNEL_LABELS: Record<string, string> = {
+  discord_dm: 'Discord DM',
+  discord_webhook: 'Discord Webhook',
+  email: 'Email',
+  pushover: 'Pushover',
+  gotify: 'Gotify',
+  telegram: 'Telegram',
+}
+
 interface ReminderManagerProps {
   targetId: string
   targetType: string
@@ -100,7 +109,7 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
                 <div key={r.id} className="bg-white/5 border border-white/10 rounded-xl p-3 flex justify-between items-center">
                   <div>
                     <div className="text-xs font-bold font-mono text-primary flex items-center gap-1.5">
-                      {r.deliveryType === 'discord_dm' ? 'Discord DM' : 'Discord Webhook'}
+                      {CHANNEL_LABELS[r.deliveryType] || r.deliveryType}
                       <span className="text-[9px] bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm tracking-widest">
                         {r.frequencyDays} Days Prior
                       </span>
@@ -136,6 +145,10 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
                 >
                   <option value="discord_dm">Discord Direct Message</option>
                   <option value="discord_webhook">Discord Webhook</option>
+                  <option value="email">Email</option>
+                  <option value="pushover">Pushover</option>
+                  <option value="gotify">Gotify</option>
+                  <option value="telegram">Telegram</option>
                 </select>
               </div>
 
@@ -147,6 +160,62 @@ export const ReminderManager: React.FC<ReminderManagerProps> = ({ targetId, targ
                     value={deliveryTarget}
                     onChange={(e) => setDeliveryTarget(e.target.value)}
                     placeholder="https://discord.com/api/webhooks/..."
+                    className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-primary/50"
+                    required
+                  />
+                </div>
+              )}
+
+              {deliveryType === 'email' && (
+                <div>
+                  <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={deliveryTarget}
+                    onChange={(e) => setDeliveryTarget(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-primary/50"
+                    required
+                  />
+                </div>
+              )}
+
+              {deliveryType === 'pushover' && (
+                <div>
+                  <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Pushover User Key</label>
+                  <input 
+                    type="text" 
+                    value={deliveryTarget}
+                    onChange={(e) => setDeliveryTarget(e.target.value)}
+                    placeholder="Your Pushover user key"
+                    className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-primary/50"
+                    required
+                  />
+                </div>
+              )}
+
+              {deliveryType === 'gotify' && (
+                <div>
+                  <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Gotify URL (with token)</label>
+                  <input 
+                    type="text" 
+                    value={deliveryTarget}
+                    onChange={(e) => setDeliveryTarget(e.target.value)}
+                    placeholder="https://gotify.example.org/message?token=xxx"
+                    className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-primary/50"
+                    required
+                  />
+                </div>
+              )}
+
+              {deliveryType === 'telegram' && (
+                <div>
+                  <label className="text-[10px] font-black tracking-widest text-white/40 block mb-1">Telegram Chat ID</label>
+                  <input 
+                    type="text" 
+                    value={deliveryTarget}
+                    onChange={(e) => setDeliveryTarget(e.target.value)}
+                    placeholder="Chat ID (numeric or @username)"
                     className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-primary/50"
                     required
                   />

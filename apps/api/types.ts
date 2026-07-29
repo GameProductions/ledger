@@ -40,6 +40,8 @@ export type Bindings = {
   MATCH_AGENT: any
   RULE_AGENT: any
   ADMIN_MIGRATION_KEY: string
+  PUSHOVER_APP_TOKEN?: string
+  TELEGRAM_BOT_TOKEN?: string
   // 🛰️ Fleet Activity Queue (Producer)
   FLEET_ACTIVITY?: Queue;
 }

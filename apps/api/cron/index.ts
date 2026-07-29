@@ -351,6 +351,56 @@ export const handleScheduled = async (event: { cron: string }, env: Bindings, ct
                           await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
                       }
                   }
+              } else if (reminder.deliveryType === 'pushover' && reminder.deliveryTarget && env.PUSHOVER_APP_TOKEN) {
+                  const formData = new FormData();
+                  formData.append('token', env.PUSHOVER_APP_TOKEN);
+                  formData.append('user', reminder.deliveryTarget);
+                  formData.append('message', message);
+                  formData.append('title', 'Ledger Reminder');
+                  formData.append('sound', 'pushover');
+                  const poRes = await fetch('https://api.pushover.net/1/messages.json', { method: 'POST', body: formData });
+                  if (poRes.ok) {
+                      await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
+                  }
+              } else if (reminder.deliveryType === 'gotify' && reminder.deliveryTarget) {
+                  const gotifyRes = await fetch(reminder.deliveryTarget, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title: 'Ledger Reminder', message, priority: 5 }),
+                  });
+                  if (gotifyRes.ok) {
+                      await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
+                  }
+              } else if (reminder.deliveryType === 'telegram' && reminder.deliveryTarget && env.TELEGRAM_BOT_TOKEN) {
+                  const tgRes = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ chat_id: reminder.deliveryTarget, text: message, parse_mode: 'Markdown' }),
+                  });
+                  if (tgRes.ok) {
+                      await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
+                  }
+              } else if (reminder.deliveryType === 'email' && reminder.deliveryTarget && env.RESEND_API_KEY) {
+                  try {
+                      const emailRes = await fetch('https://api.resend.com/emails', {
+                          method: 'POST',
+                          headers: {
+                              'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+                              'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                              from: env.FROM_EMAIL || 'LEDGER <onboarding@resend.dev>',
+                              to: [reminder.deliveryTarget],
+                              subject: `Ledger Reminder: ${itemName}`,
+                              text: message.replace(/\*\*/g, ''),
+                          }),
+                      });
+                      if (emailRes.ok) {
+                          await db.update(reminders).set({ lastSentAt: nowIso }).where(eq(reminders.id, reminder.id));
+                      }
+                  } catch (emailErr) {
+                      console.error('[Reminders] Email dispatch failed:', emailErr);
+                  }
               }
           }
       }

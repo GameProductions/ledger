@@ -212,6 +212,7 @@ export const subscriptions = pgTable('subscriptions', {
   upcomingEffectiveDate: text('upcoming_effective_date'),
   payScheduleId: text('pay_schedule_id'),
   paycheckDate: text('paycheck_date'),
+  paymentMethodId: text('payment_method_id'),
 }, (table) => ({
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));

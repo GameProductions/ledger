@@ -306,7 +306,7 @@ export const reminderSchedules = pgTable('reminder_schedules', {
 export const reminderChannels = pgTable('reminder_channels', {
   id: text('id').primaryKey(),
   scheduleId: text('schedule_id').notNull().references(() => reminderSchedules.id, { onDelete: 'cascade' }),
-  channelType: text('channel_type').notNull(), // DISCORD_DM, DISCORD_WEBHOOK, EMAIL, TOAST, WEBHOOK
+  channelType: text('channel_type').notNull(), // DISCORD_DM, DISCORD_WEBHOOK, EMAIL, PUSHOVER, GOTIFY, TELEGRAM, TOAST, WEBHOOK
   target: text('target'), // Email address, Webhook URL, Discord ID
   soundId: text('sound_id'), // FK to notificationSounds
   isEnabled: boolean('is_enabled').default(true),

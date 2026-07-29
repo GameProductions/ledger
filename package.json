@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.140.0",
+  "version": "3.141.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -29,6 +29,7 @@
     "exceljs": "^4.4.0",
     "framer-motion": "^12.43.0",
     "hono": "^4.12.32",
+    "html2canvas": "^1.4.1",
     "jose": "^6.2.4",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.27.0",
@@ -37,6 +38,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
+    "recharts": "^3.10.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "workers-ai-provider": "^4.0.0",

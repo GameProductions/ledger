@@ -27,6 +27,7 @@ import { sharedAccess } from '#/schema'
 import discordRoutes from './discord'
 import supportRoutes from './routes/support'
 import trackedExpensesRoutes from './routes/tracked-expenses'
+import reportsRoutes from './routes/reports'
 
 
 // Durable Objects Exports (Required for Cloudflare)
@@ -249,6 +250,7 @@ app.get('/api/shared/:token', async (c) => {
 
 // Specific Middleware Chains
 app.use('/api/admin/*', adminMiddleware)
+app.use('/api/reports/*', authMiddleware)
 // 4. System Routes
 app.route('/api/auth', authRoutes)
 app.route('/api/proxy', authRoutes)
@@ -262,6 +264,7 @@ app.route('/api/backup', backupRoutes)
 app.route('/api/support', supportRoutes)
 app.route('/api/discord', discordRoutes)
 app.route('/api/tracked-expenses', trackedExpensesRoutes)
+app.route('/api/reports', reportsRoutes)
 
 // Helper to safely parse configuration values
 const safeJsonParse = (val: string | null) => {

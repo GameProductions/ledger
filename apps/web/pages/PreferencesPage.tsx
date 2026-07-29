@@ -2,7 +2,7 @@ import React from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
 import { useApi } from '../hooks/useApi'
-import { ArrowLeft, Palette, Layout } from 'lucide-react'
+import { ArrowLeft, Palette, Layout, Receipt } from 'lucide-react'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import { MainLayout } from '../components/layout/MainLayout'
 import InviteManager from '../components/InviteManager'
@@ -50,7 +50,8 @@ const PreferencesPage: React.FC = () => {
     { id: 'recentTransactions', name: 'Recent Transactions', desc: 'Live feed of your latest activity' },
     { id: 'calendar', name: 'Financial Calendar', desc: 'Monthly view of upcoming bills and income' },
     { id: 'savingsBuckets', name: 'Savings Buckets', desc: 'Progress towards your financial goals' },
-    { id: 'smartInsights', name: 'AI Smart Insights', desc: 'Personalized advice from the AI Coach' }
+    { id: 'smartInsights', name: 'AI Smart Insights', desc: 'Personalized advice from the AI Coach' },
+    { id: 'subscriptions', name: 'Subscriptions', desc: 'Full-page subscription manager' }
   ]
 
   return (

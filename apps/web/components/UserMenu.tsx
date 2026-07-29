@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge, Lock, Globe, Zap, FileText, Search } from 'lucide-react'
+import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge, Lock, Globe, Zap, FileText, Search, Receipt } from 'lucide-react'
 import { Masked } from './ui/Masked'
 import { sanitizeImageUrl } from '../utils/security'
 
@@ -18,6 +18,9 @@ const UserMenu: React.FC<{
   const [isOpen, setIsOpen] = useState(false)
   const reduced = useReducedMotion()
 
+  const settings = JSON.parse(profile?.settingsJson || '{}')
+  const dashboardLayout = settings.dashboardLayout || {}
+  const subsEnabled = dashboardLayout.subscriptions !== false
   const isHome = !window.location.hash || window.location.hash === '#/'
   const displayName = profile?.displayName || user?.displayName || profile?.username || user?.username || 'User'
   const avatarUrl = sanitizeImageUrl(profile?.avatarUrl || user?.avatarUrl)
@@ -52,6 +55,7 @@ const UserMenu: React.FC<{
   ] : [
     { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
     { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
+    ...(subsEnabled ? [{ icon: Receipt, label: 'Subscriptions', hash: '#/subscriptions', color: 'text-amber-400' }] : []),
     { icon: HandCoins, label: 'Loan Manager', hash: '#/loans', color: 'text-orange-400' },
     { icon: Briefcase, label: 'Investments', hash: '#/investments', color: 'text-indigo-400' },
     { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },

@@ -47,6 +47,15 @@ export const categories = pgTable('categories', {
   householdIdx: index('idx_categories_household').on(table.householdId),
 }));
 
+export const merchants = pgTable('merchants', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_merchants_household').on(table.householdId),
+}));
+
 export const chargeDescriptors = pgTable('charge_descriptors', {
   id: text('id').primaryKey(),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),

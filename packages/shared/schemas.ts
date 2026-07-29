@@ -244,6 +244,10 @@ export const LoanSchema = z.object({
   status: z.enum(['active', 'closed', 'defaulted']).optional().default('active')
 })
 
+export const MerchantSchema = z.object({
+  name: z.string().min(1).max(200),
+})
+
 export const BillerSchema = z.object({
   name: z.string().min(1).max(200),
   logoUrl: z.string().url().optional().nullable(),

@@ -16,6 +16,7 @@ import {
   AccountSchema,
   TransactionPairingRuleSchema,
   BillerSchema,
+  MerchantSchema,
   ChargeDescriptorSchema
 } from '@shared/schemas'
 import { dispatchWebhook } from '../services/webhook-service'
@@ -39,7 +40,7 @@ import {
   users,
   chargeDescriptors
 } from '#/schema'
-import { billers, reconciliationProposals } from '#/schema'
+import { billers, merchants, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { inferTransactionDetails } from '../inference'
@@ -1253,6 +1254,24 @@ financials.delete('/billers/:id', async (c) => {
   await db.delete(billers).where(eq(billers.id, id))
   await logAudit(c, 'billers', id, 'DELETE')
   return c.json({ success: true })
+})
+
+// 🏪 Merchants CRUD
+financials.get('/merchants', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(merchants).where(eq(merchants.householdId, householdId)).orderBy(asc(merchants.name))
+  return c.json({ success: true, data: results })
+})
+
+financials.post('/merchants', zValidator('json', MerchantSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(merchants).values({ id, householdId, ...data })
+  await logAudit(c, 'merchants', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
 })
 
 // 🧩 Intelligent Reconciliation

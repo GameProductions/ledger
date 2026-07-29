@@ -508,7 +508,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           frequency: data.frequency,
           estimatedAmountCents: data.estimatedAmountCents,
           nextPayDate: data.nextPayDate,
-          notes: data.notes
+          notes: data.notes,
+          upcomingAmountCents: data.upcomingAmountCents || null,
+          upcomingEffectiveDate: data.upcomingEffectiveDate || null
         }
       } else if (data.type === 'bill' || data.type === 'subscription') {
         payload = {
@@ -524,7 +526,9 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
           categoryId: data.categoryId || null,
           accountId: data.accountId || null,
           payScheduleId: data.payScheduleId || null,
-          paycheckDate: data.paycheckDate || null
+          paycheckDate: data.paycheckDate || null,
+          upcomingAmountCents: data.upcomingAmountCents || null,
+          upcomingEffectiveDate: data.upcomingEffectiveDate || null
         }
       } else if (data.type === 'installment') {
         payload = {

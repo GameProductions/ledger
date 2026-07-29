@@ -7,13 +7,23 @@ interface ProviderLogoProps {
   className?: string
 }
 
+function isValidImageUrl(s: string): boolean {
+  try {
+    const u = new URL(s)
+    return u.protocol === 'https:' && u.hostname.includes('.')
+  } catch {
+    return false
+  }
+}
+
 export const ProviderLogo: React.FC<ProviderLogoProps> = ({ url, name, size = 24, className = '' }) => {
   const [failed, setFailed] = useState(false)
+  const safeUrl = url && isValidImageUrl(url) ? url : null
 
-  if (url && !failed) {
+  if (safeUrl && !failed) {
     return (
       <img
-        src={url}
+        src={safeUrl}
         alt={name || ''}
         className={`rounded-full object-cover flex-shrink-0 ${className}`}
         style={{ width: size, height: size }}

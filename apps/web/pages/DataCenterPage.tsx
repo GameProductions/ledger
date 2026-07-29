@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import ImportReview from '../components/ImportReview';
+import { LedgerSpreadsheetImport } from '../components/LedgerSpreadsheetImport';
 import { PrivacySettings } from '../components/PrivacySettings';
 import { getApiUrl } from '../utils/api';
 import { useApi } from '../hooks/useApi';
@@ -26,6 +27,7 @@ const API_URL = getApiUrl();
 const DataCenterPage: React.FC = () => {
   const [importScope, setImportScope] = useState<'household' | 'private'>('household');
   const [activeTab, setActiveTab] = useState<'upload' | 'cloud' | 'url'>('upload');
+  const [importMode, setImportMode] = useState<'standard' | 'ledger'>('standard');
   const [url, setUrl] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -143,11 +145,32 @@ const DataCenterPage: React.FC = () => {
               <div className="p-12">
                 {activeTab === 'upload' && (
                   <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                    <ImportReview scope={importScope} onImportComplete={() => window.location.reload()} />
-                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
-                       <FileText className="text-blue-400 shrink-0" />
-                       <p className="text-xs text-blue-400/80 font-medium">Supported formats: **CSV, QIF, OFX, and PDF Bank Statements**. Spreadsheets will be auto-mapped to your history.</p>
+                    <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10 w-fit">
+                      <button
+                        onClick={() => setImportMode('standard')}
+                        className={`px-5 py-2 rounded-lg font-bold text-xs transition-all ${importMode === 'standard' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        Standard Import
+                      </button>
+                      <button
+                        onClick={() => setImportMode('ledger')}
+                        className={`px-5 py-2 rounded-lg font-bold text-xs transition-all ${importMode === 'ledger' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        Ledger Spreadsheet
+                      </button>
                     </div>
+
+                    {importMode === 'standard' ? (
+                      <>
+                        <ImportReview scope={importScope} onImportComplete={() => window.location.reload()} />
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10">
+                           <FileText className="text-blue-400 shrink-0" />
+                           <p className="text-xs text-blue-400/80 font-medium">Supported formats: **CSV, QIF, OFX, and PDF Bank Statements**. Spreadsheets will be auto-mapped to your history.</p>
+                        </div>
+                      </>
+                    ) : (
+                      <LedgerSpreadsheetImport scope={importScope} onImportComplete={() => window.location.reload()} />
+                    )}
                   </div>
                 )}
 

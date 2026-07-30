@@ -627,67 +627,57 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="flex items-start gap-3 min-w-0">
                     <Checkbox 
                       checked={selectedIds.includes(item.id)} 
                       onChange={() => toggleSelect(item.id)} 
-                      iconClassName="text-orange-500"
+                      iconClassName="text-orange-500 shrink-0"
                     />
-                    <div>
-                      <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors">{item.description}</div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="text-[10px] tracking-widest text-secondary font-black flex items-center gap-1">
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-white group-hover:text-orange-100 transition-colors truncate">{item.description}</div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                        <div className="text-[10px] tracking-widest text-secondary font-black flex items-center gap-1 whitespace-nowrap">
                           <Calendar size={10} /> {new Date(item.transactionDate || item.createdAt).toLocaleDateString()}
                         </div>
                         {item.attentionRequired && (
-                          <div className="text-[10px] tracking-widest text-orange-400 font-black flex items-center gap-1">
+                          <div className="text-[10px] tracking-widest text-orange-400 font-black flex items-center gap-1 whitespace-nowrap">
                             <AlertTriangle size={10} /> Needs Attention
                           </div>
                         )}
                         {item.needsBalanceTransfer && (
-                          <div className="flex items-center gap-2">
-                            <div className="text-[10px] tracking-widest text-blue-400 font-black flex items-center gap-1">
-                              <ArrowLeftRight size={10} /> Balance Transfer{item.transferTiming ? `: ${(() => {
-                                const v = item.transferTiming
-                                if (v.includes('T')) {
-                                  const [d, t] = v.split('T')
-                                  return `${d} @ ${t}`
-                                }
-                                return v
-                              })()}` : ''}
+                          <div className="flex items-center gap-1.5">
+                            <div className="text-[10px] tracking-widest text-blue-400 font-black flex items-center gap-1 whitespace-nowrap">
+                              <ArrowLeftRight size={10} /> Transfer
                             </div>
                             {item.transferReconciled ? (
-                              <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] font-black tracking-widest rounded flex items-center gap-1">
-                                <Check size={8} /> Reconciled
+                              <div className="px-1 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] font-black tracking-widest rounded flex items-center gap-0.5">
+                                <Check size={8} /> Done
                               </div>
                             ) : (
-                              <div className="px-1.5 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black tracking-widest rounded flex items-center gap-1">
+                              <div className="px-1 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black tracking-widest rounded flex items-center gap-0.5">
                                 Pending
                               </div>
                             )}
                           </div>
                         )}
                         {item.isBorrowed && (
-                          <div className="text-[10px] tracking-widest text-purple-400 font-black flex items-center gap-1">
-                            <Wallet size={10} /> Borrowed{item.borrowSource ? ` from ${item.borrowSource}` : ''}
+                          <div className="text-[10px] tracking-widest text-purple-400 font-black flex items-center gap-1 truncate max-w-[200px] sm:max-w-none">
+                            <Wallet size={10} />{item.borrowSource ? ` ${item.borrowSource}` : ' Borrowed'}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <Price amountCents={item.amountCents} className="text-lg font-black text-orange-200" />
-                      <div className="text-[9px] font-black tracking-widest text-secondary mt-0.5">
-                        Running: {formatPrice(tracked.slice(0, tracked.indexOf(item) + 1).reduce((s: number, i: any) => s + (i.amountCents ?? 0), 0))}
-                      </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 shrink-0">
+                    <div className="text-left sm:text-right">
+                      <Price amountCents={item.amountCents} className="text-base sm:text-lg font-black text-orange-200" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <button
                         onClick={() => openMoveToLedger(item.id)}
-                        className="p-2 hover:bg-orange-500/10 rounded-xl transition-all text-orange-400 hover:text-orange-300 flex items-center justify-center cursor-pointer"
+                        className="p-1.5 sm:p-2 hover:bg-orange-500/10 rounded-xl transition-all text-orange-400 hover:text-orange-300 flex items-center justify-center cursor-pointer"
                         aria-label="Move to ledger"
                         title="Move to ledger"
                       >
@@ -712,7 +702,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             createdAt: item.createdAt || toLocalDate()
                           })
                         }}
-                        className="p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
+                        className="p-1.5 sm:p-2 hover:bg-white/10 rounded-xl transition-all text-secondary hover:text-white"
                         aria-label={`Expand and edit ${item.description}`}
                       >
                         <ChevronDown size={18} />

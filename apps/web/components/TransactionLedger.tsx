@@ -398,24 +398,24 @@ export const TransactionLedger: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-sm">
+        <table className="w-full text-left border-collapse text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-white/10 text-gray-400">
-              <th className="py-2 pl-2 w-10">
+              <th className="py-1 sm:py-2 pl-1 sm:pl-2 w-8 sm:w-10">
                 <Checkbox 
                   checked={!!(transactions && transactions.length > 0 && selectedIds.length === transactions?.length)} 
                   onChange={toggleSelectAll} 
                 />
               </th>
-              <th className="py-2 cursor-pointer hover:text-white" onClick={() => toggleSort('date')}>
+              <th className="py-1 sm:py-2 cursor-pointer hover:text-white whitespace-nowrap" onClick={() => toggleSort('date')}>
                 Date {sortBy === 'date' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
-              <th className="py-2">Description</th>
-              <th className="py-2">Category</th>
-              <th className="py-2 text-right cursor-pointer hover:text-white" onClick={() => toggleSort('amount')}>
+              <th className="py-1 sm:py-2">Description</th>
+              <th className="py-1 sm:py-2 hidden sm:table-cell">Category</th>
+              <th className="py-1 sm:py-2 text-right cursor-pointer hover:text-white whitespace-nowrap" onClick={() => toggleSort('amount')}>
                 Amount {sortBy === 'amount' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
-              <th className="py-2 pr-2 w-10"></th>
+              <th className="py-1 sm:py-2 pr-1 sm:pr-2 w-8 sm:w-10"></th>
             </tr>
           </thead>
           <tbody>
@@ -423,52 +423,54 @@ export const TransactionLedger: React.FC = () => {
               transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accountedFor : true).map((tx: any) => (
               <React.Fragment key={tx.id}>
                 <tr className={`border-b border-white/5 hover:bg-white/5 transition-colors ${selectedIds.includes(tx.id) ? 'bg-primary/5' : ''}`}>
-                  <td className="py-2 pl-2">
+                  <td className="py-1 sm:py-2 pl-1 sm:pl-2">
                     <Checkbox 
                       checked={selectedIds.includes(tx.id)} 
                       onChange={() => toggleSelect(tx.id)} 
                     />
                   </td>
-                  <td className="py-2 opacity-80 whitespace-nowrap">{tx.transactionDate}</td>
-                  <td className="py-2 font-medium flex items-center gap-2">
-                    {tx.description}
-                    {tx.attentionRequired && !tx.accountedFor && (
-                       <Flag size={14} className="text-orange-500" />
-                    )}
+                  <td className="py-1 sm:py-2 opacity-80 whitespace-nowrap text-[10px] sm:text-xs">{tx.transactionDate}</td>
+                  <td className="py-1 sm:py-2 font-medium truncate max-w-[120px] sm:max-w-none">
+                    <span className="flex items-center gap-1">
+                      {tx.description}
+                      {tx.attentionRequired && !tx.accountedFor && (
+                         <Flag size={12} className="text-orange-500 shrink-0" />
+                      )}
+                    </span>
                   </td>
-                  <td className="py-2">
+                  <td className="py-1 sm:py-2 hidden sm:table-cell">
                     {tx.categoryId ? (
-                      <span className="px-2 py-0.5 bg-white/10 rounded-full text-xs opacity-80">
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-white/10 rounded-full text-[10px] sm:text-xs opacity-80 whitespace-nowrap">
                         {categories?.find((c:any) => c.id === tx.categoryId)?.name || 'Unknown'}
                       </span>
                     ) : suggestions[tx.id] ? (
-                      <div className="flex items-center gap-2">
-                         <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-xs flex items-center gap-1">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                         <span className="px-1.5 sm:px-2 py-0.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-[10px] sm:text-xs flex items-center gap-1 whitespace-nowrap">
                            ✨ {categories?.find((c:any) => c.id === suggestions[tx.id].categoryId)?.name || 'Suggested'}
                          </span>
                          <button 
                            onClick={() => {/* Mock confirm & remember */ globalMutate()}}
-                           className="text-[10px] bg-orange-500 text-black px-2 rounded-full font-bold tracking-widest hover:scale-105"
+                           className="text-[9px] sm:text-[10px] bg-orange-500 text-black px-1.5 sm:px-2 rounded-full font-bold tracking-widest hover:scale-105"
                          >
-                           Confirm
+                           ✓
                          </button>
                       </div>
                     ) : (
-                      <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-full text-xs">Uncategorized</span>
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-full text-[10px] sm:text-xs whitespace-nowrap">Uncat</span>
                     )}
                   </td>
-                  <td className={`py-2 text-right font-bold ${tx.amountCents > 0 ? 'text-emerald-400' : 'text-white'}`}>
+                  <td className={`py-1 sm:py-2 text-right font-bold text-[11px] sm:text-sm ${tx.amountCents > 0 ? 'text-emerald-400' : 'text-white'}`}>
                     <Price amountCents={Math.abs(tx.amountCents)} />
                   </td>
-                  <td className="py-2 pr-2 text-right">
+                  <td className="py-1 sm:py-2 pr-1 sm:pr-2 text-right">
                     <button onClick={() => setExpandedId(expandedId === tx.id ? null : tx.id)} className="p-1 hover:bg-white/10 rounded">
-                      {expandedId === tx.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      {expandedId === tx.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
                   </td>
                 </tr>
                 {expandedId === tx.id && (
                   <tr className="bg-black/20 border-b border-white/10">
-                    <td colSpan={6} className="p-4">
+                    <td colSpan={6} className="p-3 sm:p-4">
                       <div className="grid grid-cols-2 gap-4 text-xs opacity-80">
                         <div>
                           <p className="mb-1 tracking-wider font-bold opacity-50">Raw Bank Data</p>

@@ -261,7 +261,10 @@ export const ReconciliationProposalSchema = z.object({
   suggestedTransactionId: z.string(),
   confidenceScore: z.number().int().min(0).max(100),
   matchReason: z.string().optional().nullable(),
-  status: z.enum(['pending', 'approved', 'rejected']).optional().default('pending')
+  status: z.enum(['pending', 'approved', 'rejected']).optional().default('pending'),
+  updatedAt: z.string().optional().nullable(),
+  approvedBy: z.string().optional().nullable(),
+  approvedAt: z.string().optional().nullable()
 })
 
 // --- USER & HOUSEHOLD SCHEMAS ---

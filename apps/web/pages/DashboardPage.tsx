@@ -387,7 +387,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ status: current ? 'none' : 'reconciled' })
+      body: JSON.stringify({ reconciled: !current })
     })
     mutateTx()
     globalMutate()
@@ -1312,7 +1312,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                               'Authorization': `Bearer ${token}`,
                               'x-household-id': householdId || ''
                             },
-                            body: JSON.stringify({ linkedToIds: [t.id] })
+                            body: JSON.stringify({ targetId: t.id })
                           })
                           mutateTx()
                           globalMutate()
@@ -1350,7 +1350,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                             'Authorization': `Bearer ${token}`,
                             'x-household-id': householdId || ''
                           },
-                          body: JSON.stringify({ linkedToIds: [t.id] })
+                          body: JSON.stringify({ targetId: t.id })
                         })
                         mutateTx()
                         globalMutate()

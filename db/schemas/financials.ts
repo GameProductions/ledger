@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, integer, primaryKey, index, serial } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, integer, primaryKey, index, serial, unique } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './auth';
 
@@ -226,10 +226,14 @@ export const reconciliationProposals = pgTable('reconciliation_proposals', {
   matchReason: text('match_reason'),
   status: text('status').default('pending'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at'),
+  approvedBy: text('approved_by'),
+  approvedAt: text('approved_at'),
 }, (table) => ({
   householdIdx: index('idx_recon_proposals_household').on(table.householdId),
   primaryTxIdx: index('idx_recon_proposals_primary').on(table.primaryTransactionId),
   suggestedTxIdx: index('idx_recon_proposals_suggested').on(table.suggestedTransactionId),
+  uniquePair: unique('uq_recon_proposals_pair').on(table.primaryTransactionId, table.suggestedTransactionId),
 }));
 
 export const sharedBalances = pgTable('shared_balances', {

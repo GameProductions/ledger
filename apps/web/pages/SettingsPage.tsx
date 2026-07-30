@@ -42,7 +42,7 @@ const locales = [
 ];
 
 const SettingsPage: React.FC = () => {
-  const { user, token, login, secureFetch } = useAuth()
+  const { user, token, login, globalRole, secureFetch } = useAuth()
   const { data: profile, mutate } = (useApi('/api/user/profile') as any)
   const { data: accounts } = (useApi('/api/financials/accounts') as any)
   const { data: identities, mutate: mutateIdentities } = (useApi('/api/user/identities') as any)

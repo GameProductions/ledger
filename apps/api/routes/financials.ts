@@ -1274,13 +1274,62 @@ financials.post('/merchants', zValidator('json', MerchantSchema), async (c) => {
   return c.json({ success: true, id })
 })
 
-// 🧩 Intelligent Reconciliation
-financials.get('/reconciliation/proposals', async (c) => {
+// 📋 Transaction Pairing Rules
+financials.get('/pairing-rules', async (c) => {
   const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = await db.select().from(transactionPairingRules).where(eq(transactionPairingRules.householdId, householdId)).orderBy(desc(transactionPairingRules.createdAt))
+  return c.json({ success: true, data: results })
+})
+
+financials.post('/pairing-rules', zValidator('json', TransactionPairingRuleSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  await db.insert(transactionPairingRules).values({ id, householdId, ownerId: userId, ...data })
+  await logAudit(c, 'transaction_pairing_rules', id, 'CREATE', null, data)
+  return c.json({ success: true, id })
+})
+
+financials.put('/pairing-rules/:id', zValidator('json', TransactionPairingRuleSchema.partial()), async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  await db.update(transactionPairingRules).set(data).where(and(eq(transactionPairingRules.id, id), eq(transactionPairingRules.householdId, householdId)))
+  await logAudit(c, 'transaction_pairing_rules', id, 'UPDATE', null, data)
+  return c.json({ success: true })
+})
+
+financials.delete('/pairing-rules/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  await db.delete(transactionPairingRules).where(and(eq(transactionPairingRules.id, id), eq(transactionPairingRules.householdId, householdId)))
+  await logAudit(c, 'transaction_pairing_rules', id, 'DELETE', null, null)
+  return c.json({ success: true })
+})
+
+// 🧩 Intelligent Reconciliation
+financials.get('/reconciliation/proposals', zValidator('query', z.object({
+  status: z.enum(['pending', 'approved', 'rejected', 'all']).optional().default('pending'),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20)
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { status, page, limit } = c.req.valid('query')
   const db = getDb(c.env)
   
   const t1 = alias(transactions, 't1')
   const t2 = alias(transactions, 't2')
+
+  const whereConditions: any[] = [eq(reconciliationProposals.householdId, householdId)]
+  if (status !== 'all') whereConditions.push(eq(reconciliationProposals.status, status))
+
+  const total = (await db.select({ count: count() }).from(reconciliationProposals).where(and(...whereConditions)) as any)[0]?.count || 0
+  const offset = (page - 1) * limit
 
   const results = (await db.select({
       id: reconciliationProposals.id,
@@ -1290,6 +1339,10 @@ financials.get('/reconciliation/proposals', async (c) => {
       confidenceScore: reconciliationProposals.confidenceScore,
       status: reconciliationProposals.status,
       createdAt: reconciliationProposals.createdAt,
+      updatedAt: reconciliationProposals.updatedAt,
+      approvedBy: reconciliationProposals.approvedBy,
+      approvedAt: reconciliationProposals.approvedAt,
+      matchReason: reconciliationProposals.matchReason,
       primaryDescription: t1.description,
       primaryAmount: t1.amountCents,
       primaryDate: t1.transactionDate,
@@ -1300,13 +1353,12 @@ financials.get('/reconciliation/proposals', async (c) => {
     .from(reconciliationProposals)
     .innerJoin(t1, eq(reconciliationProposals.primaryTransactionId, t1.id))
     .innerJoin(t2, eq(reconciliationProposals.suggestedTransactionId, t2.id))
-    .where(and(
-      eq(reconciliationProposals.householdId, householdId),
-      eq(reconciliationProposals.status, 'pending')
-    ))
-    .orderBy(desc(reconciliationProposals.confidenceScore)) as any)
+    .where(and(...whereConditions))
+    .orderBy(desc(reconciliationProposals.confidenceScore))
+    .limit(limit)
+    .offset(offset) as any)
   
-  return c.json({ success: true, data: results || [] })
+  return c.json({ success: true, data: results || [], total, page, limit })
 })
 
 financials.post('/reconciliation/sync', async (c) => {
@@ -1322,11 +1374,84 @@ financials.post('/reconciliation/proposals/bulk-action', zValidator('json', z.ob
   action: z.enum(['approve', 'reject'])
 })), async (c) => {
   const householdId = c.get('householdId')
+  const userId = c.get('userId')
   const { proposalIds, action } = c.req.valid('json')
   const db = getDb(c.env)
   const reconService = new ReconciliationService(db, c.env)
-  await reconService.handleBulkProposals(householdId, proposalIds, action)
+  await reconService.handleBulkProposals(householdId, proposalIds, action, userId)
+  await logAudit(c, 'reconciliation_proposals', null, `BULK_${action.toUpperCase()}`, null, { proposalIds, count: proposalIds.length })
   return c.json({ success: true })
+})
+
+financials.post('/reconciliation/proposals/:id/action', zValidator('json', z.object({
+  action: z.enum(['approve', 'reject'])
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const proposalId = c.req.param('id')
+  const { action } = c.req.valid('json')
+  const db = getDb(c.env)
+  const reconService = new ReconciliationService(db, c.env)
+  try {
+    const result = await reconService.handleIndividualAction(householdId, proposalId, action, userId)
+    await logAudit(c, 'reconciliation_proposals', proposalId, `INDIVIDUAL_${action.toUpperCase()}`, null, result)
+    return c.json({ success: true, data: result })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message })
+  }
+})
+
+financials.post('/reconciliation/proposals/:id/undo', async (c) => {
+  const householdId = c.get('householdId')
+  const proposalId = c.req.param('id')
+  const db = getDb(c.env)
+  const reconService = new ReconciliationService(db, c.env)
+  try {
+    const result = await reconService.undoApproval(householdId, proposalId)
+    await logAudit(c, 'reconciliation_proposals', proposalId, 'UNDO', null, result)
+    return c.json({ success: true, data: result })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message })
+  }
+})
+
+financials.post('/reconciliation/manual-match', zValidator('json', z.object({
+  primaryTransactionId: z.string(),
+  suggestedTransactionId: z.string(),
+  matchReason: z.string().optional()
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId')
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const sortedIds = [data.primaryTransactionId, data.suggestedTransactionId].sort()
+  const primaryId = sortedIds[0]
+  const suggestedId = sortedIds[1]
+
+  const existing = (await db.select().from(reconciliationProposals).where(
+    and(
+      eq(reconciliationProposals.householdId, householdId),
+      eq(reconciliationProposals.primaryTransactionId, primaryId),
+      eq(reconciliationProposals.suggestedTransactionId, suggestedId)
+    )
+  ).limit(1).then(res => res[0]) as any)
+
+  if (existing) return c.json({ success: false, error: 'A proposal for this pair already exists' })
+
+  const id = crypto.randomUUID()
+  await db.insert(reconciliationProposals).values({
+    id,
+    householdId,
+    primaryTransactionId: primaryId,
+    suggestedTransactionId: suggestedId,
+    confidenceScore: 100,
+    matchReason: data.matchReason || 'Manual match',
+    status: 'pending'
+  })
+
+  await logAudit(c, 'reconciliation_proposals', id, 'MANUAL_MATCH_CREATED', null, { primaryId, suggestedId })
+  return c.json({ success: true, id })
 })
 
 // financials.delete('/transactions/bulk', ...)

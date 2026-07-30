@@ -269,7 +269,7 @@ export const TransactionLedger: React.FC = () => {
         'Authorization': `Bearer ${token}`,
         'x-household-id': householdId || ''
       },
-      body: JSON.stringify({ transaction_ids: selectedIds, reconciled })
+      body: JSON.stringify({ transactionIds: selectedIds, reconciled })
     })
     globalMutate()
     setSelectedIds([])

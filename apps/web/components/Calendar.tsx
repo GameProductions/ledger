@@ -353,7 +353,7 @@ const Calendar: React.FC<CalendarProps> = ({
 
   return (
     <div 
-      className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-3 sm:p-4 md:p-6 animate-in fade-in zoom-in duration-500 relative overflow-x-auto"
+      className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-3 sm:p-4 md:p-6 animate-in fade-in zoom-in duration-500 relative"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -601,9 +601,9 @@ const Calendar: React.FC<CalendarProps> = ({
       )}
 
       {displayMode === 'calendar' ? (
-      <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-3 min-w-[640px] sm:min-w-0" role="grid" aria-label="Calendar">
+      <div className="grid grid-cols-7 gap-px sm:gap-1 md:gap-2 lg:gap-3" role="grid" aria-label="Calendar">
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} role="columnheader" className="text-center text-[8px] sm:text-[10px] md:text-xs font-black text-slate-600 tracking-[0.1em] sm:tracking-[0.2em] md:tracking-[0.3em] py-1 sm:py-2">{d}</div>
+          <div key={d} role="columnheader" className="text-center text-[7px] sm:text-[9px] md:text-[10px] lg:text-xs font-black text-slate-600 tracking-[0.05em] sm:tracking-[0.15em] md:tracking-[0.2em] lg:tracking-[0.3em] py-0.5 sm:py-1 md:py-2">{d}</div>
         ))}
         
         {datesToRender.map((dObj, idx) => {
@@ -621,26 +621,26 @@ const Calendar: React.FC<CalendarProps> = ({
               role="gridcell"
               aria-label={isPadding ? '' : `${format(date, 'MMMM d, yyyy')}${dayItems.length > 0 ? `, ${dayItems.length} items` : ''}`}
               onClick={() => !isPadding && onDayClick(date)}
-              className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] p-1.5 sm:p-2 md:p-3 rounded-xl sm:rounded-2xl md:rounded-3xl border transition-all cursor-pointer group hover:scale-[1.01] sm:hover:scale-[1.02] active:scale-[0.98] ${
+              className={`min-h-[56px] sm:min-h-[80px] md:min-h-[100px] lg:min-h-[120px] p-1 sm:p-1.5 md:p-2 lg:p-3 rounded-md sm:rounded-lg md:rounded-2xl lg:rounded-3xl border transition-all cursor-pointer group hover:scale-[1.01] active:scale-[0.98] ${
                 isPadding ? 'opacity-20 cursor-default' :
                 dayItems.length > 0 
                   ? 'bg-white/[0.03] border-white/10' 
                   : 'bg-transparent border-white/5 hover:border-white/20'
-              } ${isToday ? 'border-primary/50 shadow-[0_0_12px_rgba(16,185,129,0.08)] sm:shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}`}
+              } ${isToday ? 'border-primary/50 shadow-[0_0_10px_rgba(16,185,129,0.08)] sm:shadow-[0_0_16px_rgba(16,185,129,0.1)]' : ''}`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className={`text-[11px] sm:text-xs md:text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>
+               <div className="flex items-center justify-between mb-1 sm:mb-2 md:mb-3">
+                <span className={`text-[9px] sm:text-[11px] md:text-xs lg:text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>
                   {format(date, 'd') === '1' ? (
-                    <span className="flex flex-col items-start leading-none">
-                      <span className="text-[7px] sm:text-[8px] opacity-60 tracking-tighter">{format(date, 'MMM')}</span>
-                      <span>{format(date, 'd')}</span>
+                    <span className="flex flex-col items-start leading-tight">
+                      <span className="text-[6px] sm:text-[7px] md:text-[8px] opacity-60 tracking-tighter leading-none">{format(date, 'MMM')}</span>
+                      <span className="leading-none">{format(date, 'd')}</span>
                     </span>
                   ) : format(date, 'd')}
                 </span>
                 {!isPadding && (dayItems.length > 0 ? (
-                   <div className="flex gap-0.5 sm:gap-1">
+                   <div className="flex gap-px sm:gap-0.5 md:gap-1">
                      {Array.from(new Set(dayItems.map(i => i.type))).map(type => (
-                       <div key={type} className={`w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full animate-pulse ${getItemTypeStyle(type).dotColor}`} />
+                       <div key={type} className={`w-[3px] sm:w-1 md:w-1.5 h-[3px] sm:h-1 md:h-1.5 rounded-full ${getItemTypeStyle(type).dotColor}`} />
                      ))}
                    </div>
                 ) : (
@@ -648,12 +648,12 @@ const Calendar: React.FC<CalendarProps> = ({
                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                      onClick={(e) => { e.stopPropagation(); onDayClick(date); }}
                    >
-                     <span className="text-[8px] sm:text-[10px] font-black tracking-widest text-slate-500 hover:text-white block px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-white/5 bg-white/5">+ Add</span>
+                     <span className="text-[6px] sm:text-[8px] md:text-[10px] font-black tracking-widest text-slate-500 hover:text-white block px-0.5 sm:px-1 md:px-2 py-0 rounded sm:py-0.5 md:py-1 border border-white/5 bg-white/5">+</span>
                    </div>
                 ))}
               </div>
 
-              <div className="space-y-0.5 sm:space-y-1 md:space-y-1.5">
+              <div className="space-y-px sm:space-y-0.5 md:space-y-1 lg:space-y-1.5">
                 {!isPadding && dayItems.slice(0, 3).map((item: any, itemIdx: number) => (
                   <div 
                     key={`${item.type}-${item.id || Math.random()}`} 
@@ -665,23 +665,23 @@ const Calendar: React.FC<CalendarProps> = ({
                        }
                     }}
                     onMouseLeave={() => setHoverItem(null)}
-                    className={`text-[8px] sm:text-[9px] md:text-[10px] p-0.5 sm:p-1 md:p-1.5 rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between gap-0.5 sm:gap-1 ${itemIdx > 1 ? 'hidden sm:flex' : ''} ${getItemTypeStyle(item.type).badgeBg} ${getItemTypeStyle(item.type).badgeText} ${getItemTypeStyle(item.type).badgeBorder}`}
+                    className={`text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] p-px sm:p-0.5 md:p-1 lg:p-1.5 rounded-sm sm:rounded-md lg:rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between ${getItemTypeStyle(item.type).badgeBg} ${getItemTypeStyle(item.type).badgeText} ${getItemTypeStyle(item.type).badgeBorder} ${itemIdx > 1 ? 'hidden md:flex' : ''}`}
                   >
-                    <span className="truncate flex items-center gap-1 sm:gap-1.5">
-                        <ProviderLogo url={item.iconUrl || item.logoUrl} name={item.description} size={10} />
-                        <span className="hidden sm:inline">
+                    <span className="truncate flex items-center gap-px sm:gap-0.5 md:gap-1 lg:gap-1.5">
+                        <ProviderLogo url={item.iconUrl || item.logoUrl} name={item.description} size={8} />
+                        <span className="hidden lg:inline">
                           <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} /> {item.description}
                         </span>
-                        <span className="sm:hidden">
-                          <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} />
+                        <span className="lg:hidden">
+                          <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0, maximumFractionDigits: 0 }} />
                         </span>
                     </span>
-                    {(item.notes || item.note) && <StickyNote size={8} className="text-white/40 animate-pulse" />}
+                    {(item.notes || item.note) && <StickyNote size={6} className="text-white/40" />}
                   </div>
                 ))}
                 {!isPadding && dayItems.length > 3 && (
-                  <div className="text-[8px] sm:text-[10px] text-center font-black text-slate-600 tracking-widest">
-                    + {dayItems.length - 3}
+                  <div className="text-[7px] sm:text-[8px] md:text-[9px] lg:text-[10px] text-center font-black text-slate-600 tracking-widest leading-none">
+                    +{dayItems.length - 3}
                   </div>
                 )}
               </div>

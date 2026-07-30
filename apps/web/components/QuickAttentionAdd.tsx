@@ -120,12 +120,12 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     <div className="card mb-6 border-l-4 border-l-orange-500 overflow-hidden relative">
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full"></div>
       
-      <div className="flex items-center justify-between gap-2 mb-3 relative z-20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 relative z-20">
         <div className="flex items-center gap-2">
           <Flag className="text-orange-500" size={18} />
           <h3 className="font-bold text-white tracking-widest text-sm text-orange-100">Add Tracked Expense</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button 
             type="button"
             onClick={handleAddBlank}
@@ -334,8 +334,8 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
           ))}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-white/5">
-          <div className="text-xs text-secondary font-semibold">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/5">
+          <div className="text-xs text-secondary font-semibold order-2 sm:order-1">
             {instances.length > 1 && `${instances.length} items staged to add`}
           </div>
           <button 

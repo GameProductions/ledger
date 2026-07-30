@@ -715,8 +715,8 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       )
       case 'safe-to-spend': return (
             <section key="safe-to-spend" className="card">
-              <div className="flex justify-between items-start mb-2">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-2">
+                <div className="flex-1">
                   <h3 className="text-lg font-bold">Safe-to-Spend Balance</h3>
                   <p className="text-xs text-secondary font-medium mt-1">This shows how much money you can safely spend right now, after accounting for all your upcoming bills, subscriptions, and savings goals within the selected timeframe.</p>
                 </div>
@@ -728,7 +728,7 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
                   ]}
                   value={timeframe}
                   onChange={(val) => setTimeframe(val)}
-                  className="min-w-[140px]"
+                  className="min-w-[140px] self-start sm:self-auto"
                 />
               </div>
               <div className="safe-to-spend-container mt-4">
@@ -765,30 +765,30 @@ const DashboardPage: React.FC<{ view: 'list' | 'calendar', setView: (v: 'list' |
       );
       case 'recent-activity': return (
             <section key="recent-activity" className="card animate-in fade-in zoom-in duration-500">
-              <div className="flex justify-between items-start mb-6">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
+                <div className="flex-1">
                   <h3 className="text-lg font-bold">Recent Activity</h3>
                   <p className="text-xs text-secondary font-medium mt-1 pr-4">A log of your recent purchases and deposits. Check the boxes to match them with your bills or categorize them for budgeting.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex bg-white/5 p-1 rounded-xl border border-glass-border">
+                <div className="flex flex-col sm:items-center gap-3 self-start sm:self-auto w-full sm:w-auto">
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-glass-border w-full sm:w-auto">
                      <input 
                         type="text" 
                         placeholder="Filter search..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-transparent border-none text-sm text-white px-3 py-1 outline-none w-32 focus:w-48 transition-all"
+                        className="bg-transparent border-none text-sm text-white px-3 py-1 outline-none w-full sm:w-32 sm:focus:w-48 transition-all"
                       />
                   </div>
-                  <div className="flex gap-4 items-center mr-4">
-                    <a href="#/data" className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary hover:text-white transition-all no-underline">
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <a href="#/data" className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary hover:text-white transition-all no-underline whitespace-nowrap">
                       <span>📥</span> Import & Export
                     </a>
                     {['all', 'unmatched', 'matched'].map(s => (
                       <button 
                         key={s}
                         onClick={() => setFilterStatus(s)}
-                        className={`text-[12px] font-black tracking-widest px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
+                        className={`text-[11px] sm:text-xs font-black tracking-widest px-2.5 sm:px-3 py-1.5 rounded-lg border transition-all ${filterStatus === s ? 'bg-primary border-primary text-white' : 'bg-white/5 border-glass-border text-secondary hover:text-white'}`}
                       >
                         {s}
                       </button>

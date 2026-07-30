@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
-import { Bell, Link, Share2, Search, Plus, X, Trash2, CheckCircle2, Receipt, Globe, Ban } from 'lucide-react'
+import { Bell, Link, Share2, Search, Plus, X, Trash2, CheckCircle2, Receipt, Globe, Ban, Info } from 'lucide-react'
 import { Price } from './Price'
 import { ProviderLogo } from './shared/ProviderLogo'
 import { StatusBadge } from './shared/StatusBadge'
@@ -522,7 +522,62 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
   onSave,
   onClose,
 }) => {
+  const { showToast } = useToast()
+
+  const apiUrl = getApiUrl().replace(/\/$/, '')
+  const token = localStorage.getItem('ledger_token')
+
+  const handleCreateProvider = async (search: string) => {
+    const res = await fetch(`${apiUrl}/api/user/service-providers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: search, visibility: 'private' }),
+    })
+    const data: any = await res.json()
+    if (data.success) {
+      globalMutate()
+      showToast(`Provider "${search}" created`, 'success')
+      return data.id
+    }
+    showToast('Failed to create provider', 'error')
+  }
+
+  const handleCreateLinkedAccount = async (search: string) => {
+    if (!selectedProviderId) {
+      showToast('Select a provider first before linking an account', 'error')
+      return
+    }
+    const res = await fetch(`${apiUrl}/api/user/linked-accounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ providerId: selectedProviderId, emailAttached: search }),
+    })
+    const data: any = await res.json()
+    if (data.success) {
+      globalMutate()
+      showToast(`Linked account "${search}" created`, 'success')
+      return data.id
+    }
+    showToast('Failed to create linked account', 'error')
+  }
+
+  const handleCreatePaymentMethod = async (search: string) => {
+    const res = await fetch(`${apiUrl}/api/user/payment-methods`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: search, type: 'other' }),
+    })
+    const data: any = await res.json()
+    if (data.success) {
+      globalMutate()
+      showToast(`Payment method "${search}" created`, 'success')
+      return data.id
+    }
+    showToast('Failed to create payment method', 'error')
+  }
+
   const [name, setName] = useState(initial?.name || '')
+  const [selectedProviderId, setSelectedProviderId] = useState(initial?.providerId || '')
   const [amountCents, setAmountCents] = useState(initial?.amountCents || 0)
   const [billingCycle, setBillingCycle] = useState(initial?.billingCycle || 'monthly')
   const [nextBillingDate, setNextBillingDate] = useState(initial?.nextBillingDate || '')
@@ -569,8 +624,9 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl" onClick={onClose}>
-      <div className="card w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 space-y-5 relative" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[10001] overflow-y-auto bg-black/80 backdrop-blur-xl" onClick={onClose}>
+      <div className="min-h-full flex items-center justify-center p-4">
+        <div className="card w-full max-w-lg p-6 space-y-5 relative" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-black italic tracking-tighter">
             {initial ? 'Edit' : 'Add'} <span className="text-primary">Subscription</span>
@@ -585,7 +641,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
           <div className="flex items-center gap-3">
             <ProviderLogo url={iconUrl} name={name} size={40} className="border border-white/10" />
             <div className="flex-1 space-y-1">
-              <label className="text-[10px] font-black tracking-widest text-secondary">Service Name</label>
+              <FieldLabel label="Service Name" tooltip="A friendly name to identify this subscription (e.g. &quot;Netflix Standard&quot;)" />
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
@@ -598,7 +654,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
           {/* Logo URL + Auto-fetch */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black tracking-widest text-secondary">Logo URL</label>
+            <FieldLabel label="Logo URL" tooltip="URL for the service logo. Use &quot;Auto&quot; to fetch one automatically." />
             <div className="flex gap-2">
               <input
                 value={iconUrl}
@@ -619,14 +675,15 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
           {/* Provider Link */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black tracking-widest text-secondary">Link Provider</label>
+            <FieldLabel label="Link Provider" tooltip="The company or service providing this subscription. Selecting one can auto-fill the service name." />
             <SearchableSelect
               options={providerOptions}
-              value={providerOptions.find((p: any) => p.label === name)?.value || ''}
+              value={selectedProviderId}
+              onCreate={handleCreateProvider}
               onChange={(val) => {
-                const p = val
-                if (p) {
-                  const match = providerOptions.find((opt: any) => opt.value === p)
+                setSelectedProviderId(val)
+                if (!name) {
+                  const match = providerOptions.find((opt: any) => opt.value === val)
                   if (match) setName(match.label)
                 }
               }}
@@ -637,11 +694,11 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
           {/* Amount + Cycle */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-black tracking-widest text-secondary">Amount</label>
+              <FieldLabel label="Amount" tooltip="How much you pay each billing cycle (in cents for precision)" />
               <CurrencyInput valueCents={amountCents} onChangeCents={setAmountCents} placeholder="0.00" />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black tracking-widest text-secondary">Billing Cycle</label>
+              <FieldLabel label="Billing Cycle" tooltip="How often you are billed (monthly, yearly, weekly, etc.)" />
               <select
                 value={billingCycle}
                 onChange={e => setBillingCycle(e.target.value)}
@@ -657,7 +714,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-black tracking-widest text-secondary">Next Billing</label>
+              <FieldLabel label="Next Billing" tooltip="The next date this subscription will charge you" />
               <input
                 type="date"
                 value={nextBillingDate}
@@ -667,7 +724,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black tracking-widest text-secondary">Trial Ends</label>
+              <FieldLabel label="Trial Ends" tooltip="If this subscription has a free trial, set the end date here" />
               <input
                 type="date"
                 value={trialEndDate}
@@ -679,10 +736,11 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
           {/* Linked Account */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black tracking-widest text-secondary">Linked Account</label>
+            <FieldLabel label="Linked Account" tooltip="The service account (email / username) linked to this subscription" />
             <SearchableSelect
               options={linkedAccountOptions}
               value={linkedAccountId}
+              onCreate={handleCreateLinkedAccount}
               onChange={setLinkedAccountId}
               placeholder="Link account..."
             />
@@ -690,10 +748,11 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
           {/* Payment Method */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black tracking-widest text-secondary">Payment Method</label>
+            <FieldLabel label="Payment Method" tooltip="The card or bank account used to pay for this subscription" />
             <SearchableSelect
               options={paymentMethods.map((pm: any) => ({ value: pm.id, label: pm.name || pm.type || pm.id }))}
               value={paymentMethodId}
+              onCreate={handleCreatePaymentMethod}
               onChange={setPaymentMethodId}
               placeholder="Select payment method..."
             />
@@ -701,7 +760,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
           {/* Category */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black tracking-widest text-secondary">Category</label>
+            <FieldLabel label="Category" tooltip="Group this subscription under a spending category for budgeting" />
             <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
@@ -739,7 +798,7 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
 
           {/* Notes */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black tracking-widest text-secondary">Notes</label>
+            <FieldLabel label="Notes" tooltip="Any additional info about this subscription (contract terms, login details, etc.)" />
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -768,9 +827,24 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
           </div>
         </form>
       </div>
+      </div>
     </div>
   )
 }
+
+// ─── Field Label with Tooltip ─────────────────────────────────────
+
+const FieldLabel: React.FC<{ label: string; tooltip: string }> = ({ label, tooltip }) => (
+  <span className="inline-flex items-center gap-1.5 group text-[10px] font-black tracking-widest text-secondary">
+    {label}
+    <span className="relative inline-flex">
+      <Info size={11} className="text-slate-600 cursor-help" />
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-slate-800 border border-white/10 text-[11px] text-slate-300 rounded-lg whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 max-w-[220px] font-medium leading-relaxed">
+        {tooltip}
+      </span>
+    </span>
+  </span>
+)
 
 // ─── Cancel Subscription Modal ──────────────────────────────────────
 

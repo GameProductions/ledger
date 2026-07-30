@@ -51,7 +51,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setCurrentVersion(data.currentVersion || CURRENT_VERSION)
           
           const tourVersion = data.currentVersion || CURRENT_VERSION
-          const isTourOptedOut = localStorage.getItem(`ledger_show_tour_${tourVersion}`) === 'false'
+          const isPermanentlyDisabled = localStorage.getItem('ledger_tour_permanently_disabled') === 'true'
+          const isTourOptedOut = isPermanentlyDisabled || localStorage.getItem(`ledger_show_tour_${tourVersion}`) === 'false'
           
           if (!isTourOptedOut) {
             if ((data.updates?.length || 0) > 0) {

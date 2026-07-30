@@ -68,7 +68,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ targetType, targetId, 
 
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl" onClick={onClose}>
-      <div className="card w-full max-w-md p-6 space-y-5 relative" onClick={e => e.stopPropagation()}>
+      <div className="card w-full max-w-md p-6 space-y-5 relative max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-black italic tracking-tighter">
             Share <span className="text-primary">{targetName}</span>

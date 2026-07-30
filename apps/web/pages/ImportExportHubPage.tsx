@@ -24,7 +24,7 @@ import { openDropboxPicker, openOneDrivePicker, downloadCloudFile, CloudFileResu
 
 const API_URL = getApiUrl();
 
-const DataCenterPage: React.FC = () => {
+const ImportExportHubPage: React.FC = () => {
   const [importScope, setImportScope] = useState<'household' | 'private'>('household');
   const [activeTab, setActiveTab] = useState<'upload' | 'cloud' | 'url'>('upload');
   const [importMode, setImportMode] = useState<'standard' | 'ledger'>('standard');
@@ -96,7 +96,7 @@ const DataCenterPage: React.FC = () => {
                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
                   <Database size={20} />
                </div>
-               <p className="text-xs font-black tracking-[0.4em] text-slate-500">Data Center</p>
+               <p className="text-xs font-black tracking-[0.4em] text-slate-500">Import & Export Hub</p>
             </div>
             <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white underline decoration-emerald-500/50 underline-offset-8">Import & Export Hub</h1>
             <p className="mt-4 text-slate-400 font-medium max-w-xl">Easily import your transaction documents, back up your financial records, or sync your data with cloud storage securely.</p>
@@ -325,4 +325,4 @@ const DataCenterPage: React.FC = () => {
   );
 };
 
-export default DataCenterPage;
+export default ImportExportHubPage;

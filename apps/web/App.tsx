@@ -28,7 +28,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const PreferencesPage = lazy(() => import('./pages/PreferencesPage'))
 const ReportsPage = lazy(() => import('./pages/ReportsPage'))
-const DataCenterPage = lazy(() => import('./pages/DataCenterPage'))
+const ImportExportHubPage = lazy(() => import('./pages/ImportExportHubPage'))
 const SnapshotViewer = lazy(() => import('./pages/SnapshotViewer'))
 const BackupHub = lazy(() => import('./pages/BackupHub'))
 const HelpCenter = lazy(() => import('./pages/help/HelpCenter').then(m => ({ default: m.HelpCenter })))
@@ -52,7 +52,7 @@ const PaymentCentralPage = lazy(() => import('./pages/PaymentCentralPage'))
 const JoinHouseholdPage = lazy(() => import('./pages/JoinHouseholdPage'))
 const LoanManagerPage = lazy(() => import('./pages/LoanManagerPage'))
 const InvestmentPortfolioPage = lazy(() => import('./pages/InvestmentPortfolioPage'))
-const DataManagerPage = lazy(() => import('./pages/DataManagerPage'))
+const EntityManagerPage = lazy(() => import('./pages/EntityManagerPage'))
 const SubscriptionManagerPage = lazy(() => import('./pages/SubscriptionManagerPage'))
 const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
 const PasskeyChallenge = lazy(() => import('./components/PasskeyChallenge'))
@@ -262,10 +262,10 @@ const AppContent: React.FC = () => {
     if (path === '#/preferences') return <PreferencesPage />
     if (path === '#/reports') return <ReportsPage />
     if (path === '#/payments') return <PaymentCentralPage />
-    if (path === '#/data') return <DataCenterPage />
+    if (path === '#/data') return <ImportExportHubPage />
     if (path === '#/loans') return <LoanManagerPage />
     if (path === '#/investments') return <InvestmentPortfolioPage />
-    if (path === '#/manage') return <DataManagerPage />
+    if (path === '#/manage') return <EntityManagerPage />
     if (path === '#/subscriptions') return <SubscriptionManagerPage />
     if (path === '#/reconcile') return <ReconciliationPage />
     if (path.startsWith('#/snapshot/')) return <SnapshotViewer />

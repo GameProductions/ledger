@@ -7,6 +7,7 @@ export interface FieldDef {
   options?: { value: string; label: string }[]
   locked?: boolean
   placeholder?: string
+  reference?: { apiPath: string; labelKey: string }
 }
 
 export type EntityType =
@@ -22,6 +23,7 @@ export type EntityType =
   | 'payment-methods'
   | 'subscriptions'
   | 'lenders'
+  | 'billers'
   | 'external-contacts'
   | 'shared-access'
 
@@ -56,8 +58,8 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'cancelled', label: 'Cancelled' },
     ]},
     { key: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Optional notes...' },
-    { key: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'UUID (optional)' },
-    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
+    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'isRecurring', label: 'Recurring', type: 'boolean' },
     { key: 'frequency', label: 'Frequency', type: 'select', options: [
       { value: 'weekly', label: 'Weekly' },
@@ -66,10 +68,21 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'quarterly', label: 'Quarterly' },
       { value: 'yearly', label: 'Yearly' },
     ]},
+    { key: 'upcomingAmountCents', label: 'Upcoming Amount', type: 'cents', placeholder: '0.00' },
+    { key: 'upcomingEffectiveDate', label: 'Upcoming Effective Date', type: 'date' },
     { key: 'endDate', label: 'End Date', type: 'date' },
     { key: 'maxOccurrences', label: 'Max Occurrences', type: 'number', placeholder: '12' },
-    { key: 'payScheduleId', label: 'Pay Schedule ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'payScheduleId', label: 'Pay Schedule ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/planning/pay-schedules', labelKey: 'name' } },
     { key: 'paycheckDate', label: 'Paycheck Date', type: 'date' },
+    { key: 'visibility', label: 'Visibility', type: 'select', options: [
+      { value: 'private', label: 'Private' },
+      { value: 'household', label: 'Household' },
+    ]},
+    { key: 'publicScope', label: 'Public Scope', type: 'select', options: [
+      { value: 'name_only', label: 'Name Only' },
+      { value: 'full', label: 'Full' },
+    ]},
+    { key: 'externalContactId', label: 'External Contact ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/external-contacts', labelKey: 'name' } },
     { key: 'ownerId', label: 'Owner ID', type: 'text', locked: true },
   ],
 
@@ -79,6 +92,8 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'icon', label: 'Icon', type: 'text', placeholder: '🛒' },
     { key: 'color', label: 'Color', type: 'text', placeholder: '#4ade80' },
     { key: 'monthlyBudgetCents', label: 'Monthly Budget', type: 'cents', placeholder: '500.00' },
+    { key: 'envelopeBalanceCents', label: 'Envelope Balance', type: 'cents', placeholder: '0.00' },
+    { key: 'rolloverCents', label: 'Rollover Amount', type: 'cents', placeholder: '0.00' },
     { key: 'rolloverEnabled', label: 'Rollover Unused Budget', type: 'boolean' },
     { key: 'emergencyFund', label: 'Emergency Fund', type: 'boolean' },
   ],
@@ -87,13 +102,13 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'householdId', label: 'Household ID', type: 'text', locked: true },
     { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Grocery Run' },
     { key: 'description', label: 'Description', type: 'text', placeholder: 'Optional details...' },
-    { key: 'defaultCategoryId', label: 'Default Category ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'defaultCategoryId', label: 'Default Category ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
     { key: 'isActive', label: 'Active', type: 'boolean' },
   ],
 
   'credit-cards': [
     { key: 'householdId', label: 'Household ID', type: 'text', locked: true },
-    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID' },
+    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'creditLimitCents', label: 'Credit Limit', type: 'cents', placeholder: '5000.00' },
     { key: 'interestRateApy', label: 'Interest Rate (APY)', type: 'cents', placeholder: '24.99' },
     { key: 'statementClosingDay', label: 'Statement Closing Day', type: 'number', placeholder: '15' },
@@ -108,7 +123,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'user', label: 'User Created' },
       { value: 'bnpl', label: 'BNPL (Buy Now Pay Later)' },
     ]},
-    { key: 'bnplProviderId', label: 'BNPL Provider ID', type: 'text', placeholder: 'UUID from Lenders (Affirm, Klarna, etc.)' },
+    { key: 'bnplProviderId', label: 'BNPL Provider ID', type: 'text', placeholder: 'UUID from Lenders (Affirm, Klarna, etc.)', reference: { apiPath: '/api/user/service-providers', labelKey: 'name' } },
     { key: 'originalTransactionId', label: 'Original Transaction ID', type: 'text', placeholder: 'UUID of the purchase transaction' },
     { key: 'totalAmountCents', label: 'Total Amount', type: 'cents', placeholder: '2400.00' },
     { key: 'installmentAmountCents', label: 'Per Installment', type: 'cents', placeholder: '200.00' },
@@ -122,7 +137,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'yearly', label: 'Yearly' },
     ]},
     { key: 'nextPaymentDate', label: 'Next Payment Date', type: 'date' },
-    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: [
       { value: 'manual', label: 'Manual' },
       { value: 'autopay', label: 'Autopay' },
@@ -132,17 +147,19 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'completed', label: 'Completed' },
       { value: 'cancelled', label: 'Cancelled' },
     ]},
+    { key: 'upcomingAmountCents', label: 'Upcoming Amount', type: 'cents', placeholder: '0.00' },
+    { key: 'upcomingEffectiveDate', label: 'Upcoming Effective Date', type: 'date' },
   ],
 
   'linked-accounts': [
     { key: 'userId', label: 'User ID', type: 'text', locked: true },
     { key: 'householdId', label: 'Household ID', type: 'text', locked: true },
-    { key: 'providerId', label: 'Provider ID', type: 'text' },
-    { key: 'paymentMethodId', label: 'Payment Method ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'providerId', label: 'Provider ID', type: 'text', reference: { apiPath: '/api/user/service-providers', labelKey: 'name' } },
+    { key: 'paymentMethodId', label: 'Payment Method ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/user/payment-methods', labelKey: 'name' } },
     { key: 'emailAttached', label: 'Email', type: 'text', placeholder: 'account@email.com' },
     { key: 'membershipStartDate', label: 'Membership Start Date', type: 'date' },
     { key: 'membershipEndDate', label: 'Membership End Date', type: 'date' },
-    { key: 'subscriptionId', label: 'Subscription ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'subscriptionId', label: 'Subscription ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/planning/subscriptions', labelKey: 'name' } },
     { key: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Additional notes...' },
     { key: 'status', label: 'Status', type: 'select', options: [
       { value: 'active', label: 'Active' },
@@ -155,8 +172,8 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
   'pairing-rules': [
     { key: 'householdId', label: 'Household ID', type: 'text', locked: true },
     { key: 'pattern', label: 'Pattern (match description)', type: 'text', placeholder: 'e.g. AMAZON*' },
-    { key: 'targetProviderId', label: 'Target Provider ID', type: 'text', placeholder: 'UUID (optional)' },
-    { key: 'targetCategoryId', label: 'Target Category ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'targetProviderId', label: 'Target Provider ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/user/service-providers', labelKey: 'name' } },
+    { key: 'targetCategoryId', label: 'Target Category ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
     { key: 'autoConfirm', label: 'Auto Confirm', type: 'boolean' },
     { key: 'ownerId', label: 'Owner ID', type: 'text', locked: true },
     { key: 'visibility', label: 'Visibility', type: 'select', options: [
@@ -169,6 +186,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'smart_biller', label: 'Smart Biller' },
       { value: 'auto_learned', label: 'Auto Learned' },
     ]},
+    { key: 'metadataJson', label: 'Metadata JSON', type: 'textarea', placeholder: 'Optional JSON metadata...' },
   ],
 
   'pay-schedules': [
@@ -186,6 +204,8 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Optional notes...' },
     { key: 'semiMonthlyDay1', label: 'Semi-Monthly Day 1', type: 'number', placeholder: '15' },
     { key: 'semiMonthlyDay2', label: 'Semi-Monthly Day 2', type: 'number', placeholder: '30' },
+    { key: 'upcomingAmountCents', label: 'Upcoming Amount', type: 'cents', placeholder: '0.00' },
+    { key: 'upcomingEffectiveDate', label: 'Upcoming Effective Date', type: 'date' },
   ],
 
   'payment-methods': [
@@ -225,14 +245,14 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'maxOccurrences', label: 'Max Occurrences', type: 'number', placeholder: '12' },
     { key: 'trialEndDate', label: 'Trial End Date', type: 'date' },
     { key: 'isTrial', label: 'Is Trial', type: 'boolean' },
-    { key: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'UUID (optional)' },
-    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
+    { key: 'accountId', label: 'Account ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: [
       { value: 'manual', label: 'Manual' },
       { value: 'autopay', label: 'Autopay' },
     ]},
     { key: 'ownerId', label: 'Owner ID', type: 'text', locked: true },
-    { key: 'payScheduleId', label: 'Pay Schedule ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'payScheduleId', label: 'Pay Schedule ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/planning/pay-schedules', labelKey: 'name' } },
     { key: 'paycheckDate', label: 'Paycheck Date', type: 'date' },
   ],
 
@@ -252,8 +272,14 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'inactive', label: 'Inactive' },
     ]},
     { key: 'iconUrl', label: 'Icon URL', type: 'text', placeholder: 'https://...' },
-    { key: 'defaultCategoryId', label: 'Default Category ID', type: 'text', placeholder: 'UUID (optional)' },
+    { key: 'defaultCategoryId', label: 'Default Category ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
     { key: 'defaultDueDate', label: 'Default Due Date', type: 'date' },
+  ],
+  billers: [
+    { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Netflix' },
+    { key: 'logoUrl', label: 'Logo URL', type: 'text', placeholder: 'https://...' },
+    { key: 'website', label: 'Website', type: 'text', placeholder: 'https://...' },
+    { key: 'industry', label: 'Industry', type: 'text', placeholder: 'Streaming' },
   ],
   'external-contacts': [
     { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Sarah, Mom' },

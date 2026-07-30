@@ -333,7 +333,7 @@ data.post('/import/confirm', zValidator('json', z.object({
       await db.insert(transactions).values(records.slice(i, i + 100))
     }
     
-    await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, count: items.length })
+    await logAudit(c, 'import_export_hub', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, count: items.length })
     return c.json({ success: true, count: items.length, target: householdId })
   }
 
@@ -484,11 +484,11 @@ data.post('/import/confirm', zValidator('json', z.object({
       }
     }
 
-    await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, counts })
+    await logAudit(c, 'import_export_hub', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope, counts })
     return c.json({ success: true, counts, target: householdId })
   }
   
-  await logAudit(c, 'data_center', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope })
+  await logAudit(c, 'import_export_hub', 'bulk_import', 'IMPORT', null, { type, scope: reqData.scope })
   return c.json({ success: true, target: householdId })
 })
 

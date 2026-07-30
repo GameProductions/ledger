@@ -72,6 +72,12 @@ export const GuidedTour: React.FC = () => {
     setShowConfirmSkip(true)
   }
 
+  const handlePermanentDismiss = () => {
+    localStorage.setItem('ledger_tour_permanently_disabled', 'true')
+    skipTour()
+    setShowConfirmSkip(false)
+  }
+
   const handleConfirmSkipShowAgain = () => {
     localStorage.setItem(`ledger_show_tour_${currentVersion}`, 'true')
     skipTour()
@@ -106,6 +112,12 @@ export const GuidedTour: React.FC = () => {
             className="w-full py-2.5 bg-white/10 text-white font-black tracking-widest text-xs rounded-xl hover:bg-white/20 transition-all border border-white/5 cursor-pointer"
           >
             No, don't show this tour again
+          </button>
+          <button 
+            onClick={handlePermanentDismiss}
+            className="w-full py-2.5 bg-red-500/10 text-red-400 font-black tracking-widest text-xs rounded-xl hover:bg-red-500/20 transition-all border border-red-500/20 cursor-pointer"
+          >
+            Never show again (including future What's New)
           </button>
         </div>
       </div>
@@ -150,7 +162,7 @@ export const GuidedTour: React.FC = () => {
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="card max-w-md w-full relative overflow-hidden"
+          className="card max-w-md w-full relative max-h-[85vh] overflow-y-auto"
           style={{ background: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--primary)' }}
         >
           {/* Progress Bar */}
@@ -182,14 +194,22 @@ export const GuidedTour: React.FC = () => {
             </p>
 
             {isWelcome && updates.length > 0 && (
-              <div className="mb-6 flex flex-col gap-3 bg-white/5 p-4 rounded-lg border border-white/10 max-h-[300px] overflow-y-auto custom-scrollbar">
-                {updates.map(u => (
-                  <div key={u.version} className="mb-2 last:mb-0">
-                    <div className="text-sm font-bold text-primary mb-1">{u.title} ({u.version})</div>
-                    <div className="text-sm text-secondary whitespace-pre-wrap leading-relaxed">{u.description}</div>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="mb-3 flex flex-col gap-3 bg-white/5 p-4 rounded-lg border border-white/10 max-h-[300px] overflow-y-auto custom-scrollbar">
+                  {updates.map(u => (
+                    <div key={u.version} className="mb-2 last:mb-0">
+                      <div className="text-sm font-bold text-primary mb-1">{u.title} ({u.version})</div>
+                      <div className="text-sm text-secondary whitespace-pre-wrap leading-relaxed">{u.description}</div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handlePermanentDismiss}
+                  className="w-full mb-4 py-2 bg-white/5 text-slate-400 font-black tracking-widest text-xs rounded-xl hover:bg-red-500/10 hover:text-red-400 transition-all border border-white/5 cursor-pointer"
+                >
+                  Don't show What's New again
+                </button>
+              </>
             )}
 
             <div className="flex items-center justify-between">
@@ -236,7 +256,7 @@ export const GuidedTour: React.FC = () => {
           onClick={(e) => e.stopPropagation()}
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
-          className="card max-w-md w-full relative overflow-hidden"
+          className="card max-w-md w-full relative max-h-[85vh] overflow-y-auto"
           style={{ background: 'rgba(15, 23, 42, 0.9)', border: '1px solid var(--primary)' }}
         >
           {/* Progress Bar */}
@@ -269,14 +289,22 @@ export const GuidedTour: React.FC = () => {
             </p>
 
             {isWelcome && updates.length > 0 && (
-              <div className="mb-6 flex flex-col gap-3 bg-white/5 p-4 rounded-lg border border-white/10 max-h-[300px] overflow-y-auto custom-scrollbar">
-                {updates.map(u => (
-                  <div key={u.version} className="mb-2 last:mb-0">
-                    <div className="text-sm font-bold text-primary mb-1">{u.title} ({u.version})</div>
-                    <div className="text-sm text-secondary whitespace-pre-wrap leading-relaxed">{u.description}</div>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="mb-3 flex flex-col gap-3 bg-white/5 p-4 rounded-lg border border-white/10 max-h-[300px] overflow-y-auto custom-scrollbar">
+                  {updates.map(u => (
+                    <div key={u.version} className="mb-2 last:mb-0">
+                      <div className="text-sm font-bold text-primary mb-1">{u.title} ({u.version})</div>
+                      <div className="text-sm text-secondary whitespace-pre-wrap leading-relaxed">{u.description}</div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handlePermanentDismiss}
+                  className="w-full mb-4 py-2 bg-white/5 text-slate-400 font-black tracking-widest text-xs rounded-xl hover:bg-red-500/10 hover:text-red-400 transition-all border border-white/5 cursor-pointer"
+                >
+                  Don't show What's New again
+                </button>
+              </>
             )}
 
             <div className="flex items-center justify-between">

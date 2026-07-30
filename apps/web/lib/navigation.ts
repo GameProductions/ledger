@@ -11,14 +11,14 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { id: 'payments',      label: 'Payment Central',    icon: CreditCard,   hash: '#/payments' },
-  { id: 'subscriptions', label: 'Subscriptions',      icon: Receipt,      hash: '#/subscriptions' },
-  { id: 'reports',       label: 'Reports',            icon: BarChart3,    hash: '#/reports' },
-  { id: 'loans',         label: 'Loan Manager',       icon: HandCoins,    hash: '#/loans' },
-  { id: 'investments',   label: 'Investments',        icon: Briefcase,    hash: '#/investments' },
-  { id: 'data',          label: 'Data Center',         icon: Database,     hash: '#/data' },
-  { id: 'manage',        label: 'Data Manager',        icon: List,         hash: '#/manage' },
+  { id: 'payments',      label: 'Payment Central',     icon: CreditCard,   hash: '#/payments' },
   { id: 'reconcile',     label: 'Reconciliation',      icon: GitMerge,     hash: '#/reconcile' },
+  { id: 'subscriptions', label: 'Subscriptions',       icon: Receipt,      hash: '#/subscriptions' },
+  { id: 'reports',       label: 'Reports',             icon: BarChart3,    hash: '#/reports' },
+  { id: 'loans',         label: 'Loan Manager',        icon: HandCoins,    hash: '#/loans' },
+  { id: 'investments',   label: 'Investments',         icon: Briefcase,    hash: '#/investments' },
+  { id: 'data',          label: 'Import & Export Hub', icon: Database,     hash: '#/data' },
+  { id: 'manage',        label: 'Entity Manager',      icon: List,         hash: '#/manage' },
   { id: 'help',          label: 'Help & Guides',       icon: HelpCircle,   hash: '#/help' },
 ]
 

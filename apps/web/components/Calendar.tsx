@@ -353,7 +353,7 @@ const Calendar: React.FC<CalendarProps> = ({
 
   return (
     <div 
-      className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-6 animate-in fade-in zoom-in duration-500 relative"
+      className="calendar-container bg-black/40 rounded-[2.5rem] border border-white/5 p-3 sm:p-4 md:p-6 animate-in fade-in zoom-in duration-500 relative overflow-x-auto"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -601,9 +601,9 @@ const Calendar: React.FC<CalendarProps> = ({
       )}
 
       {displayMode === 'calendar' ? (
-      <div className="grid grid-cols-7 gap-3" role="grid" aria-label="Calendar">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-3 min-w-[640px] sm:min-w-0" role="grid" aria-label="Calendar">
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} role="columnheader" className="text-center text-xs font-black text-slate-600 tracking-[0.3em] py-2">{d}</div>
+          <div key={d} role="columnheader" className="text-center text-[8px] sm:text-[10px] md:text-xs font-black text-slate-600 tracking-[0.1em] sm:tracking-[0.2em] md:tracking-[0.3em] py-1 sm:py-2">{d}</div>
         ))}
         
         {datesToRender.map((dObj, idx) => {
@@ -621,26 +621,26 @@ const Calendar: React.FC<CalendarProps> = ({
               role="gridcell"
               aria-label={isPadding ? '' : `${format(date, 'MMMM d, yyyy')}${dayItems.length > 0 ? `, ${dayItems.length} items` : ''}`}
               onClick={() => !isPadding && onDayClick(date)}
-              className={`min-h-[120px] p-3 rounded-3xl border transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${
+              className={`min-h-[80px] sm:min-h-[100px] md:min-h-[120px] p-1.5 sm:p-2 md:p-3 rounded-xl sm:rounded-2xl md:rounded-3xl border transition-all cursor-pointer group hover:scale-[1.01] sm:hover:scale-[1.02] active:scale-[0.98] ${
                 isPadding ? 'opacity-20 cursor-default' :
                 dayItems.length > 0 
                   ? 'bg-white/[0.03] border-white/10' 
                   : 'bg-transparent border-white/5 hover:border-white/20'
-              } ${isToday ? 'border-primary/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}`}
+              } ${isToday ? 'border-primary/50 shadow-[0_0_12px_rgba(16,185,129,0.08)] sm:shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}`}
             >
               <div className="flex items-center justify-between mb-3">
-                <span className={`text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>
+                <span className={`text-[11px] sm:text-xs md:text-sm font-black ${isToday ? 'text-primary' : 'text-slate-500 group-hover:text-white'}`}>
                   {format(date, 'd') === '1' ? (
                     <span className="flex flex-col items-start leading-none">
-                      <span className="text-[8px] opacity-60 tracking-tighter">{format(date, 'MMM')}</span>
+                      <span className="text-[7px] sm:text-[8px] opacity-60 tracking-tighter">{format(date, 'MMM')}</span>
                       <span>{format(date, 'd')}</span>
                     </span>
                   ) : format(date, 'd')}
                 </span>
                 {!isPadding && (dayItems.length > 0 ? (
-                   <div className="flex gap-1">
+                   <div className="flex gap-0.5 sm:gap-1">
                      {Array.from(new Set(dayItems.map(i => i.type))).map(type => (
-                       <div key={type} className={`w-1.5 h-1.5 rounded-full animate-pulse ${getItemTypeStyle(type).dotColor}`} />
+                       <div key={type} className={`w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full animate-pulse ${getItemTypeStyle(type).dotColor}`} />
                      ))}
                    </div>
                 ) : (
@@ -648,13 +648,13 @@ const Calendar: React.FC<CalendarProps> = ({
                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                      onClick={(e) => { e.stopPropagation(); onDayClick(date); }}
                    >
-                     <span className="text-[10px] font-black tracking-widest text-slate-500 hover:text-white block px-2 py-1 rounded border border-white/5 bg-white/5">+ Add</span>
+                     <span className="text-[8px] sm:text-[10px] font-black tracking-widest text-slate-500 hover:text-white block px-1 sm:px-2 py-0.5 sm:py-1 rounded border border-white/5 bg-white/5">+ Add</span>
                    </div>
                 ))}
               </div>
 
-              <div className="space-y-1.5">
-                {!isPadding && dayItems.slice(0, 3).map((item: any) => (
+              <div className="space-y-0.5 sm:space-y-1 md:space-y-1.5">
+                {!isPadding && dayItems.slice(0, 3).map((item: any, itemIdx: number) => (
                   <div 
                     key={`${item.type}-${item.id || Math.random()}`} 
                     onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
@@ -665,18 +665,23 @@ const Calendar: React.FC<CalendarProps> = ({
                        }
                     }}
                     onMouseLeave={() => setHoverItem(null)}
-                    className={`text-[10px] p-1.5 rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between gap-1 ${getItemTypeStyle(item.type).badgeBg} ${getItemTypeStyle(item.type).badgeText} ${getItemTypeStyle(item.type).badgeBorder}`}
+                    className={`text-[8px] sm:text-[9px] md:text-[10px] p-0.5 sm:p-1 md:p-1.5 rounded-lg truncate font-bold border transition-all hover:brightness-125 flex items-center justify-between gap-0.5 sm:gap-1 ${itemIdx > 1 ? 'hidden sm:flex' : ''} ${getItemTypeStyle(item.type).badgeBg} ${getItemTypeStyle(item.type).badgeText} ${getItemTypeStyle(item.type).badgeBorder}`}
                   >
-                    <span className="truncate flex items-center gap-1.5">
-                        <ProviderLogo url={item.iconUrl || item.logoUrl} name={item.description} size={14} />
-                        <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} /> {item.description}
+                    <span className="truncate flex items-center gap-1 sm:gap-1.5">
+                        <ProviderLogo url={item.iconUrl || item.logoUrl} name={item.description} size={10} />
+                        <span className="hidden sm:inline">
+                          <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} /> {item.description}
+                        </span>
+                        <span className="sm:hidden">
+                          <Price amountCents={item.amountCents} options={{ minimumFractionDigits: 0 }} />
+                        </span>
                     </span>
-                    {(item.notes || item.note) && <StickyNote size={10} className="text-white/40 animate-pulse" />}
+                    {(item.notes || item.note) && <StickyNote size={8} className="text-white/40 animate-pulse" />}
                   </div>
                 ))}
                 {!isPadding && dayItems.length > 3 && (
-                  <div className="text-[10px] text-center font-black text-slate-600 tracking-widest">
-                    + {dayItems.length - 3} MORE
+                  <div className="text-[8px] sm:text-[10px] text-center font-black text-slate-600 tracking-widest">
+                    + {dayItems.length - 3}
                   </div>
                 )}
               </div>

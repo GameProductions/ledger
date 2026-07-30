@@ -307,13 +307,15 @@ export const TransactionLedger: React.FC = () => {
       <QuickAttentionAdd onAdded={() => globalMutate()} />
 
       <div className="mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
           <div className="flex-1">
-            <h2 className="text-xl font-bold flex items-center gap-2 mb-1">
-              📖 Transaction Ledger
-              <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary" title="Help">
-                <HelpCircle size={16} />
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                📖 Transaction Ledger
+                <button onClick={() => setIsHelpOpen(true)} className="p-1 hover:bg-white/10 rounded-full transition-colors text-primary" title="Help">
+                  <HelpCircle size={16} />
+                </button>
+              </h2>
               <button 
                 onClick={() => {
                   setTxForm({
@@ -328,12 +330,12 @@ export const TransactionLedger: React.FC = () => {
                   });
                   setIsAddTxOpen(true);
                 }} 
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-black font-bold tracking-widest text-[10px] rounded-lg hover:brightness-110 transition-all shadow-md self-start"
                 title="Add Transaction"
               >
                 <Plus size={12} /> Add Item
               </button>
-            </h2>
+            </div>
             <p className="text-xs text-secondary font-medium">A complete list of your historical purchases and deposits. Search, filter, and edit transactions, or map them to categories to keep your budget accurate.</p>
           </div>
 
@@ -371,15 +373,15 @@ export const TransactionLedger: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 ml-auto">
+      <div className="flex items-center justify-end mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative group/search">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary group-focus-within/search:text-primary transition-colors" />
             <input 
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Search..." 
-              className="pl-9 pr-4 py-1.5 text-xs bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary w-32 focus:w-48 transition-all font-black tracking-widest"
+              className="pl-9 pr-4 py-1.5 text-xs bg-black/40 border border-white/10 rounded-full focus:outline-none focus:border-primary w-28 sm:w-32 focus:w-36 sm:focus:w-48 transition-all font-black tracking-widest"
             />
           </div>
           <button 

@@ -272,7 +272,8 @@ export const ProfileSchema = z.object({
   avatarUrl: z.string().url().or(z.string().length(0)).nullable().optional(),
   timezone: z.string().min(1).max(50).optional(),
   locale: z.string().min(2).max(10).optional(),
-  theme: z.enum(['light', 'dark', 'system']).optional()
+  theme: z.enum(['light', 'dark', 'system']).optional(),
+  settingsJson: z.string().optional()
 })
 
 export const JoinHouseholdSchema = z.object({
@@ -424,5 +425,6 @@ export const UserOutputSchema = z.object({
   theme: z.string().nullable().optional(),
   timezone: z.string().nullable().optional(),
   createdAt: z.string().nullable().optional(),
-  householdId: z.string().nullable().optional()
+  householdId: z.string().nullable().optional(),
+  settingsJson: z.string().nullable().optional()
 })

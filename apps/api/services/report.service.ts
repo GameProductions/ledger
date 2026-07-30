@@ -108,13 +108,13 @@ export async function getSpending(env: Bindings, params: ReportQueryParams) {
     .orderBy(sql`${transactions.transactionDate} ASC`)
 
   const weekday = await db.select({
-    dayOfWeek: sql<number>`CAST(strftime('%w', ${transactions.transactionDate}) AS INTEGER)`,
+    dayOfWeek: sql<number>`CAST(EXTRACT(DOW FROM ${transactions.transactionDate}::date) AS INTEGER)`,
     avgCents: sql<number>`COALESCE(CAST(AVG(ABS(${transactions.amountCents})) AS INTEGER), 0)`,
     count: sql<number>`COUNT(*)`,
   })
     .from(transactions)
     .where(and(where, lt(transactions.amountCents, 0)))
-    .groupBy(sql`strftime('%w', ${transactions.transactionDate})`)
+    .groupBy(sql`EXTRACT(DOW FROM ${transactions.transactionDate}::date)`)
     .orderBy(sql`dayOfWeek ASC`)
 
   return { categories: categoriesWithPct, totalSpend, topMerchants, trend, weekday }
@@ -173,13 +173,13 @@ export async function getCashFlow(env: Bindings, params: ReportQueryParams) {
   const where = dateClauses(params)
 
   const monthlyTotals = await db.select({
-    month: sql<string>`strftime('%Y-%m', ${transactions.transactionDate})`,
+    month: sql<string>`TO_CHAR(${transactions.transactionDate}::date, 'YYYY-MM')`,
     incomeCents: sql<number>`COALESCE(SUM(CASE WHEN ${transactions.amountCents} > 0 THEN ${transactions.amountCents} ELSE 0 END), 0)`,
     expenseCents: sql<number>`COALESCE(SUM(ABS(CASE WHEN ${transactions.amountCents} < 0 THEN ${transactions.amountCents} ELSE 0 END)), 0)`,
   })
     .from(transactions)
     .where(where)
-    .groupBy(sql`strftime('%Y-%m', ${transactions.transactionDate})`)
+    .groupBy(sql`TO_CHAR(${transactions.transactionDate}::date, 'YYYY-MM')`)
     .orderBy(sql`month ASC`)
 
   const recurring = await db.select({

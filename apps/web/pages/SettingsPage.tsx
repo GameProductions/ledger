@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useApi, globalMutate } from '../hooks/useApi'
-import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, ShieldCheck, Lock, Palette, Layout, Eye } from 'lucide-react'
+import { ArrowLeft, Settings, Save, Fingerprint, Key, RefreshCw, Edit3, Trash2, ShieldCheck, Lock, Palette, Layout, Eye, Settings as SettingsIcon } from 'lucide-react'
 import { MainLayout } from '../components/layout/MainLayout'
 import { useToast } from '../context/ToastContext'
 import { Modal } from '../components/ui/Modal'
@@ -22,6 +22,9 @@ import { sanitizeImageUrl } from '../utils/security'
 import { getApiUrl } from '../utils/api'
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { setReducedMotion } from '../hooks/useReducedMotion'
+import { DASHBOARD_TABS, toggleWidgetInLayout } from '../lib/dashboardWidgets'
+import { navItems, adminNavItems } from '../lib/navigation'
+import type { NavVisibility } from '../lib/navigation'
 
 const API_URL = getApiUrl();
 
@@ -235,28 +238,36 @@ const SettingsPage: React.FC = () => {
 
   // Display Settings Helpers
   const toggleWidget = (widgetId: string) => {
-    const layout = settingsJson.dashboardLayout || {}
-    const newSettings = {
-      ...settingsJson,
-      dashboardLayout: {
-        ...layout,
-        [widgetId]: !layout[widgetId]
-      }
-    }
-    updateSettingsJson(newSettings)
+    const newLayout = toggleWidgetInLayout(settingsJson.dashboardLayout, widgetId)
+    updateSettingsJson({ ...settingsJson, dashboardLayout: newLayout })
+  }
+
+  const toggleNavItem = (id: string) => {
+    const navVis: NavVisibility = settingsJson.navigationVisibility || {}
+    updateSettingsJson({ ...settingsJson, navigationVisibility: { ...navVis, [id]: !navVis[id] } })
   }
 
   const setUiStyle = (style: string) => {
     updateSettingsJson({ ...settingsJson, uiStyle: style })
   }
 
-  const widgets = [
-    { id: 'healthScore', name: 'Financial Insights', desc: 'Health score and spending trends' },
-    { id: 'recentTransactions', name: 'Recent Transactions', desc: 'Live feed of your latest activity' },
-    { id: 'calendar', name: 'Financial Calendar', desc: 'Monthly view of upcoming bills and income' },
-    { id: 'savingsBuckets', name: 'Savings Buckets', desc: 'Progress towards your financial goals' },
-    { id: 'smartInsights', name: 'AI Smart Insights', desc: 'Personalized advice from the AI Coach' }
-  ]
+  const isWidgetVisible = (widgetId: string): boolean => {
+    const layout = settingsJson.dashboardLayout
+    if (!layout) return true
+    for (const tab of DASHBOARD_TABS) {
+      const tabWidgets = layout[tab.tabId]
+      if (tabWidgets) {
+        const w = tabWidgets.find((w: any) => w.id === widgetId)
+        if (w) return w.visible !== false
+      }
+    }
+    return true
+  }
+
+  const isNavVisible = (id: string): boolean => {
+    const navVis: NavVisibility = settingsJson.navigationVisibility || {}
+    return navVis[id] !== false
+  }
 
   // -------------- RENDERERS --------------
 
@@ -663,24 +674,91 @@ const SettingsPage: React.FC = () => {
                     <Layout size={20} className="text-secondary" />
                     <h3 className="text-lg font-bold">Dashboard Layout</h3>
                   </div>
-                  <p className="text-sm text-secondary mb-6">Toggle which features are visible on your command center.</p>
-                  <div className="space-y-3">
-                    {(widgets || []).map(w => (
-                      <div 
-                        key={w.id} 
-                        onClick={() => toggleWidget(w.id)}
-                        className="flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-2xl cursor-pointer hover:bg-white/10 transition-all"
-                      >
-                        <div>
-                          <div className="text-sm font-bold">{w.name}</div>
-                          <div className="text-xs text-secondary">{w.desc}</div>
-                        </div>
-                        <div className={`w-10 h-6 rounded-full transition-all relative ${settingsJson.dashboardLayout?.[w.id] !== false ? 'bg-primary' : 'bg-white/10'}`}>
-                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settingsJson.dashboardLayout?.[w.id] !== false ? 'right-1' : 'left-1'}`} />
+                  <p className="text-sm text-secondary mb-6">Toggle which widgets are visible on each dashboard tab.</p>
+                  <div className="space-y-6">
+                    {DASHBOARD_TABS.map(tab => (
+                      <div key={tab.tabId}>
+                        <h4 className="text-xs font-black tracking-widest text-secondary uppercase mb-3">{tab.tabLabel}</h4>
+                        <div className="space-y-2">
+                          {tab.widgets.map(w => (
+                            <div
+                              key={w.id}
+                              onClick={() => toggleWidget(w.id)}
+                              className="flex items-center justify-between p-3 bg-white/5 border border-glass-border rounded-xl cursor-pointer hover:bg-white/10 transition-all"
+                            >
+                              <div>
+                                <div className="text-sm font-bold">{w.name}</div>
+                                <div className="text-[10px] text-secondary">{w.desc}</div>
+                              </div>
+                              <div className={`w-10 h-6 rounded-full transition-all relative flex-shrink-0 ml-3 ${isWidgetVisible(w.id) ? 'bg-primary' : 'bg-white/10'}`}>
+                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isWidgetVisible(w.id) ? 'right-1' : 'left-1'}`} />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
                   </div>
+                </section>
+
+                <section className="card p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Layout size={20} className="text-primary" />
+                    <h3 className="text-lg font-bold">Menu Navigation</h3>
+                  </div>
+                  <p className="text-sm text-secondary mb-6">Toggle which pages appear in the dropdown menu and mobile navigation.</p>
+                  <div className="space-y-3">
+                    {navItems.map(item => (
+                      <div
+                        key={item.id}
+                        onClick={() => toggleNavItem(item.id)}
+                        className="flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-2xl cursor-pointer hover:bg-white/10 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon size={18} className="text-secondary" />
+                          <div>
+                            <div className="text-sm font-bold">{item.label}</div>
+                          </div>
+                        </div>
+                        <div className={`w-10 h-6 rounded-full transition-all relative ${isNavVisible(item.id) ? 'bg-primary' : 'bg-white/10'}`}>
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isNavVisible(item.id) ? 'right-1' : 'left-1'}`} />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-2xl opacity-50">
+                      <div className="flex items-center gap-3">
+                        <SettingsIcon size={18} className="text-secondary" />
+                        <div>
+                          <div className="text-sm font-bold">My Settings</div>
+                          <div className="text-[10px] text-secondary">Always visible</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {(globalRole === 'owner' || globalRole === 'super_admin' || profile?.globalRole === 'owner') && (
+                    <div className="mt-4 pt-4 border-t border-glass-border">
+                      <p className="text-xs text-secondary font-bold tracking-widest mb-3">Admin Portal</p>
+                      <div className="space-y-3">
+                        {adminNavItems.map(item => (
+                          <div
+                            key={item.id}
+                            onClick={() => toggleNavItem(item.id)}
+                            className="flex items-center justify-between p-4 bg-white/5 border border-glass-border rounded-2xl cursor-pointer hover:bg-white/10 transition-all"
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon size={18} className="text-secondary" />
+                              <div>
+                                <div className="text-sm font-bold">{item.label}</div>
+                              </div>
+                            </div>
+                            <div className={`w-10 h-6 rounded-full transition-all relative ${isNavVisible(item.id) ? 'bg-primary' : 'bg-white/10'}`}>
+                              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isNavVisible(item.id) ? 'right-1' : 'left-1'}`} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </section>
               </div>
             </div>

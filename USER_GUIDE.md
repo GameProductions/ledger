@@ -13,6 +13,21 @@ Collaborate with your family or housemates under a unified ledger.
 ### 2. User Onboarding
 Upon first login, you will see a Guided Tour introducing key features and workflows.
 
+### 3. Navigation & Menu Visibility
+You can customize which pages appear in the top-right dropdown menu and the mobile bottom navigation bar:
+- Open **Preferences** or **Settings > Display Settings**.
+- Scroll to **Menu Navigation**.
+- Toggle any page on or off using the switch. Settings is always visible and cannot be hidden.
+- Owners/Admins see an additional **Admin Portal** section with its own independent toggles.
+- Changes apply instantly to both the desktop dropdown and mobile bottom nav.
+
+### 4. Dashboard Widget Customization
+Each dashboard tab (Overview, Activity, Planning, Insights) has its own set of widgets you can show or hide:
+- Go to **Preferences** or **Settings > Display Settings**.
+- Find the **Dashboard Layout** section, which lists all widgets grouped by tab.
+- Toggle any widget off to hide it from that tab. Disabled widgets will not render on the dashboard.
+- Unlike the dashboard's inline customizer, these settings persist across sessions.
+
 ## Transaction Privacy & Data Ownership
 
 ### Payment Orchestrator

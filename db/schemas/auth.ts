@@ -23,6 +23,7 @@ export const users = pgTable('users', {
   timezone: text('timezone').default('UTC'),
   locale: text('locale').default('en-US'),
   theme: text('theme').default('system'),
+  settingsJson: text('settings_json'),
 });
 
 export const userIdentities = pgTable('user_identities', {

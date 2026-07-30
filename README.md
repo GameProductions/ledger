@@ -33,6 +33,11 @@ LEDGER is a production-grade personal and household finance platform built for s
 - **Searchable Selectors**: All dropdown lists for Accounts, Categories, Providers, Payment Methods, and Subscriptions are fully searchable.
 - **Inline Entity Creation**: Create new categories, accounts, or providers on the fly directly inside form selectors with automatic insertion and selection.
 
+### Customization & Navigation
+- **Menu Visibility Controls**: Individually toggle which pages appear in the dropdown menu and mobile bottom navigation, with Settings always accessible.
+- **Dashboard Widget Customization**: Per-tab widget visibility toggles for Overview, Activity, Planning, and Insights dashboards.
+- **Admin Portal Visibility**: Owner/Admin users can independently control which admin portal items appear in their navigation.
+
 ### Collaboration & Households
 - **Household Management**: Collaborative finance with administrative role management.
 - **Social Accounts**: Secure OAuth 2.0 integration for Discord and Google.

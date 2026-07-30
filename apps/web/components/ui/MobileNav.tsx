@@ -1,33 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, CreditCard, BarChart3, Settings, MoreHorizontal, HandCoins, Briefcase, Database, List, GitMerge, HelpCircle, X, Wallet, Calendar, Zap, Receipt } from 'lucide-react';
+import { LayoutDashboard, Settings, MoreHorizontal, X, Wallet, Calendar, Zap, LogOut } from 'lucide-react';
+import { navItems, SETTINGS_ITEM } from '../../lib/navigation';
+import { useNavVisibility } from '../../hooks/useNavVisibility';
 
-const mainTabsDefault = [
-  { id: 'home', label: 'Home', icon: LayoutDashboard, hash: '#/' },
-  { id: 'payments', label: 'Payments', icon: CreditCard, hash: '#/payments' },
-  { id: 'reports', label: 'Reports', icon: BarChart3, hash: '#/reports' },
-  { id: 'settings', label: 'Settings', icon: Settings, hash: '#/settings' },
-  { id: 'more', label: 'More', icon: MoreHorizontal },
-];
+interface BarItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
+  hash?: string;
+}
 
-const overflowItems = [
-  { id: 'subscriptions', label: 'Subscriptions', icon: Receipt, hash: '#/subscriptions' },
-  { id: 'loans', label: 'Loans', icon: HandCoins, hash: '#/loans' },
-  { id: 'investments', label: 'Investments', icon: Briefcase, hash: '#/investments' },
-  { id: 'data', label: 'Data Center', icon: Database, hash: '#/data' },
-  { id: 'manage', label: 'Data Manager', icon: List, hash: '#/manage' },
-  { id: 'reconcile', label: 'Reconciliation', icon: GitMerge, hash: '#/reconcile' },
-  { id: 'help', label: 'Help', icon: HelpCircle, hash: '#/help' },
+const dashboardBarTabs: BarItem[] = [
+  { id: 'overview', label: 'Wallet', icon: Wallet, hash: '#/' },
+  { id: 'planning', label: 'Lifecycle', icon: Calendar, hash: '#/' },
+  { id: 'insights', label: 'Advisor', icon: Zap, hash: '#/' },
 ];
 
 const MobileNav: React.FC = () => {
   const [showMore, setShowMore] = useState(false);
   const [currentHash, setCurrentHash] = useState(window.location.hash);
   const [activeDashboardTab, setActiveDashboardTab] = useState('overview');
+  const { isVisible } = useNavVisibility();
 
   useEffect(() => {
     const onHashChange = () => setCurrentHash(window.location.hash);
     window.addEventListener('hashchange', onHashChange);
-    
+
     const handleTabChanged = (e: Event) => {
       const tabId = (e as CustomEvent).detail;
       if (tabId) setActiveDashboardTab(tabId);
@@ -58,23 +56,39 @@ const MobileNav: React.FC = () => {
     }
   };
 
-  // If on Dashboard, show page sub-tabs instead of standard main tabs
   const isOnDashboard = currentHash === '' || currentHash === '#/';
-  const mainTabs = isOnDashboard ? [
-    { id: 'overview', label: 'Wallet', icon: Wallet, hash: '#/' },
-    { id: 'planning', label: 'Lifecycle', icon: Calendar, hash: '#/' },
-    { id: 'insights', label: 'Advisor', icon: Zap, hash: '#/' },
-    { id: 'payments', label: 'Payments', icon: CreditCard, hash: '#/payments' },
-    { id: 'more', label: 'More', icon: MoreHorizontal },
-  ] : mainTabsDefault;
+
+  // Visible nav items (excluding Settings which is always on the bar)
+  const visibleItems = navItems.filter(i => isVisible(i.id));
+
+  // Build the bottom bar dynamically
+  const barTabs: BarItem[] = isOnDashboard
+    ? [...dashboardBarTabs, SETTINGS_ITEM, { id: 'more', label: 'More', icon: MoreHorizontal }]
+    : [
+        { id: 'home', label: 'Home', icon: LayoutDashboard, hash: '#/' },
+        ...visibleItems.slice(0, 2).map(i => ({ id: i.id, label: i.label, icon: i.icon, hash: i.hash })),
+        SETTINGS_ITEM,
+        { id: 'more', label: 'More', icon: MoreHorizontal },
+      ];
+
+  // Items for the overflow sheet: visible items not on the bar + Sign Out
+  const onBarIds = new Set(barTabs.map(t => t.id));
+  const overflowItems = [
+    ...visibleItems.filter(i => !onBarIds.has(i.id) && i.id !== 'settings').map(i => ({
+      id: i.id, label: i.label, icon: i.icon, hash: i.hash,
+    })),
+  ];
 
   return (
     <>
       <div className="fixed bottom-0 left-0 right-0 z-50 p-2 pb-3 sm:hidden">
-        <nav className="card flex items-center justify-around py-2 px-1 bg-[#0f172a]/90 backdrop-blur-2xl border border-glass-border rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)]">
-          {mainTabs.map((item) => {
+        <nav
+          className="card flex items-center justify-around py-2 px-1 bg-[#0f172a]/90 backdrop-blur-2xl border border-glass-border rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)]"
+          style={{ justifyContent: barTabs.length <= 3 ? 'center' : undefined }}
+        >
+          {barTabs.map((item) => {
             const Icon = item.icon;
-            const active = item.hash 
+            const active = item.hash
               ? (item.id === 'overview' || item.id === 'planning' || item.id === 'insights'
                   ? isOnDashboard && activeDashboardTab === item.id
                   : isActive(item.hash))
@@ -83,11 +97,11 @@ const MobileNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => handleTabClick(item.id, item.hash)}
-                className={`flex flex-col items-center gap-0.5 py-1 px-2 transition-all min-w-0 flex-1 cursor-pointer ${
+                className={`flex flex-col items-center gap-0.5 py-1 px-2 transition-all min-w-0 cursor-pointer ${
                   active
                     ? 'text-primary scale-110'
                     : 'text-secondary opacity-60 hover:opacity-100'
-                }`}
+                } ${item.id === 'settings' ? 'min-w-0 flex-1' : barTabs.length > 4 ? 'flex-1' : ''}`}
               >
                 <Icon size={18} />
                 <span className="text-[9px] font-bold tracking-widest">{item.label}</span>
@@ -113,11 +127,11 @@ const MobileNav: React.FC = () => {
             <div className="grid grid-cols-3 gap-3">
               {overflowItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.hash);
+                const active = isActive(item.hash!);
                 return (
                   <button
                     key={item.id}
-                    onClick={() => { navigate(item.hash); setShowMore(false); }}
+                    onClick={() => { navigate(item.hash!); setShowMore(false); }}
                     className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all cursor-pointer ${
                       active
                         ? 'bg-primary/10 text-primary border border-primary/20'
@@ -129,6 +143,22 @@ const MobileNav: React.FC = () => {
                   </button>
                 );
               })}
+            </div>
+            <div className="mt-6 pt-4 border-t border-glass-border">
+              <button
+                onClick={() => { navigate('#/settings'); setShowMore(false); }}
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl hover:bg-white/5 text-sm text-secondary transition-all cursor-pointer"
+              >
+                <Settings size={18} />
+                <span className="font-bold tracking-widest">Settings</span>
+              </button>
+              <button
+                onClick={() => { setShowMore(false); }}
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl hover:bg-red-500/10 text-sm text-red-400 transition-all cursor-pointer mt-2"
+              >
+                <LogOut size={18} />
+                <span className="font-bold tracking-widest">Sign Out</span>
+              </button>
             </div>
           </div>
         </div>

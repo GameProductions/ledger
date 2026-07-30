@@ -25,7 +25,9 @@ All schemas use drizzle-orm for type-safe queries. IDs are UUIDs generated via `
 - Modals for create/edit/delete operations on all entities
 - Searchable selectors with inline entity creation
 - Currency inputs with RTL calculator-style formatting
-- Mobile-responsive layout
+- Mobile-responsive layout with dynamic bottom navigation
+- **Shared Navigation Config**: All nav items defined in `apps/web/lib/navigation.ts` — both the dropdown menu and mobile nav derive from the same source, filtered by `navigationVisibility` in the user's `settingsJson`.
+- **Dashboard Widget System**: 25 widgets across 4 dashboard tabs, each individually togglable via the same `settingsJson.dashboardLayout` structure.
 
 ## Key Design Decisions
 
@@ -34,6 +36,9 @@ All schemas use drizzle-orm for type-safe queries. IDs are UUIDs generated via `
 - **CamelCase API keys**: Consistent JavaScript property naming across all API responses
 - **Household scoping**: Most entities scoped to a household for collaborative finance
 - **Force PATCH**: Updates use PATCH with partial payloads
+- **settingsJson persistence**: User preferences (theme, currency, dashboard layout, navigation visibility, UI style) are stored as a JSON text blob in the `settings_json` column. The PATCH `/api/user/profile` endpoint now accepts and persists this field.
+- **Menu Visibility**: The `navigationVisibility` key within `settingsJson` stores per-item boolean toggles. Settings is always visible to prevent lockout.
+- **Dashboard Layout**: The `dashboardLayout` key stores a tab-keyed map of widget visibility arrays (e.g. `{ overview: [{ id: 'calendar', visible: true }, ...] }`).
 - **Audit logging**: All Owner (administration) actions are recorded with before/after snapshots
 
 ## Admin Entity Manager

@@ -3,10 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { Settings, Shield, LogOut, Palette, ChevronDown, List, Calendar as CalendarIcon, HelpCircle, Cpu, Database, Users, Activity, LayoutDashboard, CreditCard, MessageSquare, HandCoins, Briefcase, Megaphone, GitMerge, Lock, Globe, Zap, FileText, Search, Receipt } from 'lucide-react'
+import { Shield, LogOut, ChevronDown, List, Calendar as CalendarIcon, LayoutDashboard, Lock } from 'lucide-react'
 import { Masked } from './ui/Masked'
 import { sanitizeImageUrl } from '../utils/security'
+import { navItems, adminNavItems } from '../lib/navigation'
+import { useNavVisibility } from '../hooks/useNavVisibility'
+import { SETTINGS_ITEM } from '../lib/navigation'
 
+const navColor: Record<string, string> = {
+  payments: 'text-amber-500', subscriptions: 'text-amber-400', reports: 'text-primary',
+  loans: 'text-orange-400', investments: 'text-indigo-400', data: 'text-emerald-500',
+  manage: 'text-cyan-400', reconcile: 'text-primary', help: 'text-blue-400',
+  'admin-dashboard': 'text-emerald-500', 'admin-users': 'text-primary',
+  'admin-households': 'text-emerald-400', 'admin-entity-manager': 'text-orange-400',
+  'admin-providers': 'text-cyan-400', 'admin-processors': 'text-rose-500',
+  'admin-registry': 'text-blue-500', 'admin-search': 'text-slate-400',
+  'admin-config': 'text-yellow-500', 'admin-guide': 'text-indigo-400',
+}
 
 const UserMenu: React.FC<{ 
   view?: string, 
@@ -15,12 +28,10 @@ const UserMenu: React.FC<{
 }> = ({ view, setView, isAdminPortal = false }) => {
   const { user, logout, globalRole, isImpersonating } = useAuth() as any
   const { data: profile } = (useApi('/api/user/profile') as any)
+  const { isVisible } = useNavVisibility()
   const [isOpen, setIsOpen] = useState(false)
   const reduced = useReducedMotion()
 
-  const settings = JSON.parse(profile?.settingsJson || '{}')
-  const dashboardLayout = settings.dashboardLayout || {}
-  const subsEnabled = dashboardLayout.subscriptions !== false
   const isHome = !window.location.hash || window.location.hash === '#/'
   const displayName = profile?.displayName || user?.displayName || profile?.username || user?.username || 'User'
   const avatarUrl = sanitizeImageUrl(profile?.avatarUrl || user?.avatarUrl)
@@ -40,30 +51,12 @@ const UserMenu: React.FC<{
     }
   }
 
-  const menuItems = isAdminPortal ? [
-    { icon: LayoutDashboard, label: 'Owner Dashboard', hash: '#/admin/dashboard', color: 'text-emerald-500' },
-    { icon: Users, label: 'User Directory', hash: '#/admin/users', color: 'text-primary' },
-    { icon: Shield, label: 'Household Registry', hash: '#/admin/households', color: 'text-emerald-400' },
-    { icon: Database, label: 'Entity Manager', hash: '#/admin/entity-manager', color: 'text-orange-400' },
-    { icon: Globe, label: 'Service Providers', hash: '#/admin/providers', color: 'text-cyan-400' },
-    { icon: Zap, label: 'Payment Networks', hash: '#/admin/processors', color: 'text-rose-500' },
-    { icon: FileText, label: 'Master Records', hash: '#/admin/registry', color: 'text-blue-500' },
-    { icon: Search, label: 'Global Search', hash: '#/admin/search', color: 'text-slate-400' },
-    { icon: Cpu, label: 'Platform Settings', hash: '#/admin/config', color: 'text-yellow-500' },
-    { icon: FileText, label: 'Owner Guide', hash: '#/admin/guide', color: 'text-indigo-400' },
-    { icon: Lock, label: 'Exit Owner Portal', hash: '#/', color: 'text-amber-500' },
-  ] : [
-    { icon: Settings, label: 'My Settings', hash: '#/settings', color: 'text-primary' },
-    { icon: CreditCard, label: 'Payment Central', hash: '#/payments', color: 'text-amber-500' },
-    ...(subsEnabled ? [{ icon: Receipt, label: 'Subscriptions', hash: '#/subscriptions', color: 'text-amber-400' }] : []),
-    { icon: HandCoins, label: 'Loan Manager', hash: '#/loans', color: 'text-orange-400' },
-    { icon: Briefcase, label: 'Investments', hash: '#/investments', color: 'text-indigo-400' },
-    { icon: Database, label: 'Data Center', hash: '#/data', color: 'text-emerald-500' },
-    { icon: List, label: 'Data Manager', hash: '#/manage', color: 'text-cyan-400' },
-    { icon: GitMerge, label: 'Smart Reconciliation', hash: '#/reconcile', color: 'text-primary' },
-    { icon: HelpCircle, label: 'Help & Guides', hash: '#/help', color: 'text-blue-400' },
-    { icon: MessageSquare, label: 'High-Priority Support', hash: '#/help/support', color: 'text-primary' },
-  ]
+  const filteredNavItems = [SETTINGS_ITEM, ...navItems].filter(i => isVisible(i.id))
+  const filteredAdminItems = adminNavItems.filter(i => isVisible(i.id))
+
+  const menuItems = isAdminPortal
+    ? filteredAdminItems
+    : filteredNavItems
 
   return (
     <div className="z-[2000] relative flex items-center">
@@ -163,11 +156,21 @@ const UserMenu: React.FC<{
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left group"
                     style={{ background: 'none', border: 'none' }}
                   >
-                    <item.icon size={18} className={item.color} />
+                    <item.icon size={18} className={navColor[item.id] || 'text-text-main'} />
                     <span>{item.label}</span>
                   </button>
                 ))}
-                
+                {isAdminPortal && (
+                  <button 
+                    role="menuitem"
+                    onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-amber-500/10 text-sm text-amber-400 transition-colors text-left"
+                    style={{ background: 'none', border: 'none' }}
+                  >
+                    <Lock size={18} />
+                    <span>Exit Owner Portal</span>
+                  </button>
+                )}
                 {!isAdminPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
                   <button 
                     role="menuitem"
@@ -266,10 +269,21 @@ const UserMenu: React.FC<{
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm text-text-main transition-colors text-left group"
                       style={{ background: 'none', border: 'none' }}
                     >
-                      <item.icon size={18} className={item.color} />
+                      <item.icon size={18} className={navColor[item.id] || 'text-text-main'} />
                       <span>{item.label}</span>
                     </button>
                   ))}
+                  {isAdminPortal && (
+                    <button 
+                      role="menuitem"
+                      onClick={() => { window.location.hash = '#/'; setIsOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-amber-500/10 text-sm text-amber-400 transition-colors text-left"
+                      style={{ background: 'none', border: 'none' }}
+                    >
+                      <Lock size={18} />
+                      <span>Exit Owner Portal</span>
+                    </button>
+                  )}
                   {!isAdminPortal && (globalRole === 'owner' || profile?.globalRole === 'owner') && (
                     <button 
                       role="menuitem"

@@ -56,6 +56,7 @@ user.get('/profile', async (c) => {
           locale: users.locale,
           theme: users.theme,
           timezone: users.timezone,
+          settingsJson: users.settingsJson,
           createdAt: users.createdAt
         }).from(users).where(eq(users.id, userId as string)) as any)
     
@@ -125,14 +126,14 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
   if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl || null
   if (data.locale !== undefined) updates.locale = data.locale || 'en'
   if (data.theme !== undefined) updates.theme = data.theme || 'system'
-  
+  if (data.settingsJson !== undefined) updates.settingsJson = data.settingsJson
+
   if (Object.keys(updates).length > 0) {
     await db.update(users).set(updates).where(eq(users.id, userId))
     await logAudit(c, 'users', userId, 'UPDATE', null, updates)
   }
 
   // Return the fresh profile so the client can update its local state immediately
-  // without needing a separate GET /profile round-trip.
   const [updated] = await db.select({
     id: users.id,
     username: users.username,
@@ -144,6 +145,7 @@ user.patch('/profile', zValidator('json', ProfileSchema, (result, c) => {
     locale: users.locale,
     theme: users.theme,
     timezone: users.timezone,
+    settingsJson: users.settingsJson,
     createdAt: users.createdAt
   }).from(users).where(eq(users.id, userId))
 

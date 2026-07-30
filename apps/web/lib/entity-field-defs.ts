@@ -82,7 +82,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'name_only', label: 'Name Only' },
       { value: 'full', label: 'Full' },
     ]},
-    { key: 'externalContactId', label: 'External Contact ID', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/external-contacts', labelKey: 'name' } },
+    { key: 'externalContactId', label: 'External Contact ID', type: 'text', placeholder: 'UUID (optional)' },
     { key: 'ownerId', label: 'Owner ID', type: 'text', locked: true },
   ],
 

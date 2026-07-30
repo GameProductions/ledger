@@ -7,11 +7,12 @@ import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import { getApiUrl } from '../utils/api'
 import { Price } from '../components/Price'
+import { EntityActionButtons } from '../components/entity/EntityActionButtons'
 import { getFieldDefs, type FieldDef } from '../lib/entity-field-defs'
 import { 
   Tag, Building2, CreditCard, Wallet, Link2, GitMerge, CalendarClock, FileText,
   Banknote, Receipt, Clock,
-  Plus, Pencil, Trash2, Check, Search
+  Plus, Check, Search
 } from 'lucide-react'
 
 const API = getApiUrl()
@@ -50,6 +51,22 @@ async function apiCall(token: string, householdId: string, method: string, path:
   return res.json()
 }
 
+const ENTITY_AUDIT_MAP: Record<string, string> = {
+  accounts: 'accounts',
+  bills: 'bills',
+  billers: 'billers',
+  categories: 'categories',
+  'charge-descriptors': 'charge_descriptors',
+  'credit-cards': 'credit_cards',
+  'installment-plans': 'installment_plans',
+  lenders: 'service_providers',
+  'linked-accounts': 'linked_accounts',
+  'pairing-rules': 'pairing_rules',
+  'pay-schedules': 'pay_schedules',
+  'payment-methods': 'user_payment_methods',
+  subscriptions: 'subscriptions',
+}
+
 // ─── Reusable Entity Manager ────────────────────────────────────────
 interface EntityManagerProps {
   title: string
@@ -77,6 +94,9 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
   const [pageSize, setPageSize] = useState(20)
   const [sortAsc, setSortAsc] = useState(true)
   const [refCache, setRefCache] = useState<Record<string, any[]>>({})
+  const [historyItem, setHistoryItem] = useState<any>(null)
+  const [historyLogs, setHistoryLogs] = useState<any[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
 
   const referencePaths = useMemo(() => {
     const paths = new Set<string>()
@@ -104,6 +124,20 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
       })
     })
   }, [showForm, referencePaths, token, householdId])
+
+  const openHistory = async (item: any) => {
+    setHistoryItem(item)
+    setHistoryLoading(true)
+    setHistoryLogs([])
+    try {
+      const res = await apiCall(token!, householdId!, 'GET', '/api/user/audit')
+      const auditType = ENTITY_AUDIT_MAP[apiPath.split('/').pop() || ''] || ''
+      const itemId = getSafeValue(item, idField)
+      const logs: any[] = res?.data || res || []
+      setHistoryLogs(logs.filter((l: any) => l.target_type === auditType && l.target_id === itemId))
+    } catch { /* ignore */ }
+    setHistoryLoading(false)
+  }
 
   const resetForm = () => { setFormData({}); setEditing(null); setShowForm(false) }
   
@@ -214,14 +248,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
             return (
               <div key={itemId} className="group flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] transition-all">
                 <div className="flex-1 min-w-0">{displayFn(item)}</div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(item)} className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-primary transition-colors" title="Edit">
-                    <Pencil size={14} />
-                  </button>
-                  <button onClick={() => setDeleting(itemId)} className="p-2 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors" title="Delete">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
+                <EntityActionButtons onHistory={() => openHistory(item)} onEdit={() => openEdit(item)} onDelete={() => setDeleting(itemId)} />
               </div>
             );
           })}
@@ -302,6 +329,29 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
       </>
     }>
       <p className="text-white/60 text-sm">This action cannot be undone. Are you sure you want to remove this {title.slice(0, -1).toLowerCase()}?</p>
+    </Modal>
+
+    <Modal isOpen={!!historyItem} onClose={() => setHistoryItem(null)} title="Audit History">
+      {historyLoading ? (
+        <div className="py-8 text-center text-white/30 text-sm">Loading...</div>
+      ) : historyLogs.length === 0 ? (
+        <div className="py-8 text-center text-white/30 text-sm">No audit history for this record.</div>
+      ) : (
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+          {historyLogs.map((log: any) => (
+            <div key={log.id} className="p-3 bg-white/[0.03] border border-white/5 rounded-xl text-sm">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-bold text-xs text-white/80">{log.action}</span>
+                <span className="text-[10px] text-white/30 font-mono">{log.created_at ? new Date(log.created_at).toLocaleString() : '—'}</span>
+              </div>
+              {log.actor_name && <div className="text-[11px] text-white/40">by {log.actor_name}</div>}
+              {log.details_json && (
+                <pre className="mt-1 text-[10px] text-white/30 font-mono whitespace-pre-wrap">{JSON.stringify(log.details_json, null, 2)}</pre>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </Modal>
     </>
   )

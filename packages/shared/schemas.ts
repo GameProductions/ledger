@@ -20,7 +20,8 @@ export const AccountSchema = z.object({
   type: z.enum(['checking', 'savings', 'credit', 'investment', 'cash', 'other']),
   balanceCents: z.number().int().optional().default(0),
   currency: z.string().length(3).optional().default('USD'),
-  status: z.enum(['active', 'closed', 'frozen']).optional().default('active')
+  status: z.enum(['active', 'closed', 'frozen']).optional().default('active'),
+  providerId: z.string().optional().nullable(),
 })
 
 // --- FINANCIAL SCHEMAS ---
@@ -167,6 +168,8 @@ export const SubscriptionSchema = z.object({
   payScheduleId: z.string().optional().nullable(),
   paycheckDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   paymentMethodId: z.string().optional().nullable(),
+  categoryId: z.string().optional().nullable(),
+  billerId: z.string().optional().nullable(),
 })
 
 export const PayScheduleSchema = z.object({

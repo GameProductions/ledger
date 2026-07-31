@@ -40,7 +40,7 @@ export const ITEM_TYPE_CONFIG: Record<string, ItemTypeStyle> = {
   },
   installment: {
     color: 'violet',
-    label: 'BNPL',
+    label: 'Buy Now, Pay Later',
     icon: Layers,
     badgeBg: 'bg-violet-500/10',
     badgeText: 'text-violet-500',

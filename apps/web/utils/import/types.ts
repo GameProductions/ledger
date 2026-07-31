@@ -37,6 +37,54 @@ export interface ParsedLedgerData {
   paychecks: PaycheckBlock[]
 }
 
+export type MatchConfidence = 'exact' | 'high' | 'medium' | 'low' | null
+
+export type EntityGroup = 'provider' | 'account' | 'category' | 'biller' | 'payment-method' | 'subscription' | 'person'
+
+export interface MatchResult {
+  entityId: string
+  entityName: string
+  confidence: MatchConfidence
+}
+
+export interface EntityMatchItem {
+  id: string
+  group: EntityGroup
+  importedName: string
+  existing: MatchResult | null
+  status: 'pending' | 'approved' | 'rejected'
+  manualMatch: MatchResult | null
+  createNew: boolean
+  newName: string
+}
+
+export interface EntityMatchGroup {
+  group: EntityGroup
+  label: string
+  items: EntityMatchItem[]
+}
+
+export interface EntityInput {
+  group: EntityGroup
+  names: string[]
+  context?: Record<string, { accountType?: string }>
+}
+
+export type ParsingMode = 'auto' | 'predefined' | 'custom' | 'template'
+
+export interface ParsingSelection {
+  mode: ParsingMode
+  predefinedFormat?: string
+  templateName?: string
+}
+
+export interface TemplateDefinition {
+  columnMapping: Record<string, string>
+  layoutMode: 'rows' | 'cells'
+  fieldPatterns: Record<string, string>
+  additionalFields: { fieldName: string; column: string; pattern: string }[]
+}
+
 export interface ImportCommitPayload {
   year: number
   personMap: Record<string, string>

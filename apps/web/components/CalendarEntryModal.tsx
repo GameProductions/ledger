@@ -381,7 +381,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
       onSave({
         id,
         type: 'installment',
-        name: lender || 'BNPL',
+        name: lender || 'Buy Now, Pay Later',
         totalAmountCents,
         installmentAmountCents,
         totalInstallments,
@@ -464,7 +464,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Lender{infoIcon('The financial institution providing this BNPL financing')}</label>
+                  <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Lender{infoIcon('The financial institution providing this Buy Now, Pay Later financing')}</label>
                   <SearchableSelect
                     options={providerOptions}
                     value={lender}
@@ -498,7 +498,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                   <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Total Amount{infoIcon('The full purchase amount financed through this BNPL plan')}</label>
+                   <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Total Amount{infoIcon('The full purchase amount financed through this Buy Now, Pay Later plan')}</label>
                    <CurrencyInput 
                      valueCents={totalAmountCents}
                      onChangeCents={setTotalAmountCents}
@@ -566,7 +566,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                      />
                   </div>
                    <div className="space-y-2">
-                      <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Account{infoIcon('Which account this BNPL plan is linked to for payments')}</label>
+                      <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Account{infoIcon('Which account this Buy Now, Pay Later plan is linked to for payments')}</label>
                       <SearchableSelect
                         options={accounts.map((a: any) => ({ value: a.id, label: a.name }))}
                         value={accountId}
@@ -602,7 +602,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Status{infoIcon('Current state of this BNPL plan — Active, Completed, or Cancelled')}</label>
+                    <label className="text-xs font-black tracking-widest text-secondary ml-1 flex items-center gap-1">Status{infoIcon('Current state of this Buy Now, Pay Later plan — Active, Completed, or Cancelled')}</label>
                     <select
                       value={status}
                       onChange={(e) => setStatus(e.target.value)}
@@ -1158,7 +1158,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                 Confirm {scopeConfirmState === 'edit' ? 'Update' : 'Delete'} Scope
               </h3>
               <p className="text-xs text-secondary font-bold tracking-widest mt-1">
-                This is a recurring {type === 'pay_schedule' ? 'income schedule' : type === 'installment' ? 'BNPL installment plan' : 'bill'}
+                This is a recurring {type === 'pay_schedule' ? 'income schedule' : type === 'installment' ? 'Buy Now, Pay Later installment plan' : 'bill'}
               </p>
             </div>
 

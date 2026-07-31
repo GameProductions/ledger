@@ -28,6 +28,7 @@ export const accounts = pgTable('accounts', {
   balanceCents: integer('balance_cents').default(0),
   currency: text('currency').default('USD'),
   status: text('status').default('active'),
+  providerId: text('provider_id'),
 }, (table) => ({
   householdIdx: index('idx_accounts_household').on(table.householdId),
 }));
@@ -213,6 +214,7 @@ export const subscriptions = pgTable('subscriptions', {
   payScheduleId: text('pay_schedule_id'),
   paycheckDate: text('paycheck_date'),
   paymentMethodId: text('payment_method_id'),
+  billerId: text('biller_id').references(() => billers.id, { onDelete: 'set null' }),
 }, (table) => ({
   householdIdx: index('idx_subscriptions_household').on(table.householdId),
 }));

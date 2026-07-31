@@ -24,6 +24,7 @@ export type EntityType =
   | 'subscriptions'
   | 'lenders'
   | 'billers'
+  | 'billing-processors'
   | 'external-contacts'
   | 'shared-access'
 
@@ -39,6 +40,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'cash', label: 'Cash' },
       { value: 'other', label: 'Other' },
     ]},
+    { key: 'providerId', label: 'Bank', type: 'text', placeholder: 'Select a bank/lender...', reference: { apiPath: '/api/user/service-providers', labelKey: 'name' } },
     { key: 'balanceCents', label: 'Balance', type: 'cents', placeholder: '0.00' },
     { key: 'currency', label: 'Currency', type: 'text', placeholder: 'USD' },
     { key: 'status', label: 'Status', type: 'select', options: [
@@ -121,9 +123,9 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Furniture Payment' },
     { key: 'planType', label: 'Plan Type', type: 'select', options: [
       { value: 'user', label: 'User Created' },
-      { value: 'bnpl', label: 'BNPL (Buy Now Pay Later)' },
+      { value: 'bnpl', label: 'Buy Now, Pay Later' },
     ]},
-    { key: 'bnplProviderId', label: 'BNPL Provider', type: 'text', placeholder: 'UUID from Lenders (Affirm, Klarna, etc.)', reference: { apiPath: '/api/user/service-providers', labelKey: 'name' } },
+    { key: 'bnplProviderId', label: 'Buy Now, Pay Later Provider', type: 'text', placeholder: 'UUID from Lenders (Affirm, Klarna, etc.)', reference: { apiPath: '/api/user/service-providers', labelKey: 'name' } },
     { key: 'originalTransactionId', label: 'Original Transaction ID', type: 'text', placeholder: 'UUID of the purchase transaction' },
     { key: 'totalAmountCents', label: 'Total Amount', type: 'cents', placeholder: '2400.00' },
     { key: 'installmentAmountCents', label: 'Per Installment', type: 'cents', placeholder: '200.00' },
@@ -247,6 +249,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'isTrial', label: 'Is Trial', type: 'boolean' },
     { key: 'categoryId', label: 'Category', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
     { key: 'accountId', label: 'Payment Account', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
+    { key: 'billerId', label: 'Service Provider', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/billers', labelKey: 'name' } },
     { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: [
       { value: 'manual', label: 'Manual' },
       { value: 'autopay', label: 'Autopay' },
@@ -258,6 +261,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
 
   lenders: [
     { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Netflix' },
+    { key: 'website', label: 'Website', type: 'text', placeholder: 'https://...' },
     { key: 'visibility', label: 'Visibility', type: 'select', options: [
       { value: 'private', label: 'Private' },
       { value: 'household', label: 'Household' },
@@ -274,6 +278,13 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'iconUrl', label: 'Icon URL', type: 'text', placeholder: 'https://...' },
     { key: 'defaultCategoryId', label: 'Default Category', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
     { key: 'defaultDueDate', label: 'Default Due Date', type: 'date' },
+  ],
+  'billing-processors': [
+    { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Stripe' },
+    { key: 'websiteUrl', label: 'Website', type: 'text', placeholder: 'https://...' },
+    { key: 'brandingUrl', label: 'Branding URL', type: 'text', placeholder: 'https://...' },
+    { key: 'supportUrl', label: 'Support URL', type: 'text', placeholder: 'https://...' },
+    { key: 'subscriptionIdNotes', label: 'Subscription ID Notes', type: 'textarea', placeholder: 'How subscription IDs are formatted...' },
   ],
   billers: [
     { key: 'name', label: 'Name', type: 'text', placeholder: 'e.g. Netflix' },

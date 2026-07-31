@@ -1,18 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { MainLayout } from '../components/layout/MainLayout'
 import { Modal } from '../components/ui/Modal'
-import { Button } from '../components/ui/Button'
+import type { SearchableOption } from '../components/ui/SearchableSelect'
 import { getApiUrl } from '../utils/api'
 import { Price } from '../components/Price'
 import { EntityActionButtons } from '../components/entity/EntityActionButtons'
+import { EntityFormField } from '../components/entity/EntityFormField'
+import { EntityFormSection } from '../components/entity/EntityFormSection'
+import { LogoPreview } from '../components/ui/LogoPreview'
 import { getFieldDefs, type FieldDef } from '../lib/entity-field-defs'
+import { useReducedMotion } from '../hooks/useReducedMotion'
 import { 
   Tag, Building2, CreditCard, Wallet, Link2, GitMerge, CalendarClock, FileText,
   Banknote, Receipt, Clock,
-  Plus, Check, Search
+  Plus, Check, Search, Trash2, History, AlertTriangle,
+  DollarSign, Calendar, ToggleLeft, Database, FolderTree,
 } from 'lucide-react'
 
 const API = getApiUrl()
@@ -51,10 +56,58 @@ async function apiCall(token: string, householdId: string, method: string, path:
   return res.json()
 }
 
+const SECTION_ORDER = ['details', 'amounts', 'dates', 'organization', 'settings', 'notes', 'metadata'] as const
+
+const SECTION_ICONS: Record<string, React.ReactNode> = {
+  details: <FileText size={14} />,
+  amounts: <DollarSign size={14} />,
+  dates: <Calendar size={14} />,
+  organization: <FolderTree size={14} />,
+  settings: <ToggleLeft size={14} />,
+  notes: <FileText size={14} />,
+  metadata: <Database size={14} />,
+}
+
+const SECTION_COLORS: Record<string, string> = {
+  details: 'blue',
+  amounts: 'emerald',
+  dates: 'amber',
+  organization: 'violet',
+  settings: 'slate',
+  notes: 'indigo',
+  metadata: 'slate',
+}
+
+const FIELD_SECTION = (f: FieldDef): string => {
+  if (f.locked) return 'metadata'
+  if (f.type === 'textarea') return 'notes'
+  if (f.type === 'boolean') return 'settings'
+  if (f.type === 'date') return 'dates'
+  if (f.reference) return 'organization'
+  if (f.type === 'cents' || f.type === 'number') return 'amounts'
+  return 'details'
+}
+
+const WEBSITE_KEYS = new Set(['website', 'websiteUrl'])
+
+const SCRAPE_FIELD_MAP: Record<string, Record<string, string>> = {
+  '/api/financials/billers': { name: 'name', logoUrl: 'logoUrl', industry: 'description' },
+  '/api/user/service-providers': { name: 'name', iconUrl: 'logoUrl' },
+  '/api/admin/billing/networks': { name: 'name', brandingUrl: 'logoUrl' },
+}
+
+const CREATE_DEFAULTS: Record<string, Record<string, any>> = {
+  '/api/financials/accounts': { type: 'checking' },
+  '/api/user/payment-methods': { type: 'other' },
+  '/api/planning/pay-schedules': { amountCents: 0, frequency: 'monthly' },
+  '/api/planning/subscriptions': { amountCents: 0, billingCycle: 'monthly', nextBillingDate: new Date().toISOString().split('T')[0] },
+}
+
 const ENTITY_AUDIT_MAP: Record<string, string> = {
   accounts: 'accounts',
   bills: 'bills',
   billers: 'billers',
+  'billing-processors': 'billing_processors',
   categories: 'categories',
   'charge-descriptors': 'charge_descriptors',
   'credit-cards': 'credit_cards',
@@ -84,6 +137,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
   const fields = rawFields.filter(f => !f.locked)
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
+  const reduced = useReducedMotion()
   const { data: items = [], loading, mutate } = (useApi(apiPath) as any)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<any>(null)
@@ -124,6 +178,38 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
       })
     })
   }, [showForm, referencePaths, token, householdId])
+
+  const handleCreateReference = useCallback(async (apiPath: string, search: string) => {
+    const defaults = CREATE_DEFAULTS[apiPath] || {}
+    const res = await apiCall(token!, householdId!, 'POST', apiPath, { name: search, ...defaults })
+    const newItem = res?.data ?? res
+    setRefCache(prev => ({
+      ...prev,
+      [apiPath]: [...(prev[apiPath] || []), newItem]
+    }))
+    return newItem?.id
+  }, [token, householdId])
+
+  const handleScrapeWebsite = useCallback(async (url: string) => {
+    try {
+      const res = await apiCall(token!, householdId!, 'POST', '/api/data/scrape', { url })
+      const data = res?.data ?? res
+      if (!data) return
+      const fieldMap = SCRAPE_FIELD_MAP[apiPath]
+      if (!fieldMap) return
+      const updates: Record<string, any> = {}
+      Object.entries(fieldMap).forEach(([fieldKey, scrapeKey]) => {
+        const val = data[scrapeKey]
+        if (val) updates[fieldKey] = val
+      })
+      if (Object.keys(updates).length > 0) {
+        setFormData((prev: any) => ({ ...prev, ...updates }))
+        showToast('Site details fetched', 'success')
+      }
+    } catch {
+      showToast('Failed to fetch site details', 'error')
+    }
+  }, [token, householdId, apiPath, showToast])
 
   const openHistory = async (item: any) => {
     setHistoryItem(item)
@@ -195,6 +281,12 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 
   useEffect(() => { setPage(0) }, [search])
 
+  useEffect(() => {
+    if (!showForm && !deleting && !historyItem) return
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [showForm, deleting, historyItem])
+
   const sortItems = (list: any[]) =>
     [...list].sort((a, b) => {
       const cmp = (a.name || a.pattern || '').localeCompare(b.name || b.pattern || '')
@@ -204,6 +296,30 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
   const filtered = sortItems(search
     ? (items || []).filter((item: any) => JSON.stringify(item).toLowerCase().includes(search.toLowerCase()))
     : items || [])
+
+  const sectionGroups = useMemo(() => {
+    const groups: Record<string, FieldDef[]> = {}
+    fields.forEach(f => {
+      const s = FIELD_SECTION(f)
+      if (!groups[s]) groups[s] = []
+      groups[s].push(f)
+    })
+    return groups
+  }, [fields])
+
+  const refOptions = useMemo(() => {
+    const map: Record<string, SearchableOption[]> = {}
+    Object.keys(refCache).forEach(path => {
+      map[path] = (refCache[path] || []).map((ref: any) => ({
+        value: ref.id,
+        label: ref.name || ref.id,
+        ...(ref.iconUrl || ref.logoUrl || ref.brandingUrl ? {
+          icon: <img src={ref.iconUrl || ref.logoUrl || ref.brandingUrl} className="w-full h-full object-cover" />
+        } : {}),
+      }))
+    })
+    return map
+  }, [refCache])
 
   return (
     <>
@@ -272,49 +388,39 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
         </>
       )}
     </div>
-    <Modal isOpen={showForm} onClose={resetForm} title={editing ? `Edit ${title.slice(0, -1)}` : `New ${title.slice(0, -1)}`}>
+    <Modal isOpen={showForm} onClose={resetForm} title={editing ? `Edit ${title.slice(0, -1)}` : `New ${title.slice(0, -1)}`} maxWidth="max-w-2xl">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {fields.map(f => {
-          const formVal = getSafeValue(formData, f.key);
+        {SECTION_ORDER.map(section => {
+          const sectionFields = sectionGroups[section]
+          if (!sectionFields || sectionFields.length === 0) return null
+
           return (
-            <div key={f.key}>
-              <label htmlFor={`em-${f.key}`} className="text-[10px] font-black tracking-widest text-white/40 block mb-1.5">{f.label}</label>
-              {f.reference ? (
-                <select id={`em-${f.key}`} value={formVal ?? ''} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
-                  <option value="">Select {f.label.replace(/ ID$/, '')}...</option>
-                  {(refCache[f.reference.apiPath] || []).map((ref: any) => (
-                    <option key={ref.id} value={ref.id}>{ref[f.reference!.labelKey] || ref.id}</option>
-                  ))}
-                </select>
-              ) : f.type === 'select' ? (
-                <select id={`em-${f.key}`} value={formVal ?? ''} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))} className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm">
-                  <option value="">Select...</option>
-                  {f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              ) : f.type === 'boolean' ? (
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input id={`em-${f.key}`} type="checkbox" checked={formVal === true || formVal === 'true' || formVal === 1} onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.checked))} className="sr-only peer" />
-                  <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-primary transition-colors relative after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white/40 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 peer-checked:after:bg-white" />
-                  <span className="text-sm text-white/60">{formVal ? 'Enabled' : 'Disabled'}</span>
-                </label>
-              ) : (
-                <input
-                  id={`em-${f.key}`}
-                  type={f.type === 'cents' ? 'number' : f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
-                  step={f.type === 'cents' ? '0.01' : f.type === 'number' ? 'any' : undefined}
-                  value={formVal ?? ''}
-                  onChange={e => setFormData(safeSpreadUpdate(formData, f.key, e.target.value))}
-                  placeholder={f.placeholder || f.label}
-                  className="w-full p-2.5 bg-black/40 border border-white/10 rounded-xl text-sm"
+            <EntityFormSection
+              key={section}
+              title={section.charAt(0).toUpperCase() + section.slice(1)}
+              icon={SECTION_ICONS[section]}
+              color={SECTION_COLORS[section]}
+              defaultOpen={section !== 'metadata'}
+              columns={section === 'notes' || section === 'settings' ? 1 : 2}
+            >
+              {sectionFields.map(f => (
+                <EntityFormField
+                  key={f.key}
+                  field={f}
+                  value={getSafeValue(formData, f.key)}
+                  onChange={v => setFormData(safeSpreadUpdate(formData, f.key, v))}
+                  referenceOptions={f.reference ? refOptions[f.reference.apiPath] : undefined}
+                  onCreateReference={f.reference ? (s: string) => handleCreateReference(f.reference!.apiPath, s) : undefined}
+                  onScrapeWebsite={WEBSITE_KEYS.has(f.key) ? handleScrapeWebsite : undefined}
                 />
-              )}
-            </div>
-          );
+              ))}
+            </EntityFormSection>
+          )
         })}
-        <div className="flex justify-end gap-3 pt-2">
-          <button type="button" onClick={resetForm} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
-          <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-primary rounded-xl text-sm font-bold text-white hover:bg-primary/80 transition-all">
-            <Check size={14} /> {editing ? 'Save Changes' : 'Create'}
+        <div className="flex items-center justify-between pt-4">
+          <button type="button" onClick={resetForm} className="px-4 py-2 text-sm text-white/40 hover:text-white/80 transition-colors">Cancel</button>
+          <button type="submit" className="flex items-center gap-2 px-6 py-3 bg-primary rounded-xl text-sm font-bold text-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
+            <Check size={16} /> {editing ? 'Save Changes' : 'Create'}
           </button>
         </div>
       </form>
@@ -322,34 +428,63 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 
     <Modal isOpen={!!deleting} onClose={() => setDeleting(null)} title="Confirm Removal" footer={
       <>
-        <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
-        <button onClick={() => deleting && handleDelete(deleting)} className="px-5 py-2.5 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 transition-all">
-          Remove Permanently
+        <button onClick={() => setDeleting(null)} className="px-4 py-2 text-sm text-white/40 hover:text-white/80 transition-colors">Cancel</button>
+        <button onClick={() => deleting && handleDelete(deleting)} className="flex items-center gap-2 px-6 py-3 bg-red-600 rounded-xl text-sm font-bold text-white hover:bg-red-500 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-red-500/20">
+          <Trash2 size={16} /> Remove Permanently
         </button>
       </>
     }>
-      <p className="text-white/60 text-sm">This action cannot be undone. Are you sure you want to remove this {title.slice(0, -1).toLowerCase()}?</p>
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+          <AlertTriangle size={24} className="text-red-400" />
+        </div>
+        <div>
+          <p className="font-bold text-white/90">Are you absolutely sure?</p>
+          <p className="text-sm text-white/50 mt-1 leading-relaxed">
+            This will permanently remove this {title.slice(0, -1).toLowerCase()} and all associated data. This action cannot be undone.
+          </p>
+        </div>
+      </div>
     </Modal>
 
     <Modal isOpen={!!historyItem} onClose={() => setHistoryItem(null)} title="Audit History">
       {historyLoading ? (
-        <div className="py-8 text-center text-white/30 text-sm">Loading...</div>
+        <div className="py-12 text-center">
+          <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin mx-auto mb-3" />
+          <div className="text-sm text-white/40">Loading audit trail...</div>
+        </div>
       ) : historyLogs.length === 0 ? (
-        <div className="py-8 text-center text-white/30 text-sm">No audit history for this record.</div>
+        <div className="py-12 text-center">
+          <History size={32} className="text-white/10 mx-auto mb-3" />
+          <p className="text-sm text-white/30 font-medium">No audit history for this record.</p>
+        </div>
       ) : (
         <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-          {historyLogs.map((log: any) => (
-            <div key={log.id} className="p-3 bg-white/[0.03] border border-white/5 rounded-xl text-sm">
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-xs text-white/80">{log.action}</span>
-                <span className="text-[10px] text-white/30 font-mono">{log.created_at ? new Date(log.created_at).toLocaleString() : '—'}</span>
+          {historyLogs.map((log: any) => {
+            const isCreate = log.action?.toLowerCase().includes('create');
+            const isDelete = log.action?.toLowerCase().includes('delete');
+            let borderClass = 'border-blue-500/10';
+            let textClass = 'text-blue-400';
+            if (isCreate) { borderClass = 'border-emerald-500/10'; textClass = 'text-emerald-400'; }
+            if (isDelete) { borderClass = 'border-red-500/10'; textClass = 'text-red-400'; }
+            return (
+              <div key={log.id} className={`p-4 bg-white/[0.03] border ${borderClass} rounded-xl`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-black tracking-widest ${textClass} uppercase`}>{log.action}</span>
+                  <span className="text-[10px] text-white/30 font-mono">{log.created_at ? new Date(log.created_at).toLocaleString() : '—'}</span>
+                </div>
+                {log.actor_name && (
+                  <div className="text-xs text-white/40 flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                    by {log.actor_name}
+                  </div>
+                )}
+                {log.details_json && (
+                  <pre className="mt-2 text-xs text-white/25 font-mono whitespace-pre-wrap bg-black/40 p-3 rounded-xl border border-white/5">{JSON.stringify(log.details_json, null, 2)}</pre>
+                )}
               </div>
-              {log.actor_name && <div className="text-[11px] text-white/40">by {log.actor_name}</div>}
-              {log.details_json && (
-                <pre className="mt-1 text-[10px] text-white/30 font-mono whitespace-pre-wrap">{JSON.stringify(log.details_json, null, 2)}</pre>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </Modal>
@@ -358,7 +493,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
-type TabKey = 'accounts' | 'bills' | 'billers' | 'categories' | 'charge-descriptors' | 'credit-cards' | 'installment-plans' | 'lenders' | 'linked-accounts' | 'pairing-rules' | 'pay-schedules' | 'payment-methods' | 'subscriptions'
+type TabKey = 'accounts' | 'bills' | 'billers' | 'billing-processors' | 'categories' | 'charge-descriptors' | 'credit-cards' | 'installment-plans' | 'lenders' | 'linked-accounts' | 'pairing-rules' | 'pay-schedules' | 'payment-methods' | 'subscriptions'
 
 interface EntityConfig {
   key: TabKey
@@ -373,7 +508,7 @@ interface EntityConfig {
 
 const ENTITY_CONFIGS: EntityConfig[] = [
   {
-    key: 'accounts', label: 'Accounts', description: 'Bank accounts, savings, and other financial accounts you track',
+    key: 'accounts', label: 'Funding Sources', description: 'Bank accounts, savings, and other places your money lives',
     icon: <Wallet size={18} />, apiPath: '/api/financials/accounts',
     displayFn: (acc: any) => (
       <div className="flex items-center gap-3">
@@ -423,12 +558,23 @@ const ENTITY_CONFIGS: EntityConfig[] = [
     icon: <Building2 size={18} />, apiPath: '/api/financials/billers',
     displayFn: (biller: any) => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-          {biller.logoUrl ? <img src={biller.logoUrl} className="w-full h-full object-cover" /> : <Building2 size={14} />}
-        </div>
+        <LogoPreview src={biller.logoUrl} name={biller.name} size={32} className="bg-white/5 border border-white/10" />
         <div>
           <div className="font-bold text-sm">{biller.name}</div>
           <div className="text-[10px] text-white/40 font-medium">{biller.industry || 'Unknown Industry'}</div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    key: 'billing-processors', label: 'Billing Processors', description: 'Payment processing networks like Stripe, PayPal, etc.',
+    icon: <CreditCard size={18} />, apiPath: '/api/admin/billing/networks',
+    displayFn: (bp: any) => (
+      <div className="flex items-center gap-3">
+        <LogoPreview src={bp.brandingUrl} name={bp.name} size={32} className="bg-sky-500/10 border border-sky-500/20" />
+        <div>
+          <div className="font-bold text-sm">{bp.name}</div>
+          <div className="text-[10px] text-white/40 font-medium">{bp.websiteUrl || '-'}</div>
         </div>
       </div>
     ),
@@ -495,9 +641,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
     icon: <Building2 size={18} />, apiPath: '/api/user/service-providers',
     displayFn: (p: any) => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center overflow-hidden">
-          {p.iconUrl ? <img src={p.iconUrl} className="w-full h-full object-cover" /> : <Building2 size={14} className="text-blue-400" />}
-        </div>
+        <LogoPreview src={p.iconUrl} name={p.name} size={32} className="bg-blue-500/10 border border-blue-500/20" />
         <div>
           <div className="font-bold text-sm flex items-center gap-2">
             {p.name}
@@ -564,7 +708,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
     ),
   },
   {
-    key: 'payment-methods', label: 'Payment Methods', description: 'Cards, bank accounts, and other payment instruments',
+    key: 'payment-methods', label: 'Payment Methods', description: 'Cards, bank transfers, and other ways you pay for things',
     icon: <Wallet size={18} />, apiPath: '/api/user/payment-methods', scope: 'user',
     displayFn: (pm: any) => (
       <div className="flex items-center gap-3">
@@ -602,6 +746,12 @@ const ENTITY_CONFIGS: EntityConfig[] = [
 
 const EntityManagerPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('accounts')
+  const [sortAlpha, setSortAlpha] = useState(false)
+
+  const sortedConfigs = useMemo(() => {
+    if (!sortAlpha) return ENTITY_CONFIGS
+    return [...ENTITY_CONFIGS].sort((a, b) => a.label.localeCompare(b.label))
+  }, [sortAlpha])
 
   const renderTab = () => {
     const config = ENTITY_CONFIGS.find(c => c.key === activeTab)
@@ -624,9 +774,18 @@ const EntityManagerPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 max-w-7xl mx-auto">
         {/* Sidebar Nav */}
         <nav className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 h-fit lg:sticky lg:top-6">
-          <div className="text-[9px] font-black tracking-[0.2em] text-white/30 px-3 py-2">Entity Types</div>
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="text-[9px] font-black tracking-[0.2em] text-white/30">Entity Types</span>
+            <button
+              onClick={() => setSortAlpha(s => !s)}
+              className="text-[9px] font-black tracking-widest text-white/20 hover:text-white/50 transition-colors"
+              title={sortAlpha ? 'Sort by default order' : 'Sort A–Z'}
+            >
+              {sortAlpha ? 'A–Z ↑' : 'A–Z ↓'}
+            </button>
+          </div>
           <div className="space-y-1">
-            {ENTITY_CONFIGS.map(cfg => (
+            {sortedConfigs.map(cfg => (
               <button
                 key={cfg.key}
                 onClick={() => setActiveTab(cfg.key)}

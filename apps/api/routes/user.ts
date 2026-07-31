@@ -574,7 +574,9 @@ user.post('/service-providers', zValidator('json', z.object({
   visibility: z.enum(['private', 'household', 'public']).optional(),
   defaultCategoryId: z.string().nullable().optional(),
   defaultDueDate: z.string().nullable().optional(),
-  iconUrl: z.string().nullable().optional()
+  iconUrl: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
+  status: z.enum(['active', 'inactive']).optional(),
 })), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') || null
@@ -614,10 +616,14 @@ user.post('/service-providers', zValidator('json', z.object({
 
 user.patch('/service-providers/:id', zValidator('json', z.object({
   name: z.string().optional(),
-  visibility: z.enum(['private', 'household']).optional(),
+  visibility: z.enum(['private', 'household', 'public']).optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+  billingProcessorId: z.string().nullable().optional(),
+  billerId: z.string().nullable().optional(),
   defaultCategoryId: z.string().nullable().optional(),
   defaultDueDate: z.string().nullable().optional(),
-  iconUrl: z.string().nullable().optional()
+  iconUrl: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
 })), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.get('householdId') || null
@@ -671,6 +677,10 @@ user.patch('/service-providers/:id', zValidator('json', z.object({
   if (updates.defaultCategoryId !== undefined) valuesToSet.defaultCategoryId = updates.defaultCategoryId
   if (updates.defaultDueDate !== undefined) valuesToSet.defaultDueDate = updates.defaultDueDate
   if (updates.iconUrl !== undefined) valuesToSet.iconUrl = updates.iconUrl
+  if (updates.website !== undefined) valuesToSet.website = updates.website
+  if (updates.status !== undefined) valuesToSet.status = updates.status
+  if (updates.billingProcessorId !== undefined) valuesToSet.billingProcessorId = updates.billingProcessorId
+  if (updates.billerId !== undefined) valuesToSet.billerId = updates.billerId
 
   await db.update(serviceProviders).set(valuesToSet).where(eq(serviceProviders.id, id))
   await logAudit(c, 'service_providers', id, 'UPDATE', null, valuesToSet)

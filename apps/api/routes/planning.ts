@@ -140,7 +140,12 @@ planning.patch('/subscriptions/:id', zValidator('json', SubscriptionSchema.parti
   if (data.upcomingEffectiveDate !== undefined) updates.upcomingEffectiveDate = data.upcomingEffectiveDate
   if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
   if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
-  
+  if (data.paymentMethodId !== undefined) updates.paymentMethodId = data.paymentMethodId
+  if (data.categoryId !== undefined) updates.categoryId = data.categoryId
+  if (data.trialEndDate !== undefined) updates.trialEndDate = data.trialEndDate
+  if (data.isTrial !== undefined) updates.isTrial = data.isTrial
+  if (data.billerId !== undefined) updates.billerId = data.billerId
+
   if (Object.keys(updates).length > 0) {
     await db.update(subscriptions).set(updates).where(and(eq(subscriptions.id, id), eq(subscriptions.householdId, householdId)))
     await logAudit(c, 'subscriptions', id, 'update', old, data)

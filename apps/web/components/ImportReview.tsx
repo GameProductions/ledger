@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { 
   FileCheck, 
   ShieldCheck, 
@@ -13,6 +13,10 @@ import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/api';
 import { Modal } from './ui/Modal';
+import ParsingModeSelect from './entity/ParsingModeSelect';
+import type { ParsingMode, EntityInput } from '../utils/import/types';
+import { useEntityMatching } from '../utils/import/useEntityMatching';
+import EntityMatchReview from './entity/EntityMatchReview';
 
 interface ImportReviewProps {
   onImportComplete: () => void;
@@ -54,6 +58,11 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   });
   const [additionalFields, setAdditionalFields] = useState<{ fieldName: string; column: string; pattern: string }[]>([]);
 
+  // Step management
+  const [step, setStep] = useState<'idle' | 'select-mode' | 'mapping' | 'match' | 'review' | 'done'>('idle');
+  const [entityInputs, setEntityInputs] = useState<EntityInput[]>([]);
+  const match = useEntityMatching(entityInputs);
+
   // Preview Limit & Modal States
   const [previewLimit, setPreviewLimit] = useState<string>('5');
   const [rawTextContent, setRawTextContent] = useState<string>('');
@@ -70,17 +79,27 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   });
   const [templateName, setTemplateName] = useState('');
 
+  const saveTemplate = (name: string) => {
+    const tmpl = {
+      columnMapping,
+      layoutMode,
+      fieldPatterns,
+      additionalFields,
+    };
+    const stored = localStorage.getItem('ledger_import_templates');
+    const templates = stored ? JSON.parse(stored) : {};
+    templates[name.trim()] = tmpl;
+    localStorage.setItem('ledger_import_templates', JSON.stringify(templates));
+    return templates;
+  };
+
   const handleSaveTemplate = () => {
     if (!templateName.trim()) {
       showToast('Please enter a template name', 'error');
       return;
     }
-    const updated = {
-      ...savedTemplates,
-      [templateName.trim()]: { ...columnMapping }
-    };
+    const updated = saveTemplate(templateName.trim());
     setSavedTemplates(updated);
-    localStorage.setItem('ledger_import_templates', JSON.stringify(updated));
     showToast(`Template "${templateName.trim()}" saved`, 'success');
     setTemplateName('');
   };
@@ -113,9 +132,13 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     ? rawMembers
     : (rawMembers?.data && Array.isArray(rawMembers.data) ? rawMembers.data : []);
 
-  // Fetch categories list for dropdown selection
+  // Fetch entity lists for matching
   const { data: categoriesList = [] } = (useApi<any[]>('/api/financials/categories') as any);
   const categories = Array.isArray(categoriesList) ? categoriesList : [];
+  const { data: providersList = [] } = (useApi<any[]>('/api/user/service-providers') as any);
+  const providers = Array.isArray(providersList) ? providersList : [];
+  const { data: accountsList = [] } = (useApi<any[]>('/api/financials/accounts') as any);
+  const accounts = Array.isArray(accountsList) ? accountsList : [];
 
   const handleExcelSheetParsing = async (wb: any, sheetName: string) => {
     const ws = wb.getWorksheet(sheetName);
@@ -149,90 +172,144 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
     setShowMapping(true);
   };
 
+  const handleParsingModeSelect = useCallback(async (mode: ParsingMode, predefinedFormat?: string, templateName?: string) => {
+    if (!file) return
+
+    if (mode === 'predefined' && predefinedFormat === 'ledger-spreadsheet') {
+      showToast('This format is handled by the Ledger Spreadsheet import mode. Please switch to Ledger Spreadsheet mode.', 'error')
+      setStep('idle')
+      return
+    }
+
+    if (mode === 'custom' || (mode === 'auto' && !file.name.endsWith('.xlsx'))) {
+      setStep('mapping')
+    }
+
+    // For xlsx with auto-detect, parse directly
+    if (mode === 'auto' && file.name.endsWith('.xlsx')) {
+      setAnalyzing(true)
+      try {
+        const ExcelJS = (await import('exceljs')).default
+        const wb = new ExcelJS.Workbook()
+        const arrayBuffer = await file.arrayBuffer()
+        await wb.xlsx.load(arrayBuffer)
+        setWorkbook(wb as any)
+        const sheetNames = (wb.worksheets || []).map((ws: any) => ws.name)
+        setAvailableSheets(sheetNames)
+        setSelectedSheet(sheetNames[0])
+        await handleExcelSheetParsing(wb, sheetNames[0])
+      } catch {
+        showToast('Failed to load Excel library', 'error')
+      } finally {
+        setAnalyzing(false)
+      }
+    }
+
+    // For template mode, apply saved template and show mapping
+    if (mode === 'template' && templateName) {
+      try {
+        const stored = localStorage.getItem('ledger_import_templates')
+        if (stored) {
+          const templates = JSON.parse(stored)
+          const tmpl = templates[templateName]
+          if (tmpl) {
+            setColumnMapping(tmpl.columnMapping || { description: '', amount: '', date: '', category: '', notes: '' })
+            setLayoutMode(tmpl.layoutMode || 'rows')
+            setFieldPatterns(tmpl.fieldPatterns || { description: '', amount: '', date: '' })
+            setAdditionalFields(tmpl.additionalFields || [])
+          }
+        }
+      } catch {}
+      // Parse and show mapping
+      await handleFileParse(file)
+    }
+  }, [file])
+
+  const handleFileParse = async (uploadedFile: File) => {
+    setStep('mapping')
+    if (uploadedFile.name.endsWith('.xlsx')) {
+      setAnalyzing(true);
+      setRawTextContent('');
+      try {
+        const ExcelJS = (await import('exceljs')).default;
+        const wb = new ExcelJS.Workbook();
+        const arrayBuffer = (await uploadedFile.arrayBuffer() as any);
+        await wb.xlsx.load(arrayBuffer);
+        setWorkbook(wb as any);
+        const sheetNames = (wb.worksheets || []).map((ws: any) => ws.name);
+        setAvailableSheets(sheetNames);
+        setSelectedSheet(sheetNames[0]);
+        await handleExcelSheetParsing(wb, sheetNames[0]);
+      } catch (err: any) {
+        showToast('Failed to load Excel library', 'error');
+      } finally {
+        setAnalyzing(false);
+      }
+    } else if (uploadedFile.name.endsWith('.json')) {
+      try {
+        const text = await uploadedFile.text();
+        setRawTextContent(text);
+        const parsed = JSON.parse(text);
+        const rows = Array.isArray(parsed) ? parsed : [parsed];
+        if (rows.length > 0) {
+          const fileHeaders = Object.keys(rows[0] as any);
+          setHeaders(fileHeaders);
+          setRawRows(rows);
+          setColumnMapping({
+            description: fileHeaders.find(h => /desc|name|merchant|payee/i.test(h)) || fileHeaders[0] || '',
+            amount: fileHeaders.find(h => /amount|cost|val|price|debit/i.test(h)) || fileHeaders[1] || '',
+            date: fileHeaders.find(h => /date|time/i.test(h)) || fileHeaders[2] || '',
+            category: fileHeaders.find(h => /cat/i.test(h)) || '',
+            notes: fileHeaders.find(h => /note|memo/i.test(h)) || ''
+          });
+          setShowMapping(true);
+        }
+      } catch (e) {
+        showToast('Invalid JSON file', 'error');
+      }
+    } else if (uploadedFile.name.endsWith('.pdf')) {
+      setRawTextContent('');
+      setHeaders(['description', 'amount', 'date']);
+      setRawRows([{ description: 'PDF Transaction Extraction', amount: 125.50, date: '2026-03-25' }]);
+      setColumnMapping({ description: 'description', amount: 'amount', date: 'date', category: '', notes: '' });
+      setShowMapping(true);
+    } else {
+      try {
+        const text = await uploadedFile.text();
+        setRawTextContent(text);
+        const Papa = (await import('papaparse')).default;
+        Papa.parse(uploadedFile, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            if (results?.data && results.data.length > 0) {
+              const fileHeaders = Object.keys(results.data[0] as any);
+              setHeaders(fileHeaders);
+              setRawRows(results.data);
+              setColumnMapping({
+                description: fileHeaders.find(h => /desc|name|merchant|payee/i.test(h)) || fileHeaders[0] || '',
+                amount: fileHeaders.find(h => /amount|cost|val|price|debit/i.test(h)) || fileHeaders[1] || '',
+                date: fileHeaders.find(h => /date|time/i.test(h)) || fileHeaders[2] || '',
+                category: fileHeaders.find(h => /cat/i.test(h)) || '',
+                notes: fileHeaders.find(h => /note|memo/i.test(h)) || ''
+              });
+              setShowMapping(true);
+            }
+          }
+        });
+      } catch (err: any) {
+        showToast('Failed to load CSV library', 'error');
+      }
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const uploadedFile = e.target.files[0];
       setFile(uploadedFile);
       setReviewItems([]);
       setShowMapping(false);
-      
-      if (uploadedFile.name.endsWith('.xlsx')) {
-        setAnalyzing(true);
-        setRawTextContent('');
-        try {
-          const ExcelJS = (await import('exceljs')).default;
-          const wb = new ExcelJS.Workbook();
-          const arrayBuffer = (await uploadedFile.arrayBuffer() as any);
-          await wb.xlsx.load(arrayBuffer);
-          setWorkbook(wb as any);
-          const sheetNames = (wb.worksheets || []).map(ws => ws.name);
-          setAvailableSheets(sheetNames);
-          setSelectedSheet(sheetNames[0]);
-          await handleExcelSheetParsing(wb, sheetNames[0]);
-        } catch (err: any) {
-          showToast('Failed to load Excel library', 'error');
-        } finally {
-          setAnalyzing(false);
-        }
-      } else if (uploadedFile.name.endsWith('.json')) {
-        // Load JSON immediately to preview
-        try {
-          const text = await uploadedFile.text();
-          setRawTextContent(text);
-          const parsed = JSON.parse(text);
-          const rows = Array.isArray(parsed) ? parsed : [parsed];
-          if (rows.length > 0) {
-            const fileHeaders = Object.keys(rows[0] as any);
-            setHeaders(fileHeaders);
-            setRawRows(rows);
-            setColumnMapping({
-              description: fileHeaders.find(h => /desc|name|merchant|payee/i.test(h)) || fileHeaders[0] || '',
-              amount: fileHeaders.find(h => /amount|cost|val|price|debit/i.test(h)) || fileHeaders[1] || '',
-              date: fileHeaders.find(h => /date|time/i.test(h)) || fileHeaders[2] || '',
-              category: fileHeaders.find(h => /cat/i.test(h)) || '',
-              notes: fileHeaders.find(h => /note|memo/i.test(h)) || ''
-            });
-            setShowMapping(true);
-          }
-        } catch (e) {
-          showToast('Invalid JSON file', 'error');
-        }
-      } else if (uploadedFile.name.endsWith('.pdf')) {
-        // Fallback for PDF
-        setRawTextContent('');
-        setHeaders(['description', 'amount', 'date']);
-        setRawRows([{ description: 'PDF Transaction Extraction', amount: 125.50, date: '2026-03-25' }]);
-        setColumnMapping({ description: 'description', amount: 'amount', date: 'date', category: '', notes: '' });
-        setShowMapping(true);
-      } else {
-        // Parse CSV Papa Parse
-        try {
-          const text = await uploadedFile.text();
-          setRawTextContent(text);
-          const Papa = (await import('papaparse')).default;
-          Papa.parse(uploadedFile, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-              if (results?.data && results.data.length > 0) {
-                const fileHeaders = Object.keys(results.data[0] as any);
-                setHeaders(fileHeaders);
-                setRawRows(results.data);
-                setColumnMapping({
-                  description: fileHeaders.find(h => /desc|name|merchant|payee/i.test(h)) || fileHeaders[0] || '',
-                  amount: fileHeaders.find(h => /amount|cost|val|price|debit/i.test(h)) || fileHeaders[1] || '',
-                  date: fileHeaders.find(h => /date|time/i.test(h)) || fileHeaders[2] || '',
-                  category: fileHeaders.find(h => /cat/i.test(h)) || '',
-                  notes: fileHeaders.find(h => /note|memo/i.test(h)) || ''
-                });
-                setShowMapping(true);
-              }
-            }
-          });
-        } catch (err: any) {
-          showToast('Failed to load CSV library', 'error');
-        }
-      }
+      setStep('select-mode');
     }
   };
 
@@ -330,6 +407,14 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
 
         setReviewItems([record]);
         setShowMapping(false);
+        // Entity extraction for cells mode
+        const cats = [record.category].filter(Boolean) as string[]
+        const provs = [record.description].filter(Boolean) as string[]
+        const cellInputs: EntityInput[] = []
+        if (cats.length) cellInputs.push({ group: 'category', names: cats })
+        if (provs.length) cellInputs.push({ group: 'provider', names: provs })
+        setEntityInputs(cellInputs)
+        setStep('match')
       } else {
         // Tabular rows mode
         const mapped = rawRows.map((r: any, i: number) => {
@@ -371,6 +456,14 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         
         setReviewItems(mapped);
         setShowMapping(false);
+        // Entity extraction for tabular mode
+        const cats = [...new Set(mapped.map((r: any) => r.category).filter(Boolean))] as string[]
+        const provs = [...new Set(mapped.map((r: any) => r.description).filter(Boolean))] as string[]
+        const tabInputs: EntityInput[] = []
+        if (cats.length) tabInputs.push({ group: 'category', names: cats })
+        if (provs.length) tabInputs.push({ group: 'provider', names: provs })
+        setEntityInputs(tabInputs)
+        setStep('match')
       }
     } catch (e) {
       showToast('Error mapping file. Please check cell coordinates or column config.', 'error');
@@ -378,6 +471,29 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
       setAnalyzing(false);
     }
   };
+
+  const handleMatchConfirm = useCallback(() => {
+    const mapping = match.getFinalMapping()
+    const updated = reviewItems.map((item: any) => ({
+      ...item,
+      category: mapping.categoryMap[item.category] || item.category,
+      providerId: mapping.providerMap[item.description] || null,
+    }))
+    setReviewItems(updated)
+    setStep('review')
+  }, [reviewItems, match])
+
+  const [showTemplateSave, setShowTemplateSave] = useState(false)
+  const [templateSaveName, setTemplateSaveName] = useState('')
+
+  const handleSaveImportTemplate = () => {
+    if (!templateSaveName.trim()) return
+    saveTemplate(templateSaveName.trim());
+    showToast(`Template "${templateSaveName.trim()}" saved`, 'success');
+    setTemplateSaveName('');
+    setShowTemplateSave(false);
+    onImportComplete();
+  }
 
   const handleCommit = async () => {
     if (reviewItems.length === 0) return;
@@ -396,10 +512,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
               })
              }) as any);
       if (res.ok) {
-        showToast(`Successfully imported to ${scope === 'household' ? 'Shared Ledger' : 'Personal Hub'}`, 'success');
-        onImportComplete();
-        setReviewItems([]);
-        setFile(null);
+        setShowTemplateSave(true)
       }
     } finally {
       setCommitting(false);
@@ -449,7 +562,50 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         </label>
       )}
 
-      {file && showMapping && reviewItems.length === 0 && (
+      {file && step === 'select-mode' && (
+        <ParsingModeSelect
+          fileName={file.name}
+          onSelect={(mode, fmt) => handleParsingModeSelect(mode, fmt)}
+          onCancel={() => { setFile(null); setStep('idle') }}
+        />
+      )}
+
+      {file && step === 'match' && (
+        <div className="p-8 sm:p-12 rounded-[2.5rem] border border-amber-500/20 bg-black/40 backdrop-blur-3xl shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <h4 className="text-2xl font-black text-white italic tracking-tighter mb-1">Entity Match Review</h4>
+              <p className="text-[10px] text-slate-500 font-black tracking-widest">Confirm or edit detected entity matches before importing</p>
+            </div>
+          </div>
+          <EntityMatchReview
+            items={match.items}
+            loading={match.loading}
+            entityOptions={{
+              provider: (providers || []).map((p: any) => ({ value: p.id, label: p.name.toUpperCase() })),
+              account: (accounts || []).map((a: any) => ({ value: a.id, label: `${a.name} (${a.type})`.toUpperCase() })),
+              category: (categories || []).map((c: any) => ({ value: c.id, label: c.name.toUpperCase() })),
+              biller: [],
+              'payment-method': [],
+              subscription: [],
+              person: [],
+            }}
+            onApproveAll={match.approveAll}
+            onRejectAll={match.rejectAll}
+            onUpdate={match.updateItem}
+            onSetManualMatch={match.setManualMatch}
+            onSetCreateNew={match.setCreateNew}
+            onSetNewName={match.setNewName}
+            onConfirm={handleMatchConfirm}
+            onCancel={() => setStep('idle')}
+          />
+        </div>
+      )}
+
+      {file && step === 'mapping' && showMapping && reviewItems.length === 0 && (
         <div className="p-8 sm:p-12 rounded-[2.5rem] border border-emerald-500/20 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-6">
             <div>
@@ -825,7 +981,7 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
         </div>
       )}
 
-      {reviewItems.length > 0 && (
+      {step === 'review' && reviewItems.length > 0 && (
         <div className="space-y-6 animate-in slide-in-from-top-4 duration-500">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 bg-white/5 rounded-[2rem] border border-white/10 backdrop-blur-xl">
              <div className="flex items-center gap-4">
@@ -1008,6 +1164,35 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
               </pre>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Save Template Modal */}
+      <Modal isOpen={showTemplateSave} onClose={() => { onImportComplete(); setReviewItems([]); setFile(null) }} title="Save as Template" maxWidth="max-w-md">
+        <div className="space-y-6 py-4">
+          <p className="text-sm text-slate-400">Do you want to save the current column mapping as a reusable template for future imports?</p>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={templateSaveName}
+              onChange={(e) => setTemplateSaveName(e.target.value)}
+              placeholder="e.g. Bank of America CSV"
+              className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-emerald-500/50"
+            />
+            <button
+              onClick={handleSaveImportTemplate}
+              disabled={!templateSaveName.trim()}
+              className="px-6 py-3 bg-emerald-500 text-black font-black text-sm rounded-xl hover:bg-emerald-400 transition-all disabled:opacity-30"
+            >
+              Save
+            </button>
+          </div>
+          <button
+            onClick={() => { onImportComplete(); setReviewItems([]); setFile(null) }}
+            className="text-xs text-slate-500 hover:text-white font-medium transition-all"
+          >
+            No thanks, just finish
+          </button>
         </div>
       </Modal>
     </div>

@@ -184,39 +184,63 @@ data.post('/scrape', zValidator('json', z.object({
   url: z.string().url(),
   type: z.enum(['provider', 'bank', 'billing']).default('provider')
 })), async (c) => {
-  const { url, type } = c.req.valid('json')
+  const { url } = c.req.valid('json')
   
   // Audit Phase 4: SSRF Shielding
   if (isPrivateIp(url)) {
     throw new HTTPException(403, { message: 'Security Block: Internal network targets are prohibited.' })
   }
 
+  const resolveUrl = (src: string | undefined, base: URL): string | undefined => {
+    if (!src) return undefined
+    if (src.startsWith('http')) return src
+    return `${base.origin}${src.startsWith('/') ? '' : '/'}${src}`
+  }
+
   try {
     const response = (await fetch(url) as any)
     const html = (await response.text() as any)
+    const baseUrl = new URL(url)
     
-    // Basic metadata extraction
-    const title = html.match(/<title>(.*?)<\/title>/i)?.[1] || url
-    const description = html.match(/<meta name="description" content="(.*?)"/i)?.[1] || ""
-    const logo = html.match(/<link rel="(?:icon|shortcut icon|apple-touch-icon)" href="(.*?)"/i)?.[1]
+    const title = html.match(/<title>(.*?)<\/title>/i)?.[1] || ''
+    const ogTitle = html.match(/<meta\s+property="og:title"\s+content="(.*?)"/i)?.[1]
+    const ogDesc = html.match(/<meta\s+property="og:description"\s+content="(.*?)"/i)?.[1]
+    const ogImage = html.match(/<meta\s+property="og:image"\s+content="(.*?)"/i)?.[1]
+    const description = html.match(/<meta\s+name="description"\s+content="(.*?)"/i)?.[1] || ogDesc || ''
     
-    let absoluteLogo = logo
-    if (logo && !logo.startsWith('http')) {
-      const baseUrl = new URL(url)
-      absoluteLogo = `${baseUrl.origin}${logo.startsWith('/') ? '' : '/'}${logo}`
+    // Favicon / icon extraction (prefer largest)
+    const iconTags = [...html.matchAll(/<link\s+[^>]*rel="(?:icon|shortcut icon|apple-touch-icon|apple-touch-icon-precomposed)"[^>]*>/gi)]
+    let bestIcon: string | undefined
+    let largestSize = 0
+    for (const tag of iconTags) {
+      const href = tag[0].match(/href="(.*?)"/i)?.[1]
+      const sizes = tag[0].match(/sizes="(\d+)x\d+"/i)?.[1]
+      const size = sizes ? parseInt(sizes) : 0
+      if (href && size >= largestSize) {
+        largestSize = size
+        bestIcon = href
+      }
     }
+    // Fallback: /favicon.ico
+    if (!bestIcon) {
+      const anyIcon = html.match(/<link\s+[^>]*rel="(?:icon|shortcut icon)"[^>]*href="(.*?)"[^>]*>/i)?.[1]
+      bestIcon = anyIcon || '/favicon.ico'
+    }
+
+    const themeColor = html.match(/<meta\s+name="theme-color"\s+content="(.*?)"/i)?.[1]
 
     const isSpreadsheet = url.endsWith('.csv') || url.includes('docs.google.com/spreadsheets') || url.includes('export=csv')
 
     return c.json({
       success: true,
       data: {
-        name: title.split('|')[0].trim(),
+        name: (ogTitle || title).split('|')[0].trim(),
         description,
         websiteUrl: url,
-        logoUrl: absoluteLogo,
-        isSpreadsheet: isSpreadsheet,
-        type
+        logoUrl: resolveUrl(ogImage || bestIcon, baseUrl),
+        faviconUrl: resolveUrl(bestIcon, baseUrl),
+        themeColor,
+        isSpreadsheet,
       }
     })
   } catch (err: any) {

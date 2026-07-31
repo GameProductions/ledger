@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.148.0",
+  "version": "3.148.1",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -63,7 +63,7 @@
     "postcss": "^8.5.24",
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^7.0.2",
+    "typescript": "~6.0.3",
     "typescript-eslint": "^8.65.0",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"

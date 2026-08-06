@@ -171,7 +171,7 @@ export const PasskeyModule = () => {
 
   const fetchPasskeys = async () => {
     try {
-      const res = await secureRequest('/api/admin/webauthn/passkeys') as any;
+      const res = await secureRequest('/api/auth/webauthn/passkeys') as any;
       if (res.ok) {
         const data = await res.json() as any;
         setPasskeys(data.passkeys || []);
@@ -189,11 +189,11 @@ export const PasskeyModule = () => {
   const generatePasskey = async () => {
     setRegistering(true);
     try {
-      const optionsRes = await secureRequest('/api/admin/webauthn/generate-registration', { method: 'POST' }) as any;
+      const optionsRes = await secureRequest('/api/auth/webauthn/generate-registration', { method: 'POST' }) as any;
       const options = await optionsRes.json() as any;
       const regResp = await startRegistration({ optionsJSON: options }) as any;
 
-      const verifyRes = await secureRequest('/api/admin/webauthn/verify-registration', {
+      const verifyRes = await secureRequest('/api/auth/webauthn/verify-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ attestation: regResp }),
@@ -217,10 +217,10 @@ export const PasskeyModule = () => {
     }
   };
 
-  // Inline rename via PUT /api/admin/webauthn/passkeys/:id
+  // Inline rename via PUT /api/auth/webauthn/passkeys/:id
   const renamePasskey = async (id: string, name: string) => {
     try {
-      const res = await secureRequest(`/api/admin/webauthn/passkeys/${id}`, {
+      const res = await secureRequest(`/api/auth/webauthn/passkeys/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
@@ -238,7 +238,7 @@ export const PasskeyModule = () => {
 
   const deletePasskey = async (id: string) => {
     try {
-      const res = await secureRequest(`/api/admin/webauthn/passkeys/${id}`, { method: 'DELETE' }) as any;
+      const res = await secureRequest(`/api/auth/webauthn/passkeys/${id}`, { method: 'DELETE' }) as any;
       if (res.ok) {
         showInline('Hardware signature revoked.', 'success');
         setConfirmDeleteId(null);
@@ -310,7 +310,7 @@ export const PasskeyModule = () => {
             <Fingerprint className="w-12 h-12 text-slate-700 mb-4" />
             <p className="text-slate-400 font-medium">
               No hardware signatures detected.<br />
-              Enroll a passkey to enable administrative access.
+              Enroll a passkey for quick, secure sign-in.
             </p>
           </div>
         ) : (

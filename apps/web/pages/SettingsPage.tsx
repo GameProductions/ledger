@@ -378,6 +378,26 @@ const SettingsPage: React.FC = () => {
                  {email || profile?.email || user?.email}
               </div>
             )}
+
+            {profile?.createdAt && (
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 pt-2 border-t border-white/5 text-[10px] font-bold tracking-widest text-slate-500">
+                 <span>MEMBER SINCE {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+              </div>
+            )}
+
+            {Array.isArray(profile?.households) && profile.households.length > 0 && (
+              <div className="pt-2 space-y-1">
+                {(profile.households as any[]).map((h: any) => (
+                  <div key={h.householdId} className="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1 text-[10px] font-bold text-slate-400">
+                    <span className="text-primary tracking-widest uppercase">{h.name || 'Household'}</span>
+                    <span className="text-slate-600">
+                      {h.role === 'admin' ? 'Admin' : h.role === 'owner' ? 'Owner' : 'Member'} · Joined {h.joinedAt ? new Date(h.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                      {h.joinMethod ? ` · ${h.joinMethod === 'create' ? 'Founder' : h.joinMethod === 'invite' ? 'Invite' : h.joinMethod === 'code' ? 'Join code' : h.joinMethod}` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
         </div>

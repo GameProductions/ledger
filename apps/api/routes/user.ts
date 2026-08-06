@@ -10,10 +10,14 @@ import {
   UserPaymentMethodSchema, 
   UserLinkedAccountSchema,
   JoinHouseholdSchema,
+  JoinHouseholdByCodeSchema,
+  CreateHouseholdInviteSchema,
+  UpdateHouseholdInviteSchema,
   UserOutputSchema,
   EnvelopeSchema
 } from '@shared/schemas'
 import { logAudit } from '../utils'
+import { ipRateLimit } from '../utils/rate-limit'
 import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
@@ -73,6 +77,30 @@ user.get('/profile', async (c) => {
           .limit(1) as any)
     
     userData.householdId = userHh?.householdId || null;
+
+    const memberships = (await db.select({
+      householdId: userHouseholds.householdId,
+      role: userHouseholds.role,
+      joinedAt: userHouseholds.joinedAt,
+      joinMethod: userHouseholds.joinMethod,
+      householdName: households.name,
+      householdCurrency: households.currency,
+      householdStatus: households.status
+    })
+      .from(userHouseholds)
+      .innerJoin(households, eq(households.id, userHouseholds.householdId))
+      .where(eq(userHouseholds.userId, userId as string))
+      .orderBy(asc(userHouseholds.joinedAt)) as any)
+
+    userData.households = (memberships || []).map((m: any) => ({
+      householdId: m.householdId,
+      role: m.role,
+      joinedAt: m.joinedAt,
+      joinMethod: m.joinMethod,
+      name: m.householdName,
+      currency: m.householdCurrency,
+      status: m.householdStatus
+    }));
     
     try {
       return c.json({
@@ -319,42 +347,75 @@ user.post('/households', zValidator('json', CreateHouseholdSchema, (result, c) =
   
   await db.batch([
     db.insert(households).values({ id, name, currency: currency || 'USD' }),
-    db.insert(userHouseholds).values({ userId, householdId: id, role: 'admin' })
+    db.insert(userHouseholds).values({ userId, householdId: id, role: 'admin', joinMethod: 'create' })
   ])
   
   await logAudit(c, 'households', id, 'CREATE', null, { name, currency })
   return c.json({ success: true, id, name }, 201)
 })
 
-user.post('/households/invite', zValidator('json', z.object({ email: z.string().email().optional() }).optional(), (result, c) => {
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+function generateJoinCode(length: number): string {
+  const bytes = new Uint8Array(length)
+  crypto.getRandomValues(bytes)
+  let code = ''
+  for (let i = 0; i < length; i++) {
+    code += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length]
+  }
+  return code
+}
+
+async function ensureUniqueJoinCode(db: any, length: number, attempts = 0): Promise<string> {
+  const code = generateJoinCode(length)
+  const collision = (await db.select({ id: householdInvites.id }).from(householdInvites).where(eq(householdInvites.joinCode, code)).limit(1).then((res: any[]) => res[0]))
+  if (collision && attempts < 5) return ensureUniqueJoinCode(db, length, attempts + 1)
+  return code
+}
+
+user.post('/households/invite', zValidator('json', z.optional(CreateHouseholdInviteSchema), (result, c) => {
   if (!result.success) {
     console.error(`[DIAGNOSTIC_FAILURE] Household invite validation failed:`, result.error.issues);
   }
 }), async (c) => {
   const userId = c.get('userId') as string
   const householdId = c.req.header('x-household-id')
-  const body = c.req.valid('json')
+  const body = (c.req.valid('json') || {}) as { email?: string; method?: 'link' | 'code' | 'both'; codeLength?: 6 | 8; codeLifetimeHours?: 24 | 168; reusable?: boolean }
   const db = getDb(c.env)
   
   if (!householdId) throw new HTTPException(400, { message: 'Missing x-household-id header' })
 
-  const household = (await db.select({ name: households.name, role: userHouseholds.role })
+  const household = (await db.select({ name: households.name, role: userHouseholds.role, invitesEnabled: households.invitesEnabled })
       .from(households).innerJoin(userHouseholds, eq(households.id, userHouseholds.householdId))
       .where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(households.id, householdId))).limit(1).then(res => res[0]) as any)
   
   if (!household || household.role !== 'admin') {
     throw new HTTPException(403, { message: 'Forbidden: Only household admins can generate invites' })
   }
+  if (!household.invitesEnabled) {
+    throw new HTTPException(403, { message: 'Invites are disabled for this household' })
+  }
+
+  const method = body.method || 'link'
+  const codeLength = body.codeLength || 6
+  const codeLifetimeHours = body.codeLifetimeHours || 24
+  const reusable = body.reusable ?? true
 
   const id = crypto.randomUUID()
   const expiresAt = new Date()
-  expiresAt.setHours(expiresAt.getHours() + 24)
+  expiresAt.setHours(expiresAt.getHours() + codeLifetimeHours)
   
+  const joinCode = method !== 'link' ? await ensureUniqueJoinCode(db, codeLength) : null
+
   await db.insert(householdInvites).values({
     id,
     householdId,
     createdBy: userId,
-    expiresAt: expiresAt.toISOString()
+    expiresAt: expiresAt.toISOString(),
+    joinCode,
+    codeLength: joinCode ? codeLength : null,
+    reusable,
+    joinCount: 0
   })
   
   const inviteUrl = `${c.env.WEB_URL || 'https://ledger.gpnet.dev'}/#/households/join?token=${id}`
@@ -368,9 +429,19 @@ user.post('/households/invite', zValidator('json', z.object({ email: z.string().
     }
   }
 
-  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, { token: id, targetEmail: body?.email })
+  await logAudit(c, 'households', householdId, 'INVITE_GENERATED', null, {
+    inviteId: id,
+    method,
+    codeLength: joinCode ? codeLength : null,
+    lifetimeHours: codeLifetimeHours,
+    reusable,
+    targetEmail: body?.email
+  })
   
-  return c.json({ success: true, url: `#/households/join?token=${id}` })
+  const response: any = { success: true, inviteId: id, method, expiresAt: expiresAt.toISOString(), reusable }
+  if (method !== 'code') response.url = `#/households/join?token=${id}`
+  if (method !== 'link') response.code = joinCode
+  return c.json(response)
 })
 
 user.post('/households/join', zValidator('json', JoinHouseholdSchema, (result, c) => {
@@ -385,6 +456,7 @@ user.post('/households/join', zValidator('json', JoinHouseholdSchema, (result, c
   const invite = (await db.select().from(householdInvites).where(and(eq(householdInvites.id, token), eq(householdInvites.status, 'pending'))).limit(1).then(res => res[0]) as any)
   
   if (!invite) throw new HTTPException(404, { message: 'Invitation not found or already accepted' })
+  if (invite.disabledAt) throw new HTTPException(410, { message: 'Invitation has been revoked' })
   if (new Date(invite.expiresAt) < new Date()) {
     await db.update(householdInvites).set({ status: 'expired' }).where(eq(householdInvites.id, token))
     throw new HTTPException(410, { message: 'Invitation expired' })
@@ -393,14 +465,92 @@ user.post('/households/join', zValidator('json', JoinHouseholdSchema, (result, c
   const existing = (await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(userHouseholds.householdId, invite.householdId))).limit(1).then(res => res[0]) as any)
   if (existing) throw new HTTPException(409, { message: 'You are already a member of this household' })
 
+  const invitesEnabled = (await db.select({ invitesEnabled: households.invitesEnabled }).from(households).where(eq(households.id, invite.householdId)).limit(1).then(res => res[0]) as any)
+  if (invitesEnabled && invitesEnabled.invitesEnabled === false) {
+    throw new HTTPException(410, { message: 'This household is no longer accepting invites' })
+  }
+
   await db.batch([
-    db.insert(userHouseholds).values({ userId, householdId: invite.householdId, role: 'member' }),
-    db.update(householdInvites).set({ status: 'accepted' }).where(eq(householdInvites.id, token))
+    db.insert(userHouseholds).values({ userId, householdId: invite.householdId, role: 'member', joinMethod: 'invite' }),
+    ...(invite.reusable
+      ? [db.update(householdInvites).set({ joinCount: sql`${householdInvites.joinCount} + 1` }).where(eq(householdInvites.id, token))]
+      : [db.update(householdInvites).set({ status: 'accepted' }).where(eq(householdInvites.id, token))])
   ])
   
-  await logAudit(c, 'households', invite.householdId, 'JOIN_VIA_INVITE', null, { userId })
+  await logAudit(c, 'households', invite.householdId, 'JOIN_VIA_INVITE', null, { userId, joinMethod: 'invite' })
   
   return c.json({ success: true, householdId: invite.householdId })
+})
+
+user.post('/households/join-by-code', ipRateLimit('STRICT'), zValidator('json', JoinHouseholdByCodeSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household join-by-code validation failed:`, result.error.issues);
+  }
+}), async (c) => {
+  const userId = c.get('userId') as string
+  const { code } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const invite = (await db.select().from(householdInvites).where(and(eq(householdInvites.joinCode, code), eq(householdInvites.status, 'pending'))).limit(1).then(res => res[0]) as any)
+
+  if (!invite) throw new HTTPException(404, { message: 'That invite code was not found' })
+  if (invite.disabledAt) throw new HTTPException(410, { message: 'That invite code has been revoked' })
+  if (new Date(invite.expiresAt) < new Date()) {
+    await db.update(householdInvites).set({ status: 'expired' }).where(eq(householdInvites.id, invite.id))
+    throw new HTTPException(410, { message: 'That invite code has expired' })
+  }
+
+  const invitesEnabled = (await db.select({ invitesEnabled: households.invitesEnabled }).from(households).where(eq(households.id, invite.householdId)).limit(1).then(res => res[0]) as any)
+  if (invitesEnabled && invitesEnabled.invitesEnabled === false) {
+    throw new HTTPException(410, { message: 'This household is no longer accepting invites' })
+  }
+
+  const existing = (await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(userHouseholds.householdId, invite.householdId))).limit(1).then(res => res[0]) as any)
+  if (existing) throw new HTTPException(409, { message: 'You are already a member of this household' })
+
+  await db.batch([
+    db.insert(userHouseholds).values({ userId, householdId: invite.householdId, role: 'member', joinMethod: 'code' }),
+    ...(invite.reusable
+      ? [db.update(householdInvites).set({ joinCount: sql`${householdInvites.joinCount} + 1` }).where(eq(householdInvites.id, invite.id))]
+      : [db.update(householdInvites).set({ status: 'accepted' }).where(eq(householdInvites.id, invite.id))])
+  ])
+
+  await logAudit(c, 'households', invite.householdId, 'JOIN_VIA_CODE', null, { userId, joinMethod: 'code' })
+
+  return c.json({ success: true, householdId: invite.householdId })
+})
+
+user.patch('/households/invites/:inviteId', zValidator('json', UpdateHouseholdInviteSchema, (result, c) => {
+  if (!result.success) {
+    console.error(`[DIAGNOSTIC_FAILURE] Household invite update validation failed:`, result.error.issues);
+  }
+}), async (c) => {
+  const { inviteId } = c.req.param()
+  const { disabled } = c.req.valid('json')
+  const userId = c.get('userId') as string
+  const globalRole = c.get('globalRole') as string
+  const db = getDb(c.env)
+
+  const invite = (await db.select().from(householdInvites).where(eq(householdInvites.id, inviteId)).limit(1).then(res => res[0]) as any)
+  if (!invite) throw new HTTPException(404, { message: 'Invitation not found' })
+
+  if (globalRole !== 'owner') {
+    const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, invite.householdId))).limit(1).then(res => res[0]) as any)
+    if (!membership || membership.role !== 'admin') {
+      throw new HTTPException(403, { message: 'Forbidden: Only household admins can manage invites' })
+    }
+  }
+
+  if (disabled === true && !invite.disabledAt) {
+    await db.update(householdInvites).set({ status: 'disabled', disabledAt: new Date().toISOString() }).where(eq(householdInvites.id, inviteId))
+    await logAudit(c, 'households', invite.householdId, 'INVITE_DISABLED', null, { inviteId })
+  } else if (disabled === false && invite.disabledAt) {
+    const expired = new Date(invite.expiresAt) < new Date()
+    await db.update(householdInvites).set({ disabledAt: null, status: expired ? 'expired' : 'pending' }).where(eq(householdInvites.id, inviteId))
+    await logAudit(c, 'households', invite.householdId, 'INVITE_ENABLED', null, { inviteId })
+  }
+
+  return c.json({ success: true, inviteId })
 })
 
 user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result, c) => {
@@ -409,7 +559,7 @@ user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result,
   }
 }), async (c) => {
   const { id } = c.req.param()
-  const { name } = c.req.valid('json')
+  const { name, invitesEnabled } = c.req.valid('json')
   const globalRole = c.get('globalRole') as string
   const userId = c.get('userId') as string
   const db = getDb(c.env)
@@ -417,17 +567,24 @@ user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result,
   if (globalRole !== 'owner') {
      const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds).where(and(and(eq(userHouseholds.userId, userId), ne(households.status, 'archived')), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0]) as any)
      if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) {
-       throw new HTTPException(403, { message: 'Forbidden: Insufficient permissions to rename household' })
+       throw new HTTPException(403, { message: 'Forbidden: Insufficient permissions to update household' })
      }
   }
 
-  const existing = (await db.select({ name: households.name }).from(households).where(eq(households.id, id)).limit(1).then(res => res[0]) as any)
+  const existing = (await db.select({ name: households.name, invitesEnabled: households.invitesEnabled }).from(households).where(eq(households.id, id)).limit(1).then(res => res[0]) as any)
   if (!existing) throw new HTTPException(404, { message: 'Household not found' })
 
-  await db.update(households).set({ name }).where(eq(households.id, id))
-  await logAudit(c, 'households', id, 'UPDATE', { name: existing.name }, { name })
+  const updates: any = {}
+  if (name !== undefined) updates.name = name
+  if (invitesEnabled !== undefined) updates.invitesEnabled = invitesEnabled
 
-  return c.json({ success: true, name })
+  await db.update(households).set(updates).where(eq(households.id, id))
+  await logAudit(c, 'households', id, 'UPDATE', { name: existing.name, invitesEnabled: existing.invitesEnabled }, updates)
+  if (invitesEnabled !== undefined && invitesEnabled !== existing.invitesEnabled) {
+    await logAudit(c, 'households', id, invitesEnabled ? 'INVITE_ENABLED' : 'INVITE_DISABLED', null, { householdId: id })
+  }
+
+  return c.json({ success: true, name: updates.name ?? existing.name, invitesEnabled: updates.invitesEnabled ?? existing.invitesEnabled })
 })
 
 // Preferences
@@ -1004,7 +1161,9 @@ user.get('/households/:id/members', async (c) => {
       email: users.email,
       displayName: users.displayName,
       avatarUrl: users.avatarUrl,
-      role: userHouseholds.role
+      role: userHouseholds.role,
+      joinedAt: userHouseholds.joinedAt,
+      joinMethod: userHouseholds.joinMethod
     }).from(users).innerJoin(userHouseholds, eq(users.id, userHouseholds.userId)).where(eq(userHouseholds.householdId, id)) as any)
   
   return c.json({
@@ -1016,8 +1175,15 @@ user.get('/households/:id/members', async (c) => {
 user.get('/households/:id/invites', async (c) => {
   const userId = c.get('userId') as string
   const id = c.req.param('id')
+  const globalRole = c.get('globalRole') as string
   const db = getDb(c.env)
-  const results = (await db.select().from(householdInvites).where(and(eq(householdInvites.householdId, id), eq(householdInvites.status, 'pending'))) as any)
+
+  if (globalRole !== 'owner') {
+    const membership = (await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0]) as any)
+    if (!membership || (membership.role !== 'admin' && membership.role !== 'owner')) return c.json({ error: 'Forbidden' }, 403)
+  }
+
+  const results = (await db.select().from(householdInvites).where(eq(householdInvites.householdId, id)).orderBy(desc(householdInvites.createdAt)) as any)
   return c.json({
     success: true,
     data: results

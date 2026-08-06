@@ -56,11 +56,12 @@ const EntityManagerPage = lazy(() => import('./pages/EntityManagerPage'))
 const SubscriptionManagerPage = lazy(() => import('./pages/SubscriptionManagerPage'))
 const ReconciliationPage = lazy(() => import('./pages/ReconciliationPage'))
 const PasskeyChallenge = lazy(() => import('./components/PasskeyChallenge'))
+const HouseholdWizard = lazy(() => import('./components/HouseholdWizard'))
 import { MaintenanceView } from './components/MaintenanceView'
 import { AlertTriangle, WifiOff, ExternalLink } from 'lucide-react'
 
 const AppContent: React.FC = () => {
-  const { user, globalRole } = useAuth()
+  const { user, globalRole, refreshProfile } = useAuth()
   const [currentHash, setCurrentHash] = useState(window.location.hash)
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [isMaintenance, setIsMaintenance] = useState(false)
@@ -68,6 +69,16 @@ const AppContent: React.FC = () => {
   const [isLoadingConfig, setIsLoadingConfig] = useState(true)
   const [retryAttempt, setRetryAttempt] = useState(0)
   const reduced = useReducedMotion()
+  const [profileSynced, setProfileSynced] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(false)
+
+  useEffect(() => {
+    if (user && user.households === undefined && !profileSynced && !profileLoading) {
+      setProfileSynced(true)
+      setProfileLoading(true)
+      refreshProfile().finally(() => setProfileLoading(false))
+    }
+  }, [user, profileSynced, profileLoading, refreshProfile])
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
@@ -231,6 +242,17 @@ const AppContent: React.FC = () => {
 
     // 3. Auth Guard
     if (!user) return <LoginPage />
+
+    // 3a. Household Onboarding Gate: users with zero households must onboard first
+    const householdCount = Array.isArray(user.households) ? user.households.length : null
+    if (householdCount === null && profileLoading) {
+      return (
+        <div className="flex-center min-h-screen bg-black">
+          <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )
+    }
+    if (householdCount === 0) return <HouseholdWizard />
 
     // 3. Owner Portal - Owner Only
     if (isAdminPath) {

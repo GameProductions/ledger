@@ -38,7 +38,8 @@ import {
   trackedExpenses,
   activityLogs,
   users,
-  chargeDescriptors
+  chargeDescriptors,
+  billingProcessors
 } from '#/schema'
 import { billers, merchants, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
@@ -188,6 +189,15 @@ financials.delete('/accounts/:id', async (c) => {
 })
 
 // Charge Descriptors
+financials.get('/charge-descriptors', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  const results = (await db.select().from(chargeDescriptors)
+    .where(eq(chargeDescriptors.householdId, householdId))
+    .orderBy(asc(chargeDescriptors.name)) as any)
+  return c.json({ success: true, data: results || [] })
+})
+
 financials.post('/charge-descriptors', zValidator('json', ChargeDescriptorSchema), async (c) => {
   const householdId = c.get('householdId')
   const data = (c.req.valid('json') as any)
@@ -201,6 +211,45 @@ financials.post('/charge-descriptors', zValidator('json', ChargeDescriptorSchema
   })
   await logAudit(c, 'charge_descriptors', id, 'CREATE', null, data)
   return c.json({ success: true, id })
+})
+
+financials.patch('/charge-descriptors/:id', zValidator('json', z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().optional().nullable(),
+  defaultCategoryId: z.string().optional().nullable(),
+  isActive: z.boolean().optional(),
+})), async (c) => {
+  const householdId = c.get('householdId')
+  const { id } = c.req.param()
+  const data = (c.req.valid('json') as any)
+  const db = getDb(c.env)
+  const existing = (await db.select().from(chargeDescriptors)
+    .where(and(eq(chargeDescriptors.id, id), eq(chargeDescriptors.householdId, householdId)))
+    .limit(1) as any)[0]
+  if (!existing) throw new HTTPException(404, { message: 'Charge descriptor not found' })
+  await db.update(chargeDescriptors).set(data).where(and(eq(chargeDescriptors.id, id), eq(chargeDescriptors.householdId, householdId)))
+  await logAudit(c, 'charge_descriptors', id, 'UPDATE', null, data)
+  return c.json({ success: true })
+})
+
+financials.delete('/charge-descriptors/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const { id } = c.req.param()
+  const db = getDb(c.env)
+  const existing = (await db.select().from(chargeDescriptors)
+    .where(and(eq(chargeDescriptors.id, id), eq(chargeDescriptors.householdId, householdId)))
+    .limit(1) as any)[0]
+  if (!existing) throw new HTTPException(404, { message: 'Charge descriptor not found' })
+  await db.delete(chargeDescriptors).where(and(eq(chargeDescriptors.id, id), eq(chargeDescriptors.householdId, householdId)))
+  await logAudit(c, 'charge_descriptors', id, 'DELETE', null, null)
+  return c.json({ success: true })
+})
+
+// Billing Processors (read-only global registry)
+financials.get('/billing-processors', async (c) => {
+  const db = getDb(c.env)
+  const results = (await db.select().from(billingProcessors).orderBy(asc(billingProcessors.name)) as any)
+  return c.json({ success: true, data: results || [] })
 })
 
 // Credit Cards

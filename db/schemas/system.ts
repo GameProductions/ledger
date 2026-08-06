@@ -357,7 +357,15 @@ export const householdInvites = pgTable('household_invites', {
   status: text('status').default('pending'),
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+  joinCode: text('join_code'),
+  codeLength: integer('code_length').default(6),
+  reusable: boolean('reusable').default(true),
+  disabledAt: text('disabled_at'),
+  joinCount: integer('join_count').default(0),
+}, (table) => ({
+  joinCodeIdx: index('idx_household_invites_join_code').on(table.joinCode),
+  householdIdx: index('idx_household_invites_household').on(table.householdId),
+}));
 
 export const linkedProviders = pgTable('linked_providers', {
   id: text('id').primaryKey(),

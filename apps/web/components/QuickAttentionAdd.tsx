@@ -5,7 +5,7 @@ import { Flag, ShieldAlert, ArrowRightLeft, HandCoins, Copy, Trash2, Plus } from
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
 import { CurrencyInput } from './ui/CurrencyInput'
-import { EntityManagerSelect } from './ui/EntityManagerSelect'
+import { SearchableSelect } from './ui/SearchableSelect'
 import { Checkbox } from './ui/Checkbox'
 
 interface QuickAttentionAddProps {
@@ -28,6 +28,7 @@ interface FormInstance {
 
 export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded }) => {
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
+  const { data: chargeDescriptors = [] } = (useApi('/api/financials/charge-descriptors') as any)
 
   const createEmptyInstance = (): FormInstance => ({
     id: Math.random().toString(36).substr(2, 9),
@@ -233,10 +234,13 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                 </div>
                 <div className="md:col-span-2 pr-16">
                   <label className="text-xs tracking-widest text-secondary mb-1 flex">Charge Descriptor</label>
-                  <EntityManagerSelect
-                    entityType="charge-descriptors"
+                  <SearchableSelect
+                    options={(chargeDescriptors || []).map((cd: any) => ({ value: cd.id, label: cd.name }))}
                     value={inst.chargeDescriptorId}
-                    onChange={(val, item) => handleUpdate(index, { chargeDescriptorId: val, description: (item as any)?.name || inst.description })}
+                    onChange={(val) => {
+                      const cd = (chargeDescriptors || []).find((c: any) => c.id === val)
+                      handleUpdate(index, { chargeDescriptorId: val, description: cd?.name || inst.description })
+                    }}
                     placeholder="Choose or create descriptor..."
                   />
                 </div>

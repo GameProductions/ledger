@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Shield, Edit3, Plus, Send, Copy, Check, Users, UserMinus, ShieldAlert, Trash2, ChevronDown, UserCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Edit3, Plus, Send, Copy, Check, Users, UserMinus, ShieldAlert, Trash2, ChevronDown, UserCheck, KeyRound, Power } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -10,15 +9,41 @@ import { Input } from './ui/Input';
 import { formatHumanError } from '../utils/error-handler';
 import { getApiUrl } from '../utils/api';
 import { InlineToast } from './ui/InlineToast';
-import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const API_URL = getApiUrl();
+
+const formatJoinedAt = (joinedAt?: string | null) => {
+  if (!joinedAt) return '—';
+  const joined = new Date(joinedAt);
+  if (isNaN(joined.getTime())) return '—';
+  const diff = Date.now() - joined.getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.floor(months / 12);
+  return `${years}y ago`;
+};
+
+const joinMethodLabel = (method?: string | null) => {
+  if (!method) return '—';
+  const map: Record<string, string> = {
+    create: 'Founder',
+    invite: 'Invite link',
+    code: 'Invite code',
+    system: 'Seeded'
+  };
+  return map[method] || method;
+};
 
 const HouseholdRegistry: React.FC = () => {
   const { householdId } = useAuth();
   const { data: profile } = (useApi('/api/user/profile') as any);
   const { data: households } = (useApi('/api/user/households') as any);
   const { data: members, mutate: mutateMembers } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any);
+  const { data: invites, mutate: mutateInvites } = (useApi(householdId ? `/api/user/households/${householdId}/invites` : null) as any);
   
   const currentHousehold = useMemo(() => {
     if (Array.isArray(households) && householdId) {
@@ -37,13 +62,20 @@ const HouseholdRegistry: React.FC = () => {
 
   const isAdmin = userRole === 'admin' || userRole === 'owner';
   const isOwner = userRole === 'owner';
-  const reduced = useReducedMotion();
 
   const { showToast } = useToast();
   const [isRenaming, setIsRenaming] = useState(false);
   const [householdName, setHouseholdName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteUrl, setInviteUrl] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteMethod, setInviteMethod] = useState<'link' | 'code' | 'both'>('link');
+  const [inviteCodeLength, setInviteCodeLength] = useState<6 | 8>(6);
+  const [inviteLifetimeHours, setInviteLifetimeHours] = useState<24 | 168>(24);
+  const [inviteReusable, setInviteReusable] = useState(true);
+  const [showInviteOptions, setShowInviteOptions] = useState(false);
+  const [revokingInviteId, setRevokingInviteId] = useState<string | null>(null);
+  const [togglingInvites, setTogglingInvites] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -186,6 +218,8 @@ const HouseholdRegistry: React.FC = () => {
 
   const generateInvite = async () => {
     setLoading(true);
+    setInviteUrl('');
+    setInviteCode('');
     const token = localStorage.getItem('ledger_token');
     try {
       const res = (await fetch(`${API_URL}/api/user/households/invite`, {
@@ -195,16 +229,30 @@ const HouseholdRegistry: React.FC = () => {
                 'Content-Type': 'application/json',
                 'x-household-id': householdId || ''
               },
-              body: JSON.stringify({ email: inviteEmail || undefined })
+              body: JSON.stringify({
+                email: inviteEmail || undefined,
+                method: inviteMethod,
+                codeLength: inviteMethod === 'link' ? undefined : inviteCodeLength,
+                codeLifetimeHours: inviteLifetimeHours,
+                reusable: inviteReusable
+              })
             }) as any);
       const data = (await res.json() as any);
       if (res.ok) {
-        setInviteUrl(`${window.location.origin}/${data.url}`);
+        if (inviteMethod !== 'code') {
+          setInviteUrl(`${window.location.origin}/${data.url}`);
+        }
+        if (inviteMethod !== 'link' && data.code) {
+          setInviteCode(data.code);
+        }
         if (inviteEmail) {
            showToast(`Invitation sent to ${inviteEmail}`, 'success');
+        } else if (inviteMethod !== 'link' && data.code) {
+           showToast('Invite code generated', 'success');
         } else {
            showToast('Invite link created', 'success');
         }
+        mutateInvites();
       } else {
         showToast(formatHumanError(data, 'Invite generation failed'), 'error');
       }
@@ -213,6 +261,61 @@ const HouseholdRegistry: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const revokeInvite = async (inviteId: string) => {
+    setRevokingInviteId(inviteId);
+    const token = localStorage.getItem('ledger_token');
+    try {
+      const res = (await fetch(`${API_URL}/api/user/households/${householdId}/invites/${inviteId}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            }) as any);
+      if (res.ok) {
+        showToast('Invitation revoked', 'success');
+        mutateInvites();
+      } else {
+        const err = (await res.json() as any);
+        showToast(formatHumanError(err, 'Failed to revoke invite'), 'error');
+      }
+    } catch (err: any) {
+      showToast(formatHumanError(err, 'Network error while revoking invite'), 'error');
+    } finally {
+      setRevokingInviteId(null);
+    }
+  };
+
+  const toggleInvitesEnabled = async () => {
+    setTogglingInvites(true);
+    const token = localStorage.getItem('ledger_token');
+    const next = !(currentHousehold?.invitesEnabled ?? true);
+    try {
+      const res = (await fetch(`${API_URL}/api/user/households/${householdId}`, {
+              method: 'PATCH',
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ invitesEnabled: next })
+            }) as any);
+      if (res.ok) {
+        showToast(next ? 'Invites enabled for this household' : 'Invites disabled for this household', 'success');
+        window.location.reload();
+      } else {
+        const err = (await res.json() as any);
+        showToast(formatHumanError(err, 'Failed to toggle invites'), 'error');
+      }
+    } catch (err: any) {
+      showToast(formatHumanError(err, 'Network error while toggling invites'), 'error');
+    } finally {
+      setTogglingInvites(false);
+    }
+  };
+
+  const copyInviteValue = (value: string) => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -292,7 +395,10 @@ const HouseholdRegistry: React.FC = () => {
                                 {m.role}
                              </span>
                           </div>
-                          <p className="text-[10px] text-slate-500 font-mono italic opacity-60 truncate max-w-[120px]">{m.email}</p>
+                           <p className="text-[10px] text-slate-500 font-mono italic opacity-60 truncate max-w-[120px]">{m.email}</p>
+                           <p className="text-[10px] text-slate-600 font-bold tracking-wide">
+                              Joined {formatJoinedAt(m.joinedAt)} · {joinMethodLabel(m.joinMethod)}
+                           </p>
                        </div>
                     </div>
 
@@ -343,7 +449,24 @@ const HouseholdRegistry: React.FC = () => {
                 </h4>
                 <p className="text-xs text-secondary opacity-40 font-bold tracking-tight">Expand your household's collaborative access</p>
               </div>
+              {isAdmin && (
+                <button
+                  onClick={toggleInvitesEnabled}
+                  disabled={togglingInvites}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest transition-all border ${currentHousehold?.invitesEnabled === false ? 'border-red-500/30 text-red-500 bg-red-500/5' : 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5'}`}
+                  title="Toggle household-wide invites"
+                >
+                  <Power size={12} />
+                  {currentHousehold?.invitesEnabled === false ? 'Invites Off' : 'Invites On'}
+                </button>
+              )}
            </div>
+
+           {currentHousehold?.invitesEnabled === false && (
+             <div className="p-3 rounded-2xl border border-red-500/20 bg-red-500/5 text-xs font-bold text-red-400/80 tracking-wide">
+                Invites are currently disabled for this household. Turn them on to generate new invites.
+             </div>
+           )}
 
            <div className="flex gap-3">
               <input 
@@ -363,46 +486,140 @@ const HouseholdRegistry: React.FC = () => {
               </button>
            </div>
 
-            {inviteUrl && (
-              reduced ? (
-                <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4">
-                   <div className="flex-1 overflow-hidden">
-                      <p className="text-[10px] text-emerald-500 font-black tracking-widest mb-1">Invite Link Active (24h)</p>
-                      <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
-                   </div>
-                   <button 
-                     onClick={() => {
-                       navigator.clipboard.writeText(inviteUrl);
-                       setCopied(true);
-                       setTimeout(() => setCopied(false), 2000);
-                     }}
-                     className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-500 hover:bg-white/10'}`}
-                   >
-                     {copied ? <Check size={18} /> : <Copy size={18} />}
-                   </button>
+           {isAdmin && (
+             <>
+              <button
+                onClick={() => setShowInviteOptions(!showInviteOptions)}
+                className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-500 hover:text-emerald-500 transition-all"
+              >
+                <ChevronDown size={12} className={`transition-transform ${showInviteOptions ? 'rotate-180' : ''}`} />
+                Invite Options
+              </button>
+
+              {showInviteOptions && (
+                <div className="p-4 bg-black/40 border border-white/5 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <label className="block">
+                     <span className="text-[10px] font-black tracking-widest text-secondary block mb-1">DELIVERY METHOD</span>
+                     <select
+                       className="w-full bg-black border border-white/10 rounded-lg text-xs font-black py-2 px-2 outline-none hover:border-emerald-500/30 transition-all"
+                       value={inviteMethod}
+                       onChange={e => setInviteMethod(e.target.value as any)}
+                     >
+                        <option value="link">Invite link</option>
+                        <option value="code">Join code</option>
+                        <option value="both">Link + code</option>
+                     </select>
+                   </label>
+                   <label className="block">
+                     <span className="text-[10px] font-black tracking-widest text-secondary block mb-1">CODE LENGTH</span>
+                     <select
+                       className="w-full bg-black border border-white/10 rounded-lg text-xs font-black py-2 px-2 outline-none hover:border-emerald-500/30 transition-all disabled:opacity-40"
+                       value={inviteCodeLength}
+                       onChange={e => setInviteCodeLength(Number(e.target.value) as any)}
+                       disabled={inviteMethod === 'link'}
+                     >
+                        <option value={6}>6 characters</option>
+                        <option value={8}>8 characters</option>
+                     </select>
+                   </label>
+                   <label className="block">
+                     <span className="text-[10px] font-black tracking-widest text-secondary block mb-1">EXPIRY</span>
+                     <select
+                       className="w-full bg-black border border-white/10 rounded-lg text-xs font-black py-2 px-2 outline-none hover:border-emerald-500/30 transition-all"
+                       value={inviteLifetimeHours}
+                       onChange={e => setInviteLifetimeHours(Number(e.target.value) as any)}
+                     >
+                        <option value={24}>24 hours</option>
+                        <option value={168}>7 days</option>
+                     </select>
+                   </label>
+                   <label className="flex items-center gap-3 pt-5 cursor-pointer select-none">
+                     <input
+                       type="checkbox"
+                       checked={inviteReusable}
+                       onChange={e => setInviteReusable(e.target.checked)}
+                       className="w-4 h-4 accent-emerald-500"
+                     />
+                     <span className="text-[10px] font-black tracking-widest text-secondary">REUSABLE INVITE</span>
+                   </label>
                 </div>
-              ) : (
-                <motion.div 
-                   initial={{ opacity: 0, y: 10 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4"
-                >
-                   <div className="flex-1 overflow-hidden">
-                      <p className="text-[10px] text-emerald-500 font-black tracking-widest mb-1">Invite Link Active (24h)</p>
-                      <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
-                   </div>
-                   <button 
-                     onClick={() => {
-                       navigator.clipboard.writeText(inviteUrl);
-                       setCopied(true);
-                       setTimeout(() => setCopied(false), 2000);
-                     }}
-                     className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-500 hover:bg-white/10'}`}
-                   >
-                     {copied ? <Check size={18} /> : <Copy size={18} />}
-                   </button>
-                </motion.div>
-              )
+              )}
+             </>
+            )}
+
+            {inviteUrl && (
+              <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between gap-4">
+                 <div className="flex-1 overflow-hidden">
+                    <p className="text-[10px] text-emerald-500 font-black tracking-widest mb-1">Invite Link Active ({inviteLifetimeHours}h)</p>
+                    <code className="text-xs text-slate-300 font-mono break-all">{inviteUrl}</code>
+                 </div>
+                 <button 
+                   onClick={() => copyInviteValue(inviteUrl)}
+                   className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-500 hover:bg-white/10'}`}
+                 >
+                   {copied ? <Check size={18} /> : <Copy size={18} />}
+                 </button>
+              </div>
+            )}
+
+            {inviteCode && (
+              <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl flex items-center justify-between gap-4">
+                 <div className="flex-1">
+                    <p className="text-[10px] text-blue-400 font-black tracking-widest mb-1">Join Code Active ({inviteLifetimeHours}h{inviteReusable ? ' · Reusable' : ''})</p>
+                    <code className="text-2xl font-mono font-black tracking-[0.4em] text-blue-300">{inviteCode}</code>
+                 </div>
+                 <button 
+                   onClick={() => copyInviteValue(inviteCode)}
+                   className={`p-3 rounded-xl transition-all ${copied ? 'bg-emerald-500 text-black' : 'bg-white/5 text-blue-400 hover:bg-white/10'}`}
+                 >
+                   {copied ? <Check size={18} /> : <Copy size={18} />}
+                 </button>
+              </div>
+            )}
+
+            {isAdmin && Array.isArray(invites) && invites.length > 0 && (
+              <div className="space-y-2 pt-2">
+                 <p className="text-[10px] font-black tracking-widest text-slate-500 flex items-center gap-2">
+                    <KeyRound size={12} /> ACTIVE INVITES ({invites.length})
+                 </p>
+                 {(invites as any[]).map((inv: any) => {
+                    const isExpired = inv.expiresAt && new Date(inv.expiresAt) < new Date();
+                    return (
+                      <div key={inv.id} className="p-3 bg-white/[0.02] border border-white/5 rounded-xl flex items-center justify-between gap-3">
+                         <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {inv.joinCode && (
+                                <code className="font-mono font-black tracking-[0.25em] text-blue-300 text-sm">{inv.joinCode}</code>
+                              )}
+                              {inv.joinCode ? (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-black tracking-widest">CODE</span>
+                              ) : (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-black tracking-widest">LINK</span>
+                              )}
+                              {inv.disabledAt && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-black tracking-widest">REVOKED</span>
+                              )}
+                              {isExpired && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400 font-black tracking-widest">EXPIRED</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-bold tracking-wide mt-1">
+                              {inv.reusable ? 'Reusable' : 'Single-use'} · {inv.joinCount || 0} joined
+                              {inv.expiresAt ? ` · Expires ${new Date(inv.expiresAt).toLocaleString()}` : ''}
+                            </p>
+                         </div>
+                         <button
+                           onClick={() => revokeInvite(inv.id)}
+                           disabled={revokingInviteId === inv.id}
+                           className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                           title="Revoke invite"
+                         >
+                            <Trash2 size={14} />
+                         </button>
+                      </div>
+                    )
+                 })}
+              </div>
             )}
         </div>
       </div>

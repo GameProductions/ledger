@@ -1,8 +1,9 @@
 import React from 'react'
 import { Modal } from './ui/Modal'
-import { EntityManagerSelect } from './ui/EntityManagerSelect'
+import { SearchableSelect, SearchableOption } from './ui/SearchableSelect'
 import { Price } from './Price'
 import { Calendar, Send, CreditCard, Tag, FileText } from 'lucide-react'
+import { useApi } from '../hooks/useApi'
 
 interface LedgerDetails {
   accountId: string
@@ -24,6 +25,11 @@ interface PromoteToLedgerModalProps {
   onSubmit: () => Promise<void>
 }
 
+const toOptions = (items: any[]): SearchableOption[] => (items || []).map((item: any) => ({
+  value: item.id,
+  label: item.name || item.label || item.description || item.id,
+}))
+
 export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
   isOpen,
   onClose,
@@ -35,6 +41,14 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
   handleCreateChargeDescriptor,
   onSubmit,
 }) => {
+  const { data: accountsData } = (useApi('/api/financials/accounts') as any)
+  const { data: categoriesData } = (useApi('/api/financials/categories') as any)
+  const { data: chargeDescriptorsData } = (useApi('/api/financials/charge-descriptors') as any)
+
+  const accountOptions = toOptions(accountsData)
+  const categoryOptions = toOptions(categoriesData)
+  const chargeDescriptorOptions = toOptions(chargeDescriptorsData)
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add to Main Ledger">
       <div className="space-y-6 p-1">
@@ -64,8 +78,8 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
             <p className="text-[10px] text-slate-500 font-bold mb-2">
               Optional — label this charge to standardize descriptions across the ledger.
             </p>
-            <EntityManagerSelect
-              entityType="charge-descriptors"
+            <SearchableSelect
+              options={chargeDescriptorOptions}
               value={ledgerDetails.chargeDescriptorId || ''}
               onChange={(id) => {
                 setLedgerDetails({ ...ledgerDetails, chargeDescriptorId: id || '' })
@@ -84,8 +98,8 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
             <p className="text-[10px] text-slate-500 font-bold mb-2">
               The account used for payment. Type a name to create a new one.
             </p>
-            <EntityManagerSelect
-              entityType="accounts"
+            <SearchableSelect
+              options={accountOptions}
               value={ledgerDetails.accountId}
               onChange={(val) => setLedgerDetails({ ...ledgerDetails, accountId: val })}
               placeholder="Choose or create Account..."
@@ -99,8 +113,8 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
             <p className="text-[10px] text-slate-500 font-bold mb-2">
               Category for expense reports. Type a name to create a new one.
             </p>
-            <EntityManagerSelect
-              entityType="categories"
+            <SearchableSelect
+              options={categoryOptions}
               value={ledgerDetails.categoryId}
               onChange={(val) => setLedgerDetails({ ...ledgerDetails, categoryId: val })}
               placeholder="Choose or create Category..."

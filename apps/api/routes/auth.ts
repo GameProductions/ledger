@@ -13,13 +13,13 @@ import { logAudit, getRequestMetadata } from '../utils'
 import { uint8ArrayToBase64, base64ToUint8Array, uint8ArrayToBase64url, decodeBase64, getRpID, hashIdentifier } from '../auth-utils'
 import { getAAGUIDMetadata } from '../utils/webauthn-metadata'
 import { VaultService } from '../utils/vault.service'
-import { setSignedCookie, getSignedCookie } from 'hono/cookie'
+import { setSignedCookie, getSignedCookie, deleteCookie } from 'hono/cookie'
 import { verify as jwtVerify } from 'hono/jwt'
 import { HTTPException } from 'hono/http-exception'
 import { EmailService } from '../services/email.service'
 import { getDb } from '#/index'
 import { users, passkeys, sessions, crossDeviceAuth } from '#/schema'
-import { eq, or, and, isNull } from 'drizzle-orm'
+import { eq, or, and, isNull, desc } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
@@ -835,28 +835,37 @@ auth.get('/callback/onedrive', async (c) => {
 auth.get('/webauthn/passkeys', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
-  const results = (await db.select({
-      id: passkeys.id,
-      name: passkeys.name,
-      aaguid: passkeys.aaguid,
-      createdAt: passkeys.createdAt,
-      counter: passkeys.counter,
-      lastUsedAt: passkeys.lastUsedAt
-    }).from(passkeys).where(eq(passkeys.userId, userId)) as any)
-  
+  const userPasskeys = (await db.select().from(passkeys).where(eq(passkeys.userId, userId)).orderBy(desc(passkeys.createdAt)) as any)
+
+  const enriched = userPasskeys.map((pk: any) => {
+    const branding = getAAGUIDMetadata(pk.aaguid)
+    return {
+      ...pk,
+      providerName: branding.name,
+      service: branding.service,
+      logo: pk.logo || branding.logo,
+      color: branding.color,
+      description: branding.description,
+      website: branding.website,
+      manufacturer: pk.manufacturer || branding.manufacturer,
+      securityLevel: pk.securityLevel || branding.securityLevel,
+    }
+  })
+
   return c.json({
     success: true,
-    passkeys: results // Frontend expects { passkeys: [...] }
+    passkeys: enriched // Frontend expects { passkeys: [...] }
   })
 })
 
-auth.put('/webauthn/passkeys/:id', zValidator('json', z.object({ name: z.string() })), async (c) => {
+auth.put('/webauthn/passkeys/:id', zValidator('json', z.object({ name: z.string().min(1) })), async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
   const { name } = c.req.valid('json')
   const db = getDb(c.env)
   
   await db.update(passkeys).set({ name }).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
+  await logAudit(c, 'passkeys', id, 'RENAME', null, { name })
   return c.json({ success: true })
 })
 
@@ -864,8 +873,11 @@ auth.delete('/webauthn/passkeys/:id', async (c) => {
   const userId = c.get('userId')
   const { id } = c.req.param()
   const db = getDb(c.env)
-  
+  const vault = new VaultService(db, c.env.JWT_SECRET)
   await db.delete(passkeys).where(and(eq(passkeys.id, id), eq(passkeys.userId, userId)))
+  await vault.deleteSecret(id, 'CREDENTIAL_ID', 'webauthn')
+  await vault.deleteSecret(id, 'PUBLIC_KEY', 'webauthn')
+  await logAudit(c, 'passkeys', id, 'REMOVE', null, null)
   return c.json({ success: true })
 })
 
@@ -934,8 +946,12 @@ async function handleRegisterVerify(c: any) {
     throw new HTTPException(401, { message: 'Invalid or expired WebAuthn challenge' })
   }
 
+  deleteCookie(c, 'webauthn_challenge')
+
+  const attestation = body.attestation || body
+
   const verification = (await verifyRegistrationResponse({
-      response: body,
+      response: attestation,
       expectedChallenge,
       expectedOrigin: c.env.WEB_URL || (c.req.header('origin') || (c.env.ENVIRONMENT === 'production' ? 'https://ledger.gpnet.dev' : 'http://localhost:5173')),
       expectedRPID: getRpID(c),
@@ -984,7 +1000,7 @@ async function handleRegisterVerify(c: any) {
       aaguid: aaguid || null,
       providerName: branding.name,
       icon: branding.icon,
-      transports: JSON.stringify(body.response.transports || []),
+      transports: JSON.stringify(attestation.response.transports || []),
       
       // 🕒 Timestamps
       createdAt: new Date().toISOString(),

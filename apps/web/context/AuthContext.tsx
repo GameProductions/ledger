@@ -75,9 +75,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('ledger_impersonation_active')
 
     // FORENSIC PRIORITY: Prioritize the householdId from the profile if available
-    const hId = newUser.householdId || 'ledger-main-001'
+    const hId = newUser.householdId || null
     setRawHouseholdId(hId)
-    localStorage.setItem('ledger_householdId', hId)
+    localStorage.setItem('ledger_householdId', hId || '')
   }, [])
 
   const logout = React.useCallback(() => {

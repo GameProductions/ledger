@@ -286,13 +286,30 @@ export const JoinHouseholdSchema = z.object({
   token: z.string()
 })
 
+export const JoinHouseholdByCodeSchema = z.object({
+  code: z.string().min(4).max(12).transform(v => v.trim().toUpperCase())
+})
+
+export const CreateHouseholdInviteSchema = z.object({
+  email: z.string().email().optional(),
+  method: z.enum(['link', 'code', 'both']).optional().default('link'),
+  codeLength: z.union([z.literal(6), z.literal(8)]).optional().default(6),
+  codeLifetimeHours: z.union([z.literal(24), z.literal(168)]).optional().default(24),
+  reusable: z.boolean().optional().default(true),
+})
+
+export const UpdateHouseholdInviteSchema = z.object({
+  disabled: z.boolean().optional()
+})
+
 export const CreateHouseholdSchema = z.object({
   name: z.string().min(1).max(100),
   currency: z.string().length(3).optional().default('USD')
 })
 
 export const UpdateHouseholdSchema = z.object({
-  name: z.string().min(1).max(100)
+  name: z.string().min(1).max(100).optional(),
+  invitesEnabled: z.boolean().optional()
 })
 
 export const OwnershipTransferSchema = z.object({
@@ -432,5 +449,14 @@ export const UserOutputSchema = z.object({
   timezone: z.string().nullable().optional(),
   createdAt: z.string().nullable().optional(),
   householdId: z.string().nullable().optional(),
+  households: z.array(z.object({
+    householdId: z.string(),
+    role: z.string().nullable().optional(),
+    joinedAt: z.string().nullable().optional(),
+    joinMethod: z.string().nullable().optional(),
+    name: z.string().nullable().optional(),
+    currency: z.string().nullable().optional(),
+    status: z.string().nullable().optional()
+  })).optional(),
   settingsJson: z.string().nullable().optional()
 })

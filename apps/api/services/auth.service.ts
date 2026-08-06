@@ -112,34 +112,15 @@ export class AuthService {
               .where(eq(userHouseholds.userId, userId))
               .limit(1) as any)
       targetHouseholdId = userHh[0]?.householdId
-      
-      if (!targetHouseholdId) {
-        targetHouseholdId = 'ledger-main-001'
-        try {
-          await db.insert(households).values({
-            id: 'ledger-main-001',
-            name: 'Primary Household',
-            currency: 'USD'
-          }).onConflictDoNothing()
-          await db.insert(userHouseholds).values({
-            userId: userId,
-            householdId: 'ledger-main-001',
-            role: 'admin'
-          }).onConflictDoNothing()
-        } catch (err) {
-          console.error('[Auth Service] Failed to dynamically seed default household:', err)
-        }
-      }
     }
 
     const payload: any = {
       sub: userId,
       sid: sid, // Session Tracker
-      householdId: targetHouseholdId,
       globalRole: user?.globalRole || 'user',
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24,
     }
-    
+    if (targetHouseholdId) payload.householdId = targetHouseholdId
     if (impersonatorId) payload.impersonatorId = impersonatorId
 
     if (!this.env.JWT_SECRET) throw new HTTPException(500, { message: 'Internal error' })
@@ -343,7 +324,8 @@ export class AuthService {
       await db.insert(userHouseholds).values({
         userId: userId,
         householdId: 'ledger-main-001',
-        role: 'admin'
+        role: 'admin',
+        joinMethod: 'create'
       })
       
       return userId

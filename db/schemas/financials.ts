@@ -10,14 +10,18 @@ export const households = pgTable('households', {
   countryCode: text('country_code').default('US'),
   unallocatedBalanceCents: integer('unallocated_balance_cents').default(0),
   status: text('status').default('active'),
+  invitesEnabled: boolean('invites_enabled').default(true).notNull(),
 });
 
 export const userHouseholds = pgTable('user_households', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
   role: text('role').default('member'),
+  joinedAt: text('joined_at').default(sql`CURRENT_TIMESTAMP`),
+  joinMethod: text('join_method'),
 }, (table) => ({
   pk: primaryKey({ columns: [table.userId, table.householdId] }),
+  userIdx: index('idx_user_households_user').on(table.userId),
 }));
 
 export const accounts = pgTable('accounts', {

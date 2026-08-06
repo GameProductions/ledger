@@ -8,10 +8,9 @@ import { useReducedMotion } from '../hooks/useReducedMotion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
 import { Price } from './Price'
-import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy, Check, CheckCircle2 } from 'lucide-react'
+import { Trash2, Edit3, Send, CheckSquare, Square, Save, X, Calendar, Tag, CreditCard, ChevronRight, ChevronDown, AlertTriangle, ArrowLeftRight, Wallet, Copy, Check, CheckCircle2, Search, SearchX } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
-import { EntityManagerSelect } from './ui/EntityManagerSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { DateTimeInput } from './ui/DateTimeInput'
@@ -25,6 +24,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: tracked = [], mutate } = (useApi('/api/tracked-expenses') as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
+  const { data: chargeDescriptors = [] } = (useApi('/api/financials/charge-descriptors') as any)
   const { data: paymentMethodsData } = (useApi('/api/user/payment-methods') as any)
   const paymentMethods: any[] = paymentMethodsData?.data ?? []
   const { formatPrice } = useCurrency()
@@ -65,6 +65,57 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   // Inline Confirmation State
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+
+  // Search State
+  const [searchTerm, setSearchTerm] = useState('')
+
+  // Sort / Filter State
+  const [sortKey, setSortKey] = useState<string>('newest')
+  const [flagFilters, setFlagFilters] = useState<{ attentionRequired: boolean; needsBalanceTransfer: boolean; isBorrowed: boolean }>({
+    attentionRequired: false,
+    needsBalanceTransfer: false,
+    isBorrowed: false,
+  })
+
+  const hasFlagFilters = flagFilters.attentionRequired || flagFilters.needsBalanceTransfer || flagFilters.isBorrowed
+
+  const filtered = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase()
+
+    let items = tracked.filter((item: any) => {
+      if (q) {
+        const match =
+          String(item.description || '').toLowerCase().includes(q) ||
+          String(item.notes || '').toLowerCase().includes(q) ||
+          String(item.confirmationNumber || '').toLowerCase().includes(q) ||
+          String(item.borrowSource || '').toLowerCase().includes(q)
+        if (!match) return false
+      }
+      if (hasFlagFilters) {
+        if (flagFilters.attentionRequired && item.attentionRequired) return true
+        if (flagFilters.needsBalanceTransfer && item.needsBalanceTransfer) return true
+        if (flagFilters.isBorrowed && item.isBorrowed) return true
+        return false
+      }
+      return true
+    })
+
+    const dateOf = (item: any) => new Date(item.transactionDate || item.createdAt || 0).getTime() || 0
+
+    items = [...items].sort((a: any, b: any) => {
+      switch (sortKey) {
+        case 'oldest': return dateOf(a) - dateOf(b)
+        case 'amount-desc': return (b.amountCents ?? 0) - (a.amountCents ?? 0)
+        case 'amount-asc': return (a.amountCents ?? 0) - (b.amountCents ?? 0)
+        case 'alpha-asc': return String(a.description || '').localeCompare(String(b.description || ''))
+        case 'alpha-desc': return String(b.description || '').localeCompare(String(a.description || ''))
+        case 'newest':
+        default: return dateOf(b) - dateOf(a)
+      }
+    })
+
+    return items
+  }, [tracked, searchTerm, sortKey, flagFilters, hasFlagFilters])
 
   const handleBulkDuplicate = async () => {
     if (duplicateCopies <= 0 || selectedIds.length === 0) return
@@ -120,10 +171,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.length === tracked.length) {
+    const visibleIds = filtered.map((t: any) => t.id)
+    if (selectedIds.length === filtered.length && selectedIds.every(id => visibleIds.includes(id))) {
       setSelectedIds([])
     } else {
-      setSelectedIds(tracked.map((t: any) => t.id))
+      setSelectedIds(visibleIds)
     }
   }
 
@@ -306,12 +358,79 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         <div className="mb-4">
           <h4 className="text-xs font-black tracking-[0.2em] text-orange-200/60 flex items-center gap-2 mb-1">
             <ChevronRight size={14} className="text-orange-500" />
-            Pending Tracked Expenses ({tracked.length})
+            Pending Tracked Expenses ({filtered.length})
             <span className="ml-2 px-2 py-0.5 bg-orange-500/10 rounded-full text-orange-400 border border-orange-500/10">
-              {formatPrice(tracked.reduce((sum: number, item: any) => sum + (item.amountCents ?? 0), 0))}
+              {formatPrice(filtered.reduce((sum: number, item: any) => sum + (item.amountCents ?? 0), 0))}
             </span>
           </h4>
           <p className="text-xs text-secondary font-medium">Pending expenses tracked automatically from your accounts. You can review them here, bulk edit them, or match/promote them to the main ledger.</p>
+        </div>
+
+        <div className="relative mb-4">
+          <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary/50" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search tracked expenses..."
+            className="w-full bg-black/60 border border-white/10 rounded-xl pl-11 pr-10 py-3 text-sm text-white focus:border-orange-500/50 outline-none transition-all"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors cursor-pointer"
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black tracking-widest text-secondary/60">Sort</span>
+            <select
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value)}
+              className="bg-black/60 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none focus:border-orange-500/50 transition-all"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="amount-desc">Amount: High to Low</option>
+              <option value="amount-asc">Amount: Low to High</option>
+              <option value="alpha-asc">Description: A to Z</option>
+              <option value="alpha-desc">Description: Z to A</option>
+            </select>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-black tracking-widest text-secondary/60">Filter</span>
+            {[
+              { key: 'attentionRequired' as const, label: 'Needs Attention', icon: <AlertTriangle size={11} /> },
+              { key: 'needsBalanceTransfer' as const, label: 'Balance Transfer', icon: <ArrowLeftRight size={11} /> },
+              { key: 'isBorrowed' as const, label: 'Borrowed', icon: <Wallet size={11} /> },
+            ].map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFlagFilters(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[10px] font-black tracking-widest transition-all cursor-pointer ${flagFilters[f.key] ? 'bg-orange-500/15 border-orange-500/40 text-orange-300' : 'bg-black/60 border-white/10 text-secondary hover:bg-white/5'}`}
+              >
+                {f.icon}
+                {f.label}
+              </button>
+            ))}
+            {(hasFlagFilters || sortKey !== 'newest') && (
+              <button
+                onClick={() => {
+                  setSortKey('newest')
+                  setFlagFilters({ attentionRequired: false, needsBalanceTransfer: false, isBorrowed: false })
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/10 text-[10px] font-black tracking-widest text-slate-500 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <X size={11} /> Reset
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -320,7 +439,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
               onClick={toggleSelectAll}
               className="text-[10px] font-black tracking-widest text-secondary hover:text-primary transition-colors"
             >
-              {selectedIds.length === tracked.length ? 'Deselect All' : 'Select All'}
+              {selectedIds.length === filtered.length ? 'Deselect All' : 'Select All'}
             </button>
           </div>
           
@@ -433,7 +552,18 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
       </div>
 
       <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-        {tracked.map((item: any) => {
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-white/5 rounded-2xl text-slate-600">
+            <SearchX size={28} className="opacity-30" />
+            <span className="text-xs font-black tracking-widest">No tracked expenses match "{searchTerm}"</span>
+            <button
+              onClick={() => setSearchTerm('')}
+              className="text-[10px] font-black tracking-widest text-orange-400 hover:text-orange-300 transition-colors cursor-pointer"
+            >
+              Clear Search
+            </button>
+          </div>
+        ) : filtered.map((item: any) => {
           const itemContent = (
             <>
               {editingId === item.id ? (
@@ -441,11 +571,12 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Charge Descriptor</label>
-                      <EntityManagerSelect
-                        entityType="charge-descriptors"
+                      <SearchableSelect
+                        options={(chargeDescriptors || []).map((cd: any) => ({ value: cd.id, label: cd.name }))}
                         value={editForm?.chargeDescriptorId || ''}
-                        onChange={(val, item) => {
-                          setEditForm({...editForm, chargeDescriptorId: val, description: (item as any)?.name || editForm?.description || ''})
+                        onChange={(val) => {
+                          const cd = (chargeDescriptors || []).find((c: any) => c.id === val)
+                          setEditForm({...editForm, chargeDescriptorId: val, description: cd?.name || editForm?.description || ''})
                         }}
                         placeholder="Choose or create descriptor..."
                         onCreate={handleCreateChargeDescriptor}

@@ -93,7 +93,7 @@ const WEBSITE_KEYS = new Set(['website', 'websiteUrl'])
 const SCRAPE_FIELD_MAP: Record<string, Record<string, string>> = {
   '/api/financials/billers': { name: 'name', logoUrl: 'logoUrl', industry: 'description' },
   '/api/user/service-providers': { name: 'name', iconUrl: 'logoUrl' },
-  '/api/admin/billing/networks': { name: 'name', brandingUrl: 'logoUrl' },
+  '/api/financials/billing-processors': { name: 'name', brandingUrl: 'logoUrl' },
 }
 
 const CREATE_DEFAULTS: Record<string, Record<string, any>> = {
@@ -131,9 +131,11 @@ interface EntityManagerProps {
   emptyMessage?: string
   scope?: 'household' | 'user'
   createPath?: string
+  writePath?: string
+  canWrite?: boolean
 }
 
-const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fields: rawFields, displayFn, idField = 'id', emptyMessage, scope = 'household', createPath }) => {
+const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fields: rawFields, displayFn, idField = 'id', emptyMessage, scope = 'household', createPath, writePath, canWrite = true }) => {
   const fields = rawFields.filter(f => !f.locked)
   const { token, householdId } = useAuth()
   const { showToast } = useToast()
@@ -260,10 +262,10 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
     })
     
     if (editing) {
-      await apiCall(token!, householdId!, 'PATCH', `${apiPath}/${getSafeValue(editing, idField)}`, payload)
+      await apiCall(token!, householdId!, 'PATCH', `${writePath || apiPath}/${getSafeValue(editing, idField)}`, payload)
       showToast(`${title.slice(0, -1)} updated`, 'success')
     } else {
-      await apiCall(token!, householdId!, 'POST', createPath || apiPath, payload)
+      await apiCall(token!, householdId!, 'POST', createPath || writePath || apiPath, payload)
       showToast(`${title.slice(0, -1)} created`, 'success')
     }
     resetForm()
@@ -272,7 +274,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
   }
 
   const handleDelete = async (id: string) => {
-    await apiCall(token!, householdId!, 'DELETE', `${apiPath}/${id}`)
+    await apiCall(token!, householdId!, 'DELETE', `${writePath || apiPath}/${id}`)
     showToast(`${title.slice(0, -1)} removed`, 'success')
     setDeleting(null)
     mutate();
@@ -336,9 +338,11 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
             A–Z {sortAsc ? '↑' : '↓'}
           </button>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true) }} className="flex items-center gap-2 px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-xs font-black tracking-widest text-primary hover:bg-primary/30 transition-all">
-          <Plus size={14} /> Add
-        </button>
+        {canWrite && (
+          <button onClick={() => { resetForm(); setShowForm(true) }} className="flex items-center gap-2 px-4 py-2 bg-primary/20 border border-primary/30 rounded-xl text-xs font-black tracking-widest text-primary hover:bg-primary/30 transition-all">
+            <Plus size={14} /> Add
+          </button>
+        )}
       </div>
 
       {(() => { const desc = ENTITY_CONFIGS.find(c => c.label === title)?.description; return desc ? <p className="text-xs text-white/40 font-medium leading-relaxed">{desc}</p> : null })()}
@@ -355,7 +359,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
       {loading ? (
         <div className="py-12 text-center text-white/30 text-sm">Loading...</div>
       ) : filtered.length === 0 ? (
-        <div className="py-12 text-center text-white/30 text-sm">{emptyMessage || `No ${title.toLowerCase()} yet. Click Add to create one.`}</div>
+        <div className="py-12 text-center text-white/30 text-sm">{emptyMessage || (canWrite ? `No ${title.toLowerCase()} yet. Click Add to create one.` : `No ${title.toLowerCase()} yet.`)}</div>
       ) : (
         <>
         <div className="space-y-2">
@@ -364,7 +368,7 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
             return (
               <div key={itemId} className="group flex items-center justify-between p-4 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] transition-all">
                 <div className="flex-1 min-w-0">{displayFn(item)}</div>
-                <EntityActionButtons onHistory={() => openHistory(item)} onEdit={() => openEdit(item)} onDelete={() => setDeleting(itemId)} />
+                <EntityActionButtons onHistory={() => openHistory(item)} onEdit={canWrite ? () => openEdit(item) : undefined} onDelete={canWrite ? () => setDeleting(itemId) : undefined} />
               </div>
             );
           })}
@@ -503,6 +507,7 @@ interface EntityConfig {
   apiPath: string
   createPath?: string
   scope?: 'household' | 'user'
+  writePath?: string
   displayFn: (item: any) => React.ReactNode
 }
 
@@ -568,7 +573,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
   },
   {
     key: 'billing-processors', label: 'Billing Processors', description: 'Payment processing networks like Stripe, PayPal, etc.',
-    icon: <CreditCard size={18} />, apiPath: '/api/admin/billing/networks',
+    icon: <CreditCard size={18} />, apiPath: '/api/financials/billing-processors', writePath: '/api/admin/billing/networks',
     displayFn: (bp: any) => (
       <div className="flex items-center gap-3">
         <LogoPreview src={bp.brandingUrl} name={bp.name} size={32} className="bg-sky-500/10 border border-sky-500/20" />
@@ -599,7 +604,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
   },
   {
     key: 'charge-descriptors', label: 'Charge Descriptors', description: 'Transaction description patterns used for auto-categorization',
-    icon: <FileText size={18} />, apiPath: '/api/admin/entity-manager/charge-descriptors', createPath: '/api/financials/charge-descriptors',
+    icon: <FileText size={18} />, apiPath: '/api/financials/charge-descriptors',
     displayFn: (cd: any) => (
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
@@ -745,6 +750,8 @@ const ENTITY_CONFIGS: EntityConfig[] = [
 ]
 
 const EntityManagerPage: React.FC = () => {
+  const { globalRole } = useAuth() as any
+  const isPlatformOwner = globalRole === 'owner'
   const [activeTab, setActiveTab] = useState<TabKey>('accounts')
   const [sortAlpha, setSortAlpha] = useState(false)
 
@@ -765,6 +772,8 @@ const EntityManagerPage: React.FC = () => {
         displayFn={config.displayFn}
         scope={config.scope}
         createPath={config.createPath}
+        writePath={config.writePath}
+        canWrite={!config.writePath || isPlatformOwner}
       />
     )
   }

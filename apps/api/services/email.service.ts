@@ -71,14 +71,25 @@ export class EmailService {
     return await this.sendEmail(to, 'Account Ready: Welcome to Ledger', html)
   }
 
-  async sendInvitationEmail(to: string, householdName: string, inviteUrl: string) {
+  async sendInvitationEmail(to: string, householdName: string, inviteUrl: string, inviteCode?: string) {
+    const actionBlock = inviteCode
+      ? `
+        <p style="color: #475569; line-height: 1.6;">Use this join code within the Ledger app:</p>
+        <div style="margin: 32px 0; text-align: center;">
+          <div style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 16px 32px; border-radius: 8px; letter-spacing: 0.4em; font-size: 24px; font-weight: bold; font-family: monospace;">${inviteCode}</div>
+        </div>
+        <p style="color: #475569; line-height: 1.6;">Open Ledger, sign in, and choose <strong>Join a Household</strong> to redeem this code.</p>
+      `
+      : `
+        <div style="margin: 32px 0;">
+          <a href="${inviteUrl}" style="background-color: #10b981; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Accept Invitation</a>
+        </div>
+      `
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
         <h2 style="color: #0f172a; margin-top: 0;">Household Invitation</h2>
         <p style="color: #475569; line-height: 1.6;">You have been invited to join a household: <strong style="color: #0f172a;">${householdName}</strong>. This will allow for shared financial tracking and budgeting.</p>
-        <div style="margin: 32px 0;">
-          <a href="${inviteUrl}" style="background-color: #10b981; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Accept Invitation</a>
-        </div>
+        ${actionBlock}
         <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">If you were not expecting this, please ignore this email.</p>
         <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 32px 0;" />
         <p style="color: #94a3b8; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">LEDGER System</p>

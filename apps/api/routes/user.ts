@@ -423,7 +423,7 @@ user.post('/households/invite', zValidator('json', z.optional(CreateHouseholdInv
   if (body?.email) {
     const emailService = new EmailService(c.env)
     try {
-      await emailService.sendInvitationEmail(body.email, household.name, inviteUrl)
+      await emailService.sendInvitationEmail(body.email, household.name, inviteUrl, method !== 'link' ? joinCode || undefined : undefined)
     } catch (err: any) {
       console.error('[Invitation] Failed to send email:', err)
     }

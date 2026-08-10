@@ -61,7 +61,7 @@ import { MaintenanceView } from './components/MaintenanceView'
 import { AlertTriangle, WifiOff, ExternalLink } from 'lucide-react'
 
 const AppContent: React.FC = () => {
-  const { user, globalRole, refreshProfile } = useAuth()
+  const { user, globalRole, householdId, refreshProfile } = useAuth()
   const [currentHash, setCurrentHash] = useState(window.location.hash)
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [isMaintenance, setIsMaintenance] = useState(false)
@@ -73,12 +73,16 @@ const AppContent: React.FC = () => {
   const [profileLoading, setProfileLoading] = useState(false)
 
   useEffect(() => {
-    if (user && user.households === undefined && !profileSynced && !profileLoading) {
-      setProfileSynced(true)
-      setProfileLoading(true)
-      refreshProfile().finally(() => setProfileLoading(false))
+    if (!user || profileLoading || profileSynced) return
+    const list = user.households
+    const curId = user.householdId || householdId
+    if (Array.isArray(list)) {
+      if (!curId || list.some((h: any) => h.householdId === curId)) return
     }
-  }, [user, profileSynced, profileLoading, refreshProfile])
+    setProfileSynced(true)
+    setProfileLoading(true)
+    refreshProfile().finally(() => setProfileLoading(false))
+  }, [user, householdId, profileLoading, profileSynced, refreshProfile])
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
@@ -244,15 +248,20 @@ const AppContent: React.FC = () => {
     if (!user) return <LoginPage />
 
     // 3a. Household Onboarding Gate: users with zero households must onboard first
-    const householdCount = Array.isArray(user.households) ? user.households.length : null
-    if (householdCount === null && profileLoading) {
-      return (
-        <div className="flex-center min-h-screen bg-black">
-          <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        </div>
-      )
+    if (user) {
+      const list = Array.isArray(user.households) ? user.households : null
+      const curId = user.householdId || householdId
+      const currentInList = list && curId ? list.some((h: any) => h.householdId === curId) : false
+      const resolving = (list === null && (profileLoading || !profileSynced)) || (list && curId && !currentInList && profileLoading)
+      if (resolving) {
+        return (
+          <div className="flex-center min-h-screen bg-black">
+            <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          </div>
+        )
+      }
+      if (list && list.length === 0) return <HouseholdWizard />
     }
-    if (householdCount === 0) return <HouseholdWizard />
 
     // 3. Owner Portal - Owner Only
     if (isAdminPath) {

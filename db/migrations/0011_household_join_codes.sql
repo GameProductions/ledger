@@ -14,4 +14,4 @@ CREATE INDEX IF NOT EXISTS idx_household_invites_join_code ON household_invites 
 CREATE INDEX IF NOT EXISTS idx_user_households_user ON user_households (user_id);
 
 UPDATE user_households SET join_method = 'system' WHERE join_method IS NULL;
-UPDATE user_households SET joined_at = COALESCE(joined_at, CURRENT_TIMESTAMP) WHERE joined_at IS NULL;
+UPDATE user_households SET joined_at = COALESCE(joined_at, CURRENT_TIMESTAMP::text) WHERE joined_at IS NULL;

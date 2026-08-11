@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.151.2",
+  "version": "3.151.4",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -78,6 +78,9 @@
     "brace-expansion": "^5.0.8",
     "js-yaml": "^4.2.0",
     "@babel/core": "^7.29.0",
-    "@hono/node-server": "^2.0.12"
+    "@hono/node-server": "^2.0.12",
+    "typescript-eslint": {
+      "typescript": "$typescript"
+    }
   }
 }

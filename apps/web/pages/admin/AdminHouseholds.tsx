@@ -977,36 +977,40 @@ const AdminHouseholds: React.FC = () => {
                 </div>
               </div>
 
-              {/* Row 2: Household ID + Action Buttons on a distinct separate row */}
-              <div className="flex items-center justify-between gap-2 mb-5 p-2 bg-white/[0.02] border border-white/5 rounded-xl">
-                <span className="text-[11px] text-slate-400 font-mono tracking-tight px-1 truncate" title={h.id}>{h.id}</span>
+              {/* Household ID directly above Action Buttons in the same section container */}
+              <div className="flex flex-col gap-2 mb-5 p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                <span className="text-[11px] text-slate-400 font-mono tracking-tight px-0.5 truncate" title={h.id}>
+                  {h.id}
+                </span>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
                    <button 
                      onClick={() => { setAddressHousehold(h); }}
                      title="Manage encrypted household address"
-                     className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
+                     className="flex-1 py-1.5 px-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-300 hover:scale-[1.02] flex items-center justify-center gap-1.5 text-xs font-bold"
                    >
-                     <MapPin size={14} />
+                     <MapPin size={13} />
+                     <span>Address</span>
                    </button>
                    <button 
                      onClick={() => { setMoveHousehold(h); }}
                      title="Move member data to another household"
-                     className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
+                     className="flex-1 py-1.5 px-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-300 hover:scale-[1.02] flex items-center justify-center gap-1.5 text-xs font-bold"
                    >
-                     <ArrowRightLeft size={14} />
+                     <ArrowRightLeft size={13} />
+                     <span>Move</span>
                    </button>
                    <button 
                      onClick={() => { setEditingId(h.id); setNewName(h.name); }}
                      title="Edit household name"
-                     className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
+                     className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 hover:scale-[1.02]"
                    >
                      <Edit3 size={14} />
                    </button>
                    <button 
                      onClick={() => setConfirmDeleteId(h.id)}
                      title="Delete household"
-                     className="p-1.5 bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-all text-slate-400 hover:scale-105"
+                     className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl transition-all text-slate-400 hover:scale-[1.02]"
                    >
                      <Trash2 size={14} />
                    </button>

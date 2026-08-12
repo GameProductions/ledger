@@ -12,6 +12,8 @@ import {
 import { eq, and, desc, count, sql, inArray, or } from 'drizzle-orm'
 import { logAudit } from '../../utils'
 import { HTTPException } from 'hono/http-exception'
+import { VaultService } from '../../utils/vault.service'
+
 
 const auditMeta = (c: any) => ({
   ipAddress: c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || '0.0.0.0',
@@ -172,6 +174,46 @@ householdAdmin.delete('/:id/members/:userId', async (c) => {
   await db.delete(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
   await logAudit(c, 'households', householdId, 'ADMIN_REMOVE_MEMBER', { userId, role: existing.role }, null, {}, true)
   return c.json({ success: true })
+})
+
+const HouseholdAddressSchema = z.object({
+  street: z.string().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  postalCode: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  formatted: z.string().optional().nullable(),
+}).nullable()
+
+householdAdmin.get('/:id/address', async (c) => {
+  const householdId = c.req.param('id')
+  const db = getDb(c.env)
+  const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  const raw = await vault.getSecret(householdId, 'HOUSEHOLD_ADDRESS', 'household')
+  const address = raw ? JSON.parse(raw) : null
+  return c.json({ success: true, data: address })
+})
+
+householdAdmin.put('/:id/address', zValidator('json', HouseholdAddressSchema), async (c) => {
+  const householdId = c.req.param('id')
+  const body = c.req.valid('json')
+  const db = getDb(c.env)
+  const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+
+  if (!body || (!body.street && !body.formatted && !body.city)) {
+    await vault.deleteSecret(householdId, 'HOUSEHOLD_ADDRESS', 'household')
+    await logAudit(c, 'households', householdId, 'ADMIN_REMOVE_ADDRESS', {}, null, {}, true)
+    return c.json({ success: true, data: null })
+  }
+
+  const addressData = {
+    ...body,
+    updatedAt: new Date().toISOString()
+  }
+  await vault.setSecret(householdId, 'HOUSEHOLD_ADDRESS', 'household', JSON.stringify(addressData))
+  await logAudit(c, 'households', householdId, 'ADMIN_SET_ADDRESS', {}, addressData, {}, true)
+  return c.json({ success: true, data: addressData })
 })
 
 const MoveMemberSchema = z.object({

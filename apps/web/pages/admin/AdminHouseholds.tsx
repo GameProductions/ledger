@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
-import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, UserPlus, Info, Database, Cpu, HardDrive } from 'lucide-react';
+import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, UserPlus, Info, Database, Cpu, HardDrive, MapPin, Lock } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,312 @@ const MOVE_CATEGORIES: { key: string; label: string; hint: string }[] = [
   { key: 'liabilitySplits', label: 'Liability Splits', hint: 'Splits involving this member' },
   { key: 'sharedBalances', label: 'Shared Balances', hint: 'Balances shared to/from this member' },
 ];
+
+// --- SUB-COMPONENT: Encrypted Household Address Modal ---
+const HouseholdAddressModal: React.FC<{
+  household: any;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ household, onClose, onSuccess }) => {
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [address, setAddress] = useState<{
+    street: string;
+    unit: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    formatted: string;
+  }>({
+    street: '',
+    unit: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: '',
+    formatted: '',
+  });
+
+  useEffect(() => {
+    if (!household) return;
+    let cancelled = false;
+    const fetchAddress = async () => {
+      try {
+        const token = localStorage.getItem('ledger_token');
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}/api/admin/households/${household.id}/address`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!cancelled && data.success && data.data) {
+          setAddress({
+            street: data.data.street || '',
+            unit: data.data.unit || '',
+            city: data.data.city || '',
+            state: data.data.state || '',
+            postalCode: data.data.postalCode || '',
+            country: data.data.country || '',
+            formatted: data.data.formatted || '',
+          });
+          setQuery(data.data.formatted || data.data.street || '');
+        }
+      } catch (err: any) {
+        console.error('Failed to load household address:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchAddress();
+    return () => { cancelled = true; };
+  }, [household]);
+
+  // Address Autocomplete debounced lookup
+  useEffect(() => {
+    if (!query || query.trim().length < 3) {
+      setSuggestions([]);
+      setSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const token = localStorage.getItem('ledger_token');
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}/api/address/autocomplete?q=${encodeURIComponent(query.trim())}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setSuggestions(data.suggestions || []);
+          setShowDropdown(true);
+        }
+      } catch (err: any) {
+        console.error('Autocomplete error:', err);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const handleSelectSuggestion = (s: any) => {
+    setAddress(prev => ({
+      ...prev,
+      street: s.street || prev.street,
+      city: s.city || prev.city,
+      state: s.state || prev.state,
+      postalCode: s.postalCode || prev.postalCode,
+      country: s.country || prev.country,
+      formatted: s.formatted,
+    }));
+    setQuery(s.formatted);
+    setShowDropdown(false);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const formatted = address.formatted || [address.street, address.unit, address.city, address.state, address.postalCode, address.country].filter(Boolean).join(', ');
+      const res = await fetch(`${apiUrl}/api/admin/households/${household.id}/address`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...address, formatted })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Encrypted address saved to Vault', 'success');
+        onSuccess();
+        onClose();
+      } else {
+        showToast(data.error || 'Failed to save address', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save address', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/admin/households/${household.id}/address`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(null)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Household address removed', 'success');
+        onSuccess();
+        onClose();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to remove address', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={!!household}
+      onClose={onClose}
+      title={`Household Encrypted Address — ${household?.name}`}
+      maxWidth="max-w-2xl"
+      footer={
+        <div className="flex items-center justify-between w-full">
+          {(address.street || address.formatted) ? (
+            <Button variant="danger" onClick={handleRemove} disabled={saving}>Remove Address</Button>
+          ) : <div />}
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button
+              variant="primary"
+              className="bg-emerald-500 hover:bg-emerald-600 text-black font-black"
+              loading={saving}
+              onClick={handleSave}
+            >
+              <Lock size={14} /> Save Encrypted Address
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        {/* Security / Vault Info Header */}
+        <div className="flex items-start gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+          <Lock size={18} className="text-emerald-400 mt-0.5 shrink-0" />
+          <div>
+            <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest">Encrypted Vault Storage</h4>
+            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Household addresses are encrypted at rest using AES-GCM in the Ledger Vault table (<code className="text-emerald-300">vault_v2</code>). Address values are decrypted on demand only for authorized household members.
+            </p>
+          </div>
+        </div>
+
+        {/* Autocomplete Search */}
+        <div className="space-y-2 relative">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">
+            Search Address / Autocomplete Suggestions
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Type an address (e.g. 1600 Pennsylvania Ave)..."
+              value={query}
+              onChange={e => { setQuery(e.target.value); setShowDropdown(true); }}
+              onFocus={() => setShowDropdown(true)}
+              className="w-full bg-black/80 border border-white/10 p-3.5 pl-10 pr-10 rounded-2xl text-xs font-bold text-white outline-none focus:border-emerald-500/50 transition-all"
+            />
+            <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none" />
+            {searching && (
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+            )}
+          </div>
+
+          {/* Autocomplete Dropdown Suggestions */}
+          {showDropdown && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-[#0d0d0d] border border-white/15 rounded-2xl p-2 shadow-2xl space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
+              {suggestions.map((s, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleSelectSuggestion(s)}
+                  className="p-3 hover:bg-emerald-500/10 rounded-xl cursor-pointer transition-all border border-transparent hover:border-emerald-500/20"
+                >
+                  <p className="text-xs font-bold text-white flex items-center gap-2">
+                    <MapPin size={12} className="text-emerald-400 shrink-0" /> {s.formatted}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Individual Editable Address Fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <div className="sm:col-span-2 space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">Street Address</label>
+            <input
+              type="text"
+              placeholder="Street name & number"
+              value={address.street}
+              onChange={e => setAddress(prev => ({ ...prev, street: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">Apt / Unit / Suite (Optional)</label>
+            <input
+              type="text"
+              placeholder="Apt 4B, Suite 100"
+              value={address.unit}
+              onChange={e => setAddress(prev => ({ ...prev, unit: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">City / Town</label>
+            <input
+              type="text"
+              placeholder="City"
+              value={address.city}
+              onChange={e => setAddress(prev => ({ ...prev, city: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">State / Province</label>
+            <input
+              type="text"
+              placeholder="State"
+              value={address.state}
+              onChange={e => setAddress(prev => ({ ...prev, state: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">Postal Code</label>
+            <input
+              type="text"
+              placeholder="Postal code"
+              value={address.postalCode}
+              onChange={e => setAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            />
+          </div>
+
+          <div className="sm:col-span-2 space-y-1">
+            <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">Country</label>
+            <input
+              type="text"
+              placeholder="Country"
+              value={address.country}
+              onChange={e => setAddress(prev => ({ ...prev, country: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            />
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
 
 // --- SUB-COMPONENT: Household Members Management Modal ---
 const HouseholdMembersModal: React.FC<{
@@ -543,6 +849,7 @@ const AdminHouseholds: React.FC = () => {
   const [moveHousehold, setMoveHousehold] = useState<any | null>(null);
   const [membersHousehold, setMembersHousehold] = useState<any | null>(null);
   const [resourceInfoHousehold, setResourceInfoHousehold] = useState<any | null>(null);
+  const [addressHousehold, setAddressHousehold] = useState<any | null>(null);
 
   const fetchHouseholds = async () => {
     try {
@@ -623,7 +930,7 @@ const AdminHouseholds: React.FC = () => {
           <h2 className="text-4xl font-black italic tracking-tighter leading-none">
             Household <span className="text-emerald-500">Registry</span>
           </h2>
-          <p className="text-sm text-slate-500 mt-2 tracking-widest font-bold">Manage households and memberships</p>
+          <p className="text-sm text-slate-500 mt-2 tracking-widest font-bold">Manage households, addresses & memberships</p>
         </div>
         <div className="relative">
           <input 
@@ -676,6 +983,13 @@ const AdminHouseholds: React.FC = () => {
 
                 <div className="flex items-center gap-1 shrink-0">
                    <button 
+                     onClick={() => { setAddressHousehold(h); }}
+                     title="Manage encrypted household address"
+                     className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
+                   >
+                     <MapPin size={14} />
+                   </button>
+                   <button 
                      onClick={() => { setMoveHousehold(h); }}
                      title="Move member data to another household"
                      className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
@@ -689,7 +1003,6 @@ const AdminHouseholds: React.FC = () => {
                    >
                      <Edit3 size={14} />
                    </button>
-                   
                    <button 
                      onClick={() => setConfirmDeleteId(h.id)}
                      title="Delete household"
@@ -762,6 +1075,13 @@ const AdminHouseholds: React.FC = () => {
       </div>
 
       <AnimatePresence>
+        {addressHousehold && (
+          <HouseholdAddressModal
+            household={addressHousehold}
+            onClose={() => setAddressHousehold(null)}
+            onSuccess={fetchHouseholds}
+          />
+        )}
         {moveHousehold && (
           <MoveMemberModal
             sourceHousehold={moveHousehold}

@@ -25,12 +25,48 @@ if (mode === 'pre-commit') {
     const pkgPath = path.join(__dirname, '../package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
     const currentVersion = pkg.version;
+
+    // 1. Prevent double-bumping: If package.json version was ALREADY manually or explicitly bumped relative to HEAD, preserve it
+    let pkgAlreadyBumped = false;
+    try {
+      const headPkgJson = execSync('git show HEAD:package.json', { maxBuffer: 10 * 1024 * 1024, stdio: ['pipe', 'pipe', 'ignore'] }).toString();
+      const headPkg = JSON.parse(headPkgJson);
+      if (headPkg.version !== currentVersion) {
+        pkgAlreadyBumped = true;
+      }
+    } catch (e) {
+      // Ignore if HEAD:package.json is missing or unparseable
+    }
+
+    if (pkgAlreadyBumped) {
+      console.log(`[Auto-Bump/Sync] package.json version (${currentVersion}) already manually bumped. Skipping additional version bump.`);
+      process.exit(0);
+    }
+
     const [major, minor, patch] = currentVersion.split('.').map(Number);
 
-    const hasNewFiles = lines.some(line => line.startsWith('A'));
+    // Exclude migrations, scripts, tests, and documentation from triggering a minor bump
+    const nonFeatureFilePatterns = [
+      /^db\/migrations\//,
+      /^db\/scripts\//,
+      /^scripts\//,
+      /\.sql$/,
+      /\.md$/,
+      /\.test\.[jt]sx?$/,
+      /\.spec\.[jt]sx?$/
+    ];
+
+    const newFiles = lines
+      .filter(line => line.startsWith('A'))
+      .map(line => line.replace(/^A\s+/, '').trim());
+
+    const hasNewFeatureFiles = newFiles.some(file =>
+      !nonFeatureFilePatterns.some(pattern => pattern.test(file))
+    );
+
     const addedLines = diff.split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++'));
     const hasFeatureKeywords = /\b(feat|feature)\b/i.test(addedLines.join('\n'));
-    const isMinor = hasNewFiles || hasFeatureKeywords;
+    const isMinor = hasNewFeatureFiles || hasFeatureKeywords;
 
     let newVersion;
     if (isMinor) {

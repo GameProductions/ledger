@@ -92,6 +92,88 @@ householdAdmin.get('/:id/members', async (c) => {
   return c.json({ success: true, data: members || [] })
 })
 
+// Add member to household
+householdAdmin.post('/:id/members', zValidator('json', z.object({
+  userId: z.string().min(1),
+  role: z.enum(['owner', 'member', 'viewer']).default('member')
+})), async (c) => {
+  const householdId = c.req.param('id')
+  const { userId, role } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const household = await db.select({ id: households.id }).from(households).where(eq(households.id, householdId)).limit(1).then(res => res[0])
+  if (!household) throw new HTTPException(404, { message: 'Household not found' })
+
+  const user = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0])
+  if (!user) throw new HTTPException(404, { message: 'User not found' })
+
+  const existing = await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+    .limit(1).then(res => res[0])
+
+  if (existing) {
+    await db.update(userHouseholds).set({ role }).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+  } else {
+    await db.insert(userHouseholds).values({ userId, householdId, role, joinMethod: 'admin' })
+  }
+
+  await logAudit(c, 'households', householdId, 'ADMIN_ADD_MEMBER', {}, { userId, role }, {}, true)
+  return c.json({ success: true })
+})
+
+// Update member role
+householdAdmin.patch('/:id/members/:userId', zValidator('json', z.object({
+  role: z.enum(['owner', 'member', 'viewer'])
+})), async (c) => {
+  const householdId = c.req.param('id')
+  const userId = c.req.param('userId')
+  const { role } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const existing = await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+    .limit(1).then(res => res[0])
+  if (!existing) throw new HTTPException(404, { message: 'Member not found in household' })
+
+  if (existing.role === 'owner' && role !== 'owner') {
+    const ownerCount = await db.select({ count: count() }).from(userHouseholds)
+      .where(and(eq(userHouseholds.householdId, householdId), eq(userHouseholds.role, 'owner')))
+      .then(res => res[0].count)
+    if (Number(ownerCount) <= 1) {
+      throw new HTTPException(400, { message: 'Cannot demote the last owner of the household' })
+    }
+  }
+
+  await db.update(userHouseholds).set({ role }).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+  await logAudit(c, 'households', householdId, 'ADMIN_UPDATE_MEMBER_ROLE', { oldRole: existing.role }, { newRole: role, userId }, {}, true)
+  return c.json({ success: true })
+})
+
+// Remove member from household
+householdAdmin.delete('/:id/members/:userId', async (c) => {
+  const householdId = c.req.param('id')
+  const userId = c.req.param('userId')
+  const db = getDb(c.env)
+
+  const existing = await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+    .limit(1).then(res => res[0])
+  if (!existing) throw new HTTPException(404, { message: 'Member not found in household' })
+
+  if (existing.role === 'owner') {
+    const ownerCount = await db.select({ count: count() }).from(userHouseholds)
+      .where(and(eq(userHouseholds.householdId, householdId), eq(userHouseholds.role, 'owner')))
+      .then(res => res[0].count)
+    if (Number(ownerCount) <= 1) {
+      throw new HTTPException(400, { message: 'Cannot remove the last owner of the household' })
+    }
+  }
+
+  await db.delete(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, householdId)))
+  await logAudit(c, 'households', householdId, 'ADMIN_REMOVE_MEMBER', { userId, role: existing.role }, null, {}, true)
+  return c.json({ success: true })
+})
+
 const MoveMemberSchema = z.object({
   memberId: z.string(),
   destinationHouseholdId: z.string(),

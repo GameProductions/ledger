@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
-import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown } from 'lucide-react';
+import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, UserPlus, Info, Database, Cpu, HardDrive } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,323 @@ const MOVE_CATEGORIES: { key: string; label: string; hint: string }[] = [
   { key: 'liabilitySplits', label: 'Liability Splits', hint: 'Splits involving this member' },
   { key: 'sharedBalances', label: 'Shared Balances', hint: 'Balances shared to/from this member' },
 ];
+
+// --- SUB-COMPONENT: Household Members Management Modal ---
+const HouseholdMembersModal: React.FC<{
+  household: any;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ household, onClose, onSuccess }) => {
+  const { showToast } = useToast();
+  const [members, setMembers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addingUserId, setAddingUserId] = useState('');
+  const [addingRole, setAddingRole] = useState<'owner' | 'member' | 'viewer'>('member');
+  const [submitting, setSubmitting] = useState(false);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+
+  const fetchMembers = async () => {
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const [resMembers, resUsers] = await Promise.all([
+        fetch(`${apiUrl}/api/admin/households/${household.id}/members`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${apiUrl}/api/admin/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+      const dataMembers = (await resMembers.json() as any);
+      const dataUsers = (await resUsers.json() as any);
+      if (dataMembers.success) setMembers(dataMembers.data || []);
+      if (dataUsers.success) setAllUsers(dataUsers.data || []);
+    } catch (err: any) {
+      console.error('Failed to load household members:', err);
+      showToast(err.message || 'Failed to load members', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (household) fetchMembers();
+  }, [household]);
+
+  const handleUpdateRole = async (userId: string, newRole: string) => {
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = (await fetch(`${apiUrl}/api/admin/households/${household.id}/members/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      }) as any);
+      const data = (await res.json() as any);
+      if (data.success) {
+        showToast('Member role updated', 'success');
+        setMembers(prev => prev.map(m => m.userId === userId ? { ...m, role: newRole } : m));
+        onSuccess();
+      } else {
+        showToast(data.error || 'Failed to update role', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update role', 'error');
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = (await fetch(`${apiUrl}/api/admin/households/${household.id}/members/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }) as any);
+      const data = (await res.json() as any);
+      if (data.success) {
+        showToast('Member removed from household', 'success');
+        setMembers(prev => prev.filter(m => m.userId !== userId));
+        setConfirmRemoveId(null);
+        onSuccess();
+      } else {
+        showToast(data.error || 'Failed to remove member', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to remove member', 'error');
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!addingUserId) return;
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = (await fetch(`${apiUrl}/api/admin/households/${household.id}/members`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: addingUserId, role: addingRole })
+      }) as any);
+      const data = (await res.json() as any);
+      if (data.success) {
+        showToast('Member added to household', 'success');
+        setAddingUserId('');
+        await fetchMembers();
+        onSuccess();
+      } else {
+        showToast(data.error || 'Failed to add member', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to add member', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const availableUsersToAdd = allUsers.filter(u => !members.some(m => m.userId === u.id));
+
+  return (
+    <Modal
+      isOpen={!!household}
+      onClose={onClose}
+      title={`Household Members — ${household?.name}`}
+      maxWidth="max-w-3xl"
+      footer={<Button variant="secondary" onClick={onClose}>Close</Button>}
+    >
+      <div className="space-y-6">
+        {/* Add Member Form */}
+        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+              <UserPlus size={14} /> Add Member to Household
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2 relative">
+              <select
+                value={addingUserId}
+                onChange={e => setAddingUserId(e.target.value)}
+                className="w-full appearance-none bg-black/80 border border-white/10 p-3 pr-10 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+              >
+                <option value="">Select user to add...</option>
+                {availableUsersToAdd.map(u => (
+                  <option key={u.id} value={u.id} className="bg-[#0d0d0d] text-white">
+                    {u.displayName || u.username || u.email} ({u.email})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            </div>
+
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <select
+                  value={addingRole}
+                  onChange={e => setAddingRole(e.target.value as any)}
+                  className="w-full appearance-none bg-black/80 border border-white/10 p-3 pr-8 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50 capitalize"
+                >
+                  <option value="member">Member</option>
+                  <option value="owner">Owner</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              </div>
+              <Button
+                variant="primary"
+                className="bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-black px-4"
+                disabled={!addingUserId || submitting}
+                loading={submitting}
+                onClick={handleAddMember}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Members List */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Active Members ({members.length})
+            </h4>
+          </div>
+
+          {loading ? (
+            <div className="p-6 text-center text-xs text-slate-500 font-bold animate-pulse">Loading household members...</div>
+          ) : members.length === 0 ? (
+            <div className="p-6 text-center text-xs text-slate-500 font-bold bg-white/5 rounded-2xl border border-white/5">
+              No members assigned to this household.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
+              {members.map(m => {
+                const initials = (m.displayName || m.username || m.email || 'U').slice(0, 2).toUpperCase();
+                return (
+                  <div key={m.userId} className="flex items-center justify-between p-3.5 bg-white/5 border border-white/5 hover:border-white/10 rounded-2xl transition-all gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-blue-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-black text-emerald-400 shrink-0">
+                        {initials}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-white truncate">{m.displayName || m.username || 'User'}</p>
+                        <p className="text-[10px] text-slate-500 font-mono truncate">{m.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="relative">
+                        <select
+                          value={m.role}
+                          onChange={e => handleUpdateRole(m.userId, e.target.value)}
+                          className="appearance-none bg-black/60 border border-white/10 px-3 py-1.5 pr-7 rounded-xl text-[11px] font-bold text-slate-300 outline-none focus:border-emerald-500/50 capitalize"
+                        >
+                          <option value="owner">Owner</option>
+                          <option value="member">Member</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
+                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                      </div>
+
+                      {confirmRemoveId === m.userId ? (
+                        <InlineToast
+                          message="Remove?"
+                          type="confirm"
+                          onConfirm={() => handleRemoveMember(m.userId)}
+                          onCancel={() => setConfirmRemoveId(null)}
+                        />
+                      ) : (
+                        <button
+                          onClick={() => setConfirmRemoveId(m.userId)}
+                          title="Remove from household"
+                          className="p-1.5 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl transition-all text-slate-500"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+// --- SUB-COMPONENT: Resource Usage Details Modal ---
+const ResourceUsageInfoModal: React.FC<{
+  household: any;
+  onClose: () => void;
+}> = ({ household, onClose }) => {
+  return (
+    <Modal
+      isOpen={!!household}
+      onClose={onClose}
+      title="Resource Usage Diagnostics"
+      maxWidth="max-w-lg"
+      footer={<Button variant="secondary" onClick={onClose}>Close</Button>}
+    >
+      <div className="space-y-4">
+        <div className="flex items-start gap-3 p-4 bg-emerald-500/5 border border-emerald-500/15 rounded-2xl">
+          <Info size={18} className="text-emerald-400 mt-0.5 shrink-0" />
+          <div>
+            <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest">Resource Metering Overview</h4>
+            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              This meter measures the aggregate multi-tenant resource consumption for <strong className="text-white">{household?.name}</strong> across database indexing, API executions, and storage objects.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="p-3 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Database size={16} className="text-emerald-500" />
+              <div>
+                <p className="text-xs font-black text-white">Database Row Records</p>
+                <p className="text-[10px] text-slate-500 font-bold">Transactions, Bills, Subscriptions, Accounts</p>
+              </div>
+            </div>
+            <span className="text-xs font-mono font-black text-emerald-400">Indexed</span>
+          </div>
+
+          <div className="p-3 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Cpu size={16} className="text-blue-500" />
+              <div>
+                <p className="text-xs font-black text-white">Worker Edge Invocations</p>
+                <p className="text-[10px] text-slate-500 font-bold">API Routing & Session Durable Objects</p>
+              </div>
+            </div>
+            <span className="text-xs font-mono font-black text-blue-400">Stateless</span>
+          </div>
+
+          <div className="p-3 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <HardDrive size={16} className="text-amber-500" />
+              <div>
+                <p className="text-xs font-black text-white">R2 Media & Backup Snapshots</p>
+                <p className="text-[10px] text-slate-500 font-bold">Attachments & Automated Backups</p>
+              </div>
+            </div>
+            <span className="text-xs font-mono font-black text-amber-400">Encrypted</span>
+          </div>
+        </div>
+
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-between">
+          <span className="text-xs font-black text-slate-300">Operational Health Status</span>
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500 text-black tracking-widest uppercase">
+            65% — Optimal
+          </span>
+        </div>
+      </div>
+    </Modal>
+  );
+};
 
 // --- SUB-COMPONENT: Move Member Modal ---
 const MoveMemberModal: React.FC<{
@@ -92,7 +409,7 @@ const MoveMemberModal: React.FC<{
     }
   };
 
-  const selectedMember = members.find(m => m.id === memberId);
+  const selectedMember = members.find(m => m.userId === memberId);
 
   return (
     <Modal
@@ -224,14 +541,16 @@ const AdminHouseholds: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [moveHousehold, setMoveHousehold] = useState<any | null>(null);
+  const [membersHousehold, setMembersHousehold] = useState<any | null>(null);
+  const [resourceInfoHousehold, setResourceInfoHousehold] = useState<any | null>(null);
 
   const fetchHouseholds = async () => {
     try {
       const token = localStorage.getItem('ledger_token');
       const apiUrl = getApiUrl();
       const res = (await fetch(`${apiUrl}/api/admin/households`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-            }) as any);
+        headers: { 'Authorization': `Bearer ${token}` }
+      }) as any);
       const data = (await res.json() as any);
       if (data.success) {
         setHouseholds(data.data || []);
@@ -327,54 +646,56 @@ const AdminHouseholds: React.FC = () => {
             className="bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:border-emerald-500/30 transition-all group flex flex-col justify-between"
           >
             <div>
-              {/* Header: Title + Inline Action Controls */}
-              <div className="flex items-start justify-between gap-3 mb-6">
-                <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0 shadow-lg">
-                    <Shield size={22} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    {editingId === h.id ? (
-                      <div className="flex items-center gap-1.5">
-                        <input 
-                          type="text"
-                          value={newName}
-                          onChange={e => setNewName(e.target.value)}
-                          className="bg-black/80 border border-emerald-500/50 px-2 py-1 rounded-xl text-sm text-white font-black w-full outline-none focus:border-emerald-500"
-                          autoFocus
-                        />
-                        <button onClick={() => handleRename(h.id)} title="Save name" className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-400 rounded-lg transition-all shrink-0"><Activity size={14} /></button>
-                        <button onClick={() => setEditingId(null)} title="Cancel" className="p-1.5 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-lg transition-all shrink-0"><X size={14} /></button>
-                      </div>
-                    ) : (
-                      <h3 className="text-lg font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors truncate" title={h.name}>{h.name}</h3>
-                    )}
-                    <p className="text-[11px] text-slate-500 font-mono tracking-tight truncate mt-0.5" title={h.id}>{h.id}</p>
-                  </div>
+              {/* Row 1: Icon + Household Name (Full width, no truncation) */}
+              <div className="flex items-start gap-3.5 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0 shadow-lg mt-0.5">
+                  <Shield size={22} />
                 </div>
+                <div className="flex-1 min-w-0">
+                  {editingId === h.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <input 
+                        type="text"
+                        value={newName}
+                        onChange={e => setNewName(e.target.value)}
+                        className="bg-black/80 border border-emerald-500/50 px-2 py-1 rounded-xl text-sm text-white font-black w-full outline-none focus:border-emerald-500"
+                        autoFocus
+                      />
+                      <button onClick={() => handleRename(h.id)} title="Save name" className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-400 rounded-lg transition-all shrink-0"><Activity size={14} /></button>
+                      <button onClick={() => setEditingId(null)} title="Cancel" className="p-1.5 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-lg transition-all shrink-0"><X size={14} /></button>
+                    </div>
+                  ) : (
+                    <h3 className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors leading-snug break-words">{h.name}</h3>
+                  )}
+                </div>
+              </div>
 
-                <div className="flex items-center gap-1 shrink-0 pt-0.5">
+              {/* Row 2: Household ID + Action Buttons on a distinct separate row */}
+              <div className="flex items-center justify-between gap-2 mb-5 p-2 bg-white/[0.02] border border-white/5 rounded-xl">
+                <span className="text-[11px] text-slate-400 font-mono tracking-tight px-1 truncate" title={h.id}>{h.id}</span>
+
+                <div className="flex items-center gap-1 shrink-0">
                    <button 
                      onClick={() => { setMoveHousehold(h); }}
                      title="Move member data to another household"
-                     className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 hover:scale-105"
+                     className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
                    >
-                     <ArrowRightLeft size={15} />
+                     <ArrowRightLeft size={14} />
                    </button>
                    <button 
                      onClick={() => { setEditingId(h.id); setNewName(h.name); }}
                      title="Edit household name"
-                     className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 hover:scale-105"
+                     className="p-1.5 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-400 hover:scale-105"
                    >
-                     <Edit3 size={15} />
+                     <Edit3 size={14} />
                    </button>
                    
                    <button 
                      onClick={() => setConfirmDeleteId(h.id)}
                      title="Delete household"
-                     className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl transition-all text-slate-400 hover:scale-105"
+                     className="p-1.5 bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-all text-slate-400 hover:scale-105"
                    >
-                     <Trash2 size={15} />
+                     <Trash2 size={14} />
                    </button>
                 </div>
               </div>
@@ -391,14 +712,22 @@ const AdminHouseholds: React.FC = () => {
               )}
 
               {/* Household Metadata Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 pt-5 border-t border-white/5">
-                 <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
-                     <div className="text-[10px] text-slate-500 font-black tracking-widest uppercase mb-1">Members</div>
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                 <div 
+                   onClick={() => setMembersHousehold(h)}
+                   className="bg-white/[0.02] border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] p-3 rounded-2xl cursor-pointer transition-all group/member"
+                   title="Click to view & edit household members"
+                 >
+                     <div className="flex items-center justify-between mb-1">
+                       <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Members</span>
+                       <span className="text-[9px] font-black text-emerald-400 opacity-0 group-hover/member:opacity-100 transition-opacity">Manage →</span>
+                     </div>
                      <div className="flex items-center gap-2">
                         <Users size={14} className="text-emerald-500 shrink-0" />
                         <span className="text-xs font-bold text-slate-200">{h.memberCount} Member{h.memberCount === 1 ? '' : 's'}</span>
                      </div>
                  </div>
+
                  <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
                     <div className="text-[10px] text-slate-500 font-black tracking-widest uppercase mb-1">Currency</div>
                     <div className="flex items-center gap-2">
@@ -415,7 +744,16 @@ const AdminHouseholds: React.FC = () => {
                   <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full rounded-full" style={{ width: '65%' }} />
                </div>
                <div className="flex justify-between items-center mt-2.5">
-                  <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Resource Usage</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Resource Usage</span>
+                    <button 
+                      onClick={() => setResourceInfoHousehold(h)}
+                      title="View what is counted in resource usage"
+                      className="text-slate-500 hover:text-emerald-400 transition-colors p-0.5 rounded-full hover:bg-white/5"
+                    >
+                      <Info size={13} />
+                    </button>
+                  </div>
                   <span className="text-[10px] text-emerald-400 font-black tracking-widest uppercase">Optimal</span>
                </div>
             </div>
@@ -430,6 +768,19 @@ const AdminHouseholds: React.FC = () => {
             households={households}
             onClose={() => setMoveHousehold(null)}
             onSuccess={fetchHouseholds}
+          />
+        )}
+        {membersHousehold && (
+          <HouseholdMembersModal
+            household={membersHousehold}
+            onClose={() => setMembersHousehold(null)}
+            onSuccess={fetchHouseholds}
+          />
+        )}
+        {resourceInfoHousehold && (
+          <ResourceUsageInfoModal
+            household={resourceInfoHousehold}
+            onClose={() => setResourceInfoHousehold(null)}
           />
         )}
       </AnimatePresence>

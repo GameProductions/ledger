@@ -29,7 +29,7 @@ householdAdmin.get('/', async (c) => {
       name: households.name,
       currency: households.currency,
       createdAt: households.createdAt,
-      memberCount: sql<number>`(SELECT COUNT(*) FROM userHouseholds WHERE householdId = ${households.id})`
+      memberCount: sql<number>`(SELECT COUNT(*) FROM user_households WHERE household_id = ${households.id})`
     }).from(households).orderBy(desc(households.createdAt)) as any)
   
   return c.json({ success: true, data: results || [] })

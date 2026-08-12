@@ -381,9 +381,20 @@ app.get('/.well-known/microsoft-identity-association.json', msVerification)
 
 // 7. Global Error Handler
 app.onError((err: Error, c: Context) => {
-  const status = (err as any).status || 500
-  return apiError(c, err.message, 'INTERNAL_SERVER_ERROR', 'A system error occurred.', status, {
-    path: c.req.path,
-    stack: err.stack
-  })
+  const status = (err as any).status && typeof (err as any).status === 'number' ? (err as any).status : 500
+  const isClientError = status >= 400 && status < 500
+
+  let code = 'INTERNAL_SERVER_ERROR'
+  if (status === 401) code = 'UNAUTHORIZED'
+  else if (status === 403) code = 'FORBIDDEN'
+  else if (status === 404) code = 'NOT_FOUND'
+  else if (status === 409) code = 'CONFLICT'
+  else if (status === 410) code = 'EXPIRED'
+  else if (status === 429) code = 'RATE_LIMITED'
+  else if (isClientError) code = 'BAD_REQUEST'
+
+  const userMsg = isClientError ? (err.message || 'Client Request Error') : 'A system error occurred.'
+  const details = isClientError ? null : { path: c.req.path, stack: err.stack }
+
+  return apiError(c, err.message, code, userMsg, status, details)
 })

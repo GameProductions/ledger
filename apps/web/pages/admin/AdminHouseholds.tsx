@@ -324,89 +324,100 @@ const AdminHouseholds: React.FC = () => {
             key={h.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 border border-white/10 rounded-[2rem] p-8 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
+            className="bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:border-emerald-500/30 transition-all group flex flex-col justify-between"
           >
-            <div className="absolute top-0 right-0 p-6 flex gap-2">
-               <button 
-                 onClick={() => { setMoveHousehold(h); }}
-                 title="Move member data to another household"
-                 className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-500"
-               >
-                 <ArrowRightLeft size={16} />
-               </button>
-               <button 
-                 onClick={() => { setEditingId(h.id); setNewName(h.name); }}
-                 className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-lg transition-all text-slate-500"
-               >
-                 <Edit3 size={16} />
-               </button>
-               
-               {confirmDeleteId === h.id ? (
-                 <InlineToast 
-                   message="Delete household?" 
-                   type="confirm" 
-                   onConfirm={() => handleDelete(h.id)} 
-                   onCancel={() => setConfirmDeleteId(null)} 
-                 />
-               ) : (
-                 <button 
-                   onClick={() => setConfirmDeleteId(h.id)}
-                   className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-lg transition-all text-slate-500"
-                 >
-                   <Trash2 size={16} />
-                 </button>
-               )}
-            </div>
-
-            <div className="flex items-center gap-4 mb-6">
-               <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                  <Shield size={24} />
-               </div>
-               <div>
-                  {editingId === h.id ? (
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="text"
-                        value={newName}
-                        onChange={e => setNewName(e.target.value)}
-                        className="bg-black border border-emerald-500/50 p-1 rounded text-sm text-white font-black"
-                        autoFocus
-                      />
-                      <button onClick={() => handleRename(h.id)} className="text-emerald-500"><Activity size={16} /></button>
-                      <button onClick={() => setEditingId(null)} className="text-red-500"><X size={16} /></button>
-                    </div>
-                  ) : (
-                    <h3 className="text-xl font-black tracking-tight group-hover:text-emerald-400 transition-colors">{h.name}</h3>
-                  )}
-                  <p className="text-xs text-slate-600 font-mono tracking-tighter">{h.id}</p>
-               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-white/5">
-               <div>
-                   <div className="text-[10px] text-slate-600 font-black tracking-widest mb-1">Members</div>
-                   <div className="flex items-center gap-2">
-                      <Users size={14} className="text-emerald-500" />
-                      <span className="text-sm font-bold text-slate-300">{h.memberCount} Members</span>
-                   </div>
-               </div>
-               <div>
-                  <div className="text-[10px] text-slate-600 font-black tracking-widest mb-1">Currency</div>
-                  <div className="flex items-center gap-2">
-                     <Globe size={14} className="text-blue-500" />
-                     <span className="text-sm font-bold text-slate-300">{h.currency}</span>
+            <div>
+              {/* Header: Title + Inline Action Controls */}
+              <div className="flex items-start justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0 shadow-lg">
+                    <Shield size={22} />
                   </div>
-               </div>
+                  <div className="min-w-0 flex-1">
+                    {editingId === h.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input 
+                          type="text"
+                          value={newName}
+                          onChange={e => setNewName(e.target.value)}
+                          className="bg-black/80 border border-emerald-500/50 px-2 py-1 rounded-xl text-sm text-white font-black w-full outline-none focus:border-emerald-500"
+                          autoFocus
+                        />
+                        <button onClick={() => handleRename(h.id)} title="Save name" className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-400 rounded-lg transition-all shrink-0"><Activity size={14} /></button>
+                        <button onClick={() => setEditingId(null)} title="Cancel" className="p-1.5 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-lg transition-all shrink-0"><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <h3 className="text-lg font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors truncate" title={h.name}>{h.name}</h3>
+                    )}
+                    <p className="text-[11px] text-slate-500 font-mono tracking-tight truncate mt-0.5" title={h.id}>{h.id}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                   <button 
+                     onClick={() => { setMoveHousehold(h); }}
+                     title="Move member data to another household"
+                     className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 hover:scale-105"
+                   >
+                     <ArrowRightLeft size={15} />
+                   </button>
+                   <button 
+                     onClick={() => { setEditingId(h.id); setNewName(h.name); }}
+                     title="Edit household name"
+                     className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 hover:scale-105"
+                   >
+                     <Edit3 size={15} />
+                   </button>
+                   
+                   <button 
+                     onClick={() => setConfirmDeleteId(h.id)}
+                     title="Delete household"
+                     className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl transition-all text-slate-400 hover:scale-105"
+                   >
+                     <Trash2 size={15} />
+                   </button>
+                </div>
+              </div>
+
+              {confirmDeleteId === h.id && (
+                <div className="mb-4">
+                  <InlineToast 
+                    message="Delete household?" 
+                    type="confirm" 
+                    onConfirm={() => handleDelete(h.id)} 
+                    onCancel={() => setConfirmDeleteId(null)} 
+                  />
+                </div>
+              )}
+
+              {/* Household Metadata Stats Grid */}
+              <div className="grid grid-cols-2 gap-4 pt-5 border-t border-white/5">
+                 <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
+                     <div className="text-[10px] text-slate-500 font-black tracking-widest uppercase mb-1">Members</div>
+                     <div className="flex items-center gap-2">
+                        <Users size={14} className="text-emerald-500 shrink-0" />
+                        <span className="text-xs font-bold text-slate-200">{h.memberCount} Member{h.memberCount === 1 ? '' : 's'}</span>
+                     </div>
+                 </div>
+                 <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
+                    <div className="text-[10px] text-slate-500 font-black tracking-widest uppercase mb-1">Currency</div>
+                    <div className="flex items-center gap-2">
+                       <Globe size={14} className="text-blue-500 shrink-0" />
+                       <span className="text-xs font-bold text-slate-200">{h.currency || 'USD'}</span>
+                    </div>
+                 </div>
+              </div>
             </div>
 
-            <div className="mt-6">
-               <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
-                  <div className="bg-emerald-500 h-full" style={{ width: '65%' }} />
+            {/* Bottom Progress Bar */}
+            <div className="mt-5 pt-3 border-t border-white/5">
+               <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full rounded-full" style={{ width: '65%' }} />
                </div>
-                <div className="flex justify-between items-center mt-2">
-                   <span className="text-[10px] text-slate-600 font-black tracking-widest">Resource Usage</span>
-                   <span className="text-[10px] text-emerald-500 font-black tracking-widest">Optimal</span>
-                </div>
+               <div className="flex justify-between items-center mt-2.5">
+                  <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Resource Usage</span>
+                  <span className="text-[10px] text-emerald-400 font-black tracking-widest uppercase">Optimal</span>
+               </div>
             </div>
           </motion.div>
         ))}

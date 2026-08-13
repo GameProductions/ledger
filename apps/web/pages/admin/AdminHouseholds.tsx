@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
-import { Home, Building, Landmark, Shield, Heart, Key, Briefcase, Zap, MoreVertical, MapPin, Lock, UserPlus, Info, Database, Cpu, HardDrive, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, Edit3, Trash2 } from 'lucide-react';
+import { Home, Building, Landmark, Shield, Heart, Key, Briefcase, Zap, MoreVertical, MapPin, Lock, UserPlus, Info, Database, Cpu, HardDrive, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, Edit3, Trash2, Plus } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1012,6 +1012,195 @@ const MoveMemberModal: React.FC<{
   );
 };
 
+// --- SUB-COMPONENT: Create Household Modal ---
+const CreateHouseholdModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ isOpen, onClose, onSuccess }) => {
+  const { showToast } = useToast();
+  const [name, setName] = useState('');
+  const [slugId, setSlugId] = useState('');
+  const [icon, setIcon] = useState('Home');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [ownerUserId, setOwnerUserId] = useState('');
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const token = localStorage.getItem('ledger_token');
+    const apiUrl = getApiUrl();
+    fetch(`${apiUrl}/api/admin/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json() as any)
+      .then(d => {
+        if (d.success) setUsersList(d.data || []);
+      })
+      .catch(() => {});
+  }, [isOpen]);
+
+  const handleCreate = async () => {
+    if (!name.trim()) {
+      showToast('Household Name is required', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = await fetch(`${apiUrl}/api/admin/households`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: slugId.trim() || undefined,
+          name: name.trim(),
+          currency: currency.trim().toUpperCase(),
+          icon,
+          avatarUrl: avatarUrl.trim() || null,
+          ownerUserId: ownerUserId || undefined
+        })
+      });
+      const data: any = await res.json();
+      if (data.success) {
+        showToast('New Household Created Successfully', 'success');
+        onSuccess();
+        onClose();
+        setName('');
+        setSlugId('');
+        setIcon('Home');
+        setAvatarUrl('');
+        setCurrency('USD');
+        setOwnerUserId('');
+      } else {
+        showToast(data.error || 'Failed to create household', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to create household', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Create New Household"
+      maxWidth="max-w-xl"
+      footer={
+        <div className="flex items-center justify-end gap-2 w-full">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button 
+            variant="primary" 
+            className="bg-emerald-500 hover:bg-emerald-600 text-black font-black"
+            loading={saving}
+            onClick={handleCreate}
+          >
+            <Plus size={14} className="mr-1" /> Create Household
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Household Name *</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            placeholder="e.g. Vacation Villa / Second Family"
+            autoFocus
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Household ID (Unique Slug - Optional)</label>
+          <input
+            type="text"
+            value={slugId}
+            onChange={(e) => setSlugId(e.target.value)}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-mono font-bold text-white outline-none focus:border-emerald-500/50"
+            placeholder="Auto-generated if left blank (e.g. villa-main-01)"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Choose Household Icon</label>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {PRESET_ICONS.map((item) => {
+              const IconComp = item.icon;
+              const isSelected = icon === item.id && !avatarUrl;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setIcon(item.id); setAvatarUrl(''); }}
+                  title={item.label}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                    isSelected
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-lg'
+                      : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/20'
+                  }`}
+                >
+                  <IconComp size={18} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Or Custom Avatar Image URL (Optional)</label>
+          <input
+            type="text"
+            value={avatarUrl}
+            onChange={(e) => setAvatarUrl(e.target.value)}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-mono font-bold text-white outline-none focus:border-emerald-500/50"
+            placeholder="https://example.com/icon.png"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Currency Code</label>
+            <input
+              type="text"
+              value={currency}
+              maxLength={3}
+              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+              className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-mono font-bold text-white outline-none focus:border-emerald-500/50 uppercase"
+              placeholder="USD"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Assign Initial Owner User</label>
+            <select
+              value={ownerUserId}
+              onChange={(e) => setOwnerUserId(e.target.value)}
+              className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            >
+              <option value="">Current Admin (Default)</option>
+              {usersList.map((u: any) => (
+                <option key={u.id} value={u.id}>
+                  {u.displayName || u.username || u.email} ({u.email})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 
 const AdminHouseholds: React.FC = () => {
   const { showConfirm } = useToast();
@@ -1026,6 +1215,7 @@ const AdminHouseholds: React.FC = () => {
   const [membersHousehold, setMembersHousehold] = useState<any | null>(null);
   const [resourceInfoHousehold, setResourceInfoHousehold] = useState<any | null>(null);
   const [addressHousehold, setAddressHousehold] = useState<any | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const fetchHouseholds = async () => {
     try {
@@ -1103,15 +1293,24 @@ const AdminHouseholds: React.FC = () => {
           </h2>
           <p className="text-sm text-slate-500 mt-2 tracking-widest font-bold">Manage households, addresses & memberships</p>
         </div>
-        <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Filter by ID or Name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:border-emerald-500 transition-all text-sm w-full lg:w-96 shadow-2xl backdrop-blur-sm"
-          />
-          <Search className="absolute left-4 top-4.5 opacity-30 text-emerald-500" size={18} />
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="relative w-full sm:w-80">
+            <input 
+              type="text" 
+              placeholder="Filter by ID or Name..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 pr-6 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:outline-none focus:border-emerald-500 transition-all text-sm w-full shadow-2xl backdrop-blur-sm"
+            />
+            <Search className="absolute left-4 top-4 opacity-30 text-emerald-500" size={18} />
+          </div>
+          <Button
+            variant="primary"
+            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-black font-black px-5 py-3.5 rounded-2xl shrink-0 flex items-center justify-center gap-2"
+            onClick={() => setCreateModalOpen(true)}
+          >
+            <Plus size={18} /> Create Household
+          </Button>
         </div>
       </div>
 
@@ -1317,6 +1516,11 @@ const AdminHouseholds: React.FC = () => {
             onClose={() => setResourceInfoHousehold(null)}
           />
         )}
+        <CreateHouseholdModal
+          isOpen={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={fetchHouseholds}
+        />
       </AnimatePresence>
     </AdminPortal>
   );

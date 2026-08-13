@@ -39,6 +39,48 @@ householdAdmin.get('/', async (c) => {
   return c.json({ success: true, data: results || [] })
 })
 
+householdAdmin.post('/', zValidator('json', z.object({
+  id: z.string().min(1).optional(),
+  name: z.string().min(1),
+  currency: z.string().length(3).optional().default('USD'),
+  icon: z.string().optional().nullable(),
+  avatarUrl: z.string().optional().nullable(),
+  ownerUserId: z.string().optional().nullable(),
+})), async (c) => {
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+  
+  const rawId = data.id?.trim() || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `household-${Date.now()}`
+  const id = rawId.startsWith('household-') || rawId.includes('-') ? rawId : `${rawId}-${Date.now().toString(36).slice(-4)}`
+  
+  const existing = await db.select({ id: households.id }).from(households).where(eq(households.id, id)).limit(1).then(res => res[0])
+  if (existing) throw new HTTPException(400, { message: 'A household with this ID already exists' })
+
+  const newHousehold = {
+    id,
+    name: data.name.trim(),
+    currency: (data.currency || 'USD').toUpperCase(),
+    icon: data.icon || 'Home',
+    avatarUrl: data.avatarUrl?.trim() || null,
+    invitesEnabled: true,
+  }
+
+  await db.insert(households).values(newHousehold)
+
+  const assignUserId = data.ownerUserId || c.get('userId')
+  if (assignUserId) {
+    await db.insert(userHouseholds).values({
+      userId: assignUserId,
+      householdId: id,
+      role: 'owner',
+      joinMethod: 'admin_create',
+    }).onConflictDoNothing()
+  }
+
+  await logAudit(c, 'households', id, 'ADMIN_CREATE', null, newHousehold, {}, true)
+  return c.json({ success: true, data: newHousehold })
+})
+
 householdAdmin.patch('/:id', zValidator('json', z.object({
   id: z.string().min(1).optional(),
   name: z.string().min(1).optional(),

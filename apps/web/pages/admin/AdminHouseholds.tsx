@@ -240,7 +240,7 @@ const HouseholdAddressModal: React.FC<{
         const res = await fetch(`${apiUrl}/api/admin/households/${household.id}/address`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await res.json();
+        const data: any = await res.json();
         if (!cancelled && data.success && data.data) {
           setAddress({
             street: data.data.street || '',
@@ -279,7 +279,7 @@ const HouseholdAddressModal: React.FC<{
         const res = await fetch(`${apiUrl}/api/address/autocomplete?q=${encodeURIComponent(query.trim())}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await res.json();
+        const data: any = await res.json();
         if (data.success) {
           setSuggestions(data.suggestions || []);
           setShowDropdown(true);
@@ -319,7 +319,7 @@ const HouseholdAddressModal: React.FC<{
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...address, formatted })
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (data.success) {
         showToast('Encrypted address saved to Vault', 'success');
         onSuccess();
@@ -344,7 +344,7 @@ const HouseholdAddressModal: React.FC<{
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(null)
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (data.success) {
         showToast('Household address removed', 'success');
         onSuccess();
@@ -1045,7 +1045,7 @@ const AdminHouseholds: React.FC = () => {
             const resAddr = await fetch(`${apiUrl}/api/admin/households/${h.id}/address`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
-            const dataAddr = await resAddr.json();
+            const dataAddr: any = await resAddr.json();
             if (dataAddr.success && dataAddr.data) {
               setAddresses(prev => ({ ...prev, [h.id]: dataAddr.data }));
             }

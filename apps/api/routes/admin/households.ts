@@ -53,19 +53,48 @@ householdAdmin.patch('/:id', zValidator('json', z.object({
   const old = (await db.select().from(households).where(eq(households.id, currentId)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'Household not found' })
 
-  if (data.id && data.id !== currentId) {
-    const existing = await db.select({ id: households.id }).from(households).where(eq(households.id, data.id)).limit(1).then(res => res[0])
+  const { id: newId, ...updateFields } = data
+
+  if (newId && newId !== currentId) {
+    const existing = await db.select({ id: households.id }).from(households).where(eq(households.id, newId)).limit(1).then(res => res[0])
     if (existing) throw new HTTPException(400, { message: 'A household with this ID already exists' })
 
     await db.transaction(async (tx) => {
-      await tx.update(userHouseholds).set({ householdId: data.id }).where(eq(userHouseholds.householdId, currentId))
-      await tx.update(households).set({ ...data, id: data.id }).where(eq(households.id, currentId))
+      // 1. Create new household record with newId
+      await tx.insert(households).values({
+        ...old,
+        ...updateFields,
+        id: newId,
+      })
+
+      // 2. Re-point child tables referencing householdId
+      await tx.update(userHouseholds).set({ householdId: newId }).where(eq(userHouseholds.householdId, currentId))
+      await tx.update(transactions).set({ householdId: newId }).where(eq(transactions.householdId, currentId))
+      await tx.update(bills).set({ householdId: newId }).where(eq(bills.householdId, currentId))
+      await tx.update(subscriptions).set({ householdId: newId }).where(eq(subscriptions.householdId, currentId))
+      await tx.update(transactionPairingRules).set({ householdId: newId }).where(eq(transactionPairingRules.householdId, currentId))
+      await tx.update(paySchedules).set({ householdId: newId }).where(eq(paySchedules.householdId, currentId))
+      await tx.update(payExceptions).set({ householdId: newId }).where(eq(payExceptions.householdId, currentId))
+      await tx.update(userPaymentMethods).set({ householdId: newId }).where(eq(userPaymentMethods.householdId, currentId))
+      await tx.update(userLinkedAccounts).set({ householdId: newId }).where(eq(userLinkedAccounts.householdId, currentId))
+      await tx.update(externalContacts).set({ householdId: newId }).where(eq(externalContacts.householdId, currentId))
+      await tx.update(reminders).set({ householdId: newId }).where(eq(reminders.householdId, currentId))
+      await tx.update(reminders_v2).set({ householdId: newId }).where(eq(reminders_v2.householdId, currentId))
+      await tx.update(personalLoans).set({ householdId: newId }).where(eq(personalLoans.householdId, currentId))
+      await tx.update(liabilitySplits).set({ householdId: newId }).where(eq(liabilitySplits.householdId, currentId))
+      await tx.update(sharedBalances).set({ householdId: newId }).where(eq(sharedBalances.householdId, currentId))
+      await tx.update(activityLogs).set({ householdId: newId }).where(eq(activityLogs.householdId, currentId))
+
+      // 3. Remove old household record
+      await tx.delete(households).where(eq(households.id, currentId))
     })
   } else {
-    await db.update(households).set(data).where(eq(households.id, currentId))
+    if (Object.keys(updateFields).length > 0) {
+      await db.update(households).set(updateFields).where(eq(households.id, currentId))
+    }
   }
 
-  await logAudit(c, 'households', data.id || currentId, 'ADMIN_UPDATE', old, data, {}, true)
+  await logAudit(c, 'households', newId || currentId, 'ADMIN_UPDATE', old, data, {}, true)
   return c.json({ success: true })
 })
 

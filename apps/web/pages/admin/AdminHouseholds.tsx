@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminPortal from './AdminPortal';
-import { Shield, Trash2, Edit3, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, UserPlus, Info, Database, Cpu, HardDrive, MapPin, Lock } from 'lucide-react';
+import { Home, Building, Landmark, Shield, Heart, Key, Briefcase, Zap, MoreVertical, MapPin, Lock, UserPlus, Info, Database, Cpu, HardDrive, Search, Users, Activity, Globe, X, ArrowRightLeft, ShieldAlert, ChevronDown, Edit3, Trash2 } from 'lucide-react';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,6 +8,26 @@ import { InlineToast } from '../../components/ui/InlineToast';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Checkbox } from '../../components/ui/Checkbox';
+
+const PRESET_ICONS = [
+  { id: 'Home', label: 'House', icon: Home },
+  { id: 'Building', label: 'Building', icon: Building },
+  { id: 'Landmark', label: 'Landmark', icon: Landmark },
+  { id: 'Shield', label: 'Shield', icon: Shield },
+  { id: 'Heart', label: 'Heart', icon: Heart },
+  { id: 'Key', label: 'Key', icon: Key },
+  { id: 'Briefcase', label: 'Work', icon: Briefcase },
+  { id: 'Zap', label: 'Zap', icon: Zap },
+];
+
+const renderHouseholdIcon = (iconName?: string, avatarUrl?: string, className: string = "w-6 h-6 text-emerald-400") => {
+  if (avatarUrl && avatarUrl.trim().length > 0) {
+    return <img src={avatarUrl} alt="Household Avatar" className="w-12 h-12 rounded-2xl object-cover border border-emerald-500/30 shadow-lg" />;
+  }
+  const match = PRESET_ICONS.find(i => i.id === iconName);
+  const IconComponent = match ? match.icon : Home;
+  return <IconComponent className={className} />;
+};
 
 const MOVE_CATEGORIES: { key: string; label: string; hint: string }[] = [
   { key: 'membership', label: 'Membership', hint: 'Move the member into the destination household' },
@@ -23,6 +43,161 @@ const MOVE_CATEGORIES: { key: string; label: string; hint: string }[] = [
   { key: 'liabilitySplits', label: 'Liability Splits', hint: 'Splits involving this member' },
   { key: 'sharedBalances', label: 'Shared Balances', hint: 'Balances shared to/from this member' },
 ];
+
+// --- SUB-COMPONENT: Edit Household Details & Icon Modal ---
+const HouseholdEditModal: React.FC<{
+  household: any;
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ household, onClose, onSuccess }) => {
+  const { showToast } = useToast();
+  const [name, setName] = useState(household?.name || '');
+  const [slugId, setSlugId] = useState(household?.id || '');
+  const [selectedIcon, setSelectedIcon] = useState(household?.icon || 'Home');
+  const [avatarUrl, setAvatarUrl] = useState(household?.avatarUrl || '');
+  const [currency, setCurrency] = useState(household?.currency || 'USD');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim() || !slugId.trim()) return;
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('ledger_token');
+      const apiUrl = getApiUrl();
+      const res = (await fetch(`${apiUrl}/api/admin/households/${household.id}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: slugId.trim(),
+          name: name.trim(),
+          currency: currency.trim().toUpperCase(),
+          icon: selectedIcon,
+          avatarUrl: avatarUrl.trim() || null,
+        })
+      }) as any);
+      const data = (await res.json() as any);
+      if (data.success) {
+        showToast('Household details & icon updated', 'success');
+        onSuccess();
+        onClose();
+      } else {
+        showToast(data.error || 'Failed to update household', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update household', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={!!household}
+      onClose={onClose}
+      title="Edit Household & Custom Icon"
+      maxWidth="max-w-xl"
+      footer={
+        <div className="flex items-center justify-end gap-2 w-full">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button
+            variant="primary"
+            className="bg-emerald-500 hover:bg-emerald-600 text-black font-black"
+            loading={saving}
+            onClick={handleSave}
+          >
+            Save Changes
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-5">
+        {/* Preview Avatar / Icon */}
+        <div className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg">
+            {renderHouseholdIcon(selectedIcon, avatarUrl, "w-7 h-7 text-emerald-400")}
+          </div>
+          <div>
+            <h4 className="text-sm font-black text-white">{name || 'Household Name'}</h4>
+            <p className="text-xs text-slate-500 font-mono">{slugId || 'household-id'}</p>
+          </div>
+        </div>
+
+        {/* Household Name */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Household Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+            placeholder="e.g. Main Family Household"
+          />
+        </div>
+
+        {/* Household ID (Slug) */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Household ID (Unique Slug)</label>
+          <input
+            type="text"
+            value={slugId}
+            onChange={e => setSlugId(e.target.value)}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-mono font-bold text-white outline-none focus:border-emerald-500/50"
+            placeholder="e.g. main-household-01"
+          />
+        </div>
+
+        {/* Preset Icon Selector */}
+        <div className="space-y-2">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Choose Household Icon</label>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {PRESET_ICONS.map(item => {
+              const IconComp = item.icon;
+              const isSelected = selectedIcon === item.id && !avatarUrl;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setSelectedIcon(item.id); setAvatarUrl(''); }}
+                  title={item.label}
+                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+                    isSelected ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-lg' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/20'
+                  }`}
+                >
+                  <IconComp size={18} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Custom Avatar Image URL */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Or Custom Avatar Image URL (Optional)</label>
+          <input
+            type="text"
+            value={avatarUrl}
+            onChange={e => setAvatarUrl(e.target.value)}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-mono font-bold text-white outline-none focus:border-emerald-500/50"
+            placeholder="https://example.com/icon.png"
+          />
+        </div>
+
+        {/* Currency */}
+        <div className="space-y-1">
+          <label className="text-[10px] text-slate-400 font-black tracking-widest uppercase ml-1">Currency Code</label>
+          <input
+            type="text"
+            value={currency}
+            maxLength={3}
+            onChange={e => setCurrency(e.target.value.toUpperCase())}
+            className="w-full bg-black/80 border border-white/10 p-3 rounded-xl text-xs font-mono font-bold text-white outline-none focus:border-emerald-500/50 uppercase"
+            placeholder="USD"
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+};
 
 // --- SUB-COMPONENT: Encrypted Household Address Modal ---
 const HouseholdAddressModal: React.FC<{
@@ -841,10 +1016,11 @@ const MoveMemberModal: React.FC<{
 const AdminHouseholds: React.FC = () => {
   const { showConfirm } = useToast();
   const [households, setHouseholds] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newName, setNewName] = useState('');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [editingHousehold, setEditingHousehold] = useState<any | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [moveHousehold, setMoveHousehold] = useState<any | null>(null);
   const [membersHousehold, setMembersHousehold] = useState<any | null>(null);
@@ -860,7 +1036,23 @@ const AdminHouseholds: React.FC = () => {
       }) as any);
       const data = (await res.json() as any);
       if (data.success) {
-        setHouseholds(data.data || []);
+        const list = data.data || [];
+        setHouseholds(list);
+
+        // Fetch addresses for households asynchronously
+        list.forEach(async (h: any) => {
+          try {
+            const resAddr = await fetch(`${apiUrl}/api/admin/households/${h.id}/address`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const dataAddr = await resAddr.json();
+            if (dataAddr.success && dataAddr.data) {
+              setAddresses(prev => ({ ...prev, [h.id]: dataAddr.data }));
+            }
+          } catch (e) {
+            // ignore
+          }
+        });
       }
     } catch (err: any) {
       console.error('Failed to fetch households:', err);
@@ -872,27 +1064,6 @@ const AdminHouseholds: React.FC = () => {
   useEffect(() => {
     fetchHouseholds();
   }, []);
-
-  const handleRename = async (id: string) => {
-    if (!newName) return;
-    try {
-      const token = localStorage.getItem('ledger_token');
-      const apiUrl = getApiUrl();
-      await fetch(`${apiUrl}/api/admin/households/${id}`, {
-        method: 'PATCH',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: newName })
-      });
-      setHouseholds(prev => prev.map(h => h.id === id ? { ...h, name: newName } : h));
-      setEditingId(null);
-      setNewName('');
-    } catch (err: any) {
-      console.error('Rename failed:', err);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     try {
@@ -945,140 +1116,179 @@ const AdminHouseholds: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {(filtered || []).map(h => (
-          <motion.div 
-            key={h.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:border-emerald-500/30 transition-all group flex flex-col justify-between"
-          >
-            <div>
-              {/* Row 1: Icon + Household Name (Full width, no truncation) */}
-              <div className="flex items-start gap-3.5 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0 shadow-lg mt-0.5">
-                  <Shield size={22} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  {editingId === h.id ? (
-                    <div className="flex items-center gap-1.5">
-                      <input 
-                        type="text"
-                        value={newName}
-                        onChange={e => setNewName(e.target.value)}
-                        className="bg-black/80 border border-emerald-500/50 px-2 py-1 rounded-xl text-sm text-white font-black w-full outline-none focus:border-emerald-500"
-                        autoFocus
-                      />
-                      <button onClick={() => handleRename(h.id)} title="Save name" className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-400 rounded-lg transition-all shrink-0"><Activity size={14} /></button>
-                      <button onClick={() => setEditingId(null)} title="Cancel" className="p-1.5 bg-white/5 hover:bg-red-500/20 text-red-400 rounded-lg transition-all shrink-0"><X size={14} /></button>
+        {(filtered || []).map(h => {
+          const addr = addresses[h.id];
+          const isMenuOpen = activeMenuId === h.id;
+
+          return (
+            <motion.div 
+              key={h.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/5 border border-white/10 rounded-[2rem] p-6 hover:border-emerald-500/30 transition-all group flex flex-col justify-between relative overflow-visible"
+            >
+              {/* Overflow Dropdown Button in Top Right Corner */}
+              <div className="absolute top-5 right-5 z-20">
+                <button
+                  onClick={() => setActiveMenuId(isMenuOpen ? null : h.id)}
+                  title="Household actions menu"
+                  className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 shadow-md"
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {isMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setActiveMenuId(null)} />
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#0c1322] border border-white/15 rounded-2xl p-1.5 shadow-2xl z-20 space-y-1 backdrop-blur-2xl">
+                      <button
+                        onClick={() => { setEditingHousehold(h); setActiveMenuId(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white transition-all text-left"
+                      >
+                        <Edit3 size={14} className="text-emerald-400" />
+                        <span>Edit Household & Icon</span>
+                      </button>
+                      <button
+                        onClick={() => { setAddressHousehold(h); setActiveMenuId(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white transition-all text-left"
+                      >
+                        <MapPin size={14} className="text-blue-400" />
+                        <span>Encrypted Address</span>
+                      </button>
+                      <button
+                        onClick={() => { setMoveHousehold(h); setActiveMenuId(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white transition-all text-left"
+                      >
+                        <ArrowRightLeft size={14} className="text-orange-400" />
+                        <span>Move Member Data</span>
+                      </button>
+                      <div className="border-t border-white/5 my-1" />
+                      <button
+                        onClick={() => { setConfirmDeleteId(h.id); setActiveMenuId(null); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/15 transition-all text-left"
+                      >
+                        <Trash2 size={14} />
+                        <span>Delete Household</span>
+                      </button>
                     </div>
-                  ) : (
-                    <h3 className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors leading-snug break-words">{h.name}</h3>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
 
-              {/* Household ID directly above Action Buttons in the same section container */}
-              <div className="flex flex-col gap-2 mb-5 p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
-                <span className="text-[11px] text-slate-400 font-mono tracking-tight px-0.5 truncate" title={h.id}>
-                  {h.id}
-                </span>
-
-                <div className="flex items-center gap-1.5 pt-2 border-t border-white/5">
-                   <button 
-                     onClick={() => { setAddressHousehold(h); }}
-                     title="Manage encrypted household address"
-                     className="flex-1 py-1.5 px-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-300 hover:scale-[1.02] flex items-center justify-center gap-1.5 text-xs font-bold"
-                   >
-                     <MapPin size={13} />
-                     <span>Address</span>
-                   </button>
-                   <button 
-                     onClick={() => { setMoveHousehold(h); }}
-                     title="Move member data to another household"
-                     className="flex-1 py-1.5 px-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-300 hover:scale-[1.02] flex items-center justify-center gap-1.5 text-xs font-bold"
-                   >
-                     <ArrowRightLeft size={13} />
-                     <span>Move</span>
-                   </button>
-                   <button 
-                     onClick={() => { setEditingId(h.id); setNewName(h.name); }}
-                     title="Edit household name"
-                     className="p-2 bg-white/5 hover:bg-emerald-500 hover:text-black rounded-xl transition-all text-slate-400 hover:scale-[1.02]"
-                   >
-                     <Edit3 size={14} />
-                   </button>
-                   <button 
-                     onClick={() => setConfirmDeleteId(h.id)}
-                     title="Delete household"
-                     className="p-2 bg-white/5 hover:bg-red-500 hover:text-white rounded-xl transition-all text-slate-400 hover:scale-[1.02]"
-                   >
-                     <Trash2 size={14} />
-                   </button>
+              <div>
+                {/* Header: Household Icon / Avatar + Full-Width Household Name */}
+                <div className="flex items-start gap-3.5 mb-4 pr-10">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg mt-0.5">
+                    {renderHouseholdIcon(h.icon, h.avatarUrl)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl font-black tracking-tight text-white group-hover:text-emerald-400 transition-colors leading-snug break-words">
+                      {h.name}
+                    </h3>
+                  </div>
                 </div>
-              </div>
 
-              {confirmDeleteId === h.id && (
-                <div className="mb-4">
-                  <InlineToast 
-                    message="Delete household?" 
-                    type="confirm" 
-                    onConfirm={() => handleDelete(h.id)} 
-                    onCancel={() => setConfirmDeleteId(null)} 
-                  />
-                </div>
-              )}
-
-              {/* Household Metadata Stats Grid */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                 <div 
-                   onClick={() => setMembersHousehold(h)}
-                   className="bg-white/[0.02] border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] p-3 rounded-2xl cursor-pointer transition-all group/member"
-                   title="Click to view & edit household members"
-                 >
-                     <div className="flex items-center justify-between mb-1">
-                       <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Members</span>
-                       <span className="text-[9px] font-black text-emerald-400 opacity-0 group-hover/member:opacity-100 transition-opacity">Manage →</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                        <Users size={14} className="text-emerald-500 shrink-0" />
-                        <span className="text-xs font-bold text-slate-200">{h.memberCount} Member{h.memberCount === 1 ? '' : 's'}</span>
-                     </div>
-                 </div>
-
-                 <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
-                    <div className="text-[10px] text-slate-500 font-black tracking-widest uppercase mb-1">Currency</div>
-                    <div className="flex items-center gap-2">
-                       <Globe size={14} className="text-blue-500 shrink-0" />
-                       <span className="text-xs font-bold text-slate-200">{h.currency || 'USD'}</span>
-                    </div>
-                 </div>
-              </div>
-            </div>
-
-            {/* Bottom Progress Bar */}
-            <div className="mt-5 pt-3 border-t border-white/5">
-               <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full rounded-full" style={{ width: '65%' }} />
-               </div>
-               <div className="flex justify-between items-center mt-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Resource Usage</span>
-                    <button 
-                      onClick={() => setResourceInfoHousehold(h)}
-                      title="View what is counted in resource usage"
-                      className="text-slate-500 hover:text-emerald-400 transition-colors p-0.5 rounded-full hover:bg-white/5"
+                {/* Household ID + Household Address in the card section container */}
+                <div className="flex flex-col gap-2 mb-5 p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Household ID</span>
+                    <button
+                      onClick={() => setEditingHousehold(h)}
+                      className="text-[9px] font-black text-emerald-400 hover:underline"
                     >
-                      <Info size={13} />
+                      Edit ID
                     </button>
                   </div>
-                  <span className="text-[10px] text-emerald-400 font-black tracking-widest uppercase">Optimal</span>
-               </div>
-            </div>
-          </motion.div>
-        ))}
+                  <span className="text-xs font-mono font-bold text-slate-300 truncate" title={h.id}>
+                    {h.id}
+                  </span>
+
+                  {/* Encrypted Address Box in place of action buttons */}
+                  <div
+                    onClick={() => setAddressHousehold(h)}
+                    className="mt-1 p-2.5 bg-white/5 hover:bg-emerald-500/10 border border-white/5 hover:border-emerald-500/30 rounded-xl cursor-pointer transition-all flex items-center gap-2 group/addr"
+                    title="Click to manage encrypted household address"
+                  >
+                    <MapPin size={14} className={addr?.formatted ? "text-emerald-400 shrink-0" : "text-slate-500 shrink-0"} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold text-slate-300 truncate">
+                        {addr?.formatted || addr?.street ? (addr.formatted || addr.street) : <span className="text-slate-500 italic font-normal">No address assigned — click to set</span>}
+                      </p>
+                    </div>
+                    <span className="text-[9px] font-black text-emerald-400 opacity-0 group-hover/addr:opacity-100 transition-opacity">Edit</span>
+                  </div>
+                </div>
+
+                {confirmDeleteId === h.id && (
+                  <div className="mb-4">
+                    <InlineToast 
+                      message="Delete household?" 
+                      type="confirm" 
+                      onConfirm={() => handleDelete(h.id)} 
+                      onCancel={() => setConfirmDeleteId(null)} 
+                    />
+                  </div>
+                )}
+
+                {/* Household Metadata Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+                   <div 
+                     onClick={() => setMembersHousehold(h)}
+                     className="bg-white/[0.02] border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] p-3 rounded-2xl cursor-pointer transition-all group/member"
+                     title="Click to view & edit household members"
+                   >
+                       <div className="flex items-center justify-between mb-1">
+                         <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Members</span>
+                         <span className="text-[9px] font-black text-emerald-400 opacity-0 group-hover/member:opacity-100 transition-opacity">Manage →</span>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <Users size={14} className="text-emerald-500 shrink-0" />
+                          <span className="text-xs font-bold text-slate-200">{h.memberCount} Member{h.memberCount === 1 ? '' : 's'}</span>
+                       </div>
+                   </div>
+
+                   <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
+                      <div className="text-[10px] text-slate-500 font-black tracking-widest uppercase mb-1">Currency</div>
+                      <div className="flex items-center gap-2">
+                         <Globe size={14} className="text-blue-500 shrink-0" />
+                         <span className="text-xs font-bold text-slate-200">{h.currency || 'USD'}</span>
+                      </div>
+                   </div>
+                </div>
+              </div>
+
+              {/* Bottom Progress Bar */}
+              <div className="mt-5 pt-3 border-t border-white/5">
+                 <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full rounded-full" style={{ width: '65%' }} />
+                 </div>
+                 <div className="flex justify-between items-center mt-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-black tracking-widest uppercase">Resource Usage</span>
+                      <button 
+                        onClick={() => setResourceInfoHousehold(h)}
+                        title="View what is counted in resource usage"
+                        className="text-slate-500 hover:text-emerald-400 transition-colors p-0.5 rounded-full hover:bg-white/5"
+                      >
+                        <Info size={13} />
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-black tracking-widest uppercase">Optimal</span>
+                 </div>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       <AnimatePresence>
+        {editingHousehold && (
+          <HouseholdEditModal
+            household={editingHousehold}
+            onClose={() => setEditingHousehold(null)}
+            onSuccess={fetchHouseholds}
+          />
+        )}
         {addressHousehold && (
           <HouseholdAddressModal
             household={addressHousehold}

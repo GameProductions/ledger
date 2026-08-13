@@ -30,6 +30,8 @@ householdAdmin.get('/', async (c) => {
       id: households.id,
       name: households.name,
       currency: households.currency,
+      icon: households.icon,
+      avatarUrl: households.avatarUrl,
       createdAt: households.createdAt,
       memberCount: sql<number>`(SELECT COUNT(*) FROM user_households WHERE household_id = ${households.id})`
     }).from(households).orderBy(desc(households.createdAt)) as any)
@@ -38,19 +40,32 @@ householdAdmin.get('/', async (c) => {
 })
 
 householdAdmin.patch('/:id', zValidator('json', z.object({
+  id: z.string().min(1).optional(),
   name: z.string().min(1).optional(),
-  currency: z.string().length(3).optional()
+  currency: z.string().length(3).optional(),
+  icon: z.string().optional().nullable(),
+  avatarUrl: z.string().optional().nullable(),
 })), async (c) => {
-  const id = c.req.param('id')
-  const data = (c.req.valid('json') as any)
+  const currentId = c.req.param('id')
+  const data = c.req.valid('json') as any
   const db = getDb(c.env)
   
-  const old = (await db.select().from(households).where(eq(households.id, id)).limit(1).then(res => res[0]) as any)
+  const old = (await db.select().from(households).where(eq(households.id, currentId)).limit(1).then(res => res[0]) as any)
   if (!old) throw new HTTPException(404, { message: 'Household not found' })
 
-  await db.update(households).set({ ...data, updatedAt: sql`CURRENT_TIMESTAMP` }).where(eq(households.id, id))
-  await logAudit(c, 'households', id, 'ADMIN_UPDATE', old, data, {}, true)
-  
+  if (data.id && data.id !== currentId) {
+    const existing = await db.select({ id: households.id }).from(households).where(eq(households.id, data.id)).limit(1).then(res => res[0])
+    if (existing) throw new HTTPException(400, { message: 'A household with this ID already exists' })
+
+    await db.transaction(async (tx) => {
+      await tx.update(userHouseholds).set({ householdId: data.id }).where(eq(userHouseholds.householdId, currentId))
+      await tx.update(households).set({ ...data, id: data.id }).where(eq(households.id, currentId))
+    })
+  } else {
+    await db.update(households).set(data).where(eq(households.id, currentId))
+  }
+
+  await logAudit(c, 'households', data.id || currentId, 'ADMIN_UPDATE', old, data, {}, true)
   return c.json({ success: true })
 })
 

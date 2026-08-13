@@ -11,6 +11,8 @@ export const households = pgTable('households', {
   unallocatedBalanceCents: integer('unallocated_balance_cents').default(0),
   status: text('status').default('active'),
   invitesEnabled: boolean('invites_enabled').default(true).notNull(),
+  icon: text('icon'),
+  avatarUrl: text('avatar_url'),
 });
 
 export const userHouseholds = pgTable('user_households', {

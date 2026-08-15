@@ -33,6 +33,7 @@ export type Bindings = {
   ONEDRIVE_CLIENT_SECRET: string
   GITHUB_TOKEN: string
   GITHUB_REPO: string
+  GOOGLE_MAPS_API_KEY: string
   MAINTENANCE_MODE?: string
   FOUNDATION_URL?: string
   SHARED_SERVICE_SECRET: string

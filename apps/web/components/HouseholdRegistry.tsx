@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Shield, Edit3, Plus, Send, Copy, Check, Users, UserMinus, ShieldAlert, Trash2, ChevronDown, UserCheck, KeyRound, Power } from 'lucide-react';
+import { AddressPanel } from './AddressPanel';
+import { AddressVisibilitySettings } from './AddressVisibilitySettings';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -365,6 +367,14 @@ const HouseholdRegistry: React.FC = () => {
               <Plus size={14} />
               New Household
            </button>
+        </div>
+
+        {/* Address Section */}
+        <div className="pt-4 pb-2 border-t border-white/5 space-y-4">
+          <AddressPanel householdId={householdId!} userRole={userRole} />
+          {isOwner && householdId && (
+            <AddressVisibilitySettings householdId={householdId} />
+          )}
         </div>
 
         {/* Members List */}

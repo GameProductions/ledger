@@ -20,6 +20,7 @@ import { logAudit } from '../utils'
 import { ipRateLimit } from '../utils/rate-limit'
 import { CURRENT_VERSION, VERSION_UPDATES } from '@shared/constants'
 import { EmailService } from '../services/email.service'
+import { VaultService } from '../utils/vault.service'
 import { getDb } from '#/index'
 import { 
   users, userOnboarding, sessions, households, accounts, userHouseholds, 
@@ -31,6 +32,27 @@ import {
 import { eq, and, sql, desc, asc, or, gt, ne, isNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
+
+type AddressVisibility = {
+  admin: 'read-write' | 'read-only' | 'hidden'
+  member: 'read-write' | 'read-only' | 'hidden'
+}
+const DEFAULT_VISIBILITY: AddressVisibility = { admin: 'read-write', member: 'read-only' }
+
+const HouseholdAddressSchema = z.object({
+  street: z.string().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  postalCode: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  formatted: z.string().optional().nullable(),
+}).nullable()
+
+const AddressVisibilitySchema = z.object({
+  admin: z.enum(['read-write', 'read-only', 'hidden']),
+  member: z.enum(['read-write', 'read-only', 'hidden']),
+})
 
 // Profile & Identity
 user.get('/me', (c) => {
@@ -585,6 +607,113 @@ user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result,
   }
 
   return c.json({ success: true, name: updates.name ?? existing.name, invitesEnabled: updates.invitesEnabled ?? existing.invitesEnabled })
+})
+
+// Household Address
+user.get('/households/:id/address', async (c) => {
+  const { id } = c.req.param()
+  const userId = c.get('userId') as string
+  const db = getDb(c.env)
+
+  const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id)))
+    .limit(1).then(res => res[0]) as any)
+  
+  if (!membership) throw new HTTPException(403, { message: 'Forbidden: Not a member of this household' })
+
+  const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  
+  const visRaw = await vault.getSecret(id, 'HOUSEHOLD_ADDRESS_VISIBILITY', 'household')
+  const visibility: AddressVisibility = visRaw ? JSON.parse(visRaw) : DEFAULT_VISIBILITY
+
+  const role = membership.role
+  let access = role === 'owner' ? 'read-write' : visibility[role as keyof AddressVisibility] || 'hidden'
+
+  if (access === 'hidden' && role !== 'owner') {
+    return c.json({ success: true, data: null, hidden: true, visibility: role === 'owner' ? visibility : undefined })
+  }
+
+  const raw = await vault.getSecret(id, 'HOUSEHOLD_ADDRESS', 'household')
+  const address = raw ? JSON.parse(raw) : null
+  
+  return c.json({ success: true, data: address, access, hidden: false, visibility: role === 'owner' ? visibility : undefined })
+})
+
+user.put('/households/:id/address', zValidator('json', HouseholdAddressSchema), async (c) => {
+  const { id } = c.req.param()
+  const userId = c.get('userId') as string
+  const body = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id)))
+    .limit(1).then(res => res[0]) as any)
+  
+  if (!membership) throw new HTTPException(403, { message: 'Forbidden: Not a member of this household' })
+
+  const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  const visRaw = await vault.getSecret(id, 'HOUSEHOLD_ADDRESS_VISIBILITY', 'household')
+  const visibility: AddressVisibility = visRaw ? JSON.parse(visRaw) : DEFAULT_VISIBILITY
+  
+  const role = membership.role
+  const access = role === 'owner' ? 'read-write' : visibility[role as keyof AddressVisibility] || 'hidden'
+
+  if (access !== 'read-write') {
+    throw new HTTPException(403, { message: 'Forbidden: You do not have permission to edit the address' })
+  }
+
+  if (!body || Object.values(body).every(v => v === null || v === '')) {
+    await vault.deleteSecret(id, 'HOUSEHOLD_ADDRESS', 'household')
+    await logAudit(c, 'households', id, 'REMOVE_ADDRESS', {}, null)
+    return c.json({ success: true, data: null })
+  }
+
+  const addressData = { ...body, updatedAt: new Date().toISOString() }
+  await vault.setSecret(id, 'HOUSEHOLD_ADDRESS', 'household', JSON.stringify(addressData))
+  await logAudit(c, 'households', id, 'SET_ADDRESS', {}, addressData)
+  
+  return c.json({ success: true, data: addressData })
+})
+
+user.get('/households/:id/address-visibility', async (c) => {
+  const { id } = c.req.param()
+  const userId = c.get('userId') as string
+  const db = getDb(c.env)
+
+  const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id)))
+    .limit(1).then(res => res[0]) as any)
+  
+  if (!membership || membership.role !== 'owner') {
+    throw new HTTPException(403, { message: 'Forbidden: Only owner can view visibility settings directly' })
+  }
+
+  const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  const visRaw = await vault.getSecret(id, 'HOUSEHOLD_ADDRESS_VISIBILITY', 'household')
+  const visibility: AddressVisibility = visRaw ? JSON.parse(visRaw) : DEFAULT_VISIBILITY
+
+  return c.json({ success: true, data: visibility })
+})
+
+user.put('/households/:id/address-visibility', zValidator('json', AddressVisibilitySchema), async (c) => {
+  const { id } = c.req.param()
+  const userId = c.get('userId') as string
+  const body = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds)
+    .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id)))
+    .limit(1).then(res => res[0]) as any)
+  
+  if (!membership || membership.role !== 'owner') {
+    throw new HTTPException(403, { message: 'Forbidden: Only owner can manage visibility' })
+  }
+
+  const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
+  await vault.setSecret(id, 'HOUSEHOLD_ADDRESS_VISIBILITY', 'household', JSON.stringify(body))
+  await logAudit(c, 'households', id, 'UPDATE_ADDRESS_VISIBILITY', null, body)
+  
+  return c.json({ success: true, data: body })
 })
 
 // Preferences

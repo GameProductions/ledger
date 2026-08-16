@@ -1,6 +1,4 @@
 import { Hono } from 'hono';
-// @ts-expect-error - __STATIC_CONTENT_MANIFEST is provided at build time
-import manifest from '__STATIC_CONTENT_MANIFEST';
 import { app as apiApp } from './index';
 import { FLEET_VERSION } from '@shared/constants';
 import { handleScheduled } from './cron';

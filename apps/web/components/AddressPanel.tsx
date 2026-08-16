@@ -68,7 +68,7 @@ export const AddressPanel: React.FC<AddressPanelProps> = ({ householdId, userRol
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        const result = await res.json();
+        const result = (await res.json()) as any;
         if (result.hidden) {
           setHidden(true);
         } else {
@@ -127,7 +127,7 @@ export const AddressPanel: React.FC<AddressPanelProps> = ({ householdId, userRol
           })
         });
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json()) as any;
           setSuggestions(data.suggestions || []);
           setShowDropdown(true);
         }
@@ -156,7 +156,7 @@ export const AddressPanel: React.FC<AddressPanelProps> = ({ householdId, userRol
         })
       });
       if (res.ok) {
-        const result = await res.json();
+        const result = (await res.json()) as any;
         const details = result.data;
         if (details) {
           if (details.street) setStreet(details.street);

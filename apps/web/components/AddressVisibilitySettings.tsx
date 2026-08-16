@@ -33,7 +33,7 @@ export const AddressVisibilitySettings: React.FC<AddressVisibilitySettingsProps>
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        const result = await res.json();
+        const result = (await res.json()) as any;
         if (result.data) {
           setVisibility(result.data);
         }

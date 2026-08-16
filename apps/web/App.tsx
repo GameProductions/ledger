@@ -14,9 +14,11 @@ import { UserManager } from './components/foundation/admin/UserManager'
 import { getApiUrl } from './utils/api'
 import { useReducedMotion, setReducedMotion } from './hooks/useReducedMotion'
 
-const savedReduced = localStorage.getItem('ledger_reduced_motion')
-if (savedReduced !== null) {
-  setReducedMotion(savedReduced === 'true')
+if (typeof window !== 'undefined') {
+  const savedReduced = localStorage.getItem('ledger_reduced_motion')
+  if (savedReduced !== null) {
+    setReducedMotion(savedReduced === 'true')
+  }
 }
 import logo from './assets/logo.svg'
 

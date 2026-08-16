@@ -103,7 +103,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
-  const [activeThemeId, setActiveThemeId] = useState<string>(localStorage.getItem('ledger_theme') || 'emerald');
+  const [activeThemeId, setActiveThemeId] = useState<string>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_theme') || 'emerald' : 'emerald');
   const [broadcastThemeId, setBroadcastThemeId] = useState<string | null>(null);
 
   // Fetch broadcast theme

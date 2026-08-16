@@ -198,24 +198,45 @@ app.all('/api/*', (c) => {
   return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
 })
 
-// 8. Static Assets & SPA Fallback
-app.get("*", async (c) => {
+// 8. React Router v8 Fullstack SSR
+import { createRequestHandler, RouterContextProvider } from 'react-router';
+// @ts-ignore
+import * as build from '../../build/server';
+
+app.all("*", async (c) => {
   const path = c.req.path;
   const nonce = c.get('cspNonce');
-  
-  const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
-  const res = new Response(assetRes.body as any, assetRes as any);
-  
-  if (res.status === 404) {
-      if (path.startsWith('/api/') || path.startsWith('/auth/')) {
-          return c.json({ error: 'Not Found', path }, 404);
-      }
-      
-      const indexRes = (await c.env.ASSETS.fetch(new Request(new URL('/index.html', c.req.url)) as any) as any);
-      return injectCSPNonce(new Response(indexRes.body as any, indexRes as any), nonce);
+
+  if (path.startsWith('/api/') || path.startsWith('/auth/')) {
+    return c.json({ error: 'Not Found', path }, 404);
   }
-  
-  return injectCSPNonce(res, nonce);
+
+  try {
+    const buildObj = build;
+    if (!buildObj || !(buildObj as any).routes) {
+      const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
+      return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
+    }
+
+    // @ts-ignore
+    const handler = createRequestHandler(buildObj);
+
+    const loadContext = Object.assign(new RouterContextProvider(), {
+      cloudflare: {
+        env: c.env,
+        ctx: c.executionCtx,
+        cf: (c.req.raw as any).cf || {},
+      },
+      env: c.env,
+      ctx: c.executionCtx,
+    });
+
+    const res = await handler(c.req.raw, loadContext);
+    return injectCSPNonce(res, nonce);
+  } catch (error: any) {
+    console.error('React Router SSR Error:', error);
+    return c.text('Internal Server Error', 500);
+  }
 });
 
 app.onError((err, c) => {

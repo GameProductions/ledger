@@ -1,36 +1,30 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
-import pkg from './package.json'
+import { cloudflare } from "@cloudflare/vite-plugin";
+import { reactRouter } from "@react-router/dev/vite";
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './apps/web'),
-      '~': path.resolve(__dirname, './apps/api'),
-      '#': path.resolve(__dirname, './db'),
-      '@shared': path.resolve(__dirname, './packages/shared'),
-    },
-  },
-  define: {
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
-  },
+  assetsInclude: ['**/*.md'],
   server: {
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8790',
+        target: 'http://localhost:8787',
         changeOrigin: true,
-      }
-    }
+      },
+    },
+  },
+  resolve: {
+    tsconfigPaths: true,
   },
   build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-  }
-})
+    rolldownOptions: {
+      external: [/^@modelcontextprotocol\/.*/],
+    },
+  },
+  plugins: [
+    tailwindcss(),
+    cloudflare(),
+    reactRouter(),
+  ],
+});

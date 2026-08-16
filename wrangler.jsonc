@@ -11,7 +11,7 @@
     "@shared": "./packages/shared"
   },
   "assets": {
-    "directory": "./dist",
+    "directory": "./build/client",
     "binding": "ASSETS"
   },
   "routes": [

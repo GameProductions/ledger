@@ -8,6 +8,7 @@ import { InlineToast } from '../../components/ui/InlineToast';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Checkbox } from '../../components/ui/Checkbox';
+import { sanitizeImageUrl } from '../../utils/security';
 
 const PRESET_ICONS = [
   { id: 'Home', label: 'House', icon: Home },
@@ -21,8 +22,9 @@ const PRESET_ICONS = [
 ];
 
 const renderHouseholdIcon = (iconName?: string, avatarUrl?: string, className: string = "w-6 h-6 text-emerald-400") => {
-  if (avatarUrl && avatarUrl.trim().length > 0) {
-    return <img src={avatarUrl} alt="Household Avatar" className="w-12 h-12 rounded-2xl object-cover border border-emerald-500/30 shadow-lg" />;
+  const safeAvatar = sanitizeImageUrl(avatarUrl);
+  if (safeAvatar) {
+    return <img src={safeAvatar} alt="Household Avatar" className="w-12 h-12 rounded-2xl object-cover border border-emerald-500/30 shadow-lg" />;
   }
   const match = PRESET_ICONS.find(i => i.id === iconName);
   const IconComponent = match ? match.icon : Home;

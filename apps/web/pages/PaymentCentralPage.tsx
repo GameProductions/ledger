@@ -5,6 +5,7 @@ import { CreditCard, Shield, Plus, Trash2, Link, Mail, Calendar, ExternalLink, G
 import { SearchableSelect } from '../components/ui/SearchableSelect';
 import { MainLayout } from '../components/layout/MainLayout';
 import { getApiUrl } from '../utils/api';
+import { sanitizeImageUrl } from '../utils/security';
 
 const PaymentCentralPage: React.FC = () => {
   const { token, householdId } = useAuth();
@@ -284,11 +285,14 @@ const PaymentCentralPage: React.FC = () => {
                     <div>
                       <label className="text-xs font-black tracking-widest text-amber-500/50 mb-2 block">Select Provider</label>
                       <SearchableSelect 
-                        options={(providers || []).map(p => ({ 
-                          value: p.id, 
-                          label: p.name, 
-                          icon: p.iconUrl ? <img src={p.iconUrl} className="w-5 h-5" alt="" /> : null
-                        }))}
+                        options={(providers || []).map(p => {
+                          const safeIcon = sanitizeImageUrl(p.iconUrl);
+                          return { 
+                            value: p.id, 
+                            label: p.name, 
+                            icon: safeIcon ? <img src={safeIcon} className="w-5 h-5 object-contain" alt="" /> : null
+                          };
+                        })}
                         value={newAccount.providerId}
                         onChange={(val) => setNewAccount({ ...newAccount, providerId: val })}
                         placeholder="Choose Provider..."
@@ -397,8 +401,8 @@ const PaymentCentralPage: React.FC = () => {
                     
                      <div className="flex items-center justify-between mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center overflow-hidden">
-                         {account.provider_branding ? (
-                           <img src={account.provider_branding} alt="" className="w-8 h-8 object-contain" />
+                         {sanitizeImageUrl(account.provider_branding) ? (
+                           <img src={sanitizeImageUrl(account.provider_branding)} alt="" className="w-8 h-8 object-contain" />
                          ) : (
                            <Globe size={24} className="text-slate-600" />
                          )}

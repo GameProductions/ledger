@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { InlineToast } from '../../components/ui/InlineToast';
 import { Checkbox } from '../../components/ui/Checkbox';
+import { sanitizeImageUrl } from '../../utils/security';
 
 const AdminProviders: React.FC = () => {
   const [providers, setProviders] = useState<any[]>([]);
@@ -162,16 +163,19 @@ const AdminProviders: React.FC = () => {
               </div>
                <div>
                 <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Billing Processor</label>
-                <SearchableSelect 
-                   options={(processors || []).map(proc => ({ 
-                     value: proc.id, 
-                     label: proc.name,
-                     icon: (proc.brandingUrl || proc.brandingUrl) ? <img src={proc.brandingUrl || proc.brandingUrl} className="w-5 h-5" alt="" /> : null
-                   }))}
-                   value={newItem.billingProcessorId}
-                   onChange={(val) => setNewItem({ ...newItem, billingProcessorId: val })}
-                   placeholder="Select Processor..."
-                />
+                 <SearchableSelect 
+                    options={(processors || []).map(proc => {
+                      const safeIcon = sanitizeImageUrl(proc.brandingUrl);
+                      return { 
+                        value: proc.id, 
+                        label: proc.name,
+                        icon: safeIcon ? <img src={safeIcon} className="w-5 h-5 object-contain" alt="" /> : null
+                      };
+                    })}
+                    value={newItem.billingProcessorId}
+                    onChange={(val) => setNewItem({ ...newItem, billingProcessorId: val })}
+                    placeholder="Select Processor..."
+                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                    <div>
@@ -179,23 +183,26 @@ const AdminProviders: React.FC = () => {
                     <input 
                       type="url" 
                       value={newItem.logoUrl} 
-                      onChange={(e) => setNewItem({ ...newItem, logoUrl: e.target.value, brandingUrl: e.target.value })}
-                      placeholder="https://..."
+                      onChange={(e) => setNewItem({ ...newItem, logoUrl: e.target.value })}
+                      placeholder="https://.../logo.png"
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                     />
                   </div>
-                   <div className="flex items-center gap-3 pt-6">
-                     <Checkbox 
-                       checked={newItem.is3rdPartyCapable} 
-                       onChange={(checked) => setNewItem({ ...newItem, is3rdPartyCapable: checked })}
-                     />
-                     <label onClick={() => setNewItem({ ...newItem, is3rdPartyCapable: !newItem.is3rdPartyCapable })} className="text-xs font-black tracking-widest text-slate-400 cursor-pointer select-none">3rd Party Ready</label>
+                  <div>
+                    <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Branding URL (Square)</label>
+                    <input 
+                      type="url" 
+                      value={newItem.brandingUrl} 
+                      onChange={(e) => setNewItem({ ...newItem, brandingUrl: e.target.value })}
+                      placeholder="https://.../icon.png"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
+                    />
                   </div>
               </div>
             </div>
             <div className="space-y-6">
                <div>
-                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Website</label>
+                <label className="text-xs font-black tracking-widest text-gray-500 mb-2 block">Website URL</label>
                 <input 
                   type="url" 
                   value={newItem.websiteUrl} 
@@ -224,6 +231,13 @@ const AdminProviders: React.FC = () => {
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-emerald-500/50 transition-all outline-none"
                 />
               </div>
+              <div className="flex items-center gap-3">
+                 <Checkbox 
+                   checked={newItem.is3rdPartyCapable} 
+                   onChange={(checked) => setNewItem({ ...newItem, is3rdPartyCapable: checked })}
+                 />
+                 <label onClick={() => setNewItem({ ...newItem, is3rdPartyCapable: !newItem.is3rdPartyCapable })} className="text-xs font-black tracking-widest text-slate-400 cursor-pointer select-none">3rd Party Ready</label>
+              </div>
               <button type="submit" className="w-full py-4 bg-emerald-500 text-black font-black text-sm rounded-xl hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20">
                 {editingId ? 'Save Changes' : 'Add Provider'}
               </button>
@@ -233,11 +247,13 @@ const AdminProviders: React.FC = () => {
       )}
 
       <div className="space-y-4">
-        {(providers || []).map(provider => (
+        {(providers || []).map(provider => {
+          const safeLogo = sanitizeImageUrl(provider.logoUrl || provider.brandingUrl);
+          return (
           <div key={provider.id} className="p-8 rounded-[3rem] bg-white/5 border border-white/5 flex items-center gap-8 group hover:border-emerald-500/20 transition-all relative overflow-visible shadow-lg bg-gradient-to-br from-white/2 to-transparent">
             <div className="w-20 h-20 rounded-3xl bg-black/40 flex items-center justify-center border border-white/5 overflow-hidden p-3 shadow-inner group-hover:border-emerald-500/30 transition-all">
-                {provider.logoUrl || provider.brandingUrl ? (
-                  <img src={provider.logoUrl || provider.brandingUrl} alt="" className="w-full h-full object-contain" />
+                {safeLogo ? (
+                  <img src={safeLogo} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <Building2 size={32} className="text-emerald-500/30" />
                 )}
@@ -271,33 +287,34 @@ const AdminProviders: React.FC = () => {
                     <Server size={12} className="text-emerald-500" /> Identity Verified
                   </p>
                </div>
-               <div className="flex gap-3">
-                 <button 
-                  onClick={() => handleEdit(provider)}
-                  className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all shadow-xl"
-                 >
-                    <Edit2 size={18} />
-                 </button>
-                 
-                 {confirmDeleteId === provider.id ? (
-                   <InlineToast 
-                     message="Delete provider?" 
-                     type="confirm" 
-                     onConfirm={() => handleDelete(provider.id)} 
-                     onCancel={() => setConfirmDeleteId(null)} 
-                   />
-                 ) : (
-                   <button 
-                    onClick={() => setConfirmDeleteId(provider.id)}
-                    className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-xl"
-                   >
-                      <Trash2 size={18} />
-                   </button>
-                 )}
-               </div>
-            </div>
-          </div>
-        ))}
+                <div className="flex gap-3">
+                  <button 
+                   onClick={() => handleEdit(provider)}
+                   className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all shadow-xl"
+                  >
+                     <Edit2 size={18} />
+                  </button>
+                  
+                  {confirmDeleteId === provider.id ? (
+                    <InlineToast 
+                      message="Delete provider?" 
+                      type="confirm" 
+                      onConfirm={() => handleDelete(provider.id)} 
+                      onCancel={() => setConfirmDeleteId(null)} 
+                    />
+                  ) : (
+                    <button 
+                     onClick={() => setConfirmDeleteId(provider.id)}
+                     className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all shadow-xl"
+                    >
+                       <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+             </div>
+           </div>
+          );
+        })}
 
         {providers.length === 0 && (
           <div className="py-32 text-center rounded-[4rem] border border-dashed border-white/10 bg-white/2 overflow-hidden reveal">

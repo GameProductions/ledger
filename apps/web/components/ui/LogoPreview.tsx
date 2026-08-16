@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { ImageOff } from 'lucide-react'
+import { sanitizeImageUrl } from '../../utils/security'
 
 interface LogoPreviewProps {
   src?: string | null
@@ -10,8 +11,9 @@ interface LogoPreviewProps {
 
 export const LogoPreview: React.FC<LogoPreviewProps> = ({ src, size = 40, name, className = '' }) => {
   const [error, setError] = useState(false)
+  const safeSrc = sanitizeImageUrl(src || undefined)
 
-  if (!src || error) {
+  if (!safeSrc || error) {
     return (
       <div
         className={`rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 ${className}`}
@@ -32,7 +34,7 @@ export const LogoPreview: React.FC<LogoPreviewProps> = ({ src, size = 40, name, 
       style={{ width: size, height: size }}
     >
       <img
-        src={src}
+        src={safeSrc}
         alt={name || 'logo'}
         onError={() => setError(true)}
         className="w-full h-full object-cover"

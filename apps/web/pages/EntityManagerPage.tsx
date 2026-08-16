@@ -12,6 +12,7 @@ import { EntityFormField } from '../components/entity/EntityFormField'
 import { EntityFormSection } from '../components/entity/EntityFormSection'
 import { LogoPreview } from '../components/ui/LogoPreview'
 import { getFieldDefs, type FieldDef } from '../lib/entity-field-defs'
+import { sanitizeImageUrl } from '../utils/security'
 import { useReducedMotion } from '../hooks/useReducedMotion'
 import { 
   Tag, Building2, CreditCard, Wallet, Link2, GitMerge, CalendarClock, FileText,
@@ -312,13 +313,16 @@ const EntityManager: React.FC<EntityManagerProps> = ({ title, icon, apiPath, fie
   const refOptions = useMemo(() => {
     const map: Record<string, SearchableOption[]> = {}
     Object.keys(refCache).forEach(path => {
-      map[path] = (refCache[path] || []).map((ref: any) => ({
-        value: ref.id,
-        label: ref.name || ref.id,
-        ...(ref.iconUrl || ref.logoUrl || ref.brandingUrl ? {
-          icon: <img src={ref.iconUrl || ref.logoUrl || ref.brandingUrl} className="w-full h-full object-cover" />
-        } : {}),
-      }))
+      map[path] = (refCache[path] || []).map((ref: any) => {
+        const safeIcon = sanitizeImageUrl(ref.iconUrl || ref.logoUrl || ref.brandingUrl);
+        return {
+          value: ref.id,
+          label: ref.name || ref.id,
+          ...(safeIcon ? {
+            icon: <img src={safeIcon} className="w-full h-full object-cover" alt="" />
+          } : {}),
+        };
+      })
     })
     return map
   }, [refCache])

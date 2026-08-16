@@ -11,6 +11,7 @@ import { Input } from './ui/Input';
 import { formatHumanError } from '../utils/error-handler';
 import { getApiUrl } from '../utils/api';
 import { InlineToast } from './ui/InlineToast';
+import { sanitizeImageUrl } from '../utils/security';
 
 const API_URL = getApiUrl();
 
@@ -394,9 +395,9 @@ const HouseholdRegistry: React.FC = () => {
                  <div key={m.id} className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between group hover:border-emerald-500/20 transition-all">
                     <div className="flex items-center gap-3">
                        <img 
-                         src={m.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${m.id}`} 
+                         src={sanitizeImageUrl(m.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(m.id)}`} 
                          className="w-10 h-10 rounded-xl border border-white/10" 
-                         alt={m.displayName} 
+                         alt={m.displayName || ''} 
                        />
                        <div>
                           <div className="flex items-center gap-2">

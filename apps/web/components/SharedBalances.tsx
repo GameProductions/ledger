@@ -8,6 +8,7 @@ import { ArrowRightLeft, Plus, Trash2, Handshake, Users } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 import { CurrencyInput } from './ui/CurrencyInput'
+import { sanitizeImageUrl } from '../utils/security'
 
 interface SharedBalance {
   id: string
@@ -156,8 +157,8 @@ export default function SharedBalances() {
                 <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-violet-500/20 transition-all">
                   <div className="flex items-center gap-3">
                     <div className="flex -space-x-2">
-                      <img src={s.fromAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.fromUserId}`} className="w-8 h-8 rounded-lg border-2 border-black" />
-                      <img src={s.toAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${s.toUserId}`} className="w-8 h-8 rounded-lg border-2 border-black" />
+                      <img src={sanitizeImageUrl(s.fromAvatar) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(s.fromUserId)}`} className="w-8 h-8 rounded-lg border-2 border-black" alt="" />
+                      <img src={sanitizeImageUrl(s.toAvatar) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(s.toUserId)}`} className="w-8 h-8 rounded-lg border-2 border-black" alt="" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">
@@ -211,8 +212,8 @@ export default function SharedBalances() {
               <div key={b.id} className="flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-white/10 transition-all group">
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    <img src={b.fromAvatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${b.fromUserId}`} className="w-7 h-7 rounded-lg border-2 border-black" />
-                    <img src={b.toAvatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${b.toUserId}`} className="w-7 h-7 rounded-lg border-2 border-black" />
+                    <img src={sanitizeImageUrl(b.fromAvatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(b.fromUserId)}`} className="w-7 h-7 rounded-lg border-2 border-black" alt="" />
+                    <img src={sanitizeImageUrl(b.toAvatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(b.toUserId)}`} className="w-7 h-7 rounded-lg border-2 border-black" alt="" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">

@@ -4,6 +4,7 @@ import { CreditCard, Globe, LifeBuoy, Plus, Trash2, Edit2, ExternalLink, ShieldA
 import { InlineToast } from '../../components/ui/InlineToast';
 import { getApiUrl } from '../../utils/api';
 import { useToast } from '../../context/ToastContext';
+import { sanitizeImageUrl } from '../../utils/security';
 
 const AdminProcessors: React.FC = () => {
   const [processors, setProcessors] = useState<any[]>([]);
@@ -227,8 +228,8 @@ const AdminProcessors: React.FC = () => {
             
             <div className="flex items-center gap-5 mb-8">
               <div className="w-20 h-20 rounded-3xl bg-black/40 flex items-center justify-center overflow-hidden border border-white/5 p-4 shadow-inner">
-                {processor.brandingUrl ? (
-                  <img src={processor.brandingUrl} alt="" className="w-full h-full object-contain" />
+                {sanitizeImageUrl(processor.brandingUrl) ? (
+                  <img src={sanitizeImageUrl(processor.brandingUrl)} alt="" className="w-full h-full object-contain" />
                 ) : (
                   <CreditCard size={32} className="text-blue-500/40" />
                 )}

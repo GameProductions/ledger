@@ -12,6 +12,7 @@ import { Masked } from '../../components/ui/Masked';
 import { Checkbox } from '../../components/ui/Checkbox';
 import { useToast } from '../../context/ToastContext';
 import { getApiUrl } from '../../utils/api';
+import { sanitizeImageUrl } from '../../utils/security';
 
 const getInitials = (displayName?: string, username?: string, email?: string) => {
   const name = displayName || username || email || '?';
@@ -234,9 +235,9 @@ const UserDetailsModal: React.FC<{
         <div className="p-5 sm:p-6 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-emerald-500/10 via-transparent to-blue-500/10">
           <div className="flex items-center gap-4">
             <div className="relative">
-               {details?.profile?.avatarUrl ? (
+               {sanitizeImageUrl(details?.profile?.avatarUrl) ? (
                   <img 
-                    src={details?.profile?.avatarUrl} 
+                    src={sanitizeImageUrl(details?.profile?.avatarUrl)} 
                     className="w-16 h-16 rounded-xl border-2 border-white/5 shadow-2xl object-cover" 
                     alt="User"
                   />
@@ -984,9 +985,9 @@ const AdminUsers: React.FC = () => {
             <tr key={u.id} className="hover:bg-white/[0.03] transition-colors group relative">
               <td className="px-8 py-6">
                 <div className="flex items-center gap-4">
-                  {u.avatarUrl ? (
+                  {sanitizeImageUrl(u.avatarUrl) ? (
                     <img 
-                      src={u.avatarUrl} 
+                      src={sanitizeImageUrl(u.avatarUrl)} 
                       className="w-10 h-10 rounded-xl border border-white/10 group-hover:border-emerald-500/50 transition-all object-cover" 
                       alt="Avatar"
                     />
@@ -1154,7 +1155,13 @@ const AdminUsers: React.FC = () => {
                   className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${mergeTarget === u.id ? 'bg-orange-500/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <img src={u.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.id}`} className="w-8 h-8 rounded-lg" />
+                    {sanitizeImageUrl(u.avatarUrl) ? (
+                      <img src={sanitizeImageUrl(u.avatarUrl)} className="w-8 h-8 rounded-lg" alt="" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs flex items-center justify-center">
+                        {getInitials(u.displayName, u.username, u.email)}
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm font-black text-white tracking-tight">{u.displayName || u.username}</p>
                       <p className="text-[10px] font-mono text-slate-500">{u.email}</p>

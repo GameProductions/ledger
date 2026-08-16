@@ -7,7 +7,7 @@
  * Sanitizes a URL for use in sensitive DOM attributes like <img src>.
  * Prevents javascript: protocols and other injection vectors.
  */
-export const sanitizeImageUrl = (url: string | undefined): string | undefined => {
+export const sanitizeImageUrl = (url: string | null | undefined): string | undefined => {
   if (!url) return undefined;
 
   const trimmed = url.trim();
@@ -32,7 +32,7 @@ export const sanitizeImageUrl = (url: string | undefined): string | undefined =>
       // Although React escapes these, being explicit helps static analyzers.
       return trimmed.replace(/[<>"'\s]/g, '');
     }
-  } catch (e: any) {
+  } catch {
     // If it's not a valid URL (and not relative/data), ignore it
     return undefined;
   }

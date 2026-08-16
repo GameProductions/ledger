@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useApi } from '../hooks/useApi'
 import { getApiUrl } from '../utils/api'
+import { sanitizeImageUrl } from '../utils/security'
 
 const UserProfile: React.FC = () => {
   const { data: profile } = (useApi('/api/user/profile') as any)
@@ -26,6 +27,8 @@ const UserProfile: React.FC = () => {
 
   if (!profile) return null
 
+  const safeAvatar = sanitizeImageUrl(profile.avatarUrl) || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(profile.id)}`
+
   return (
     <div className="user-profile-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
       {editing ? (
@@ -39,7 +42,7 @@ const UserProfile: React.FC = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer' }} onClick={() => setEditing(true)}>
-          <img src={profile.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
+          <img src={safeAvatar} alt="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
           <span style={{ fontWeight: 600 }}>{profile.displayName || 'Set Name'}</span>
         </div>
       )}

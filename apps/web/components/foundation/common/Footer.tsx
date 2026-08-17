@@ -40,7 +40,7 @@ export const Footer: React.FC<FooterProps> = ({ appName, version, isGloson = fal
         {/* Bottom Row: Ownership */}
         <div className="pt-8 border-t border-slate-900/50 flex justify-center">
           <p className="text-slate-500 text-[11px] font-bold tracking-[0.2em] uppercase">
-            {currentYear} GameProductions™{isGloson ? ' & Gloson Production™' : ''}. All rights reserved.
+            {currentYear} GameProductions™{isGloson ? ' | Gloson Production™' : ''}. All rights reserved.
           </p>
         </div>
 

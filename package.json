@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.157.7",
+  "version": "3.157.8",
   "type": "module",
   "scripts": {
     "dev": "vite",

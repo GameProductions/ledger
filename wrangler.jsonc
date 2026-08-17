@@ -5,11 +5,7 @@
   "main": "apps/api/worker.ts",
   "compatibility_date": "2026-05-01",
   "compatibility_flags": ["nodejs_compat"],
-  "alias": {
-    "~": "./apps/api",
-    "#": "./db",
-    "@shared": "./packages/shared"
-  },
+
   "assets": {
     "directory": "./build/client",
     "binding": "ASSETS"

@@ -18,8 +18,14 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   build: {
-    rolldownOptions: {
-      external: [/^@modelcontextprotocol\/.*/],
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('drizzle-orm') || id.includes('/db/')) {
+            return 'drizzle-core';
+          }
+        },
+      },
     },
   },
   plugins: [

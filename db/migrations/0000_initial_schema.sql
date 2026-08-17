@@ -180,6 +180,7 @@ CREATE TABLE "users" (
 	"timezone" text DEFAULT 'UTC',
 	"locale" text DEFAULT 'en-US',
 	"theme" text DEFAULT 'system',
+	"settings_json" text,
 	CONSTRAINT "users_email_unique" UNIQUE("email"),
 	CONSTRAINT "users_username_unique" UNIQUE("username")
 );
@@ -191,7 +192,8 @@ CREATE TABLE "accounts" (
 	"type" text NOT NULL,
 	"balance_cents" integer DEFAULT 0,
 	"currency" text DEFAULT 'USD',
-	"status" text DEFAULT 'active'
+	"status" text DEFAULT 'active',
+	"provider_id" text
 );
 --> statement-breakpoint
 CREATE TABLE "billers" (
@@ -215,9 +217,16 @@ CREATE TABLE "bills" (
 	"account_id" text,
 	"is_recurring" boolean DEFAULT false,
 	"frequency" text,
+	"end_date" text,
+	"max_occurrences" integer,
 	"upcoming_amount_cents" integer,
 	"upcoming_effective_date" text,
+	"pay_schedule_id" text,
+	"paycheck_date" text,
 	"owner_id" text,
+	"visibility" text DEFAULT 'household',
+	"public_scope" text DEFAULT 'name_only',
+	"external_contact_id" text,
 	"created_at" text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
@@ -234,6 +243,16 @@ CREATE TABLE "categories" (
 	"emergency_fund" boolean DEFAULT false
 );
 --> statement-breakpoint
+CREATE TABLE "charge_descriptors" (
+	"id" text PRIMARY KEY NOT NULL,
+	"household_id" text NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"default_category_id" text,
+	"is_active" boolean DEFAULT true,
+	"created_at" text DEFAULT CURRENT_TIMESTAMP
+);
+--> statement-breakpoint
 CREATE TABLE "credit_cards" (
 	"id" text PRIMARY KEY NOT NULL,
 	"household_id" text NOT NULL,
@@ -245,6 +264,15 @@ CREATE TABLE "credit_cards" (
 	"next_statement_date" text
 );
 --> statement-breakpoint
+CREATE TABLE "external_contacts" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"scope" text DEFAULT 'private',
+	"household_id" text,
+	"created_by" text,
+	"created_at" text DEFAULT CURRENT_TIMESTAMP
+);
+--> statement-breakpoint
 CREATE TABLE "households" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -252,7 +280,10 @@ CREATE TABLE "households" (
 	"currency" text DEFAULT 'USD',
 	"country_code" text DEFAULT 'US',
 	"unallocated_balance_cents" integer DEFAULT 0,
-	"status" text DEFAULT 'active'
+	"status" text DEFAULT 'active',
+	"invites_enabled" boolean DEFAULT true NOT NULL,
+	"icon" text,
+	"avatar_url" text
 );
 --> statement-breakpoint
 CREATE TABLE "installment_plans" (
@@ -268,6 +299,9 @@ CREATE TABLE "installment_plans" (
 	"account_id" text,
 	"payment_mode" text DEFAULT 'manual',
 	"status" text DEFAULT 'active',
+	"plan_type" text DEFAULT 'user',
+	"bnpl_provider_id" text,
+	"original_transaction_id" text,
 	"upcoming_amount_cents" integer,
 	"upcoming_effective_date" text
 );
@@ -304,6 +338,13 @@ CREATE TABLE "liability_splits" (
 	"updated_at" text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
+CREATE TABLE "merchants" (
+	"id" text PRIMARY KEY NOT NULL,
+	"household_id" text NOT NULL,
+	"name" text NOT NULL,
+	"created_at" text DEFAULT CURRENT_TIMESTAMP
+);
+--> statement-breakpoint
 CREATE TABLE "reconciliation_proposals" (
 	"id" text PRIMARY KEY NOT NULL,
 	"household_id" text NOT NULL,
@@ -312,7 +353,11 @@ CREATE TABLE "reconciliation_proposals" (
 	"confidence_score" integer DEFAULT 0,
 	"match_reason" text,
 	"status" text DEFAULT 'pending',
-	"created_at" text DEFAULT CURRENT_TIMESTAMP
+	"created_at" text DEFAULT CURRENT_TIMESTAMP,
+	"updated_at" text,
+	"approved_by" text,
+	"approved_at" text,
+	CONSTRAINT "uq_recon_proposals_pair" UNIQUE("primary_transaction_id","suggested_transaction_id")
 );
 --> statement-breakpoint
 CREATE TABLE "reports" (
@@ -336,6 +381,21 @@ CREATE TABLE "savings_buckets" (
 	"created_at" text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
+CREATE TABLE "shared_access" (
+	"id" text PRIMARY KEY NOT NULL,
+	"target_type" text NOT NULL,
+	"target_id" text NOT NULL,
+	"token" text NOT NULL,
+	"contact_label" text NOT NULL,
+	"visibility_scope" text DEFAULT 'name_only',
+	"permission" text DEFAULT 'view',
+	"expires_at" text,
+	"last_accessed_at" text,
+	"created_by" text,
+	"created_at" text DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT "shared_access_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
 CREATE TABLE "shared_balances" (
 	"id" text PRIMARY KEY NOT NULL,
 	"household_id" text NOT NULL,
@@ -352,14 +412,23 @@ CREATE TABLE "subscriptions" (
 	"amount_cents" integer NOT NULL,
 	"billing_cycle" text NOT NULL,
 	"next_billing_date" text,
+	"end_date" text,
+	"max_occurrences" integer,
 	"trial_end_date" text,
 	"is_trial" boolean DEFAULT false,
 	"category_id" text,
 	"account_id" text,
 	"payment_mode" text DEFAULT 'manual',
 	"owner_id" text,
+	"visibility" text DEFAULT 'household',
+	"public_scope" text DEFAULT 'name_only',
+	"external_contact_id" text,
 	"upcoming_amount_cents" integer,
-	"upcoming_effective_date" text
+	"upcoming_effective_date" text,
+	"pay_schedule_id" text,
+	"paycheck_date" text,
+	"payment_method_id" text,
+	"biller_id" text
 );
 --> statement-breakpoint
 CREATE TABLE "transaction_pairing_rules" (
@@ -406,17 +475,23 @@ CREATE TABLE "transactions" (
 	"bill_id" text,
 	"attention_required" boolean DEFAULT false,
 	"needs_balance_transfer" boolean DEFAULT false,
+	"transfer_reconciled" boolean DEFAULT false,
 	"transfer_timing" text,
 	"is_borrowed" boolean DEFAULT false,
 	"borrow_source" text,
 	"accounted_for" boolean DEFAULT false,
-	"source" text DEFAULT 'manual'
+	"source" text DEFAULT 'manual',
+	"pay_schedule_id" text,
+	"paycheck_date" text,
+	"charge_descriptor_id" text
 );
 --> statement-breakpoint
 CREATE TABLE "user_households" (
 	"user_id" text NOT NULL,
 	"household_id" text NOT NULL,
 	"role" text DEFAULT 'member',
+	"joined_at" text DEFAULT CURRENT_TIMESTAMP,
+	"join_method" text,
 	CONSTRAINT "user_households_user_id_household_id_pk" PRIMARY KEY("user_id","household_id")
 );
 --> statement-breakpoint
@@ -484,9 +559,11 @@ CREATE TABLE "tracked_expenses" (
 	"confirmation_number" text,
 	"attention_required" boolean DEFAULT false,
 	"needs_balance_transfer" boolean DEFAULT false,
+	"transfer_reconciled" boolean DEFAULT false,
 	"transfer_timing" text,
 	"is_borrowed" boolean DEFAULT false,
 	"borrow_source" text,
+	"charge_descriptor_id" text,
 	"created_at" text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
@@ -597,7 +674,12 @@ CREATE TABLE "household_invites" (
 	"created_by" text NOT NULL,
 	"status" text DEFAULT 'pending',
 	"expires_at" text NOT NULL,
-	"created_at" text DEFAULT CURRENT_TIMESTAMP
+	"created_at" text DEFAULT CURRENT_TIMESTAMP,
+	"join_code" text,
+	"code_length" integer DEFAULT 6,
+	"reusable" boolean DEFAULT true,
+	"disabled_at" text,
+	"join_count" integer DEFAULT 0
 );
 --> statement-breakpoint
 CREATE TABLE "linked_providers" (
@@ -754,6 +836,8 @@ CREATE TABLE "service_providers" (
 	"created_by" text,
 	"status" text DEFAULT 'active',
 	"icon_url" text,
+	"default_category_id" text,
+	"default_due_date" text,
 	"created_at" text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
@@ -916,9 +1000,13 @@ ALTER TABLE "bills" ADD CONSTRAINT "bills_household_id_households_id_fk" FOREIGN
 ALTER TABLE "bills" ADD CONSTRAINT "bills_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bills" ADD CONSTRAINT "bills_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bills" ADD CONSTRAINT "bills_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "bills" ADD CONSTRAINT "bills_external_contact_id_external_contacts_id_fk" FOREIGN KEY ("external_contact_id") REFERENCES "public"."external_contacts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "categories" ADD CONSTRAINT "categories_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "charge_descriptors" ADD CONSTRAINT "charge_descriptors_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "credit_cards" ADD CONSTRAINT "credit_cards_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "credit_cards" ADD CONSTRAINT "credit_cards_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_contacts" ADD CONSTRAINT "external_contacts_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "installment_plans" ADD CONSTRAINT "installment_plans_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "installment_plans" ADD CONSTRAINT "installment_plans_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "investment_holdings" ADD CONSTRAINT "investment_holdings_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -926,12 +1014,14 @@ ALTER TABLE "investment_holdings" ADD CONSTRAINT "investment_holdings_account_id
 ALTER TABLE "liability_splits" ADD CONSTRAINT "liability_splits_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "liability_splits" ADD CONSTRAINT "liability_splits_originator_user_id_users_id_fk" FOREIGN KEY ("originator_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "liability_splits" ADD CONSTRAINT "liability_splits_assigned_user_id_users_id_fk" FOREIGN KEY ("assigned_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "merchants" ADD CONSTRAINT "merchants_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reconciliation_proposals" ADD CONSTRAINT "reconciliation_proposals_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reconciliation_proposals" ADD CONSTRAINT "reconciliation_proposals_primary_transaction_id_transactions_id_fk" FOREIGN KEY ("primary_transaction_id") REFERENCES "public"."transactions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reconciliation_proposals" ADD CONSTRAINT "reconciliation_proposals_suggested_transaction_id_transactions_id_fk" FOREIGN KEY ("suggested_transaction_id") REFERENCES "public"."transactions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reports" ADD CONSTRAINT "reports_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "savings_buckets" ADD CONSTRAINT "savings_buckets_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "savings_buckets" ADD CONSTRAINT "savings_buckets_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "shared_access" ADD CONSTRAINT "shared_access_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shared_balances" ADD CONSTRAINT "shared_balances_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shared_balances" ADD CONSTRAINT "shared_balances_from_user_id_users_id_fk" FOREIGN KEY ("from_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shared_balances" ADD CONSTRAINT "shared_balances_to_user_id_users_id_fk" FOREIGN KEY ("to_user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -940,6 +1030,8 @@ ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_household_id_household
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_external_contact_id_external_contacts_id_fk" FOREIGN KEY ("external_contact_id") REFERENCES "public"."external_contacts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_biller_id_billers_id_fk" FOREIGN KEY ("biller_id") REFERENCES "public"."billers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transaction_pairing_rules" ADD CONSTRAINT "transaction_pairing_rules_household_id_households_id_fk" FOREIGN KEY ("household_id") REFERENCES "public"."households"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transaction_pairing_rules" ADD CONSTRAINT "transaction_pairing_rules_target_category_id_categories_id_fk" FOREIGN KEY ("target_category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transaction_pairing_rules" ADD CONSTRAINT "transaction_pairing_rules_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -1020,16 +1112,22 @@ CREATE INDEX "idx_accounts_household" ON "accounts" USING btree ("household_id")
 CREATE INDEX "idx_bills_household" ON "bills" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_bills_owner" ON "bills" USING btree ("owner_id");--> statement-breakpoint
 CREATE INDEX "idx_categories_household" ON "categories" USING btree ("household_id");--> statement-breakpoint
+CREATE INDEX "idx_charge_descriptors_household" ON "charge_descriptors" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_credit_cards_household" ON "credit_cards" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_credit_cards_account" ON "credit_cards" USING btree ("account_id");--> statement-breakpoint
+CREATE INDEX "idx_ext_contacts_household" ON "external_contacts" USING btree ("household_id");--> statement-breakpoint
+CREATE INDEX "idx_ext_contacts_creator" ON "external_contacts" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "idx_installments_household" ON "installment_plans" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_invest_holdings_household" ON "investment_holdings" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_invest_holdings_account" ON "investment_holdings" USING btree ("account_id");--> statement-breakpoint
+CREATE INDEX "idx_merchants_household" ON "merchants" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_recon_proposals_household" ON "reconciliation_proposals" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_recon_proposals_primary" ON "reconciliation_proposals" USING btree ("primary_transaction_id");--> statement-breakpoint
 CREATE INDEX "idx_recon_proposals_suggested" ON "reconciliation_proposals" USING btree ("suggested_transaction_id");--> statement-breakpoint
 CREATE INDEX "idx_reports_household" ON "reports" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_savings_household" ON "savings_buckets" USING btree ("household_id");--> statement-breakpoint
+CREATE INDEX "idx_shared_access_token" ON "shared_access" USING btree ("token");--> statement-breakpoint
+CREATE INDEX "idx_shared_access_target" ON "shared_access" USING btree ("target_type","target_id");--> statement-breakpoint
 CREATE INDEX "idx_shared_balances_household" ON "shared_balances" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_shared_balances_transaction" ON "shared_balances" USING btree ("transaction_id");--> statement-breakpoint
 CREATE INDEX "idx_subscriptions_household" ON "subscriptions" USING btree ("household_id");--> statement-breakpoint
@@ -1041,6 +1139,7 @@ CREATE INDEX "idx_transactions_account" ON "transactions" USING btree ("account_
 CREATE INDEX "idx_transactions_category" ON "transactions" USING btree ("category_id");--> statement-breakpoint
 CREATE INDEX "idx_transactions_parent" ON "transactions" USING btree ("parent_id");--> statement-breakpoint
 CREATE INDEX "idx_transactions_date" ON "transactions" USING btree ("transaction_date");--> statement-breakpoint
+CREATE INDEX "idx_user_households_user" ON "user_households" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_linked_accounts_user" ON "user_linked_accounts" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_linked_accounts_household" ON "user_linked_accounts" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_payment_methods_user" ON "user_payment_methods" USING btree ("user_id");--> statement-breakpoint
@@ -1056,6 +1155,8 @@ CREATE INDEX "idx_activity_logs_household" ON "activity_logs" USING btree ("hous
 CREATE INDEX "idx_activity_logs_actor" ON "activity_logs" USING btree ("actor_id");--> statement-breakpoint
 CREATE INDEX "idx_activity_logs_action" ON "activity_logs" USING btree ("action");--> statement-breakpoint
 CREATE INDEX "idx_ext_conn_household" ON "external_connections" USING btree ("household_id");--> statement-breakpoint
+CREATE INDEX "idx_household_invites_join_code" ON "household_invites" USING btree ("join_code");--> statement-breakpoint
+CREATE INDEX "idx_household_invites_household" ON "household_invites" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_privacy_cards_household" ON "privacy_cards" USING btree ("household_id");--> statement-breakpoint
 CREATE INDEX "idx_reminders_target" ON "reminders" USING btree ("target_type","target_id");--> statement-breakpoint
 CREATE INDEX "idx_reminders_user" ON "reminders" USING btree ("user_id");--> statement-breakpoint

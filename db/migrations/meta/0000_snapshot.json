@@ -1,5 +1,5 @@
 {
-  "id": "8a4a3ba5-97ea-44e0-9875-13ffa0134645",
+  "id": "8db1d031-a242-45a8-a99f-9bebb5eb0f9d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1411,6 +1411,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'system'"
+        },
+        "settings_json": {
+          "name": "settings_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1484,6 +1490,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'active'"
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1646,6 +1658,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "end_date": {
+          "name": "end_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_occurrences": {
+          "name": "max_occurrences",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "upcoming_amount_cents": {
           "name": "upcoming_amount_cents",
           "type": "integer",
@@ -1658,8 +1682,40 @@
           "primaryKey": false,
           "notNull": false
         },
+        "pay_schedule_id": {
+          "name": "pay_schedule_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paycheck_date": {
+          "name": "paycheck_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "owner_id": {
           "name": "owner_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'household'"
+        },
+        "public_scope": {
+          "name": "public_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'name_only'"
+        },
+        "external_contact_id": {
+          "name": "external_contact_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1750,6 +1806,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "bills_external_contact_id_external_contacts_id_fk": {
+          "name": "bills_external_contact_id_external_contacts_id_fk",
+          "tableFrom": "bills",
+          "tableTo": "external_contacts",
+          "columnsFrom": [
+            "external_contact_id"
           ],
           "columnsTo": [
             "id"
@@ -1855,6 +1924,93 @@
         "categories_household_id_households_id_fk": {
           "name": "categories_household_id_households_id_fk",
           "tableFrom": "categories",
+          "tableTo": "households",
+          "columnsFrom": [
+            "household_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.charge_descriptors": {
+      "name": "charge_descriptors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_category_id": {
+          "name": "default_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_charge_descriptors_household": {
+          "name": "idx_charge_descriptors_household",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "charge_descriptors_household_id_households_id_fk": {
+          "name": "charge_descriptors_household_id_households_id_fk",
+          "tableFrom": "charge_descriptors",
           "tableTo": "households",
           "columnsFrom": [
             "household_id"
@@ -1991,6 +2147,115 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.external_contacts": {
+      "name": "external_contacts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'private'"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_ext_contacts_household": {
+          "name": "idx_ext_contacts_household",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_ext_contacts_creator": {
+          "name": "idx_ext_contacts_creator",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "external_contacts_household_id_households_id_fk": {
+          "name": "external_contacts_household_id_households_id_fk",
+          "tableFrom": "external_contacts",
+          "tableTo": "households",
+          "columnsFrom": [
+            "household_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "external_contacts_created_by_users_id_fk": {
+          "name": "external_contacts_created_by_users_id_fk",
+          "tableFrom": "external_contacts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.households": {
       "name": "households",
       "schema": "",
@@ -2041,6 +2306,25 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'active'"
+        },
+        "invites_enabled": {
+          "name": "invites_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -2128,6 +2412,25 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'active'"
+        },
+        "plan_type": {
+          "name": "plan_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'user'"
+        },
+        "bnpl_provider_id": {
+          "name": "bnpl_provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "original_transaction_id": {
+          "name": "original_transaction_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "upcoming_amount_cents": {
           "name": "upcoming_amount_cents",
@@ -2480,6 +2783,74 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.merchants": {
+      "name": "merchants",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_merchants_household": {
+          "name": "idx_merchants_household",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "merchants_household_id_households_id_fk": {
+          "name": "merchants_household_id_households_id_fk",
+          "tableFrom": "merchants",
+          "tableTo": "households",
+          "columnsFrom": [
+            "household_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.reconciliation_proposals": {
       "name": "reconciliation_proposals",
       "schema": "",
@@ -2534,6 +2905,24 @@
           "primaryKey": false,
           "notNull": false,
           "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by": {
+          "name": "approved_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_at": {
+          "name": "approved_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2625,7 +3014,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "uq_recon_proposals_pair": {
+          "name": "uq_recon_proposals_pair",
+          "nullsNotDistinct": false,
+          "columns": [
+            "primary_transaction_id",
+            "suggested_transaction_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2822,6 +3220,147 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.shared_access": {
+      "name": "shared_access",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact_label": {
+          "name": "contact_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visibility_scope": {
+          "name": "visibility_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'name_only'"
+        },
+        "permission": {
+          "name": "permission",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'view'"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_accessed_at": {
+          "name": "last_accessed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "idx_shared_access_token": {
+          "name": "idx_shared_access_token",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_shared_access_target": {
+          "name": "idx_shared_access_target",
+          "columns": [
+            {
+              "expression": "target_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "shared_access_created_by_users_id_fk": {
+          "name": "shared_access_created_by_users_id_fk",
+          "tableFrom": "shared_access",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "shared_access_token_unique": {
+          "name": "shared_access_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.shared_balances": {
       "name": "shared_balances",
       "schema": "",
@@ -2995,6 +3534,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "end_date": {
+          "name": "end_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_occurrences": {
+          "name": "max_occurrences",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "trial_end_date": {
           "name": "trial_end_date",
           "type": "text",
@@ -3033,6 +3584,26 @@
           "primaryKey": false,
           "notNull": false
         },
+        "visibility": {
+          "name": "visibility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'household'"
+        },
+        "public_scope": {
+          "name": "public_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'name_only'"
+        },
+        "external_contact_id": {
+          "name": "external_contact_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "upcoming_amount_cents": {
           "name": "upcoming_amount_cents",
           "type": "integer",
@@ -3041,6 +3612,30 @@
         },
         "upcoming_effective_date": {
           "name": "upcoming_effective_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pay_schedule_id": {
+          "name": "pay_schedule_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paycheck_date": {
+          "name": "paycheck_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_method_id": {
+          "name": "payment_method_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biller_id": {
+          "name": "biller_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -3109,6 +3704,32 @@
           "tableTo": "users",
           "columnsFrom": [
             "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "subscriptions_external_contact_id_external_contacts_id_fk": {
+          "name": "subscriptions_external_contact_id_external_contacts_id_fk",
+          "tableFrom": "subscriptions",
+          "tableTo": "external_contacts",
+          "columnsFrom": [
+            "external_contact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "subscriptions_biller_id_billers_id_fk": {
+          "name": "subscriptions_biller_id_billers_id_fk",
+          "tableFrom": "subscriptions",
+          "tableTo": "billers",
+          "columnsFrom": [
+            "biller_id"
           ],
           "columnsTo": [
             "id"
@@ -3487,6 +4108,13 @@
           "notNull": false,
           "default": false
         },
+        "transfer_reconciled": {
+          "name": "transfer_reconciled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
         "transfer_timing": {
           "name": "transfer_timing",
           "type": "text",
@@ -3519,6 +4147,24 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'manual'"
+        },
+        "pay_schedule_id": {
+          "name": "pay_schedule_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paycheck_date": {
+          "name": "paycheck_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "charge_descriptor_id": {
+          "name": "charge_descriptor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3706,9 +4352,38 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'member'"
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "join_method": {
+          "name": "join_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_user_households_user": {
+          "name": "idx_user_households_user",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "user_households_user_id_users_id_fk": {
           "name": "user_households_user_id_users_id_fk",
@@ -4364,6 +5039,13 @@
           "notNull": false,
           "default": false
         },
+        "transfer_reconciled": {
+          "name": "transfer_reconciled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
         "transfer_timing": {
           "name": "transfer_timing",
           "type": "text",
@@ -4379,6 +5061,12 @@
         },
         "borrow_source": {
           "name": "borrow_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "charge_descriptor_id": {
+          "name": "charge_descriptor_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -5248,9 +5936,73 @@
           "primaryKey": false,
           "notNull": false,
           "default": "CURRENT_TIMESTAMP"
+        },
+        "join_code": {
+          "name": "join_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_length": {
+          "name": "code_length",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 6
+        },
+        "reusable": {
+          "name": "reusable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "disabled_at": {
+          "name": "disabled_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "join_count": {
+          "name": "join_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_household_invites_join_code": {
+          "name": "idx_household_invites_join_code",
+          "columns": [
+            {
+              "expression": "join_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_household_invites_household": {
+          "name": "idx_household_invites_household",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "household_invites_household_id_households_id_fk": {
           "name": "household_invites_household_id_households_id_fk",
@@ -6531,6 +7283,18 @@
         },
         "icon_url": {
           "name": "icon_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_category_id": {
+          "name": "default_category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_due_date": {
+          "name": "default_due_date",
           "type": "text",
           "primaryKey": false,
           "notNull": false

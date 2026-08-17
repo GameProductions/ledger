@@ -2,7 +2,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { 
   users as usersTable
-} from '#';
+} from '../../../db/schemas/auth';
 
 export interface UpdateProfileInput {
   username?: string;

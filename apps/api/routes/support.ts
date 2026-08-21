@@ -10,6 +10,42 @@ import { sql } from 'drizzle-orm'
 
 const support = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
+// Helper to verify GitHub Webhook HMAC-SHA256 signature
+async function verifyGitHubWebhookSignature(secret: string, signatureHeader: string | undefined, payloadBody: string): Promise<boolean> {
+  if (!signatureHeader || !signatureHeader.startsWith('sha256=')) return false;
+  const signatureHex = signatureHeader.replace('sha256=', '');
+  
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+  
+  const signatureBytes = new Uint8Array(signatureHex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+  return await crypto.subtle.verify('HMAC', key, signatureBytes, encoder.encode(payloadBody));
+}
+
+// Simple PII redactor for support payloads (Rule 13.17)
+function sanitizeSupportMetadata(metadata: Record<string, any> = {}): Record<string, any> {
+  const SENSITIVE_KEYS = ['password', 'token', 'secret', 'key', 'auth', 'email', 'cookie', 'session'];
+  const sanitized: Record<string, any> = {};
+
+  for (const [k, v] of Object.entries(metadata)) {
+    const isSensitive = SENSITIVE_KEYS.some(s => k.toLowerCase().includes(s));
+    if (isSensitive) {
+      sanitized[k] = '[REDACTED]';
+    } else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+      sanitized[k] = sanitizeSupportMetadata(v);
+    } else {
+      sanitized[k] = v;
+    }
+  }
+  return sanitized;
+}
+
 support.get('/issues', async (c) => {
   const userId = c.get('userId')
   const db = getDb(c.env)
@@ -50,29 +86,31 @@ support.post('/issues/:id/comments', zValidator('json', z.object({
     id: commentId,
     issueId: id,
     userId,
-    authorName: 'User', // Simplified for now
+    authorName: 'User',
     body
   })
   
-  // Push to GitHub if linked
+  // Non-blocking async dispatch to GitHub (Rule 13.11)
   if (issue.githubIssueNumber && c.env.GITHUB_TOKEN && c.env.GITHUB_REPO) {
-     try {
-       const repoRaw = c.env.GITHUB_REPO.trim()
-       const repoMatch = repoRaw.match(/([^/]+\/[^/]+)$/)
-       const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
-       
-       await fetch(`https://api.github.com/repos/${repo}/issues/${issue.githubIssueNumber}/comments`, {
-         method: 'POST',
-         headers: {
-           'Authorization': c.env.GITHUB_TOKEN.startsWith('ghp_') ? `token ${c.env.GITHUB_TOKEN}` : `Bearer ${c.env.GITHUB_TOKEN}`,
-           'Accept': 'application/vnd.github.v3+json',
-           'User-Agent': 'LEDGER-Forensic-Support-Engine'
-         },
-         body: JSON.stringify({ body: `**[Ledger User Comment]**\n\n${body}` })
-       })
-     } catch (err: any) {
-       console.error('[Support] Failed to push comment to GitHub:', err)
-     }
+    c.executionCtx.waitUntil((async () => {
+      try {
+        const repoRaw = c.env.GITHUB_REPO.trim()
+        const repoMatch = repoRaw.match(/([^/]+\/[^/]+)$/)
+        const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
+        
+        await fetch(`https://api.github.com/repos/${repo}/issues/${issue.githubIssueNumber}/comments`, {
+          method: 'POST',
+          headers: {
+            'Authorization': c.env.GITHUB_TOKEN.startsWith('ghp_') ? `token ${c.env.GITHUB_TOKEN}` : `Bearer ${c.env.GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'LEDGER-Forensic-Support-Engine'
+          },
+          body: JSON.stringify({ body: `**[Ledger User Comment]**\n\n${body}` })
+        })
+      } catch (err: any) {
+        console.error('[Support] Failed to push comment to GitHub in background:', err)
+      }
+    })())
   }
   
   return c.json({ success: true, id: commentId })
@@ -89,7 +127,6 @@ const SupportIssueSchema = z.object({
 support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
   const userId = c.get('userId')
   
-  // 1. Defensive Auth Guard (Prevent NULL DB inserts)
   if (!userId) {
     console.error('[Support] Unauthorized submission attempt: userId missing in context')
     throw new HTTPException(401, { message: 'Authentication required for support submission' })
@@ -101,7 +138,6 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
   try {
     const id = crypto.randomUUID()
     
-    // 2. Persistent Storage
     await db.insert(supportIssues).values({
       id,
       userId,
@@ -111,25 +147,25 @@ support.post('/issues', zValidator('json', SupportIssueSchema), async (c) => {
       priority
     })
 
-    // 3. GitHub Integration (Sanitized)
-    let githubUrl = null
+    // Asynchronously create GitHub Issue with sanitized metadata (Rule 13.11 & 13.17)
     if (c.env.GITHUB_TOKEN && c.env.GITHUB_REPO) {
-      try {
-        // Sanitize Repo Name (Extract owner/repo in case user provided full URL)
-        const repoRaw = c.env.GITHUB_REPO.trim()
-        const repoMatch = repoRaw.match(/([^/]+\/[^/]+)$/)
-        const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
+      c.executionCtx.waitUntil((async () => {
+        try {
+          const repoRaw = c.env.GITHUB_REPO.trim()
+          const repoMatch = repoRaw.match(/([^/]+\/[^/]+)$/)
+          const repo = repoMatch ? repoMatch[1].replace('.git', '') : repoRaw
+          const cleanMetadata = sanitizeSupportMetadata(metadata || {})
 
-        const res = (await fetch(`https://api.github.com/repos/${repo}/issues`, {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': c.env.GITHUB_TOKEN.startsWith('ghp_') ? `token ${c.env.GITHUB_TOKEN}` : `Bearer ${c.env.GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'User-Agent': 'LEDGER-Forensic-Support-Engine'
-                  },
-                  body: JSON.stringify({
-                    title: `[Support] ${title}`,
-                    body: `
+          const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+            method: 'POST',
+            headers: {
+              'Authorization': c.env.GITHUB_TOKEN.startsWith('ghp_') ? `token ${c.env.GITHUB_TOKEN}` : `Bearer ${c.env.GITHUB_TOKEN}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'LEDGER-Forensic-Support-Engine'
+            },
+            body: JSON.stringify({
+              title: `[Support] ${title}`,
+              body: `
 ### Description
 ${description}
 
@@ -139,48 +175,60 @@ ${description}
 **Internal Reference:** ${id}
 **System Metadata:**
 \`\`\`json
-${JSON.stringify(metadata || {}, null, 2)}
+${JSON.stringify(cleanMetadata, null, 2)}
 \`\`\`
-            `.trim(),
-                    labels: ['support', category || 'other'].filter(Boolean)
-                  })
-                }) as any)
+              `.trim(),
+              labels: ['support', category || 'other'].filter(Boolean)
+            })
+          })
 
-        if (res.ok) {
-          const ghData: any = await res.json()
-          githubUrl = ghData.html_url
-          await db.update(supportIssues).set({ 
-            githubIssueUrl: githubUrl,
-            githubIssueNumber: ghData.number,
-            githubIssueId: ghData.id
-          }).where(eq(supportIssues.id, id))
-        } else {
-          const errText = (await res.text() as any)
-          console.error(`[Support] GitHub API error for repo ${repo}:`, errText)
+          if (res.ok) {
+            const ghData: any = await res.json()
+            await db.update(supportIssues).set({ 
+              githubIssueUrl: ghData.html_url,
+              githubIssueNumber: ghData.number,
+              githubIssueId: ghData.id
+            }).where(eq(supportIssues.id, id))
+          } else {
+            console.error(`[Support] GitHub API error for repo ${repo}:`, await res.text())
+          }
+        } catch (ghErr: any) {
+          console.error('[Support] Background GitHub issue sync error:', ghErr)
         }
-      } catch (ghErr: any) {
-        console.error('[Support] GitHub Integration exception:', ghErr)
-      }
+      })())
     }
 
-    return c.json({ 
-      success: true, 
-      id, 
-      githubIssueUrl: githubUrl 
-    }, 201)
-
+    return c.json({ success: true, id }, 201)
   } catch (err: any) {
     console.error('[Support] Fatal backend error:', err.message)
     throw new HTTPException(500, { message: 'Failed to process support request. Please try again later.' })
   }
 })
 
-// GitHub Webhook for Real-Time Sync
+// GitHub Webhook for Real-Time Sync (Hardened with HMAC & Echo Suppression)
 support.post('/webhook/github', async (c) => {
-  const payload = (await c.req.json() as any)
+  const signature = c.req.header('x-hub-signature-256')
+  const rawBody = await c.req.text()
+
+  // 1. Verify Cryptographic Webhook HMAC Signature if secret is configured
+  if (c.env.GITHUB_WEBHOOK_SECRET) {
+    const isValid = await verifyGitHubWebhookSignature(c.env.GITHUB_WEBHOOK_SECRET, signature, rawBody)
+    if (!isValid) {
+      console.warn('[Support Webhook] Invalid GitHub HMAC signature rejected.')
+      return c.text('Invalid signature', 401)
+    }
+  }
+
+  let payload: any
+  try {
+    payload = JSON.parse(rawBody)
+  } catch {
+    return c.text('Invalid JSON', 400)
+  }
+
   const db = getDb(c.env)
   
-  // 1. Handle Issue Status Changes
+  // 2. Handle Issue Status Changes
   if (payload.issue && (payload.action === 'closed' || payload.action === 'reopened')) {
     const status = payload.action === 'closed' ? 'closed' : 'open'
     await db.update(supportIssues)
@@ -188,8 +236,15 @@ support.post('/webhook/github', async (c) => {
       .where(eq(supportIssues.githubIssueId, payload.issue.id))
   }
   
-  // 2. Handle New Comments
+  // 3. Handle New Incoming Comments (with Echo Suppression)
   if (payload.action === 'created' && payload.comment && payload.issue) {
+    const commentBody = String(payload.comment.body || '')
+
+    // Echo suppression: Ignore comments posted by the system/bot itself
+    if (commentBody.startsWith('**[Ledger User Comment]**') || payload.comment.user?.type === 'Bot') {
+      return c.json({ success: true, skipped: 'echo_suppressed' })
+    }
+
     // Find the local ticket by GitHub Issue ID
     const tickets = (await db.select()
           .from(supportIssues)
@@ -199,7 +254,7 @@ support.post('/webhook/github', async (c) => {
     if (tickets.length > 0) {
       const ticket = tickets[0]
       
-      // Check if comment already exists (prevent duplicates)
+      // Prevent duplicates
       const existing = (await db.select()
               .from(supportComments)
               .where(eq(supportComments.githubCommentId, payload.comment.id))
@@ -210,7 +265,7 @@ support.post('/webhook/github', async (c) => {
           id: crypto.randomUUID(),
           issueId: ticket.id,
           authorName: payload.comment.user.login,
-          body: payload.comment.body,
+          body: commentBody,
           githubCommentId: payload.comment.id
         })
       }

@@ -25,10 +25,11 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({ view, setView }) => {
                   LEDGER
                 </h1>
                 <span className="text-[10px] font-black tracking-[0.2em] text-text-muted/40 mt-0.5">
-                  v{import.meta.env.VITE_APP_VERSION}
+                  v{import.meta.env.PACKAGE_VERSION || import.meta.env.VITE_APP_VERSION || '3.160.2'}
                 </span>
               </div>
             </a>
+
             <div className="h-6 w-px bg-glass-border hidden sm:block" />
             <div className="hidden sm:block">
               <HouseholdSwitcher />

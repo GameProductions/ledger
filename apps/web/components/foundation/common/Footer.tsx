@@ -31,9 +31,11 @@ export const Footer: React.FC<FooterProps> = ({ appName, version, isGloson = fal
           </div>
 
           <div className="flex items-center space-x-6 text-slate-500 font-semibold tracking-wider text-[11px] uppercase">
+            <a href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms</a>
             <a href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy</a>
             <a href="/legal/security" className="hover:text-cyan-400 transition-colors">Security</a>
             <a href="/legal/safety" className="hover:text-cyan-400 transition-colors">Safety</a>
+            <a href="/legal/cookies" className="hover:text-cyan-400 transition-colors">Cookies</a>
           </div>
         </div>
 
@@ -43,6 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ appName, version, isGloson = fal
             {currentYear} GameProductions™{isGloson ? ' | Gloson Production™' : ''}. All rights reserved.
           </p>
         </div>
+
 
       </div>
     </footer>

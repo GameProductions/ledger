@@ -20,7 +20,25 @@ import { apiError } from '~/utils/errors';
 import { logger } from "hono/logger";
 import { ipRateLimit } from './middlewares/rate-limit';
 
+// 🛑 Shield: Drop PHP / WordPress / Vulnerability scanner probes immediately
+app.use('*', async (c, next) => {
+  const path = c.req.path.toLowerCase();
+  if (
+    path.endsWith('.php') ||
+    path.includes('wp-') ||
+    path.includes('cgi-bin') ||
+    path.includes('phpmyadmin') ||
+    path.includes('.env') ||
+    path.includes('env') ||
+    path.includes('.git')
+  ) {
+    return c.text('Not Found', 404);
+  }
+  await next();
+});
+
 // [SECURITY-V6.1] Fleet-wide Security Hardening & Vault Migration (TOP LEVEL - BYPASS CSRF)
+
 app.post('/api/admin/vault-migration', ipRateLimit(5, 60), async (c) => {
     const authHeader = c.req.header('Authorization');
     if (authHeader !== `Bearer ${c.env.ADMIN_MIGRATION_KEY}`) {
@@ -196,23 +214,8 @@ app.all('/api/*', (c) => {
   return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
 })
 
-// 🛑 Shield: Drop PHP / WordPress / Vulnerability scanner probes immediately
-app.use('*', async (c, next) => {
-  const path = c.req.path.toLowerCase();
-  if (
-    path.endsWith('.php') ||
-    path.includes('wp-') ||
-    path.includes('cgi-bin') ||
-    path.includes('phpmyadmin') ||
-    path.includes('.env') ||
-    path.includes('.git')
-  ) {
-    return c.text('Not Found', 404);
-  }
-  await next();
-});
-
 // 8. React Router v8 Fullstack SSR
+
 import { createRequestHandler, RouterContextProvider } from 'react-router';
 // @ts-ignore
 import * as build from '../../build/server';

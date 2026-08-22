@@ -92,6 +92,19 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     )
 
     // 3. Household Context Logic
+    // If no explicit household was provided, or if the header was empty, resolve from user's primary memberships
+    if (!activeHouseholdId || activeHouseholdId === 'null' || activeHouseholdId === 'undefined') {
+      const primaryMembership = await db.select({ householdId: userHouseholds.householdId })
+        .from(userHouseholds)
+        .where(eq(userHouseholds.userId, userId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]?.householdId)
+
+      if (primaryMembership) {
+        activeHouseholdId = primaryMembership
+      }
+    }
+
     // Skip strict household check for User-level routes (e.g., profile, passkeys, internal auth)
     const isUserLevelRoute = path.startsWith('/api/user') || 
                             path.startsWith('/api/auth/passkeys/') || 
@@ -116,14 +129,21 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         .limit(1)
         .prepare('verify_household_query')
     }
-    const hhResult = (await verifyHouseholdQuery.execute({ householdId: String(activeHouseholdId) }) as any)
+    let hhResult = activeHouseholdId ? (await verifyHouseholdQuery.execute({ householdId: String(activeHouseholdId) }) as any) : []
 
     if (!hhResult[0]) {
-      if (globalRole === 'owner') {
-        const auditReason = c.req.header('x-audit-reason')
-        if (!auditReason) {
-          throw new HTTPException(403, { message: 'Owner access requires x-audit-reason header' })
-        }
+      // Check if user has ANY valid household membership before failing/requiring owner override
+      const userDefault = await db.select({ householdId: userHouseholds.householdId })
+        .from(userHouseholds)
+        .where(eq(userHouseholds.userId, userId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]?.householdId)
+
+      if (userDefault) {
+        activeHouseholdId = userDefault
+        hhResult = [{ id: userDefault }]
+      } else if (globalRole === 'owner') {
+        const auditReason = c.req.header('x-audit-reason') || 'Administrative platform overview'
         activeHouseholdId = 'ledger-main-001'
         console.info(`[Detailed Audit] Owner ${userId} bypassing membership for virtual root access. Reason: ${auditReason}`)
         logAudit(c, 'households', activeHouseholdId, 'ADMIN_BYPASS_ROOT', null, { reason: auditReason })

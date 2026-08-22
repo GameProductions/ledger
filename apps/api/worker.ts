@@ -196,6 +196,22 @@ app.all('/api/*', (c) => {
   return c.json({ error: 'API Endpoint Not Found', status: 404 }, 404)
 })
 
+// 🛑 Shield: Drop PHP / WordPress / Vulnerability scanner probes immediately
+app.use('*', async (c, next) => {
+  const path = c.req.path.toLowerCase();
+  if (
+    path.endsWith('.php') ||
+    path.includes('wp-') ||
+    path.includes('cgi-bin') ||
+    path.includes('phpmyadmin') ||
+    path.includes('.env') ||
+    path.includes('.git')
+  ) {
+    return c.text('Not Found', 404);
+  }
+  await next();
+});
+
 // 8. React Router v8 Fullstack SSR
 import { createRequestHandler, RouterContextProvider } from 'react-router';
 // @ts-ignore
@@ -207,6 +223,27 @@ app.all("*", async (c) => {
 
   if (path.startsWith('/api/') || path.startsWith('/auth/')) {
     return c.json({ error: 'Not Found', path }, 404);
+  }
+
+  // 🖼️ Serve static assets directly from Cloudflare ASSETS binding
+  if (
+    path === '/favicon.ico' || 
+    path === '/favicon.png' || 
+    path === '/apple-touch-icon.png' || 
+    path === '/manifest.json' || 
+    path.startsWith('/icons/') || 
+    path.startsWith('/assets/') ||
+    path.startsWith('/brand/')
+  ) {
+    try {
+      if (c.env.ASSETS && typeof c.env.ASSETS.fetch === 'function') {
+        const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
+        return assetRes;
+      }
+    } catch (e) {
+      console.warn('[Assets Fetch] Error retrieving static asset:', path, e);
+    }
+    return c.text('Asset Not Found', 404);
   }
 
   try {
@@ -229,13 +266,26 @@ app.all("*", async (c) => {
       ctx: c.executionCtx,
     });
 
-    const res = await handler(c.req.raw, loadContext);
+    let res: Response;
+    try {
+      res = await handler(c.req.raw, loadContext);
+    } catch (handlerErr: any) {
+      console.warn('[React Router SSR Fallback] SSR handler encountered error, falling back to static asset delivery:', handlerErr.message);
+      const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
+      return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
+    }
     return injectCSPNonce(res, nonce);
   } catch (error: any) {
     console.error('React Router SSR Error:', error);
-    return c.text('Internal Server Error', 500);
+    try {
+      const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
+      return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
+    } catch {
+      return c.text('Internal Server Error', 500);
+    }
   }
 });
+
 
 app.onError((err, c) => {
   const status = (err as any).status && typeof (err as any).status === 'number' ? (err as any).status : 500;

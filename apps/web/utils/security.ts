@@ -8,17 +8,22 @@
  * Prevents javascript: protocols and other injection vectors.
  */
 export const sanitizeImageUrl = (url: string | null | undefined): string | undefined => {
-  if (!url) return undefined;
+  if (!url || typeof url !== 'string') return undefined;
 
   const trimmed = url.trim();
+  if (!trimmed) return undefined;
 
   // 1. Allow relative paths starting with /
   if (trimmed.startsWith('/')) {
-    return trimmed;
+    // Only allow alphanumeric, dash, dot, underscore, slash, query params
+    if (/^\/[a-zA-Z0-9_\-\.\/\?=&%]+$/.test(trimmed)) {
+      return trimmed;
+    }
+    return undefined;
   }
 
   // 2. Allow specific safe data types (images only)
-  if (trimmed.startsWith('data:image/')) {
+  if (/^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(trimmed)) {
     return trimmed;
   }
 
@@ -26,16 +31,13 @@ export const sanitizeImageUrl = (url: string | null | undefined): string | undef
     const parsed = new URL(trimmed);
     
     // 3. Whitelist safe protocols
-    const safeProtocols = ['http:', 'https:'];
-    if (safeProtocols.includes(parsed.protocol)) {
-      // Further safety: ensure no quotes or other delimiters that might break out of an attribute
-      // Although React escapes these, being explicit helps static analyzers.
-      return trimmed.replace(/[<>"'\s]/g, '');
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.href;
     }
   } catch {
-    // If it's not a valid URL (and not relative/data), ignore it
     return undefined;
   }
 
   return undefined;
 };
+

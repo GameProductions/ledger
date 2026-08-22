@@ -3,7 +3,7 @@ import { useApi, globalMutate } from '../hooks/useApi'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { getApiUrl } from '../utils/api'
-import { Bell, Link, Share2, Search, Plus, X, Trash2, CheckCircle2, Receipt, Globe, Ban, Info } from 'lucide-react'
+import { Bell, Link, Share2, Search, Plus, X, Trash2, CheckCircle2, Receipt, Globe, Ban, Info, Upload, Image as ImageIcon } from 'lucide-react'
 import { Price } from './Price'
 import { ProviderLogo } from './shared/ProviderLogo'
 import { StatusBadge } from './shared/StatusBadge'
@@ -591,14 +591,11 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
   const [showRateChange, setShowRateChange] = useState(!!(initial?.upcomingAmountCents || initial?.upcomingEffectiveDate))
   const [paymentMethodId, setPaymentMethodId] = useState(initial?.paymentMethodId || '')
   const [notes, setNotes] = useState(initial?.notes || '')
+  const [showLogoPicker, setShowLogoPicker] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
 
-  const handleAutoFetchLogo = () => {
-    const logos = autoFetchLogo(name)
-    if (logos) setIconUrl(logos.clearbit)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -637,59 +634,55 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name + Logo */}
-          <div className="flex items-center gap-3">
-            <ProviderLogo url={iconUrl} name={name} size={40} className="border border-white/10" />
-            <div className="flex-1 space-y-1">
-              <FieldLabel label="Service Name" tooltip="A friendly name to identify this subscription (e.g. &quot;Netflix Standard&quot;)" />
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Netflix, Spotify, etc."
-                required
-                className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Logo URL + Auto-fetch */}
-          <div className="space-y-1">
-            <FieldLabel label="Logo URL" tooltip="URL for the service logo. Use &quot;Auto&quot; to fetch one automatically." />
-            <div className="flex gap-2">
-              <input
-                value={iconUrl}
-                onChange={e => setIconUrl(e.target.value)}
-                placeholder="https://logo.clearbit.com/netflix.com"
-                className="flex-1 p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-xs font-bold"
-              />
-              <button
-                type="button"
-                onClick={handleAutoFetchLogo}
-                disabled={!name}
-                className="px-3 bg-primary/10 border border-primary/30 text-primary rounded-xl text-[10px] font-black tracking-widest hover:bg-primary/20 transition-all disabled:opacity-40"
-              >
-                Auto
-              </button>
-            </div>
-          </div>
-
-          {/* Provider Link */}
-          <div className="space-y-1">
-            <FieldLabel label="Link Provider" tooltip="The company or service providing this subscription. Selecting one can auto-fill the service name." />
-            <SearchableSelect
-              options={providerOptions}
-              value={selectedProviderId}
-              onCreate={handleCreateProvider}
-              onChange={(val) => {
-                setSelectedProviderId(val)
-                if (!name) {
+          {/* Provider Link & Subscription Name + Logo */}
+          <div className="space-y-4">
+            {/* Service Provider (Vendor) */}
+            <div className="space-y-1">
+              <FieldLabel label="Service Provider / Vendor" tooltip="The vendor or company providing this subscription (e.g. Netflix, Apple, Google)." />
+              <SearchableSelect
+                options={providerOptions}
+                value={selectedProviderId}
+                onCreate={handleCreateProvider}
+                onChange={(val) => {
+                  setSelectedProviderId(val)
                   const match = providerOptions.find((opt: any) => opt.value === val)
-                  if (match) setName(match.label)
-                }
-              }}
-              placeholder="Select provider..."
-            />
+                  if (match) {
+                    if (!name) setName(match.label)
+                    const logos = autoFetchLogo(match.label)
+                    if (logos && !iconUrl) setIconUrl(logos.clearbit)
+                  }
+                }}
+                placeholder="Select or search provider (e.g. Netflix, Apple, Spotify)..."
+              />
+            </div>
+
+            {/* Subscription Name / Plan + Interactive Logo Trigger */}
+            <div className="flex items-center gap-3">
+              <div className="relative group cursor-pointer" onClick={() => setShowLogoPicker(true)} title="Click to customize or search logo">
+                <ProviderLogo url={iconUrl} name={name} size={48} className="border border-white/10 group-hover:border-primary transition-all rounded-2xl" />
+                <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center text-white">
+                  <Upload size={16} />
+                </div>
+              </div>
+              <div className="flex-1 space-y-1">
+                <FieldLabel label="Subscription Name / Plan" tooltip="The specific subscription or plan identifier (e.g. &quot;Netflix Premium 4K&quot;, &quot;Family Tier&quot;)" />
+                <input
+                  value={name}
+                  onChange={e => {
+                    setName(e.target.value)
+                    if (!iconUrl && e.target.value.length > 2) {
+                      const logos = autoFetchLogo(e.target.value)
+                      if (logos) setIconUrl(logos.clearbit)
+                    }
+                  }}
+                  placeholder="e.g. Premium 4K, Family Tier, Starter..."
+                  required
+                  className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all font-bold text-sm"
+                />
+              </div>
+            </div>
           </div>
+
 
           {/* Amount + Cycle */}
           <div className="grid grid-cols-2 gap-3">
@@ -734,15 +727,15 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
             </div>
           </div>
 
-          {/* Linked Account */}
+          {/* Linked Credentials */}
           <div className="space-y-1">
-            <FieldLabel label="Linked Account" tooltip="The service account (email / username) linked to this subscription" />
+            <FieldLabel label="Linked Credentials" tooltip="The service credentials (email / username) linked to this subscription" />
             <SearchableSelect
               options={linkedAccountOptions}
               value={linkedAccountId}
               onCreate={handleCreateLinkedAccount}
               onChange={setLinkedAccountId}
-              placeholder="Link account..."
+              placeholder="Link credentials..."
             />
           </div>
 
@@ -828,9 +821,234 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
         </form>
       </div>
       </div>
+
+      {showLogoPicker && (
+        <LogoPickerModal
+          currentUrl={iconUrl}
+          providerName={name || providerOptions.find((p: any) => p.value === selectedProviderId)?.label || ''}
+          onSelect={(url) => {
+            setIconUrl(url)
+            setShowLogoPicker(false)
+          }}
+          onClose={() => setShowLogoPicker(false)}
+        />
+      )}
     </div>
   )
 }
+
+// ─── Interactive Logo Picker Modal ──────────────────────────────────
+
+interface LogoPickerModalProps {
+  currentUrl: string
+  providerName: string
+  onSelect: (url: string) => void
+  onClose: () => void
+}
+
+const LogoPickerModal: React.FC<LogoPickerModalProps> = ({ currentUrl, providerName, onSelect, onClose }) => {
+  const [tab, setTab] = useState<'search' | 'upload' | 'url'>('search')
+  const [searchQuery, setSearchQuery] = useState(providerName || '')
+  const [customUrl, setCustomUrl] = useState('')
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Generate candidate logo previews based on search query or provider name
+  const candidateLogos = useMemo(() => {
+    const q = searchQuery.trim() || providerName.trim()
+    if (!q) return []
+    const derived = deriveDomain(q) || `${q.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`
+    return [
+      { label: 'High-Res Vector / Brand', url: `https://logo.clearbit.com/${derived}` },
+      { label: 'Google High-Res (128px)', url: `https://www.google.com/s2/favicons?domain=${derived}&sz=128` },
+      { label: 'Google Standard (64px)', url: `https://www.google.com/s2/favicons?domain=${derived}&sz=64` },
+      { label: 'Direct Domain Root', url: `https://www.google.com/s2/favicons?domain=${q.toLowerCase().replace(/[^a-z0-9]/g, '')}.com&sz=128` },
+    ]
+  }, [searchQuery, providerName])
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setUploadPreview(reader.result)
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl" onClick={onClose}>
+      <div className="card w-full max-w-md p-6 space-y-4 relative border border-white/15 bg-slate-950 shadow-2xl rounded-3xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-black italic tracking-tight flex items-center gap-2">
+            <ImageIcon size={18} className="text-primary" /> Choose <span className="text-primary">Service Logo</span>
+          </h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full transition-all text-slate-400 hover:text-white">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="grid grid-cols-3 gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 text-[11px] font-black">
+          <button
+            type="button"
+            onClick={() => setTab('search')}
+            className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${tab === 'search' ? 'bg-primary text-white shadow' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Search size={13} /> Search
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('upload')}
+            className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${tab === 'upload' ? 'bg-primary text-white shadow' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Upload size={13} /> Upload
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('url')}
+            className={`py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${tab === 'url' ? 'bg-primary text-white shadow' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Link size={13} /> URL
+          </button>
+        </div>
+
+        {/* Tab 1: Web / Google Logo Search */}
+        {tab === 'search' && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black tracking-widest text-secondary">Search Brand / Service</label>
+              <div className="relative">
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="e.g. Netflix, Disney+, GitHub, HBO..."
+                  className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-xs font-bold"
+                />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black tracking-widest text-secondary">Found Logos (Click to select)</label>
+              <div className="grid grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1">
+                {candidateLogos.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onSelect(item.url)}
+                    className="p-3 bg-white/5 border border-white/10 hover:border-primary/60 hover:bg-primary/5 rounded-2xl flex items-center gap-3 transition-all text-left group cursor-pointer"
+                  >
+                    <ProviderLogo url={item.url} name={searchQuery} size={36} className="border border-white/10 rounded-xl flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold text-white truncate group-hover:text-primary transition-colors">{item.label}</p>
+                      <p className="text-[9px] text-slate-500 font-mono truncate">{searchQuery}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Image File Upload */}
+        {tab === 'upload' && (
+          <div className="space-y-4">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="p-8 border-2 border-dashed border-white/15 hover:border-primary/50 hover:bg-primary/5 rounded-3xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all text-center"
+            >
+              {uploadPreview ? (
+                <div className="space-y-2 flex flex-col items-center">
+                  <img src={uploadPreview} alt="Uploaded logo" className="w-16 h-16 object-contain rounded-2xl border border-white/20 shadow-lg" />
+                  <span className="text-xs text-primary font-bold">Click to choose different image</span>
+                </div>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-400">
+                    <Upload size={22} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Select image from your device</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, SVG, WebP up to 5MB</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {uploadPreview && (
+              <button
+                type="button"
+                onClick={() => onSelect(uploadPreview)}
+                className="w-full py-2.5 bg-primary text-white font-bold rounded-xl text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              >
+                Use Uploaded Image
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: Custom URL */}
+        {tab === 'url' && (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black tracking-widest text-secondary">Direct Image URL</label>
+              <input
+                value={customUrl}
+                onChange={e => setCustomUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+                className="w-full p-3 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-xs font-bold"
+              />
+            </div>
+
+            {customUrl && (
+              <div className="p-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+                <ProviderLogo url={customUrl} name={providerName} size={36} className="border border-white/10 rounded-xl" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-white truncate">Live Preview</p>
+                  <p className="text-[10px] text-slate-400 truncate">{customUrl}</p>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              disabled={!customUrl}
+              onClick={() => onSelect(customUrl)}
+              className="w-full py-2.5 bg-primary text-white font-bold rounded-xl text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 cursor-pointer"
+            >
+              Apply Image URL
+            </button>
+          </div>
+        )}
+
+        {/* Clear or Reset Option */}
+        {currentUrl && (
+          <div className="pt-2 border-t border-white/5 flex justify-end">
+            <button
+              type="button"
+              onClick={() => onSelect('')}
+              className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <Trash2 size={12} /> Remove Logo
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 
 // ─── Field Label with Tooltip ─────────────────────────────────────
 

@@ -29,6 +29,7 @@ import supportRoutes from './routes/support'
 import trackedExpensesRoutes from './routes/tracked-expenses'
 import reportsRoutes from './routes/reports'
 import addressRoutes from './routes/address'
+import notificationsRoutes from './routes/notifications'
 
 
 // Durable Objects Exports (Required for Cloudflare)
@@ -58,9 +59,10 @@ app.use('*', async (c, next) => {
   const path = c.req.path
   
   // 1. Public Path Bypass (Skip complex logic for non-API and public routes)
-  if (AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
+  if (path === '/api/fleet/status' || AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
     return await next()
   }
+
 
   // 2. Maintenance Status Check
   const isHardLocked = c.env.MAINTENANCE_MODE === 'true'
@@ -104,9 +106,10 @@ app.use('*', async (c, next) => {
       isGlobalLocked = true
     } else if (globalStatusCache === null) {
       // Fallback: Perform background fetch to Foundation
-      const foundationUrl = c.env.FOUNDATION_URL || (c.env.ENVIRONMENT === 'production' ? 'https://foundation.gpnet.dev' : 'http://localhost:8787');
+      const foundationUrl = c.env.FOUNDATION_URL || 'https://foundation.gpnet.dev';
       try {
         const res = (await fetch(`${foundationUrl}/api/fleet/status`) as any);
+
         if (res.ok) {
           const data = await res.json() as { globalMaintenance: boolean };
           const statusStr = String(data.globalMaintenance);
@@ -171,9 +174,10 @@ app.use('/api/*', async (c, next) => {
   }
 
   // 2. Public Access Check
-  if (AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
+  if (path === '/api/fleet/status' || AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
     return await next()
   }
+
 
   if (path.startsWith('/api/discord') || method === 'OPTIONS') {
     return await next()
@@ -185,6 +189,9 @@ app.use('/api/*', async (c, next) => {
 
 // 2. Health & System Information
 app.get('/ping', (c) => c.text('PONG - LEDGER IS LIVE'))
+
+app.get('/api/fleet/status', (c) => c.json({ globalMaintenance: false }))
+
 
 app.get('/api/health', async (c) => {
   let dbStatus = "connected";
@@ -267,6 +274,9 @@ app.route('/api/discord', discordRoutes)
 app.route('/api/tracked-expenses', trackedExpensesRoutes)
 app.route('/api/reports', reportsRoutes)
 app.route('/api/address', addressRoutes)
+app.route('/api/notifications', notificationsRoutes)
+
+
 
 // Helper to safely parse configuration values
 const safeJsonParse = (val: string | null) => {

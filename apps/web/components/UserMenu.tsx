@@ -234,9 +234,10 @@ const UserMenu: React.FC<{
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="!absolute top-full right-0 mt-3 w-64 card overflow-y-auto max-h-[calc(100vh-100px)] p-2 shadow-2xl z-[2001] overflow-list"
+                className="!absolute top-full right-0 mt-3 w-64 max-w-[calc(100vw-24px)] card overflow-y-auto max-h-[calc(100vh-100px)] p-2 shadow-2xl z-[2001] overflow-list"
                 style={{ background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid var(--primary)' }}
               >
+
                 <div className="px-3 py-2 border-b border-glass-border mb-2">
                   <div className="min-w-0">
                     <div className="text-xs text-primary tracking-widest font-black mb-1">

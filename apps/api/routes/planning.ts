@@ -48,16 +48,42 @@ planning.get('/subscriptions', async (c) => {
   const user = c.get('user') as any
   const db = getDb(c.env)
   
-  const allSubs = (await db.select().from(subscriptions).where(eq(subscriptions.householdId, householdId)).orderBy(asc(subscriptions.name)) as any)
+  const allSubs = (await db.select({
+    id: subscriptions.id,
+    householdId: subscriptions.householdId,
+    name: subscriptions.name,
+    amountCents: subscriptions.amountCents,
+    billingCycle: subscriptions.billingCycle,
+    nextBillingDate: subscriptions.nextBillingDate,
+    endDate: subscriptions.endDate,
+    maxOccurrences: subscriptions.maxOccurrences,
+    trialEndDate: subscriptions.trialEndDate,
+    isTrial: subscriptions.isTrial,
+    categoryId: subscriptions.categoryId,
+    accountId: subscriptions.accountId,
+    paymentMode: subscriptions.paymentMode,
+    ownerId: subscriptions.ownerId,
+    visibility: subscriptions.visibility,
+    publicScope: subscriptions.publicScope,
+    externalContactId: subscriptions.externalContactId,
+    upcomingAmountCents: subscriptions.upcomingAmountCents,
+    upcomingEffectiveDate: subscriptions.upcomingEffectiveDate,
+    payScheduleId: subscriptions.payScheduleId,
+    paycheckDate: subscriptions.paycheckDate,
+    paymentMethodId: subscriptions.paymentMethodId
+  }).from(subscriptions).where(eq(subscriptions.householdId, householdId)).orderBy(asc(subscriptions.name)) as any)
+
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'subscription'))) as any)
   
   const results = allSubs.map((sub: any) => {
-    const userSplit = splits.find((s: any) => s.targetId === sub.id && s.assignedUserId === user?.id)
+    const userId = user?.id || c.get('userId')
+    const userSplit = userId ? splits.find((s: any) => s.targetId === sub.id && s.assignedUserId === userId) : null
     if (userSplit) {
        const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter((s: any) => s.targetId === sub.id) : undefined;
        return {
          ...sub,
          amountCents: userSplit.calculatedAmountCents,
+
          nextBillingDate: userSplit.overrideDate || sub.nextBillingDate,
          billingCycle: userSplit.overrideFrequency || sub.billingCycle,
          isSplitPortion: true,
@@ -66,8 +92,9 @@ planning.get('/subscriptions', async (c) => {
        }
     }
     
-    const originatedSplits = splits.filter((s: any) => s.targetId === sub.id && s.originatorUserId === user?.id)
+    const originatedSplits = userId ? splits.filter((s: any) => s.targetId === sub.id && s.originatorUserId === userId) : []
     if (originatedSplits.length > 0) {
+
       const remainingCents = sub.amountCents - originatedSplits.reduce((acc: any, curr: any) => acc + curr.calculatedAmountCents, 0)
       return {
         ...sub,
@@ -166,13 +193,14 @@ planning.delete('/subscriptions/:id', async (c) => {
 planning.get('/bills', async (c) => {
   const householdId = c.get('householdId')
   const user = c.get('user') as any
+  const userId = user?.id || c.get('userId')
   const db = getDb(c.env)
 
   const allBills = (await db.select().from(bills).where(eq(bills.householdId, householdId)).orderBy(asc(bills.name)) as any)
   const splits = (await db.select().from(liabilitySplits).where(and(eq(liabilitySplits.householdId, householdId), eq(liabilitySplits.targetType, 'bill'))) as any)
   
   const results = allBills.map((bill: any) => {
-    const userSplit = splits.find((s: any) => s.targetId === bill.id && s.assignedUserId === user?.id)
+    const userSplit = userId ? splits.find((s: any) => s.targetId === bill.id && s.assignedUserId === userId) : null
     if (userSplit) {
        const publicSplits = userSplit.isMasterLedgerPublic ? splits.filter((s: any) => s.targetId === bill.id) : undefined;
        return {
@@ -185,7 +213,7 @@ planning.get('/bills', async (c) => {
          splits: publicSplits
        }
     }
-    const originatedSplits = splits.filter((s: any) => s.targetId === bill.id && s.originatorUserId === user?.id)
+    const originatedSplits = userId ? splits.filter((s: any) => s.targetId === bill.id && s.originatorUserId === userId) : []
     if (originatedSplits.length > 0) {
       const remainingCents = bill.amountCents - originatedSplits.reduce((acc: any, curr: any) => acc + curr.calculatedAmountCents, 0)
       return {

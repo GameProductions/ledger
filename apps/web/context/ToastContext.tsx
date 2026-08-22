@@ -39,7 +39,21 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const showToast = useCallback((message: string, type: ToastType = 'info', title?: string) => {
     addToast({ message, type, title })
+    
+    // Broadcast toast event for notification bell & history aggregation
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ledger-inapp-toast', {
+        detail: {
+          id: `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          title: title || (type.charAt(0).toUpperCase() + type.slice(1)),
+          message,
+          type,
+          timestamp: new Date().toISOString()
+        }
+      }))
+    }
   }, [addToast])
+
 
   const showConfirm = useCallback((message: string, title: string = 'Confirm Action'): Promise<boolean> => {
     return new Promise((resolve) => {

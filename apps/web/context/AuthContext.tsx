@@ -22,21 +22,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isDev = import.meta.env.DEV;
-  const [token, setToken] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_token') || (isDev ? 'dummy-token' : null) : (isDev ? 'dummy-token' : null))
+  const [token, setToken] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_token') : null)
   const [user, setUser] = useState<any>(() => {
-    if (typeof window === 'undefined') return isDev ? { id: "user-123", displayName: "Administrator", email: "admin@example.com" } : null;
+    if (typeof window === 'undefined') return null;
     try {
-      return JSON.parse(localStorage.getItem('ledger_user') || (isDev ? '{"id":"user-123","displayName":"Administrator","email":"admin@example.com"}' : 'null'));
+      return JSON.parse(localStorage.getItem('ledger_user') || 'null');
     } catch {
       return null;
     }
   })
-  const [householdId, setRawHouseholdId] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_householdId') || (isDev ? 'household-abc' : null) : (isDev ? 'household-abc' : null))
+  const [householdId, setRawHouseholdId] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_householdId') : null)
   const [globalRole, setGlobalRole] = useState<string | null>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_globalRole') || 'user' : 'user')
   const [privacyMode, setPrivacyMode] = useState<boolean>(() => typeof window !== 'undefined' ? localStorage.getItem('ledger_privacy_mode') === 'true' : false)
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
   const [isAdminVerified, setIsAdminVerified] = useState<boolean>(false)
+
   // Session Verification
   React.useEffect(() => {
     if (token) {

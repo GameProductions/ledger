@@ -36,8 +36,9 @@ export const getStandardCSP = (nonce: string) => {
         "https://*.discordapp.com", "https://*.discord.com", "https://discord.com", "https://canary.discord.com",
         "https://www.gstatic.com", "https://cdn.simpleicons.org", "https://flaticons.net",
         "https://api.dicebear.com", "https://ui-avatars.com", "https://api.qrserver.com",
-        "https://images.unsplash.com", "https://*.giphy.com",
+        "https://images.unsplash.com", "https://*.giphy.com", "https://*.googleusercontent.com",
         "https://c.1password.com", "https://cache.agilebits.com", "https://raw.githubusercontent.com"
+
       ],
       connectSrc: [
         "'self'", "https://*.gpnet.dev", "https://*.glosonproductions.com",

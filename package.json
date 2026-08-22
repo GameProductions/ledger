@@ -1,8 +1,9 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.161.0",
+  "version": "3.162.0",
   "type": "module",
+
   "scripts": {
     "dev": "vite",
     "build": "react-router build",

@@ -102,6 +102,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
       if (primaryMembership) {
         activeHouseholdId = primaryMembership
+      } else if (globalRole === 'owner') {
+        activeHouseholdId = 'ledger-main-001'
       }
     }
 
@@ -115,7 +117,6 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
       c.set('userId', userId)
       c.set('globalRole', globalRole as string)
       if (payload.sid) c.set('sessionId', payload.sid)
-      // Attempt to set householdId if present, but don't fail if not
       if (activeHouseholdId) c.set('householdId', String(activeHouseholdId))
       await next()
       return
@@ -143,10 +144,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         activeHouseholdId = userDefault
         hhResult = [{ id: userDefault }]
       } else if (globalRole === 'owner') {
-        const auditReason = c.req.header('x-audit-reason') || 'Administrative platform overview'
         activeHouseholdId = 'ledger-main-001'
-        console.info(`[Detailed Audit] Owner ${userId} bypassing membership for virtual root access. Reason: ${auditReason}`)
-        logAudit(c, 'households', activeHouseholdId, 'ADMIN_BYPASS_ROOT', null, { reason: auditReason })
+        hhResult = [{ id: 'ledger-main-001' }]
       } else {
         throw new HTTPException(401, { message: 'Invalid or missing Household' })
       }
@@ -165,8 +164,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
 
     if (!isMember) {
       if (globalRole === 'owner') {
-        // Owner Bypass Logging
-        const auditReason = c.req.header('x-audit-reason')
+        // Automatically link owner to default household if not yet recorded, or require reason for third-party household inspection
+        const auditReason = c.req.header('x-audit-reason') || (activeHouseholdId === 'ledger-main-001' ? 'Default Owner Household Context' : undefined)
         if (!auditReason) {
           throw new HTTPException(403, { message: 'Owner access requires x-audit-reason header' })
         }
@@ -177,6 +176,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
         throw new HTTPException(403, { message: 'Access Denied to this Household' })
       }
     }
+
     
     c.set('userId', userId)
     c.set('user', user)

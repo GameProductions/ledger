@@ -11,6 +11,8 @@ dist
 build
 .next
 out
+.react-router
+
 
 # Misc
 .DS_Store

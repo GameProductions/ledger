@@ -44,11 +44,16 @@ const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, portalRef, 
       const dropdownHeight = 380; // approximate max-height
       const above = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
 
+      const dropdownWidth = Math.max(rect.width, 240);
+      // Ensure left doesn't overflow right viewport edge
+      const maxLeft = window.innerWidth - dropdownWidth - 12;
+      const clampedLeft = Math.max(12, Math.min(rect.left, maxLeft));
+
       setStyle({
         position: 'fixed',
         zIndex: 50000,
-        left: rect.left,
-        width: rect.width,
+        left: clampedLeft,
+        width: Math.min(dropdownWidth, window.innerWidth - 24),
         ...(above
           ? { bottom: window.innerHeight - rect.top + 4 }
           : { top: rect.bottom + 4 }),
@@ -56,6 +61,7 @@ const DropdownPortal: React.FC<DropdownPortalProps> = ({ triggerRef, portalRef, 
     };
 
     position();
+
     window.addEventListener('scroll', position, true);
     window.addEventListener('resize', position);
     return () => {

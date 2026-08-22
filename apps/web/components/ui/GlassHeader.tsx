@@ -3,6 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import HouseholdSwitcher from '../HouseholdSwitcher';
 import UserMenu from '../UserMenu';
 import SeasonalAssets from '../SeasonalAssets';
+import { NotificationBell } from '../NotificationBell';
 
 interface GlassHeaderProps {
   view?: 'list' | 'calendar';
@@ -36,13 +37,12 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({ view, setView }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
-             <button className="p-2 hover:bg-white/5 rounded-xl text-secondary hover:text-white transition-all text-lg border border-transparent hover:border-glass-border hidden xs:block">
-               🔍
-             </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+             <NotificationBell />
              <UserMenu view={view} setView={setView} />
           </div>
         </header>
+
         {/* Mobile Household Switcher (visible only on small screens) */}
         <div className="mt-2 sm:hidden flex justify-center">
           <div className="bg-[#0f172a]/80 backdrop-blur-2xl border border-glass-border rounded-xl px-4 py-1 shadow-lg reveal">

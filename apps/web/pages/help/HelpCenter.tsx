@@ -1,7 +1,8 @@
 import React from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
-import { Book, HelpCircle, PlayCircle, MessageSquare, AlertTriangle, ArrowRight, Search } from 'lucide-react';
+import { Book, HelpCircle, PlayCircle, MessageSquare, ArrowRight, Search } from 'lucide-react';
 import { HelpCenter as FoundationHelp } from '../../components/foundation/help/HelpCenter';
+
 
 export const HelpCenter: React.FC = () => {
   const categories = [
@@ -66,25 +67,9 @@ export const HelpCenter: React.FC = () => {
           ))}
         </div>
 
-        <section className="p-12 bg-primary/10 border border-primary/20 rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 blur-[100px] -mr-48 -mt-48 group-hover:bg-primary/30 transition-colors" />
-          <div className="space-y-4 relative z-10">
-            <h2 className="text-3xl font-black italic tracking-tighter text-white">Report an Emergency</h2>
-            <p className="text-secondary max-w-md font-medium">
-              Experiencing a critical sync error or security concern? Our priority response team is standing by.
-            </p>
-          </div>
-          <a 
-            href="#/help/support?emergency=true"
-            className="px-10 py-5 bg-white text-black font-black tracking-widest text-sm rounded-2xl hover:bg-primary hover:text-white transition-all transform hover:scale-105 relative z-10 flex items-center gap-3"
-          >
-            <AlertTriangle size={16} />
-            Report Issue
-          </a>
-        </section>
-
         <section className="space-y-8">
           <div className="flex items-center gap-3 mb-4">
+
             <Search className="text-primary" size={24} />
             <h2 className="text-2xl font-black italic tracking-tighter text-white">Universal Search</h2>
           </div>

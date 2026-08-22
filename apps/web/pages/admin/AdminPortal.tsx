@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import UserMenu from '../../components/UserMenu';
-import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Activity, Lock, Globe, Zap, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Shield, Settings, Database, Search, FileText, Globe, Zap, ExternalLink, Lock } from 'lucide-react';
 
 interface AdminPortalProps {
   children: React.ReactNode;
@@ -10,7 +10,6 @@ interface AdminPortalProps {
 
 const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
   const { user } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   React.useEffect(() => {
     const originalTitle = document.title;
@@ -30,6 +29,10 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
     );
   }
 
+  const domain = typeof window !== 'undefined' && window.location.hostname.includes('localhost')
+    ? 'http://localhost:5172'
+    : 'https://foundation.gpnet.dev';
+
   const navItems = [
     { name: 'Owner Dashboard', path: '#/admin/dashboard', icon: LayoutDashboard },
     { name: 'User Directory', path: '#/admin/users', icon: Users },
@@ -39,7 +42,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
     { name: 'Payment Networks', path: '#/admin/processors', icon: Zap },
     { name: 'Master Records', path: '#/admin/registry', icon: FileText },
     { name: 'Global Search', path: '#/admin/search', icon: Search },
-    { name: 'Platform Settings', path: '#/admin/config', icon: Settings },
+    { name: 'Ledger Settings', path: '#/admin/config', icon: Settings },
     { name: 'Owner Guide', path: '#/admin/guide', icon: FileText },
   ];
 
@@ -50,28 +53,31 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center text-black font-black text-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] border border-white/10">
-               S
+               L
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-base font-black tracking-tight italic">System <span className="text-emerald-500">Owner</span></h1>
+                <h1 className="text-base font-black tracking-tight italic">Ledger <span className="text-emerald-500">Owner</span></h1>
                 <span className="px-1.5 py-0.5 rounded text-[8px] bg-emerald-500 text-black font-black tracking-widest animate-pulse">Auth</span>
               </div>
-              <p className="text-[8px] text-slate-500 tracking-widest font-black">Owner Access</p>
+              <p className="text-[8px] text-slate-500 tracking-widest font-black">Domain Control</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-            <Shield size={14} className="text-emerald-500" />
-            <span className="text-[10px] font-black text-emerald-500 tracking-wider">Secure Connection</span>
-          </div>
+        <div className="flex items-center gap-4">
+          <a
+            href={`${domain}/platform-settings`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+          >
+            <span>Foundation Sovereign Matrix</span>
+            <ExternalLink size={12} />
+          </a>
           <UserMenu isAdminPortal={true} />
         </div>
       </header>
-
-
 
       {/* Sidebar Navigation */}
       <aside className="fixed top-[72px] left-6 bottom-6 w-56 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-3xl p-3 hidden xl:block overflow-y-auto custom-scrollbar">
@@ -96,36 +102,50 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                })}
             </div>
             
-            <div className="p-3 border-t border-white/5">
-                <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2">
-                   <Lock size={14} className="text-blue-500" />
+            {/* Foundation Sovereign Command Matrix Deep Link */}
+            <div className="p-3 border-t border-white/5 space-y-2">
+                <a
+                  href={`${domain}/security`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-400 flex flex-col gap-1 transition-all group"
+                >
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider">
+                    <span>Fleet Security</span>
+                    <ExternalLink size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  <span className="text-[9px] text-slate-400 leading-tight">Manage fleet policies & locks in Foundation</span>
+                </a>
+
+                <div className="p-2.5 bg-white/5 rounded-xl border border-white/5 flex items-center gap-2">
+                   <Lock size={12} className="text-emerald-500" />
                    <div className="flex flex-col">
-                       <span className="text-[10px] font-black text-slate-600">Level</span>
-                       <span className="text-[10px] font-black text-blue-500 italic">OWNER_ACCESS</span>
+                       <span className="text-[8px] font-black text-slate-500 uppercase">Role</span>
+                       <span className="text-[9px] font-black text-emerald-400 font-mono">OWNER</span>
                    </div>
-                 </div>
-              </div>
-          </div>
-       </aside>
-
-        {/* Main Content Area */}
-        <main className="pt-24 pb-12 px-4 sm:px-6 xl:pl-[270px] xl:pr-8 max-w-[1500px] mx-auto h-[calc(100vh-72px)] overflow-y-auto custom-scrollbar">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
-            {children}
-          </div>
-        </main>
-
-        {/* Status Footer */}
-        <footer className="fixed bottom-0 left-0 right-0 py-1.5 px-8 z-[500] pointer-events-none">
-          <div className="flex items-center justify-between opacity-25">
-            <div className="text-[10px] text-slate-600 font-mono tracking-widest">
-              Session: {user.id.slice(0, 16)}... | Secure
+                </div>
             </div>
-            <div className="text-[10px] text-emerald-500 font-mono tracking-widest">
-              Host: {window.location.hostname}
-            </div>
+         </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="pt-24 pb-12 px-4 sm:px-6 xl:pl-[270px] xl:pr-8 max-w-[1500px] mx-auto h-[calc(100vh-72px)] overflow-y-auto custom-scrollbar">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
+          {children}
+        </div>
+      </main>
+
+      {/* Status Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 py-1.5 px-8 z-[500] pointer-events-none">
+        <div className="flex items-center justify-between opacity-25">
+          <div className="text-[10px] text-slate-600 font-mono tracking-widest">
+            Session: {user.id.slice(0, 16)}... | Secure
           </div>
-        </footer>
+          <div className="text-[10px] text-emerald-500 font-mono tracking-widest">
+            Host: {typeof window !== 'undefined' ? window.location.hostname : 'gpnet.dev'}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

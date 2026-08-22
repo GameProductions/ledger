@@ -516,34 +516,26 @@ const AdminConfig: React.FC = () => {
           </div>
         </section>
 
-        {/* Domain Lists */}
-        <section>
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-black italic tracking-tighter underline decoration-violet-500/50 underline-offset-8">Domain Access Control</h2>
-            <span className="text-xs bg-white/10 px-2 py-1 rounded text-gray-500 font-bold tracking-widest leading-none">Security</span>
+        {/* Domain Access Control — Moved to Foundation */}
+        <section className="p-8 rounded-3xl bg-blue-500/10 border border-blue-500/20 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex items-center gap-2 text-blue-400">
+              <span className="text-xs bg-blue-500/20 px-2.5 py-1 rounded-full font-black uppercase tracking-wider">Centralized Policy</span>
+            </div>
+            <h3 className="text-xl font-black text-white uppercase tracking-tight">Domain Access & CORS Governance</h3>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Allowed origins, blocked domains, edge firewall rules, and global security policies are centralized in the Foundation Command Matrix.
+            </p>
           </div>
-          <div className="grid grid-cols-1 gap-4">
-            {allowedDomainsCfg && (
-              <DomainChipEditor
-                label="ALLOWED_DOMAINS"
-                description="Domains permitted to access this platform. Supports wildcards (e.g. *.example.com), localhost, and IP addresses."
-                accentColor="emerald"
-                configId={allowedDomainsCfg.id}
-                initialValue={allowedDomainsCfg.configValue ?? ''}
-                onSave={handleUpdateConfig}
-              />
-            )}
-            {blockedDomainsCfg && (
-              <DomainChipEditor
-                label="BLOCKED_DOMAINS"
-                description="Domains that are explicitly denied access. Blocked domains take precedence over the allowed list."
-                accentColor="red"
-                configId={blockedDomainsCfg.id}
-                initialValue={blockedDomainsCfg.configValue ?? ''}
-                onSave={handleUpdateConfig}
-              />
-            )}
-          </div>
+
+          <a
+            href={typeof window !== 'undefined' && window.location.hostname.includes('localhost') ? 'http://localhost:5172/platform-settings' : 'https://foundation.gpnet.dev/platform-settings'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition-all shrink-0 text-center shadow-lg shadow-blue-600/20"
+          >
+            Manage in Foundation ↗
+          </a>
         </section>
 
         {/* Feature Flags */}

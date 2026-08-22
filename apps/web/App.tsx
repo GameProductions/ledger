@@ -64,7 +64,7 @@ import { AlertTriangle, WifiOff, ExternalLink } from 'lucide-react'
 
 const AppContent: React.FC = () => {
   const { user, globalRole, householdId, refreshProfile } = useAuth()
-  const [currentHash, setCurrentHash] = useState(window.location.hash)
+  const [currentHash, setCurrentHash] = useState(() => typeof window !== 'undefined' ? window.location.hash : '')
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [isMaintenance, setIsMaintenance] = useState(false)
   const [isError, setIsError] = useState(false)

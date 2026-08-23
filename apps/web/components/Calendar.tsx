@@ -723,8 +723,8 @@ const Calendar: React.FC<CalendarProps> = ({
                                  <p className="text-[10px] tracking-widest font-black opacity-50 mt-1 flex flex-wrap items-center gap-1">
                                      <span>{style.label} • {format(item._date, 'MMM d, yyyy')}</span>
                                      {getAssignedPaycheckName(item) && (
-                                       <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-black text-[8px] tracking-widest ml-1 border border-blue-500/10">
-                                         <Wallet size={10} className="inline" /> {getAssignedPaycheckName(item)}
+                                       <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-bold text-[10px] tracking-wider ml-1 border border-blue-500/20">
+                                         <Wallet size={11} className="inline mr-0.5" /> {getAssignedPaycheckName(item)}
                                        </span>
                                      )}
                                  </p>
@@ -801,8 +801,8 @@ const Calendar: React.FC<CalendarProps> = ({
                                 onClick={() => { setRangeType('pay_period'); setPayPeriodType(type); setIsRangeModalOpen(false); }}
                                 className={`p-4 rounded-2xl border transition-all text-center flex flex-col items-center gap-2 ${rangeType === 'pay_period' && payPeriodType === type ? 'bg-primary/10 border-primary text-white' : 'bg-white/5 border-white/5 text-secondary hover:bg-white/10'}`}
                             >
-                                <div className="text-[10px] font-black tracking-widest">{type}</div>
-                                <div className="text-[8px] opacity-40">Period</div>
+                                <div className="text-xs font-bold tracking-wider uppercase">{type}</div>
+                                <div className="text-[10px] text-white/50">Period</div>
                             </button>
                         ))}
                     </div>

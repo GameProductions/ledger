@@ -194,17 +194,17 @@ const SubscriptionManager: React.FC<SubManagerProps> = ({ compact, onNavigateToF
       {/* Stats bar */}
       {!compact && (
         <div className="grid grid-cols-3 gap-3">
-          <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
-            <div className="text-[8px] font-black tracking-widest text-white/30">Active</div>
-            <div className="text-lg font-black text-white">{stats.activeCount}</div>
+          <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl">
+            <div className="text-xs font-bold tracking-wider uppercase text-white/60">Active</div>
+            <div className="text-lg font-black text-white mt-0.5">{stats.activeCount}</div>
           </div>
-          <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
-            <div className="text-[8px] font-black tracking-widest text-white/30">Monthly</div>
-            <Price amountCents={Math.round(stats.monthlyTotal)} className="text-lg font-black text-amber-400" />
+          <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl">
+            <div className="text-xs font-bold tracking-wider uppercase text-amber-400/80">Monthly</div>
+            <Price amountCents={Math.round(stats.monthlyTotal)} className="text-lg font-black text-amber-400 mt-0.5" />
           </div>
-          <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
-            <div className="text-[8px] font-black tracking-widest text-white/30">Annual</div>
-            <Price amountCents={Math.round(stats.annualTotal)} className="text-lg font-black text-emerald-400" />
+          <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl">
+            <div className="text-xs font-bold tracking-wider uppercase text-emerald-400/80">Annual</div>
+            <Price amountCents={Math.round(stats.annualTotal)} className="text-lg font-black text-emerald-400 mt-0.5" />
           </div>
         </div>
       )}
@@ -778,11 +778,11 @@ const SubscriptionFormModal: React.FC<SubscriptionFormModalProps> = ({
             {showRateChange && (
               <div className="grid grid-cols-2 gap-2 animate-in slide-in-from-top-2 duration-200">
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black tracking-widest text-white/30">Upcoming Amount</label>
+                  <label className="text-xs font-bold tracking-wider uppercase text-white/60">Upcoming Amount</label>
                   <CurrencyInput valueCents={upcomingAmountCents} onChangeCents={setUpcomingAmountCents} placeholder="0.00" className="bg-black/40 border-white/10" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black tracking-widest text-white/30">Effective Date</label>
+                  <label className="text-xs font-bold tracking-wider uppercase text-white/60">Effective Date</label>
                   <input type="date" value={upcomingEffectiveDate} onChange={e => setUpcomingEffectiveDate(e.target.value)} className="w-full p-3 bg-black/40 border border-white/10 rounded-xl text-white text-sm font-bold outline-none focus:border-white/20" />
                 </div>
               </div>

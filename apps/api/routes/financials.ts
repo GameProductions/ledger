@@ -17,7 +17,8 @@ import {
   TransactionPairingRuleSchema,
   BillerSchema,
   MerchantSchema,
-  ChargeDescriptorSchema
+  ChargeDescriptorSchema,
+  SplitTemplateSchema
 } from '@shared/schemas'
 import { dispatchWebhook } from '../services/webhook-service'
 import { logAudit, apiError } from '../utils'
@@ -39,7 +40,9 @@ import {
   activityLogs,
   users,
   chargeDescriptors,
-  billingProcessors
+  billingProcessors,
+  liabilitySplits,
+  splitTemplates
 } from '#/schema'
 import { billers, merchants, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
@@ -518,14 +521,31 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
       paycheckDate: data.paycheckDate || null,
     })
 
+    const insertTimeline = db.insert(transactionTimeline).values({
+      id: crypto.randomUUID(),
+      transactionId: id,
+      type: 'creation',
+      content: JSON.stringify({
+        amountCents: data.amountCents,
+        description: data.description,
+        transactionDate: date,
+        accountId: data.accountId || null,
+        categoryId: data.categoryId || null,
+        status: data.status || 'pending',
+        notes: data.notes || null,
+        confirmationNumber: data.confirmationNumber || null,
+        source: data.source || 'manual'
+      })
+    })
+
     if (data.categoryId) {
       const updateCat = db.update(categories)
         .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amountCents}` })
         .where(and(eq(categories.id, data.categoryId), eq(categories.householdId, householdId)))
       
-      await db.batch([insertTx, updateCat])
+      await db.batch([insertTx, insertTimeline, updateCat])
     } else {
-      await insertTx
+      await db.batch([insertTx, insertTimeline])
     }
     
     // EXECUTE RULE ENGINE (Smart Billing)
@@ -728,19 +748,123 @@ financials.patch('/transactions/bulk-reconcile', zValidator('json', z.object({
   return c.json({ success: true })
 })
 
+financials.patch('/transactions/:id/timeline/:entryId', zValidator('json', z.object({
+  content: z.string().min(1)
+})), async (c) => {
+  const id = c.req.param('id')
+  const entryId = c.req.param('entryId')
+  const householdId = c.get('householdId')
+  const { content } = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const tx = (await db.select({ id: transactions.id }).from(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+      .limit(1).then(res => res[0]) as any)
+
+  if (!tx) throw new HTTPException(404, { message: 'Transaction not found in this household' })
+
+  await db.update(transactionTimeline)
+    .set({ content })
+    .where(and(eq(transactionTimeline.id, entryId), eq(transactionTimeline.transactionId, id)))
+
+  await logAudit(c, 'transaction_timeline', entryId, 'UPDATE', null, { content })
+  return c.json({ success: true })
+})
+
+financials.delete('/transactions/:id/timeline/:entryId', async (c) => {
+  const id = c.req.param('id')
+  const entryId = c.req.param('entryId')
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+
+  const tx = (await db.select({ id: transactions.id }).from(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+      .limit(1).then(res => res[0]) as any)
+
+  if (!tx) throw new HTTPException(404, { message: 'Transaction not found in this household' })
+
+  await db.delete(transactionTimeline)
+    .where(and(eq(transactionTimeline.id, entryId), eq(transactionTimeline.transactionId, id)))
+
+  await logAudit(c, 'transaction_timeline', entryId, 'DELETE', null, null)
+  return c.json({ success: true })
+})
+
+financials.post('/transactions/:id/share', zValidator('json', z.object({
+  assignedUserId: z.string(),
+  splitType: z.enum(['percentage', 'fixed']).default('fixed'),
+  splitValue: z.number(),
+  calculatedAmountCents: z.number().int().min(1),
+  isMasterLedgerPublic: z.boolean().optional().default(false)
+})), async (c) => {
+  const id = c.req.param('id')
+  const householdId = c.get('householdId')
+  const userId = c.get('userId') as string
+  const data = c.req.valid('json')
+  const db = getDb(c.env)
+
+  const tx = (await db.select().from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+    .limit(1).then(res => res[0]) as any)
+  if (!tx) throw new HTTPException(404, { message: 'Transaction not found' })
+
+  const splitId = crypto.randomUUID()
+  const lSplit = db.insert(liabilitySplits).values({
+    id: splitId,
+    householdId,
+    targetId: id,
+    targetType: 'transaction',
+    originatorUserId: userId,
+    assignedUserId: data.assignedUserId,
+    splitType: data.splitType,
+    splitValue: data.splitValue,
+    calculatedAmountCents: data.calculatedAmountCents,
+    status: 'pending',
+    isMasterLedgerPublic: data.isMasterLedgerPublic
+  })
+
+  const balanceId = crypto.randomUUID()
+  const sBalance = db.insert(sharedBalances).values({
+    id: balanceId,
+    householdId,
+    fromUserId: userId,
+    toUserId: data.assignedUserId,
+    amountCents: data.calculatedAmountCents,
+    transactionId: id
+  })
+
+  const tLog = db.insert(transactionTimeline).values({
+    id: crypto.randomUUID(),
+    transactionId: id,
+    type: 'share',
+    content: JSON.stringify({
+      assignedUserId: data.assignedUserId,
+      amountCents: data.calculatedAmountCents,
+      splitType: data.splitType,
+      splitValue: data.splitValue
+    })
+  })
+
+  await db.batch([lSplit, sBalance, tLog] as any)
+  await logAudit(c, 'transactions', id, 'SHARE_EXPENSE', null, data)
+  return c.json({ success: true, id: splitId })
+})
+
 financials.post('/transactions/:id/split', zValidator('json', z.object({
   splits: z.array(z.object({
     amountCents: z.number().int(),
+    description: z.string().min(1),
     categoryId: z.string().optional().nullable(),
-    description: z.string()
-  }))
-}), (result, c) => {
-  if (!result.success) {
-    console.error(`[DIAGNOSTIC_FAILURE] Transaction split validation failed:`, result.error.issues);
-  }
-}), async (c) => {
+    accountId: z.string().optional().nullable(),
+    transactionDate: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    assignedUserId: z.string().optional().nullable(),
+    splitSharedAmountCents: z.number().int().optional().nullable()
+  })).min(2)
+})), async (c) => {
   const id = c.req.param('id')
   const householdId = c.get('householdId')
+  const userId = c.get('userId') as string
   const { splits } = c.req.valid('json')
   const db = getDb(c.env)
   
@@ -752,26 +876,93 @@ financials.post('/transactions/:id/split', zValidator('json', z.object({
     throw new HTTPException(400, { message: 'Split amounts must equal original transaction amount' })
   }
 
-  const inserts = splits.map(split => {
-    return db.insert(transactions).values({
-      id: crypto.randomUUID(),
+  const inserts: any[] = []
+  const timelineInserts: any[] = []
+  const sharedInserts: any[] = []
+  const liabilityInserts: any[] = []
+
+  for (const split of splits) {
+    const childId = crypto.randomUUID()
+    const childDate = split.transactionDate || original.transactionDate
+    const childAccount = split.accountId || original.accountId
+    const childCategory = split.categoryId || null
+    
+    inserts.push(db.insert(transactions).values({
+      id: childId,
       householdId,
-      accountId: original.accountId,
-      categoryId: split.categoryId || null,
+      accountId: childAccount,
+      categoryId: childCategory,
       description: split.description,
       amountCents: split.amountCents,
-      transactionDate: original.transactionDate,
-      parentId: id, // Link to original
+      transactionDate: childDate,
+      parentId: id, // Preserved parent linkage
       status: original.status,
-      ownerId: original.ownerId
+      notes: split.notes || null,
+      ownerId: original.ownerId,
+      source: 'split'
+    }))
+
+    timelineInserts.push(db.insert(transactionTimeline).values({
+      id: crypto.randomUUID(),
+      transactionId: childId,
+      type: 'creation',
+      content: JSON.stringify({
+        amountCents: split.amountCents,
+        description: split.description,
+        transactionDate: childDate,
+        accountId: childAccount,
+        categoryId: childCategory,
+        source: 'split',
+        parentId: id
+      })
+    }))
+
+    if (split.assignedUserId && split.splitSharedAmountCents && split.splitSharedAmountCents > 0) {
+      const balanceId = crypto.randomUUID()
+      sharedInserts.push(db.insert(sharedBalances).values({
+        id: balanceId,
+        householdId,
+        fromUserId: userId,
+        toUserId: split.assignedUserId,
+        amountCents: split.splitSharedAmountCents,
+        transactionId: childId
+      }))
+
+      const splitId = crypto.randomUUID()
+      liabilityInserts.push(db.insert(liabilitySplits).values({
+        id: splitId,
+        householdId,
+        targetId: childId,
+        targetType: 'transaction',
+        originatorUserId: userId,
+        assignedUserId: split.assignedUserId,
+        splitType: 'fixed',
+        splitValue: split.splitSharedAmountCents,
+        calculatedAmountCents: split.splitSharedAmountCents,
+        status: 'pending'
+      }))
+    }
+  }
+
+  const markParent = db.update(transactions).set({ reconciliationStatus: 'split' }).where(eq(transactions.id, id))
+  const parentTimeline = db.insert(transactionTimeline).values({
+    id: crypto.randomUUID(),
+    transactionId: id,
+    type: 'split',
+    content: JSON.stringify({
+      splitCount: splits.length,
+      totalAmountCents: original.amountCents
     })
   })
 
-  // We could delete the original, or mark it as an invisible 'parent'
-  // The ledger will traditionally filter out transactions that are parents of splits.
-  const markParent = db.update(transactions).set({ reconciliationStatus: 'split' }).where(eq(transactions.id, id))
-
-  await db.batch([...inserts, markParent] as any)
+  await db.batch([
+    ...inserts,
+    ...timelineInserts,
+    ...sharedInserts,
+    ...liabilityInserts,
+    markParent,
+    parentTimeline
+  ] as any)
 
   await logAudit(c, 'transactions', id, 'SPLIT', null, { splitCount: splits.length })
 
@@ -826,6 +1017,7 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   const id = c.req.param('id')
   const householdId = c.get('householdId')
   const data = (c.req.valid('json') as any)
+  const db = getDb(c.env)
   
   const updates: any = {}
   
@@ -837,6 +1029,7 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.description !== undefined) updates.description = data.description
   if (data.amountCents !== undefined) updates.amountCents = data.amountCents
   if (data.transactionDate !== undefined) updates.transactionDate = data.transactionDate
+  if (data.notes !== undefined) updates.notes = data.notes
   if (data.attentionRequired !== undefined) updates.attentionRequired = data.attentionRequired
   if (data.needsBalanceTransfer !== undefined) updates.needsBalanceTransfer = data.needsBalanceTransfer
   if (data.transferTiming !== undefined) updates.transferTiming = data.transferTiming
@@ -847,18 +1040,29 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
   
   if (Object.keys(updates).length > 0) {
-    const db = getDb(c.env)
+    const existingTx = (await db.select().from(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+      .limit(1).then(res => res[0]) as any)
+
     await db.update(transactions)
       .set(updates)
       .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
     
-    if (data.status) {
-       await db.insert(transactionTimeline).values({
-         id: crypto.randomUUID(),
-         transactionId: id,
-         type: 'status_change',
-         content: `Status changed to ${data.status}`
-       })
+    if (existingTx) {
+      const fieldChanges: Record<string, { from: any, to: any }> = {}
+      for (const key of Object.keys(updates)) {
+        if (existingTx[key] !== updates[key]) {
+          fieldChanges[key] = { from: existingTx[key], to: updates[key] }
+        }
+      }
+      if (Object.keys(fieldChanges).length > 0) {
+        await db.insert(transactionTimeline).values({
+          id: crypto.randomUUID(),
+          transactionId: id,
+          type: 'edit',
+          content: JSON.stringify({ changes: fieldChanges })
+        })
+      }
     }
   }
   
@@ -1259,15 +1463,22 @@ financials.delete('/shared-balances/:id', async (c) => {
   return c.json({ success: true })
 })
 
-// Settle all debts between two users
+// Settle debts between two users with optional transaction logging
 financials.post('/shared-balances/settle', zValidator('json', z.object({
-  withUserId: z.string()
+  withUserId: z.string(),
+  amountCents: z.number().int().positive().optional(),
+  paymentAccountId: z.string().optional().nullable(),
+  method: z.enum(['venmo', 'zelle', 'cash', 'bank_transfer', 'manual', 'other']).optional().default('manual'),
+  createLedgerTransaction: z.boolean().optional().default(false),
+  notes: z.string().max(500).optional().nullable()
 })), async (c) => {
   const householdId = c.get('householdId')
   const userId = c.get('userId') as string
-  const { withUserId } = c.req.valid('json')
+  const { withUserId, amountCents, paymentAccountId, method, createLedgerTransaction, notes } = c.req.valid('json')
   
   const db = getDb(c.env)
+  
+  // Clear or reduce the shared balances
   await db.delete(sharedBalances)
     .where(and(
       eq(sharedBalances.householdId, householdId),
@@ -1277,7 +1488,106 @@ financials.post('/shared-balances/settle', zValidator('json', z.object({
       )
     ))
   
-  await logAudit(c, 'shared_balances', 'settle', 'SETTLE', null, { user1: userId, user2: withUserId })
+  let txId: string | null = null
+  if (createLedgerTransaction && amountCents && paymentAccountId) {
+    txId = crypto.randomUUID()
+    
+    // Lookup withUser display name
+    const [withUser] = (await db.select().from(users).where(eq(users.id, withUserId)) as any[]) || []
+    const partnerName = withUser?.displayName || withUser?.username || 'Partner'
+    const desc = `Settlement with ${partnerName} (${method.toUpperCase()})`
+
+    await db.insert(transactions).values({
+      id: txId,
+      householdId,
+      accountId: paymentAccountId,
+      amountCents: -amountCents,
+      description: desc,
+      transactionDate: new Date().toISOString().split('T')[0],
+      status: 'paid',
+      reconciliationStatus: 'reconciled',
+      source: 'settlement',
+      notes: notes || `Settled via ${method}`,
+      ownerId: userId
+    })
+
+    // Log creation and settlement in timeline
+    await db.insert(transactionTimeline).values({
+      id: crypto.randomUUID(),
+      transactionId: txId,
+      type: 'creation',
+      content: JSON.stringify({
+        description: desc,
+        amountCents: -amountCents,
+        accountId: paymentAccountId,
+        settlementWithUserId: withUserId,
+        method
+      })
+    })
+  }
+
+  await logAudit(c, 'shared_balances', 'settle', 'SETTLE', null, { 
+    user1: userId, 
+    user2: withUserId, 
+    amountCents, 
+    method,
+    transactionId: txId 
+  })
+  
+  return c.json({ success: true, transactionId: txId })
+})
+
+// 📋 Split Templates CRUD
+financials.get('/split-templates', async (c) => {
+  const householdId = c.get('householdId')
+  const db = getDb(c.env)
+  
+  const results = (await db.select()
+    .from(splitTemplates)
+    .where(eq(splitTemplates.householdId, householdId))
+    .orderBy(desc(splitTemplates.createdAt)) as any[])
+
+  const parsed = results.map(r => {
+    let allocations = []
+    try {
+      allocations = JSON.parse(r.allocationsJson || '[]')
+    } catch {}
+    return {
+      ...r,
+      allocations
+    }
+  })
+  
+  return c.json({ success: true, data: parsed })
+})
+
+financials.post('/split-templates', zValidator('json', SplitTemplateSchema), async (c) => {
+  const householdId = c.get('householdId')
+  const userId = c.get('userId') as string
+  const { name, description, allocations } = c.req.valid('json')
+  const db = getDb(c.env)
+  const id = crypto.randomUUID()
+  
+  await db.insert(splitTemplates).values({
+    id,
+    householdId,
+    name,
+    description: description || null,
+    allocationsJson: JSON.stringify(allocations),
+    createdBy: userId
+  })
+  
+  await logAudit(c, 'split_templates', id, 'CREATE', null, { name, allocationsCount: allocations.length })
+  return c.json({ success: true, id })
+})
+
+financials.delete('/split-templates/:id', async (c) => {
+  const householdId = c.get('householdId')
+  const id = c.req.param('id')
+  const db = getDb(c.env)
+  
+  await db.delete(splitTemplates).where(and(eq(splitTemplates.id, id), eq(splitTemplates.householdId, householdId)))
+  await logAudit(c, 'split_templates', id, 'DELETE')
   return c.json({ success: true })
 })
 

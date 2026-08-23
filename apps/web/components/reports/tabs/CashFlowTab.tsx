@@ -27,19 +27,19 @@ export const CashFlowTab: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Current Balance</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">Current Balance</div>
           <Price amountCents={data.currentBalance || 0} className="text-lg font-black text-white" />
         </Card>
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Daily Surplus</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-emerald-400/80">Daily Surplus</div>
           <Price amountCents={data.dailySurplus || 0} className="text-lg font-black text-emerald-400" />
         </Card>
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Recurring</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-amber-400/80">Recurring</div>
           <Price amountCents={data.recurringCents || 0} className="text-lg font-black text-amber-400" />
         </Card>
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">One-Time</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-blue-400/80">One-Time</div>
           <Price amountCents={data.oneTimeCents || 0} className="text-lg font-black text-blue-400" />
         </Card>
       </div>

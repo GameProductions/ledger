@@ -94,8 +94,22 @@ export const TransactionPairingRuleSchema = z.object({
 })
 
 export const TimelineEntrySchema = z.object({
-  type: z.enum(['note', 'confirmation', 'status_change']),
+  type: z.enum(['note', 'confirmation', 'status_change', 'creation', 'edit', 'split', 'share']),
   content: z.string().min(1)
+})
+
+export const SplitTemplateAllocationSchema = z.object({
+  percent: z.number().min(0).max(100).optional(),
+  defaultCategoryId: z.string().optional().nullable(),
+  descriptionSuffix: z.string().optional().nullable(),
+  defaultAccountId: z.string().optional().nullable(),
+  assignedUserId: z.string().optional().nullable()
+})
+
+export const SplitTemplateSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional().nullable(),
+  allocations: z.array(SplitTemplateAllocationSchema).min(2)
 })
 
 export const TransferSchema = z.object({

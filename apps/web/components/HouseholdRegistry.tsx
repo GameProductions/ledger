@@ -402,7 +402,7 @@ const HouseholdRegistry: React.FC = () => {
                        <div>
                           <div className="flex items-center gap-2">
                              <p className="text-sm font-black tracking-tight">{m.displayName || 'System User'}</p>
-                             <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-widest ${ m.role === 'owner' ? 'bg-emerald-500 text-black' : m.role === 'admin' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-white/5 text-slate-400' }`}>
+                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-black tracking-widest ${ m.role === 'owner' ? 'bg-emerald-500 text-black' : m.role === 'admin' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-white/5 text-slate-400' }`}>
                                 {m.role}
                              </span>
                           </div>

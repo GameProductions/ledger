@@ -105,19 +105,19 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
           </div>
         </div>
 
-        <div className="px-6 py-3 border-b border-white/5">
+        <div className="px-6 py-4 border-b border-white/5">
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center">
-              <div className="text-[8px] font-black tracking-widest text-blue-400">Income</div>
-              <Price amountCents={totalDeposits} className="text-sm font-black text-blue-400" />
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center flex flex-col justify-center">
+              <div className="text-xs font-black tracking-wider text-blue-400 uppercase mb-1">Income</div>
+              <Price amountCents={totalDeposits} className="text-base sm:text-lg font-black text-blue-400" />
             </div>
-            <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl text-center">
-              <div className="text-[8px] font-black tracking-widest text-amber-400">Expenses</div>
-              <Price amountCents={totalDebits} className="text-sm font-black text-amber-400" />
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-center flex flex-col justify-center">
+              <div className="text-xs font-black tracking-wider text-amber-400 uppercase mb-1">Expenses</div>
+              <Price amountCents={totalDebits} className="text-base sm:text-lg font-black text-amber-400" />
             </div>
-            <div className={`p-2 rounded-xl text-center border ${netFlow >= 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
-              <div className="text-[8px] font-black tracking-widest text-white/40">Net</div>
-              <Price amountCents={netFlow} className={`text-sm font-black ${netFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
+            <div className={`p-3 rounded-2xl text-center border flex flex-col justify-center ${netFlow >= 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+              <div className="text-xs font-black tracking-wider text-white/70 uppercase mb-1">Net</div>
+              <Price amountCents={netFlow} className={`text-base sm:text-lg font-black ${netFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
             </div>
           </div>
         </div>
@@ -125,7 +125,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {sortedTypes.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-xs font-black tracking-widest text-white/20">No entries for this day</p>
+              <p className="text-xs font-bold tracking-widest text-white/30">No entries for this day</p>
             </div>
           ) : (
             sortedTypes.map(type => {
@@ -134,8 +134,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
               return (
                 <div key={type}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-2 h-2 rounded-full ${style.dotColor}`} />
-                    <span className={`text-[10px] font-black tracking-widest ${style.badgeText}`}>
+                    <div className={`w-2.5 h-2.5 rounded-full ${style.dotColor}`} />
+                    <span className={`text-xs font-bold tracking-wider ${style.badgeText}`}>
                       {style.label} · {typeEntries.length}
                     </span>
                   </div>
@@ -144,7 +144,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                       <div
                         key={`${entry.id || i}`}
                         onClick={() => onEditEntry(entry)}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer group gap-2"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/20 transition-all cursor-pointer group gap-2"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <ProviderLogo url={entry.iconUrl || entry.logoUrl} name={entry.description} size={28} className="flex-shrink-0" />
@@ -153,19 +153,19 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                               {entry.description}
                               {entry.notes && <StickyNote size={12} className="text-white/30 flex-shrink-0" />}
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
                               {entry.status && <StatusBadge status={entry.status} />}
                               {entry.frequency && (
-                                <span className="text-[8px] font-black tracking-widest text-white/20">{entry.frequency}</span>
+                                <span className="text-[10px] font-bold tracking-wider text-white/40">{entry.frequency}</span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-end gap-1.5 flex-shrink-0 ml-0 sm:ml-2">
+                        <div className="flex items-center justify-end gap-2 flex-shrink-0 ml-0 sm:ml-2">
                           {onMarkPaid && entry.status !== 'paid' && entry.type !== 'pay_schedule' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); onMarkPaid(entry) }}
-                              className="flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors px-2 py-1 text-[10px] font-black tracking-widest border border-emerald-500/30 rounded-lg hover:bg-emerald-500/10 active:scale-90"
+                              className="flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors px-2.5 py-1 text-xs font-bold tracking-wide border border-emerald-500/30 rounded-lg hover:bg-emerald-500/10 active:scale-90"
                               title="Mark paid"
                             >
                               <CheckCircle2 size={14} /> Paid
@@ -174,7 +174,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({
                           {onDeleteEntry && (
                             <button
                               onClick={(e) => { e.stopPropagation(); onDeleteEntry(entry) }}
-                              className="flex items-center gap-1 text-red-500 hover:text-red-400 transition-colors px-2 py-1 text-[10px] font-black tracking-widest border border-red-500/30 rounded-lg hover:bg-red-500/10 active:scale-90"
+                              className="flex items-center gap-1 text-red-500 hover:text-red-400 transition-colors px-2.5 py-1 text-xs font-bold tracking-wide border border-red-500/30 rounded-lg hover:bg-red-500/10 active:scale-90"
                               title="Delete"
                             >
                               <Trash2 size={14} /> Delete

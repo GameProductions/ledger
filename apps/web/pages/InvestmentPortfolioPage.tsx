@@ -243,14 +243,14 @@ const InvestmentPortfolioPage: React.FC = () => {
                    </div>
 
                    <div className="grid grid-cols-2 gap-4 pt-2">
-                       <div>
-                         <p className="text-[8px] font-black tracking-widest text-secondary opacity-40 mb-1">Quantity</p>
-                         <p className="text-sm font-bold">{inv.quantity} Units</p>
-                       </div>
-                       <div className="text-right">
-                         <p className="text-[8px] font-black tracking-widest text-secondary opacity-40 mb-1">Cost Basis</p>
-                         <Price amountCents={inv.costBasisCents} className="text-sm font-bold opacity-60" />
-                       </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">Quantity</p>
+                          <p className="text-sm font-bold">{inv.quantity} Units</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-bold uppercase tracking-wider text-secondary mb-1">Cost Basis</p>
+                          <Price amountCents={inv.costBasisCents} className="text-sm font-bold opacity-80" />
+                        </div>
                    </div>
                 </div>
               </div>

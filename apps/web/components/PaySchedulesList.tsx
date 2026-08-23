@@ -111,16 +111,16 @@ export const PaySchedulesList: React.FC = () => {
                             <div className="flex items-center gap-6">
                                 {(s.upcomingEffectiveDate || s.upcomingAmountCents) && (
                                     <div className="hidden lg:flex flex-col items-end px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg animate-in fade-in slide-in-from-right-2">
-                                        <div className="text-[8px] font-black tracking-widest text-emerald-500/60">Planned Adjustment</div>
+                                        <div className="text-[10px] font-bold tracking-wider uppercase text-emerald-400/80">Planned Adjustment</div>
                                         <div className="flex items-center gap-1.5">
-                                            <Price amountCents={s.upcomingAmountCents} className="text-[10px] font-black text-emerald-500" />
-                                            <span className="text-[8px] text-emerald-500/40 font-bold">@ {s.upcomingEffectiveDate}</span>
+                                            <Price amountCents={s.upcomingAmountCents} className="text-xs font-black text-emerald-400" />
+                                            <span className="text-[10px] text-emerald-400/60 font-bold">@ {s.upcomingEffectiveDate}</span>
                                         </div>
                                     </div>
                                 )}
                                 <div className="text-right">
                                     <Price amountCents={s.estimatedAmountCents} className="text-lg font-black tracking-tighter" />
-                                    <div className="text-[9px] font-black tracking-widest text-white/20">Next: {s.nextPayDate || 'N/A'}</div>
+                                    <div className="text-xs font-bold tracking-wider text-white/40">Next: {s.nextPayDate || 'N/A'}</div>
                                 </div>
                                 
                                 <div className="flex items-center">

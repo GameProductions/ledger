@@ -131,7 +131,7 @@ const ForensicRow = ({ icon, label, value }: { icon: React.ReactNode; label: str
 const FidoBadge = ({ level }: { level?: string }) => {
   const isL2 = level?.includes('SE') || level?.includes('TPM') || level?.includes('Secure Element') || level?.includes('Enclave');
   return (
-    <span className={`px-2 py-0.5 text-[8px] font-black tracking-tighter rounded border ${ isL2 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-slate-700/40 text-slate-500 border-slate-600/20' }`}>
+    <span className={`px-2 py-0.5 text-[10px] font-black tracking-wider rounded border ${ isL2 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-slate-700/40 text-slate-400 border-slate-600/20' }`}>
       {isL2 ? 'FIDO2 L2' : 'FIDO2 L1'}
     </span>
   );

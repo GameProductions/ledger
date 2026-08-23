@@ -89,11 +89,11 @@ const UserMenu: React.FC<{
             <span className="text-sm font-bold text-white">{displayName}</span>
           </Masked>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider border ${getRoleBadgeStyles(role)}`}>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider border ${getRoleBadgeStyles(role)}`}>
               {role}
             </span>
             {isImpersonating && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider border bg-purple-500/10 text-purple-400 border-purple-500/20">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black tracking-wider border bg-purple-500/10 text-purple-400 border-purple-500/20">
                 Impersonated
               </span>
             )}

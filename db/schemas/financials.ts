@@ -394,3 +394,16 @@ export const userLinkedAccounts = pgTable('user_linked_accounts', {
   userIdx: index('idx_linked_accounts_user').on(table.userId),
   householdIdx: index('idx_linked_accounts_household').on(table.householdId),
 }));
+
+export const splitTemplates = pgTable('split_templates', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').notNull().references(() => households.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  allocationsJson: text('allocations_json').notNull(), // Array of { percent?: number, defaultCategoryId?: string, descriptionSuffix?: string, defaultAccountId?: string, assignedUserId?: string }
+  createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_split_templates_household').on(table.householdId),
+}));

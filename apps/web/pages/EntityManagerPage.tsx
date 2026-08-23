@@ -527,7 +527,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
         <div>
           <div className="font-bold text-sm flex items-center gap-2">
             {acc.name}
-            {acc.status === 'closed' && <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Closed</span>}
+            {acc.status === 'closed' && <span className="text-[10px] font-black tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Closed</span>}
           </div>
           <div className="text-[10px] text-white/40 font-medium">
             <Price amountCents={acc.balanceCents || acc.balance_cents} /> · {acc.type} · {acc.currency || 'USD'}
@@ -553,7 +553,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
         <div>
           <div className="font-bold text-sm flex items-center gap-2">
             {bill.name}
-            {bill.isRecurring && <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded">Recurring</span>}
+            {bill.isRecurring && <span className="text-[10px] font-black tracking-widest px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded">Recurring</span>}
           </div>
           <div className="text-[10px] text-white/40 font-medium">
             <Price amountCents={bill.amountCents} /> · Due: {bill.dueDate} · {bill.status}
@@ -655,9 +655,9 @@ const ENTITY_CONFIGS: EntityConfig[] = [
           <div className="font-bold text-sm flex items-center gap-2">
             {p.name}
             {p.status === 'active' ? (
-              <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Active</span>
+              <span className="text-[10px] font-black tracking-widest px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">Active</span>
             ) : (
-              <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Inactive</span>
+              <span className="text-[10px] font-black tracking-widest px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded">Inactive</span>
             )}
           </div>
           <div className="text-[10px] text-white/40 font-medium">
@@ -742,7 +742,7 @@ const ENTITY_CONFIGS: EntityConfig[] = [
         <div>
           <div className="font-bold text-sm flex items-center gap-2">
             {sub.name}
-            {sub.isTrial && <span className="text-[8px] font-black tracking-widest px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">Trial</span>}
+            {sub.isTrial && <span className="text-[10px] font-black tracking-widest px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">Trial</span>}
           </div>
           <div className="text-[10px] text-white/40 font-medium">
             <Price amountCents={sub.amountCents} />/{sub.billingCycle} · Next: {sub.nextBillingDate || '—'} · {sub.paymentMode}

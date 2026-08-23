@@ -7,3 +7,4 @@ export * from './portainer'
 export * from './rbac/client'
 export * from './cookie-consent'
 
+export * from './vault/client'

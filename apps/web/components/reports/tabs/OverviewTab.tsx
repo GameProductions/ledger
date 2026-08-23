@@ -30,19 +30,19 @@ export const OverviewTab: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="p-4 space-y-1">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Net Worth</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">Net Worth</div>
           <Price amountCents={data.currentNetWorth || 0} className="text-lg font-black text-white" />
         </Card>
         <Card className="p-4 space-y-1">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Monthly Income</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-emerald-400/80">Monthly Income</div>
           <Price amountCents={data.monthlyIncome || 0} className="text-lg font-black text-emerald-400" />
         </Card>
         <Card className="p-4 space-y-1">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Monthly Expenses</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-red-400/80">Monthly Expenses</div>
           <Price amountCents={data.monthlyExpense || 0} className="text-lg font-black text-red-400" />
         </Card>
         <Card className="p-4 space-y-1">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Savings Rate</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">Savings Rate</div>
           <div className={`text-lg font-black ${savingsRate >= 20 ? 'text-emerald-400' : savingsRate >= 10 ? 'text-amber-400' : 'text-red-400'}`}>
             {savingsRate}%
           </div>

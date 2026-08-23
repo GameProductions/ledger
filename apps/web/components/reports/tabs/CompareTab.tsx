@@ -29,14 +29,14 @@ export const CompareTab: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Expense Change</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">Expense Change</div>
           <div className={`text-lg font-black flex items-center gap-2 ${(data.expenseChangePct || 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
             {data.expenseChangePct != null ? `${data.expenseChangePct > 0 ? '+' : ''}${data.expenseChangePct}%` : 'N/A'}
             {(data.expenseChangePct || 0) > 0 ? ' ↑' : (data.expenseChangePct || 0) < 0 ? ' ↓' : ''}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Income Change</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">Income Change</div>
           <div className={`text-lg font-black flex items-center gap-2 ${(data.incomeChangePct || 0) > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {data.incomeChangePct != null ? `${data.incomeChangePct > 0 ? '+' : ''}${data.incomeChangePct}%` : 'N/A'}
             {(data.incomeChangePct || 0) > 0 ? ' ↑' : (data.incomeChangePct || 0) < 0 ? ' ↓' : ''}

@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useApi } from '../hooks/useApi'
-import { Flag, ShieldAlert, ArrowRightLeft, HandCoins, Copy, Trash2, Plus } from 'lucide-react'
+import { useApi, globalMutate } from '../hooks/useApi'
+import { useAuth } from '../context/AuthContext'
+import { Flag, ShieldAlert, ArrowRightLeft, HandCoins, Copy, Trash2, Plus, Users, Calendar, Banknote } from 'lucide-react'
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
 import { CurrencyInput } from './ui/CurrencyInput'
@@ -19,16 +20,27 @@ interface FormInstance {
   chargeDescriptorId: string;
   attentionRequired: boolean;
   needsBalanceTransfer: boolean;
-  transferTiming: string;
+  transferTiming: string; // 'same_day' | 'future'
   isBorrowed: boolean;
+  borrowType: 'member' | 'external';
+  borrowUserId: string;
+  borrowCustomName: string;
+  borrowPaybackDate: string;
+  borrowPaybackMethod: 'venmo' | 'zelle' | 'cash' | 'bank_transfer' | 'manual';
+  borrowNotes: string;
+  recordHouseholdIou: boolean;
   borrowSource: string;
   transactionDate: string;
   createdAt: string;
 }
 
 export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded }) => {
+  const { householdId, user } = useAuth()
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { data: chargeDescriptors = [] } = (useApi('/api/financials/charge-descriptors') as any)
+  const { data: members = [] } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any)
+
+  const otherMembers = (members || []).filter((m: any) => (m.user?.id || m.id) !== user?.id)
 
   const createEmptyInstance = (): FormInstance => ({
     id: Math.random().toString(36).substr(2, 9),
@@ -37,8 +49,15 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     chargeDescriptorId: '',
     attentionRequired: false,
     needsBalanceTransfer: false,
-    transferTiming: 'future',
+    transferTiming: 'same_day', // Default to Must do Same Day
     isBorrowed: false,
+    borrowType: otherMembers.length > 0 ? 'member' : 'external',
+    borrowUserId: otherMembers[0]?.user?.id || otherMembers[0]?.id || '',
+    borrowCustomName: '',
+    borrowPaybackDate: '',
+    borrowPaybackMethod: 'venmo',
+    borrowNotes: '',
+    recordHouseholdIou: true,
     borrowSource: '',
     transactionDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })(),
     createdAt: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` })()
@@ -83,8 +102,23 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     setLoading(true)
 
     try {
-      const promises = validInstances.map(inst =>
-        fetch(`${getApiUrl()}/api/tracked-expenses`, {
+      const promises = validInstances.map(inst => {
+        let formattedBorrowSource = inst.borrowSource
+        let targetUserId: string | null = null
+
+        if (inst.isBorrowed) {
+          if (inst.borrowType === 'member') {
+            const memberObj = (members || []).find((m: any) => (m.user?.id || m.id) === inst.borrowUserId)
+            const lenderName = memberObj?.displayName || memberObj?.user?.displayName || memberObj?.user?.username || memberObj?.email || 'Household Member'
+            targetUserId = inst.borrowUserId || null
+            formattedBorrowSource = `IOU: ${lenderName}${inst.borrowPaybackDate ? ` • Repay by ${inst.borrowPaybackDate}` : ''}${inst.borrowPaybackMethod ? ` via ${inst.borrowPaybackMethod.toUpperCase()}` : ''}${inst.borrowNotes ? ` (${inst.borrowNotes})` : ''}`
+          } else {
+            const lenderName = inst.borrowCustomName.trim() || 'External Lender'
+            formattedBorrowSource = `Borrowed from ${lenderName}${inst.borrowPaybackDate ? ` • Repay by ${inst.borrowPaybackDate}` : ''}${inst.borrowPaybackMethod ? ` via ${inst.borrowPaybackMethod.toUpperCase()}` : ''}${inst.borrowNotes ? ` (${inst.borrowNotes})` : ''}`
+          }
+        }
+
+        return fetch(`${getApiUrl()}/api/tracked-expenses`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -97,18 +131,23 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             chargeDescriptorId: inst.chargeDescriptorId || null,
             attentionRequired: inst.attentionRequired,
             needsBalanceTransfer: inst.needsBalanceTransfer,
-            transferTiming: inst.needsBalanceTransfer ? inst.transferTiming : null,
+            transferTiming: inst.needsBalanceTransfer ? (inst.transferTiming || 'same_day') : null,
             isBorrowed: inst.isBorrowed,
-            borrowSource: inst.isBorrowed ? inst.borrowSource : null,
+            borrowSource: inst.isBorrowed ? formattedBorrowSource : null,
+            recordHouseholdIou: inst.isBorrowed && inst.borrowType === 'member' && inst.recordHouseholdIou,
+            iouToUserId: targetUserId,
+            iouAmountCents: inst.amountCents,
+            iouNotes: inst.borrowNotes || `Borrowed funds for: ${inst.description}`,
             createdAt: inst.transactionDate,
           })
         })
-      );
+      });
 
       await Promise.all(promises);
 
       setInstances([createEmptyInstance()]);
       setRefreshTrigger(prev => prev + 1);
+      globalMutate();
       onAdded();
     } catch (err) {
       console.error(err);
@@ -279,54 +318,189 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="bg-orange-500/5 border border-orange-500/10 rounded-xl p-4 mt-2 space-y-4">
+                    <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mt-2 space-y-5">
                       
-                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                      {/* Requires Balance Transfer */}
+                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                         <label className="flex items-center gap-2 cursor-pointer flex-1">
                           <Checkbox 
                             checked={inst.needsBalanceTransfer} 
-                            onChange={v => handleUpdate(index, { needsBalanceTransfer: v })}
+                            onChange={v => handleUpdate(index, { 
+                              needsBalanceTransfer: v,
+                              transferTiming: inst.transferTiming || 'same_day'
+                            })}
                             iconClassName="text-orange-500"
                           />
-                          <span className="text-sm flex items-center gap-1.5 text-orange-200">
+                          <span className="text-xs sm:text-sm font-bold flex items-center gap-1.5 text-orange-200">
                             <ArrowRightLeft size={16} /> Requires Balance Transfer
                           </span>
                         </label>
                         
                         {inst.needsBalanceTransfer && (
-                          <select 
-                            value={inst.transferTiming} 
-                            onChange={e => handleUpdate(index, { transferTiming: e.target.value })}
-                            className="bg-black/50 border border-orange-500/20 rounded-lg p-2 text-sm text-white w-full md:w-auto outline-none"
-                          >
-                            <option value="same_day">Must do Same Day</option>
-                            <option value="future">Can do in Future</option>
-                          </select>
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-orange-300/70 hidden sm:inline">Timing:</span>
+                            <select 
+                              value={inst.transferTiming || 'same_day'} 
+                              onChange={e => handleUpdate(index, { transferTiming: e.target.value })}
+                              className="bg-black/60 border border-orange-500/30 rounded-xl px-3 py-1.5 text-xs font-bold text-white w-full sm:w-auto outline-none focus:border-orange-400"
+                            >
+                              <option value="same_day">Must do Same Day (Default)</option>
+                              <option value="future">Can do in Future</option>
+                            </select>
+                          </div>
                         )}
                       </div>
 
                       <div className="w-full h-px bg-white/5"></div>
 
-                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer flex-1">
+                      {/* Funds Were Borrowed (Linked to IOU & Payback Details) */}
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
                           <Checkbox 
                             checked={inst.isBorrowed} 
                             onChange={v => handleUpdate(index, { isBorrowed: v })}
                             iconClassName="text-orange-500"
                           />
-                          <span className="text-sm flex items-center gap-1.5 text-orange-200">
+                          <span className="text-xs sm:text-sm font-bold flex items-center gap-1.5 text-orange-200">
                             <HandCoins size={16} /> Funds were Borrowed
                           </span>
                         </label>
                         
                         {inst.isBorrowed && (
-                          <input 
-                            type="text" 
-                            placeholder="Who/what to reimburse?"
-                            value={inst.borrowSource}
-                            onChange={e => handleUpdate(index, { borrowSource: e.target.value })}
-                            className="bg-black/50 border border-orange-500/20 rounded-lg p-2 text-sm text-white w-full md:w-1/2 outline-none"
-                          />
+                          <div className="p-3.5 bg-black/40 border border-orange-500/20 rounded-xl space-y-4 animate-in slide-in-from-top-1 duration-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-2">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-orange-300">
+                                Who to Reimburse & Payback Details
+                              </span>
+                              {otherMembers.length > 0 && (
+                                <div className="flex bg-black/40 rounded-lg p-0.5 border border-white/10 self-start sm:self-auto">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdate(index, { borrowType: 'member' })}
+                                    className={`px-2.5 py-1 text-[10px] font-black rounded-md transition-all cursor-pointer ${
+                                      inst.borrowType === 'member' ? 'bg-orange-500 text-black shadow-sm' : 'text-white/60 hover:text-white'
+                                    }`}
+                                  >
+                                    Household Member
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdate(index, { borrowType: 'external' })}
+                                    className={`px-2.5 py-1 text-[10px] font-black rounded-md transition-all cursor-pointer ${
+                                      inst.borrowType === 'external' ? 'bg-orange-500 text-black shadow-sm' : 'text-white/60 hover:text-white'
+                                    }`}
+                                  >
+                                    External / Other
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Lender Selection */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {inst.borrowType === 'member' && otherMembers.length > 0 ? (
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                                    Household Member (IOU Recipient)
+                                  </label>
+                                  <select
+                                    value={inst.borrowUserId || otherMembers[0]?.user?.id || otherMembers[0]?.id || ''}
+                                    onChange={e => handleUpdate(index, { borrowUserId: e.target.value })}
+                                    className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
+                                  >
+                                    {otherMembers.map((m: any) => {
+                                      const mId = m.user?.id || m.id
+                                      const mName = m.displayName || m.user?.displayName || m.user?.username || m.email
+                                      return (
+                                        <option key={mId} value={mId} className="bg-slate-900 text-white">
+                                          {mName}
+                                        </option>
+                                      )
+                                    })}
+                                  </select>
+                                </div>
+                              ) : (
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                                    Lender / Entity Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={inst.borrowCustomName}
+                                    onChange={e => handleUpdate(index, { borrowCustomName: e.target.value })}
+                                    placeholder="e.g. Parent, Friend, Bank Loan"
+                                    className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Target Payback Date */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                                  Target Payback Date (Optional)
+                                </label>
+                                <input
+                                  type="date"
+                                  value={inst.borrowPaybackDate}
+                                  onChange={e => handleUpdate(index, { borrowPaybackDate: e.target.value })}
+                                  style={{ colorScheme: 'dark' }}
+                                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Payback Method & Terms */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                                  Reimbursement Method
+                                </label>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                  {(['venmo', 'zelle', 'bank_transfer', 'cash', 'manual'] as const).map(m => (
+                                    <button
+                                      key={m}
+                                      type="button"
+                                      onClick={() => handleUpdate(index, { borrowPaybackMethod: m })}
+                                      className={`py-1.5 px-1 rounded-lg text-[10px] font-bold capitalize transition-all border ${
+                                        inst.borrowPaybackMethod === m
+                                          ? 'bg-orange-500/20 border-orange-500 text-orange-300'
+                                          : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                      }`}
+                                    >
+                                      {m === 'bank_transfer' ? 'Transfer' : m}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
+                                  Payback Terms / Notes
+                                </label>
+                                <input
+                                  type="text"
+                                  value={inst.borrowNotes}
+                                  onChange={e => handleUpdate(index, { borrowNotes: e.target.value })}
+                                  placeholder="e.g. Repay from next Friday paycheck"
+                                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Auto-record Household IOU Option */}
+                            {inst.borrowType === 'member' && otherMembers.length > 0 && (
+                              <label className="flex items-center gap-2 p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-xl cursor-pointer">
+                                <Checkbox
+                                  checked={inst.recordHouseholdIou}
+                                  onChange={v => handleUpdate(index, { recordHouseholdIou: v })}
+                                  iconClassName="text-orange-400"
+                                />
+                                <span className="text-xs font-bold text-orange-200">
+                                  Automatically sync to Household IOU & Shared Balances Ledger
+                                </span>
+                              </label>
+                            )}
+                          </div>
                         )}
                       </div>
 

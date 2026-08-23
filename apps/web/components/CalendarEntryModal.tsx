@@ -920,12 +920,12 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
                   {showRateAdjustment && (
                     <div className="grid grid-cols-2 gap-3 pt-3 animate-in slide-in-from-top-2">
                       <div>
-                        <label className="text-[8px] font-black tracking-widest text-white/30 flex items-center gap-1">Upcoming Amount{infoIcon('The new amount when the rate change takes effect')}</label>
+                        <label className="text-xs font-bold tracking-wider uppercase text-white/60 flex items-center gap-1">Upcoming Amount{infoIcon('The new amount when the rate change takes effect')}</label>
                         <CurrencyInput valueCents={upcomingAmountCents} onChangeCents={setUpcomingAmountCents}
                           placeholder="0.00" className="bg-black/40 border-white/5" />
                       </div>
                       <div>
-                        <label className="text-[8px] font-black tracking-widest text-white/30 flex items-center gap-1">Effective Date{infoIcon('The date when the new amount takes effect')}</label>
+                        <label className="text-xs font-bold tracking-wider uppercase text-white/60 flex items-center gap-1">Effective Date{infoIcon('The date when the new amount takes effect')}</label>
                         <input type="date" value={upcomingDate} onChange={(e) => setUpcomingDate(e.target.value)}
                           className="w-full p-2.5 bg-black/40 border border-white/5 rounded-xl text-white text-xs font-bold outline-none focus:border-white/20" />
                       </div>

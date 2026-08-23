@@ -5,7 +5,7 @@ import { HTTPException } from 'hono/http-exception'
 import { Bindings, Variables } from '../types'
 import { TransactionSchema } from '@shared/schemas'
 import { getDb } from '#/index'
-import { trackedExpenses, transactions } from '#/schema'
+import { trackedExpenses, transactions, sharedBalances } from '#/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { logAudit } from '../utils'
 
@@ -39,10 +39,16 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
   isBorrowed: z.boolean().optional(),
   borrowSource: z.string().optional().nullable(),
   chargeDescriptorId: z.string().optional().nullable(),
-  createdAt: z.string().optional()
+  createdAt: z.string().optional(),
+  recordHouseholdIou: z.boolean().optional(),
+  iouToUserId: z.string().optional().nullable(),
+  iouAmountCents: z.number().int().optional().nullable(),
+  iouNotes: z.string().optional().nullable()
 })), async (c) => {
   const householdId = c.get('householdId')
-  const data = (c.req.valid('json') as any)
+  const userId = c.get('userId') as string
+  const body = c.req.valid('json')
+  const { recordHouseholdIou, iouToUserId, iouAmountCents, iouNotes, ...data } = body
   const db = getDb(c.env)
   const id = crypto.randomUUID()
   
@@ -52,6 +58,26 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
     ...data,
     status: 'pending'
   })
+
+  // If funds were borrowed and user opted to link/record a household IOU
+  if (data.isBorrowed && recordHouseholdIou && iouToUserId && userId) {
+    const iouId = crypto.randomUUID()
+    await db.insert(sharedBalances).values({
+      id: iouId,
+      householdId,
+      fromUserId: userId,
+      toUserId: iouToUserId,
+      amountCents: iouAmountCents || data.amountCents,
+      transactionId: null
+    })
+    await logAudit(c, 'shared_balances', iouId, 'CREATE', null, { 
+      source: 'tracked_expense_borrow',
+      trackedExpenseId: id,
+      toUserId: iouToUserId,
+      amountCents: iouAmountCents || data.amountCents,
+      notes: iouNotes
+    })
+  }
   
   await logAudit(c, 'tracked_expenses', id, 'CREATE', null, data)
   return c.json({ success: true, id })

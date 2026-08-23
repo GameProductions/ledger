@@ -9,6 +9,7 @@ import { Modal } from './ui/Modal'
 import { Button } from './ui/Button'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { sanitizeImageUrl } from '../utils/security'
+import { SettleBalancesModal } from './shared/SettleBalancesModal'
 
 interface SharedBalance {
   id: string
@@ -39,12 +40,18 @@ export default function SharedBalances() {
   const { data: balances = [], mutate: mutateBalances } = (useApi('/api/financials/shared-balances') as any)
   const { data: summary = [], mutate: mutateSummary } = (useApi('/api/financials/shared-balances/summary') as any)
   const { data: members = [] } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any)
+  const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   
   const [showAddModal, setShowAddModal] = useState(false)
   const [newIOU, setNewIOU] = useState({ toUserId: '', amountCents: 0, description: '' })
   const [adding, setAdding] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [confirmSettleUserId, setConfirmSettleUserId] = useState<string | null>(null)
+  const [settleTarget, setSettleTarget] = useState<{
+    id: string
+    displayName: string
+    avatarUrl?: string
+    balanceCents: number
+  } | null>(null)
 
   const createIOU = async () => {
     if (!newIOU.toUserId || !newIOU.amountCents) return
@@ -173,22 +180,18 @@ export default function SharedBalances() {
                     <span className={`text-lg font-black ${isOwed ? 'text-red-400' : 'text-emerald-400'}`}>
                       ${(Math.abs(s.netCents) / 100).toFixed(2)}
                     </span>
-                    {confirmSettleUserId === (isOwed ? s.toUserId : s.fromUserId) ? (
-                      <InlineToast 
-                        message="Settle up?" 
-                        type="confirm" 
-                        onConfirm={() => settleWith(isOwed ? s.toUserId : s.fromUserId)} 
-                        onCancel={() => setConfirmSettleUserId(null)} 
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setConfirmSettleUserId(isOwed ? s.toUserId : s.fromUserId)}
-                        className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
-                        title="Settle Up"
-                      >
-                        <Handshake className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setSettleTarget({
+                        id: isOwed ? s.toUserId : s.fromUserId,
+                        displayName: isOwed ? s.toName : s.fromName,
+                        avatarUrl: (isOwed ? s.toAvatar : s.fromAvatar) || undefined,
+                        balanceCents: isOwed ? -Math.abs(s.netCents) : Math.abs(s.netCents)
+                      })}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-black tracking-wider transition-all cursor-pointer border border-emerald-500/20 shadow-sm"
+                      title="Open Settlement Wizard"
+                    >
+                      <Handshake className="w-3.5 h-3.5" /> Settle
+                    </button>
                   </div>
                 </div>
               )
@@ -301,6 +304,17 @@ export default function SharedBalances() {
           </div>
         </div>
       </Modal>
+
+      <SettleBalancesModal
+        isOpen={!!settleTarget}
+        onClose={() => setSettleTarget(null)}
+        targetUser={settleTarget}
+        accounts={accounts || []}
+        onSettled={() => {
+          mutateBalances()
+          mutateSummary()
+        }}
+      />
     </section>
   )
 }

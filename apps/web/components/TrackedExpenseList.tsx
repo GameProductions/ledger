@@ -687,11 +687,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                           <div>
                             <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
                             <select 
-                              value={editForm?.transferTiming || 'future'} 
+                              value={editForm?.transferTiming || 'same_day'} 
                               onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
                               className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-orange-500/50 outline-none"
                             >
-                              <option value="same_day">Must do Same Day</option>
+                              <option value="same_day">Must do Same Day (Default)</option>
                               <option value="future">Can do in Future</option>
                             </select>
                           </div>
@@ -782,11 +782,11 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                               <ArrowLeftRight size={10} /> Transfer
                             </div>
                             {item.transferReconciled ? (
-                              <div className="px-1 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[8px] font-black tracking-widest rounded flex items-center gap-0.5">
-                                <Check size={8} /> Done
+                              <div className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black tracking-wider rounded flex items-center gap-0.5">
+                                <Check size={10} /> Done
                               </div>
                             ) : (
-                              <div className="px-1 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[8px] font-black tracking-widest rounded flex items-center gap-0.5">
+                              <div className="px-1.5 py-0.5 bg-slate-500/10 border border-slate-500/20 text-slate-400 text-[10px] font-black tracking-wider rounded flex items-center gap-0.5">
                                 Pending
                               </div>
                             )}
@@ -825,7 +825,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             attentionRequired: item.attentionRequired ?? false,
                             needsBalanceTransfer: item.needsBalanceTransfer ?? false,
                             transferReconciled: item.transferReconciled ?? false,
-                            transferTiming: item.transferTiming || '',
+                            transferTiming: item.transferTiming || 'same_day',
                             chargeDescriptorId: item.chargeDescriptorId || '',
                             isBorrowed: item.isBorrowed ?? false,
                             borrowSource: item.borrowSource || '',

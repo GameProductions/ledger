@@ -37,7 +37,7 @@ export const SpendingTab: React.FC<SpendingTabProps> = ({ onDrillDown }) => {
       {/* Summary bar */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[8px] font-black tracking-widest text-white/30">Total Spend</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60 mb-0.5">Total Spend</div>
           <Price amountCents={totalSpend} className="text-2xl font-black text-white" />
         </div>
         <div className="flex gap-1 bg-white/5 rounded-xl p-1">

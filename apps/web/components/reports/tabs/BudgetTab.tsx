@@ -32,15 +32,15 @@ export const BudgetTab: React.FC = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Total Budget</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">Total Budget</div>
           <Price amountCents={totalBudget} className="text-lg font-black text-white" />
         </Card>
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">Total Spent</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-amber-400/80">Total Spent</div>
           <Price amountCents={totalSpend} className="text-lg font-black text-amber-400" />
         </Card>
         <Card className="p-4">
-          <div className="text-[8px] font-black tracking-widest text-white/30">{overspent ? 'Overspent' : 'Remaining'}</div>
+          <div className="text-xs font-bold tracking-wider uppercase text-white/60">{overspent ? 'Overspent' : 'Remaining'}</div>
           <Price amountCents={Math.abs(remaining)} className={`text-lg font-black ${overspent ? 'text-red-400' : 'text-emerald-400'}`} />
         </Card>
       </div>

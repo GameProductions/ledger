@@ -12,7 +12,7 @@ import { systemConfig } from '#/schema'
 import { eq } from 'drizzle-orm'
 import { logAudit, apiError } from './utils'
 import { ipRateLimit } from './utils/rate-limit'
-import { AUTH_EXCLUSIONS } from '@shared/constants'
+import { AUTH_EXCLUSIONS, FLEET_VERSION } from '@shared/constants'
 
 // Route Imports
 import authRoutes from './routes/auth'
@@ -226,7 +226,11 @@ app.get('/api/health', async (c) => {
     maintenance: isMaintenance,
     database: dbStatus,
     service: "ledger",
-    environment: c.env.ENVIRONMENT || "development",
+    environment: c.env.ENVIRONMENT || "production",
+    versions: {
+      production: FLEET_VERSION.replace('v', ''),
+      development: `${FLEET_VERSION.replace('v', '')}-dev`
+    },
     timestamp: Date.now() 
   });
 })

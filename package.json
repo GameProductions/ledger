@@ -1,7 +1,7 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.167.5",
+  "version": "3.167.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -55,10 +55,10 @@
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.3.0",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.1.0",
     "autoprefixer": "^10.5.4",
     "drizzle-kit": "^0.31.10",

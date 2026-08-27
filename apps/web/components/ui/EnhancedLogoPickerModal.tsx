@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Globe, Check, Sparkles, X, AlertTriangle, ShieldCheck } from 'lucide-react';
-import { FoundationLogoSearchResult } from '../../types/foundationLogo';
-import { searchFoundationLogos } from '../../utils/foundationLogoApi';
+import { Search, Globe, Sparkles, X } from 'lucide-react';
+import { LogoSearchResult, foundationLogoClient } from '@shared/logo';
 
 interface EnhancedLogoPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectLogo: (logoUrl: string, brandColors?: string[]) => void;
   initialQuery?: string;
+  projectId?: string;
 }
 
 export const EnhancedLogoPickerModal: React.FC<EnhancedLogoPickerModalProps> = ({
@@ -15,10 +15,11 @@ export const EnhancedLogoPickerModal: React.FC<EnhancedLogoPickerModalProps> = (
   onClose,
   onSelectLogo,
   initialQuery = '',
+  projectId = 'ledger',
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [allowNsfw, setAllowNsfw] = useState(false);
-  const [results, setResults] = useState<FoundationLogoSearchResult[]>([]);
+  const [results, setResults] = useState<LogoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
 
@@ -33,7 +34,10 @@ export const EnhancedLogoPickerModal: React.FC<EnhancedLogoPickerModalProps> = (
     if (!searchQuery.trim()) return;
     setLoading(true);
     try {
-      const logos = await searchFoundationLogos(searchQuery, { allowNsfw: nsfwFlag });
+      const logos = await foundationLogoClient.search(searchQuery, {
+        projectId,
+        allowNsfw: nsfwFlag,
+      });
       setResults(logos);
     } finally {
       setLoading(false);
@@ -53,7 +57,7 @@ export const EnhancedLogoPickerModal: React.FC<EnhancedLogoPickerModalProps> = (
             </div>
             <div>
               <h2 className="text-lg font-black text-white tracking-tight">Select Brand & Service Logo</h2>
-              <p className="text-xs text-slate-400">Foundation Multi-Provider Gateway Search</p>
+              <p className="text-xs text-slate-400">Universal Foundation Logo Gateway Search</p>
             </div>
           </div>
           <button
@@ -73,7 +77,7 @@ export const EnhancedLogoPickerModal: React.FC<EnhancedLogoPickerModalProps> = (
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(query, allowNsfw)}
-              placeholder="Search service, company, or domain (e.g. netflix.com, github)..."
+              placeholder="Search company, brand, or domain (e.g. netflix.com, github)..."
               className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-11 pr-24 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors font-medium"
             />
             <button
@@ -114,7 +118,7 @@ export const EnhancedLogoPickerModal: React.FC<EnhancedLogoPickerModalProps> = (
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-3">
               <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-              <p className="text-xs font-mono text-slate-500">Querying multi-source gateway...</p>
+              <p className="text-xs font-mono text-slate-500">Querying central gateway...</p>
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-12 space-y-2">

@@ -497,28 +497,31 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     const id = crypto.randomUUID()
     const date = data.transactionDate || new Date().toISOString().split('T')[0]
     
+    // Handle confirmation numbers - extract from data and store in normalized table later
+    const { confirmationNumbers, confirmationNumber, ...txData } = data
+    
     const insertTx = db.insert(transactions).values({
       id,
       householdId,
-      accountId: data.accountId as string, 
-      categoryId: (data.categoryId && data.categoryId.trim() !== '') ? data.categoryId : null,
-      description: data.description,
-      amountCents: data.amountCents,
+      accountId: txData.accountId as string, 
+      categoryId: (txData.categoryId && txData.categoryId.trim() !== '') ? txData.categoryId : null,
+      description: txData.description,
+      amountCents: txData.amountCents,
       transactionDate: date,
-      notes: (data.notes && data.notes.trim() !== '') ? data.notes : null,
-      rawDescription: (data.rawDescription && data.rawDescription.trim() !== '') ? data.rawDescription : null,
-      parentId: (data.parentId && data.parentId.trim() !== '') ? data.parentId : null,
-      providerId: (data.providerId && data.providerId.trim() !== '') ? data.providerId : null,
-      billId: (data.billId && data.billId.trim() !== '') ? data.billId : null,
-      attentionRequired: data.attentionRequired,
-      needsBalanceTransfer: data.needsBalanceTransfer,
-      transferTiming: data.transferTiming || null,
-      isBorrowed: data.isBorrowed,
-      borrowSource: data.borrowSource || null,
-      accountedFor: data.accountedFor,
-      source: data.source || 'manual',
-      payScheduleId: data.payScheduleId || null,
-      paycheckDate: data.paycheckDate || null,
+      notes: (txData.notes && txData.notes.trim() !== '') ? txData.notes : null,
+      rawDescription: (txData.rawDescription && txData.rawDescription.trim() !== '') ? txData.rawDescription : null,
+      parentId: (txData.parentId && txData.parentId.trim() !== '') ? txData.parentId : null,
+      providerId: (txData.providerId && txData.providerId.trim() !== '') ? txData.providerId : null,
+      billId: (txData.billId && txData.billId.trim() !== '') ? txData.billId : null,
+      attentionRequired: txData.attentionRequired,
+      needsBalanceTransfer: txData.needsBalanceTransfer,
+      transferTiming: txData.transferTiming || null,
+      isBorrowed: txData.isBorrowed,
+      borrowSource: txData.borrowSource || null,
+      accountedFor: txData.accountedFor,
+      source: txData.source || 'manual',
+      payScheduleId: txData.payScheduleId || null,
+      paycheckDate: txData.paycheckDate || null,
     })
 
     const insertTimeline = db.insert(transactionTimeline).values({
@@ -526,22 +529,22 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
       transactionId: id,
       type: 'creation',
       content: JSON.stringify({
-        amountCents: data.amountCents,
-        description: data.description,
+        amountCents: txData.amountCents,
+        description: txData.description,
         transactionDate: date,
-        accountId: data.accountId || null,
-        categoryId: data.categoryId || null,
-        status: data.status || 'pending',
-        notes: data.notes || null,
-        confirmationNumber: data.confirmationNumber || null,
-        source: data.source || 'manual'
+        accountId: txData.accountId || null,
+        categoryId: txData.categoryId || null,
+        status: txData.status || 'pending',
+        notes: txData.notes || null,
+        confirmationNumber: txData.confirmationNumber || null,
+        source: txData.source || 'manual'
       })
     })
 
-    if (data.categoryId) {
+    if (txData.categoryId) {
       const updateCat = db.update(categories)
-        .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${data.amountCents}` })
-        .where(and(eq(categories.id, data.categoryId), eq(categories.householdId, householdId)))
+        .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${txData.amountCents}` })
+        .where(and(eq(categories.id, txData.categoryId), eq(categories.householdId, householdId)))
       
       await db.batch([insertTx, insertTimeline, updateCat])
     } else {
@@ -553,9 +556,9 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     await reconService.applyRules(householdId, [id])
     
     await logAudit(c, 'transactions', id, 'CREATE', null, { 
-      amount: data.amountCents, 
-      accountId: data.accountId, 
-      categoryId: data.categoryId 
+      amount: txData.amountCents, 
+      accountId: txData.accountId, 
+      categoryId: txData.categoryId 
     })
     
     return c.json({ success: true, id })
@@ -1026,6 +1029,7 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.ownerId !== undefined) updates.ownerId = data.ownerId
   if (data.status !== undefined) updates.status = data.status
   if (data.confirmationNumber !== undefined) updates.confirmationNumber = data.confirmationNumber
+  if (data.confirmationNumbers !== undefined) updates.confirmationNumbers = data.confirmationNumbers
   if (data.description !== undefined) updates.description = data.description
   if (data.amountCents !== undefined) updates.amountCents = data.amountCents
   if (data.transactionDate !== undefined) updates.transactionDate = data.transactionDate

@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, integer, primaryKey, index, serial, unique } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, integer, primaryKey, index, serial, unique, json } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { users } from './auth';
 
@@ -97,6 +97,7 @@ export const transactions = pgTable('transactions', {
   receiptR2Key: text('receipt_r2_key'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   confirmationNumber: text('confirmation_number'),
+  confirmationNumbers: json('confirmation_numbers').$type<ConfirmationNumber[]>().default([]),
   linkedTransactionId: text('linked_transaction_id').references((): any => transactions.id, { onDelete: 'set null' }),
   reconciliationStatus: text('reconciliation_status').default('unreconciled'),
   notes: text('notes'),
@@ -121,6 +122,44 @@ export const transactions = pgTable('transactions', {
   categoryIdx: index('idx_transactions_category').on(table.categoryId),
   parentIdx: index('idx_transactions_parent').on(table.parentId),
   dateIdx: index('idx_transactions_date').on(table.transactionDate),
+}));
+
+export interface ConfirmationNumber {
+  id: string;
+  category: string;
+  customCategoryLabel?: string;
+  value: string;
+  isPrimary?: boolean;
+  sortOrder?: number;
+}
+
+export const transactionConfirmationNumbers = pgTable('transaction_confirmation_numbers', {
+  id: text('id').primaryKey(),
+  transactionId: text('transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+  category: text('category').notNull(),
+  customCategoryLabel: text('custom_category_label'),
+  value: text('value').notNull(),
+  isPrimary: boolean('is_primary').default(false),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  transactionIdx: index('idx_tcn_transaction').on(table.transactionId),
+}));
+
+export const transactionLifecycleLogs = pgTable('transaction_lifecycle_logs', {
+  id: serial('id').primaryKey(),
+  transactionId: text('transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+  actorId: text('actor_id').notNull(),
+  action: text('action').notNull(),
+  fieldChanged: text('field_changed'),
+  oldValue: text('old_value'),
+  newValue: text('new_value'),
+  diffJson: json('diff_json'),
+  metadataJson: json('metadata_json').default({}),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  transactionIdx: index('idx_tll_transaction').on(table.transactionId),
+  actorIdx: index('idx_tll_actor').on(table.actorId),
 }));
 
 export const transactionPairingRules = pgTable('transaction_pairing_rules', {

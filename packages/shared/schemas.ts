@@ -24,6 +24,26 @@ export const AccountSchema = z.object({
   providerId: z.string().optional().nullable(),
 })
 
+// --- CONFIRMATION NUMBER SCHEMAS ---
+export const ConfirmationNumberItemSchema = z.object({
+  id: z.string().optional(),
+  category: z.string().min(1),
+  customCategoryLabel: z.string().optional().nullable(),
+  value: z.string().min(1).max(100),
+  isPrimary: z.boolean().optional().default(false),
+  sortOrder: z.number().int().optional().default(0),
+})
+
+export const ConfirmationNumberCategorySchema = z.object({
+  id: z.string().optional(),
+  key: z.string().min(1).max(50),
+  label: z.string().min(1).max(50),
+  icon: z.string().max(10).optional().default('🔖'),
+  sortOrder: z.number().int().optional().default(0),
+  isSystem: z.boolean().optional().default(false),
+  householdId: z.string().nullable().optional(),
+})
+
 // --- FINANCIAL SCHEMAS ---
 export const TransactionSchema = z.object({
   amountCents: z.number().int(),
@@ -33,7 +53,8 @@ export const TransactionSchema = z.object({
   transactionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   ownerId: z.string().optional(),
   status: z.string().optional().default('unpaid'),
-  confirmationNumber: z.string().optional().nullable(),
+  confirmationNumber: z.string().optional().nullable(), // Legacy
+  confirmationNumbers: z.array(ConfirmationNumberItemSchema).optional().default([]), // New multi-instance
   notes: z.string().max(1000).optional().nullable(),
   rawDescription: z.string().optional().nullable(),
   parentId: z.string().uuid().or(z.literal('')).transform(v => v === '' ? null : v).optional().nullable(),
@@ -61,7 +82,8 @@ export const TransactionOutputSchema = z.object({
   transactionDate: z.string(),
   ownerId: z.string().nullable(),
   status: z.string(),
-  confirmationNumber: z.string().nullable(),
+  confirmationNumber: z.string().nullable(), // Legacy
+  confirmationNumbers: z.array(ConfirmationNumberItemSchema).optional().default([]), // New multi-instance
   notes: z.string().nullable(),
   rawDescription: z.string().nullable(),
   parentId: z.string().nullable(),
@@ -154,7 +176,8 @@ export const TrackedExpenseSchema = z.object({
   amountCents: z.number().int(),
   description: z.string().min(1).max(1000),
   notes: z.preprocess(val => val === '' ? null : val, z.string().max(1000).optional().nullable()),
-  confirmationNumber: z.preprocess(val => val === '' ? null : val, z.string().max(100).optional().nullable()),
+  confirmationNumber: z.preprocess(val => val === '' ? null : val, z.string().max(100).optional().nullable()), // Legacy
+  confirmationNumbers: z.array(ConfirmationNumberItemSchema).optional().default([]), // New multi-instance
   attentionRequired: z.boolean().optional().default(false),
   needsBalanceTransfer: z.boolean().optional().default(false),
   transferTiming: z.preprocess(val => val === '' ? null : val, z.string().optional().nullable()),
@@ -473,4 +496,55 @@ export const UserOutputSchema = z.object({
     status: z.string().nullable().optional()
   })).optional(),
   settingsJson: z.string().nullable().optional()
+})
+
+export const ConfirmationNumberCategoriesResponseSchema = z.object({
+  categories: z.array(ConfirmationNumberCategorySchema),
+  legacyCategory: z.object({
+    id: z.string(),
+    key: z.literal('legacy'),
+    label: z.string(),
+    icon: z.string(),
+    sortOrder: z.number().int(),
+    isSystem: z.boolean()
+  }).optional(),
+})
+
+export const CreateConfirmationNumberCategorySchema = z.object({
+  key: z.string().min(1).max(50).regex(/^[a-z0-9_]+$/),
+  label: z.string().min(1).max(50),
+  icon: z.string().max(10).optional().default('🔖'),
+  sortOrder: z.number().int().optional().default(0),
+})
+
+export const UpdateConfirmationNumberCategorySchema = z.object({
+  label: z.string().min(1).max(50).optional(),
+  icon: z.string().max(10).optional(),
+  sortOrder: z.number().int().optional(),
+})
+
+export const TransactionLifecycleLogSchema = z.object({
+  id: z.number().int(),
+  transactionId: z.string(),
+  actorId: z.string(),
+  action: z.string(),
+  fieldChanged: z.string().nullable().optional(),
+  oldValue: z.string().nullable().optional(),
+  newValue: z.string().nullable().optional(),
+  diffJson: z.any().nullable().optional(),
+  metadataJson: z.any().nullable().optional(),
+  createdAt: z.string(),
+})
+
+export const TrackedExpenseLifecycleLogSchema = z.object({
+  id: z.number().int(),
+  trackedExpenseId: z.string(),
+  actorId: z.string(),
+  action: z.string(),
+  fieldChanged: z.string().nullable().optional(),
+  oldValue: z.string().nullable().optional(),
+  newValue: z.string().nullable().optional(),
+  diffJson: z.any().nullable().optional(),
+  metadataJson: z.any().nullable().optional(),
+  createdAt: z.string(),
 })

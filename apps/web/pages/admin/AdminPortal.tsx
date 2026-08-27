@@ -72,7 +72,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
             rel="noopener noreferrer"
             className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
           >
-            <span>Foundation Sovereign Matrix</span>
+            <span>Foundation Central Matrix</span>
             <ExternalLink size={12} />
           </a>
           <UserMenu isAdminPortal={true} />
@@ -102,7 +102,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ children, activePath }) => {
                })}
             </div>
             
-            {/* Foundation Sovereign Command Matrix Deep Link */}
+            {/* Foundation Central Command Matrix Deep Link */}
             <div className="p-3 border-t border-white/5 space-y-2">
                 <a
                   href={`${domain}/security`}

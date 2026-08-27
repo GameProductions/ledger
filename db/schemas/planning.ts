@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, integer, index } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, integer, index, json, serial, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { households } from './financials';
 
@@ -43,7 +43,8 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   amountCents: integer('amount_cents').notNull(),
   status: text('status').default('pending'), // pending, committed, ignored
   notes: text('notes'),
-  confirmationNumber: text('confirmation_number'),
+  confirmationNumber: text('confirmation_number'), // Legacy single confirmation number
+  confirmationNumbers: json('confirmation_numbers').$type<ConfirmationNumber[]>().default([]), // New multi-instance
   attentionRequired: boolean('attention_required').default(false),
   needsBalanceTransfer: boolean('needs_balance_transfer').default(false),
   transferReconciled: boolean('transfer_reconciled').default(false),
@@ -54,4 +55,56 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   householdIdx: index('idx_tracked_expenses_household').on(table.householdId),
+}));
+
+export interface ConfirmationNumber {
+  id: string;
+  category: string;
+  customCategoryLabel?: string;
+  value: string;
+  isPrimary?: boolean;
+  sortOrder?: number;
+}
+
+export const trackedExpenseConfirmationNumbers = pgTable('tracked_expense_confirmation_numbers', {
+  id: text('id').primaryKey(),
+  trackedExpenseId: text('tracked_expense_id').notNull().references(() => trackedExpenses.id, { onDelete: 'cascade' }),
+  category: text('category').notNull(),
+  customCategoryLabel: text('custom_category_label'),
+  value: text('value').notNull(),
+  isPrimary: boolean('is_primary').default(false),
+  sortOrder: integer('sort_order').default(0),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  trackedExpenseIdx: index('idx_tecn_tracked_expense').on(table.trackedExpenseId),
+}));
+
+export const confirmationNumberCategories = pgTable('confirmation_number_categories', {
+  id: text('id').primaryKey(),
+  householdId: text('household_id').references(() => households.id, { onDelete: 'cascade' }),
+  key: text('key').notNull(),
+  label: text('label').notNull(),
+  icon: text('icon').default('🔖'),
+  sortOrder: integer('sort_order').default(0),
+  isSystem: boolean('is_system').default(false),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  householdIdx: index('idx_cnc_household').on(table.householdId),
+  householdKeyIdx: uniqueIndex('idx_cnc_household_key').on(table.householdId, table.key),
+}));
+
+export const trackedExpenseLifecycleLogs = pgTable('tracked_expense_lifecycle_logs', {
+  id: serial('id').primaryKey(),
+  trackedExpenseId: text('tracked_expense_id').notNull().references(() => trackedExpenses.id, { onDelete: 'cascade' }),
+  actorId: text('actor_id').notNull(),
+  action: text('action').notNull(),
+  fieldChanged: text('field_changed'),
+  oldValue: text('old_value'),
+  newValue: text('new_value'),
+  diffJson: json('diff_json'),
+  metadataJson: json('metadata_json').default({}),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  trackedExpenseIdx: index('idx_tell_tracked_expense').on(table.trackedExpenseId),
+  actorIdx: index('idx_tell_actor').on(table.actorId),
 }));

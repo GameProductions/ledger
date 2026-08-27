@@ -33,7 +33,7 @@ export function mountAuth(app: Hono<any>, config: AuthConfig) {
   app.route('/api/auth/passkeys', createPasskeyRoutes(config))
 }
 
-export { AuthService, generateUUIDv7, generatePrefixedId } from './services/auth.service'
+export { AuthService, generateUUIDv7, generatePrefixedId, hashPassword, verifyPassword } from './services/auth.service'
 export { sessionGuard } from './middleware/session'
 export { requireRole } from './middleware/role'
 export { requirePasskeyFreshness } from './middleware/stepup'

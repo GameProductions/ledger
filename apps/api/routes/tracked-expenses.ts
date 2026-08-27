@@ -105,7 +105,7 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
     }]
   }
   
-  await db.insert(trackedExpenses).values({
+  await (db.insert(trackedExpenses) as any).values({
     id,
     householdId,
     ...data,
@@ -115,7 +115,8 @@ trackedExpensesRoutes.post('/', zValidator('json', z.object({
   // Store confirmation numbers in normalized table
   if (confirmationNumbers.length > 0) {
     for (const cn of confirmationNumbers) {
-      await db.insert(trackedExpenseConfirmationNumbers).values({
+      await (db.insert(trackedExpenseConfirmationNumbers) as any).values({
+        id: crypto.randomUUID(),
         trackedExpenseId: id,
         category: cn.category,
         customCategoryLabel: cn.customCategoryLabel,
@@ -210,7 +211,8 @@ trackedExpensesRoutes.patch('/bulk', zValidator('json', z.object({
     
     for (const cn of newConfirmationNumbers) {
       for (const id of ids) {
-        await db.insert(trackedExpenseConfirmationNumbers).values({
+        await (db.insert(trackedExpenseConfirmationNumbers) as any).values({
+          id: crypto.randomUUID(),
           trackedExpenseId: id,
           category: cn.category,
           customCategoryLabel: cn.customCategoryLabel,

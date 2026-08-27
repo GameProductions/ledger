@@ -26,7 +26,7 @@ export const AccountSchema = z.object({
 
 // --- CONFIRMATION NUMBER SCHEMAS ---
 export const ConfirmationNumberItemSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   category: z.string().min(1),
   customCategoryLabel: z.string().optional().nullable(),
   value: z.string().min(1).max(100),

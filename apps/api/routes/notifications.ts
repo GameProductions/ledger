@@ -67,12 +67,12 @@ notifications.get('/', async (c) => {
       // Authorization Check:
       // - Owners/Admins see all household/system activity logs.
       // - Regular users see only their own actions, general financial updates, announcements, or notifications targeted to them.
-      if (!isAdmin && log.actorId !== userId && log.targetType.includes('system') && !log.action.includes('ANNOUNCEMENT')) {
+      if (!isAdmin && log.actorId !== userId && log.targetType?.includes('system') && !log.action.includes('ANNOUNCEMENT')) {
         continue
       }
 
       let friendlyAction = log.action.replace(/_/g, ' ')
-      let friendlyTarget = log.targetType
+      let friendlyTarget = log.targetType || 'Activity'
 
       if (log.action.includes('TRANSACTION')) {
         friendlyAction = 'Transaction Mutation'
@@ -108,7 +108,7 @@ notifications.get('/', async (c) => {
         actorName: resolvedActorName,
         action: log.action,
         friendlyAction,
-        targetType: log.targetType,
+        targetType: log.targetType || 'unknown',
         friendlyTarget,
         severity: (log.severity?.toUpperCase() as any) || 'INFO',
         metadataJson: log.detailsJson,

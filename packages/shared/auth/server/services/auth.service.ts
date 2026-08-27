@@ -1,4 +1,4 @@
-import { eq, or, and, gt } from 'drizzle-orm'
+import { eq, or, and, gt, sql } from 'drizzle-orm'
 import { getDb } from '#/index'
 import { users, sessions, userIdentities, passwordResets, adminInvitations, backupCodes } from '#/schema'
 import { setCookie, deleteCookie } from 'hono/cookie'
@@ -88,26 +88,82 @@ function timingSafeEqual(a: string, b: string): boolean {
   return result === 0
 }
 
-async function hashPassword(password: string): Promise<string> {
+/**
+ * 🔒 Enterprise Password Hashing: Native WebCrypto PBKDF2-SHA256
+ * Format: v1$pbkdf2-sha256$100000$<saltBase64url>$<hashBase64url>
+ */
+export async function hashPassword(password: string, pepper: string = ''): Promise<string> {
   const encoder = new TextEncoder()
   const salt = crypto.getRandomValues(new Uint8Array(16))
-  const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey'])
-  const derivedBits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }, keyMaterial, 256)
-  const saltBase64 = uint8ArrayToBase64(salt)
-  const hashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits))
-  return `${PBKDF2_ITERATIONS}.${saltBase64}.${hashBase64}`
+  
+  // Combine password with pepper via HMAC if pepper is provided
+  let inputKeyBytes: Uint8Array
+  if (pepper) {
+    const pepperKey = await crypto.subtle.importKey('raw', encoder.encode(pepper), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    const hmacSig = await crypto.subtle.sign('HMAC', pepperKey, encoder.encode(password))
+    inputKeyBytes = new Uint8Array(hmacSig)
+  } else {
+    inputKeyBytes = encoder.encode(password)
+  }
+
+const keyMaterial = await crypto.subtle.importKey('raw', inputKeyBytes.buffer as ArrayBuffer, 'PBKDF2', false, ['deriveBits', 'deriveKey'])
+  const derivedBits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }, 
+    keyMaterial, 
+    256
+  )
+  
+  const saltBase64 = uint8ArrayToBase64(salt).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  const hashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return `v1$pbkdf2-sha256$${PBKDF2_ITERATIONS}$${saltBase64}$${hashBase64}`
 }
 
-async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+export async function verifyPassword(password: string, storedHash: string, pepper: string = ''): Promise<boolean> {
   try {
-    const [iterations, saltBase64, expectedHashBase64] = storedHash.split('.')
-    const salt = base64ToUint8Array(saltBase64)
+    if (!storedHash) return false
+
+    let iterations: number
+    let saltBase64: string
+    let expectedHashBase64: string
+
+    if (storedHash.startsWith('v1$pbkdf2-sha256$')) {
+      const parts = storedHash.split('$')
+      iterations = parseInt(parts[2], 10)
+      saltBase64 = parts[3]
+      expectedHashBase64 = parts[4]
+    } else {
+      // Legacy unversioned PBKDF2 format fallback: iterations.salt.hash
+      const parts = storedHash.split('.')
+      if (parts.length !== 3) return false
+      iterations = parseInt(parts[0], 10)
+      saltBase64 = parts[1]
+      expectedHashBase64 = parts[2]
+    }
+
+    const salt = base64ToUint8Array(saltBase64.replace(/-/g, '+').replace(/_/g, '/'))
     const encoder = new TextEncoder()
-    const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits', 'deriveKey'])
-    const derivedBits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt as BufferSource, iterations: parseInt(iterations), hash: 'SHA-256' }, keyMaterial, 256)
-    const actualHashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits))
-    return timingSafeEqual(actualHashBase64, expectedHashBase64)
-  } catch {
+
+    let inputKeyBytes: Uint8Array
+    if (pepper) {
+      const pepperKey = await crypto.subtle.importKey('raw', encoder.encode(pepper), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+      const hmacSig = await crypto.subtle.sign('HMAC', pepperKey, encoder.encode(password))
+      inputKeyBytes = new Uint8Array(hmacSig)
+    } else {
+      inputKeyBytes = encoder.encode(password)
+    }
+
+const keyMaterial = await crypto.subtle.importKey('raw', inputKeyBytes.buffer as ArrayBuffer, 'PBKDF2', false, ['deriveBits', 'deriveKey'])
+    const derivedBits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: salt as BufferSource, iterations, hash: 'SHA-256' }, 
+      keyMaterial, 
+      256
+    )
+    const actualHashBase64 = uint8ArrayToBase64(new Uint8Array(derivedBits)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const cleanExpectedHash = expectedHashBase64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    
+    return timingSafeEqual(actualHashBase64, cleanExpectedHash)
+  } catch (err: any) {
+    console.error('[AuthService] Password verification exception:', err?.message)
     return false
   }
 }
@@ -134,13 +190,24 @@ async function hashToken(token: string): Promise<string> {
 export class AuthService {
   constructor(private env: any, private config: AuthConfig) {}
 
+  private getPepper(): string {
+    return this.env?.GLOBAL_PASSWORD_PEPPER || this.env?.ENCRYPTION_KEY || this.env?.JWT_SECRET || 'foundation-core-secret-pepper';
+  }
+
   async validateCredentials(identifier: string, password: string) {
     const db = getDb(this.env)
+    const pepper = this.getPepper()
+
     const result = await db.select().from(users).where(
-      or(eq(users.email, identifier), eq(users.displayName, identifier))
+      or(eq(users.email, identifier), sql`lower(${users.username}) = lower(${identifier})`)
     ).limit(1)
     const user = result[0]
-    if (!user) return { success: false, error: 'Invalid credentials' } as const
+    
+    // Constant-time mitigation against user enumeration
+    if (!user) {
+      await hashPassword(password, pepper)
+      return { success: false, error: 'Invalid credentials' } as const
+    }
 
     if (user.status === 'locked' || user.status === 'suspended') {
       return { success: false, error: 'Account is restricted.' } as const
@@ -150,21 +217,21 @@ export class AuthService {
       return { success: false, error: 'Account linked via social provider. Please use Discord or Google login.' } as const
     }
 
-    const isMatch = await verifyPassword(password, user.passwordHash)
+    const isMatch = await verifyPassword(password, user.passwordHash, pepper)
     if (!isMatch) {
       await db.update(users).set({ failedLoginAttempts: (user.failedLoginAttempts || 0) + 1 }).where(eq(users.id, user.id))
 
       if ((user.failedLoginAttempts || 0) + 1 >= 5) {
         const lockMinutes = 30
         const lockUntil = new Date(Date.now() + lockMinutes * 60 * 1000).toISOString()
-        await db.update(users).set({ lockedAt: lockUntil }).where(eq(users.id, user.id))
+        await (db.update(users) as any).set({ lockedAt: lockUntil, lockoutUntil: lockUntil }).where(eq(users.id, user.id))
         return { success: false, error: `Account locked for ${lockMinutes} minutes due to multiple failed attempts.` } as const
       }
 
       return { success: false, error: 'Invalid credentials' } as const
     }
 
-    await db.update(users).set({ failedLoginAttempts: 0, lockedAt: null }).where(eq(users.id, user.id))
+    await (db.update(users) as any).set({ failedLoginAttempts: 0, lockedAt: null, lockoutUntil: null }).where(eq(users.id, user.id))
 
     return { success: true, user: user as any } as const
   }
@@ -193,8 +260,13 @@ export class AuthService {
   }
 
   setSessionCookie(c: any, sessionId: string, expirationHours: number, isLocal: boolean) {
-    const host = c.req.header('host') || ''
-    const domain = isLocal || host.includes('localhost') ? undefined : (host.endsWith('gpnet.dev') ? '.gpnet.dev' : undefined)
+    const host = (c.req.header('host') || '').split(':')[0]
+    let domain: string | undefined = undefined
+    if (!isLocal && !host.includes('localhost')) {
+      if (host.endsWith('gpnet.dev') || host.includes('gpnet.dev')) {
+        domain = '.gpnet.dev'
+      }
+    }
     setCookie(c, 'FOUNDATION_SESSION', sessionId, {
       path: '/',
       domain,
@@ -211,12 +283,23 @@ export class AuthService {
     deleteCookie(c, 'FOUNDATION_SESSION', { path: '/', domain })
   }
 
+  async getSession(sessionId: string) {
+    const db = getDb(this.env)
+    const session = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1).then(r => r[0])
+    if (!session || new Date(session.expiresAt) < new Date()) {
+      return null
+    }
+    const user = await db.select().from(users).where(eq(users.id, session.userId)).limit(1).then(r => r[0])
+    if (!user) return null
+    return { session, user }
+  }
+
   async createInvitation(email: string, role: string, createdBy: string) {
     const db = getDb(this.env)
     const token = generateToken()
     const tokenHash = await hashToken(token)
 
-    await db.insert(adminInvitations).values({
+    await (db.insert(adminInvitations) as any).values({
       id: generateToken(),
       email,
       role,
@@ -228,31 +311,36 @@ export class AuthService {
     return token
   }
 
-  async acceptInvitation(token: string, displayName: string, password: string) {
+  async acceptInvitation(token: string, displayName: string, password: string, username?: string) {
     const db = getDb(this.env)
     const tokenHash = await hashToken(token)
 
-    const invitation = await db.select().from(adminInvitations)
+    const invitation: any = await db.select().from(adminInvitations)
       .where(and(eq(adminInvitations.tokenHash, tokenHash), gt(adminInvitations.expiresAt, new Date().toISOString())))
       .limit(1)
       .then(r => r[0])
 
     if (!invitation) return { success: false, error: 'Invalid or expired invitation token.' } as const
-    if (invitation.acceptedAt) return { success: false, error: 'Invitation has already been used.' } as const
+    if (invitation.acceptedAt || invitation.isClaimed) return { success: false, error: 'Invitation has already been used.' } as const
 
     const passwordHash = await hashPassword(password)
     const userId = generateToken()
 
-    await db.insert(users).values({
+    const finalUsername = (username?.trim() || (invitation.email ? invitation.email.split('@')[0] : '') || '').toLowerCase()
+    const taken = await db.select().from(users).where(sql`lower(${users.username}) = lower(${finalUsername})`).limit(1)
+    if (taken.length > 0) return { success: false, error: 'That username is already taken.' } as const
+
+    await (db.insert(users) as any).values({
       id: userId,
       email: invitation.email,
+      username: finalUsername,
       displayName,
       passwordHash,
       globalRole: invitation.role,
       status: 'active',
     })
 
-    await db.update(adminInvitations).set({ acceptedAt: new Date().toISOString() }).where(eq(adminInvitations.id, invitation.id))
+    await (db.update(adminInvitations) as any).set({ acceptedAt: new Date().toISOString(), isClaimed: true }).where(eq(adminInvitations.id, invitation.id))
 
     return { success: true, userId } as const
   }
@@ -265,7 +353,7 @@ export class AuthService {
     const token = generateToken()
     const tokenHash = await hashToken(token)
 
-    await db.insert(passwordResets).values({
+    await (db.insert(passwordResets) as any).values({
       id: generateToken(),
       userId: user.id,
       tokenHash,
@@ -279,34 +367,38 @@ export class AuthService {
     const db = getDb(this.env)
     const tokenHash = await hashToken(token)
 
-    const reset = await db.select().from(passwordResets)
+    const reset: any = await db.select().from(passwordResets)
       .where(and(eq(passwordResets.tokenHash, tokenHash), gt(passwordResets.expiresAt, new Date().toISOString())))
       .limit(1)
       .then(r => r[0])
 
-    if (!reset || reset.usedAt) return { success: false, error: 'Invalid or expired reset token.' } as const
+    if (!reset || reset.usedAt || reset.isUsed) return { success: false, error: 'Invalid or expired reset token.' } as const
 
-    const passwordHash = await hashPassword(newPassword)
-    await db.update(users).set({ passwordHash, passwordChangedAt: new Date().toISOString() }).where(eq(users.id, reset.userId))
-    await db.update(passwordResets).set({ usedAt: new Date().toISOString() }).where(eq(passwordResets.id, reset.id))
+    const passwordHash = await hashPassword(newPassword, this.getPepper())
+    await (db.update(users) as any).set({ passwordHash, passwordChangedAt: new Date().toISOString(), failedLoginAttempts: 0, lockedAt: null, lockoutUntil: null }).where(eq(users.id, reset.userId))
+    await (db.update(passwordResets) as any).set({ usedAt: new Date().toISOString(), isUsed: true }).where(eq(passwordResets.id, reset.id))
+
+    // Revoke all sessions upon password reset
+    await db.delete(sessions).where(eq(sessions.userId, reset.userId))
 
     return { success: true } as const
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const db = getDb(this.env)
+    const pepper = this.getPepper()
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1).then(r => r[0])
     if (!user) return { success: false, error: 'User not found.' } as const
 
     if (!user.passwordHash) {
-      await db.update(users).set({ passwordHash: await hashPassword(newPassword) }).where(eq(users.id, userId))
+      await db.update(users).set({ passwordHash: await hashPassword(newPassword, pepper), passwordChangedAt: new Date().toISOString() }).where(eq(users.id, userId))
       return { success: true } as const
     }
 
-    const isMatch = await verifyPassword(currentPassword, user.passwordHash)
+    const isMatch = await verifyPassword(currentPassword, user.passwordHash, pepper)
     if (!isMatch) return { success: false, error: 'Current password is incorrect.' } as const
 
-    await db.update(users).set({ passwordHash: await hashPassword(newPassword), passwordChangedAt: new Date().toISOString() }).where(eq(users.id, userId))
+    await db.update(users).set({ passwordHash: await hashPassword(newPassword, pepper), passwordChangedAt: new Date().toISOString() }).where(eq(users.id, userId))
     return { success: true } as const
   }
 

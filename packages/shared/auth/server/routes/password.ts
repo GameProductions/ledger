@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { getCookie } from 'hono/cookie'
 import { AuthConfig, AuthEnv } from '../../types'
 import { AuthService } from '../services/auth.service'
 
@@ -7,7 +8,19 @@ export function createPasswordRoutes(config: AuthConfig) {
 
   router.post('/change', async (c) => {
     try {
-      const userId = c.get('user_id')
+      let userId = (c.get as any)('user_id') as string | undefined
+      if (!userId) {
+        const authHeader = c.req.header('Authorization') || ''
+        const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : ''
+        const sessionId = bearerToken || c.req.query('session_token') || getCookie(c, 'FOUNDATION_SESSION')
+        if (sessionId) {
+          const auth = new AuthService(c.env, config)
+          const session = await auth.getSession(sessionId)
+          if (session && session.user) {
+            userId = session.user.id
+          }
+        }
+      }
       if (!userId) return c.json({ success: false, error: 'Unauthorized.' }, 401)
 
       const { currentPassword, newPassword } = await c.req.json()

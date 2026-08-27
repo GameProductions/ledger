@@ -7,6 +7,11 @@ import {
   PortainerEnvironment, 
   PortainerStack, 
   PortainerContainer, 
+  PortainerStackDetails,
+  PortainerStackVolume,
+  PortainerStackNetwork,
+  PortainerStackImage,
+  PortainerStackImageSummary,
   CreateEnvironmentPayload 
 } from './types';
 
@@ -59,15 +64,29 @@ export class PortainerClient {
     const rawEndpoints = await this.request<any[]>('/endpoints');
     
     return rawEndpoints.map(ep => {
-      const isUp = ep.Status === 1;
+      const hasDockerSnapshot = Boolean(ep.Snapshots && ep.Snapshots.length > 0 && ep.Snapshots[0]?.DockerVersion);
+      const isHealthySnapshot = hasDockerSnapshot && !ep.Snapshots[0]?.SnapshotRaw?.SnapshotError;
+      
+      let status: 'up' | 'down' | 'degraded' = 'down';
+      if (ep.Status === 1 && isHealthySnapshot) {
+        status = 'up';
+      } else if (ep.Status === 1 && !hasDockerSnapshot) {
+        // Registered in Portainer but not yet reachable / snapshot pending / agent not connected
+        status = 'degraded';
+      } else if (ep.Status === 3 || (hasDockerSnapshot && ep.Snapshots[0]?.UnhealthyContainerCount > 0)) {
+        status = 'degraded';
+      } else {
+        status = 'down';
+      }
+
       return {
         id: ep.Id,
         name: ep.Name,
         type: ep.Type,
         url: ep.URL,
-        status: isUp ? 'up' : 'down',
+        status,
         groupId: ep.GroupId || 1,
-        totalContainers: ep.Snapshots?.[0]?.DockerVersion ? (ep.Snapshots[0].RunningContainerCount + ep.Snapshots[0].StoppedContainerCount) : 0,
+        totalContainers: hasDockerSnapshot ? (ep.Snapshots[0].RunningContainerCount + ep.Snapshots[0].StoppedContainerCount) : 0,
         runningContainers: ep.Snapshots?.[0]?.RunningContainerCount || 0,
         stoppedContainers: ep.Snapshots?.[0]?.StoppedContainerCount || 0,
         healthyContainers: ep.Snapshots?.[0]?.HealthyContainerCount || 0,
@@ -131,6 +150,47 @@ export class PortainerClient {
    */
   async deleteEnvironment(id: number): Promise<void> {
     await this.request(`/endpoints/${id}`, { method: 'DELETE' });
+  }
+
+  /**
+   * Update an existing environment
+   */
+  async updateEnvironment(id: number, payload: Partial<CreateEnvironmentPayload>): Promise<PortainerEnvironment> {
+    const body: Record<string, any> = {};
+    if (payload.name !== undefined) body.Name = payload.name;
+    if (payload.type !== undefined) body.EndpointType = payload.type;
+    if (payload.url !== undefined) body.URL = payload.url;
+    if (payload.publicUrl !== undefined) body.PublicURL = payload.publicUrl;
+    if (payload.groupId !== undefined) body.GroupId = payload.groupId;
+    
+    if (payload.tls?.skipVerify !== undefined) {
+      body.TLS = {
+        TLS: true,
+        TLSSkipVerify: payload.tls.skipVerify
+      };
+    }
+
+    const updated = await this.request<any>(`/endpoints/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    return {
+      id: updated.Id,
+      name: updated.Name,
+      type: updated.Type,
+      url: updated.URL,
+      status: updated.Status === 1 ? 'up' : 'down',
+      groupId: updated.GroupId || 1,
+      totalContainers: 0,
+      runningContainers: 0,
+      stoppedContainers: 0,
+      healthyContainers: 0,
+      unhealthyContainers: 0,
+      totalImages: 0,
+      totalVolumes: 0,
+      totalStacks: 0,
+    };
   }
 
   /**
@@ -412,93 +472,7 @@ export class PortainerClient {
 
     // Enhance image updates checking against source hosting registries (Docker Hub, GHCR, Quay)
     for (const img of imageList) {
-      // Find local image match
-      const localMatch = rawDockerImages.find(di => 
-        (di.RepoTags && di.RepoTags.some((t: string) => t.includes(img.repository) || t.includes(img.name))) ||
-        (di.RepoDigests && di.RepoDigests.some((d: string) => d.includes(img.repository) || d.includes(img.name)))
-      );
-
-      if (localMatch) {
-        img.localCreated = localMatch.Created * 1000;
-        if (localMatch.RepoDigests && localMatch.RepoDigests.length > 0) {
-          const rawDig = localMatch.RepoDigests[0];
-          img.localDigest = rawDig.includes('@') ? rawDig.split('@')[1] : rawDig;
-        }
-      }
-
-      const registry = img.registryUrl || 'docker.io';
-      const tag = img.tag || 'latest';
-
-      try {
-        if (registry === 'ghcr.io') {
-          // GitHub Container Registry / LinuxServer images
-          const tokenRes = await this.fetchImpl(`https://ghcr.io/token?scope=repository:${img.repository}:pull`);
-          if (tokenRes.ok) {
-            const tokenData: any = await tokenRes.json();
-            const manifestRes = await this.fetchImpl(`https://ghcr.io/v2/${img.repository}/manifests/${tag}`, {
-              headers: {
-                Authorization: `Bearer ${tokenData.token}`,
-                Accept: 'application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json',
-              },
-            });
-            if (manifestRes.ok) {
-              const digest = manifestRes.headers.get('docker-content-digest') || manifestRes.headers.get('etag')?.replace(/"/g, '');
-              if (digest) {
-                img.remoteDigest = digest;
-                if (img.localDigest) {
-                  img.status = img.localDigest === digest ? 'up-to-date' : 'update-available';
-                }
-              }
-            }
-          }
-        } else if (registry === 'quay.io') {
-          // Quay.io Registry
-          const quayRes = await this.fetchImpl(`https://quay.io/api/v1/repository/${img.repository}/tag/?specificTag=${tag}`);
-          if (quayRes.ok) {
-            const quayData: any = await quayRes.json();
-            const tagInfo = quayData.tags?.[0];
-            if (tagInfo) {
-              img.remoteDigest = tagInfo.manifest_digest;
-              if (tagInfo.last_modified) {
-                img.remoteUpdated = new Date(tagInfo.last_modified).toISOString();
-                if (img.localCreated && new Date(tagInfo.last_modified).getTime() > img.localCreated + 300000) {
-                  img.status = 'update-available';
-                } else {
-                  img.status = 'up-to-date';
-                }
-              }
-            }
-          }
-        } else {
-          // Docker Hub Registry
-          const repoPath = img.repository.includes('/') ? img.repository : `library/${img.repository}`;
-          const hubRes = await this.fetchImpl(`https://hub.docker.com/v2/repositories/${repoPath}/tags/${tag}`);
-          if (hubRes.ok) {
-            const hubData: any = await hubRes.json();
-            img.remoteUpdated = hubData.last_updated;
-            img.remoteDigest = hubData.digest;
-
-            if (img.localCreated && hubData.last_updated) {
-              const remoteTime = new Date(hubData.last_updated).getTime();
-              if (remoteTime > img.localCreated + 300000) {
-                img.status = 'update-available';
-              } else if (img.localDigest && hubData.digest && img.localDigest !== hubData.digest) {
-                img.status = 'update-available';
-              } else {
-                img.status = 'up-to-date';
-              }
-            } else if (img.localDigest && hubData.digest) {
-              img.status = img.localDigest === hubData.digest ? 'up-to-date' : 'update-available';
-            } else {
-              img.status = 'update-available';
-            }
-          } else {
-            img.status = 'unknown';
-          }
-        }
-      } catch {
-        img.status = img.localCreated ? 'up-to-date' : 'unknown';
-      }
+      await this.checkImageUpdate(img, rawDockerImages);
     }
 
     const namedVolumes = Array.from(namedMap.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -506,9 +480,27 @@ export class PortainerClient {
 
     // Get networks
     const rawNetworks = await this.request<any[]>(`/endpoints/${endpointId}/docker/networks`).catch(() => []);
-    const stackNetworks: PortainerStackNetwork[] = (rawNetworks || [])
-      .filter(net => net.Name === 'entertainment' || net.Name.includes(stack.name.toLowerCase()) || net.Name === 'bridge')
-      .map(net => ({
+    const filteredNetworks = (rawNetworks || [])
+      .filter(net => net.Name === 'entertainment' || net.Name.includes(stack.name.toLowerCase()) || net.Name === 'bridge');
+
+    // Get container IPs for each network (parallel requests)
+    const networkDetailsPromises = filteredNetworks.map(net =>
+      this.request<any>(`/endpoints/${endpointId}/docker/networks/${net.Id}`).catch(() => null)
+    );
+    const networkDetailsResults = await Promise.all(networkDetailsPromises);
+
+    const stackNetworks: PortainerStackNetwork[] = filteredNetworks.map((net, idx) => {
+      const networkDetails = networkDetailsResults[idx];
+      const containerIps: string[] = [];
+      if (networkDetails?.Containers) {
+        for (const container of Object.values(networkDetails.Containers) as Array<{ IPv4Address?: string }>) {
+          if (container.IPv4Address) {
+            containerIps.push(container.IPv4Address.split('/')[0]);
+          }
+        }
+      }
+
+      return {
         name: net.Name,
         driver: net.Driver,
         scope: net.Scope,
@@ -516,7 +508,10 @@ export class PortainerClient {
           ipv4Address: net.IPAM?.Config?.[0]?.Subnet,
           gateway: net.IPAM?.Config?.[0]?.Gateway,
         },
-      }));
+        aliases: [],
+        containerIps,
+      };
+    });
 
     return {
       ...stack,
@@ -532,6 +527,180 @@ export class PortainerClient {
       containers: stackContainers,
       services: serviceList,
     };
+  }
+
+  /**
+   * Helper method to inspect registry update for a single container image
+   */
+  async checkImageUpdate(img: PortainerStackImage, localDockerImages: any[] = []): Promise<PortainerStackImage> {
+    const localMatch = localDockerImages.find(di => 
+      (di.RepoTags && di.RepoTags.some((t: string) => t.includes(img.repository) || t.includes(img.name))) ||
+      (di.RepoDigests && di.RepoDigests.some((d: string) => d.includes(img.repository) || d.includes(img.name)))
+    );
+
+    if (localMatch) {
+      img.localCreated = localMatch.Created * 1000;
+      if (localMatch.RepoDigests && localMatch.RepoDigests.length > 0) {
+        const rawDig = localMatch.RepoDigests[0];
+        img.localDigest = rawDig.includes('@') ? rawDig.split('@')[1] : rawDig;
+      }
+    }
+
+    const registry = img.registryUrl || 'docker.io';
+    const tag = img.tag || 'latest';
+
+    try {
+      if (registry === 'ghcr.io') {
+        const tokenRes = await this.fetchImpl(`https://ghcr.io/token?scope=repository:${img.repository}:pull`);
+        if (tokenRes.ok) {
+          const tokenData: any = await tokenRes.json();
+          const manifestRes = await this.fetchImpl(`https://ghcr.io/v2/${img.repository}/manifests/${tag}`, {
+            headers: {
+              Authorization: `Bearer ${tokenData.token}`,
+              Accept: 'application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json',
+            },
+          });
+          if (manifestRes.ok) {
+            const digest = manifestRes.headers.get('docker-content-digest') || manifestRes.headers.get('etag')?.replace(/"/g, '');
+            if (digest) {
+              img.remoteDigest = digest;
+              if (img.localDigest) {
+                img.status = img.localDigest === digest ? 'up-to-date' : 'update-available';
+              }
+            }
+          }
+        }
+      } else if (registry === 'quay.io') {
+        const quayRes = await this.fetchImpl(`https://quay.io/api/v1/repository/${img.repository}/tag/?specificTag=${tag}`);
+        if (quayRes.ok) {
+          const quayData: any = await quayRes.json();
+          const tagInfo = quayData.tags?.[0];
+          if (tagInfo) {
+            img.remoteDigest = tagInfo.manifest_digest;
+            if (tagInfo.last_modified) {
+              img.remoteUpdated = new Date(tagInfo.last_modified).toISOString();
+              if (img.localCreated && new Date(tagInfo.last_modified).getTime() > img.localCreated + 300000) {
+                img.status = 'update-available';
+              } else {
+                img.status = 'up-to-date';
+              }
+            }
+          }
+        }
+      } else {
+        const repoPath = img.repository.includes('/') ? img.repository : `library/${img.repository}`;
+        const hubRes = await this.fetchImpl(`https://hub.docker.com/v2/repositories/${repoPath}/tags/${tag}`);
+        if (hubRes.ok) {
+          const hubData: any = await hubRes.json();
+          img.remoteUpdated = hubData.last_updated;
+          img.remoteDigest = hubData.digest;
+
+          if (img.localCreated && hubData.last_updated) {
+            const remoteTime = new Date(hubData.last_updated).getTime();
+            if (remoteTime > img.localCreated + 300000) {
+              img.status = 'update-available';
+            } else if (img.localDigest && hubData.digest && img.localDigest !== hubData.digest) {
+              img.status = 'update-available';
+            } else {
+              img.status = 'up-to-date';
+            }
+          } else if (img.localDigest && hubData.digest) {
+            img.status = img.localDigest === hubData.digest ? 'up-to-date' : 'update-available';
+          } else {
+            img.status = 'update-available';
+          }
+        } else {
+          img.status = 'unknown';
+        }
+      }
+    } catch {
+      img.status = img.localCreated ? 'up-to-date' : 'unknown';
+    }
+
+    return img;
+  }
+
+  /**
+   * Check image updates across all stacks or specific stacks in an environment
+   */
+  async checkFleetImageUpdates(endpointId: number = 2, stackIds?: number[]): Promise<Record<number, PortainerStackImageSummary>> {
+    const stacks = await this.getStacks(endpointId);
+    const targetStacks = stackIds ? stacks.filter(s => stackIds.includes(s.id)) : stacks;
+    const rawDockerImages = await this.request<any[]>(`/endpoints/${endpointId}/docker/images/json`).catch(() => []);
+    const results: Record<number, PortainerStackImageSummary> = {};
+
+    for (const st of targetStacks) {
+      try {
+        const compose = await this.getStackFile(st.id);
+        const images: PortainerStackImage[] = [];
+        const lines = compose.split('\n');
+
+        for (const rawLine of lines) {
+          const line = rawLine.trim();
+          const imgMatch = line.match(/^image:\s*([^\s]+)/);
+          if (imgMatch) {
+            const fullImg = imgMatch[1].replace(/['"]/g, '');
+            let registry = 'docker.io';
+            let repo = fullImg;
+            let tag = 'latest';
+
+            if (fullImg.includes(':')) {
+              const parts = fullImg.split(':');
+              repo = parts[0];
+              tag = parts[1];
+            }
+
+            if (repo.startsWith('lscr.io/') || repo.startsWith('ghcr.io/')) {
+              registry = 'ghcr.io';
+              repo = repo.replace(/^(lscr\.io|ghcr\.io)\//, '');
+            } else if (repo.startsWith('quay.io/')) {
+              registry = 'quay.io';
+              repo = repo.replace('quay.io/', '');
+            } else if (repo.includes('/')) {
+              registry = 'docker.io';
+            }
+
+            if (!images.some(im => im.name === fullImg)) {
+              images.push({
+                name: fullImg,
+                repository: repo,
+                tag,
+                registryUrl: registry,
+                status: 'checking',
+              });
+            }
+          }
+        }
+
+        if (images.length > 0) {
+          const primaryImage = images[0];
+          await this.checkImageUpdate(primaryImage, rawDockerImages);
+
+          const hasUpdate = images.some(im => im.status === 'update-available') || primaryImage.status === 'update-available';
+          const updateVer = hasUpdate ? (primaryImage.tag !== 'latest' ? `${primaryImage.tag} (New Build)` : 'Newer Build Available') : undefined;
+
+          results[st.id] = {
+            currentVersion: primaryImage.tag || 'latest',
+            updateVersion: updateVer,
+            status: hasUpdate ? 'update-available' : 'up-to-date',
+            imageName: primaryImage.name,
+            lastChecked: Date.now(),
+          };
+        } else {
+          results[st.id] = {
+            status: 'unknown',
+            lastChecked: Date.now(),
+          };
+        }
+      } catch {
+        results[st.id] = {
+          status: 'unknown',
+          lastChecked: Date.now(),
+        };
+      }
+    }
+
+    return results;
   }
 
   /**
@@ -562,6 +731,113 @@ export class PortainerClient {
       containersCount: liveStackContainers.length,
       status: isRunning ? 'running' : 'starting',
     };
+  }
+
+  /**
+   * Full update process: pull latest images, redeploy stack, remove old images
+   * Returns progress updates via callback if provided
+   */
+  async updateStackFull(
+    stackId: number, 
+    endpointId: number, 
+    onProgress?: (progress: { stage: string; progress: number; message: string }) => void
+  ): Promise<{ 
+    success: boolean; 
+    containersCount: number; 
+    status: string;
+    imagesUpdated: number;
+    oldImagesRemoved: number;
+  }> {
+    const stack = (await this.getStacks(endpointId)).find(s => s.id === stackId);
+    if (!stack) {
+      throw new Error(`Stack ${stackId} does not exist in environment ${endpointId}`);
+    }
+
+    let imagesUpdated = 0;
+    let oldImagesRemoved = 0;
+
+    const updateProgress = (stage: string, progress: number, message: string) => {
+      if (onProgress) onProgress({ stage, progress, message });
+    };
+
+    try {
+      // Stage 1: Check for image updates
+      updateProgress('checking', 5, 'Checking for image updates...');
+      const details = await this.getStackDetails(endpointId, stackId);
+      const imagesToUpdate = details.images?.filter(img => img.status === 'update-available') || [];
+      
+      if (imagesToUpdate.length === 0) {
+        return {
+          success: true,
+          containersCount: 0,
+          status: 'up-to-date',
+          imagesUpdated: 0,
+          oldImagesRemoved: 0,
+        };
+      }
+
+      updateProgress('pulling', 10, `Pulling ${imagesToUpdate.length} updated image(s)...`);
+      
+      // Pull latest images for each service that has updates
+      for (const img of imagesToUpdate) {
+        updateProgress('pulling', 15 + (imagesUpdated * 20), `Pulling ${img.name}:${img.tag}...`);
+        try {
+          await this.request(`/endpoints/${endpointId}/docker/images/create?fromImage=${encodeURIComponent(img.repository)}&tag=${img.tag}`, {
+            method: 'POST',
+          });
+          imagesUpdated++;
+        } catch (err) {
+          console.warn(`Failed to pull ${img.name}:${img.tag}:`, err);
+        }
+      }
+
+updateProgress('redeploying', 50, 'Redeploying stack with new images...');
+       
+       // Redeploy stack with new images
+       await this.updateStack(stackId, endpointId, await this.getStackFile(stackId), stack.env || []);
+      
+      // Wait for containers to start
+      await new Promise(r => setTimeout(r, 5000));
+      
+      updateProgress('verifying', 80, 'Verifying containers are running...');
+      
+      // Verify containers are running
+      const containers = await this.getContainers(endpointId);
+      const stacks = await this.getStacks(endpointId);
+      const stackInfo = stacks.find(s => s.id === stackId);
+      const stackName = stackInfo?.name?.toLowerCase();
+      const liveStackContainers = containers.filter(c => 
+        (c.stackName && stackName && c.stackName.toLowerCase() === stackName) ||
+        c.names.some(n => n.toLowerCase().includes(stack.name.toLowerCase()))
+      );
+
+      const isRunning = liveStackContainers.some(c => c.state === 'running');
+      
+      // Stage 4: Remove old images
+      updateProgress('cleaning', 90, 'Removing old unused images...');
+      
+      try {
+        const pruneResult = await this.request<any>(`/endpoints/${endpointId}/docker/images/prune`, {
+          method: 'POST',
+          body: JSON.stringify({ filters: { dangling: ['true'] } }),
+        });
+        oldImagesRemoved = pruneResult.ImagesDeleted?.length || 0;
+      } catch (err) {
+        console.warn('Failed to prune old images:', err);
+      }
+
+      updateProgress('complete', 100, 'Update complete!');
+
+      return {
+        success: true,
+        containersCount: liveStackContainers.length,
+        status: 'running',
+        imagesUpdated,
+        oldImagesRemoved,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 
   /**
@@ -651,6 +927,98 @@ export class PortainerClient {
       method: 'POST',
     });
   }
+
+  // ==========================================
+  // 📋 CUSTOM STACK TEMPLATES (Rule 26)
+  // ==========================================
+
+  /**
+   * List all Custom Templates saved in Portainer
+   */
+  async getCustomTemplates(): Promise<any[]> {
+    return await this.request<any[]>('/custom_templates');
+  }
+
+  /**
+   * Get single Custom Template by ID
+   */
+  async getCustomTemplate(id: number): Promise<any> {
+    return await this.request<any>(`/custom_templates/${id}`);
+  }
+
+  /**
+   * Get Compose file content of a Custom Template
+   */
+  async getCustomTemplateFile(id: number): Promise<string> {
+    const res = await this.request<{ FileContent: string }>(`/custom_templates/${id}/file`);
+    return res.FileContent || '';
+  }
+
+  /**
+   * Create a new Custom Template
+   */
+  async createCustomTemplate(payload: {
+    title: string;
+    description: string;
+    note?: string;
+    platform?: number;
+    type?: number; // 1: container, 2: swarm, 3: compose
+    logo?: string;
+    fileContent: string;
+    variables?: Array<{ name: string; label: string; defaultValue?: string; description?: string }>;
+  }): Promise<any> {
+    return await this.request<any>('/custom_templates/create/string', {
+      method: 'POST',
+      body: JSON.stringify({
+        Title: payload.title,
+        Description: payload.description,
+        Note: payload.note || '',
+        Platform: payload.platform || 1,
+        Type: payload.type || 3,
+        Logo: payload.logo || '',
+        FileContent: payload.fileContent,
+        Variables: payload.variables || [],
+      }),
+    });
+  }
+
+  /**
+   * Update an existing Custom Template
+   */
+  async updateCustomTemplate(id: number, payload: {
+    title?: string;
+    description?: string;
+    note?: string;
+    platform?: number;
+    type?: number;
+    logo?: string;
+    fileContent?: string;
+    variables?: Array<{ name: string; label: string; defaultValue?: string; description?: string }>;
+  }): Promise<any> {
+    return await this.request<any>(`/custom_templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        Title: payload.title,
+        Description: payload.description,
+        Note: payload.note,
+        Platform: payload.platform || 1,
+        Type: payload.type || 3,
+        Logo: payload.logo,
+        FileContent: payload.fileContent,
+        Variables: payload.variables,
+      }),
+    });
+  }
+
+  /**
+   * Delete a Custom Template
+   */
+  async deleteCustomTemplate(id: number): Promise<void> {
+    await this.request(`/custom_templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
+
 
 

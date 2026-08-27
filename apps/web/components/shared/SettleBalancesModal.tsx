@@ -71,7 +71,7 @@ export const SettleBalancesModal: React.FC<SettleBalancesModalProps> = ({
         })
       })
 
-      const data = await res.json()
+      const data = (await res.json()) as any
       if (res.ok && data.success) {
         showToast(`Settled balance with ${targetUser.displayName}!`, 'success')
         if (onSettled) onSettled()

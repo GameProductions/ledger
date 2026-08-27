@@ -1,6 +1,6 @@
 import { boolean, pgTable, text, integer, index, json, serial, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { households } from './financials';
+import { households, type ConfirmationNumber } from './financials';
 
 import { users } from './auth';
 
@@ -57,14 +57,6 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   householdIdx: index('idx_tracked_expenses_household').on(table.householdId),
 }));
 
-export interface ConfirmationNumber {
-  id: string;
-  category: string;
-  customCategoryLabel?: string;
-  value: string;
-  isPrimary?: boolean;
-  sortOrder?: number;
-}
 
 export const trackedExpenseConfirmationNumbers = pgTable('tracked_expense_confirmation_numbers', {
   id: text('id').primaryKey(),

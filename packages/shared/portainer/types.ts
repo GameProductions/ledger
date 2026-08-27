@@ -34,6 +34,17 @@ export interface PortainerEnvironment {
   publicUrl?: string;
 }
 
+export interface CreateEnvironmentPayload {
+  name: string;
+  type: PortainerEndpointType;
+  url: string;
+  publicUrl?: string;
+  groupId?: number;
+  tls?: {
+    skipVerify?: boolean;
+  };
+}
+
 export interface PortainerStackVolume {
   name: string;
   containerPath: string;
@@ -50,6 +61,7 @@ export interface PortainerStackNetwork {
     gateway?: string;
   };
   aliases?: string[];
+  containerIps?: string[]; // Container IPs within this network
 }
 
 export interface PortainerStackImage {
@@ -63,6 +75,22 @@ export interface PortainerStackImage {
   remoteUpdated?: string;
   registryUrl?: string;
   status: 'up-to-date' | 'update-available' | 'checking' | 'unknown';
+}
+
+export interface PortainerStackImageSummary {
+  currentVersion?: string;
+  updateVersion?: string;
+  status: 'up-to-date' | 'update-available' | 'checking' | 'unknown';
+  imageName?: string;
+  lastChecked?: number;
+}
+
+export interface PortainerAutoScanSettings {
+  enabled: boolean;
+  intervalMinutes: number; // e.g. 60, 360, 1440
+  autoRedeployOnUpdate: boolean;
+  notifyOnUpdateFound: boolean;
+  discordWebhookUrl?: string;
 }
 
 export interface PortainerStack {
@@ -86,6 +114,7 @@ export interface PortainerStack {
   websiteUrl?: string;
   customIcon?: string;
   tags?: string[];
+  imageSummary?: PortainerStackImageSummary;
 }
 
 export interface PortainerStackDetails extends PortainerStack {
@@ -162,17 +191,53 @@ export interface ScheduledTask {
   nextRun?: number;
 }
 
-export interface CreateEnvironmentPayload {
-  name: string;
-  type: PortainerEndpointType;
-  url: string;
-  publicUrl?: string;
-  groupId?: number;
-  tags?: string[];
-  tls?: {
-    skipVerify?: boolean;
-    certFile?: string;
-    keyFile?: string;
-    caFile?: string;
-  };
+export interface PortainerCustomTemplate {
+  id: number;
+  title: string;
+  description: string;
+  note?: string;
+  platform: number; // 1: Linux, 2: Windows
+  type: number;     // 1: Standalone Container, 2: Swarm Stack, 3: Compose Stack
+  logo?: string;
+  variables?: Array<{
+    name: string;
+    label: string;
+    defaultValue?: string;
+    description?: string;
+  }>;
+  fileContent?: string;
+  created?: number;
+  createdBy?: string;
+}
+
+export interface CreateCustomTemplatePayload {
+  title: string;
+  description: string;
+  note?: string;
+  platform?: number;
+  type?: number;
+  logo?: string;
+  fileContent: string;
+  variables?: Array<{
+    name: string;
+    label: string;
+    defaultValue?: string;
+    description?: string;
+  }>;
+}
+
+export interface UpdateCustomTemplatePayload {
+  title?: string;
+  description?: string;
+  note?: string;
+  platform?: number;
+  type?: number;
+  logo?: string;
+  fileContent?: string;
+  variables?: Array<{
+    name: string;
+    label: string;
+    defaultValue?: string;
+    description?: string;
+  }>;
 }

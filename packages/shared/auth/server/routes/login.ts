@@ -25,7 +25,12 @@ export function createLoginRoutes(config: AuthConfig) {
       const isLocal = Boolean((c.env as any)?.ENVIRONMENT !== 'production' && (host.includes('localhost') || c.req.header('origin')?.includes('localhost')))
       auth.setSessionCookie(c, sessionId, expirationHours, isLocal)
 
-      return c.json({ success: true, user: sanitizeUser(result.user) })
+      return c.json({
+        success: true,
+        sessionId,
+        sessionToken: sessionId,
+        user: sanitizeUser(result.user)
+      })
     } catch (err: any) {
       return c.json({ success: false, error: err.message || 'Login failed.' }, 500)
     }
@@ -44,6 +49,7 @@ function sanitizeUser(user: any) {
   return {
     id: user.id,
     email: user.email,
+    username: user.username,
     displayName: user.displayName,
     avatarUrl: user.avatarUrl,
     globalRole: user.globalRole,

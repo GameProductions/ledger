@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { AuthConfig, AuthEnv, PasskeyEntry } from '../../types'
+import { AuthService } from '../services/auth.service'
 import { getDb } from '#/index'
 import { sessions, passkeys } from '#/schema'
 import { eq, and, desc } from 'drizzle-orm'
@@ -7,18 +8,129 @@ import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthen
 import { VaultService } from '~/services/vault.service'
 
 const AAGUID_METADATA: Record<string, { name: string; icon: string; securityLevel: string; manufacturer: string; logo: string }> = {
-  'fec3...0001': { name: 'Yubico YubiKey 5 Series', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'fec3...0002': { name: 'Yubico YubiKey 5 NFC', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'fec3...0003': { name: 'Yubico YubiKey 5C', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'fec3...0004': { name: 'Yubico Security Key', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'fec3...0005': { name: 'Yubico Security Key NFC', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'fec3...0006': { name: 'Yubico Security Key C', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'fec3...0007': { name: 'Yubico Bio Key', icon: '🔑', securityLevel: 'Hardware', manufacturer: 'Yubico', logo: '' },
-  'adce0002-35bc-c60a-648b-0b25f1f05503': { name: 'Chrome on macOS', icon: '💻', securityLevel: 'Software', manufacturer: 'Google', logo: '' },
-  '08987058-cad0-4399-b38f-02f6fa2ff0f8': { name: 'Windows Hello', icon: '🪟', securityLevel: 'TPM', manufacturer: 'Microsoft', logo: '' },
-  'dd2ec1e5-3c85-4d1e-954b-0098bc104ba0': { name: 'iCloud Keychain', icon: '☁️', securityLevel: 'iCloud', manufacturer: 'Apple', logo: '' },
-  '3c0a05e8-f995-4c96-8a2e-47ef7a539f8b': { name: 'Apple Touch ID', icon: '👆', securityLevel: 'Secure Enclave', manufacturer: 'Apple', logo: '' },
-  '9ddd1817-af5a-4672-a2b9-3e205c3d2b5c': { name: 'Google Password Manager', icon: '🔒', securityLevel: 'Software', manufacturer: 'Google', logo: '' },
+  // Apple Authenticators
+  'ad155505-7d1d-473d-8517-c8a417646a53': {
+    name: 'Apple iCloud Keychain',
+    icon: 'apple',
+    securityLevel: 'Hardware Protected (TEE/SE)',
+    manufacturer: 'Apple Inc.',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg'
+  },
+  'dd2ec1e5-3c85-4d1e-954b-0098bc104ba0': {
+    name: 'Apple iCloud Keychain',
+    icon: 'apple',
+    securityLevel: 'Hardware Protected (Secure Enclave)',
+    manufacturer: 'Apple Inc.',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg'
+  },
+  '3c0a05e8-f995-4c96-8a2e-47ef7a539f8b': {
+    name: 'Apple Touch ID / Face ID',
+    icon: 'apple',
+    securityLevel: 'Hardware Protected (Secure Enclave)',
+    manufacturer: 'Apple Inc.',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg'
+  },
+  '2bce0002-35bc-c60a-648b-0b25f1f05503': {
+    name: 'Apple Safari on iOS/iPadOS',
+    icon: 'apple',
+    securityLevel: 'Hardware Protected (Secure Enclave)',
+    manufacturer: 'Apple Inc.',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg'
+  },
+
+  // Google Authenticators
+  'ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4': {
+    name: 'Google Password Manager',
+    icon: 'google',
+    securityLevel: 'Hardware Protected (TEE)',
+    manufacturer: 'Google LLC',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg'
+  },
+  '9ddd1817-af5a-4672-a2b9-3e205c3d2b5c': {
+    name: 'Google Password Manager',
+    icon: 'google',
+    securityLevel: 'Hardware Protected (TEE)',
+    manufacturer: 'Google LLC',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Logo.svg'
+  },
+  'adce0002-35bc-c60a-648b-0b25f1f05503': {
+    name: 'Google Chrome on macOS',
+    icon: 'google',
+    securityLevel: 'Hardware Protected (Secure Enclave Sync)',
+    manufacturer: 'Google LLC',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg'
+  },
+
+  // Microsoft Authenticators
+  '6028c46d-0081-4229-873b-554474775f0a': {
+    name: 'Windows Hello',
+    icon: 'windows',
+    securityLevel: 'Hardware Protected (TPM 2.0)',
+    manufacturer: 'Microsoft Corporation',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg'
+  },
+  '08987058-cad0-4399-b38f-02f6fa2ff0f8': {
+    name: 'Windows Hello',
+    icon: 'windows',
+    securityLevel: 'Hardware Protected (TPM 2.0)',
+    manufacturer: 'Microsoft Corporation',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg'
+  },
+
+  // Yubico Hardware Security Keys
+  'f8a011f3-8c0a-4d15-8006-17111f9edc01': {
+    name: 'YubiKey 5 Series (FIDO2/WebAuthn)',
+    icon: 'key',
+    securityLevel: 'Hardware Security Key (Secure Element)',
+    manufacturer: 'Yubico AB',
+    logo: 'https://www.yubico.com/wp-content/uploads/2020/09/yubico-logo.png'
+  },
+  'cb69481e-8ff7-4039-93ec-0a2729a1d67d': {
+    name: 'YubiKey 5 NFC / 5C NFC',
+    icon: 'key',
+    securityLevel: 'Hardware Security Key (Secure Element)',
+    manufacturer: 'Yubico AB',
+    logo: 'https://www.yubico.com/wp-content/uploads/2020/09/yubico-logo.png'
+  },
+  'ee690f0a-3c58-4ea7-8b64-0fb42971846b': {
+    name: 'YubiKey 5C / 5 Nano',
+    icon: 'key',
+    securityLevel: 'Hardware Security Key (Secure Element)',
+    manufacturer: 'Yubico AB',
+    logo: 'https://www.yubico.com/wp-content/uploads/2020/09/yubico-logo.png'
+  },
+  'fa2b99dc-9e39-4257-8f9a-074d411b0e00': {
+    name: 'YubiKey 5Ci',
+    icon: 'key',
+    securityLevel: 'Hardware Security Key (Secure Element)',
+    manufacturer: 'Yubico AB',
+    logo: 'https://www.yubico.com/wp-content/uploads/2020/09/yubico-logo.png'
+  },
+  'b92d8f92-5b9c-4f9e-8c9e-711d9f8b0123': {
+    name: 'YubiKey Bio Series (FIDO Edition)',
+    icon: 'key',
+    securityLevel: 'Hardware Security Key (Biometric + SE)',
+    manufacturer: 'Yubico AB',
+    logo: 'https://www.yubico.com/wp-content/uploads/2020/09/yubico-logo.png'
+  },
+
+  // 1Password
+  'b5397666-4885-4026-9f88-4f274a44b584': {
+    name: '1Password',
+    icon: 'key',
+    securityLevel: 'End-to-End Encrypted Vault',
+    manufacturer: 'AgileBits Inc.',
+    logo: 'https://1password.com/img/brand/1password-logo.svg'
+  },
+
+  // Bitwarden
+  '6c0a05e8-f995-4c96-8a2e-47ef7a539f8c': {
+    name: 'Bitwarden Authenticator',
+    icon: 'key',
+    securityLevel: 'End-to-End Encrypted Vault',
+    manufacturer: 'Bitwarden Inc.',
+    logo: 'https://bitwarden.com/images/icon-mobile.png'
+  }
 }
 
 function getRpID(c: any): string {
@@ -28,7 +140,13 @@ function getRpID(c: any): string {
 }
 
 function getAAGUIDMetadata(aaguid: string) {
-  return AAGUID_METADATA[aaguid] || { name: 'Unknown Security Key', icon: '🔑', securityLevel: 'Standard', manufacturer: 'Unknown', logo: '' }
+  return AAGUID_METADATA[aaguid] || {
+    name: 'FIDO2 / WebAuthn Authenticator',
+    icon: 'key',
+    securityLevel: 'Standard Cryptographic Hardware/Platform',
+    manufacturer: 'FIDO Alliance Certified Provider',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/FIDO_Alliance_logo.svg/320px-FIDO_Alliance_logo.svg.png'
+  }
 }
 
 function getForensics(c: any) {
@@ -115,9 +233,10 @@ export function createPasskeyRoutes(config: AuthConfig) {
         await vault.setSecret(credentialIdUrl, 'PASSKEY_PUBLIC_KEY', 'internal', publicKeyUrl)
         const providerMeta = getAAGUIDMetadata(aaguid || '')
 
-        await db.insert(passkeys).values({
+        await (db.insert(passkeys) as any).values({
           id: credentialIdUrl,
           userId,
+          credentialIdHash: credentialIdUrl,
           counter,
           aaguid: aaguid || null,
           providerName: providerMeta.name,
@@ -207,15 +326,21 @@ export function createPasskeyRoutes(config: AuthConfig) {
 
       // Store challenge in KV or cookie so unauthenticated verify can look it up
       const tempChallengeId = crypto.randomUUID()
-      if (c.env.FLEET_SECURITY_CACHE) {
-        await c.env.FLEET_SECURITY_CACHE.put(`passkey_challenge:${tempChallengeId}`, options.challenge, { expirationTtl: 300 })
+      if (c.env?.FLEET_SECURITY_CACHE?.put) {
+        try {
+          await c.env.FLEET_SECURITY_CACHE.put(`passkey_challenge:${tempChallengeId}`, options.challenge, { expirationTtl: 300 })
+        } catch (e: any) {
+          console.warn('[Passkey] Failed to cache challenge in KV:', e.message)
+        }
       }
 
       return c.json({ options, challengeId: tempChallengeId })
     } catch (err: any) {
-      return c.json({ error: err.message }, 500)
+      console.error('[Passkey] generate-authentication error:', err)
+      return c.json({ error: err.message || 'Passkey initialization failed' }, 500)
     }
   })
+
 
   // 🔑 Unauthenticated Passkey Login Verification
   router.post('/verify-authentication', async (c) => {
@@ -264,7 +389,7 @@ export function createPasskeyRoutes(config: AuthConfig) {
 
         const auth = new AuthService(c.env, config)
         const hostStr = c.req.header('host') || ''
-        const isLocal = c.env.ENVIRONMENT !== 'production' && (hostStr.includes('localhost') || c.req.header('origin')?.includes('localhost'))
+        const isLocal = Boolean(c.env.ENVIRONMENT !== 'production' && (hostStr.includes('localhost') || c.req.header('origin')?.includes('localhost')))
         const { sessionId, expirationHours } = await auth.createSession(passkey.userId, forensics, true)
         auth.setSessionCookie(c, sessionId, expirationHours, isLocal)
 

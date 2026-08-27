@@ -10,7 +10,9 @@ export function sessionGuard() {
       return await next()
     }
 
-    const sessionId = getCookie(c, 'FOUNDATION_SESSION')
+    const authHeader = c.req.header('Authorization') || ''
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : ''
+    const sessionId = bearerToken || getCookie(c, 'FOUNDATION_SESSION')
     if (!sessionId) {
       return c.json({ authenticated: false, error: 'No active session.' }, 401)
     }

@@ -16,7 +16,7 @@ import { CurrencyInput } from './ui/CurrencyInput'
 import { ReminderManager } from './ReminderManager'
 import { LiabilitySplitter } from './LiabilitySplitter'
 import { ShareDialog } from './shared/ShareDialog'
-import { autoFetchLogo } from '../utils/logoUtils'
+import { autoFetchLogo, deriveDomain } from '../utils/logoUtils'
 
 const BILLING_CYCLES = [
   { value: 'weekly', label: 'Weekly' },

@@ -74,12 +74,15 @@ export async function sendFleetDiscordNotification(
     return false;
   }
 
-  if (payload.action === 'redeploy' || payload.action === 'create' || payload.action === 'delete') {
-    if (!settings.notifyOnDeploy && payload.action !== 'test') return false;
-  } else if (payload.action === 'error') {
-    if (!settings.notifyOnError && payload.action !== 'test') return false;
-  } else if (['start', 'stop', 'restart', 'pause', 'unpause'].includes(payload.action)) {
-    if (!settings.notifyOnLifecycle && payload.action !== 'test') return false;
+  const action = payload.action;
+  if (action === 'test') {
+    // Always permit test notifications
+  } else if (action === 'redeploy' || action === 'create' || action === 'delete') {
+    if (!settings.notifyOnDeploy) return false;
+  } else if (action === 'error') {
+    if (!settings.notifyOnError) return false;
+  } else if (['start', 'stop', 'restart', 'pause', 'unpause'].includes(action)) {
+    if (!settings.notifyOnLifecycle) return false;
   }
 
   const colorMap = {

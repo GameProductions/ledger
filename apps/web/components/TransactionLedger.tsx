@@ -484,7 +484,7 @@ export const TransactionLedger: React.FC = () => {
           allocations
         })
       })
-      const data = await res.json()
+      const data = (await res.json()) as any
       if (res.ok && data.success) {
         showToast('Split template saved successfully!', 'success')
         setShowSaveTemplateModal(false)

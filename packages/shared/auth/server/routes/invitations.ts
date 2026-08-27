@@ -35,13 +35,13 @@ export function createInvitationRoutes(config: AuthConfig) {
 
   router.post('/accept', async (c) => {
     try {
-      const { token, displayName, password } = await c.req.json()
+      const { token, displayName, username, password } = await c.req.json()
       if (!token || !displayName || !password) {
         return c.json({ success: false, error: 'Token, display name, and password are required.' }, 400)
       }
 
       const auth = new AuthService(c.env, config)
-      const result = await auth.acceptInvitation(token, displayName, password)
+      const result = await auth.acceptInvitation(token, displayName, password, username)
       if (!result.success) return c.json({ success: false, error: result.error }, 400)
 
       return c.json({ success: true, message: 'Invitation accepted. You can now log in.' })

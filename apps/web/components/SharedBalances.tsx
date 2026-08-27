@@ -120,7 +120,6 @@ export default function SharedBalances() {
             }) as any)
       if (res.ok) {
         showToast('All settled!', 'success')
-        setConfirmSettleUserId(null)
         mutateBalances()
         mutateSummary()
       }

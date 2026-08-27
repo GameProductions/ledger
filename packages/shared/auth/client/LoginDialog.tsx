@@ -1,18 +1,27 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogIn, Mail, Shield, Key, Tv, Smartphone, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { LogIn, Mail, Shield, Key, Tv, Smartphone, RefreshCw, CheckCircle2, AlertCircle, X, ArrowLeft, Send, KeyRound } from 'lucide-react'
 import { startAuthentication } from '@simplewebauthn/browser'
 
 interface LoginDialogProps {
   appName: string
-  providers: Array<'discord' | 'google' | 'github' | 'microsoft'>
+  appLogo?: string
+  appDescription?: string
+  providers?: Array<'discord' | 'google' | 'github' | 'microsoft'>
   onSuccess?: () => void
 }
 
-export function LoginDialog({ appName, providers = ['discord', 'google'], onSuccess }: LoginDialogProps) {
+export function LoginDialog({
+  appName,
+  appLogo = '/icons/foundation.png',
+  appDescription = 'Authenticate to access your fleet console',
+  providers = ['discord', 'google', 'github'],
+  onSuccess
+}: LoginDialogProps) {
   const [tab, setTab] = useState<'sso' | 'passkey' | 'password' | 'companion'>('sso')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [persistent, setPersistent] = useState(true)
   const [loggingIn, setLoggingIn] = useState(false)
   const [error, setError] = useState('')
   const [passkeyLoading, setPasskeyLoading] = useState(false)
@@ -22,8 +31,38 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
   const [approvingCode, setApprovingCode] = useState(false)
   const [approvalSuccess, setApprovalSuccess] = useState(false)
 
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [requestingReset, setRequestingReset] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState('')
+
   function startOAuth(provider: string) {
-    window.location.href = `/api/auth/oauth/${provider}`
+    window.location.href = `/api/auth/oauth/${provider}?persistent=${persistent}`
+  }
+
+  async function handleRequestReset(e: React.FormEvent) {
+    e.preventDefault()
+    if (!forgotEmail) return
+    setRequestingReset(true)
+    setForgotError('')
+    try {
+      const res = await fetch('/api/auth/password/reset-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      })
+      const data: any = await res.json()
+      if (data.success) {
+        setForgotSent(true)
+      } else {
+        setForgotError(data.error || 'Failed to request password reset.')
+      }
+    } catch {
+      setForgotError('Network error — unable to request reset.')
+    } finally {
+      setRequestingReset(false)
+    }
   }
 
   async function handlePasskeyLogin() {
@@ -66,10 +105,13 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, persistent }),
       })
       const data: any = await res.json()
       if (data.success) {
+        if (data.sessionId || data.sessionToken) {
+          localStorage.setItem('foundation_session', data.sessionId || data.sessionToken)
+        }
         if (onSuccess) onSuccess()
         window.location.href = '/directory'
       } else {
@@ -109,6 +151,25 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
     }
   }
 
+  const renderPersistenceSelector = () => (
+    <div className="p-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center justify-between mt-4">
+      <div className="space-y-0.5">
+        <span className="text-[11px] font-bold text-slate-200 block">
+          {persistent ? 'Stay signed in for 30 days (Standard)' : 'Expire in 24 hours (Shared / Untrusted device)'}
+        </span>
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          checked={persistent}
+          onChange={(e) => setPersistent(e.target.checked)}
+          className="sr-only peer"
+        />
+        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+      </label>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6 font-sans">
       <motion.div
@@ -117,11 +178,15 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
         className="bg-slate-900 border border-white/10 rounded-3xl sm:rounded-[2.5rem] w-full max-w-md p-6 sm:p-10 shadow-2xl space-y-6"
       >
         <div className="text-center">
-          <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-500/20 shadow-inner">
-            <Shield className="w-7 h-7 text-blue-400" />
+          <div className="w-16 h-16 bg-slate-950/80 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden p-2.5">
+            {appLogo ? (
+              <img src={appLogo} alt={appName} className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+            ) : (
+              <Shield className="w-8 h-8 text-blue-400" />
+            )}
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">{appName} Access Gate</h2>
-          <p className="text-xs text-slate-400 mt-1">Authenticate to access your fleet console</p>
+          <p className="text-xs text-slate-400 mt-1">{appDescription}</p>
         </div>
 
         {/* Auth Mode Tabs */}
@@ -194,6 +259,21 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
                 <span>Continue with Google</span>
               </button>
             )}
+
+            {providers.includes('github') && (
+              <button
+                type="button"
+                onClick={() => startOAuth('github')}
+                className="w-full flex items-center justify-center gap-3 px-5 py-3.5 bg-[#24292F] hover:bg-[#1B1F23] text-white border border-white/10 rounded-2xl text-xs font-bold transition-all shadow-[0_4px_15px_rgba(0,0,0,0.3)] active:scale-[0.98] cursor-pointer"
+              >
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                </svg>
+                <span>Continue with GitHub</span>
+              </button>
+            )}
+
+            {renderPersistenceSelector()}
           </div>
         )}
 
@@ -210,11 +290,13 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
               type="button"
               onClick={handlePasskeyLogin}
               disabled={passkeyLoading}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-xs font-bold transition-all shadow-[0_4px_15px_rgba(8,145,178,0.3)] active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl text-xs font-bold transition-all shadow-[0_4px_15px_rgba(88,101,242,0.3)] active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
               {passkeyLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
               <span>{passkeyLoading ? 'Authenticating...' : 'Sign in with Passkey'}</span>
             </button>
+
+            {renderPersistenceSelector()}
           </div>
         )}
 
@@ -229,7 +311,7 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
                 onChange={e => setIdentifier(e.target.value)}
                 autoComplete="username"
                 className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500"
-                placeholder="name@domain.com"
+                placeholder="username or name@domain.com"
                 required
               />
             </div>
@@ -245,6 +327,21 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
                 required
               />
             </div>
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotModal(true);
+                  setForgotEmail(identifier.includes('@') ? identifier : '');
+                  setForgotSent(false);
+                  setForgotError('');
+                }}
+                className="text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                Forgot or need to recover password?
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={loggingIn}
@@ -253,6 +350,8 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
               {loggingIn ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               <span>{loggingIn ? 'Signing in...' : 'Sign in'}</span>
             </button>
+
+            {renderPersistenceSelector()}
           </form>
         )}
 
@@ -294,6 +393,97 @@ export function LoginDialog({ appName, providers = ['discord', 'google'], onSucc
           </div>
         )}
       </motion.div>
+
+      {/* Forgot Password Recovery Modal */}
+      <AnimatePresence>
+        {showForgotModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl space-y-6 relative"
+            >
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-blue-500/20">
+                  <KeyRound className="w-6 h-6 text-blue-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white tracking-tight">Recover Account Password</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Enter your registered account email address. We will generate and transmit a secure password recovery token.
+                </p>
+              </div>
+
+              {forgotSent ? (
+                <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-3">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">Recovery Request Dispatched</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    If an account with that email exists, a password reset link and authorization token have been sent.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(false)}
+                    className="w-full mt-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Return to Login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleRequestReset} className="space-y-4">
+                  {forgotError && (
+                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                      <span>{forgotError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-400">Account Email Address</label>
+                    <div className="relative">
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="name@domain.com"
+                        className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotModal(false)}
+                      className="w-1/3 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={requestingReset || !forgotEmail}
+                      className="w-2/3 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer shadow-lg shadow-blue-600/20"
+                    >
+                      {requestingReset ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      <span>{requestingReset ? 'Transmitting...' : 'Send Reset Link'}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

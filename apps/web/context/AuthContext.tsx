@@ -54,15 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setIsImpersonating(imp)
               localStorage.setItem('ledger_globalRole', role)
 
-              // If localStorage or state had null/empty householdId, sync from verified session
+              // Sync verified household context to state and local storage
               if (verifiedHouseholdId) {
-                setRawHouseholdId(prev => {
-                  if (!prev || prev === 'null' || prev === 'undefined') {
-                    localStorage.setItem('ledger_householdId', verifiedHouseholdId)
-                    return verifiedHouseholdId
-                  }
-                  return prev
-                })
+                setRawHouseholdId(verifiedHouseholdId)
+                localStorage.setItem('ledger_householdId', verifiedHouseholdId)
               }
             } else {
               console.error('[Verification failed] Malformed verify response', envelope)

@@ -1,7 +1,7 @@
-# LEDGER — Secure Financial Platform
+# LEDGER — Live Evaluation of Daily Gains & Expense Records
 > **Forensic Integrity & Agentic Reconciliation**
 
-LEDGER is a production-grade personal and household finance platform built for speed, transparency, and security.
+**LEDGER** (*Live Evaluation of Daily Gains & Expense Records*) is a production-grade personal and household finance platform built for speed, transparency, and forensic security.
 
 ## Key Features
 

@@ -61,7 +61,7 @@ export const TransactionLedger: React.FC = () => {
   const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false)
   
   // Data Fetching
-  const { data: transactions = [], mutate: mutateTx } = (useApi(`/api/financials/transactions?q=${q}&sort_by=${sortBy}&sort_dir=${sortDir}&limit=${limit}`) as any)
+  const { data: transactions = [], mutate: mutateTx } = (useApi(`/api/financials/transactions?q=${encodeURIComponent(q)}&sortBy=${sortBy}&sortDir=${sortDir}&limit=${limit}`) as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { data: household } = (useApi('/api/user/households/current') as any)
@@ -738,7 +738,18 @@ export const TransactionLedger: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {!transactions ? <tr><td colSpan={6} className="text-center py-8 text-secondary">Loading ledger...</td></tr> : 
+              {!transactions ? (
+                <tr><td colSpan={6} className="text-center py-8 text-secondary font-medium">Loading ledger...</td></tr>
+              ) : transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accountedFor : true).length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-slate-500 font-medium">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <p className="text-sm font-bold text-slate-400">No transactions recorded yet</p>
+                      <p className="text-xs text-slate-600">Add a new transaction or promote tracked expenses to populate your ledger.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
                 transactions.filter((tx: any) => showNeedsAttentionOnly ? tx.attentionRequired && !tx.accountedFor : true).map((tx: any) => (
                 <React.Fragment key={tx.id}>
                   <tr className={`border-b border-white/5 hover:bg-white/[0.04] transition-colors ${selectedIds.includes(tx.id) ? 'bg-primary/5' : ''}`}>
@@ -933,7 +944,7 @@ export const TransactionLedger: React.FC = () => {
                     </tr>
                   )}
                 </React.Fragment>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

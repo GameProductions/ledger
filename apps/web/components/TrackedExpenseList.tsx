@@ -555,13 +555,19 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-white/5 rounded-2xl text-slate-600">
             <SearchX size={28} className="opacity-30" />
-            <span className="text-xs font-black tracking-widest">No tracked expenses match "{searchTerm}"</span>
-            <button
-              onClick={() => setSearchTerm('')}
-              className="text-[10px] font-black tracking-widest text-orange-400 hover:text-orange-300 transition-colors cursor-pointer"
-            >
-              Clear Search
-            </button>
+            <span className="text-xs font-black tracking-widest">
+              {searchTerm ? `No tracked expenses match "${searchTerm}"` : 'No pending tracked expenses'}
+            </span>
+            {searchTerm ? (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="text-[10px] font-black tracking-widest text-orange-400 hover:text-orange-300 transition-colors cursor-pointer"
+              >
+                Clear Search
+              </button>
+            ) : (
+              <p className="text-[11px] text-slate-600 font-medium">Use the form above to quickly log expenses to track and review.</p>
+            )}
           </div>
         ) : filtered.map((item: any) => {
           const itemContent = (

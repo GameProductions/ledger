@@ -49,10 +49,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (res.ok) {
             const envelope = (await res.json() as any)
             if (envelope.success && envelope.data) {
-              const { globalRole: role, isImpersonating: imp } = envelope.data
+              const { globalRole: role, isImpersonating: imp, householdId: verifiedHouseholdId } = envelope.data
               setGlobalRole(role)
               setIsImpersonating(imp)
               localStorage.setItem('ledger_globalRole', role)
+
+              // If localStorage or state had null/empty householdId, sync from verified session
+              if (verifiedHouseholdId) {
+                setRawHouseholdId(prev => {
+                  if (!prev || prev === 'null' || prev === 'undefined') {
+                    localStorage.setItem('ledger_householdId', verifiedHouseholdId)
+                    return verifiedHouseholdId
+                  }
+                  return prev
+                })
+              }
             } else {
               console.error('[Verification failed] Malformed verify response', envelope)
               logout()

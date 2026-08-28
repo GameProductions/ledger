@@ -8,7 +8,16 @@ import { eq, lte, and, desc } from 'drizzle-orm'
 
 const discord = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-discord.post('/interactions', async (c) => {
+discord.get('/', (c) => {
+  return c.json({
+    status: 'HANDSHAKE_READY',
+    endpoint: '/api/discord/interactions',
+    service: 'ledger',
+    timestamp: new Date().toISOString()
+  })
+})
+
+const handleInteraction = async (c: any) => {
   const signature = c.req.header('X-Signature-Ed25519')
   const timestamp = c.req.header('X-Signature-Timestamp')
   const body = (await c.req.text() as any)
@@ -100,6 +109,9 @@ discord.post('/interactions', async (c) => {
   }
 
   return c.json({ type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE, data: { content: "Unknown LEDGER command received." } })
-})
+}
+
+discord.post('/', handleInteraction)
+discord.post('/interactions', handleInteraction)
 
 export default discord

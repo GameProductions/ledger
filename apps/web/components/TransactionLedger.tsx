@@ -30,6 +30,7 @@ import {
   Calculator
 } from 'lucide-react'
 import { Modal } from './ui/Modal'
+import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
@@ -1395,17 +1396,15 @@ export const TransactionLedger: React.FC = () => {
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs tracking-widest text-secondary block mb-1">Confirmation Number</label>
-              <input 
-                type="text" 
-                value={txForm.confirmationNumber} 
-                onChange={e => setTxForm({...txForm, confirmationNumber: e.target.value})} 
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary" 
-                placeholder="e.g. REF-12345"
-              />
-            </div>
+          <div className="space-y-4">
+            <ConfirmationNumberBuilder
+              value={txForm.confirmationNumber}
+              onChangeValue={val => setTxForm({...txForm, confirmationNumber: val})}
+              confirmationNumbers={txForm.confirmationNumbers || []}
+              onChangeNumbers={items => setTxForm({...txForm, confirmationNumbers: items})}
+              accentColor="primary"
+              compact={true}
+            />
             <div>
               <label className="text-xs tracking-widest text-secondary block mb-1">Status</label>
               <select 
@@ -1492,23 +1491,17 @@ export const TransactionLedger: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className={editingTx?.linkedTransactionId ? 'sm:col-span-2' : ''}>
-                <label className={`text-xs tracking-widest block mb-1 flex items-center gap-1.5 ${editingTx?.linkedTransactionId ? 'text-blue-400 font-black' : 'text-secondary'}`}>
-                  {editingTx?.linkedTransactionId && <Hash size={12} />}
-                  Confirmation Number{editingTx?.linkedTransactionId ? ' (Transfer)' : ''}
-                </label>
-                <input 
-                  type="text" 
-                  value={txForm.confirmationNumber} 
-                  onChange={e => setTxForm({...txForm, confirmationNumber: e.target.value})} 
-                  className={`w-full bg-black/40 border rounded-xl p-3 text-white focus:outline-none ${editingTx?.linkedTransactionId ? 'border-blue-500/40 focus:border-blue-400' : 'border-white/10 focus:border-primary'}`}
-                  placeholder="e.g. REF-12345"
-                />
-                {editingTx?.linkedTransactionId && (
-                  <p className="text-[10px] text-blue-400/70 mt-1">This transaction is linked to a transfer. Adding a confirmation number helps track the transfer.</p>
-                )}
-              </div>
+            <div className="space-y-4">
+              <ConfirmationNumberBuilder
+                value={txForm.confirmationNumber}
+                onChangeValue={val => setTxForm({...txForm, confirmationNumber: val})}
+                confirmationNumbers={txForm.confirmationNumbers || []}
+                onChangeNumbers={items => setTxForm({...txForm, confirmationNumbers: items})}
+                accentColor={editingTx?.linkedTransactionId ? 'blue' : 'primary'}
+                compact={true}
+                label={editingTx?.linkedTransactionId ? 'Transfer Confirmation & References' : 'Categorized Confirmation Numbers & References'}
+                helperText={editingTx?.linkedTransactionId ? 'This transaction is linked to a transfer. Adding a confirmation number helps track the transfer.' : undefined}
+              />
               {!editingTx?.linkedTransactionId && (
                 <div>
                   <label className="text-xs tracking-widest text-secondary block mb-1">Status</label>

@@ -25,6 +25,8 @@ export const getStandardCSP = (nonce: string) => {
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'", 
+        "'unsafe-inline'",
+        "'unsafe-eval'",
         `'nonce-${nonce}'`,
         "https://static.cloudflareinsights.com",
       ],

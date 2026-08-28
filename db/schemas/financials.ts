@@ -97,7 +97,6 @@ export const transactions = pgTable('transactions', {
   receiptR2Key: text('receipt_r2_key'),
   ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
   confirmationNumber: text('confirmation_number'),
-  confirmationNumbers: json('confirmation_numbers').$type<ConfirmationNumber[]>().default([]),
   linkedTransactionId: text('linked_transaction_id').references((): any => transactions.id, { onDelete: 'set null' }),
   reconciliationStatus: text('reconciliation_status').default('unreconciled'),
   notes: text('notes'),

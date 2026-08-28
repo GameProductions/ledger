@@ -13,6 +13,7 @@ import { Modal } from './ui/Modal'
 import { SearchableSelect } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
+import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder'
 import { DateTimeInput } from './ui/DateTimeInput'
 import { PromoteToLedgerModal } from './PromoteToLedgerModal'
 
@@ -616,21 +617,20 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         required
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Confirmation Number</label>
-                      <input 
-                        type="text" 
-                        value={editForm?.confirmationNumber || ''} 
-                        onChange={e => {
-                          const val = e.target.value;
-                          const updates: any = { confirmationNumber: val };
+                    <div className="md:col-span-2">
+                      <ConfirmationNumberBuilder
+                        value={editForm?.confirmationNumber || ''}
+                        onChangeValue={val => {
+                          const updates: any = { confirmationNumber: val }
                           if (val.trim() && editForm?.needsBalanceTransfer) {
-                            updates.transferReconciled = true;
+                            updates.transferReconciled = true
                           }
-                          setEditForm({...editForm, ...updates});
+                          setEditForm({ ...editForm, ...updates })
                         }}
-                        className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-sm text-white focus:border-orange-500/50 outline-none"
-                        placeholder="e.g. TXN-12345"
+                        confirmationNumbers={editForm?.confirmationNumbers || []}
+                        onChangeNumbers={items => setEditForm({ ...editForm, confirmationNumbers: items })}
+                        accentColor="orange"
+                        compact={true}
                       />
                     </div>
                     <div className="md:col-span-2">

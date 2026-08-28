@@ -2,12 +2,13 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
-import { Flag, ShieldAlert, ArrowRightLeft, HandCoins, Copy, Trash2, Plus, Users, Calendar, Banknote } from 'lucide-react'
+import { Flag, ShieldAlert, ArrowRightLeft, HandCoins, Copy, Trash2, Plus, Hash } from 'lucide-react'
 import { getApiUrl } from '../utils/api'
 import { TrackedExpenseList } from './TrackedExpenseList'
 import { CurrencyInput } from './ui/CurrencyInput'
-import { SearchableSelect } from './ui/SearchableSelect'
+import { SearchableSelect, SearchableOption } from './ui/SearchableSelect'
 import { Checkbox } from './ui/Checkbox'
+import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder'
 
 interface QuickAttentionAddProps {
   onAdded: () => void;
@@ -18,6 +19,8 @@ interface FormInstance {
   description: string;
   amountCents: number;
   chargeDescriptorId: string;
+  confirmationNumber: string;
+  confirmationNumbers: ConfirmationNumberItem[];
   attentionRequired: boolean;
   needsBalanceTransfer: boolean;
   transferTiming: string; // 'same_day' | 'future'
@@ -26,7 +29,7 @@ interface FormInstance {
   borrowUserId: string;
   borrowCustomName: string;
   borrowPaybackDate: string;
-  borrowPaybackMethod: 'venmo' | 'zelle' | 'cash' | 'bank_transfer' | 'manual';
+  borrowPaybackMethod: string;
   borrowNotes: string;
   recordHouseholdIou: boolean;
   borrowSource: string;
@@ -34,19 +37,39 @@ interface FormInstance {
   createdAt: string;
 }
 
+const TRANSFER_TIMING_OPTIONS: SearchableOption[] = [
+  { value: 'same_day', label: 'Must do Same Day (Default)' },
+  { value: 'future', label: 'Can do in Future' }
+];
+
+const DEFAULT_REIMBURSEMENT_METHODS: SearchableOption[] = [
+  { value: 'venmo', label: 'Venmo' },
+  { value: 'zelle', label: 'Zelle' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'manual', label: 'Manual' },
+  { value: 'paypal', label: 'PayPal' },
+  { value: 'cashapp', label: 'Cash App' },
+  { value: 'apple_pay', label: 'Apple Pay' }
+];
+
 export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded }) => {
   const { householdId, user } = useAuth()
-  const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { data: chargeDescriptors = [] } = (useApi('/api/financials/charge-descriptors') as any)
   const { data: members = [] } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any)
 
   const otherMembers = (members || []).filter((m: any) => (m.user?.id || m.id) !== user?.id)
+
+  const [customLenders, setCustomLenders] = useState<string[]>(['Parent', 'Friend', 'Bank Loan'])
+  const [customReimbursementMethods, setCustomReimbursementMethods] = useState<SearchableOption[]>(DEFAULT_REIMBURSEMENT_METHODS)
 
   const createEmptyInstance = (): FormInstance => ({
     id: Math.random().toString(36).substr(2, 9),
     description: '',
     amountCents: 0,
     chargeDescriptorId: '',
+    confirmationNumber: '',
+    confirmationNumbers: [],
     attentionRequired: false,
     needsBalanceTransfer: false,
     transferTiming: 'same_day', // Default to Must do Same Day
@@ -118,6 +141,17 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
           }
         }
 
+        const validConfirmationNumbers = (inst.confirmationNumbers || []).filter(cn => cn.value && cn.value.trim() !== '').map((cn, i) => ({
+          id: crypto.randomUUID(),
+          category: cn.category,
+          customCategoryLabel: cn.category === 'custom' ? (cn.customCategoryLabel || null) : null,
+          value: cn.value.trim(),
+          isPrimary: i === 0,
+          sortOrder: i
+        }))
+
+        const primaryConfirmationNumber = inst.confirmationNumber?.trim() || validConfirmationNumbers[0]?.value || null
+
         return fetch(`${getApiUrl()}/api/tracked-expenses`, {
           method: 'POST',
           headers: {
@@ -129,6 +163,8 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             description: inst.description,
             amountCents: inst.amountCents,
             chargeDescriptorId: inst.chargeDescriptorId || null,
+            confirmationNumber: primaryConfirmationNumber,
+            confirmationNumbers: validConfirmationNumbers,
             attentionRequired: inst.attentionRequired,
             needsBalanceTransfer: inst.needsBalanceTransfer,
             transferTiming: inst.needsBalanceTransfer ? (inst.transferTiming || 'same_day') : null,
@@ -155,6 +191,20 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
       setLoading(false);
     }
   }
+
+  const memberOptions: SearchableOption[] = otherMembers.map((m: any) => {
+    const mId = m.user?.id || m.id
+    const mName = m.displayName || m.user?.displayName || m.user?.username || m.email || 'Member'
+    return {
+      value: mId,
+      label: mName
+    }
+  })
+
+  const lenderOptions: SearchableOption[] = Array.from(new Set([
+    ...customLenders,
+    ...instances.map(i => i.borrowCustomName).filter(Boolean)
+  ])).map(name => ({ value: name, label: name }))
 
   return (
     <div className="card mb-6 border-l-4 border-l-orange-500 overflow-hidden relative">
@@ -283,7 +333,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                     placeholder="Choose or create descriptor..."
                   />
                 </div>
-                <div className="md:col-span-2 pr-16">
+                <div className="md:col-span-2">
                   <label className="text-xs tracking-widest text-secondary mb-1 flex">Description</label>
                   <input 
                     type="text" 
@@ -292,6 +342,17 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                     placeholder="What was this for?" 
                     required 
                     className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+                  />
+                </div>
+                {/* Enhanced Categorized Confirmation Numbers */}
+                <div className="md:col-span-4">
+                  <ConfirmationNumberBuilder
+                    value={inst.confirmationNumber}
+                    onChangeValue={val => handleUpdate(index, { confirmationNumber: val })}
+                    confirmationNumbers={inst.confirmationNumbers}
+                    onChangeNumbers={items => handleUpdate(index, { confirmationNumbers: items })}
+                    accentColor="orange"
+                    compact={true}
                   />
                 </div>
               </div>
@@ -337,16 +398,16 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                         </label>
                         
                         {inst.needsBalanceTransfer && (
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 w-full sm:w-auto min-w-[240px]">
                             <span className="text-[10px] font-black uppercase tracking-wider text-orange-300/70 hidden sm:inline">Timing:</span>
-                            <select 
-                              value={inst.transferTiming || 'same_day'} 
-                              onChange={e => handleUpdate(index, { transferTiming: e.target.value })}
-                              className="bg-black/60 border border-orange-500/30 rounded-xl px-3 py-1.5 text-xs font-bold text-white w-full sm:w-auto outline-none focus:border-orange-400"
-                            >
-                              <option value="same_day">Must do Same Day (Default)</option>
-                              <option value="future">Can do in Future</option>
-                            </select>
+                            <div className="w-full sm:w-64">
+                              <SearchableSelect 
+                                options={TRANSFER_TIMING_OPTIONS}
+                                value={inst.transferTiming || 'same_day'} 
+                                onChange={val => handleUpdate(index, { transferTiming: val })}
+                                placeholder="Select transfer timing..."
+                              />
+                            </div>
                           </div>
                         )}
                       </div>
@@ -403,33 +464,31 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                                   <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
                                     Household Member (IOU Recipient)
                                   </label>
-                                  <select
+                                  <SearchableSelect
+                                    options={memberOptions}
                                     value={inst.borrowUserId || otherMembers[0]?.user?.id || otherMembers[0]?.id || ''}
-                                    onChange={e => handleUpdate(index, { borrowUserId: e.target.value })}
-                                    className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
-                                  >
-                                    {otherMembers.map((m: any) => {
-                                      const mId = m.user?.id || m.id
-                                      const mName = m.displayName || m.user?.displayName || m.user?.username || m.email
-                                      return (
-                                        <option key={mId} value={mId} className="bg-slate-900 text-white">
-                                          {mName}
-                                        </option>
-                                      )
-                                    })}
-                                  </select>
+                                    onChange={val => handleUpdate(index, { borrowUserId: val })}
+                                    placeholder="Search household member..."
+                                  />
                                 </div>
                               ) : (
                                 <div className="space-y-1">
                                   <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
                                     Lender / Entity Name
                                   </label>
-                                  <input
-                                    type="text"
+                                  <SearchableSelect
+                                    options={lenderOptions}
                                     value={inst.borrowCustomName}
-                                    onChange={e => handleUpdate(index, { borrowCustomName: e.target.value })}
-                                    placeholder="e.g. Parent, Friend, Bank Loan"
-                                    className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
+                                    onChange={val => handleUpdate(index, { borrowCustomName: val })}
+                                    onCreate={(search) => {
+                                      const trimmed = search.trim()
+                                      if (trimmed) {
+                                        setCustomLenders(prev => Array.from(new Set([...prev, trimmed])))
+                                        handleUpdate(index, { borrowCustomName: trimmed })
+                                        return trimmed
+                                      }
+                                    }}
+                                    placeholder="Search or enter lender/entity name..."
                                   />
                                 </div>
                               )}
@@ -455,22 +514,21 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                                 <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
                                   Reimbursement Method
                                 </label>
-                                <div className="grid grid-cols-3 gap-1.5">
-                                  {(['venmo', 'zelle', 'bank_transfer', 'cash', 'manual'] as const).map(m => (
-                                    <button
-                                      key={m}
-                                      type="button"
-                                      onClick={() => handleUpdate(index, { borrowPaybackMethod: m })}
-                                      className={`py-1.5 px-1 rounded-lg text-[10px] font-bold capitalize transition-all border ${
-                                        inst.borrowPaybackMethod === m
-                                          ? 'bg-orange-500/20 border-orange-500 text-orange-300'
-                                          : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
-                                      }`}
-                                    >
-                                      {m === 'bank_transfer' ? 'Transfer' : m}
-                                    </button>
-                                  ))}
-                                </div>
+                                <SearchableSelect
+                                  options={customReimbursementMethods}
+                                  value={inst.borrowPaybackMethod || 'venmo'}
+                                  onChange={val => handleUpdate(index, { borrowPaybackMethod: val })}
+                                  onCreate={(search) => {
+                                    const trimmed = search.trim()
+                                    if (trimmed) {
+                                      const newOpt: SearchableOption = { value: trimmed.toLowerCase().replace(/\s+/g, '_'), label: trimmed }
+                                      setCustomReimbursementMethods(prev => [...prev, newOpt])
+                                      handleUpdate(index, { borrowPaybackMethod: newOpt.value })
+                                      return newOpt.value
+                                    }
+                                  }}
+                                  placeholder="Select or add method..."
+                                />
                               </div>
 
                               <div className="space-y-1">
@@ -530,3 +588,4 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     </div>
   )
 }
+

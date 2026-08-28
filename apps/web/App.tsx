@@ -22,11 +22,10 @@ if (typeof window !== 'undefined') {
 }
 import logo from './assets/logo.svg'
 
-// Lazy load pages for better performance
-const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
-const LandingPage = lazy(() => import('./pages/LandingPage'))
+import LoginPage from './pages/auth/LoginPage'
+import LandingPage from './pages/LandingPage'
+import DashboardPage from './pages/DashboardPage'
 const ClaimInvitePage = lazy(() => import('./pages/auth/ClaimInvitePage'))
-const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const PreferencesPage = lazy(() => import('./pages/PreferencesPage'))
 const ReportsPage = lazy(() => import('./pages/ReportsPage'))
@@ -87,8 +86,12 @@ const AppContent: React.FC = () => {
   }, [user, householdId, profileLoading, profileSynced, refreshProfile])
 
   useEffect(() => {
-    const handleHashChange = () => setCurrentHash(window.location.hash)
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash || '#/')
+    }
     window.addEventListener('hashchange', handleHashChange)
+    window.addEventListener('popstate', handleHashChange)
+    handleHashChange()
 
     // [FLEET-RESILIENCE] Asset Recovery Protocol
     // Detects 404 errors on critical hashed assets (JS/CSS) or dynamic import failures

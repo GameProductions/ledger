@@ -13,6 +13,7 @@ import { CurrencyInput } from './ui/CurrencyInput';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { SearchableSelect } from './ui/SearchableSelect';
 import { Checkbox } from './ui/Checkbox';
+import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import { getApiUrl } from '../utils/api';
@@ -142,6 +143,7 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
   const [currentDate, setCurrentDate] = useState(initialData?.transactionDate || initialData?.nextBillingDate || initialData?.nextPayDate || date?.toISOString().split('T')[0] || '');
   const [status, setStatus] = useState(initialData?.status || 'unpaid');
   const [confirmationNumber, setConfirmationNumber] = useState(initialData?.confirmationNumber || '');
+  const [confirmationNumbers, setConfirmationNumbers] = useState<ConfirmationNumberItem[]>(initialData?.confirmationNumbers || []);
   const [frequency, setFrequency] = useState(initialData?.frequency || 'biweekly');
   const [semiMonthlyDay1, setSemiMonthlyDay1] = useState(initialData?.semiMonthlyDay1 || 1);
   const [semiMonthlyDay2, setSemiMonthlyDay2] = useState(initialData?.semiMonthlyDay2 || 15);
@@ -427,7 +429,8 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
           amountCents: amountCents,
           transactionDate: paymentDate,
           status,
-          confirmationNumber: confirmationNumber,
+          confirmationNumber: confirmationNumber || (confirmationNumbers[0]?.value ?? ''),
+          confirmationNumbers: confirmationNumbers,
           categoryId: categoryId || null,
           accountId: accountId || null,
           payScheduleId: payScheduleId || null,
@@ -970,13 +973,15 @@ export const CalendarEntryModal: React.FC<CalendarEntryModalProps> = ({
 
                 {/* Confirmation Number */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black tracking-widest text-secondary flex items-center gap-1">Confirmation #{infoIcon('Payment reference or confirmation number from the provider')}</label>
-                  <div className="relative">
-                    <input type="text" value={confirmationNumber} onChange={(e) => setConfirmationNumber(e.target.value)}
-                      placeholder="Optional..."
-                      className="w-full p-3 pl-10 bg-white/5 border border-glass-border rounded-xl text-white outline-none focus:border-primary transition-all text-xs font-bold" />
-                    <Hash size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                  </div>
+                  <ConfirmationNumberBuilder
+                    value={confirmationNumber}
+                    onChangeValue={setConfirmationNumber}
+                    confirmationNumbers={confirmationNumbers}
+                    onChangeNumbers={setConfirmationNumbers}
+                    accentColor="primary"
+                    compact={true}
+                    helperText="Payment reference or confirmation number from the provider."
+                  />
                 </div>
 
                 {/* Pay Date */}

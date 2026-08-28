@@ -241,7 +241,20 @@ app.all("*", async (c) => {
     try {
       if (c.env.ASSETS && typeof c.env.ASSETS.fetch === 'function') {
         const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
-        return assetRes;
+        if (assetRes && assetRes.status < 400) {
+          const headers = new Headers(assetRes.headers);
+          if (path.endsWith('.css')) headers.set('Content-Type', 'text/css; charset=utf-8');
+          else if (path.endsWith('.js')) headers.set('Content-Type', 'application/javascript; charset=utf-8');
+          else if (path.endsWith('.json')) headers.set('Content-Type', 'application/json; charset=utf-8');
+          else if (path.endsWith('.png')) headers.set('Content-Type', 'image/png');
+          else if (path.endsWith('.svg')) headers.set('Content-Type', 'image/svg+xml');
+          else if (path.endsWith('.ico')) headers.set('Content-Type', 'image/x-icon');
+          return new Response(assetRes.body, {
+            status: assetRes.status,
+            statusText: assetRes.statusText,
+            headers,
+          });
+        }
       }
     } catch (e) {
       console.warn('[Assets Fetch] Error retrieving static asset:', path, e);

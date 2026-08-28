@@ -44,7 +44,6 @@ export const trackedExpenses = pgTable('tracked_expenses', {
   status: text('status').default('pending'), // pending, committed, ignored
   notes: text('notes'),
   confirmationNumber: text('confirmation_number'), // Legacy single confirmation number
-  confirmationNumbers: json('confirmation_numbers').$type<ConfirmationNumber[]>().default([]), // New multi-instance
   attentionRequired: boolean('attention_required').default(false),
   needsBalanceTransfer: boolean('needs_balance_transfer').default(false),
   transferReconciled: boolean('transfer_reconciled').default(false),

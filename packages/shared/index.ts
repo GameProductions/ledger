@@ -8,3 +8,5 @@ export * from './rbac/client'
 export * from './cookie-consent'
 
 export * from './vault/client'
+export * from './discord';
+export * from './roles';

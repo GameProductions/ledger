@@ -30,6 +30,7 @@ import trackedExpensesRoutes from './routes/tracked-expenses'
 import reportsRoutes from './routes/reports'
 import addressRoutes from './routes/address'
 import notificationsRoutes from './routes/notifications'
+import { importQueueRouter } from './routes/import-queue'
 
 
 // Durable Objects Exports (Required for Cloudflare)
@@ -266,6 +267,8 @@ app.use('/api/reports/*', authMiddleware)
 // 4. System Routes
 app.route('/api/auth', authRoutes)
 app.route('/api/proxy', authRoutes)
+app.route('/api/financials/import/queue', importQueueRouter)
+app.route('/api/import/queue', importQueueRouter)
 app.route('/api/financials', financialsRoutes)
 app.route('/api/planning', planningRoutes)
 app.route('/api/user', userRoutes)

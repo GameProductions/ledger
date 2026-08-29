@@ -1,5 +1,5 @@
 import { Bindings } from '../types'
-import { getDb } from '#/index'
+import { LedgerImportConsumer } from './import-consumer'
 
 /**
  * Queue Handler
@@ -7,7 +7,10 @@ import { getDb } from '#/index'
  * on the primary API worker.
  */
 export const handleQueue = async (batch: any, env: Bindings): Promise<void> => {
-  const db = getDb(env)
+  if (batch.queue === 'ledger-import-queue') {
+    await LedgerImportConsumer.processBatch(batch, env);
+    return;
+  }
 
   for (const message of batch.messages) {
     try {
@@ -16,7 +19,13 @@ export const handleQueue = async (batch: any, env: Bindings): Promise<void> => {
 
       switch (task.type) {
         case 'HEAVY_CSV_IMPORT':
-          // offload CSV processing logic here
+        case 'EXCEL_WORKBOOK_IMPORT':
+          if (task.rows) {
+            await LedgerImportConsumer.processBatch({
+              queue: 'ledger-import-queue',
+              messages: [{ id: message.id, body: task, ack: () => message.ack(), retry: () => message.retry() }]
+            } as any, env);
+          }
           break
         case 'GLOBAL_RECONCILIATION':
           // offload complex math/aggregation here
@@ -28,7 +37,8 @@ export const handleQueue = async (batch: any, env: Bindings): Promise<void> => {
       message.ack()
     } catch (e: any) {
       console.error(`[Queue Error] Task Failed: ${message.id}`, e)
-      // Message will be retried based on queue config
+      message.retry();
     }
   }
 }
+

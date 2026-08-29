@@ -96,11 +96,27 @@
       "enabled": true
     }
   },
+  "ai": {
+    "binding": "AI"
+  },
   "queues": {
     "producers": [
       {
         "queue": "fleet-activity",
         "binding": "FLEET_ACTIVITY"
+      },
+      {
+        "queue": "ledger-import-queue",
+        "binding": "LEDGER_IMPORT_QUEUE"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "ledger-import-queue",
+        "max_batch_size": 25,
+        "max_batch_timeout": 3,
+        "max_retries": 3,
+        "dead_letter_queue": "ledger-import-dlq"
       }
     ]
   },

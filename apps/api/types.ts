@@ -46,6 +46,9 @@ export type Bindings = {
   TELEGRAM_BOT_TOKEN?: string
   // 🛰️ Fleet Activity Queue (Producer)
   FLEET_ACTIVITY?: Queue;
+  // ⚡ Ledger Asynchronous Importer Queue
+  LEDGER_IMPORT_QUEUE?: Queue;
+  AI?: any;
 }
 
 export type Variables = {

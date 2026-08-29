@@ -1040,6 +1040,9 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.isBorrowed !== undefined) updates.isBorrowed = data.isBorrowed
   if (data.borrowSource !== undefined) updates.borrowSource = data.borrowSource
   if (data.accountedFor !== undefined) updates.accountedFor = data.accountedFor
+  if (data.providerId !== undefined) updates.providerId = data.providerId
+  if (data.billId !== undefined) updates.billId = data.billId
+  if (data.chargeDescriptorId !== undefined) updates.chargeDescriptorId = data.chargeDescriptorId
   if (data.payScheduleId !== undefined) updates.payScheduleId = data.payScheduleId
   if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
   

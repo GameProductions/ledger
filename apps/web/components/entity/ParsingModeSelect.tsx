@@ -14,8 +14,8 @@ export interface PredefinedFormat {
 
 export const PREDEFINED_FORMATS: PredefinedFormat[] = [
   {
-    id: 'ledger-spreadsheet',
-    name: 'Ledger Spreadsheet',
+    id: 'legacy-expense-tracker',
+    name: 'Legacy Expense Tracker',
     description: 'Annual budget spreadsheet with paycheck blocks, monthly columns per person, and line-item expenses',
     icon: <ScrollText size={20} />,
     extensions: ['.xlsx', '.xls'],

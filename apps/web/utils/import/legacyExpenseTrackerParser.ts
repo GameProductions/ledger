@@ -76,7 +76,7 @@ function findPersonPairs(
   return { persons: personList, pairCount: personList.length }
 }
 
-export function parseLedgerSpreadsheet(
+export function parseLegacyExpenseTracker(
   workbook: Workbook,
   sheetName: string
 ): ParsedLedgerData {

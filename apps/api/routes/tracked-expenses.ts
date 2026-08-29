@@ -172,6 +172,7 @@ trackedExpensesRoutes.patch('/bulk', zValidator('json', z.object({
     isBorrowed: z.boolean().optional(),
     borrowSource: z.string().optional().nullable(),
     chargeDescriptorId: z.string().optional().nullable(),
+    billId: z.string().optional().nullable(),
     createdAt: z.string().optional(),
     status: z.string().optional()
   })
@@ -293,7 +294,7 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
       description: item.description,
       transactionDate: transactionDetails.transactionDate || (item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
       notes: item.notes,
-      confirmationNumbers, // Pass array
+      confirmationNumber: legacyConfirmationNumber || (item.confirmationNumbers?.[0]?.value ?? null),
       attentionRequired: item.attentionRequired,
       needsBalanceTransfer: item.needsBalanceTransfer,
       transferReconciled: item.transferReconciled,
@@ -301,6 +302,7 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
       isBorrowed: item.isBorrowed,
       borrowSource: item.borrowSource,
       chargeDescriptorId: transactionDetails.chargeDescriptorId || item.chargeDescriptorId || null,
+      billId: transactionDetails.billId || item.billId || null,
       status: transactionDetails.status || 'pending',
       source: 'tracked_expense_promotion'
     })

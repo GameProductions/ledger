@@ -175,8 +175,8 @@ const ImportReview: React.FC<ImportReviewProps> = ({ onImportComplete, scope }) 
   const handleParsingModeSelect = useCallback(async (mode: ParsingMode, predefinedFormat?: string, templateName?: string) => {
     if (!file) return
 
-    if (mode === 'predefined' && predefinedFormat === 'ledger-spreadsheet') {
-      showToast('This format is handled by the Ledger Spreadsheet import mode. Please switch to Ledger Spreadsheet mode.', 'error')
+    if (mode === 'predefined' && (predefinedFormat === 'legacy-expense-tracker' || predefinedFormat === 'ledger-spreadsheet')) {
+      showToast('This format is handled by the Legacy Expense Tracker import mode. Please switch to Legacy Expense Tracker mode.', 'error')
       setStep('idle')
       return
     }

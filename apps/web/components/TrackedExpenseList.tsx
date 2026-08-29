@@ -26,6 +26,9 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { data: chargeDescriptors = [] } = (useApi('/api/financials/charge-descriptors') as any)
+  const { data: bills = [] } = (useApi('/api/planning/bills') as any)
+  const { data: subscriptions = [] } = (useApi('/api/planning/subscriptions') as any)
+  const { data: members = [] } = (useApi('/api/user/households/current/members') as any)
   const { data: paymentMethodsData } = (useApi('/api/user/payment-methods') as any)
   const paymentMethods: any[] = paymentMethodsData?.data ?? []
   const { formatPrice } = useCurrency()
@@ -117,6 +120,54 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
 
     return items
   }, [tracked, searchTerm, sortKey, flagFilters, hasFlagFilters])
+
+  const billInstanceOptions: SearchableOption[] = useMemo(() => {
+    const list: SearchableOption[] = []
+    
+    // Process Subscriptions
+    const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+    for (const sub of subList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === sub.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+      const formattedAmount = sub.amountCents ? `$${(sub.amountCents / 100).toFixed(2)}` : ''
+      const cycle = sub.billingCycle ? `/${sub.billingCycle.replace('ly', '')}` : ''
+      const renew = sub.nextBillingDate ? ` • Renews ${sub.nextBillingDate}` : ''
+      list.push({
+        value: sub.id,
+        label: `${sub.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🔁</span>,
+        metadata: {
+          subtext: `${formattedAmount}${cycle}${renew}`
+        }
+      })
+    }
+
+    // Process Recurring / Single Bills
+    const billList = Array.isArray(bills) ? bills : bills?.data || []
+    for (const bill of billList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === bill.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+      const formattedAmount = bill.amountCents ? `$${(bill.amountCents / 100).toFixed(2)}` : ''
+      const due = bill.dueDate ? ` • Due ${bill.dueDate}` : ''
+      list.push({
+        value: bill.id,
+        label: `${bill.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🧾</span>,
+        metadata: {
+          subtext: `${formattedAmount}${due}`
+        }
+      })
+    }
+
+    return list.sort((a, b) => a.label.localeCompare(b.label))
+  }, [subscriptions, bills, members])
+
+  const findBillOrSub = (id?: string) => {
+    if (!id) return null
+    const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+    const billList = Array.isArray(bills) ? bills : bills?.data || []
+    return [...subList, ...billList].find((b: any) => b.id === id)
+  }
 
   const handleBulkDuplicate = async () => {
     if (duplicateCopies <= 0 || selectedIds.length === 0) return
@@ -589,6 +640,28 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         onCreate={handleCreateChargeDescriptor}
                       />
                     </div>
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-black tracking-widest text-secondary mb-1 flex items-center justify-between">
+                        <span>Linked Bill / Subscription</span>
+                        <span className="text-[9px] text-orange-400 font-normal">Layer 2 Instance</span>
+                      </label>
+                      <SearchableSelect
+                        options={billInstanceOptions}
+                        value={editForm?.billId || ''}
+                        onChange={(val) => {
+                          const matched = findBillOrSub(val)
+                          const updates: any = { billId: val }
+                          if (matched && (!editForm?.amountCents || editForm?.amountCents === 0)) {
+                            updates.amountCents = matched.amountCents || 0
+                          }
+                          if (matched && !editForm?.description) {
+                            updates.description = matched.name
+                          }
+                          setEditForm({ ...editForm, ...updates })
+                        }}
+                        placeholder="Select specific bill instance..."
+                      />
+                    </div>
                     <div>
                       <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Description</label>
                       <input 
@@ -803,6 +876,17 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             <Wallet size={10} />{item.borrowSource ? ` ${item.borrowSource}` : ' Borrowed'}
                           </div>
                         )}
+                        {item.billId && (() => {
+                          const linked = findBillOrSub(item.billId)
+                          if (!linked) return null
+                          const owner = (members || []).find((m: any) => (m.user?.id || m.id) === linked.ownerId)
+                          const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+                          return (
+                            <div className="text-[10px] font-black tracking-wide text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg flex items-center gap-1 truncate max-w-[220px] sm:max-w-none">
+                              <span>🔗</span> {linked.name} • {ownerName}
+                            </div>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -833,6 +917,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                             transferReconciled: item.transferReconciled ?? false,
                             transferTiming: item.transferTiming || 'same_day',
                             chargeDescriptorId: item.chargeDescriptorId || '',
+                            billId: item.billId || '',
                             isBorrowed: item.isBorrowed ?? false,
                             borrowSource: item.borrowSource || '',
                             transactionDate: toLocalDate(item.transactionDate || item.createdAt),

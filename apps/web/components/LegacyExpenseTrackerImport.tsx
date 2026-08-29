@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { Upload, FileText, Loader2, CheckCircle2, AlertCircle, User, Building2, Tag, Wallet } from 'lucide-react'
-import { parseLedgerSpreadsheet } from '../utils/import/ledgerSpreadsheetParser'
+import { parseLegacyExpenseTracker } from '../utils/import/legacyExpenseTrackerParser'
 import type { ParsedLedgerData, EntityInput } from '../utils/import/types'
 import { useEntityMatching } from '../utils/import/useEntityMatching'
 import EntityMatchReview from './entity/EntityMatchReview'
@@ -12,7 +12,7 @@ interface Props {
 
 const API_URL = '' // getApiUrl is called inline
 
-export const LedgerSpreadsheetImport: React.FC<Props> = ({ scope, onImportComplete }) => {
+export const LegacyExpenseTrackerImport: React.FC<Props> = ({ scope, onImportComplete }) => {
   const [file, setFile] = useState<File | null>(null)
   const [parsed, setParsed] = useState<ParsedLedgerData | null>(null)
   const [parsing, setParsing] = useState(false)
@@ -69,7 +69,7 @@ export const LedgerSpreadsheetImport: React.FC<Props> = ({ scope, onImportComple
         return
       }
 
-      const data = parseLedgerSpreadsheet(workbook, sheetName)
+      const data = parseLegacyExpenseTracker(workbook, sheetName)
       setParsed(data)
 
       // Build entity inputs for matching
@@ -432,8 +432,8 @@ export const LedgerSpreadsheetImport: React.FC<Props> = ({ scope, onImportComple
       onDragOver={(e) => e.preventDefault()}
       className="border-2 border-dashed border-white/10 rounded-3xl p-16 text-center hover:border-emerald-500/30 transition-all cursor-pointer group"
     >
-      <input type="file" accept=".xlsx,.xls" onChange={handleFileInput} className="hidden" id="ledger-spreadsheet-input" />
-      <label htmlFor="ledger-spreadsheet-input" className="cursor-pointer space-y-4">
+      <input type="file" accept=".xlsx,.xls" onChange={handleFileInput} className="hidden" id="legacy-expense-tracker-input" />
+      <label htmlFor="legacy-expense-tracker-input" className="cursor-pointer space-y-4">
         {parsing ? (
           <Loader2 size={48} className="mx-auto text-emerald-500 animate-spin" />
         ) : (
@@ -441,7 +441,7 @@ export const LedgerSpreadsheetImport: React.FC<Props> = ({ scope, onImportComple
         )}
         <div>
           <p className="text-lg font-bold text-white">
-            {parsing ? 'Parsing spreadsheet...' : 'Drop your Ledger spreadsheet here'}
+            {parsing ? 'Parsing spreadsheet...' : 'Drop your Legacy Expense Tracker here'}
           </p>
           <p className="text-sm text-slate-500 mt-1">or click to browse · .xlsx files only</p>
         </div>

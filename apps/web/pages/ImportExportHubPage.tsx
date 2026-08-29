@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import ImportReview from '../components/ImportReview';
-import { LedgerSpreadsheetImport } from '../components/LedgerSpreadsheetImport';
+import { LegacyExpenseTrackerImport } from '../components/LegacyExpenseTrackerImport';
 import { PrivacySettings } from '../components/PrivacySettings';
 import { getApiUrl } from '../utils/api';
 import { useApi } from '../hooks/useApi';
@@ -157,7 +157,7 @@ const ImportExportHubPage: React.FC = () => {
                         onClick={() => setImportMode('ledger')}
                         className={`px-5 py-2 rounded-lg font-bold text-xs transition-all ${importMode === 'ledger' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}
                       >
-                        Ledger Spreadsheet
+                        Legacy Expense Tracker
                       </button>
                     </div>
 
@@ -170,7 +170,7 @@ const ImportExportHubPage: React.FC = () => {
                         </div>
                       </>
                     ) : (
-                      <LedgerSpreadsheetImport scope={importScope} onImportComplete={() => window.location.reload()} />
+                      <LegacyExpenseTrackerImport scope={importScope} onImportComplete={() => window.location.reload()} />
                     )}
                   </div>
                 )}

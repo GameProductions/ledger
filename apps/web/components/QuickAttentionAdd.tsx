@@ -19,6 +19,7 @@ interface FormInstance {
   description: string;
   amountCents: number;
   chargeDescriptorId: string;
+  billId: string;
   confirmationNumber: string;
   confirmationNumbers: ConfirmationNumberItem[];
   attentionRequired: boolean;
@@ -56,6 +57,8 @@ const DEFAULT_REIMBURSEMENT_METHODS: SearchableOption[] = [
 export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded }) => {
   const { householdId, user } = useAuth()
   const { data: chargeDescriptors = [] } = (useApi('/api/financials/charge-descriptors') as any)
+  const { data: bills = [] } = (useApi('/api/planning/bills') as any)
+  const { data: subscriptions = [] } = (useApi('/api/planning/subscriptions') as any)
   const { data: members = [] } = (useApi(householdId ? `/api/user/households/${householdId}/members` : null) as any)
 
   const otherMembers = (members || []).filter((m: any) => (m.user?.id || m.id) !== user?.id)
@@ -68,6 +71,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     description: '',
     amountCents: 0,
     chargeDescriptorId: '',
+    billId: '',
     confirmationNumber: '',
     confirmationNumbers: [],
     attentionRequired: false,
@@ -163,6 +167,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
             description: inst.description,
             amountCents: inst.amountCents,
             chargeDescriptorId: inst.chargeDescriptorId || null,
+            billId: inst.billId || null,
             confirmationNumber: primaryConfirmationNumber,
             confirmationNumbers: validConfirmationNumbers,
             attentionRequired: inst.attentionRequired,
@@ -192,19 +197,46 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
     }
   }
 
-  const memberOptions: SearchableOption[] = otherMembers.map((m: any) => {
-    const mId = m.user?.id || m.id
-    const mName = m.displayName || m.user?.displayName || m.user?.username || m.email || 'Member'
-    return {
-      value: mId,
-      label: mName
+  const billInstanceOptions: SearchableOption[] = useMemo(() => {
+    const list: SearchableOption[] = []
+    
+    // Process Subscriptions
+    const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+    for (const sub of subList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === sub.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || (sub.ownerId === user?.id ? 'You' : 'Household')
+      const formattedAmount = sub.amountCents ? `$${(sub.amountCents / 100).toFixed(2)}` : ''
+      const cycle = sub.billingCycle ? `/${sub.billingCycle.replace('ly', '')}` : ''
+      const renew = sub.nextBillingDate ? ` • Renews ${sub.nextBillingDate}` : ''
+      list.push({
+        value: sub.id,
+        label: `${sub.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🔁</span>,
+        metadata: {
+          subtext: `${formattedAmount}${cycle}${renew}`
+        }
+      })
     }
-  })
 
-  const lenderOptions: SearchableOption[] = Array.from(new Set([
-    ...customLenders,
-    ...instances.map(i => i.borrowCustomName).filter(Boolean)
-  ])).map(name => ({ value: name, label: name }))
+    // Process Recurring / Single Bills
+    const billList = Array.isArray(bills) ? bills : bills?.data || []
+    for (const bill of billList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === bill.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || (bill.ownerId === user?.id ? 'You' : 'Household')
+      const formattedAmount = bill.amountCents ? `$${(bill.amountCents / 100).toFixed(2)}` : ''
+      const due = bill.dueDate ? ` • Due ${bill.dueDate}` : ''
+      list.push({
+        value: bill.id,
+        label: `${bill.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🧾</span>,
+        metadata: {
+          subtext: `${formattedAmount}${due}`
+        }
+      })
+    }
+
+    return list.sort((a, b) => a.label.localeCompare(b.label))
+  }, [subscriptions, bills, members, user?.id])
 
   return (
     <div className="card mb-6 border-l-4 border-l-orange-500 overflow-hidden relative">
@@ -321,7 +353,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                     required
                   />
                 </div>
-                <div className="md:col-span-2 pr-16">
+                <div className="md:col-span-2">
                   <label className="text-xs tracking-widest text-secondary mb-1 flex">Charge Descriptor</label>
                   <SearchableSelect
                     options={(chargeDescriptors || []).map((cd: any) => ({ value: cd.id, label: cd.name }))}
@@ -334,6 +366,30 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                   />
                 </div>
                 <div className="md:col-span-2">
+                  <label className="text-xs tracking-widest text-secondary mb-1 flex items-center justify-between">
+                    <span>Linked Bill / Subscription</span>
+                    <span className="text-[10px] text-orange-400/80 font-normal">Layer 2 Instance</span>
+                  </label>
+                  <SearchableSelect
+                    options={billInstanceOptions}
+                    value={inst.billId || ''}
+                    onChange={(val) => {
+                      const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+                      const billList = Array.isArray(bills) ? bills : bills?.data || []
+                      const matched = [...subList, ...billList].find((b: any) => b.id === val)
+                      const updates: Partial<FormInstance> = { billId: val }
+                      if (matched && (!inst.amountCents || inst.amountCents === 0)) {
+                        updates.amountCents = matched.amountCents || 0
+                      }
+                      if (matched && !inst.description) {
+                        updates.description = matched.name
+                      }
+                      handleUpdate(index, updates)
+                    }}
+                    placeholder="Select specific bill instance..."
+                  />
+                </div>
+                <div className="md:col-span-4">
                   <label className="text-xs tracking-widest text-secondary mb-1 flex">Description</label>
                   <input 
                     type="text" 

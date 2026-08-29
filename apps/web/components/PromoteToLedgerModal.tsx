@@ -11,6 +11,7 @@ interface LedgerDetails {
   transactionDate: string
   status: string
   chargeDescriptorId: string
+  billId?: string
 }
 
 interface PromoteToLedgerModalProps {
@@ -44,10 +45,54 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
   const { data: accountsData } = (useApi('/api/financials/accounts') as any)
   const { data: categoriesData } = (useApi('/api/financials/categories') as any)
   const { data: chargeDescriptorsData } = (useApi('/api/financials/charge-descriptors') as any)
+  const { data: bills = [] } = (useApi('/api/planning/bills') as any)
+  const { data: subscriptions = [] } = (useApi('/api/planning/subscriptions') as any)
+  const { data: members = [] } = (useApi('/api/user/households/current/members') as any)
 
   const accountOptions = toOptions(accountsData)
   const categoryOptions = toOptions(categoriesData)
   const chargeDescriptorOptions = toOptions(chargeDescriptorsData)
+
+  const billInstanceOptions: SearchableOption[] = React.useMemo(() => {
+    const list: SearchableOption[] = []
+    
+    // Process Subscriptions
+    const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+    for (const sub of subList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === sub.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+      const formattedAmount = sub.amountCents ? `$${(sub.amountCents / 100).toFixed(2)}` : ''
+      const cycle = sub.billingCycle ? `/${sub.billingCycle.replace('ly', '')}` : ''
+      const renew = sub.nextBillingDate ? ` • Renews ${sub.nextBillingDate}` : ''
+      list.push({
+        value: sub.id,
+        label: `${sub.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🔁</span>,
+        metadata: {
+          subtext: `${formattedAmount}${cycle}${renew}`
+        }
+      })
+    }
+
+    // Process Recurring / Single Bills
+    const billList = Array.isArray(bills) ? bills : bills?.data || []
+    for (const bill of billList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === bill.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+      const formattedAmount = bill.amountCents ? `$${(bill.amountCents / 100).toFixed(2)}` : ''
+      const due = bill.dueDate ? ` • Due ${bill.dueDate}` : ''
+      list.push({
+        value: bill.id,
+        label: `${bill.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🧾</span>,
+        metadata: {
+          subtext: `${formattedAmount}${due}`
+        }
+      })
+    }
+
+    return list.sort((a, b) => a.label.localeCompare(b.label))
+  }, [subscriptions, bills, members])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add to Main Ledger">
@@ -70,13 +115,13 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-black tracking-widest text-secondary mb-1 flex items-center gap-1.5">
               <FileText size={14} className="text-orange-500" /> Charge Descriptor
             </label>
             <p className="text-[10px] text-slate-500 font-bold mb-2">
-              Optional — label this charge to standardize descriptions across the ledger.
+              Optional — label to standardize descriptions.
             </p>
             <SearchableSelect
               options={chargeDescriptorOptions}
@@ -86,6 +131,23 @@ export const PromoteToLedgerModal: React.FC<PromoteToLedgerModalProps> = ({
               }}
               placeholder="Select or create descriptor..."
               onCreate={handleCreateChargeDescriptor}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-black tracking-widest text-secondary mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1.5"><span className="text-sm">🔗</span> Linked Bill / Instance</span>
+              <span className="text-[9px] text-orange-400 font-normal">Layer 2</span>
+            </label>
+            <p className="text-[10px] text-slate-500 font-bold mb-2">
+              Link directly to a specific member's bill instance.
+            </p>
+            <SearchableSelect
+              options={billInstanceOptions}
+              value={ledgerDetails.billId || ''}
+              onChange={(id) => {
+                setLedgerDetails({ ...ledgerDetails, billId: id || '' })
+              }}
+              placeholder="Select bill instance..."
             />
           </div>
         </div>

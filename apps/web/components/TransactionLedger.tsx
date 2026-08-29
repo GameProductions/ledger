@@ -65,6 +65,9 @@ export const TransactionLedger: React.FC = () => {
   const { data: transactions = [], mutate: mutateTx } = (useApi(`/api/financials/transactions?q=${encodeURIComponent(q)}&sortBy=${sortBy}&sortDir=${sortDir}&limit=${limit}`) as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
+  const { data: bills = [] } = (useApi('/api/planning/bills') as any)
+  const { data: subscriptions = [] } = (useApi('/api/planning/subscriptions') as any)
+  const { data: members = [] } = (useApi('/api/user/households/current/members') as any)
   const { data: household } = (useApi('/api/user/households/current') as any)
 
   // Selection & Details State
@@ -76,9 +79,11 @@ export const TransactionLedger: React.FC = () => {
     amountCents: 0,
     accountId: '',
     categoryId: '',
+    billId: '',
     transactionDate: new Date().toISOString().split('T')[0],
     notes: '',
     confirmationNumber: '',
+    confirmationNumbers: [],
     status: 'pending'
   })
 
@@ -99,6 +104,54 @@ export const TransactionLedger: React.FC = () => {
     { name: '60 / 20 / 20 3-Way Split', allocations: [{ percent: 60, descriptionSuffix: 'Primary' }, { percent: 20, descriptionSuffix: 'Secondary' }, { percent: 20, descriptionSuffix: 'Tertiary' }] },
     { name: '33 / 33 / 34 Equal 3-Way', allocations: [{ percent: 33.33, descriptionSuffix: 'Part 1' }, { percent: 33.33, descriptionSuffix: 'Part 2' }, { percent: 33.34, descriptionSuffix: 'Part 3' }] }
   ]
+
+  const billInstanceOptions: SearchableOption[] = useMemo(() => {
+    const list: SearchableOption[] = []
+    
+    // Process Subscriptions
+    const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+    for (const sub of subList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === sub.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+      const formattedAmount = sub.amountCents ? `$${(sub.amountCents / 100).toFixed(2)}` : ''
+      const cycle = sub.billingCycle ? `/${sub.billingCycle.replace('ly', '')}` : ''
+      const renew = sub.nextBillingDate ? ` • Renews ${sub.nextBillingDate}` : ''
+      list.push({
+        value: sub.id,
+        label: `${sub.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🔁</span>,
+        metadata: {
+          subtext: `${formattedAmount}${cycle}${renew}`
+        }
+      })
+    }
+
+    // Process Recurring / Single Bills
+    const billList = Array.isArray(bills) ? bills : bills?.data || []
+    for (const bill of billList) {
+      const owner = (members || []).find((m: any) => (m.user?.id || m.id) === bill.ownerId)
+      const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+      const formattedAmount = bill.amountCents ? `$${(bill.amountCents / 100).toFixed(2)}` : ''
+      const due = bill.dueDate ? ` • Due ${bill.dueDate}` : ''
+      list.push({
+        value: bill.id,
+        label: `${bill.name} • ${ownerName}`,
+        icon: <span className="text-base leading-none">🧾</span>,
+        metadata: {
+          subtext: `${formattedAmount}${due}`
+        }
+      })
+    }
+
+    return list.sort((a, b) => a.label.localeCompare(b.label))
+  }, [subscriptions, bills, members])
+
+  const findBillOrSub = (id?: string) => {
+    if (!id) return null
+    const subList = Array.isArray(subscriptions) ? subscriptions : subscriptions?.data || []
+    const billList = Array.isArray(bills) ? bills : bills?.data || []
+    return [...subList, ...billList].find((b: any) => b.id === id)
+  }
 
   // Expense Sharing State
   const [activeShareTx, setActiveShareTx] = useState<any>(null)
@@ -764,8 +817,19 @@ export const TransactionLedger: React.FC = () => {
                     <td className="py-2.5 font-medium max-w-[200px] truncate">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-white font-bold">{tx.description}</span>
+                        {tx.billId && (() => {
+                          const linked = findBillOrSub(tx.billId)
+                          if (!linked) return null
+                          const owner = (members || []).find((m: any) => (m.user?.id || m.id) === linked.ownerId)
+                          const ownerName = owner?.displayName || owner?.user?.displayName || owner?.user?.username || 'Household'
+                          return (
+                            <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded text-[9px] font-black tracking-wide flex items-center gap-1">
+                              <span>🔗</span> {linked.name} • {ownerName}
+                            </span>
+                          )
+                        })()}
                         {tx.reconciliationStatus === 'split' && (
-                          <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[9px] font-black uppercase tracking-wider">
+                          <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[9px] font-black tracking-wider">
                             Split Parent
                           </span>
                         )}
@@ -841,6 +905,7 @@ export const TransactionLedger: React.FC = () => {
                                     amountCents: tx.amountCents,
                                     accountId: tx.accountId || '',
                                     categoryId: tx.categoryId || '',
+                                    billId: tx.billId || '',
                                     transactionDate: tx.transactionDate,
                                     notes: tx.notes || '',
                                     confirmationNumber: tx.confirmationNumber || '',
@@ -1395,6 +1460,28 @@ export const TransactionLedger: React.FC = () => {
                 onCreate={handleCreateCategory}
               />
             </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs tracking-widest text-secondary mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="text-sm">🔗</span> Linked Bill / Subscription</span>
+                <span className="text-[9px] text-amber-400 font-normal">Layer 2 Instance</span>
+              </label>
+              <SearchableSelect 
+                options={billInstanceOptions}
+                value={txForm.billId || ''} 
+                onChange={val => {
+                  const matched = findBillOrSub(val)
+                  const updates: any = { billId: val }
+                  if (matched && (!txForm.amountCents || txForm.amountCents === 0)) {
+                    updates.amountCents = matched.amountCents || 0
+                  }
+                  if (matched && !txForm.description) {
+                    updates.description = matched.name
+                  }
+                  setTxForm({ ...txForm, ...updates })
+                }} 
+                placeholder="Select bill instance..."
+              />
+            </div>
           </div>
           <div className="space-y-4">
             <ConfirmationNumberBuilder
@@ -1488,6 +1575,28 @@ export const TransactionLedger: React.FC = () => {
                   onChange={val => setTxForm({...txForm, categoryId: val})} 
                   placeholder="Uncategorized..."
                   onCreate={handleCreateCategory}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs tracking-widest text-secondary mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5"><span className="text-sm">🔗</span> Linked Bill / Subscription</span>
+                  <span className="text-[9px] text-amber-400 font-normal">Layer 2 Instance</span>
+                </label>
+                <SearchableSelect 
+                  options={billInstanceOptions}
+                  value={txForm.billId || ''} 
+                  onChange={val => {
+                    const matched = findBillOrSub(val)
+                    const updates: any = { billId: val }
+                    if (matched && (!txForm.amountCents || txForm.amountCents === 0)) {
+                      updates.amountCents = matched.amountCents || 0
+                    }
+                    if (matched && !txForm.description) {
+                      updates.description = matched.name
+                    }
+                    setTxForm({ ...txForm, ...updates })
+                  }} 
+                  placeholder="Select bill instance..."
                 />
               </div>
             </div>

@@ -12,20 +12,36 @@ export default defineConfig({
   assetsInclude: ['**/*.md'],
   server: {
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8787',
-        changeOrigin: true,
-      },
-      '/assets': {
-        target: 'http://localhost:8787',
-        changeOrigin: true,
-      },
+    watch: {
+      ignored: [
+        '**/package.json',
+        '**/package-lock.json',
+        '**/pnpm-lock.yaml',
+        '**/.git/**',
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/build/**',
+        '**/*.log',
+      ],
     },
   },
 
   resolve: {
     tsconfigPaths: true,
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'react-dom',
+      'react-dom/client',
+      'framer-motion',
+      'lucide-react',
+      '@simplewebauthn/browser',
+      'date-fns',
+    ],
+    exclude: ['react-router', '@react-router/dev'],
   },
   build: {
     rollupOptions: {
@@ -39,8 +55,12 @@ export default defineConfig({
     },
   },
   plugins: [
+    cloudflare({
+      viteEnvironment: {
+        name: "ssr",
+      },
+    }),
     tailwindcss(),
-    cloudflare(),
     reactRouter(),
   ],
 });

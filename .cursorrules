@@ -96,6 +96,7 @@ This document serves as the absolute source of truth for all projects within the
 - **PWA Status**: All applications must be fully progressive and configured as a Progressive Web App (PWA).
 
 
+
 - **High-Fidelity Utilities**:
     - **Scrollable Lists**: Use a standardized `.scrollable-list` class with `max-height: 65vh; overflow-y: auto; overflow-x: hidden;`.
     - **Custom Scrollbars**: Implement a sleek, custom-designed scrollbar for all scrollable containers.
@@ -663,3 +664,25 @@ To ensure absolute account integrity and forensic traceability, all identity sys
   - Edge intelligence features (semantic search, embedding generation, content summaries, bot intent parsing) MUST utilize native Cloudflare Workers AI (`c.env.AI`) and Vectorize (`c.env.VECTORIZE`) to execute directly at the edge without external API roundtrip overhead.
 - **OpenTelemetry & Distributed Trace Propagation**:
   - All inter-service communications through the Fleet Application Gateway (`/api/v1/fleet`) and webhook dispatches MUST propagate standard W3C Trace Context headers (`traceparent`, `tracestate`) to maintain end-to-end request visibility across the fleet.
+
+## 38. Unified Fleet Authentication & Default Sign-In Modal Standards
+- **Default Fleet Sign-In Modal (`LoginDialog.tsx`)**:
+  - All micro-applications across the fleet MUST use the standardized `LoginDialog.tsx` from `@shared/auth/client` as their primary authentication gate modal.
+- **Header Icon & Brand Uniformity**:
+  - **App Icon**: The modal header MUST render the application's unique branding icon (`appLogo` / `public/icons/<app>.png` or `public/brand/logo.png`) inside a styled, elevated container with subtle interactive hover scaling.
+  - **Gradient Shaded App Name**: Below the icon, the application's name MUST be rendered in prominent bold Title Case header typography with brand gradient text shading (`bg-gradient-to-r ... bg-clip-text text-transparent`) aligned with the application's theme colors to maintain brand uniformity:
+    - *Foundation*: Cyan $\rightarrow$ Blue $\rightarrow$ Indigo (`from-cyan-400 via-blue-400 to-indigo-400`)
+    - *GloBot*: Red $\rightarrow$ Rose $\rightarrow$ Pink (`from-red-400 via-rose-400 to-pink-500`)
+    - *Groupcord*: Indigo $\rightarrow$ Purple $\rightarrow$ Discord Blurple (`from-indigo-400 via-purple-400 to-[#5865F2]`)
+    - *Ledger*: Emerald $\rightarrow$ Teal $\rightarrow$ Cyan (`from-emerald-400 via-teal-300 to-cyan-400`)
+    - *Food*: Amber $\rightarrow$ Orange $\rightarrow$ Red (`from-amber-400 via-orange-400 to-red-400`)
+    - *Butlarr*: Blue $\rightarrow$ Indigo $\rightarrow$ Violet (`from-blue-400 via-indigo-400 to-violet-400`)
+    - *I-AM*: Amber $\rightarrow$ Yellow $\rightarrow$ Gold (`from-amber-300 via-yellow-400 to-amber-500`)
+    - *Lets-Draw-Down*: Yellow $\rightarrow$ Amber $\rightarrow$ Orange (`from-yellow-400 via-amber-400 to-orange-400`)
+    - *Voyarr*: Fuchsia $\rightarrow$ Purple $\rightarrow$ Indigo (`from-fuchsia-400 via-purple-400 to-indigo-400`)
+- **Integrated Dual-Mode Device Companion**:
+  - The modal MUST support 4 core authentication methods: **SSO** (OAuth), **Passkey** (FIDO2/WebAuthn), **Password**, and **Device** (Companion Pairing).
+  - The **Device** tab MUST offer both:
+    1. **Approve Screen**: Auto-hyphenated 8-character PIN entry (`WDJX-7829`) to authorize TVs, Consoles, or Headsets.
+    2. **Pair This Device**: Generates a live one-time PIN with 300s expiration and automated background polling (`/api/auth/device/poll`) for frictionless login via phone or secondary laptop.
+

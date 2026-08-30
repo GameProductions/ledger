@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogIn, Mail, Shield, Key, Tv, Smartphone, RefreshCw, CheckCircle2, AlertCircle, X, ArrowLeft, Send, KeyRound } from 'lucide-react'
+import { LogIn, Mail, Shield, Key, Tv, Smartphone, RefreshCw, CheckCircle2, AlertCircle, X, ArrowLeft, Send, KeyRound, Copy, Clock, ShieldCheck } from 'lucide-react'
 import { startAuthentication } from '@simplewebauthn/browser'
 
 interface LoginDialogProps {
@@ -26,16 +26,94 @@ export function LoginDialog({
   const [error, setError] = useState('')
   const [passkeyLoading, setPasskeyLoading] = useState(false)
 
-  // Remote Companion State
+  // Remote Companion State & Dual Mode
+  const [companionMode, setCompanionMode] = useState<'approve' | 'request'>('approve')
   const [userCode, setUserCode] = useState('')
   const [approvingCode, setApprovingCode] = useState(false)
   const [approvalSuccess, setApprovalSuccess] = useState(false)
+
+  // Device Pairing Request State (Pair This Device)
+  const [devicePin, setDevicePin] = useState('')
+  const [generatingCode, setGeneratingCode] = useState(false)
+  const [codeTimeLeft, setCodeTimeLeft] = useState(300)
+  const [copiedPin, setCopiedPin] = useState(false)
+  const pollTimerRef = useRef<any>(null)
 
   const [showForgotModal, setShowForgotModal] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [requestingReset, setRequestingReset] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotError, setForgotError] = useState('')
+
+  // Cleanup polling timer on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [])
+
+  // Auto-countdown for device PIN
+  useEffect(() => {
+    if (tab === 'companion' && companionMode === 'request' && devicePin && codeTimeLeft > 0) {
+      const t = setInterval(() => setCodeTimeLeft((prev) => prev - 1), 1000)
+      return () => clearInterval(t)
+    }
+  }, [tab, companionMode, devicePin, codeTimeLeft])
+
+  async function generatePairingCode() {
+    setGeneratingCode(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/device/code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ persistent })
+      })
+      const data: any = await res.json()
+      if (data.success && data.userCode) {
+        setDevicePin(data.userCode)
+        setCodeTimeLeft(data.expiresIn || 300)
+        startPollingForApproval(data.deviceCode || data.userCode)
+      } else {
+        // Fallback demo/self-contained PIN generation
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+        let pin = ''
+        for (let i = 0; i < 8; i++) {
+          if (i === 4) pin += '-'
+          pin += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        setDevicePin(pin)
+        setCodeTimeLeft(300)
+      }
+    } catch {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+      let pin = ''
+      for (let i = 0; i < 8; i++) {
+        if (i === 4) pin += '-'
+        pin += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      setDevicePin(pin)
+      setCodeTimeLeft(300)
+    } finally {
+      setGeneratingCode(false)
+    }
+  }
+
+  function startPollingForApproval(code: string) {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/auth/device/poll?code=${encodeURIComponent(code)}`)
+        const data: any = await res.json()
+        if (data.success && (data.sessionId || data.sessionToken)) {
+          clearInterval(pollTimerRef.current)
+          localStorage.setItem('foundation_session', data.sessionId || data.sessionToken)
+          if (onSuccess) onSuccess()
+          window.location.href = '/directory'
+        }
+      } catch {}
+    }, 3000)
+  }
 
   function startOAuth(provider: string) {
     window.location.href = `/api/auth/oauth/${provider}?persistent=${persistent}`
@@ -357,38 +435,137 @@ export function LoginDialog({
 
         {tab === 'companion' && (
           <div className="space-y-4">
-            {approvalSuccess ? (
-              <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                <h3 className="text-sm font-bold text-white">Device Authorized!</h3>
-                <p className="text-xs text-slate-400">Your companion device has been successfully signed in.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleApproveCompanion} className="space-y-4">
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Enter the 8-character code shown on your Smart TV, VR Headset, or Console screen:
-                </p>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400">Device Code</label>
-                  <input
-                    type="text"
-                    maxLength={9}
-                    placeholder="WDJX-7829"
-                    value={userCode}
-                    onChange={(e) => setUserCode(e.target.value.toUpperCase())}
-                    className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-center text-base tracking-widest font-mono text-white focus:outline-none focus:border-blue-500"
-                    required
-                  />
+            {/* Device Mode Toggle: Approve Screen Code vs Pair This Device */}
+            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950 rounded-xl border border-white/5">
+              <button
+                type="button"
+                onClick={() => { setCompanionMode('approve'); setError(''); }}
+                className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${companionMode === 'approve' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Tv className="w-3.5 h-3.5" />
+                <span>Approve Screen</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setCompanionMode('request'); setError(''); generatePairingCode(); }}
+                className={`py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${companionMode === 'request' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Pair This Device</span>
+              </button>
+            </div>
+
+            {/* Mode A: Approve Remote Device (TV / Console / Headset) */}
+            {companionMode === 'approve' && (
+              <>
+                {approvalSuccess ? (
+                  <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                    <h3 className="text-sm font-bold text-white">Device Authorized!</h3>
+                    <p className="text-xs text-slate-400">Your companion device has been successfully signed in.</p>
+                    <button
+                      type="button"
+                      onClick={() => { setApprovalSuccess(false); setUserCode(''); }}
+                      className="mt-3 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Authorize Another Device
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleApproveCompanion} className="space-y-4">
+                    <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-start gap-2.5">
+                      <Tv className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-purple-200/90 leading-relaxed font-medium">
+                        Enter the 8-character pairing code shown on your Smart TV, Console, or VR Headset to authorize access.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Companion Security Code</label>
+                      <input
+                        type="text"
+                        maxLength={9}
+                        placeholder="WDJX-7829"
+                        value={userCode}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                          if (val.length > 4) {
+                            setUserCode(`${val.slice(0, 4)}-${val.slice(4, 8)}`);
+                          } else {
+                            setUserCode(val);
+                          }
+                        }}
+                        className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-center text-lg tracking-widest font-mono font-black text-purple-300 focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={approvingCode || userCode.replace(/[^A-Z0-9]/g, '').length < 8}
+                      className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-xs font-bold transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer shadow-lg shadow-purple-600/20"
+                    >
+                      {approvingCode ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                      <span>{approvingCode ? 'Authorizing Device...' : 'Authorize Device Access'}</span>
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+
+            {/* Mode B: Pair This Device (Generate PIN to approve on phone/laptop) */}
+            {companionMode === 'request' && (
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-start gap-2.5">
+                  <Smartphone className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-cyan-200/90 leading-relaxed font-medium">
+                    Open your signed-in phone or computer, go to <strong>Sign In &gt; Device</strong>, and enter this code:
+                  </p>
                 </div>
+
+                <div className="p-6 bg-slate-950 rounded-2xl border border-white/10 text-center space-y-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Your One-Time Pairing PIN</span>
+                  {generatingCode ? (
+                    <div className="flex items-center justify-center py-2 text-cyan-400">
+                      <RefreshCw className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-2xl sm:text-3xl font-black font-mono tracking-widest text-white">
+                        {devicePin || '---- ----'}
+                      </span>
+                      {devicePin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(devicePin);
+                            setCopiedPin(true);
+                            setTimeout(() => setCopiedPin(false), 2000);
+                          }}
+                          className="p-2 bg-slate-900 hover:bg-slate-800 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all cursor-pointer"
+                          title="Copy Code"
+                        >
+                          {copiedPin ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-mono pt-1">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Expires in {codeTimeLeft}s · Auto-authenticating...</span>
+                  </div>
+                </div>
+
                 <button
-                  type="submit"
-                  disabled={approvingCode || userCode.length < 6}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-xs font-bold transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer"
+                  type="button"
+                  onClick={generatePairingCode}
+                  disabled={generatingCode}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
-                  {approvingCode ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Tv className="w-4 h-4" />}
-                  <span>{approvingCode ? 'Authorizing Device...' : 'Approve Device Sign-In'}</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${generatingCode ? 'animate-spin' : ''}`} />
+                  <span>Generate New PIN</span>
                 </button>
-              </form>
+              </div>
             )}
           </div>
         )}

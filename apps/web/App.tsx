@@ -20,7 +20,6 @@ if (typeof window !== 'undefined') {
     setReducedMotion(savedReduced === 'true')
   }
 }
-import logo from './assets/logo.svg'
 
 import LoginPage from './pages/auth/LoginPage'
 import LandingPage from './pages/LandingPage'
@@ -325,7 +324,7 @@ const AppContent: React.FC = () => {
       <IdentityHead 
         appName="Ledger" 
         appDescription="Secure financial privacy & data ownership and multi-household budget management." 
-        appLogo={logo} 
+        appLogo="/assets/icon-512.png" 
       />
       <Suspense fallback={null}>
         <div id="main-content" className="relative animate-in fade-in duration-500">

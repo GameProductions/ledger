@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Check, X, Shield, ShieldCheck, ShieldAlert, Loader2 } from 'lucide-react';
-import { checkPasswordBreach, BreachCheckResult } from './breachChecker';
+import { checkPasswordBreach, type BreachCheckResult } from './breachChecker';
 
 export interface PasswordRequirement {
   id: string;

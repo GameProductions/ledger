@@ -19,6 +19,10 @@ interface SearchableSelectProps {
   className?: string;
   icon?: React.ReactNode;
   onCreate?: (search: string) => Promise<string | void> | string | void;
+  searchable?: boolean;
+  isScrapedSource?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -93,31 +97,46 @@ interface DropdownContentProps {
   onChange: (v: string) => void;
   setIsOpen: (v: boolean) => void;
   onCreate?: SearchableSelectProps['onCreate'];
+  searchable?: boolean;
+  isScrapedSource?: boolean;
 }
 
 const DropdownContent: React.FC<DropdownContentProps> = ({
   inputRef, search, setSearch, filteredOptions, showCreateOption,
   activeIndex, setActiveIndex, value, onChange, setIsOpen, onCreate,
+  searchable = true, isScrapedSource = false,
 }) => (
   <>
-    {/* Search Input */}
-    <div className="p-3 border-b border-white/5 bg-white/2">
-      <div className="relative flex items-center">
-        <Search size={14} className="absolute left-3 text-slate-500" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Typing to suggest..."
-          className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all"
-          // prevent the input click from bubbling up to the trigger toggle
-          onClick={(e) => e.stopPropagation()}
-          // prevent mousedown from triggering the outside-click handler
-          onMouseDown={(e) => e.stopPropagation()}
-        />
+    {/* Scraped Read-Only Header Banner */}
+    {isScrapedSource && (
+      <div className="px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between">
+        <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">
+          🔒 Scraped Source (Read-Only)
+        </span>
+        <span className="text-[9px] text-slate-400 font-mono">Immutable</span>
       </div>
-    </div>
+    )}
+
+    {/* Search Input */}
+    {searchable && (
+      <div className="p-3 border-b border-white/5 bg-white/2">
+        <div className="relative flex items-center">
+          <Search size={14} className="absolute left-3 text-slate-500" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Typing to suggest..."
+            className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/30 transition-all focus:outline-none"
+            // prevent the input click from bubbling up to the trigger toggle
+            onClick={(e) => e.stopPropagation()}
+            // prevent mousedown from triggering the outside-click handler
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+        </div>
+      </div>
+    )}
 
     {/* Options List */}
     <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10" role="listbox">
@@ -206,6 +225,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   className = '',
   icon: LeadingIcon,
   onCreate,
+  searchable = true,
+  isScrapedSource = false,
+  size = 'md',
+  disabled = false,
 }) => {
   const reduced = useReducedMotion();
   const [isOpen, setIsOpen] = useState(false);
@@ -220,9 +243,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const selectedOption = useMemo(() => sortedOptions.find(o => o.value === value), [sortedOptions, value]);
 
   const showCreateOption = useMemo(() => {
-    if (!onCreate || !search.trim()) return false;
+    if (isScrapedSource || !onCreate || !search.trim()) return false;
     return !sortedOptions.some(opt => opt.label.toLowerCase() === search.trim().toLowerCase());
-  }, [sortedOptions, search, onCreate]);
+  }, [sortedOptions, search, onCreate, isScrapedSource]);
 
   const filteredOptions = useMemo(() => {
     if (!search) return sortedOptions;
@@ -256,6 +279,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
     if (!isOpen) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') setIsOpen(true);
       return;
@@ -282,9 +306,16 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   };
 
+  const sizeClasses = size === 'sm' 
+    ? 'px-2.5 py-1.5 text-xs rounded-lg' 
+    : size === 'lg' 
+    ? 'px-4 py-3 text-sm rounded-2xl' 
+    : 'px-3 py-2 text-xs rounded-xl';
+
   const contentProps: DropdownContentProps = {
     inputRef, search, setSearch, filteredOptions, showCreateOption,
     activeIndex, setActiveIndex, value, onChange, setIsOpen, onCreate,
+    searchable, isScrapedSource,
   };
 
   return (
@@ -292,30 +323,32 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       {/* Trigger button */}
       <div
         onClick={(e) => {
+          if (disabled) return;
           e.stopPropagation();
           setIsOpen(!isOpen);
-          if (!isOpen) setTimeout(() => inputRef.current?.focus(), 50);
+          if (!isOpen && searchable) setTimeout(() => inputRef.current?.focus(), 50);
         }}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        className={`flex items-center gap-3 px-4 py-3 bg-black/40 border rounded-xl cursor-pointer transition-all duration-300 group ${
+        className={`flex items-center gap-2.5 bg-black/40 border cursor-pointer transition-all duration-300 group ${sizeClasses} ${
+          disabled ? 'opacity-50 cursor-not-allowed border-white/5 bg-black/20' :
           isOpen ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-white/10 hover:border-white/20'
         }`}
       >
-        <div className="flex-1 flex items-center gap-3 overflow-hidden">
-          {selectedOption?.icon || LeadingIcon || <Search size={16} className="text-slate-500 group-hover:text-amber-500/50 transition-colors" />}
+        <div className="flex-1 flex items-center gap-2.5 overflow-hidden">
+          {selectedOption?.icon || LeadingIcon || (searchable ? <Search size={size === 'sm' ? 12 : 14} className="text-slate-500 group-hover:text-amber-500/50 transition-colors shrink-0" /> : null)}
           <div className="flex flex-col overflow-hidden">
-            <span className={`text-sm tracking-tight truncate ${selectedOption ? 'text-white font-medium' : 'text-slate-500'}`}>
+            <span className={`tracking-tight truncate ${selectedOption ? 'text-white font-medium' : 'text-slate-500'} ${size === 'sm' ? 'text-xs' : 'text-sm'}`}>
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             {selectedOption?.metadata?.subtext && (
-              <span className="text-[12px] text-slate-500 font-black tracking-widest truncate">
+              <span className="text-[10px] text-slate-500 font-bold tracking-widest truncate">
                 {selectedOption.metadata.subtext}
               </span>
             )}
           </div>
         </div>
-        <ChevronDown size={16} className={`text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={size === 'sm' ? 12 : 14} className={`text-slate-500 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       {/* Portal dropdown — escapes all ancestor stacking contexts */}

@@ -207,6 +207,7 @@ app.use('*', async (c, next) => {
 import { offloadToFoundation } from './utils/foundation';
 
 // 3. Mount Backend API
+app.route('/api', apiApp);
 app.route('/', apiApp);
 
 // 4. API Shield
@@ -215,17 +216,21 @@ app.all('/api/*', (c) => {
 })
 
 // 8. React Router v8 Fullstack SSR
+import { createRequestHandler } from 'react-router';
 
-import { createRequestHandler, RouterContextProvider } from 'react-router';
-// @ts-ignore
-import * as build from '../../build/server';
+// @ts-ignore — virtual module provided by @react-router/dev/vite
+const reactRouterHandler = createRequestHandler(
+  () => import('virtual:react-router/server-build'),
+  (import.meta.env as any).MODE,
+);
 
 app.all("*", async (c) => {
-  const path = c.req.path;
+  const url = new URL(c.req.url);
+  const path = url.pathname;
   const nonce = c.get('cspNonce');
 
   if (path.startsWith('/api/') || path.startsWith('/auth/')) {
-    return c.json({ error: 'Not Found', path }, 404);
+    return c.json({ error: 'Endpoint Not Found', path }, 404);
   }
 
   // 🖼️ Serve static assets directly from Cloudflare ASSETS binding
@@ -234,71 +239,40 @@ app.all("*", async (c) => {
     path === '/favicon.png' || 
     path === '/apple-touch-icon.png' || 
     path === '/manifest.json' || 
+    path === '/robots.txt' || 
+    path === '/sw.js' ||
     path.startsWith('/icons/') || 
     path.startsWith('/assets/') ||
-    path.startsWith('/brand/')
+    path.startsWith('/brand/') ||
+    /\.(png|jpg|jpeg|gif|svg|webp|ico|css|js|woff2?|ttf|eot|json|map)$/i.test(path)
   ) {
-    try {
-      if (c.env.ASSETS && typeof c.env.ASSETS.fetch === 'function') {
-        const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
-        if (assetRes && assetRes.status < 400) {
-          const headers = new Headers(assetRes.headers);
-          if (path.endsWith('.css')) headers.set('Content-Type', 'text/css; charset=utf-8');
-          else if (path.endsWith('.js')) headers.set('Content-Type', 'application/javascript; charset=utf-8');
-          else if (path.endsWith('.json')) headers.set('Content-Type', 'application/json; charset=utf-8');
-          else if (path.endsWith('.png')) headers.set('Content-Type', 'image/png');
-          else if (path.endsWith('.svg')) headers.set('Content-Type', 'image/svg+xml');
-          else if (path.endsWith('.ico')) headers.set('Content-Type', 'image/x-icon');
-          return new Response(assetRes.body, {
-            status: assetRes.status,
-            statusText: assetRes.statusText,
-            headers,
-          });
+    if (c.env.ASSETS && typeof c.env.ASSETS.fetch === 'function') {
+      try {
+        const assetRes = await c.env.ASSETS.fetch(c.req.raw as any);
+        if (assetRes.status !== 404) {
+          return assetRes;
         }
+      } catch (e) {
+        console.warn('[Assets Fetch] Error retrieving static asset:', path, e);
       }
-    } catch (e) {
-      console.warn('[Assets Fetch] Error retrieving static asset:', path, e);
     }
-    return c.text('Asset Not Found', 404);
+    if (/\.(png|jpg|jpeg|gif|svg|webp|ico|css|js|woff2?|ttf|eot|map)$/i.test(path) || path === '/manifest.json' || path === '/robots.txt') {
+      return c.text('Asset Not Found', 404);
+    }
   }
 
   try {
-    const buildObj = build;
-    if (!buildObj || !(buildObj as any).routes) {
-      const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
-      return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
-    }
-
-    // @ts-ignore
-    const handler = createRequestHandler(buildObj);
-
-    const loadContext = Object.assign(new RouterContextProvider(), {
-      cloudflare: {
-        env: c.env,
-        ctx: c.executionCtx,
-        cf: (c.req.raw as any).cf || {},
-      },
-      env: c.env,
-      ctx: c.executionCtx,
-    });
-
-    let res: Response;
-    try {
-      res = await handler(c.req.raw, loadContext);
-    } catch (handlerErr: any) {
-      console.warn('[React Router SSR Fallback] SSR handler encountered error, falling back to static asset delivery:', handlerErr.message);
-      const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
-      return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
-    }
+    const res = await reactRouterHandler(c.req.raw, undefined);
     return injectCSPNonce(res, nonce);
   } catch (error: any) {
-    console.error('React Router SSR Error:', error);
-    try {
-      const assetRes = (await c.env.ASSETS.fetch(c.req.raw as any) as any);
-      return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
-    } catch {
-      return c.text('Internal Server Error', 500);
+    console.warn('[SSR] React Router handler fallback:', error?.message ?? error);
+    if (c.env.ASSETS && typeof c.env.ASSETS.fetch === 'function') {
+      try {
+        const assetRes = await c.env.ASSETS.fetch(c.req.raw as any);
+        return injectCSPNonce(new Response(assetRes.body as any, assetRes as any), nonce);
+      } catch { /* ignore */ }
     }
+    return c.text('Internal Server Error', 500);
   }
 });
 

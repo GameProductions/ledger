@@ -60,7 +60,18 @@ app.use('*', async (c, next) => {
   const path = c.req.path
   
   // 1. Public Path Bypass (Skip complex logic for non-API and public routes)
-  if (path === '/api/fleet/status' || AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))) {
+  if (
+    path === '/api/fleet/status' || 
+    path.startsWith('/assets/') ||
+    path.startsWith('/icons/') ||
+    path.startsWith('/brand/') ||
+    path === '/favicon.ico' ||
+    path === '/favicon.png' ||
+    path === '/apple-touch-icon.png' ||
+    path === '/manifest.json' ||
+    path === '/sw.js' ||
+    AUTH_EXCLUSIONS.some(ex => path === ex || (ex !== '/' && path.startsWith(ex)))
+  ) {
     return await next()
   }
 

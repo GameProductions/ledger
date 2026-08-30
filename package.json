@@ -1,11 +1,11 @@
 {
   "name": "ledger",
   "private": true,
-  "version": "3.172.4",
+  "version": "3.172.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "react-router build",
+    "build": "react-router build && cp -R public/* build/client/ 2>/dev/null || true",
     "lint": "eslint .",
     "test": "vitest",
     "deploy": "wrangler deploy",

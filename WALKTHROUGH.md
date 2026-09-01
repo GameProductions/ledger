@@ -6,8 +6,8 @@ LEDGER is a full-stack financial management platform built on Cloudflare Workers
 
 ### Database Schema (PostgreSQL)
 - **Auth**: Users, sessions, passkeys, identity linking
-- **Financials**: Accounts, categories, transactions, bills, subscriptions, credit cards, installment plans, charge descriptors, payment methods, linked accounts
-- **Planning**: Pay schedules, pay exceptions, tracked expenses
+- **Financials**: Accounts, categories, transactions, bills, subscriptions, credit cards, installment plans, charge descriptors, payment methods, linked accounts, confirmation number categories, confirmation number lifecycle logs
+- **Planning**: Pay schedules, pay exceptions, tracked expenses, confirmation numbers
 - **Loans**: Personal loans, lending relationships
 - **System**: Service providers, feature flags, activity logs, configuration
 

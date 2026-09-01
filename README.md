@@ -26,6 +26,7 @@
 - **Payment Orchestrator**: Granular status tracking (Paid, Pending, Scheduled, Unpaid) with high-fidelity color coding.
 - **Transaction Timeline**: Chronological history of every note, confirmation number, and status change.
 - **Multi-Note Support**: Persistent, append-only notes for every financial record.
+- **Confirmation Number Management**: Multi-instance confirmation numbers per transaction/expense with categorized tracking, lifecycle logging, and legacy migration support. Maximum 5 confirmation numbers per record.
 - **Bill Forecasting**: Rolling 30-day and "Until Payday" projections.
 - **Universal Currency Engine**: Per-user currency preferences (USD, EUR, GBP) and platform-wide defaults.
 

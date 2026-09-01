@@ -42,8 +42,16 @@ The Payment Orchestrator gives you control over your transaction lifecycle:
 
 ### Receipt, Confirmation & Currency Management
 - **Receipts**: Attach digital receipts (PDF, PNG, JPG) using the paperclip icon.
-- **Confirmation Numbers**: Store and edit transaction confirmation numbers directly in the dashboard.
+- **Confirmation Numbers**: Store and edit transaction confirmation numbers directly in the dashboard. Each confirmation number can have a category (authorization, balance_transfer, confirmation, invoice, order, payment, po, receipt, reference, tracking) or a custom household category.
 - **Currency Input Fields**: Currency inputs place decimal points at `.xx` and shift digits from right to left as you type, making data entry fast on both mobile and desktop.
+
+### 5. Confirmation Number Management
+- **Add Confirmation Numbers**: In any transaction or tracked expense detail view, add multiple confirmation numbers using the confirmation number manager.
+- **Categories**: Confirmation numbers are organized by category. System defaults include: authorization, balance_transfer, confirmation, invoice, order, payment, po, receipt, reference, tracking. Households can also create custom categories.
+- **Legacy Migration**: Existing single confirmation numbers are automatically converted to the new multi-instance format with category='confirmation' and a temporary 'Legacy' category for recategorization.
+- **Maximum 5 confirmation numbers** per transaction or tracked expense.
+- **Lifecycle Logging**: Every addition, edit, or deletion of confirmation numbers is logged with a complete audit trail including who made the change, when, and what values were changed.
+- **Search & Filter**: Filter confirmation numbers by category, value, or primary status using SearchableSelect dropdowns.
 
 ### Full Transaction Ledger CRUD
 - **Direct Management**: Full creation, editing, and deletion (single and bulk) access from the Transaction Ledger view.

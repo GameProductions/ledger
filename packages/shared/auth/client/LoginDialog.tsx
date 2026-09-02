@@ -493,7 +493,7 @@ export function LoginDialog({
     setShowSecurityKeyTroubleshooter(false)
     setPasskeyLoading(true)
     try {
-      const optRes = await fetch('/api/auth/passkeys/generate-authentication', { method: 'POST' })
+      const optRes = await fetch('/api/auth/passkeys/login/options', { method: 'POST' })
       if (!optRes.ok) {
         const errJson: any = await optRes.json()
         throw new Error(errJson.error || 'Failed to start passkey login')

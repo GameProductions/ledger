@@ -23,17 +23,38 @@ import { eq, or, and, isNull, desc } from 'drizzle-orm'
 
 const auth = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
-// Zero-Trust Identity Verification (Phase 3 Audit)
-auth.get('/verify', (c) => {
-  return c.json({
-    success: true,
-    data: {
-      userId: c.get('userId'),
-      householdId: c.get('householdId'),
-      globalRole: c.get('globalRole') || 'user',
-      isImpersonating: !!c.get('isImpersonating')
+// --- Reverse Proxy / Forward Auth Detection ---
+// Allows login page to detect if user is already authenticated via reverse proxy (Authelia, etc.)
+auth.get('/proxy-user', async (c) => {
+  // Check for common reverse proxy headers
+  const proxyUser = c.req.header('x-forwarded-user') 
+    || c.req.header('x-auth-request-user')
+    || c.req.header('remote-user')
+    || c.req.header('x-webauth-user')
+
+  if (proxyUser) {
+    return c.json({ success: true, username: proxyUser })
+  }
+  
+  // Also check if there's a valid session cookie that could identify the user
+  // This is a lightweight check that doesn't require full auth middleware
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '')
+      const jwtSecret = c.env.JWT_SECRET
+      if (jwtSecret) {
+        const payload = await jwtVerify(token, jwtSecret, 'HS256') as any
+        if (payload && payload.sub) {
+          // User has a valid token, but we don't know their username without DB lookup
+          // For now, return that they're authenticated but we don't have the username
+          return c.json({ success: true, username: 'authenticated' })
+        }
+      }
     }
-  })
+  } catch {}
+
+  return c.json({ success: false })
 })
 
 

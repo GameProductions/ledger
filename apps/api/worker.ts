@@ -230,8 +230,17 @@ app.all("*", async (c) => {
   const path = url.pathname;
   const nonce = c.get('cspNonce');
 
+  // Known SPA routes - anything else returns 404 to avoid SSR errors on scanner paths
+  const knownRoutes = ['/', '/login', '/directory', '/settings', '/planning', '/reports', '/admin'];
+  const isKnownRoute = knownRoutes.some(r => path === r || path.startsWith(r + '/'));
+
   if (path.startsWith('/api/') || path.startsWith('/auth/')) {
     return c.json({ error: 'Endpoint Not Found', path }, 404);
+  }
+
+  // Return 404 for unknown routes (scanners, bots) instead of SSR error
+  if (!isKnownRoute && !path.startsWith('/sw.js')) {
+    return c.text('Not Found', 404);
   }
 
   // 🖼️ Serve static assets directly from Cloudflare ASSETS binding

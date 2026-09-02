@@ -187,7 +187,7 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     
     await next()
   } catch (e: any) {
-    console.error('[Auth Error]', e.message)
+    if (e.status && e.status >= 500) console.error('[Auth Error]', e.message)
     throw new HTTPException(e.status || 401, { message: e.message || 'Unauthorized' })
   }
 }

@@ -49,6 +49,8 @@ export const AUTH_EXCLUSIONS = [
   '/api/auth/callback/onedrive',
   '/api/auth/passkeys/login/options',
   '/api/auth/passkeys/login/verify',
+  '/api/auth/passkeys/generate-authentication',
+  '/api/auth/proxy-user',
   '/api/auth/password/reset-request',
   '/api/auth/password/reset',
   '/api/auth/admin/claim',

@@ -35,6 +35,13 @@ export function LoginDialog({
   mode = 'login',
   reauthActionName = 'proceed with this action'
 }: LoginDialogProps) {
+  const getErrorMessage = (err: unknown, fallback: string): string => {
+    if (typeof err === 'string') return err
+    if (err && typeof err === 'object' && 'message' in err) return String((err as Error).message)
+    if (err && typeof err === 'object' && 'error' in err) return getErrorMessage((err as any).error, fallback)
+    return fallback
+  }
+
   const [tab, setTab] = useState<'sso' | 'passkey' | 'password' | 'otp' | 'companion'>('sso')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -346,7 +353,7 @@ export function LoginDialog({
         if (onSuccess) onSuccess()
         window.location.href = '/directory'
       } else {
-        setError(data.error || 'Invalid authentication code or recovery key.')
+        setError(getErrorMessage(data.error, 'Invalid authentication code or recovery key.'))
       }
     } catch {
       setError('Connection error during MFA verification.')
@@ -381,7 +388,7 @@ export function LoginDialog({
         setPassword(setupAdminPassword)
         setTab('password')
       } else {
-        setError(data.error || 'Failed to initialize administrator account.')
+        setError(getErrorMessage(data.error, 'Failed to initialize administrator account.'))
       }
     } catch {
       setError('Connection error during initial system initialization.')
@@ -518,7 +525,7 @@ export function LoginDialog({
       if (err.name === 'NotAllowedError' || (err.message && err.message.toLowerCase().includes('cancel'))) {
         setShowSecurityKeyTroubleshooter(true)
       }
-      setError(err.message || 'Passkey authentication failed.')
+      setError(getErrorMessage(err, 'Passkey authentication failed.'))
     } finally {
       setPasskeyLoading(false)
     }
@@ -566,7 +573,7 @@ export function LoginDialog({
           const backoff = Math.min(60, Math.pow(2, nextAttempts - 2) * 5)
           setRateLimitSeconds(backoff)
         }
-        setError(data.error || 'Login failed.')
+        setError(getErrorMessage(data.error, 'Login failed.'))
       }
     } catch {
       setError('Connection error.')
@@ -592,7 +599,7 @@ export function LoginDialog({
         setOtpSent(true)
         setOtpCountdown(60)
       } else {
-        setError(data.error || 'Failed to send one-time authentication code.')
+        setError(getErrorMessage(data.error, 'Failed to send one-time authentication code.'))
       }
     } catch {
       setError('Network error while requesting one-time code.')
@@ -632,7 +639,7 @@ export function LoginDialog({
         }
         window.location.href = '/directory'
       } else {
-        setError(data.error || 'Invalid or expired one-time code.')
+        setError(getErrorMessage(data.error, 'Invalid or expired one-time code.'))
       }
     } catch {
       setError('Connection error during one-time code verification.')
@@ -793,7 +800,7 @@ export function LoginDialog({
         {error && (
           <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-2.5 text-xs text-rose-300">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>{error}</span>
+            <span>{typeof error === 'string' ? error : (error as any)?.message || String(error)}</span>
           </div>
         )}
 

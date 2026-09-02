@@ -371,7 +371,7 @@ export const LegacyExpenseTrackerImport: React.FC<Props> = ({ scope, onImportCom
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm">
             <AlertCircle size={18} className="shrink-0" />
-            <p>{error}</p>
+            <p>{typeof error === 'string' ? error : (error as any)?.message || String(error)}</p>
           </div>
         )}
 

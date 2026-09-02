@@ -729,7 +729,7 @@ const CreateUserModal: React.FC<{ isOpen: boolean; onClose: () => void; onSucces
                 <label onClick={() => setFormData({ ...formData, forcePasswordChange: !formData.forcePasswordChange })} className="text-xs text-slate-500 font-bold tracking-widest cursor-pointer select-none">Require Password Change on First Login</label>
               </div>
 
-              {error && <p className="text-red-500 text-xs font-black text-center tracking-widest">{error}</p>}
+              {error && <p className="text-red-500 text-xs font-black text-center tracking-widest">{typeof error === 'string' ? error : (error as any)?.message || String(error)}</p>}
 
               <div className="pt-4 flex gap-4">
                  <button 

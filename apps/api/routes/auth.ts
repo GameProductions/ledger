@@ -139,6 +139,16 @@ auth.post('/login', zValidator('json', z.object({
     const token = (await authService.generateToken(user.id, sessionId) as any)
     
     await logAudit(c, 'users', user.id, 'login', null, { strategy: 'password' })
+
+    // Set session cookie for SSR auth check
+    await setSignedCookie(c, 'foundation_session', sessionId, c.env.JWT_SECRET, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: persistent ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days or 24 hours
+    })
+
     return c.json({ 
       success: true,
       data: {

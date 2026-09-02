@@ -208,7 +208,7 @@ export function LoginDialog({
         if (window.PublicKeyCredential.isConditionalMediationAvailable) {
           const isAvailable = await window.PublicKeyCredential.isConditionalMediationAvailable()
           if (isAvailable && active) {
-            const optRes = await fetch('/api/auth/passkeys/generate-authentication', { method: 'POST' })
+            const optRes = await fetch('/api/auth/passkeys/login/options', { method: 'POST' })
             if (!optRes.ok) return
             const { options, challengeId }: any = await optRes.json()
             if (!active) return

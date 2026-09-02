@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useApi, globalMutate } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
@@ -237,6 +237,17 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
     return list.sort((a, b) => a.label.localeCompare(b.label))
   }, [subscriptions, bills, members, user?.id])
+
+  const memberOptions: SearchableOption[] = useMemo(() => {
+    return otherMembers.map((m: any) => ({
+      value: m.user?.id || m.id,
+      label: m.displayName || m.user?.displayName || m.user?.username || m.email || 'Unknown Member'
+    }))
+  }, [otherMembers])
+
+  const lenderOptions: SearchableOption[] = useMemo(() => {
+    return customLenders.map(l => ({ value: l, label: l }))
+  }, [customLenders])
 
   return (
     <div className="card mb-6 border-l-4 border-l-orange-500 overflow-hidden relative">

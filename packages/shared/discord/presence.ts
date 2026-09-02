@@ -43,7 +43,7 @@ export interface PresencePayload {
 export function createFleetPresence(
   appName: string, 
   activity: string, 
-  type: ActivityType = ActivityType.Playing, 
+  type: ActivityType = ActivityType.Game, 
   status: StatusType = 'online'
 ): PresencePayload {
   return {

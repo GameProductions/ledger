@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import { Modal } from './ui/Modal'
 import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder'
-import { SearchableSelect } from './ui/SearchableSelect'
+import { SearchableSelect, SearchableOption } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { QuickAttentionAdd } from './QuickAttentionAdd'

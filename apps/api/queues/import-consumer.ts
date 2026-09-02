@@ -6,7 +6,7 @@
 
 import { Bindings } from '../types';
 import { getDb } from '#/index';
-import { transactions, accountAllocations, categories, accounts, serviceProviders } from '#/schema';
+import { transactions, categories, accounts, serviceProviders } from '#/schema';
 import { eq } from 'drizzle-orm';
 
 export interface ImportTaskPayload {

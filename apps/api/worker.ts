@@ -220,6 +220,7 @@ import { createRequestHandler } from 'react-router';
 
 // @ts-ignore — virtual module provided by @react-router/dev/vite
 const reactRouterHandler = createRequestHandler(
+  // @ts-ignore — virtual module
   () => import('virtual:react-router/server-build'),
   (import.meta.env as any).MODE,
 );

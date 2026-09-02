@@ -27,7 +27,7 @@ export async function verifyDiscordWebhook(
 
     const key = await crypto.subtle.importKey(
       'raw',
-      publicKeyBytes,
+      publicKeyBytes.buffer.slice(publicKeyBytes.byteOffset, publicKeyBytes.byteOffset + publicKeyBytes.byteLength) as ArrayBuffer,
       { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' },
       false,
       ['verify']
@@ -36,7 +36,7 @@ export async function verifyDiscordWebhook(
     return await crypto.subtle.verify(
       'NODE-ED25519',
       key,
-      signatureBytes,
+      signatureBytes.buffer.slice(signatureBytes.byteOffset, signatureBytes.byteOffset + signatureBytes.byteLength) as ArrayBuffer,
       message
     );
   } catch (err) {
@@ -49,7 +49,7 @@ export async function verifyDiscordWebhook(
 
       const key = await crypto.subtle.importKey(
         'raw',
-        publicKeyBytes,
+        publicKeyBytes.buffer.slice(publicKeyBytes.byteOffset, publicKeyBytes.byteOffset + publicKeyBytes.byteLength) as ArrayBuffer,
         { name: 'Ed25519' },
         false,
         ['verify']
@@ -58,7 +58,7 @@ export async function verifyDiscordWebhook(
       return await crypto.subtle.verify(
         'Ed25519',
         key,
-        signatureBytes,
+        signatureBytes.buffer.slice(signatureBytes.byteOffset, signatureBytes.byteOffset + signatureBytes.byteLength) as ArrayBuffer,
         message
       );
     } catch {

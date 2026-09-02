@@ -91,9 +91,9 @@ export async function createSessionTracker(c: any, userId: string, passkeyVerifi
 // Since logAudit is in index.ts, we might need to pass it or move it to a utility
 
 auth.post('/login', zValidator('json', z.object({
-  username: z.string().min(1),
+  identifier: z.string().min(1),
   password: z.string().min(1),
-  recoveryCode: z.string().optional(), // Rename totpCode to recoveryCode for backup code support
+  recoveryCode: z.string().optional(),
   persistent: z.boolean().optional()
 }), (result, c) => {
   if (!result.success) {
@@ -105,12 +105,12 @@ auth.post('/login', zValidator('json', z.object({
     return c.json({ success: false, error: result.error }, 400)
   }
 }), async (c) => {
-  const { username, password, recoveryCode, persistent } = c.req.valid('json')
+  const { identifier, password, recoveryCode, persistent } = c.req.valid('json')
   const authService = new AuthService(c.env)
   
   try {
     const metadata = getRequestMetadata(c)
-    const user = (await authService.validateCredentials(username, password) as any)
+    const user = (await authService.validateCredentials(identifier, password) as any)
     
     // Step-Up is handled via the separate WebAuthn flow now
 

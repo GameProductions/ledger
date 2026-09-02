@@ -81,7 +81,7 @@ jobs:
         with:
           apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --config wrangler.jsonc --minify
+          command: deploy --config wrangler.production.jsonc --minify
           secrets: |
             ENCRYPTION_KEY
             SHARED_SERVICE_SECRET

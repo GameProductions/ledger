@@ -650,11 +650,9 @@ export function LoginDialog({
 
   const renderPersistenceSelector = () => (
     <div className="p-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center justify-between mt-4">
-      <div className="space-y-0.5">
-        <span className="text-[11px] font-bold text-slate-200 block">
-          {persistent ? 'Stay signed in for 30 days (Standard)' : 'Expire in 24 hours (Shared / Untrusted device)'}
-        </span>
-      </div>
+      <span className="text-[11px] font-bold text-slate-200 leading-5">
+        {persistent ? 'Stay signed in for 30 days (Standard)' : 'Expire in 24 hours (Shared / Untrusted device)'}
+      </span>
       <label className="relative inline-flex items-center cursor-pointer">
         <input
           type="checkbox"
@@ -662,7 +660,7 @@ export function LoginDialog({
           onChange={(e) => setPersistent(e.target.checked)}
           className="sr-only peer"
         />
-        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1/2 after:left-[2px] -translate-y-1/2 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
       </label>
     </div>
   )

@@ -230,17 +230,15 @@ app.all("*", async (c) => {
   const path = url.pathname;
   const nonce = c.get('cspNonce');
 
-  // Known SPA routes - anything else returns 404 to avoid SSR errors on scanner paths
-  const knownRoutes = ['/', '/login', '/directory', '/settings', '/planning', '/reports', '/admin'];
-  const isKnownRoute = knownRoutes.some(r => path === r || path.startsWith(r + '/'));
+  // Hash-based routes - redirect to hash versions (this app uses hash-based routing)
+  const hashRoutes = ['/directory', '/settings', '/planning', '/reports', '/admin', '/payments', '/data', '/loans', '/investments', '/manage', '/subscriptions', '/reconcile', '/backup', '/help'];
+  if (hashRoutes.includes(path) || hashRoutes.some(r => path.startsWith(r + '/'))) {
+    return c.redirect(`/#${path}`, 302);
+  }
 
-  // Protected routes that need auth - if no session, serve login page instead of SSR
-  const protectedRoutes = ['/directory', '/settings', '/planning', '/reports', '/admin'];
-  const isProtectedRoute = protectedRoutes.some(r => path === r || path.startsWith(r + '/'));
-  
-  // Quick check for session cookie/header to avoid SSR crash on protected routes
-  const hasSession = c.req.header('Cookie')?.includes('foundation_session=') 
-    || c.req.header('Authorization')?.startsWith('Bearer ');
+  // Known SPA routes for SSR (only / and /login)
+  const knownRoutes = ['/', '/login'];
+  const isKnownRoute = knownRoutes.some(r => path === r || path.startsWith(r + '/'));
 
   if (path.startsWith('/api/') || path.startsWith('/auth/')) {
     return c.json({ error: 'Endpoint Not Found', path }, 404);
@@ -249,23 +247,6 @@ app.all("*", async (c) => {
   // Return 404 for unknown routes (scanners, bots) instead of SSR error
   if (!isKnownRoute && !path.startsWith('/sw.js')) {
     return c.text('Not Found', 404);
-  }
-
-  // For protected routes without session, serve login page HTML instead of crashing SSR
-  if (isProtectedRoute && !hasSession) {
-    if (c.env.ASSETS && typeof c.env.ASSETS.fetch === 'function') {
-      try {
-        const loginRes = await c.env.ASSETS.fetch(new Request(url.origin + '/login'));
-        if (loginRes.status !== 404) {
-          return injectCSPNonce(new Response(loginRes.body, {
-            status: 200,
-            headers: { ...loginRes.headers, 'Content-Type': 'text/html' }
-          }), nonce);
-        }
-      } catch {}
-    }
-    // Fallback to login redirect
-    return c.redirect('/login', 302);
   }
 
   // 🖼️ Serve static assets directly from Cloudflare ASSETS binding

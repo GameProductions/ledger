@@ -216,10 +216,10 @@ export function LoginDialog({
             const authResp = await startAuthentication({ optionsJSON: options, useBrowserAutofill: true })
             if (!active) return
 
-            const verifyRes = await fetch(`/api/auth/passkeys/verify-authentication?challengeId=${encodeURIComponent(challengeId || '')}`, {
+            const verifyRes = await fetch('/api/auth/passkeys/login/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...authResp, challengeId })
+              body: JSON.stringify({ assertion: authResp, persistent })
             })
             const verifyData: any = await verifyRes.json()
             if (verifyData.success) {
@@ -498,13 +498,13 @@ export function LoginDialog({
         const errJson: any = await optRes.json()
         throw new Error(errJson.error || 'Failed to start passkey login')
       }
-      const { options, challengeId }: any = await optRes.json()
+      const { options }: any = await optRes.json()
 
       const authResp = await startAuthentication({ optionsJSON: options })
-      const verifyRes = await fetch(`/api/auth/passkeys/verify-authentication?challengeId=${encodeURIComponent(challengeId || '')}`, {
+      const verifyRes = await fetch('/api/auth/passkeys/login/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...authResp, challengeId })
+        body: JSON.stringify({ assertion: authResp, persistent })
       })
 
       const verifyData: any = await verifyRes.json()

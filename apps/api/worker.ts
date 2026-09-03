@@ -233,7 +233,8 @@ app.all("*", async (c) => {
   // Hash-based routes - redirect to hash versions (this app uses hash-based routing)
   const hashRoutes = ['/directory', '/settings', '/planning', '/reports', '/admin', '/payments', '/data', '/loans', '/investments', '/manage', '/subscriptions', '/reconcile', '/backup', '/help'];
   if (hashRoutes.includes(path) || hashRoutes.some(r => path.startsWith(r + '/'))) {
-    return c.redirect(`/#${path}`, 302);
+    const target = path === '/directory' ? '/' : `/#${path}`;
+    return c.redirect(target, 302);
   }
 
   // Known SPA routes for SSR (only / and /login)

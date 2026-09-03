@@ -231,10 +231,61 @@ app.all("*", async (c) => {
   const nonce = c.get('cspNonce');
 
   // Hash-based routes - redirect to hash versions (this app uses hash-based routing)
-  const hashRoutes = ['/directory', '/settings', '/planning', '/reports', '/admin', '/payments', '/data', '/loans', '/investments', '/manage', '/subscriptions', '/reconcile', '/backup', '/help'];
-  if (hashRoutes.includes(path) || hashRoutes.some(r => path.startsWith(r + '/'))) {
-    const target = path === '/directory' ? '/' : `/#${path}`;
-    return c.redirect(target, 302);
+  const hashRoutes: Record<string, string> = {
+    '/settings': '/#/settings',
+    '/reports': '/#/reports',
+    '/payments': '/#/payments',
+    '/data': '/#/data',
+    '/loans': '/#/loans',
+    '/investments': '/#/investments',
+    '/manage': '/#/manage',
+    '/subscriptions': '/#/subscriptions',
+    '/reconcile': '/#/reconcile',
+    '/backup': '/#/backup',
+    '/help': '/#/help',
+    '/admin': '/#/admin/dashboard',
+    '/admin/dashboard': '/#/admin/dashboard',
+    '/admin/config': '/#/admin/config',
+    '/admin/registry': '/#/admin/registry',
+    '/admin/users': '/#/admin/users',
+    '/admin/households': '/#/admin/households',
+    '/admin/search': '/#/admin/search',
+    '/admin/providers': '/#/admin/providers',
+    '/admin/processors': '/#/admin/processors',
+    '/admin/guide': '/#/admin/guide',
+    '/admin/entity-manager': '/#/admin/entity-manager',
+    '/preferences': '/#/preferences',
+    '/payments': '/#/payments',
+    '/data': '/#/data',
+    '/loans': '/#/loans',
+    '/investments': '/#/investments',
+    '/manage': '/#/manage',
+    '/subscriptions': '/#/subscriptions',
+    '/reconcile': '/#/reconcile',
+    '/backup': '/#/backup',
+    '/help': '/#/help',
+    '/help/guides': '/#/help/guides',
+    '/help/faq': '/#/help/faq',
+    '/help/support': '/#/help/support',
+    '/help/tours': '/#/help/tours',
+  };
+
+  // Check exact match first
+  if (hashRoutes[path]) {
+    return c.redirect(hashRoutes[path], 302);
+  }
+
+  // Check prefix matches for nested routes
+  for (const [route, target] of Object.entries(hashRoutes)) {
+    if (path.startsWith(route + '/')) {
+      const suffix = path.slice(route.length);
+      return c.redirect(target + suffix, 302);
+    }
+  }
+
+  // /directory doesn't exist - redirect to dashboard
+  if (path === '/directory') {
+    return c.redirect('/', 302);
   }
 
   // Known SPA routes for SSR (only / and /login)

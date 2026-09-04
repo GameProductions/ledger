@@ -1114,7 +1114,7 @@ auth.delete('/passkeys/:id', async (c) => {
 // Redundant route removed
 
 
-auth.post('/passkeys/login/options', async (c) => {
+const handlePasskeyLoginOptions = async (c: any) => {
   const options = (await generateAuthenticationOptions({
       rpID: getRpID(c),
       allowCredentials: [], // Allow any credential for this RP
@@ -1129,15 +1129,21 @@ auth.post('/passkeys/login/options', async (c) => {
     maxAge: 300,
   })
 
-  return c.json({ success: true, data: options })
-})
+  // Return both top-level and nested structure so all clients succeed seamlessly
+  return c.json({ success: true, data: options, options, challengeId: options.challenge })
+}
 
-auth.post('/passkeys/login/verify', zValidator('json', z.object({
-  assertion: z.any(),
-  persistent: z.boolean().optional()
-})), async (c) => {
-  const { assertion, persistent } = c.req.valid('json')
-  const expectedChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
+auth.post('/passkeys/login/options', handlePasskeyLoginOptions)
+auth.post('/passkeys/login-options', handlePasskeyLoginOptions)
+auth.post('/passkeys/generate-authentication', handlePasskeyLoginOptions)
+
+const handlePasskeyLoginVerify = async (c: any) => {
+  const body = await c.req.json().catch(() => ({}))
+  const assertion = body.assertion || body
+  const persistent = body.persistent
+  const challengeId = c.req.query('challengeId') || body.challengeId
+  const cookieChallenge = (await getSignedCookie(c, c.env.JWT_SECRET, 'webauthn_challenge') as any)
+  const expectedChallenge = cookieChallenge || challengeId
 
   if (!expectedChallenge) {
     console.warn('[WebAuthn/Login] Challenge cookie missing or expired')
@@ -1220,8 +1226,12 @@ auth.post('/passkeys/login/verify', zValidator('json', z.object({
     console.error('[WebAuthn/Login] Audit log failed (non-fatal):', e.message)
   }
   
-  return c.json({ success: true, data: { token } })
-})
+  return c.json({ success: true, data: { token }, token, sessionToken: token, sessionId })
+}
+
+auth.post('/passkeys/login/verify', handlePasskeyLoginVerify)
+auth.post('/passkeys/login-verify', handlePasskeyLoginVerify)
+auth.post('/passkeys/verify-authentication', handlePasskeyLoginVerify)
 
 auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   assertion: z.any()

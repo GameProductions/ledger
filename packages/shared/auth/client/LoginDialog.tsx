@@ -18,6 +18,8 @@ interface LoginDialogProps {
   allowFirstUserSetup?: boolean
   mode?: 'login' | 'reauth'
   reauthActionName?: string
+  defaultRedirectUri?: string
+  governanceNotice?: string
 }
 
 export function LoginDialog({
@@ -33,15 +35,10 @@ export function LoginDialog({
   onClose,
   allowFirstUserSetup = false,
   mode = 'login',
-  reauthActionName = 'proceed with this action'
+  reauthActionName = 'proceed with this action',
+  defaultRedirectUri,
+  governanceNotice,
 }: LoginDialogProps) {
-  const getErrorMessage = (err: unknown, fallback: string): string => {
-    if (typeof err === 'string') return err
-    if (err && typeof err === 'object' && 'message' in err) return String((err as Error).message)
-    if (err && typeof err === 'object' && 'error' in err) return getErrorMessage((err as any).error, fallback)
-    return fallback
-  }
-
   const [tab, setTab] = useState<'sso' | 'passkey' | 'password' | 'otp' | 'companion'>('sso')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -92,6 +89,7 @@ export function LoginDialog({
 
   // Network Offline / Online State (Hydration safe)
   const [isOnline, setIsOnline] = useState(true)
+  const [logoFailed, setLogoFailed] = useState(false)
 
   // Resolve default logo and brand gradient based on appName if not explicitly provided
   const resolvedLogo = appLogo || (() => {
@@ -112,7 +110,24 @@ export function LoginDialog({
       if (typeof import.meta !== 'undefined' && (import.meta as any).env?.PACKAGE_VERSION) {
         return (import.meta as any).env.PACKAGE_VERSION
       }
+      if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_APP_VERSION) {
+        return (import.meta as any).env.VITE_APP_VERSION
+      }
+      if (typeof (globalThis as any).__APP_VERSION__ !== 'undefined') {
+        return (globalThis as any).__APP_VERSION__
+      }
     } catch {}
+
+    const key = appName.toLowerCase()
+    if (key.includes('foundation')) return '1.192.1'
+    if (key.includes('ledger')) return '3.173.14'
+    if (key.includes('butlarr')) return '1.1.0'
+    if (key.includes('globot')) return '3.118.0'
+    if (key.includes('food')) return '1.32.0'
+    if (key.includes('i-am') || key.includes('i am')) return '3.27.0'
+    if (key.includes('draw')) return '3.116.0'
+    if (key.includes('groupcord')) return '1.35.0'
+    if (key.includes('voyarr')) return '1.190.0'
     return null
   })()
 
@@ -129,6 +144,33 @@ export function LoginDialog({
     return 'from-cyan-400 via-blue-400 to-indigo-400'
   })()
 
+  // Contextual Sign In message based on app and currently presented sign-in method
+  const contextualMessage = (() => {
+    if (isFirstUserSetup) {
+      return `Initialize the primary administrator account for ${appName}.`
+    }
+    if (proxyUser) {
+      return `Forward-auth verified. Confirm sign-in as @${proxyUser} to continue to ${appName}.`
+    }
+    if (mfaRequired) {
+      return `Enter your two-factor verification code to sign into ${appName}.`
+    }
+
+    switch (tab) {
+      case 'passkey':
+        return `Touch ID, Face ID, Windows Hello, or hardware security key sign in for ${appName}.`
+      case 'password':
+        return `Sign in with your ${appName} username or email and password.`
+      case 'otp':
+        return `Receive a secure one-time passcode via email to access ${appName}.`
+      case 'companion':
+        return `Pair your mobile phone or companion device to approve access to ${appName}.`
+      case 'sso':
+      default:
+        return appDescription || `Sign in to access your ${appName} workspace.`
+    }
+  })()
+
   // Device Pairing Request State (Pair This Device)
   const [devicePin, setDevicePin] = useState('')
   const [generatingCode, setGeneratingCode] = useState(false)
@@ -143,18 +185,40 @@ export function LoginDialog({
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotError, setForgotError] = useState('')
 
+  const saveSessionToken = (token: string) => {
+    if (!token) return
+    localStorage.setItem('foundation_session', token)
+    localStorage.setItem('GLOBOT_AUTH_TOKEN', token)
+    localStorage.setItem('voyarr_jwt', token)
+    localStorage.setItem('FOOD_AUTH_TOKEN', token)
+    localStorage.setItem('DISCORD_BOT_TOKEN', token)
+    localStorage.setItem('ledger_token', token)
+    localStorage.setItem('auth_token', token)
+    if (typeof document !== 'undefined') {
+      document.cookie = `globot_session_token=${token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`
+    }
+  }
+
+  const navigateOnSuccess = () => {
+    if (onSuccess) {
+      onSuccess()
+      return
+    }
+    const target = defaultRedirectUri || (appName?.toLowerCase().includes('foundation') ? '/directory' : '/')
+    window.location.href = target
+  }
+
   // 1. Cross-Tab Single Sign-On Sync (BroadcastChannel)
   useEffect(() => {
     if (typeof BroadcastChannel === 'undefined') return
     const authChannel = new BroadcastChannel('fleet_auth_channel')
     authChannel.onmessage = (event) => {
       if (event.data?.type === 'LOGIN_SUCCESS') {
-        if (onSuccess) onSuccess()
-        window.location.href = '/directory'
+        navigateOnSuccess()
       }
     }
     return () => authChannel.close()
-  }, [onSuccess])
+  }, [onSuccess, defaultRedirectUri, appName])
 
   // 2. Network Online / Offline Detection & Local Storage Last-Used Method
   useEffect(() => {
@@ -208,28 +272,51 @@ export function LoginDialog({
         if (window.PublicKeyCredential.isConditionalMediationAvailable) {
           const isAvailable = await window.PublicKeyCredential.isConditionalMediationAvailable()
           if (isAvailable && active) {
-            const optRes = await fetch('/api/auth/passkeys/login/options', { method: 'POST' })
+            let optRes = await fetch('/api/auth/passkeys/generate-authentication', { method: 'POST' })
+            if (!optRes.ok) {
+              optRes = await fetch('/api/auth/passkeys/login-options', { method: 'POST' })
+            }
+            if (!optRes.ok) {
+              optRes = await fetch('/api/auth/passkeys/login/options', { method: 'POST' })
+            }
             if (!optRes.ok) return
             const { options, challengeId }: any = await optRes.json()
-            if (!active) return
+            if (!options || !active) return
 
             const authResp = await startAuthentication({ optionsJSON: options, useBrowserAutofill: true })
             if (!active) return
 
-            const verifyRes = await fetch('/api/auth/passkeys/login/verify', {
+            let verifyRes = await fetch(`/api/auth/passkeys/verify-authentication?challengeId=${encodeURIComponent(challengeId || '')}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ assertion: authResp, persistent })
+              body: JSON.stringify({ ...authResp, challengeId })
             })
-            const verifyData: any = await verifyRes.json()
-            if (verifyData.success) {
+            if (!verifyRes.ok) {
+              verifyRes = await fetch('/api/auth/passkeys/login-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assertion: authResp, persistent })
+              })
+            }
+            if (!verifyRes.ok) {
+              verifyRes = await fetch('/api/auth/passkeys/login/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ assertion: authResp, persistent })
+              })
+            }
+            const verifyData: any = await verifyRes.json().catch(() => ({}))
+            if (verifyData.success || verifyData.token || verifyData.sessionToken || verifyData.access_token) {
+              const sid = verifyData.sessionToken || verifyData.token || verifyData.sessionId || verifyData.access_token
+              if (sid) {
+                saveSessionToken(sid)
+              }
               if (typeof BroadcastChannel !== 'undefined') {
                 const bc = new BroadcastChannel('fleet_auth_channel')
                 bc.postMessage({ type: 'LOGIN_SUCCESS' })
                 bc.close()
               }
-              if (onSuccess) onSuccess()
-              window.location.href = '/directory'
+              navigateOnSuccess()
             }
           }
         }
@@ -237,7 +324,7 @@ export function LoginDialog({
     }
     initConditionalPasskey()
     return () => { active = false }
-  }, [onSuccess])
+  }, [onSuccess, defaultRedirectUri, appName, persistent])
 
   // 4. Forward Auth / Reverse Proxy Auto-Detection Check
   useEffect(() => {
@@ -350,10 +437,9 @@ export function LoginDialog({
           bc.postMessage({ type: 'LOGIN_SUCCESS' })
           bc.close()
         }
-        if (onSuccess) onSuccess()
-        window.location.href = '/directory'
+        navigateOnSuccess()
       } else {
-        setError(getErrorMessage(data.error, 'Invalid authentication code or recovery key.'))
+        setError(data.error || 'Invalid authentication code or recovery key.')
       }
     } catch {
       setError('Connection error during MFA verification.')
@@ -388,7 +474,7 @@ export function LoginDialog({
         setPassword(setupAdminPassword)
         setTab('password')
       } else {
-        setError(getErrorMessage(data.error, 'Failed to initialize administrator account.'))
+        setError(data.error || 'Failed to initialize administrator account.')
       }
     } catch {
       setError('Connection error during initial system initialization.')
@@ -450,17 +536,18 @@ export function LoginDialog({
       try {
         const res = await fetch(`/api/auth/device/poll?code=${encodeURIComponent(code)}`)
         const data: any = await res.json()
-        if (data.success && (data.sessionId || data.sessionToken)) {
+        if (data.success && (data.sessionId || data.sessionToken || data.token || data.access_token)) {
           clearInterval(pollTimerRef.current)
-          localStorage.setItem('foundation_session', data.sessionId || data.sessionToken)
-          if (onSuccess) onSuccess()
-          window.location.href = '/directory'
+          saveSessionToken(data.sessionId || data.sessionToken || data.token || data.access_token)
+          navigateOnSuccess()
         }
       } catch {}
     }, 3000)
   }
 
   function startOAuth(provider: string) {
+    // Check if running on child app that uses /api/auth/login or standard /api/auth/oauth
+    // If child app without /api/auth/oauth, /api/auth/login/:provider will be aliased or called
     window.location.href = `/api/auth/oauth/${provider}?persistent=${persistent}`
   }
 
@@ -493,39 +580,62 @@ export function LoginDialog({
     setShowSecurityKeyTroubleshooter(false)
     setPasskeyLoading(true)
     try {
-      const optRes = await fetch('/api/auth/passkeys/login/options', { method: 'POST' })
+      let optRes = await fetch('/api/auth/passkeys/generate-authentication', { method: 'POST' })
       if (!optRes.ok) {
-        const errJson: any = await optRes.json()
-        throw new Error(errJson.error || 'Failed to start passkey login')
+        optRes = await fetch('/api/auth/passkeys/login-options', { method: 'POST' })
       }
-      const { options }: any = await optRes.json()
+      if (!optRes.ok) {
+        optRes = await fetch('/api/auth/passkeys/login/options', { method: 'POST' })
+      }
+      if (!optRes.ok) {
+        const errJson: any = await optRes.json().catch(() => ({}))
+        throw new Error(errJson.error || errJson.detail || 'Failed to start passkey login')
+      }
+      const { options, challengeId }: any = await optRes.json()
 
       const authResp = await startAuthentication({ optionsJSON: options })
-      const verifyRes = await fetch('/api/auth/passkeys/login/verify', {
+      let verifyRes = await fetch(`/api/auth/passkeys/verify-authentication?challengeId=${encodeURIComponent(challengeId || '')}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assertion: authResp, persistent })
+        body: JSON.stringify({ ...authResp, challengeId })
       })
+      if (!verifyRes.ok) {
+        verifyRes = await fetch('/api/auth/passkeys/login-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assertion: authResp, persistent })
+        })
+      }
+      if (!verifyRes.ok) {
+        verifyRes = await fetch('/api/auth/passkeys/login/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assertion: authResp, persistent })
+        })
+      }
 
-      const verifyData: any = await verifyRes.json()
-      if (verifyData.success) {
+      const verifyData: any = await verifyRes.json().catch(() => ({}))
+      if (verifyData.success || verifyData.token || verifyData.sessionToken || verifyData.access_token) {
+        const sid = verifyData.sessionToken || verifyData.token || verifyData.sessionId || verifyData.access_token
+        if (sid) {
+          saveSessionToken(sid)
+        }
         try {
           localStorage.setItem('last_auth_method', JSON.stringify({ method: 'passkey', label: 'Touch ID / Passkey' }))
         } catch {}
-        if (onSuccess) onSuccess()
         if (mode === 'reauth') {
           if (onClose) onClose()
           return
         }
-        window.location.href = '/directory'
+        navigateOnSuccess()
       } else {
-        setError(verifyData.error || 'Passkey verification failed.')
+        setError(verifyData.error || verifyData.detail || 'Passkey verification failed.')
       }
     } catch (err: any) {
       if (err.name === 'NotAllowedError' || (err.message && err.message.toLowerCase().includes('cancel'))) {
         setShowSecurityKeyTroubleshooter(true)
       }
-      setError(getErrorMessage(err, 'Passkey authentication failed.'))
+      setError(err.message || 'Passkey authentication failed.')
     } finally {
       setPasskeyLoading(false)
     }
@@ -547,25 +657,25 @@ export function LoginDialog({
         setMfaRequired(true)
         return
       }
-      if (data.success) {
+      if (data.success || data.token || data.sessionToken || data.access_token) {
         setFailedAttempts(0)
         try {
           localStorage.setItem('last_auth_method', JSON.stringify({ method: 'password', identifier, label: `Password (${identifier})` }))
         } catch {}
-        if (data.sessionId || data.sessionToken) {
-          localStorage.setItem('foundation_session', data.sessionId || data.sessionToken)
+        const sid = data.sessionId || data.sessionToken || data.token || data.access_token
+        if (sid) {
+          saveSessionToken(sid)
         }
         if (typeof BroadcastChannel !== 'undefined') {
           const bc = new BroadcastChannel('fleet_auth_channel')
           bc.postMessage({ type: 'LOGIN_SUCCESS' })
           bc.close()
         }
-        if (onSuccess) onSuccess()
         if (mode === 'reauth') {
           if (onClose) onClose()
           return
         }
-        window.location.href = '/directory'
+        navigateOnSuccess()
       } else {
         const nextAttempts = failedAttempts + 1
         setFailedAttempts(nextAttempts)
@@ -573,7 +683,7 @@ export function LoginDialog({
           const backoff = Math.min(60, Math.pow(2, nextAttempts - 2) * 5)
           setRateLimitSeconds(backoff)
         }
-        setError(getErrorMessage(data.error, 'Login failed.'))
+        setError(data.error || 'Login failed.')
       }
     } catch {
       setError('Connection error.')
@@ -599,7 +709,7 @@ export function LoginDialog({
         setOtpSent(true)
         setOtpCountdown(60)
       } else {
-        setError(getErrorMessage(data.error, 'Failed to send one-time authentication code.'))
+        setError(data.error || 'Failed to send one-time authentication code.')
       }
     } catch {
       setError('Network error while requesting one-time code.')
@@ -620,26 +730,26 @@ export function LoginDialog({
         body: JSON.stringify({ email: otpEmail.trim(), code: otpCode.trim(), persistent })
       })
       const data: any = await res.json()
-      if (data.success) {
+      if (data.success || data.token || data.sessionToken || data.access_token) {
         try {
           localStorage.setItem('last_auth_method', JSON.stringify({ method: 'otp', identifier: otpEmail, label: `Email Code (${otpEmail})` }))
         } catch {}
-        if (data.sessionId || data.sessionToken) {
-          localStorage.setItem('foundation_session', data.sessionId || data.sessionToken)
+        const sid = data.sessionId || data.sessionToken || data.token || data.access_token
+        if (sid) {
+          saveSessionToken(sid)
         }
         if (typeof BroadcastChannel !== 'undefined') {
           const bc = new BroadcastChannel('fleet_auth_channel')
           bc.postMessage({ type: 'LOGIN_SUCCESS' })
           bc.close()
         }
-        if (onSuccess) onSuccess()
         if (mode === 'reauth') {
           if (onClose) onClose()
           return
         }
-        window.location.href = '/directory'
+        navigateOnSuccess()
       } else {
-        setError(getErrorMessage(data.error, 'Invalid or expired one-time code.'))
+        setError(data.error || 'Invalid or expired one-time code.')
       }
     } catch {
       setError('Connection error during one-time code verification.')
@@ -650,9 +760,11 @@ export function LoginDialog({
 
   const renderPersistenceSelector = () => (
     <div className="p-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center justify-between mt-4">
-      <span className="text-[11px] font-bold text-slate-200 leading-5">
-        {persistent ? 'Stay signed in for 30 days (Standard)' : 'Expire in 24 hours (Shared / Untrusted device)'}
-      </span>
+      <div className="space-y-0.5">
+        <span className="text-[11px] font-bold text-slate-200 block">
+          {persistent ? 'Stay signed in for 30 days (Standard)' : 'Expire in 24 hours (Shared / Untrusted device)'}
+        </span>
+      </div>
       <label className="relative inline-flex items-center cursor-pointer">
         <input
           type="checkbox"
@@ -660,7 +772,7 @@ export function LoginDialog({
           onChange={(e) => setPersistent(e.target.checked)}
           className="sr-only peer"
         />
-        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1/2 after:left-[2px] -translate-y-1/2 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+        <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
       </label>
     </div>
   )
@@ -686,8 +798,13 @@ export function LoginDialog({
       )}
       <div className="text-center space-y-3">
         <div className="w-16 h-16 bg-slate-950/90 rounded-2xl flex items-center justify-center mx-auto border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] overflow-hidden p-2.5 group">
-          {resolvedLogo ? (
-            <img src={resolvedLogo} alt={appName} className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+          {resolvedLogo && !logoFailed ? (
+            <img
+              src={resolvedLogo}
+              alt={appName}
+              className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+              onError={() => setLogoFailed(true)}
+            />
           ) : (
             <Shield className="w-8 h-8 text-cyan-400" />
           )}
@@ -714,7 +831,9 @@ export function LoginDialog({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-1 font-medium">{appDescription}</p>
+              <p className="text-xs text-slate-400 mt-1.5 font-medium leading-relaxed">
+                {contextualMessage}
+              </p>
             </>
           )}
         </div>
@@ -798,7 +917,7 @@ export function LoginDialog({
         {error && (
           <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-2.5 text-xs text-rose-300">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>{typeof error === 'string' ? error : (error as any)?.message || String(error)}</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -812,8 +931,7 @@ export function LoginDialog({
             <button
               type="button"
               onClick={() => {
-                if (onSuccess) onSuccess()
-                window.location.href = '/directory'
+                navigateOnSuccess()
               }}
               className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold shrink-0 transition-all cursor-pointer"
             >
@@ -831,9 +949,8 @@ export function LoginDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="admin-email">Admin Email</label>
+              <label className="text-[10px] font-black uppercase text-slate-400">Admin Email</label>
               <input
-                id="admin-email"
                 type="email"
                 value={setupAdminEmail}
                 onChange={e => setSetupAdminEmail(e.target.value)}
@@ -844,9 +961,8 @@ export function LoginDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="admin-username">Admin Username</label>
+              <label className="text-[10px] font-black uppercase text-slate-400">Admin Username</label>
               <input
-                id="admin-username"
                 type="text"
                 value={setupAdminUsername}
                 onChange={e => setSetupAdminUsername(e.target.value)}
@@ -858,9 +974,8 @@ export function LoginDialog({
 
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="master-password">Master Password</label>
+                <label className="text-[10px] font-black uppercase text-slate-400">Master Password</label>
                 <input
-                  id="master-password"
                   type="password"
                   value={setupAdminPassword}
                   onChange={e => setSetupAdminPassword(e.target.value)}
@@ -868,12 +983,11 @@ export function LoginDialog({
                   placeholder="••••••••"
                   required
                 />
-                <PasswordChecklist password={setupAdminPassword} />
+                <PasswordChecklist password={setupAdminPassword} minLength={12} checkBreaches={true} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="confirm-master-password">Confirm Master Password</label>
+                <label className="text-[10px] font-black uppercase text-slate-400">Confirm Master Password</label>
                 <input
-                  id="confirm-master-password"
                   type="password"
                   value={setupAdminConfirmPassword}
                   onChange={e => setSetupAdminConfirmPassword(e.target.value)}
@@ -902,9 +1016,8 @@ export function LoginDialog({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="mfa-code">Security Code or Recovery Key</label>
+                <label className="text-[10px] font-black uppercase text-slate-400">Security Code or Recovery Key</label>
                 <input
-                  id="mfa-code"
                   type="text"
                   value={mfaCode}
                   onChange={e => setMfaCode(e.target.value)}
@@ -1032,7 +1145,7 @@ export function LoginDialog({
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="identifier">Email or Username</label>
+                      <label className="text-[10px] font-black uppercase text-slate-400">Email or Username</label>
                       <button
                         type="button"
                         onClick={toggleSpeechRecognition}
@@ -1045,7 +1158,6 @@ export function LoginDialog({
                     </div>
                     <div className="relative">
                       <input
-                        id="identifier"
                         type="text"
                         value={identifier}
                         onChange={e => setIdentifier(e.target.value)}
@@ -1057,9 +1169,8 @@ export function LoginDialog({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="password">Password</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400">Password</label>
                     <input
-                      id="password"
                       type="password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
@@ -1108,9 +1219,8 @@ export function LoginDialog({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="otp-email">Registered Email Address</label>
+                        <label className="text-[10px] font-black uppercase text-slate-400">Registered Email Address</label>
                         <input
-                          id="otp-email"
                           type="email"
                           value={otpEmail}
                           onChange={e => setOtpEmail(e.target.value)}
@@ -1137,9 +1247,8 @@ export function LoginDialog({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-400" htmlFor="otp-code">6-Digit Email Code</label>
+                        <label className="text-[10px] font-black uppercase text-slate-400">6-Digit Email Code</label>
                         <input
-                          id="otp-code"
                           type="text"
                           value={otpCode}
                           onChange={e => setOtpCode(e.target.value)}
@@ -1276,6 +1385,14 @@ export function LoginDialog({
             {renderPersistenceSelector()}
           </div>
         )}
+
+        {governanceNotice && (
+          <div className="pt-2 text-center">
+            <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+              {governanceNotice}
+            </p>
+          </div>
+        )}
       </motion.div>
   );
 
@@ -1384,7 +1501,7 @@ export function LoginDialog({
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 sm:p-6 font-sans">
+    <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 sm:p-6 font-sans">
       {modalBackdrop}
     </div>
   );

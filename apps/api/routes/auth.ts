@@ -1405,4 +1405,10 @@ auth.post('/admin/claim', zValidator('json', z.object({
   return c.json({ success: true, userId })
 })
 
+auth.get('/oauth/:provider', async (c) => {
+  const provider = c.req.param('provider')
+  const persistent = c.req.query('persistent') || 'true'
+  return c.redirect(`/api/auth/login/${provider}?persistent=${persistent}`)
+})
+
 export default auth

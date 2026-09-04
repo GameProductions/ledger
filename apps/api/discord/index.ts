@@ -17,6 +17,15 @@ discord.get('/', (c) => {
   })
 })
 
+discord.get('/interactions', (c) => {
+  return c.json({
+    status: 'HANDSHAKE_READY',
+    endpoint: '/api/discord/interactions',
+    service: 'ledger',
+    timestamp: new Date().toISOString()
+  })
+})
+
 const handleInteraction = async (c: any) => {
   const signature = c.req.header('X-Signature-Ed25519')
   const timestamp = c.req.header('X-Signature-Timestamp')

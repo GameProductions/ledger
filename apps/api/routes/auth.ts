@@ -1190,14 +1190,18 @@ const handlePasskeyLoginVerify = async (c: any) => {
 
   // 🔑 Retrieve secrets from Vault with multi-scope & multi-key compatibility
   const vaultEnvKey = c.env.ENCRYPTION_KEY ? new VaultService(db, c.env.ENCRYPTION_KEY) : null
-  let publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+  let publicKeyB64 = (await vault.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
+    || (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
     || (await vault.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+    || (await vault.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
     || (await vault.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
     || (await vault.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
   
   if (!publicKeyB64 && vaultEnvKey) {
-    publicKeyB64 = (await vaultEnvKey.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+    publicKeyB64 = (await vaultEnvKey.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
+      || (await vaultEnvKey.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
       || (await vaultEnvKey.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
       || (await vaultEnvKey.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
       || (await vaultEnvKey.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
   }
@@ -1312,14 +1316,18 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
 
   // 🔑 Retrieve secrets from Vault with multi-scope & multi-key compatibility
   const vaultEnvKey = c.env.ENCRYPTION_KEY ? new VaultService(db, c.env.ENCRYPTION_KEY) : null
-  let publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+  let publicKeyB64 = (await vault.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
+    || (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
     || (await vault.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+    || (await vault.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
     || (await vault.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
     || (await vault.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
   
   if (!publicKeyB64 && vaultEnvKey) {
-    publicKeyB64 = (await vaultEnvKey.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+    publicKeyB64 = (await vaultEnvKey.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
+      || (await vaultEnvKey.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
       || (await vaultEnvKey.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'webauthn') as any)
       || (await vaultEnvKey.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
       || (await vaultEnvKey.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
   }

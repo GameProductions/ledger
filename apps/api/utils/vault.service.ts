@@ -59,19 +59,23 @@ export class VaultService {
      * Retrieves and decrypts a secret from the vault.
      */
     async getSecret(ownerId: string, keyName: SecretKeyName, scope: SecretScope): Promise<string | null> {
-        const result = (await this.db.select().from(vault).where(
-                    and(
-                        eq(vault.ownerId, ownerId),
-                        eq(vault.keyName, keyName),
-                        eq(vault.scope, scope)
-                    )
-                ).limit(1) as any);
+        try {
+            const result = (await this.db.select().from(vault).where(
+                        and(
+                            eq(vault.ownerId, ownerId),
+                            eq(vault.keyName, keyName),
+                            eq(vault.scope, scope)
+                        )
+                    ).limit(1) as any);
 
-        if (result.length === 0) return null;
+            if (result.length === 0) return null;
 
-        const record = result[0];
-        
-        return await decryptData(`${record.iv}:${record.encryptedValue}`, this.encryptionKey);
+            const record = result[0];
+            
+            return await decryptData(`${record.iv}:${record.encryptedValue}`, this.encryptionKey);
+        } catch {
+            return null;
+        }
     }
 
     /**

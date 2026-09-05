@@ -115,15 +115,17 @@ export const ConfirmationNumberBuilder: React.FC<ConfirmationNumberBuilderProps>
         <div className="sm:col-span-4">
           <SearchableSelect
             options={CONFIRMATION_NUMBER_CATEGORIES}
-            value="confirmation"
+            value={confirmationNumbers?.[0]?.category || (value ? 'confirmation' : 'confirmation')}
             onChange={(cat) => {
-              if (cat !== 'confirmation' && onChangeNumbers) {
-                const next: ConfirmationNumberItem[] = [
-                  { category: cat, value: value, customCategoryLabel: '' },
-                  ...confirmationNumbers
-                ]
-                onChangeNumbers(next)
-                if (onChangeValue) onChangeValue('')
+              if (onChangeNumbers) {
+                if (confirmationNumbers && confirmationNumbers.length > 0) {
+                  handleUpdateInstance(0, { category: cat })
+                } else {
+                  onChangeNumbers([
+                    { category: cat, value: value, customCategoryLabel: '' }
+                  ])
+                  if (onChangeValue) onChangeValue('')
+                }
               }
             }}
             placeholder="Category..."
@@ -132,16 +134,25 @@ export const ConfirmationNumberBuilder: React.FC<ConfirmationNumberBuilderProps>
         <div className="sm:col-span-8">
           <input
             type="text"
-            value={value}
-            onChange={(e) => onChangeValue && onChangeValue(e.target.value)}
+            value={confirmationNumbers && confirmationNumbers.length > 0 ? confirmationNumbers[0].value : value}
+            onChange={(e) => {
+              if (confirmationNumbers && confirmationNumbers.length > 0 && onChangeNumbers) {
+                handleUpdateInstance(0, { value: e.target.value })
+                if (onChangeValue) onChangeValue(e.target.value)
+              } else if (onChangeValue) {
+                onChangeValue(e.target.value)
+              }
+            }}
             placeholder="e.g. TXN-12345, Auth #, Receipt ID, Ref #..."
             className={`w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none ${focusBorderClass} transition-colors placeholder:text-white/20`}
           />
         </div>
       </div>
 
-      {/* Multi-instance Rows */}
-      {confirmationNumbers.map((cn, idx) => (
+      {/* Multi-instance Rows (index >= 1 if primary exists in array, or all if primary separate) */}
+      {(confirmationNumbers && confirmationNumbers.length > 0 ? confirmationNumbers.slice(1) : []).map((cn, sliceIdx) => {
+        const idx = sliceIdx + 1
+        return (
         <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center pt-2.5 border-t border-white/5">
           <div className="sm:col-span-4">
             <SearchableSelect
@@ -182,7 +193,8 @@ export const ConfirmationNumberBuilder: React.FC<ConfirmationNumberBuilderProps>
             </button>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

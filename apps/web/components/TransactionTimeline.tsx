@@ -188,6 +188,25 @@ export const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ transa
                 <div>⚡ Source: <span className="text-white font-medium capitalize">{parsed.source.replace('_', ' ')}</span></div>
               )}
             </div>
+            {((parsed.confirmationNumbers && parsed.confirmationNumbers.length > 0) || parsed.confirmationNumber) && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                <span className="text-[10px] font-bold text-white/50">Ref / Conf:</span>
+                {parsed.confirmationNumbers && parsed.confirmationNumbers.length > 0 ? (
+                  parsed.confirmationNumbers.map((cn: any, idx: number) => (
+                    <span key={idx} className="px-2 py-0.5 bg-blue-500/10 text-blue-300 border border-blue-500/20 rounded text-[10px] font-mono flex items-center gap-1">
+                      <Hash size={10} className="text-blue-400" />
+                      <span className="opacity-70 capitalize">{cn.customCategoryLabel || cn.category}:</span>
+                      <span className="font-bold text-white">{cn.value}</span>
+                    </span>
+                  ))
+                ) : (
+                  <span className="px-2 py-0.5 bg-blue-500/10 text-blue-300 border border-blue-500/20 rounded text-[10px] font-mono flex items-center gap-1">
+                    <Hash size={10} className="text-blue-400" />
+                    <span className="font-bold text-white">{parsed.confirmationNumber}</span>
+                  </span>
+                )}
+              </div>
+            )}
             {parsed.notes && (
               <div className="p-2 bg-white/5 rounded-lg text-white/80 italic border border-white/5">
                 "{parsed.notes}"

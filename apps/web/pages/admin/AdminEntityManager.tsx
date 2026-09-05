@@ -186,9 +186,9 @@ const AdminEntityManager: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+      <div className="flex flex-col md:flex-row md:items-start gap-6">
         {/* Left Nav */}
-        <div className="space-y-4">
+        <div className="w-full md:w-64 md:shrink-0 space-y-4 md:sticky md:top-6">
           <nav className="bg-white/[0.02] border border-white/5 rounded-2xl p-3">
             <div className="text-[9px] font-black tracking-[0.2em] text-white/30 px-3 py-2">Entity Types</div>
             {ENTITY_TYPES.map(et => (

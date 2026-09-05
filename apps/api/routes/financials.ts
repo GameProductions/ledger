@@ -42,7 +42,8 @@ import {
   chargeDescriptors,
   billingProcessors,
   liabilitySplits,
-  splitTemplates
+  splitTemplates,
+  transactionConfirmationNumbers
 } from '#/schema'
 import { billers, merchants, reconciliationProposals } from '#/schema'
 import { eq, and, desc, asc, like, inArray, sql, gte, lte, count, or, sum } from 'drizzle-orm'
@@ -410,6 +411,7 @@ financials.get('/transactions', async (c) => {
   const sortDir = c.req.query('sortDir') || 'desc'
   const startDate = c.req.query('startDate')
   const endDate = c.req.query('endDate')
+  const status = c.req.query('status')
 
   const db = getDb(c.env)
 
@@ -422,17 +424,46 @@ financials.get('/transactions', async (c) => {
             eq(transactions.householdId, householdId),
             categoryId ? eq(transactions.categoryId, categoryId) : undefined,
             accountId ? eq(transactions.accountId, accountId) : undefined,
+            status ? eq(transactions.status, status) : undefined,
             startDate ? gte(transactions.transactionDate, startDate) : undefined,
             endDate ? lte(transactions.transactionDate, endDate) : undefined,
             q ? like(transactions.description, `%${q}%`) : undefined
           )
         ).orderBy(orderFunc(orderByCol)).limit(limit || 50).offset(offset || 0) as any)
 
+    const txIds = results.map((r: any) => r.id)
+    let cnsByTxId: Record<string, any[]> = {}
+    if (txIds.length > 0) {
+      const allCns = (await db.select().from(transactionConfirmationNumbers)
+        .where(inArray(transactionConfirmationNumbers.transactionId, txIds))
+        .orderBy(asc(transactionConfirmationNumbers.sortOrder)) as any)
+      for (const cn of allCns) {
+        if (!cnsByTxId[cn.transactionId]) cnsByTxId[cn.transactionId] = []
+        cnsByTxId[cn.transactionId].push({
+          id: cn.id,
+          category: cn.category,
+          customCategoryLabel: cn.customCategoryLabel,
+          value: cn.value,
+          isPrimary: cn.isPrimary,
+          sortOrder: cn.sortOrder
+        })
+      }
+    }
+
     return c.json({ 
       success: true, 
       data: results.map((row: any) => {
         try {
-          return TransactionOutputSchema.parse(row)
+          const rowWithCns = {
+            ...row,
+            confirmationNumbers: cnsByTxId[row.id] || (row.confirmationNumber ? [{
+              category: 'confirmation',
+              value: row.confirmationNumber,
+              isPrimary: true,
+              sortOrder: 0
+            }] : [])
+          }
+          return TransactionOutputSchema.parse(rowWithCns)
         } catch (e: any) {
           console.error(`[DIAGNOSTIC_FAILURE] Transaction validation failed for row ${row.id}:`, e.issues || e.message);
           throw e;
@@ -498,8 +529,21 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
     const date = data.transactionDate || new Date().toISOString().split('T')[0]
     
     // Handle confirmation numbers - extract from data and store in normalized table later
-    const { confirmationNumbers, confirmationNumber, ...txData } = data
-    
+    // Normalize confirmation numbers
+    let cnsToInsert: any[] = []
+    if (confirmationNumbers && Array.isArray(confirmationNumbers) && confirmationNumbers.length > 0) {
+      cnsToInsert = confirmationNumbers.filter((cn: any) => cn && cn.value && cn.value.trim() !== '')
+    } else if (confirmationNumber && confirmationNumber.trim() !== '') {
+      cnsToInsert = [{
+        category: 'confirmation',
+        value: confirmationNumber.trim(),
+        isPrimary: true,
+        sortOrder: 0
+      }]
+    }
+
+    const primaryCn = confirmationNumber || cnsToInsert[0]?.value || null
+
     const insertTx = db.insert(transactions).values({
       id,
       householdId,
@@ -509,6 +553,7 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
       amountCents: txData.amountCents,
       transactionDate: date,
       notes: (txData.notes && txData.notes.trim() !== '') ? txData.notes : null,
+      confirmationNumber: primaryCn,
       rawDescription: (txData.rawDescription && txData.rawDescription.trim() !== '') ? txData.rawDescription : null,
       parentId: (txData.parentId && txData.parentId.trim() !== '') ? txData.parentId : null,
       providerId: (txData.providerId && txData.providerId.trim() !== '') ? txData.providerId : null,
@@ -536,20 +581,37 @@ financials.post('/transactions', zValidator('json', TransactionSchema, (result, 
         categoryId: txData.categoryId || null,
         status: txData.status || 'pending',
         notes: txData.notes || null,
-        confirmationNumber: txData.confirmationNumber || null,
+        confirmationNumber: primaryCn,
+        confirmationNumbers: cnsToInsert,
         source: txData.source || 'manual'
       })
     })
+
+    const batchOps: any[] = [insertTx, insertTimeline]
+
+    for (let i = 0; i < cnsToInsert.length; i++) {
+      const cn = cnsToInsert[i]
+      batchOps.push(
+        db.insert(transactionConfirmationNumbers).values({
+          id: crypto.randomUUID(),
+          transactionId: id,
+          category: cn.category || 'confirmation',
+          customCategoryLabel: cn.customCategoryLabel || null,
+          value: cn.value.trim(),
+          isPrimary: cn.isPrimary ?? (i === 0),
+          sortOrder: cn.sortOrder ?? i
+        })
+      )
+    }
 
     if (txData.categoryId) {
       const updateCat = db.update(categories)
         .set({ envelopeBalanceCents: sql`envelope_balance_cents - ${txData.amountCents}` })
         .where(and(eq(categories.id, txData.categoryId), eq(categories.householdId, householdId)))
       
-      await db.batch([insertTx, insertTimeline, updateCat])
-    } else {
-      await db.batch([insertTx, insertTimeline])
+      batchOps.push(updateCat)
     }
+    await db.batch(batchOps as any)
     
     // EXECUTE RULE ENGINE (Smart Billing)
     const reconService = new ReconciliationService(db, c.env)
@@ -1047,13 +1109,57 @@ financials.patch('/transactions/:id', zValidator('json', TransactionSchema.parti
   if (data.paycheckDate !== undefined) updates.paycheckDate = data.paycheckDate
   
   if (Object.keys(updates).length > 0) {
+    // Separate confirmationNumbers from transaction column updates
+    const { confirmationNumbers: updatedCns, ...columnUpdates } = updates
+
     const existingTx = (await db.select().from(transactions)
       .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
       .limit(1).then(res => res[0]) as any)
 
-    await db.update(transactions)
-      .set(updates)
-      .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+    if (Object.keys(columnUpdates).length > 0) {
+      await db.update(transactions)
+        .set(columnUpdates)
+        .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+    }
+
+    // If confirmationNumbers are explicitly updated, update transactionConfirmationNumbers
+    if (updatedCns !== undefined || columnUpdates.confirmationNumber !== undefined) {
+      await db.delete(transactionConfirmationNumbers)
+        .where(eq(transactionConfirmationNumbers.transactionId, id))
+
+      let newCns: any[] = []
+      if (updatedCns && Array.isArray(updatedCns) && updatedCns.length > 0) {
+        newCns = updatedCns.filter((c: any) => c && c.value && c.value.trim() !== '')
+      } else if (columnUpdates.confirmationNumber && columnUpdates.confirmationNumber.trim() !== '') {
+        newCns = [{
+          category: 'confirmation',
+          value: columnUpdates.confirmationNumber.trim(),
+          isPrimary: true,
+          sortOrder: 0
+        }]
+      }
+
+      for (let i = 0; i < newCns.length; i++) {
+        const cn = newCns[i]
+        await db.insert(transactionConfirmationNumbers).values({
+          id: crypto.randomUUID(),
+          transactionId: id,
+          category: cn.category || 'confirmation',
+          customCategoryLabel: cn.customCategoryLabel || null,
+          value: cn.value.trim(),
+          isPrimary: cn.isPrimary ?? (i === 0),
+          sortOrder: cn.sortOrder ?? i
+        })
+      }
+
+      // Also ensure transactions.confirmation_number is in sync with primary
+      const primaryValue = newCns[0]?.value || columnUpdates.confirmationNumber || null
+      if (primaryValue !== existingTx?.confirmationNumber) {
+        await db.update(transactions)
+          .set({ confirmationNumber: primaryValue })
+          .where(and(eq(transactions.id, id), eq(transactions.householdId, householdId)))
+      }
+    }
     
     if (existingTx) {
       const fieldChanges: Record<string, { from: any, to: any }> = {}

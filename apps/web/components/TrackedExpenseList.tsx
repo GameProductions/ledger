@@ -14,7 +14,9 @@ import { SearchableSelect, SearchableOption } from './ui/SearchableSelect'
 import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder'
-import { DateTimeInput } from './ui/DateTimeInput'
+import { PromotionFlagsSelector as _PFS } from './ui/PromotionFlagsSelector'
+import { TransactionFlagsSelector } from './ui/TransactionFlagsSelector'
+import { useAuth } from '../context/AuthContext'
 import { PromoteToLedgerModal } from './PromoteToLedgerModal'
 
 interface TrackedExpenseListProps {
@@ -22,6 +24,7 @@ interface TrackedExpenseListProps {
 }
 
 export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshTrigger }) => {
+  const { user } = useAuth()
   const { data: tracked = [], mutate } = (useApi('/api/tracked-expenses') as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
@@ -693,13 +696,7 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     <div className="md:col-span-2">
                       <ConfirmationNumberBuilder
                         value={editForm?.confirmationNumber || ''}
-                        onChangeValue={val => {
-                          const updates: any = { confirmationNumber: val }
-                          if (val.trim() && editForm?.needsBalanceTransfer) {
-                            updates.transferReconciled = true
-                          }
-                          setEditForm({ ...editForm, ...updates })
-                        }}
+                        onChangeValue={val => setEditForm({ ...editForm, confirmationNumber: val })}
                         confirmationNumbers={editForm?.confirmationNumbers || []}
                         onChangeNumbers={items => setEditForm({ ...editForm, confirmationNumbers: items })}
                         accentColor="orange"
@@ -717,91 +714,30 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                     </div>
                   </div>
 
-                  {/* --- Flags --- */}
+                  {/* --- Flags (Unified Experience) --- */}
                   <div className="border-t border-white/5 pt-4">
-                    <label className="text-[10px] font-black tracking-widest text-secondary mb-3 block">Flags</label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-
-                      {/* Needs Attention */}
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={editForm?.attentionRequired ?? false}
-                          onChange={v => setEditForm({...editForm, attentionRequired: v})}
-                          iconClassName="text-orange-500"
-                        />
-                        <span className="text-xs font-bold text-secondary flex items-center gap-1"><AlertTriangle size={12} className="text-orange-400" /> Needs Attention</span>
-                      </div>
-
-                      {/* Needs Balance Transfer */}
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={editForm?.needsBalanceTransfer ?? false}
-                          onChange={v => {
-                            const updates: any = { needsBalanceTransfer: v };
-                            if (v && editForm?.confirmationNumber?.trim()) {
-                              updates.transferReconciled = true;
-                            }
-                            setEditForm({...editForm, ...updates});
-                          }}
-                          iconClassName="text-blue-400"
-                        />
-                        <span className="text-xs font-bold text-secondary flex items-center gap-1"><ArrowLeftRight size={12} className="text-blue-400" /> Balance Transfer</span>
-                      </div>
-
-                      {/* Is Borrowed */}
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={editForm?.isBorrowed ?? false}
-                          onChange={v => setEditForm({...editForm, isBorrowed: v})}
-                          iconClassName="text-purple-400"
-                        />
-                        <span className="text-xs font-bold text-secondary flex items-center gap-1"><Wallet size={12} className="text-purple-400" /> Borrowed</span>
-                      </div>
-                    </div>
-
-                    {/* Conditional sub-fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                      {editForm?.needsBalanceTransfer && (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Transfer Timing</label>
-                            <select 
-                              value={editForm?.transferTiming || 'same_day'} 
-                              onChange={e => setEditForm({...editForm, transferTiming: e.target.value})}
-                              className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-orange-500/50 outline-none"
-                            >
-                              <option value="same_day">Must do Same Day (Default)</option>
-                              <option value="future">Can do in Future</option>
-                            </select>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={editForm?.transferReconciled ?? false}
-                              onChange={v => setEditForm({...editForm, transferReconciled: v})}
-                              iconClassName="text-emerald-500"
-                            />
-                            <span className="text-xs font-bold text-secondary flex items-center gap-1">
-                              <CheckCircle2 size={12} className="text-emerald-400" /> Transfer Reconciled
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {editForm?.isBorrowed && (
-                        <div>
-                          <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Borrow Source</label>
-                          <SearchableSelect
-                            options={paymentMethods.map((pm: any) => ({
-                              value: pm.name,
-                              label: pm.name + (pm.lastFour ? ` ···${pm.lastFour}` : '')
-                            }))}
-                            value={editForm?.borrowSource || ''}
-                            onChange={v => setEditForm({...editForm, borrowSource: v})}
-                            placeholder="Select payment method..."
-                            onCreate={handleCreatePaymentMethod}
-                          />
-                        </div>
-                      )}
-                    </div>
+                    <TransactionFlagsSelector
+                      flags={{
+                        attentionRequired: editForm?.attentionRequired,
+                        needsBalanceTransfer: editForm?.needsBalanceTransfer,
+                        transferTiming: editForm?.transferTiming,
+                        transferReconciled: editForm?.transferReconciled,
+                        isBorrowed: editForm?.isBorrowed,
+                        borrowType: editForm?.borrowType,
+                        borrowUserId: editForm?.borrowUserId,
+                        borrowCustomName: editForm?.borrowCustomName,
+                        borrowPaybackDate: editForm?.borrowPaybackDate,
+                        borrowPaybackMethod: editForm?.borrowPaybackMethod,
+                        borrowNotes: editForm?.borrowNotes,
+                        recordHouseholdIou: editForm?.recordHouseholdIou,
+                        borrowSource: editForm?.borrowSource
+                      }}
+                      onChange={updates => setEditForm({ ...editForm, ...updates })}
+                      members={members}
+                      currentUserId={user?.id}
+                      showTransferReconciled={true}
+                      accentColor="orange"
+                    />
                   </div>
 
                   <div className="flex justify-between items-center mt-2 border-t border-white/5 pt-2">
@@ -830,9 +766,26 @@ export const TrackedExpenseList: React.FC<TrackedExpenseListProps> = ({ refreshT
                         </div>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditingId(null)} className="p-2 text-secondary hover:text-white transition-colors" aria-label="Cancel editing"><X size={16} /></button>
-                      <button onClick={() => handleUpdate(item.id, editForm)} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors" aria-label="Save changes"><Save size={16} /></button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditForm(null);
+                        }} 
+                        className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer" 
+                        aria-label="Cancel editing"
+                      >
+                        <X size={14} /> Cancel
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleUpdate(item.id, editForm)} 
+                        className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer" 
+                        aria-label="Save changes"
+                      >
+                        <Save size={14} /> Save
+                      </button>
                     </div>
                   </div>
                 </div>

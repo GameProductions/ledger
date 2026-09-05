@@ -5,8 +5,8 @@ import { HTTPException } from 'hono/http-exception'
 import { Bindings, Variables } from '../types'
 import { TransactionSchema, ConfirmationNumberItemSchema } from '@shared/schemas'
 import { getDb } from '#/index'
-import { trackedExpenses, transactions, sharedBalances, trackedExpenseConfirmationNumbers, trackedExpenseLifecycleLogs, confirmationNumberCategories } from '#/schema'
-import { eq, and, inArray, sql } from 'drizzle-orm'
+import { trackedExpenses, transactions, sharedBalances, trackedExpenseConfirmationNumbers, trackedExpenseLifecycleLogs, confirmationNumberCategories, transactionConfirmationNumbers, transactionTimeline } from '#/schema'
+import { eq, and, inArray, sql, asc } from 'drizzle-orm'
 import { logAudit } from '../utils'
 
 const trackedExpensesRoutes = new Hono<{ Bindings: Bindings, Variables: Variables }>()
@@ -56,8 +56,37 @@ trackedExpensesRoutes.get('/', async (c) => {
         eq(trackedExpenses.status, 'pending')
       )
     ) as any)
+
+  const expenseIds = results.map((r: any) => r.id)
+  const cnsByExpenseId: Record<string, any[]> = {}
+  if (expenseIds.length > 0) {
+    const allCns = (await db.select().from(trackedExpenseConfirmationNumbers)
+      .where(inArray(trackedExpenseConfirmationNumbers.trackedExpenseId, expenseIds))
+      .orderBy(asc(trackedExpenseConfirmationNumbers.sortOrder)) as any)
+    for (const cn of allCns) {
+      if (!cnsByExpenseId[cn.trackedExpenseId]) cnsByExpenseId[cn.trackedExpenseId] = []
+      cnsByExpenseId[cn.trackedExpenseId].push({
+        id: cn.id,
+        category: cn.category,
+        customCategoryLabel: cn.customCategoryLabel,
+        value: cn.value,
+        isPrimary: cn.isPrimary,
+        sortOrder: cn.sortOrder
+      })
+    }
+  }
+
+  const enhancedResults = results.map((item: any) => ({
+    ...item,
+    confirmationNumbers: cnsByExpenseId[item.id] || (item.confirmationNumber ? [{
+      category: 'confirmation',
+      value: item.confirmationNumber,
+      isPrimary: true,
+      sortOrder: 0
+    }] : [])
+  }))
   
-  return c.json({ success: true, data: results })
+  return c.json({ success: true, data: enhancedResults })
 })
 
 // 2. Create new tracked expense
@@ -261,58 +290,111 @@ trackedExpensesRoutes.post('/promote', zValidator('json', z.object({
   
   if (items.length === 0) return c.json({ success: false, error: 'No items found' }, 404)
   
-  // Determine the legacy confirmationNumber to use (first one or from old field)
-  let legacyConfirmationNumber = null
-  for (const item of items) {
-    if (item.confirmationNumber) {
-      legacyConfirmationNumber = item.confirmationNumber
-      break
-    }
+  // Fetch existing confirmation numbers from trackedExpenseConfirmationNumbers
+  const cnsByExpenseId: Record<string, any[]> = {}
+  const allExpenseCns = (await db.select().from(trackedExpenseConfirmationNumbers)
+    .where(inArray(trackedExpenseConfirmationNumbers.trackedExpenseId, ids))
+    .orderBy(asc(trackedExpenseConfirmationNumbers.sortOrder)) as any)
+  for (const cn of allExpenseCns) {
+    if (!cnsByExpenseId[cn.trackedExpenseId]) cnsByExpenseId[cn.trackedExpenseId] = []
+    cnsByExpenseId[cn.trackedExpenseId].push(cn)
   }
-  
-  const promoTxs = items.map((item: any) => {
-    // Get confirmation numbers from the item (new format) or legacy field
+
+  const promoOps: any[] = []
+
+  for (const item of items) {
+    const txId = crypto.randomUUID()
+    const itemCns = cnsByExpenseId[item.id] || []
+    
     let confirmationNumbers: any[] = []
-    if (item.confirmationNumbers && item.confirmationNumbers.length > 0) {
-      confirmationNumbers = item.confirmationNumbers
-    } else if (legacyConfirmationNumber) {
+    if (itemCns.length > 0) {
+      confirmationNumbers = itemCns.map(cn => ({
+        category: cn.category,
+        customCategoryLabel: cn.customCategoryLabel,
+        value: cn.value,
+        isPrimary: cn.isPrimary,
+        sortOrder: cn.sortOrder
+      }))
+    } else if (item.confirmationNumber) {
       confirmationNumbers = [{
         category: 'confirmation',
         customCategoryLabel: null,
-        value: legacyConfirmationNumber,
+        value: item.confirmationNumber,
         isPrimary: true,
         sortOrder: 0
       }]
     }
-    
-    return db.insert(transactions).values({
-      id: crypto.randomUUID(),
-      householdId,
-      accountId: transactionDetails.accountId || 'default-account',
-      categoryId: transactionDetails.categoryId || null,
-      amountCents: item.amountCents,
-      description: item.description,
-      transactionDate: transactionDetails.transactionDate || (item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-      notes: item.notes,
-      confirmationNumber: legacyConfirmationNumber || (item.confirmationNumbers?.[0]?.value ?? null),
-      attentionRequired: item.attentionRequired,
-      needsBalanceTransfer: item.needsBalanceTransfer,
-      transferReconciled: item.transferReconciled,
-      transferTiming: item.transferTiming,
-      isBorrowed: item.isBorrowed,
-      borrowSource: item.borrowSource,
-      chargeDescriptorId: transactionDetails.chargeDescriptorId || item.chargeDescriptorId || null,
-      billId: transactionDetails.billId || item.billId || null,
-      status: transactionDetails.status || 'pending',
-      source: 'tracked_expense_promotion'
-    })
-  })
-  
+
+    const primaryCn = confirmationNumbers[0]?.value || item.confirmationNumber || null
+    const txDate = transactionDetails.transactionDate || (item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+
+    promoOps.push(
+      db.insert(transactions).values({
+        id: txId,
+        householdId,
+        accountId: transactionDetails.accountId || 'default-account',
+        categoryId: transactionDetails.categoryId || null,
+        amountCents: item.amountCents,
+        description: item.description,
+        transactionDate: txDate,
+        notes: item.notes,
+        confirmationNumber: primaryCn,
+        attentionRequired: item.attentionRequired,
+        needsBalanceTransfer: item.needsBalanceTransfer,
+        transferReconciled: item.transferReconciled,
+        transferTiming: item.transferTiming,
+        isBorrowed: item.isBorrowed,
+        borrowSource: item.borrowSource,
+        chargeDescriptorId: transactionDetails.chargeDescriptorId || item.chargeDescriptorId || null,
+        billId: transactionDetails.billId || item.billId || null,
+        status: transactionDetails.status || 'pending',
+        source: 'tracked_expense_promotion'
+      })
+    )
+
+    // Log creation in transactionTimeline with confirmation numbers so it appears in transaction history
+    promoOps.push(
+      db.insert(transactionTimeline).values({
+        id: crypto.randomUUID(),
+        transactionId: txId,
+        type: 'creation',
+        content: JSON.stringify({
+          amountCents: item.amountCents,
+          description: item.description,
+          transactionDate: txDate,
+          accountId: transactionDetails.accountId || null,
+          categoryId: transactionDetails.categoryId || null,
+          status: transactionDetails.status || 'pending',
+          notes: item.notes || null,
+          confirmationNumber: primaryCn,
+          confirmationNumbers: confirmationNumbers,
+          source: 'tracked_expense_promotion'
+        })
+      })
+    )
+
+    // Insert normalized confirmation numbers
+    for (let i = 0; i < confirmationNumbers.length; i++) {
+      const cn = confirmationNumbers[i]
+      promoOps.push(
+        db.insert(transactionConfirmationNumbers).values({
+          id: crypto.randomUUID(),
+          transactionId: txId,
+          category: cn.category || 'confirmation',
+          customCategoryLabel: cn.customCategoryLabel || null,
+          value: cn.value,
+          isPrimary: cn.isPrimary ?? (i === 0),
+          sortOrder: cn.sortOrder ?? i
+        })
+      )
+    }
+  }
+
   const updateTracked = db.update(trackedExpenses)
     .set({ status: 'committed' })
     .where(and(eq(trackedExpenses.householdId, householdId), inArray(trackedExpenses.id, ids)))
     
-  await db.batch([...promoTxs, updateTracked] as any)
+  await db.batch([...promoOps, updateTracked] as any)
   
   await logAudit(c, 'tracked_expenses', 'bulk', 'PROMOTE', null, { ids, transactionDetails })
   return c.json({ success: true })

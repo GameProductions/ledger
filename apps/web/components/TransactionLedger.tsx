@@ -36,6 +36,7 @@ import { CurrencyInput } from './ui/CurrencyInput'
 import { Checkbox } from './ui/Checkbox'
 import { QuickAttentionAdd } from './QuickAttentionAdd'
 import { TransactionTimeline } from './TransactionTimeline'
+import { TransactionFlagsSelector } from './ui/TransactionFlagsSelector'
 
 interface SplitRow {
   id: string;
@@ -60,9 +61,39 @@ export const TransactionLedger: React.FC = () => {
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
   const [limit, setLimit] = useState(50)
   const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false)
-  
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false)
+  const [filterAccountId, setFilterAccountId] = useState('')
+  const [filterCategoryId, setFilterCategoryId] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterStartDate, setFilterStartDate] = useState('')
+  const [filterEndDate, setFilterEndDate] = useState('')
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filterAccountId) count++
+    if (filterCategoryId) count++
+    if (filterStatus) count++
+    if (filterStartDate) count++
+    if (filterEndDate) count++
+    return count
+  }, [filterAccountId, filterCategoryId, filterStatus, filterStartDate, filterEndDate])
+
+  const txQueryUrl = useMemo(() => {
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    params.set('sortBy', sortBy)
+    params.set('sortDir', sortDir)
+    params.set('limit', String(limit))
+    if (filterAccountId) params.set('accountId', filterAccountId)
+    if (filterCategoryId) params.set('categoryId', filterCategoryId)
+    if (filterStatus) params.set('status', filterStatus)
+    if (filterStartDate) params.set('startDate', filterStartDate)
+    if (filterEndDate) params.set('endDate', filterEndDate)
+    return `/api/financials/transactions?${params.toString()}`
+  }, [q, sortBy, sortDir, limit, filterAccountId, filterCategoryId, filterStatus, filterStartDate, filterEndDate])
+
   // Data Fetching
-  const { data: transactions = [], mutate: mutateTx } = (useApi(`/api/financials/transactions?q=${encodeURIComponent(q)}&sortBy=${sortBy}&sortDir=${sortDir}&limit=${limit}`) as any)
+  const { data: transactions = [], mutate: mutateTx } = (useApi(txQueryUrl) as any)
   const { data: accounts = [] } = (useApi('/api/financials/accounts') as any)
   const { data: categories = [] } = (useApi('/api/financials/categories') as any)
   const { data: bills = [] } = (useApi('/api/planning/bills') as any)
@@ -764,11 +795,129 @@ export const TransactionLedger: React.FC = () => {
             >
               <Flag size={14} className={showNeedsAttentionOnly ? 'fill-current' : ''} />
             </button>
-            <button className="p-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all cursor-pointer" title="Filters">
-              <Filter size={14} className="text-secondary" />
+            <button 
+              onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+              className={`p-2 border rounded-xl transition-all cursor-pointer relative ${isFilterPanelOpen || activeFiltersCount > 0 ? 'bg-primary/20 border-primary/50 text-primary' : 'bg-white/5 border-white/10 text-secondary hover:bg-white/10'}`} 
+              title="Filters"
+            >
+              <Filter size={14} className={isFilterPanelOpen || activeFiltersCount > 0 ? 'text-primary' : 'text-secondary'} />
+              {activeFiltersCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-black text-[9px] font-black rounded-full flex items-center justify-center">
+                  {activeFiltersCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Interactive Filter Drawer / Panel */}
+        {isFilterPanelOpen && (
+          <div className="mb-4 p-4 bg-black/40 border border-white/10 rounded-2xl animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <Filter size={14} className="text-primary" />
+                <span className="text-xs font-black tracking-widest text-white">Filter Transactions</span>
+                {activeFiltersCount > 0 && (
+                  <span className="px-2 py-0.5 bg-primary/20 text-primary border border-primary/30 rounded-full text-[10px] font-black">
+                    {activeFiltersCount} active
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {activeFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterAccountId('')
+                      setFilterCategoryId('')
+                      setFilterStatus('')
+                      setFilterStartDate('')
+                      setFilterEndDate('')
+                    }}
+                    className="text-[10px] font-black tracking-widest text-secondary hover:text-white transition-colors cursor-pointer"
+                  >
+                    Reset All
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsFilterPanelOpen(false)}
+                  className="p-1 text-secondary hover:text-white transition-colors"
+                  aria-label="Close filter panel"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div>
+                <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Account</label>
+                <select
+                  value={filterAccountId}
+                  onChange={e => setFilterAccountId(e.target.value)}
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-xs text-white focus:border-primary outline-none"
+                >
+                  <option value="">All Accounts</option>
+                  {(accounts || []).map((a: any) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Category</label>
+                <select
+                  value={filterCategoryId}
+                  onChange={e => setFilterCategoryId(e.target.value)}
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-xs text-white focus:border-primary outline-none"
+                >
+                  <option value="">All Categories</option>
+                  {(categories || []).map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">Status</label>
+                <select
+                  value={filterStatus}
+                  onChange={e => setFilterStatus(e.target.value)}
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-xs text-white focus:border-primary outline-none"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="reconciled">Reconciled</option>
+                  <option value="paid">Paid</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">From Date</label>
+                <input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={e => setFilterStartDate(e.target.value)}
+                  style={{ colorScheme: 'dark' }}
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-xs text-white focus:border-primary outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black tracking-widest text-secondary mb-1 block">To Date</label>
+                <input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={e => setFilterEndDate(e.target.value)}
+                  style={{ colorScheme: 'dark' }}
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2 text-xs text-white focus:border-primary outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/10">
           <table className="w-full text-left border-collapse text-xs sm:text-sm min-w-[600px]">
@@ -909,7 +1058,18 @@ export const TransactionLedger: React.FC = () => {
                                     transactionDate: tx.transactionDate,
                                     notes: tx.notes || '',
                                     confirmationNumber: tx.confirmationNumber || '',
-                                    status: tx.status || 'pending'
+                                    confirmationNumbers: tx.confirmationNumbers || (tx.confirmationNumber ? [{
+                                      category: 'confirmation',
+                                      value: tx.confirmationNumber,
+                                      isPrimary: true,
+                                      sortOrder: 0
+                                    }] : []),
+                                    status: tx.status || 'pending',
+                                    attentionRequired: tx.attentionRequired ?? false,
+                                    needsBalanceTransfer: tx.needsBalanceTransfer ?? false,
+                                    transferTiming: tx.transferTiming || 'same_day',
+                                    isBorrowed: tx.isBorrowed ?? false,
+                                    borrowSource: tx.borrowSource || ''
                                   });
                                 }} 
                                 className="flex items-center gap-1.5 bg-blue-500/15 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl hover:bg-blue-500/25 transition cursor-pointer font-bold text-xs"
@@ -1515,6 +1675,30 @@ export const TransactionLedger: React.FC = () => {
               placeholder="Additional notes..."
             />
           </div>
+          {/* Flags Selector */}
+          <div className="border-t border-white/5 pt-3">
+            <TransactionFlagsSelector
+              flags={{
+                attentionRequired: txForm.attentionRequired,
+                needsBalanceTransfer: txForm.needsBalanceTransfer,
+                transferTiming: txForm.transferTiming,
+                isBorrowed: txForm.isBorrowed,
+                borrowType: txForm.borrowType,
+                borrowUserId: txForm.borrowUserId,
+                borrowCustomName: txForm.borrowCustomName,
+                borrowPaybackDate: txForm.borrowPaybackDate,
+                borrowPaybackMethod: txForm.borrowPaybackMethod,
+                borrowNotes: txForm.borrowNotes,
+                recordHouseholdIou: txForm.recordHouseholdIou,
+                borrowSource: txForm.borrowSource
+              }}
+              onChange={updates => setTxForm({ ...txForm, ...updates })}
+              members={members}
+              currentUserId={user?.id}
+              showTransferReconciled={false}
+              accentColor="primary"
+            />
+          </div>
           <div className="flex justify-end gap-3 mt-6">
             <button type="button" onClick={() => setIsAddTxOpen(false)} className="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 transition-colors cursor-pointer">Cancel</button>
             <button type="submit" className="px-6 py-3 bg-primary text-black font-bold rounded-xl hover:brightness-110 transition-all cursor-pointer">Add Transaction</button>
@@ -1634,6 +1818,30 @@ export const TransactionLedger: React.FC = () => {
                 onChange={e => setTxForm({...txForm, notes: e.target.value})} 
                 className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-primary h-20 resize-none" 
                 placeholder="Additional notes..."
+              />
+            </div>
+            {/* Flags Selector */}
+            <div className="border-t border-white/5 pt-3">
+              <TransactionFlagsSelector
+                flags={{
+                  attentionRequired: txForm.attentionRequired,
+                  needsBalanceTransfer: txForm.needsBalanceTransfer,
+                  transferTiming: txForm.transferTiming,
+                  isBorrowed: txForm.isBorrowed,
+                  borrowType: txForm.borrowType,
+                  borrowUserId: txForm.borrowUserId,
+                  borrowCustomName: txForm.borrowCustomName,
+                  borrowPaybackDate: txForm.borrowPaybackDate,
+                  borrowPaybackMethod: txForm.borrowPaybackMethod,
+                  borrowNotes: txForm.borrowNotes,
+                  recordHouseholdIou: txForm.recordHouseholdIou,
+                  borrowSource: txForm.borrowSource
+                }}
+                onChange={updates => setTxForm({ ...txForm, ...updates })}
+                members={members}
+                currentUserId={user?.id}
+                showTransferReconciled={false}
+                accentColor={editingTx?.linkedTransactionId ? 'blue' : 'primary'}
               />
             </div>
             <div className="flex justify-end gap-3 mt-6">

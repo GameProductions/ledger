@@ -784,9 +784,9 @@ const EntityManagerPage: React.FC = () => {
 
   return (
     <MainLayout title="Entity Manager" subtitle="Manage your financial entities">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-start gap-6 max-w-7xl mx-auto">
         {/* Sidebar Nav */}
-        <nav className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 h-fit lg:sticky lg:top-6">
+        <nav className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 h-fit w-full md:w-64 md:shrink-0 md:sticky md:top-6">
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-[9px] font-black tracking-[0.2em] text-white/30">Entity Types</span>
             <button

@@ -9,6 +9,8 @@ import { CurrencyInput } from './ui/CurrencyInput'
 import { SearchableSelect, SearchableOption } from './ui/SearchableSelect'
 import { Checkbox } from './ui/Checkbox'
 import { ConfirmationNumberBuilder, ConfirmationNumberItem } from './ui/ConfirmationNumberBuilder'
+import { TransactionFlagsSelector } from './ui/TransactionFlagsSelector'
+import { Search, ArrowUpDown, X } from 'lucide-react'
 
 interface QuickAttentionAddProps {
   onAdded: () => void;
@@ -94,6 +96,23 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
   const [loading, setLoading] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showInfo, setShowInfo] = useState(false)
+  const [instanceSort, setInstanceSort] = useState<'default' | 'amount-desc' | 'amount-asc' | 'date'>('default')
+  const [instanceFilter, setInstanceFilter] = useState<'all' | 'flagged' | 'transfer' | 'borrowed'>('all')
+
+  const handleSortInstances = (sortType: 'default' | 'amount-desc' | 'amount-asc' | 'date') => {
+    setInstanceSort(sortType)
+    if (sortType === 'default') return
+    setInstances(prev => {
+      const copy = [...prev]
+      copy.sort((a, b) => {
+        if (sortType === 'amount-desc') return (b.amountCents || 0) - (a.amountCents || 0)
+        if (sortType === 'amount-asc') return (a.amountCents || 0) - (b.amountCents || 0)
+        if (sortType === 'date') return (a.transactionDate || '').localeCompare(b.transactionDate || '')
+        return 0
+      })
+      return copy
+    })
+  }
 
   const handleDuplicate = (index: number) => {
     const source = instances[index];
@@ -306,8 +325,53 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+        {instances.length > 1 && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-black/40 border border-white/10 rounded-2xl">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black tracking-widest text-secondary/60">Sort</span>
+              <select
+                value={instanceSort}
+                onChange={(e) => handleSortInstances(e.target.value as any)}
+                className="bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs font-bold text-white outline-none focus:border-orange-500/50 transition-all"
+              >
+                <option value="default">Default (Order Added)</option>
+                <option value="amount-desc">Amount: High to Low</option>
+                <option value="amount-asc">Amount: Low to High</option>
+                <option value="date">Transaction Date</option>
+              </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-black tracking-widest text-secondary/60 mr-1">Filter</span>
+              {[
+                { key: 'all' as const, label: 'All' },
+                { key: 'flagged' as const, label: 'Flagged' },
+                { key: 'transfer' as const, label: 'Transfer' },
+                { key: 'borrowed' as const, label: 'Borrowed' },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setInstanceFilter(f.key)}
+                  className={`px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest transition-all cursor-pointer ${instanceFilter === f.key ? 'bg-orange-500/15 border-orange-500/40 text-orange-300' : 'bg-black/60 border-white/10 text-secondary hover:bg-white/5'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-6">
-          {instances.map((inst, index) => (
+          {instances
+            .map((inst, origIndex) => ({ inst, origIndex }))
+            .filter(({ inst }) => {
+              if (instanceFilter === 'flagged') return inst.attentionRequired || inst.needsBalanceTransfer || inst.isBorrowed
+              if (instanceFilter === 'transfer') return inst.needsBalanceTransfer
+              if (instanceFilter === 'borrowed') return inst.isBorrowed
+              return true
+            })
+            .map(({ inst, origIndex }) => (
             <div 
               key={inst.id} 
               className={`p-4 bg-black/20 border rounded-2xl relative transition-all ${
@@ -318,7 +382,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
               <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
                 <button
                   type="button"
-                  onClick={() => handleDuplicate(index)}
+                  onClick={() => handleDuplicate(origIndex)}
                   className="p-1.5 text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-all cursor-pointer animate-in fade-in"
                   title="Duplicate this instance"
                 >
@@ -327,7 +391,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                 {instances.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => handleRemove(index)}
+                    onClick={() => handleRemove(origIndex)}
                     className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer animate-in fade-in"
                     title="Remove this instance"
                   >
@@ -338,16 +402,19 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
 
               {instances.length > 1 && (
                 <div className="text-[9px] tracking-widest text-orange-400/60 font-black mb-3">
-                  Instance #{index + 1}
+                  Instance #{origIndex + 1}
                 </div>
               )}
+
+
+
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-xs tracking-widest text-secondary mb-1 flex">Amount</label>
                   <CurrencyInput 
                     valueCents={inst.amountCents} 
-                    onChangeCents={cents => handleUpdate(index, { amountCents: cents })}
+                    onChangeCents={cents => handleUpdate(origIndex, { amountCents: cents })}
                     placeholder="0.00" 
                     required 
                     className="focus:border-orange-500/50"
@@ -358,7 +425,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                   <input 
                     type="date" 
                     value={inst.transactionDate} 
-                    onChange={e => handleUpdate(index, { transactionDate: e.target.value })}
+                    onChange={e => handleUpdate(origIndex, { transactionDate: e.target.value })}
                     style={{ colorScheme: 'dark' }}
                     className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors animate-in"
                     required
@@ -371,7 +438,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                     value={inst.chargeDescriptorId}
                     onChange={(val) => {
                       const cd = (chargeDescriptors || []).find((c: any) => c.id === val)
-                      handleUpdate(index, { chargeDescriptorId: val, description: cd?.name || inst.description })
+                      handleUpdate(origIndex, { chargeDescriptorId: val, description: cd?.name || inst.description })
                     }}
                     placeholder="Choose or create descriptor..."
                   />
@@ -395,7 +462,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                       if (matched && !inst.description) {
                         updates.description = matched.name
                       }
-                      handleUpdate(index, updates)
+                      handleUpdate(origIndex, updates)
                     }}
                     placeholder="Select specific bill instance..."
                   />
@@ -405,7 +472,7 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                   <input 
                     type="text" 
                     value={inst.description} 
-                    onChange={e => handleUpdate(index, { description: e.target.value })}
+                    onChange={e => handleUpdate(origIndex, { description: e.target.value })}
                     placeholder="What was this for?" 
                     required 
                     className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
@@ -415,239 +482,72 @@ export const QuickAttentionAdd: React.FC<QuickAttentionAddProps> = ({ onAdded })
                 <div className="md:col-span-4">
                   <ConfirmationNumberBuilder
                     value={inst.confirmationNumber}
-                    onChangeValue={val => handleUpdate(index, { confirmationNumber: val })}
+                    onChangeValue={val => handleUpdate(origIndex, { confirmationNumber: val })}
                     confirmationNumbers={inst.confirmationNumbers}
-                    onChangeNumbers={items => handleUpdate(index, { confirmationNumbers: items })}
+                    onChangeNumbers={items => handleUpdate(origIndex, { confirmationNumbers: items })}
                     accentColor="orange"
                     compact={true}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 py-2 mt-3 border-y border-white/5">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <Checkbox 
-                    checked={inst.attentionRequired} 
-                    onChange={v => handleUpdate(index, { attentionRequired: v })} 
-                    iconClassName="text-orange-500"
-                  />
-                  <span className="text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
-                    <ShieldAlert size={14} className={inst.attentionRequired ? "text-orange-400" : ""} />
-                    Flag for Future Attention
-                  </span>
-                </label>
-              </div>
-
-              <AnimatePresence>
-                {inst.attentionRequired && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="bg-orange-500/5 border border-orange-500/10 rounded-2xl p-4 mt-2 space-y-5">
-                      
-                      {/* Requires Balance Transfer */}
-                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-                        <label className="flex items-center gap-2 cursor-pointer flex-1">
-                          <Checkbox 
-                            checked={inst.needsBalanceTransfer} 
-                            onChange={v => handleUpdate(index, { 
-                              needsBalanceTransfer: v,
-                              transferTiming: inst.transferTiming || 'same_day'
-                            })}
-                            iconClassName="text-orange-500"
-                          />
-                          <span className="text-xs sm:text-sm font-bold flex items-center gap-1.5 text-orange-200">
-                            <ArrowRightLeft size={16} /> Requires Balance Transfer
-                          </span>
-                        </label>
-                        
-                        {inst.needsBalanceTransfer && (
-                          <div className="flex items-center gap-2 w-full sm:w-auto min-w-[240px]">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-orange-300/70 hidden sm:inline">Timing:</span>
-                            <div className="w-full sm:w-64">
-                              <SearchableSelect 
-                                options={TRANSFER_TIMING_OPTIONS}
-                                value={inst.transferTiming || 'same_day'} 
-                                onChange={val => handleUpdate(index, { transferTiming: val })}
-                                placeholder="Select transfer timing..."
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="w-full h-px bg-white/5"></div>
-
-                      {/* Funds Were Borrowed (Linked to IOU & Payback Details) */}
-                      <div className="space-y-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox 
-                            checked={inst.isBorrowed} 
-                            onChange={v => handleUpdate(index, { isBorrowed: v })}
-                            iconClassName="text-orange-500"
-                          />
-                          <span className="text-xs sm:text-sm font-bold flex items-center gap-1.5 text-orange-200">
-                            <HandCoins size={16} /> Funds were Borrowed
-                          </span>
-                        </label>
-                        
-                        {inst.isBorrowed && (
-                          <div className="p-3.5 bg-black/40 border border-orange-500/20 rounded-xl space-y-4 animate-in slide-in-from-top-1 duration-200">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-2">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-orange-300">
-                                Who to Reimburse & Payback Details
-                              </span>
-                              {otherMembers.length > 0 && (
-                                <div className="flex bg-black/40 rounded-lg p-0.5 border border-white/10 self-start sm:self-auto">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdate(index, { borrowType: 'member' })}
-                                    className={`px-2.5 py-1 text-[10px] font-black rounded-md transition-all cursor-pointer ${
-                                      inst.borrowType === 'member' ? 'bg-orange-500 text-black shadow-sm' : 'text-white/60 hover:text-white'
-                                    }`}
-                                  >
-                                    Household Member
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUpdate(index, { borrowType: 'external' })}
-                                    className={`px-2.5 py-1 text-[10px] font-black rounded-md transition-all cursor-pointer ${
-                                      inst.borrowType === 'external' ? 'bg-orange-500 text-black shadow-sm' : 'text-white/60 hover:text-white'
-                                    }`}
-                                  >
-                                    External / Other
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Lender Selection */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {inst.borrowType === 'member' && otherMembers.length > 0 ? (
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                                    Household Member (IOU Recipient)
-                                  </label>
-                                  <SearchableSelect
-                                    options={memberOptions}
-                                    value={inst.borrowUserId || otherMembers[0]?.user?.id || otherMembers[0]?.id || ''}
-                                    onChange={val => handleUpdate(index, { borrowUserId: val })}
-                                    placeholder="Search household member..."
-                                  />
-                                </div>
-                              ) : (
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                                    Lender / Entity Name
-                                  </label>
-                                  <SearchableSelect
-                                    options={lenderOptions}
-                                    value={inst.borrowCustomName}
-                                    onChange={val => handleUpdate(index, { borrowCustomName: val })}
-                                    onCreate={(search) => {
-                                      const trimmed = search.trim()
-                                      if (trimmed) {
-                                        setCustomLenders(prev => Array.from(new Set([...prev, trimmed])))
-                                        handleUpdate(index, { borrowCustomName: trimmed })
-                                        return trimmed
-                                      }
-                                    }}
-                                    placeholder="Search or enter lender/entity name..."
-                                  />
-                                </div>
-                              )}
-
-                              {/* Target Payback Date */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                                  Target Payback Date (Optional)
-                                </label>
-                                <input
-                                  type="date"
-                                  value={inst.borrowPaybackDate}
-                                  onChange={e => handleUpdate(index, { borrowPaybackDate: e.target.value })}
-                                  style={{ colorScheme: 'dark' }}
-                                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Payback Method & Terms */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                                  Reimbursement Method
-                                </label>
-                                <SearchableSelect
-                                  options={customReimbursementMethods}
-                                  value={inst.borrowPaybackMethod || 'venmo'}
-                                  onChange={val => handleUpdate(index, { borrowPaybackMethod: val })}
-                                  onCreate={(search) => {
-                                    const trimmed = search.trim()
-                                    if (trimmed) {
-                                      const newOpt: SearchableOption = { value: trimmed.toLowerCase().replace(/\s+/g, '_'), label: trimmed }
-                                      setCustomReimbursementMethods(prev => [...prev, newOpt])
-                                      handleUpdate(index, { borrowPaybackMethod: newOpt.value })
-                                      return newOpt.value
-                                    }
-                                  }}
-                                  placeholder="Select or add method..."
-                                />
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-secondary uppercase tracking-wider block">
-                                  Payback Terms / Notes
-                                </label>
-                                <input
-                                  type="text"
-                                  value={inst.borrowNotes}
-                                  onChange={e => handleUpdate(index, { borrowNotes: e.target.value })}
-                                  placeholder="e.g. Repay from next Friday paycheck"
-                                  className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs font-bold text-white outline-none focus:border-orange-400"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Auto-record Household IOU Option */}
-                            {inst.borrowType === 'member' && otherMembers.length > 0 && (
-                              <label className="flex items-center gap-2 p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-xl cursor-pointer">
-                                <Checkbox
-                                  checked={inst.recordHouseholdIou}
-                                  onChange={v => handleUpdate(index, { recordHouseholdIou: v })}
-                                  iconClassName="text-orange-400"
-                                />
-                                <span className="text-xs font-bold text-orange-200">
-                                  Automatically sync to Household IOU & Shared Balances Ledger
-                                </span>
-                              </label>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Flags Selector */}
+              <TransactionFlagsSelector
+                flags={{
+                  attentionRequired: inst.attentionRequired,
+                  needsBalanceTransfer: inst.needsBalanceTransfer,
+                  transferTiming: inst.transferTiming,
+                  isBorrowed: inst.isBorrowed,
+                  borrowType: inst.borrowType,
+                  borrowUserId: inst.borrowUserId,
+                  borrowCustomName: inst.borrowCustomName,
+                  borrowPaybackDate: inst.borrowPaybackDate,
+                  borrowPaybackMethod: inst.borrowPaybackMethod,
+                  borrowNotes: inst.borrowNotes,
+                  recordHouseholdIou: inst.recordHouseholdIou,
+                  borrowSource: inst.borrowSource
+                }}
+                onChange={updates => handleUpdate(origIndex, updates)}
+                members={members}
+                currentUserId={user?.id}
+                showTransferReconciled={false}
+                accentColor="orange"
+              />
             </div>
           ))}
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-white/5">
-          <div className="text-xs text-secondary font-semibold order-2 sm:order-1">
-            {instances.length > 1 && `${instances.length} items staged to add`}
+          <div className="flex items-center gap-3 order-2 sm:order-1">
+            <span className="text-xs text-secondary font-semibold">
+              {instances.length > 1 && `${instances.length} items staged to add`}
+            </span>
+            {(instances.length > 1 || instances[0]?.description || instances[0]?.amountCents > 0) && (
+              <button
+                type="button"
+                onClick={() => setInstances([createEmptyInstance()])}
+                className="text-[10px] font-black tracking-widest text-red-400 hover:text-red-300 hover:underline cursor-pointer"
+              >
+                Discard / Reset Changes
+              </button>
+            )}
           </div>
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="px-6 py-2.5 bg-white text-black font-black tracking-widest text-xs rounded-xl hover:scale-105 transition-transform cursor-pointer"
-          >
-            {loading ? 'Adding...' : instances.length > 1 ? `Save All Transactions (${instances.length})` : 'Save Transaction'}
-          </button>
+          <div className="flex items-center gap-2 order-1 sm:order-2">
+            <button
+              type="button"
+              onClick={() => setInstances([createEmptyInstance()])}
+              className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white font-bold tracking-wider text-xs rounded-xl transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="px-6 py-2.5 bg-white text-black font-black tracking-widest text-xs rounded-xl hover:scale-105 transition-transform cursor-pointer"
+            >
+              {loading ? 'Adding...' : instances.length > 1 ? `Save All Transactions (${instances.length})` : 'Save Transaction'}
+            </button>
+          </div>
         </div>
       </form>
 

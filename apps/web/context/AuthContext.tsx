@@ -139,14 +139,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleStorage = (e?: StorageEvent) => {
       if (e && e.key && !e.key.startsWith('ledger_')) return
       const savedToken = localStorage.getItem('ledger_token')
-      if (savedToken && savedToken !== token) {
+      if (savedToken) {
+        (window as any)._ledger_is_logging_out = false
         setToken(savedToken)
+      } else {
+        setToken(null)
       }
       const savedUserStr = localStorage.getItem('ledger_user')
       if (savedUserStr) {
         try {
           setUser(JSON.parse(savedUserStr))
         } catch {}
+      } else {
+        setUser(null)
       }
       const savedHousehold = localStorage.getItem('ledger_householdId')
       if (savedHousehold) {
@@ -165,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('storage', handleStorage)
       window.removeEventListener('ledger_auth_sync', handleStorage)
     }
-  }, [token])
+  }, [])
 
   const handleSetPrivacyMode = React.useCallback((active: boolean) => {
     setPrivacyMode(active)

@@ -87,9 +87,13 @@ export const authMiddleware = async (c: Context<{ Bindings: Bindings, Variables:
     let activeHouseholdId = householdHeader || payload.householdId
 
     // Heartbeat (Non-blocking)
-    c.executionCtx.waitUntil(
-      db.update(users).set({ lastActiveAt: new Date().toISOString() }).where(eq(users.id, userId)).execute()
-    )
+    if (c.executionCtx?.waitUntil) {
+      c.executionCtx.waitUntil(
+        db.update(users).set({ lastActiveAt: new Date().toISOString() }).where(eq(users.id, userId)).execute()
+      )
+    } else {
+      db.update(users).set({ lastActiveAt: new Date().toISOString() }).where(eq(users.id, userId)).execute().catch(() => {})
+    }
 
     // 3. Household Context Logic
     // If no explicit household was provided, or if the header was empty, resolve from user's primary memberships

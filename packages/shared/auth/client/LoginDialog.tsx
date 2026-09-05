@@ -666,6 +666,17 @@ export function LoginDialog({
         if (sid) {
           saveSessionToken(sid)
         }
+        if (data.data?.user || data.user) {
+          const userObj = data.data?.user || data.user
+          try {
+            localStorage.setItem('ledger_user', JSON.stringify(userObj))
+            if (userObj.globalRole) localStorage.setItem('ledger_globalRole', userObj.globalRole)
+            if (userObj.householdId) localStorage.setItem('ledger_householdId', userObj.householdId)
+          } catch {}
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('ledger_auth_sync'))
+        }
         if (typeof BroadcastChannel !== 'undefined') {
           const bc = new BroadcastChannel('fleet_auth_channel')
           bc.postMessage({ type: 'LOGIN_SUCCESS' })

@@ -57,6 +57,24 @@ auth.get('/proxy-user', async (c) => {
   return c.json({ success: false })
 })
 
+auth.get('/verify', async (c) => {
+  const userId = c.get('userId')
+  const globalRole = c.get('globalRole') || 'user'
+  const householdId = c.get('householdId') || null
+  const sessionId = c.get('sessionId') || null
+
+  return c.json({
+    success: true,
+    data: {
+      userId,
+      globalRole,
+      householdId,
+      sessionId,
+      isImpersonating: false
+    }
+  })
+})
+
 
 export async function createSessionTracker(c: any, userId: string, passkeyVerified: boolean = false, isPersistent: boolean = false) {
   const db = getDb(c.env)
@@ -159,7 +177,10 @@ auth.post('/login', zValidator('json', z.object({
           displayName: user.displayName,
           forcePasswordChange: !!user.forcePasswordChange
         }
-      }
+      },
+      token,
+      sessionToken: token,
+      sessionId
     })
   } catch (e: any) {
     if (e instanceof HTTPException) throw e

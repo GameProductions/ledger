@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
   const [isAdminVerified, setIsAdminVerified] = useState<boolean>(false)
 
-  // Session Verification
+  // Session Verification & Profile Hydration
   React.useEffect(() => {
     if (token) {
       const verifySession = async () => {
@@ -59,6 +59,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setRawHouseholdId(verifiedHouseholdId)
                 localStorage.setItem('ledger_householdId', verifiedHouseholdId)
               }
+
+              // Hydrate user profile if not present
+              if (!user) {
+                const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                })
+                if (profileRes.ok) {
+                  const pEnv = (await profileRes.json() as any)
+                  if (pEnv.success && pEnv.data) {
+                    setUser(pEnv.data)
+                    localStorage.setItem('ledger_user', JSON.stringify(pEnv.data))
+                  }
+                }
+              }
             } else {
               console.error('[Verification failed] Malformed verify response', envelope)
               logout()
@@ -71,6 +85,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       verifySession()
+    }
+  }, [token, user, logout])
+
+  // Listen for storage events (e.g. from LoginDialog saving ledger_token)
+  React.useEffect(() => {
+    const handleStorage = (e?: StorageEvent) => {
+      if (e && e.key && !e.key.startsWith('ledger_')) return
+      const savedToken = localStorage.getItem('ledger_token')
+      if (savedToken && savedToken !== token) {
+        setToken(savedToken)
+      }
+      const savedUserStr = localStorage.getItem('ledger_user')
+      if (savedUserStr) {
+        try {
+          setUser(JSON.parse(savedUserStr))
+        } catch {}
+      }
+      const savedHousehold = localStorage.getItem('ledger_householdId')
+      if (savedHousehold) {
+        setRawHouseholdId(savedHousehold)
+      }
+      const savedRole = localStorage.getItem('ledger_globalRole')
+      if (savedRole) {
+        setGlobalRole(savedRole)
+      }
+    }
+
+    window.addEventListener('storage', handleStorage)
+    // Custom sync event for same-window updates
+    window.addEventListener('ledger_auth_sync', handleStorage)
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener('ledger_auth_sync', handleStorage)
     }
   }, [token])
 

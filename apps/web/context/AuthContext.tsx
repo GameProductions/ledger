@@ -37,6 +37,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isImpersonating, setIsImpersonating] = useState<boolean>(false)
   const [isAdminVerified, setIsAdminVerified] = useState<boolean>(false)
 
+  const logout = React.useCallback(() => {
+    // Clear memory state before storage for immediate UI lockout
+    (window as any)._ledger_is_logging_out = true
+    setToken(null)
+    setUser(null)
+    setRawHouseholdId(null)
+    setGlobalRole(null)
+    setPrivacyMode(false)
+    setIsImpersonating(false)
+    setIsAdminVerified(false)
+    
+    // Clear storage
+    localStorage.removeItem('ledger_token')
+    localStorage.removeItem('ledger_user')
+    localStorage.removeItem('ledger_householdId')
+    localStorage.removeItem('ledger_globalRole')
+    localStorage.removeItem('ledger_privacy_mode')
+    localStorage.removeItem('ledger_impersonation_active')
+  }, [])
+
+  const login = React.useCallback((newToken: string, newUser: any) => {
+    (window as any)._ledger_is_logging_out = false
+    setToken(newToken)
+    setUser(newUser)
+    setGlobalRole(newUser.globalRole || 'user')
+    localStorage.setItem('ledger_token', newToken)
+    localStorage.setItem('ledger_user', JSON.stringify(newUser))
+    localStorage.setItem('ledger_globalRole', newUser.globalRole || 'user')
+    
+    // Clear impersonation on fresh login
+    setIsImpersonating(false)
+    localStorage.removeItem('ledger_impersonation_active')
+
+    // FORENSIC PRIORITY: Prioritize the householdId from the profile if available
+    const hId = newUser.householdId || null
+    setRawHouseholdId(hId)
+    localStorage.setItem('ledger_householdId', hId || '')
+  }, [])
+
   // Session Verification & Profile Hydration
   React.useEffect(() => {
     if (token) {
@@ -120,45 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('ledger_auth_sync', handleStorage)
     }
   }, [token])
-
-  const login = React.useCallback((newToken: string, newUser: any) => {
-    (window as any)._ledger_is_logging_out = false
-    setToken(newToken)
-    setUser(newUser)
-    setGlobalRole(newUser.globalRole || 'user')
-    localStorage.setItem('ledger_token', newToken)
-    localStorage.setItem('ledger_user', JSON.stringify(newUser))
-    localStorage.setItem('ledger_globalRole', newUser.globalRole || 'user')
-    
-    // Clear impersonation on fresh login
-    setIsImpersonating(false)
-    localStorage.removeItem('ledger_impersonation_active')
-
-    // FORENSIC PRIORITY: Prioritize the householdId from the profile if available
-    const hId = newUser.householdId || null
-    setRawHouseholdId(hId)
-    localStorage.setItem('ledger_householdId', hId || '')
-  }, [])
-
-  const logout = React.useCallback(() => {
-    // Clear memory state before storage for immediate UI lockout
-    (window as any)._ledger_is_logging_out = true
-    setToken(null)
-    setUser(null)
-    setRawHouseholdId(null)
-    setGlobalRole(null)
-    setPrivacyMode(false)
-    setIsImpersonating(false)
-    setIsAdminVerified(false)
-    
-    // Clear storage
-    localStorage.removeItem('ledger_token')
-    localStorage.removeItem('ledger_user')
-    localStorage.removeItem('ledger_householdId')
-    localStorage.removeItem('ledger_globalRole')
-    localStorage.removeItem('ledger_privacy_mode')
-    localStorage.removeItem('ledger_impersonation_active')
-  }, [])
 
   const handleSetPrivacyMode = React.useCallback((active: boolean) => {
     setPrivacyMode(active)

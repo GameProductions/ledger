@@ -1038,6 +1038,10 @@ async function handleRegisterVerify(c: any) {
     
     await vault.setSecret(id, 'CREDENTIAL_ID', 'webauthn', credIdB64);
     await vault.setSecret(id, 'PUBLIC_KEY', 'webauthn', pubKeyB64);
+    await vault.setSecret(id, 'PASSKEY_PUBLIC_KEY', 'internal', pubKeyB64);
+    await vault.setSecret(credIdB64, 'PASSKEY_PUBLIC_KEY', 'internal', pubKeyB64);
+    await vault.setSecret(credIdB64, 'PUBLIC_KEY', 'webauthn', pubKeyB64);
+    await vault.setSecret(credIdB64, 'CREDENTIAL_ID', 'webauthn', credIdB64);
 
     await db.insert(passkeys).values({
       id,
@@ -1184,11 +1188,34 @@ const handlePasskeyLoginVerify = async (c: any) => {
   const passkey = passkeyResult[0]
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized' })
 
-  // 🔑 Retrieve secrets from Vault
-  const publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
-  const rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
+  // 🔑 Retrieve secrets from Vault with multi-scope & multi-key compatibility
+  const vaultEnvKey = c.env.ENCRYPTION_KEY ? new VaultService(db, c.env.ENCRYPTION_KEY) : null
+  let publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+    || (await vault.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+    || (await vault.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+    || (await vault.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
   
-  if (!publicKeyB64 || !rawCredentialId) {
+  if (!publicKeyB64 && vaultEnvKey) {
+    publicKeyB64 = (await vaultEnvKey.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+      || (await vaultEnvKey.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
+  }
+
+  let rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
+    || (await vault.getSecret(assertion.id, 'CREDENTIAL_ID', 'webauthn') as any)
+    || (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'internal') as any)
+    || passkey.id
+    || assertion.id
+  
+  if (!rawCredentialId && vaultEnvKey) {
+    rawCredentialId = (await vaultEnvKey.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'CREDENTIAL_ID', 'webauthn') as any)
+      || passkey.id
+      || assertion.id
+  }
+  
+  if (!publicKeyB64) {
     console.error('[WebAuthn/Login] Vault missing cryptographic materials for passkey:', passkey.id)
     throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }
@@ -1283,11 +1310,34 @@ auth.post('/passkeys/step-up-verify', zValidator('json', z.object({
   const passkey = passkeyResult[0]
   if (!passkey) throw new HTTPException(401, { message: 'Passkey not recognized for this user' })
 
-  // 🔑 Retrieve secrets from Vault
-  const publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
-  const rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
+  // 🔑 Retrieve secrets from Vault with multi-scope & multi-key compatibility
+  const vaultEnvKey = c.env.ENCRYPTION_KEY ? new VaultService(db, c.env.ENCRYPTION_KEY) : null
+  let publicKeyB64 = (await vault.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+    || (await vault.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+    || (await vault.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+    || (await vault.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
   
-  if (!publicKeyB64 || !rawCredentialId) {
+  if (!publicKeyB64 && vaultEnvKey) {
+    publicKeyB64 = (await vaultEnvKey.getSecret(passkey.id, 'PUBLIC_KEY', 'webauthn') as any)
+      || (await vaultEnvKey.getSecret(passkey.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'PASSKEY_PUBLIC_KEY', 'internal') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'PUBLIC_KEY', 'webauthn') as any)
+  }
+
+  let rawCredentialId = (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
+    || (await vault.getSecret(assertion.id, 'CREDENTIAL_ID', 'webauthn') as any)
+    || (await vault.getSecret(passkey.id, 'CREDENTIAL_ID', 'internal') as any)
+    || passkey.id
+    || assertion.id
+  
+  if (!rawCredentialId && vaultEnvKey) {
+    rawCredentialId = (await vaultEnvKey.getSecret(passkey.id, 'CREDENTIAL_ID', 'webauthn') as any)
+      || (await vaultEnvKey.getSecret(assertion.id, 'CREDENTIAL_ID', 'webauthn') as any)
+      || passkey.id
+      || assertion.id
+  }
+  
+  if (!publicKeyB64) {
     console.error('[WebAuthn/StepUp] Vault missing cryptographic materials for passkey:', passkey.id)
     throw new HTTPException(500, { message: 'Security Integrity Error: Cryptographic materials missing from Vault' })
   }

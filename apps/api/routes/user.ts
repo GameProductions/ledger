@@ -33,6 +33,30 @@ import { eq, and, sql, desc, asc, or, gt, ne, isNull } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 const user = new Hono<{ Bindings: Bindings, Variables: Variables }>()
 
+async function resolveHouseholdId(c: any, paramId?: string): Promise<string | null> {
+  const userId = c.get('userId') as string
+  const globalRole = c.get('globalRole') as string
+  let id = paramId || c.req.param('id')
+  
+  if (!id || id === 'current' || id === 'null' || id === 'undefined') {
+    id = c.req.header('x-household-id') || (c.get('householdId') as string)
+    if (!id || id === 'null' || id === 'undefined') {
+      const db = getDb(c.env)
+      const primaryMembership = await db.select({ householdId: userHouseholds.householdId })
+        .from(userHouseholds)
+        .where(eq(userHouseholds.userId, userId))
+        .limit(1)
+        .then((rows: any[]) => rows[0]?.householdId)
+      if (primaryMembership) {
+        id = primaryMembership
+      } else if (globalRole === 'owner') {
+        id = 'ledger-main-001'
+      }
+    }
+  }
+  return id || null
+}
+
 type AddressVisibility = {
   admin: 'read-write' | 'read-only' | 'hidden'
   member: 'read-write' | 'read-only' | 'hidden'
@@ -308,7 +332,7 @@ user.get('/households', async (c) => {
 
 user.get('/households/current', async (c) => {
   const userId = c.get('userId')
-  const householdId = c.req.header('x-household-id')
+  const householdId = await resolveHouseholdId(c, 'current')
   const db = getDb(c.env)
   
   if (!householdId) {
@@ -611,15 +635,17 @@ user.patch('/households/:id', zValidator('json', UpdateHouseholdSchema, (result,
 
 // Household Address
 user.get('/households/:id/address', async (c) => {
-  const { id } = c.req.param()
+  const id = await resolveHouseholdId(c)
+  if (!id) throw new HTTPException(400, { message: 'No household context' })
   const userId = c.get('userId') as string
+  const globalRole = c.get('globalRole') as string
   const db = getDb(c.env)
 
   const membership = (await db.select({ role: userHouseholds.role }).from(userHouseholds)
     .where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id)))
     .limit(1).then(res => res[0]) as any)
   
-  if (!membership) throw new HTTPException(403, { message: 'Forbidden: Not a member of this household' })
+  if (!membership && globalRole !== 'owner') throw new HTTPException(403, { message: 'Forbidden: Not a member of this household' })
 
   const vault = new VaultService(db, c.env.ENCRYPTION_KEY || c.env.JWT_SECRET)
   
@@ -1276,14 +1302,17 @@ user.delete('/sessions', async (c) => {
 
 // Phase 3: Household Management Expansions
 
-user.get('/households/:id/members', async (c) => {
+user.get('/households/current/members', async (c) => {
   const userId = c.get('userId') as string
-  const id = c.req.param('id')
+  const globalRole = c.get('globalRole') as string
+  const id = await resolveHouseholdId(c, 'current')
+  if (!id) return c.json({ error: 'No household context' }, 400)
   const db = getDb(c.env)
   
-  // Verify membership
-  const membership = (await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0]) as any)
-  if (!membership) return c.json({ error: 'Forbidden' }, 403)
+  if (globalRole !== 'owner') {
+    const membership = (await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0]) as any)
+    if (!membership) return c.json({ error: 'Forbidden' }, 403)
+  }
     
   const members = (await db.select({
       id: users.id,
@@ -1295,15 +1324,65 @@ user.get('/households/:id/members', async (c) => {
       joinMethod: userHouseholds.joinMethod
     }).from(users).innerJoin(userHouseholds, eq(users.id, userHouseholds.userId)).where(eq(userHouseholds.householdId, id)) as any)
   
+  const formattedMembers = members.map((m: any) => ({
+    ...m,
+    user: {
+      id: m.id,
+      email: m.email,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl
+    }
+  }))
+
   return c.json({
     success: true,
-    data: members
+    data: formattedMembers
+  })
+})
+
+user.get('/households/:id/members', async (c) => {
+  const userId = c.get('userId') as string
+  const globalRole = c.get('globalRole') as string
+  const id = await resolveHouseholdId(c)
+  if (!id) return c.json({ error: 'No household context' }, 400)
+  const db = getDb(c.env)
+  
+  // Verify membership
+  if (globalRole !== 'owner') {
+    const membership = (await db.select().from(userHouseholds).where(and(eq(userHouseholds.userId, userId), eq(userHouseholds.householdId, id))).limit(1).then(res => res[0]) as any)
+    if (!membership) return c.json({ error: 'Forbidden' }, 403)
+  }
+    
+  const members = (await db.select({
+      id: users.id,
+      email: users.email,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      role: userHouseholds.role,
+      joinedAt: userHouseholds.joinedAt,
+      joinMethod: userHouseholds.joinMethod
+    }).from(users).innerJoin(userHouseholds, eq(users.id, userHouseholds.userId)).where(eq(userHouseholds.householdId, id)) as any)
+  
+  const formattedMembers = members.map((m: any) => ({
+    ...m,
+    user: {
+      id: m.id,
+      email: m.email,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl
+    }
+  }))
+
+  return c.json({
+    success: true,
+    data: formattedMembers
   })
 })
 
 user.get('/households/:id/invites', async (c) => {
   const userId = c.get('userId') as string
-  const id = c.req.param('id')
+  const id = await resolveHouseholdId(c)
+  if (!id) return c.json({ error: 'No household context' }, 400)
   const globalRole = c.get('globalRole') as string
   const db = getDb(c.env)
 

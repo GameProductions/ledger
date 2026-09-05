@@ -45,14 +45,29 @@ export const useApi = <T = unknown>(path: string | null, options: { refreshInter
             }) as any)
       
       if (!res.ok) {
-        if ((res.status === 401 || res.status === 403)) {
+        if (res.status === 401) {
           const isLoggingOut = (window as any)._ledger_is_logging_out;
           if (!isLoggingOut) {
             (window as any)._ledger_is_logging_out = true;
-            console.warn(`[Auth] Session ended (${res.status}) on ${path}. Initiating logout.`);
+            console.warn(`[Auth] Session ended (401) on ${path}. Initiating logout.`);
             logout();
           }
           return;
+        }
+        if (res.status === 403) {
+          try {
+            const body = await res.clone().json();
+            if (body?.message === 'Account Suspended' || body?.error === 'Account Suspended') {
+              const isLoggingOut = (window as any)._ledger_is_logging_out;
+              if (!isLoggingOut) {
+                (window as any)._ledger_is_logging_out = true;
+                console.warn(`[Auth] Account suspended. Initiating logout.`);
+                logout();
+              }
+              return;
+            }
+          } catch {}
+          throw new Error(`Access Forbidden (403): ${path}`);
         }
         throw new Error(`API Error: ${res.status}`);
       }

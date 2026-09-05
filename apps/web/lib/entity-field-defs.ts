@@ -61,7 +61,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     ]},
     { key: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Optional notes...' },
     { key: 'categoryId', label: 'Category', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
-    { key: 'accountId', label: 'Payment Account', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
+    { key: 'accountId', label: 'Payment Source', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'isRecurring', label: 'Recurring', type: 'boolean' },
     { key: 'frequency', label: 'Frequency', type: 'select', options: [
       { value: 'weekly', label: 'Weekly' },
@@ -139,7 +139,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
       { value: 'yearly', label: 'Yearly' },
     ]},
     { key: 'nextPaymentDate', label: 'Next Payment Date', type: 'date' },
-    { key: 'accountId', label: 'Payment Account', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
+    { key: 'accountId', label: 'Payment Source', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: [
       { value: 'manual', label: 'Manual' },
       { value: 'autopay', label: 'Autopay' },
@@ -248,7 +248,7 @@ export const FIELD_DEFS: Record<EntityType, FieldDef[]> = {
     { key: 'trialEndDate', label: 'Trial End Date', type: 'date' },
     { key: 'isTrial', label: 'Is Trial', type: 'boolean' },
     { key: 'categoryId', label: 'Category', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/categories', labelKey: 'name' } },
-    { key: 'accountId', label: 'Payment Account', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
+    { key: 'accountId', label: 'Payment Source', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/accounts', labelKey: 'name' } },
     { key: 'billerId', label: 'Service Provider', type: 'text', placeholder: 'UUID (optional)', reference: { apiPath: '/api/financials/billers', labelKey: 'name' } },
     { key: 'paymentMode', label: 'Payment Mode', type: 'select', options: [
       { value: 'manual', label: 'Manual' },

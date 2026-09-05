@@ -1268,6 +1268,24 @@ const handlePasskeyLoginVerify = async (c: any) => {
   const sessionId = (await createSessionTracker(c, passkey.userId, true, !!persistent) as any)
   const token = (await authService.generateToken(passkey.userId, sessionId) as any)
   
+  // Set session cookie for SSR auth check
+  await setSignedCookie(c, 'foundation_session', sessionId, c.env.JWT_SECRET, {
+    path: '/',
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Lax',
+    maxAge: persistent ? 60 * 60 * 24 * 30 : 60 * 60 * 24 // 30 days or 24 hours
+  })
+
+  // Fetch user object to mirror /login response
+  const [user] = await db.select({
+    id: users.id,
+    email: users.email,
+    displayName: users.displayName,
+    globalRole: users.globalRole,
+    forcePasswordChange: users.forcePasswordChange
+  }).from(users).where(eq(users.id, passkey.userId)).limit(1)
+
   try {
     await logAudit(c, 'users', passkey.userId, 'login', null, { 
       strategy: 'passkey',
@@ -1278,7 +1296,25 @@ const handlePasskeyLoginVerify = async (c: any) => {
     console.error('[WebAuthn/Login] Audit log failed (non-fatal):', e.message)
   }
   
-  return c.json({ success: true, data: { token }, token, sessionToken: token, sessionId })
+  const userPayload = user ? {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    globalRole: user.globalRole,
+    forcePasswordChange: !!user.forcePasswordChange
+  } : null
+
+  return c.json({ 
+    success: true, 
+    data: { 
+      token,
+      user: userPayload
+    }, 
+    user: userPayload,
+    token, 
+    sessionToken: token, 
+    sessionId 
+  })
 }
 
 auth.post('/passkeys/login/verify', handlePasskeyLoginVerify)

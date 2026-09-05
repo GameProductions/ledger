@@ -46,13 +46,26 @@ export const useApi = <T = unknown>(path: string | null, options: { refreshInter
       
       if (!res.ok) {
         if (res.status === 401) {
-          const isLoggingOut = (window as any)._ledger_is_logging_out;
-          if (!isLoggingOut) {
-            (window as any)._ledger_is_logging_out = true;
-            console.warn(`[Auth] Session ended (401) on ${path}. Initiating logout.`);
-            logout();
-          }
-          return;
+          try {
+            const body = await res.clone().json();
+            const msg = body?.message || body?.error || '';
+            const isFatalAuth = path === '/api/auth/verify' || 
+                                msg === 'Missing Authorization Token' || 
+                                msg === 'User Not Found' || 
+                                msg.toLowerCase().includes('expired') || 
+                                msg.toLowerCase().includes('invalid token');
+            if (isFatalAuth) {
+              const isLoggingOut = (window as any)._ledger_is_logging_out;
+              if (!isLoggingOut) {
+                (window as any)._ledger_is_logging_out = true;
+                console.warn(`[Auth] Session ended (401) on ${path}. Initiating logout.`);
+                logout();
+              }
+              return;
+            }
+          } catch {}
+          console.warn(`[API] 401 Unauthorized on non-fatal request ${path}`);
+          throw new Error(`Unauthorized (401): ${path}`);
         }
         if (res.status === 403) {
           try {

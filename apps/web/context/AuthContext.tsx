@@ -103,24 +103,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
               // Hydrate user profile if not present
               if (!user) {
-                const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                if (isCancelled) return
-                if (profileRes.ok) {
-                  const pEnv = (await profileRes.json() as any)
-                  if (pEnv.success && pEnv.data) {
-                    setUser(pEnv.data)
-                    localStorage.setItem('ledger_user', JSON.stringify(pEnv.data))
+                try {
+                  const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  })
+                  if (isCancelled) return
+                  if (profileRes.ok) {
+                    const pEnv = (await profileRes.json() as any)
+                    if (pEnv.success && pEnv.data) {
+                      setUser(pEnv.data)
+                      localStorage.setItem('ledger_user', JSON.stringify(pEnv.data))
+                    }
+                  } else {
+                    console.warn('[Auth] Background profile hydration non-fatal response:', profileRes.status)
                   }
-                } else if (profileRes.status === 401 || profileRes.status === 403) {
-                  logout()
+                } catch (pErr: any) {
+                  console.warn('[Auth] Background profile hydration error:', pErr?.message || pErr)
                 }
               }
             } else {
               logout()
             }
-          } else if (res.status === 401 || res.status === 403) {
+          } else if (res.status === 401) {
+            console.warn('[Auth] Token verification failed (401). Initiating logout.')
             logout()
           }
         } catch (err: any) {
@@ -198,11 +203,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const res = (await makeRequest() as any)
 
-    if ((res.status === 401 || res.status === 403)) {
-      const isLoggingOut = (window as any)._ledger_is_logging_out;
-      if (!isLoggingOut) {
-        logout()
-      }
+    if (res.status === 401) {
+      try {
+        const body = await res.clone().json()
+        const msg = body?.message || body?.error || ''
+        if (msg === 'Missing Authorization Token' || msg === 'User Not Found' || msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid token')) {
+          const isLoggingOut = (window as any)._ledger_is_logging_out;
+          if (!isLoggingOut) {
+            (window as any)._ledger_is_logging_out = true;
+            logout()
+          }
+        }
+      } catch {}
+    } else if (res.status === 403) {
+      try {
+        const body = await res.clone().json()
+        if (body?.message === 'Account Suspended' || body?.error === 'Account Suspended') {
+          const isLoggingOut = (window as any)._ledger_is_logging_out;
+          if (!isLoggingOut) {
+            (window as any)._ledger_is_logging_out = true;
+            logout()
+          }
+        }
+      } catch {}
     }
 
     return res

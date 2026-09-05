@@ -761,15 +761,18 @@ export function LoginDialog({
   const renderPersistenceSelector = () => (
     <div className="p-3 bg-slate-950/40 border border-white/5 rounded-2xl flex items-center justify-between mt-4">
       <div className="space-y-0.5">
-        <span className="text-[11px] font-bold text-slate-200 block">
+        <label htmlFor="login-persistent-toggle" className="text-[11px] font-bold text-slate-200 block cursor-pointer">
           {persistent ? 'Stay signed in for 30 days (Standard)' : 'Expire in 24 hours (Shared / Untrusted device)'}
-        </span>
+        </label>
       </div>
-      <label className="relative inline-flex items-center cursor-pointer">
+      <label htmlFor="login-persistent-toggle" className="relative inline-flex items-center cursor-pointer">
         <input
+          id="login-persistent-toggle"
+          name="persistent"
           type="checkbox"
           checked={persistent}
           onChange={(e) => setPersistent(e.target.checked)}
+          aria-label="Stay signed in toggle"
           className="sr-only peer"
         />
         <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
@@ -949,8 +952,10 @@ export function LoginDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-slate-400">Admin Email</label>
+              <label htmlFor="setup-admin-email" className="text-[10px] font-black uppercase text-slate-400">Admin Email</label>
               <input
+                id="setup-admin-email"
+                name="adminEmail"
                 type="email"
                 value={setupAdminEmail}
                 onChange={e => setSetupAdminEmail(e.target.value)}
@@ -961,8 +966,10 @@ export function LoginDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-slate-400">Admin Username</label>
+              <label htmlFor="setup-admin-username" className="text-[10px] font-black uppercase text-slate-400">Admin Username</label>
               <input
+                id="setup-admin-username"
+                name="adminUsername"
                 type="text"
                 value={setupAdminUsername}
                 onChange={e => setSetupAdminUsername(e.target.value)}
@@ -974,8 +981,10 @@ export function LoginDialog({
 
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400">Master Password</label>
+                <label htmlFor="setup-admin-password" className="text-[10px] font-black uppercase text-slate-400">Master Password</label>
                 <input
+                  id="setup-admin-password"
+                  name="adminPassword"
                   type="password"
                   value={setupAdminPassword}
                   onChange={e => setSetupAdminPassword(e.target.value)}
@@ -986,8 +995,10 @@ export function LoginDialog({
                 <PasswordChecklist password={setupAdminPassword} minLength={12} checkBreaches={true} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400">Confirm Master Password</label>
+                <label htmlFor="setup-admin-confirm-password" className="text-[10px] font-black uppercase text-slate-400">Confirm Master Password</label>
                 <input
+                  id="setup-admin-confirm-password"
+                  name="adminConfirmPassword"
                   type="password"
                   value={setupAdminConfirmPassword}
                   onChange={e => setSetupAdminConfirmPassword(e.target.value)}
@@ -1016,8 +1027,10 @@ export function LoginDialog({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400">Security Code or Recovery Key</label>
+                <label htmlFor="mfa-security-code" className="text-[10px] font-black uppercase text-slate-400">Security Code or Recovery Key</label>
                 <input
+                  id="mfa-security-code"
+                  name="mfaCode"
                   type="text"
                   value={mfaCode}
                   onChange={e => setMfaCode(e.target.value)}
@@ -1145,7 +1158,7 @@ export function LoginDialog({
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black uppercase text-slate-400">Email or Username</label>
+                      <label htmlFor="login-identifier" className="text-[10px] font-black uppercase text-slate-400">Email or Username</label>
                       <button
                         type="button"
                         onClick={toggleSpeechRecognition}
@@ -1158,6 +1171,8 @@ export function LoginDialog({
                     </div>
                     <div className="relative">
                       <input
+                        id="login-identifier"
+                        name="identifier"
                         type="text"
                         value={identifier}
                         onChange={e => setIdentifier(e.target.value)}
@@ -1169,8 +1184,10 @@ export function LoginDialog({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400">Password</label>
+                    <label htmlFor="login-password" className="text-[10px] font-black uppercase text-slate-400">Password</label>
                     <input
+                      id="login-password"
+                      name="password"
                       type="password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
@@ -1219,8 +1236,10 @@ export function LoginDialog({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-400">Registered Email Address</label>
+                        <label htmlFor="otp-email" className="text-[10px] font-black uppercase text-slate-400">Registered Email Address</label>
                         <input
+                          id="otp-email"
+                          name="email"
                           type="email"
                           value={otpEmail}
                           onChange={e => setOtpEmail(e.target.value)}
@@ -1247,8 +1266,10 @@ export function LoginDialog({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase text-slate-400">6-Digit Email Code</label>
+                        <label htmlFor="otp-code" className="text-[10px] font-black uppercase text-slate-400">6-Digit Email Code</label>
                         <input
+                          id="otp-code"
+                          name="otpCode"
                           type="text"
                           value={otpCode}
                           onChange={e => setOtpCode(e.target.value)}
@@ -1453,9 +1474,11 @@ export function LoginDialog({
                   )}
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400">Account Email Address</label>
+                    <label htmlFor="forgot-email" className="text-[10px] font-black uppercase text-slate-400">Account Email Address</label>
                     <div className="relative">
                       <input
+                        id="forgot-email"
+                        name="email"
                         type="email"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}

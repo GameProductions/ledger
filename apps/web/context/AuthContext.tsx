@@ -79,12 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Session Verification & Profile Hydration
   React.useEffect(() => {
     if (token) {
+      let isCancelled = false
       const verifySession = async () => {
         try {
           const apiUrl = getApiUrl()
           const res = (await fetch(`${apiUrl}/api/auth/verify`, {
                       headers: { 'Authorization': `Bearer ${token}` }
                     }) as any)
+          if (isCancelled) return
           if (res.ok) {
             const envelope = (await res.json() as any)
             if (envelope.success && envelope.data) {
@@ -104,26 +106,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const profileRes = await fetch(`${apiUrl}/api/user/profile`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 })
+                if (isCancelled) return
                 if (profileRes.ok) {
                   const pEnv = (await profileRes.json() as any)
                   if (pEnv.success && pEnv.data) {
                     setUser(pEnv.data)
                     localStorage.setItem('ledger_user', JSON.stringify(pEnv.data))
                   }
+                } else if (profileRes.status === 401 || profileRes.status === 403) {
+                  logout()
                 }
               }
             } else {
-              console.error('[Verification failed] Malformed verify response', envelope)
               logout()
             }
-          } else if (res.status === 401) {
+          } else if (res.status === 401 || res.status === 403) {
             logout()
           }
         } catch (err: any) {
-          console.error('[Auth] Verification failed', err)
+          console.warn('[Auth] Verification check encountered an issue:', err?.message || err)
         }
       }
       verifySession()
+      return () => {
+        isCancelled = true
+      }
     }
   }, [token, user, logout])
 

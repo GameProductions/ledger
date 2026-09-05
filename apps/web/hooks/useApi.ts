@@ -49,7 +49,7 @@ export const useApi = <T = unknown>(path: string | null, options: { refreshInter
           const isLoggingOut = (window as any)._ledger_is_logging_out;
           if (!isLoggingOut) {
             (window as any)._ledger_is_logging_out = true;
-            console.error(`Auth Error (${res.status}) on ${path}. Initiating global logout.`);
+            console.warn(`[Auth] Session ended (${res.status}) on ${path}. Initiating logout.`);
             logout();
           }
           return;
